@@ -25,6 +25,7 @@ namespace eval ::tcl::test::platform {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testCPUID [llength [info commands testcpuid]]
+testConstraint testlongsize [llength [info commands testlongsize]]
 
 test platform-1.0 {tcl_platform(engine)} {
   set tcl_platform(engine)
@@ -39,16 +40,9 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result
 } {byteOrder engine machine os osVersion pathSeparator platform pointerSize user wordSize}
 
-# Test assumes twos-complement arithmetic, which is true of virtually
-# everything these days.  Note that this does *not* use wide(), and
-# this is intentional since that could make Tcl's numbers wider than
-# the machine-integer on some platforms...
-test platform-2.1 {tcl_platform(wordSize) indicates size of native word} nonPortable {
-    set result [expr {int(1 << (8 * $tcl_platform(wordSize) - 1))}]
-    # Result must be the largest bit in a machine word, which this checks
-    # without assuming how wide the word really is
-    list [expr {$result < 0}] [expr {$result ^ int($result - 1)}]
-} {1 -1}
+test platform-2.1 {tcl_platform(wordSize) indicates size of native word} testlongsize {
+    expr {$tcl_platform(wordSize) == [testlongsize]}
+} {1}
 
 # On Windows/UNIX, test that the CPU ID works
 

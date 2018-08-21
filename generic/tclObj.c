@@ -2516,7 +2516,14 @@ Tcl_GetIntFromObj(
     if (TclGetLongFromObj(interp, objPtr, &l) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((ULONG_MAX > UINT_MAX) && ((l > (long)(UINT_MAX)) || (l < (long)(INT_MIN)))) {
+    if (
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+	    (l > (long)(UINT_MAX))
+#else
+	    (l > (long)(INT_MAX))
+#endif
+	    || (l < (long)(INT_MIN))
+	) {
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent as non-long integer";
@@ -2805,8 +2812,13 @@ Tcl_GetLongFromObj(
 
 	    Tcl_WideInt w = objPtr->internalRep.wideValue;
 
-	    if (w >= (Tcl_WideInt)(LONG_MIN)
-		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
+	    if (
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+		    w <= (Tcl_WideInt)(ULONG_MAX)) {
+#else
+		    w <= (Tcl_WideInt)(LONG_MAX)) {
+#endif
+		    && w >= (Tcl_WideInt)(LONG_MIN)
 		*longPtr = Tcl_WideAsLong(w);
 		return TCL_OK;
 	    }
@@ -2833,22 +2845,29 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(unsigned long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
-		unsigned long value = 0, numBytes = sizeof(long);
-		long scratch;
+		unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
 		unsigned char *bytes = (unsigned char *) &scratch;
 
 		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
-		    if (big.sign) {
-			*longPtr = - (long) value;
-		    } else {
-			*longPtr = (long) value;
+		    if (
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 8
+			    big.sign ? (value <= 1 + (unsigned long)LONG_MAX) : (value <= (unsigned long)ULONG_MAX)
+#else
+			    big.sign ? (value <= 1 + (unsigned long)LONG_MAX) : (value <= (unsigned long)LONG_MAX)
+#endif
+		    ) {
+			if (big.sign) {
+			    *longPtr = - (long) value;
+			} else {
+			    *longPtr = (long) value;
+			    }
+			return TCL_OK;
 		    }
-		    return TCL_OK;
 		}
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
