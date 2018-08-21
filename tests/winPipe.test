@@ -332,7 +332,9 @@ proc _testExecArgs {single args} {
     set broken {}
     foreach args $args {
 	if {$single & 1} {
-	    set args [list $args]
+	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated 
+	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
+	    set args [list "1st" $args "3rd"]
 	}
 	foreach cmd $cmds {
 	    set e [list [file tail $path(echoArgs.tcl)] {*}$args]
@@ -414,8 +416,15 @@ set injectList {
     "test\"whoami\\"     "test\"\"whoami\\"
     "test\"\"\"whoami\\" "test\"\"\"\"whoami\\"
 
+    {test\\&\\test}    {test"\\&\\test}
+    {"test\\&\\test}   {"test"\\&\\"test"}
+    {test\\"&"\\test}  {test"\\"&"\\test}
+    {"test\\"&"\\test} {"test"\\"&"\\"test"}
+
     {test\"&whoami}    {test"\"&whoami}
     {test""\"&whoami}  {test"""\"&whoami}
+    {test\"\&whoami}   {test"\"\&whoami}
+    {test""\"\&whoami} {test"""\"\&whoami}
 
     {test&whoami}    {test|whoami}
     {"test&whoami}   {"test|whoami}
@@ -445,6 +454,25 @@ set injectList {
     {test^whoami}    {test^^echo ^^^}
     {test"^whoami}   {test"^^echo ^^^}
     {test"^echo ^^^"} {test""^echo" ^^^"}
+
+    {test%USERDOMAIN%\%USERNAME%}
+    {test" %USERDOMAIN%\%USERNAME%}
+    {test%USERDOMAIN%\\%USERNAME%}
+    {test" %USERDOMAIN%\\%USERNAME%}
+    {test%USERDOMAIN%&%USERNAME%}
+    {test" %USERDOMAIN%&%USERNAME%}
+    {test%USERDOMAIN%\&\%USERNAME%}
+    {test" %USERDOMAIN%\&\%USERNAME%}
+
+    {test%USERDOMAIN%\&\test}
+    {test" %USERDOMAIN%\&\test}
+    {test%USERDOMAIN%\\&\\test}
+    {test" %USERDOMAIN%\\&\\test}
+
+    {test%USERDOMAIN%\&\"test}
+    {test" %USERDOMAIN%\&\"test}
+    {test%USERDOMAIN%\\&\\"test}
+    {test" %USERDOMAIN%\\&\\"test}
 }
 
 ### validate the pass-thru from BuildCommandLine() to the crt's parse_cmdline().

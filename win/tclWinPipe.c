@@ -1527,6 +1527,86 @@ ApplicationType(
  *----------------------------------------------------------------------
  */
 
+static const char *
+BuildCmdLineBypassBS(
+    const char *current,
+    const char **bspos
+) {
+    /* mark first backslash possition */
+    if (!*bspos) {
+	*bspos = current;
+    }
+    do {
+	current++;
+    } while (*current == '\\');
+    return current;
+}
+
+static void
+QuoteCmdLineBackslash(
+    Tcl_DString *dsPtr,
+    const char *start,
+    const char *current,
+    const char *bspos
+) {
+    if (!bspos) {
+	if (current > start) { /* part before current (special) */
+	    Tcl_DStringAppend(dsPtr, start, (int) (current - start));
+	}
+    } else {
+    	if (bspos > start) { /* part before first backslash */
+	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
+	}
+	while (bspos++ < current) { /* each backslash twice */
+	    Tcl_DStringAppend(dsPtr, "\\\\", 2);
+	}
+    }
+}
+
+static const char *
+QuoteCmdLinePart(
+    Tcl_DString *dsPtr,
+    const char *start,
+    const char *special,
+    const char *specMetaChars,
+    const char **bspos
+) {
+    if (!*bspos) {
+	/* rest before special (before quote) */
+	QuoteCmdLineBackslash(dsPtr, start, special, NULL);
+	start = special;
+    } else {
+	/* rest before first backslash and backslashes into new quoted block */
+	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
+	start = *bspos;
+    }
+    /* 
+     * escape all special chars enclosed in quotes like `"..."`, note that here we 
+     * don't must escape `\` (with `\`), because it's outside of the main quotes,
+     * so `\` remains `\`, but important - not at end of part, because results as 
+     * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
+     */
+    Tcl_DStringAppend(dsPtr, "\"", 1); /* opening escape quote-char */
+    do {
+    	*bspos = NULL;
+	special++;
+	if (*special == '\\') {
+	    /* bypass backslashes (and mark first backslash possition)*/
+	    special = BuildCmdLineBypassBS(special, bspos);
+	    if (*special == '\0') break;
+	}
+    } while (*special && strchr(specMetaChars, *special));
+    if (!*bspos) {
+	/* unescaped rest before quote */
+	QuoteCmdLineBackslash(dsPtr, start, special, NULL);
+    } else {
+	/* unescaped rest before first backslash (rather belongs to the main block) */
+	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
+    }
+    Tcl_DStringAppend(dsPtr, "\"", 1); /* closing escape quote-char */
+    return special;
+}
+
 static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
@@ -1536,11 +1616,14 @@ BuildCommandLine(
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (TCHAR). */
 {
-    const char *arg, *start, *special;
+    const char *arg, *start, *special, *bspos;
     int quote = 0, i;
     Tcl_DString ds;
 
-    const static char *specMetaChars = "&|^<>!%()";
+    /* characters to enclose in quotes if unpaired quote flag set */
+    const static char *specMetaChars = "&|^<>!()%";
+    /* characters to enclose in quotes in any case (regardless unpaired-flag) */
+    const static char *specMetaChars2 = "%";
 
     Tcl_DStringInit(&ds);
 
@@ -1566,6 +1649,7 @@ BuildCommandLine(
 	 *   2 - previous arguments chain contains unpaired quote-char;
 	 */
 	quote &= ~1; /* reset escape flag */
+	bspos = NULL;
 	if (arg[0] == '\0') {
 	    quote = 1;
 	} else {
@@ -1585,26 +1669,22 @@ BuildCommandLine(
 	    /* nothing to escape */
 	    Tcl_DStringAppend(&ds, arg, -1);
 	} else {
-	    /* start of argument (open quote-char) */
+	    /* start of argument (main opening quote-char) */
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {
-	    	/* `\\` or `\"` or `\` at end (so equal `\"` because quoted) */
-		if (*special == '\\' && (special[1] == '\\' || special[1] == '"' || special[1] == '\0')) {
-		    if (special > start) {
-			Tcl_DStringAppend(&ds, start, (int) (special - start));
-		    }
-		    /* escape using backslash */
-		    Tcl_DStringAppend(&ds, "\\\\", 2);
-		    start = ++special;
-		    continue;
+		/* position of `\` is important before quote or at end (equal `\"` because quoted) */
+		if (*special == '\\') {
+		    /* bypass backslashes (and mark first backslash possition)*/
+		    special = BuildCmdLineBypassBS(special, &bspos);
+		    if (*special == '\0') break;
 		}
 		/* ["] */
 		if (*special == '"') {
 		    quote ^= 2; /* invert unpaired flag - observe unpaired quotes */
-		    if (special > start) {
-			Tcl_DStringAppend(&ds, start, (int) (special - start));
-		    }
+		    /* add part before (and escape backslashes before quote) */
+		    QuoteCmdLineBackslash(&ds, start, special, bspos);
+		    bspos = NULL;
 		    /* escape using backslash */
 		    Tcl_DStringAppend(&ds, "\\\"", 2);
 		    start = ++special;
@@ -1612,27 +1692,25 @@ BuildCommandLine(
 		}
 		/* unpaired (escaped) quote causes special handling on meta-chars */
 		if ((quote & 2) && strchr(specMetaChars, *special)) {
-		    if (special > start) {
-			Tcl_DStringAppend(&ds, start, (int) (special - start));
-		    }
-		    /* unpaired - escape all special chars inside quotes like `"..."` */
-		    Tcl_DStringAppend(&ds, "\"", 1);
-		    start = special;
-		    do {
-			special++;
-		    } while(*special && strchr(specMetaChars, *special));
-		    Tcl_DStringAppend(&ds, start, (int) (special - start));
-		    Tcl_DStringAppend(&ds, "\"", 1);
-		    start = special;
+		    special = QuoteCmdLinePart(&ds, start, special, specMetaChars, &bspos);
+		    /* start to current or first backslash */
+		    start = !bspos ? special : bspos;
 		    continue;
 		}
+		/* special case for % - should be enclosed always (paired also) */
+		if (strchr(specMetaChars2, *special)) {
+		    special = QuoteCmdLinePart(&ds, start, special, specMetaChars2, &bspos);
+		    /* start to current or first backslash */
+		    start = !bspos ? special : bspos;
+		    continue;
+		}
+		/* other not special (and not meta) character */
+		bspos = NULL; /* reset last backslash possition (not interesting) */
 		special++;
 	    }
-	    /* rest of argument (don't contain special chars) */
-	    if (special > start) {
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-	    }
-	    /* end of argument (closed quote-char) */
+	    /* rest of argument (and escape backslashes before closing main quote) */
+	    QuoteCmdLineBackslash(&ds, start, special, bspos);
+	    /* end of argument (main closing quote-char) */
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
     }
