@@ -116,6 +116,7 @@ static Tcl_ObjCmdProc	ExprCeilFunc;
 static Tcl_ObjCmdProc	ExprDoubleFunc;
 static Tcl_ObjCmdProc	ExprEntierFunc;
 static Tcl_ObjCmdProc	ExprFloorFunc;
+static Tcl_ObjCmdProc	ExprIntFunc;
 static Tcl_ObjCmdProc	ExprIsqrtFunc;
 static Tcl_ObjCmdProc	ExprMaxFunc;
 static Tcl_ObjCmdProc	ExprMinFunc;
@@ -124,7 +125,6 @@ static Tcl_ObjCmdProc	ExprRoundFunc;
 static Tcl_ObjCmdProc	ExprSqrtFunc;
 static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
-static Tcl_ObjCmdProc	ExprIntFunc;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
