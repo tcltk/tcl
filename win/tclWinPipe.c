@@ -1647,21 +1647,27 @@ BuildCommandLine(
 	/* Quote flags:
 	 *   1 - escape argument;
 	 *   2 - previous arguments chain contains unpaired quote-char;
+	 *   4 - enclose in quotes;
 	 */
-	quote &= ~1; /* reset escape flag */
+	quote &= ~5; /* reset escape flags */
 	bspos = NULL;
 	if (arg[0] == '\0') {
-	    quote = 1;
+	    quote = 5;
 	} else {
 	    int count;
 	    Tcl_UniChar ch;
 	    for (start = arg; *start != '\0'; start += count) {
 		count = Tcl_UtfToUniChar(start, &ch);
-		if (Tcl_UniCharIsSpace(ch) ||
-		   (count == 1 && (*start=='"' || strchr(specMetaChars, *start)))
-		) {
-		    quote |= 1; /* set escape flag - must be quoted */
-		    break;
+		if (count == 1) {
+		    if (Tcl_UniCharIsSpace(ch) ||
+			strchr(specMetaChars, *start)
+		    ) {
+			quote |= 5; /* set escape flag & must be quoted */
+			break;
+		    }
+		    if (*start == '"') {
+			quote |= 1; /* set escape flag */
+		    }
 		}
 	    }
 	}
@@ -1670,7 +1676,9 @@ BuildCommandLine(
 	    Tcl_DStringAppend(&ds, arg, -1);
 	} else {
 	    /* start of argument (main opening quote-char) */
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    if (quote & 4) {
+		Tcl_DStringAppend(&ds, "\"", 1);
+	    }
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {
 		/* position of `\` is important before quote or at end (equal `\"` because quoted) */
@@ -1708,10 +1716,15 @@ BuildCommandLine(
 		bspos = NULL; /* reset last backslash possition (not interesting) */
 		special++;
 	    }
-	    /* rest of argument (and escape backslashes before closing main quote) */
-	    QuoteCmdLineBackslash(&ds, start, special, bspos);
-	    /* end of argument (main closing quote-char) */
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    if (quote & 4) {
+		/* rest of argument (and escape backslashes before closing main quote) */
+		QuoteCmdLineBackslash(&ds, start, special, bspos);
+		/* end of argument (main closing quote-char) */
+		Tcl_DStringAppend(&ds, "\"", 1);
+	    } else {
+		/* rest of argument */
+		QuoteCmdLineBackslash(&ds, start, special, NULL);
+	    }
 	}
     }
     Tcl_DStringFree(linePtr);
