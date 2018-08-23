@@ -362,22 +362,22 @@ test winpipe-7.2 {BuildCommandLine: null arguments} {win exec} {
 } {foo "" bar}
 test winpipe-7.3 {BuildCommandLine: dbl quote quoting #1} {win exec} {
     exec $env(COMSPEC) /c echo foo "\"" bar
-} {foo "\"" bar}
+} {foo \" bar}
 test winpipe-7.4 {BuildCommandLine: dbl quote quoting #2} {win exec} {
     exec $env(COMSPEC) /c echo foo {""} bar
-} {foo "\"\"" bar}
+} {foo \"\" bar}
 test winpipe-7.5 {BuildCommandLine: dbl quote quoting #3} {win exec} {
     exec $env(COMSPEC) /c echo foo "\" " bar
 } {foo "\" " bar}
 test winpipe-7.6 {BuildCommandLine: dbl quote quoting #4} {win exec} {
     exec $env(COMSPEC) /c echo foo {a="b"} bar
-} {foo "a=\"b\"" bar}
+} {foo a=\"b\" bar}
 test winpipe-7.7 {BuildCommandLine: dbl quote quoting #5} {win exec} {
     exec $env(COMSPEC) /c echo foo {a = "b"} bar
 } {foo "a = \"b\"" bar}
 test winpipe-7.8 {BuildCommandLine: dbl quote quoting #6} {win exec} {
     exec $env(COMSPEC) /c echo {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} "he \" llo"
-} {"\"hello\"" "\"\"hello\"\"" "\"\"\"hello\"\"\"" "\"\\\"hello\\\"\"" "he llo" "he \" llo"}
+} {\"hello\" \"\"hello\"\" \"\"\"hello\"\"\" \"\\\"hello\\\"\" "he llo" "he \" llo"}
 test winpipe-7.9 {BuildCommandLine: N backslashes followed a quote rule #1} {win exec} {
     exec $env(COMSPEC) /c echo foo \\ bar
 } {foo \ bar}
