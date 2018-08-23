@@ -336,8 +336,9 @@ proc _testExecArgs {single args} {
 	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
 	    set args [list "1st" $args "3rd"]
 	}
+	set args [list {*}$args]; # normalized canonical list
 	foreach cmd $cmds {
-	    set e [list [file tail $path(echoArgs.tcl)] {*}$args]
+	    set e [linsert $args 0 [file tail $path(echoArgs.tcl)]]
 	    tcltest::DebugPuts 4 "  ## test exec [file extension [lindex $cmd 0]] ($cmd) for\n  ##   $args"
 	    if {[catch {
 		exec {*}$cmd {*}$args
@@ -502,7 +503,7 @@ test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: dumped arguments are
 } -result {}
 
 test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (particular)} \
--constraints {win exec} -body {
+-constraints {win exec slowTest} -body {
     _testExecArgs 1 {*}$injectList
 } -result {}
 
@@ -523,6 +524,36 @@ test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 	[list START     {*}$injectList "\"END"] \
 	[list "START\"" {*}$injectList "\"END"]
 } -result {}
+
+test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (random mix)} \
+-constraints {win exec} -body {
+    set lst {}
+    set maps {
+	{\&|^<>!()%}
+	{\&|^<>!()% }
+	{"\&|^<>!()%}
+	{"\&|^<>!()% }
+	{"""""\\\\\&|^<>!()%}
+	{"""""\\\\\&|^<>!()% }
+    }
+    set i 0
+    time {
+	set args {[incr i].}
+	time {
+	    set map [lindex $maps [expr {int(rand()*[llength $maps])}]]
+	    # be sure arg has some prefix (avoid special handling, like |& etc)
+	    set a {x}
+	    while {[string length $a] < 50} {
+		append a [string index $map [expr {int(rand()*[string length $map])}]]
+	    }
+	    lappend args $a
+	} 20
+	lappend lst $args
+    } 10
+    _testExecArgs 0 {*}$lst
+} -result {} -cleanup {
+    unset -nocomplain lst args a map maps
+}
 
 rename _testExecArgs {}
 

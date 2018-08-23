@@ -1625,6 +1625,13 @@ BuildCommandLine(
     /* characters to enclose in quotes in any case (regardless unpaired-flag) */
     const static char *specMetaChars2 = "%";
 
+    /* Quote flags:
+     *   CL_ESCAPE   - escape argument;
+     *   CL_QUOTE    - enclose in quotes;
+     *   CL_UNPAIRED - previous arguments chain contains unpaired quote-char;
+     */
+    enum {CL_ESCAPE = 1, CL_QUOTE = 2, CL_UNPAIRED = 4};
+
     Tcl_DStringInit(&ds);
 
     /*
@@ -1644,41 +1651,55 @@ BuildCommandLine(
 	    Tcl_DStringAppend(&ds, " ", 1);
 	}
 
-	/* Quote flags:
-	 *   1 - escape argument;
-	 *   2 - previous arguments chain contains unpaired quote-char;
-	 *   4 - enclose in quotes;
-	 */
-	quote &= ~5; /* reset escape flags */
+	quote &= ~(CL_ESCAPE|CL_QUOTE); /* reset escape flags */
 	bspos = NULL;
 	if (arg[0] == '\0') {
-	    quote = 5;
+	    quote = CL_QUOTE;
 	} else {
 	    int count;
 	    Tcl_UniChar ch;
-	    for (start = arg; *start != '\0'; start += count) {
+	    for (start = arg;
+		*start != '\0' &&
+		    (quote & (CL_ESCAPE|CL_QUOTE)) != (CL_ESCAPE|CL_QUOTE);
+		start += count
+	    ) {
 		count = Tcl_UtfToUniChar(start, &ch);
-		if (count == 1) {
-		    if (Tcl_UniCharIsSpace(ch) ||
-			strchr(specMetaChars, *start)
-		    ) {
-			quote |= 5; /* set escape flag & must be quoted */
+		if (count > 1) continue;
+		if (Tcl_UniCharIsSpace(ch)) {
+		    quote |= CL_QUOTE; /* quote only */
+		    if (bspos) { /* if backslash found - escape & quote */
+			quote |= CL_ESCAPE;
 			break;
 		    }
-		    if (*start == '"') {
-			quote |= 1; /* set escape flag */
+		    continue;
+		}
+		if (strchr(specMetaChars, *start)) {
+		    quote |= (CL_ESCAPE|CL_QUOTE); /*escape & quote */
+		    break;
+		}
+		if (*start == '"') {
+		    quote |= CL_ESCAPE; /* escape only */
+		    continue;
+		}
+		if (*start == '\\') {
+		    bspos = start;
+		    if (quote & CL_QUOTE) { /* if quote - escape & quote */
+			quote |= CL_ESCAPE;
+			break;
 		    }
+		    continue;
 		}
 	    }
+	    bspos = NULL;
 	}
-	if (!(quote & 1)) {
+	if (quote & CL_QUOTE) {
+	    /* start of argument (main opening quote-char) */
+	    Tcl_DStringAppend(&ds, "\"", 1);
+	}
+	if (!(quote & CL_ESCAPE)) {
 	    /* nothing to escape */
 	    Tcl_DStringAppend(&ds, arg, -1);
 	} else {
-	    /* start of argument (main opening quote-char) */
-	    if (quote & 4) {
-		Tcl_DStringAppend(&ds, "\"", 1);
-	    }
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {
 		/* position of `\` is important before quote or at end (equal `\"` because quoted) */
@@ -1689,7 +1710,7 @@ BuildCommandLine(
 		}
 		/* ["] */
 		if (*special == '"') {
-		    quote ^= 2; /* invert unpaired flag - observe unpaired quotes */
+		    quote ^= CL_UNPAIRED; /* invert unpaired flag - observe unpaired quotes */
 		    /* add part before (and escape backslashes before quote) */
 		    QuoteCmdLineBackslash(&ds, start, special, bspos);
 		    bspos = NULL;
@@ -1699,7 +1720,7 @@ BuildCommandLine(
 		    continue;
 		}
 		/* unpaired (escaped) quote causes special handling on meta-chars */
-		if ((quote & 2) && strchr(specMetaChars, *special)) {
+		if ((quote & CL_UNPAIRED) && strchr(specMetaChars, *special)) {
 		    special = QuoteCmdLinePart(&ds, start, special, specMetaChars, &bspos);
 		    /* start to current or first backslash */
 		    start = !bspos ? special : bspos;
@@ -1716,15 +1737,13 @@ BuildCommandLine(
 		bspos = NULL; /* reset last backslash possition (not interesting) */
 		special++;
 	    }
-	    if (quote & 4) {
-		/* rest of argument (and escape backslashes before closing main quote) */
-		QuoteCmdLineBackslash(&ds, start, special, bspos);
-		/* end of argument (main closing quote-char) */
-		Tcl_DStringAppend(&ds, "\"", 1);
-	    } else {
-		/* rest of argument */
-		QuoteCmdLineBackslash(&ds, start, special, NULL);
-	    }
+	    /* rest of argument (and escape backslashes before closing main quote) */
+	    QuoteCmdLineBackslash(&ds, start, special, 
+	    	(quote & CL_QUOTE) ? bspos : NULL);
+	}
+	if (quote & CL_QUOTE) {
+	    /* end of argument (main closing quote-char) */
+	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
     }
     Tcl_DStringFree(linePtr);
