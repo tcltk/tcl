@@ -263,7 +263,9 @@ LLDB			= lldb
 TRACE			= strace
 TRACE_OPTS		=
 VALGRIND		= valgrind
-VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+VALGRINDARGS		= --tool=memcheck --num-callers=24 \
+    --leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+    --suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
