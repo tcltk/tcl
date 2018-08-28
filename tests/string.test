@@ -674,9 +674,9 @@ test string-6.53.$noComp {string is integer, true with whitespace} {
 test string-6.54.$noComp {string is integer, false} {
     list [run {string is integer -fail var 123abc}] $var
 } {0 3}
-test string-6.55.$noComp {string is integer, false on overflow} {
-    list [run {string is integer -fail var +[largest_int]0}] $var
-} {0 -1}
+test string-6.55.$noComp {string is integer, no overflow possible} {
+    run {string is integer +[largest_int]0}
+} 1
 test string-6.56.$noComp {string is integer, false} {
     list [run {string is integer -fail var [expr double(1)]}] $var
 } {0 1}
@@ -807,22 +807,22 @@ test string-6.91.$noComp {string is double, bad doubles} {
     }
     return $result
 } {1 1 0 0 0 1 0 0}
-test string-6.92.$noComp {string is integer, 64-bit overflow} {
+test string-6.92.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
     set x 0x10000000000000000
-    list [run {string is integer -failindex var $x}] $var
-} {0 -1}
-test string-6.93.$noComp {string is integer, 64-bit overflow} {
+    run {string is integer $x}
+} 1
+test string-6.93.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
     set x 0x10000000000000000
     append x ""
-    list [run {string is integer -failindex var $x}] $var
-} {0 -1}
-test string-6.94.$noComp {string is integer, 64-bit overflow} {
+    run {string is integer $x}
+} 1
+test string-6.94.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
     set x 0x10000000000000000
-    list [run {string is integer -failindex var [expr {$x}]}] $var
-} {0 -1}
+    run {string is integer [expr {$x}]}
+} 1
 test string-6.95.$noComp {string is wideinteger, true} {
     run {string is wideinteger +1234567890}
 } 1

@@ -1793,6 +1793,9 @@ Tcl_AppendFormatToObj(
 	char *end;
 	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
 	int width, gotPrecision, precision, sawFlag, useShort = 0, useBig = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+	int useWide = 0;
+#endif
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
 	int step = TclUtfToUniChar(format, &ch);
@@ -1983,11 +1986,18 @@ Tcl_AppendFormatToObj(
 		useBig = 1;
 		format += step;
 		step = TclUtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else {
+		useWide = 1;
+#endif
 	    }
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
 		step = TclUtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+		useWide = 1;
+#endif
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
 		step = TclUtfToUniChar(format, &ch);
@@ -2057,10 +2067,16 @@ Tcl_AppendFormatToObj(
 	case 'b': {
 	    short s = 0;	/* Silence compiler warning; only defined and
 				 * used when useShort is true. */
+	    long l;
 	    Tcl_WideInt w;
 	    mp_int big;
 	    int toAppend, isNegative = 0;
 
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (ch == 'p') {
+		useWide = 1;
+	    }
+#endif
 	    if (useBig) {
 		int cmpResult;
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
@@ -2079,32 +2095,53 @@ Tcl_AppendFormatToObj(
 			ch = 'd';
 		    }
 		}
-	    } else if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
-		Tcl_Obj *objPtr;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (useWide) {
+		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		    Tcl_Obj *objPtr;
 
-		if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
-		    goto error;
+		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
+			goto error;
+		    }
+		    mp_mod_2d(&big, (int) CHAR_BIT*sizeof(Tcl_WideInt), &big);
+		    objPtr = Tcl_NewBignumObj(&big);
+		    Tcl_IncrRefCount(objPtr);
+		    TclGetWideIntFromObj(NULL, objPtr, &w);
+		    Tcl_DecrRefCount(objPtr);
 		}
-		mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-		objPtr = Tcl_NewBignumObj(&big);
-		Tcl_IncrRefCount(objPtr);
-		TclGetWideIntFromObj(NULL, objPtr, &w);
-		Tcl_DecrRefCount(objPtr);
+		isNegative = (w < (Tcl_WideInt) 0);
+		if (w == (Tcl_WideInt) 0) gotHash = 0;
+#endif
+	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		    Tcl_Obj *objPtr;
+
+		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
+			goto error;
+		    }
+		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+		    objPtr = Tcl_NewBignumObj(&big);
+		    Tcl_IncrRefCount(objPtr);
+		    TclGetLongFromObj(NULL, objPtr, &l);
+		    Tcl_DecrRefCount(objPtr);
+		} else {
+		    l = Tcl_WideAsLong(w);
+		}
 		if (useShort) {
-		    s = (short) w;
+		    s = (short) l;
 		    isNegative = (s < (short) 0);
 		    if (s == (short) 0) gotHash = 0;
 		} else {
-		    isNegative = (w < (long) 0);
-		    if (w == (long) 0) gotHash = 0;
+		    isNegative = (l < (long) 0);
+		    if (l == (long) 0) gotHash = 0;
 		}
 	    } else if (useShort) {
-		s = (short) w;
+		s = (short) l;
 		isNegative = (s < (short) 0);
 		if (s == (short) 0) gotHash = 0;
 	    } else {
-		isNegative = (w < (Tcl_WideInt) 0);
-		if (w == (Tcl_WideInt) 0) gotHash = 0;
+		isNegative = (l < (long) 0);
+		if (l == (long) 0) gotHash = 0;
 	    }
 
 	    segment = Tcl_NewObj();
@@ -2153,10 +2190,14 @@ Tcl_AppendFormatToObj(
 
 		if (useShort) {
 		    pure = Tcl_NewIntObj((int) s);
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (useWide) {
+		    pure = Tcl_NewWideIntObj(w);
+#endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    pure = Tcl_NewWideIntObj(w);
+		    pure = Tcl_NewLongObj(l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = TclGetStringFromObj(pure, &length);
@@ -2236,6 +2277,16 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			us /= base;
 		    }
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (useWide) {
+		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
+
+		    bits = uw;
+		    while (uw) {
+			numDigits++;
+			uw /= base;
+		    }
+#endif
 		} else if (useBig && big.used) {
 		    int leftover = (big.used * DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
@@ -2252,12 +2303,12 @@ Tcl_AppendFormatToObj(
 			goto errorMsg;
 		    }
 		} else if (!useBig) {
-		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
+		    unsigned long ul = (unsigned long) l;
 
-		    bits = (Tcl_WideUInt) uw;
-		    while (uw) {
+		    bits = (Tcl_WideUInt) ul;
+		    while (ul) {
 			numDigits++;
-			uw /= base;
+			ul /= base;
 		    }
 		}
 

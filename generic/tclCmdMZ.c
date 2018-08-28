@@ -1622,6 +1622,7 @@ StringIsCmd(
     case STR_IS_GRAPH:
 	chcomp = Tcl_UniCharIsGraph;
 	break;
+    case STR_IS_INT:
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
 		(objPtr->typePtr == &tclBignumType)) {
@@ -1664,7 +1665,6 @@ StringIsCmd(
 	    failat = 0;
 	}
 	break;
-    case STR_IS_INT:
     case STR_IS_WIDE:
 	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
 	    break;
