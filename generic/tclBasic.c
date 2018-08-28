@@ -700,9 +700,7 @@ Tcl_CreateInterp(void)
      * Initialize the ensemble error message rewriting support.
      */
 
-    iPtr->ensembleRewrite.sourceObjs = NULL;
-    iPtr->ensembleRewrite.numRemovedObjs = 0;
-    iPtr->ensembleRewrite.numInsertedObjs = 0;
+    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * TIP#143: Initialise the resource limit support.
@@ -921,8 +919,8 @@ Tcl_CreateInterp(void)
      * Set up other variables such as tcl_version and tcl_library
      */
 
-    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_patchLevel", NULL, TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     TclpSetVariables(interp);
 
 #if TCL_THREADS
@@ -3898,7 +3896,7 @@ EvalObjvCore(
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
 
-	iPtr->ensembleRewrite.sourceObjs = NULL;
+	TclResetRewriteEnsemble(interp, 1);
 
 	if (flags & TCL_EVAL_GLOBAL) {
 	    TEOV_SwitchVarFrame(interp);
@@ -6215,9 +6213,8 @@ Tcl_AppendObjToErrorInfo(
 				 * pertains. */
     Tcl_Obj *objPtr)		/* Message to record. */
 {
-    int length;
+    const char *message = TclGetString(objPtr);
     register Interp *iPtr = (Interp *) interp;
-    const char *message = TclGetStringFromObj(objPtr, &length);
 
     Tcl_IncrRefCount(objPtr);
 
@@ -6239,13 +6236,13 @@ Tcl_AppendObjToErrorInfo(
      * Now append "message" to the end of errorInfo.
      */
 
-    if (length != 0) {
+    if (objPtr->length != 0) {
 	if (Tcl_IsShared(iPtr->errorInfo)) {
 	    Tcl_DecrRefCount(iPtr->errorInfo);
 	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
 	    Tcl_IncrRefCount(iPtr->errorInfo);
 	}
-	Tcl_AppendToObj(iPtr->errorInfo, message, length);
+	Tcl_AppendToObj(iPtr->errorInfo, message, objPtr->length);
     }
     Tcl_DecrRefCount(objPtr);
 }

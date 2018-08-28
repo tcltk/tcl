@@ -2678,7 +2678,6 @@ MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
-MODULE_SCOPE const Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
