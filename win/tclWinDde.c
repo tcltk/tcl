@@ -18,15 +18,6 @@
 #include <dde.h>
 #include <ddeml.h>
 
-#ifndef UNICODE
-#   undef CP_WINUNICODE
-#   define CP_WINUNICODE CP_WINANSI
-#   undef Tcl_WinTCharToUtf
-#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
-#   undef Tcl_WinUtfToTChar
-#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
-#endif
-
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES
@@ -1451,11 +1442,7 @@ DdeObjCmd(
     Initialize();
 
     if (firstArg != 1) {
-#ifdef UNICODE
 	serviceName = Tcl_GetUnicodeFromObj(objv[firstArg], &length);
-#else
-	serviceName = Tcl_GetStringFromObj(objv[firstArg], &length);
-#endif
     } else {
 	length = 0;
     }
@@ -1468,11 +1455,7 @@ DdeObjCmd(
     }
 
     if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-#ifdef UNICODE
 	topicName = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 1], &length);
-#else
-	topicName = Tcl_GetStringFromObj(objv[firstArg + 1], &length);
-#endif
 	if (length == 0) {
 	    topicName = NULL;
 	} else {
@@ -1486,11 +1469,7 @@ DdeObjCmd(
 	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
-#ifdef UNICODE
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj((Tcl_UniChar *) serviceName, -1));
-#else
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
-#endif
 	} else {
 	    Tcl_ResetResult(interp);
 	}
@@ -1549,13 +1528,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1609,13 +1583,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 	BYTE *dataString;
 
 	if (length == 0) {

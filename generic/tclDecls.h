@@ -751,9 +751,7 @@ TCLAPI const char *	Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
-/* 273 */
-TCLAPI int		TclPkgProvide(Tcl_Interp *interp, const char *name,
-				const char *version);
+/* Slot 273 is reserved */
 /* Slot 274 is reserved */
 /* Slot 275 is reserved */
 /* Slot 276 is reserved */
@@ -1023,8 +1021,7 @@ TCLAPI void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 TCLAPI int		Tcl_GetCharLength(Tcl_Obj *objPtr);
 /* 381 */
 TCLAPI int		Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
-/* 382 */
-TCLAPI Tcl_UniChar *	Tcl_GetUnicode(Tcl_Obj *objPtr);
+/* Slot 382 is reserved */
 /* 383 */
 TCLAPI Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, int first, int last);
 /* 384 */
@@ -2034,7 +2031,7 @@ typedef struct TclStubs {
     const char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, const char **termPtr); /* 270 */
     void (*reserved271)(void);
     const char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
-    int (*tclPkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
+    void (*reserved273)(void);
     void (*reserved274)(void);
     void (*reserved275)(void);
     void (*reserved276)(void);
@@ -2143,7 +2140,7 @@ typedef struct TclStubs {
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
-    Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
+    void (*reserved382)(void);
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
@@ -2937,8 +2934,7 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 271 is reserved */
 #define Tcl_PkgPresentEx \
 	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
-#define TclPkgProvide \
-	(tclStubsPtr->tclPkgProvide) /* 273 */
+/* Slot 273 is reserved */
 /* Slot 274 is reserved */
 /* Slot 275 is reserved */
 /* Slot 276 is reserved */
@@ -3144,8 +3140,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetCharLength) /* 380 */
 #define Tcl_GetUniChar \
 	(tclStubsPtr->tcl_GetUniChar) /* 381 */
-#define Tcl_GetUnicode \
-	(tclStubsPtr->tcl_GetUnicode) /* 382 */
+/* Slot 382 is reserved */
 #define Tcl_GetRange \
 	(tclStubsPtr->tcl_GetRange) /* 383 */
 #define Tcl_AppendUnicodeToObj \
@@ -3650,11 +3645,13 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_FindExecutable
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
+#   undef Tcl_SetPanicProc
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
+#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
@@ -3663,6 +3660,9 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
 #endif
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
 
 #define Tcl_PkgPresent(interp, name, version, exact) \
 	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
@@ -3715,7 +3715,6 @@ extern const TclStubs *tclStubsPtr;
 	} while(0)
 #define Tcl_DiscardResult(statePtr) \
 	Tcl_DecrRefCount(*(statePtr))
-#undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    char *__result = result; \
@@ -3763,8 +3762,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
 #define Tcl_NewIntObj(value) Tcl_NewWideIntObj((int)(value))
 #define Tcl_DbNewLongObj(value, file, line) Tcl_DbNewWideIntObj((long)(value), file, line)
-#define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (int)(value))
-#define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (long)(value))
+#define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (int)(value))
+#define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
+#define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
 
 /*
  * Deprecated Tcl procedures:

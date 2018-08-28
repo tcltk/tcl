@@ -2206,7 +2206,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
 TCLAPI void		Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc);
-TCLAPI void		Tcl_MainEx(int argc, char **argv,
+TCLAPI TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #if defined(_WIN32) && defined(UNICODE)
 TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
