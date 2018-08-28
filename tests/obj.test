@@ -21,7 +21,6 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
 testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
-testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
 
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
     set r 1
@@ -549,34 +548,34 @@ test obj-32.1 {freeing very large object trees} {
     unset x
 } {}
 
-test obj-33.1 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.1 {integer overflow on input} {longIs32bit} {
     set x 0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 2147483648}
-test obj-33.2 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.2 {integer overflow on input} {longIs32bit} {
     set x 0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 4294967295}
-test obj-33.3 {integer overflow on input} {
+test obj-33.3 {no integer overflow on input} {
     set x 0x100000000; append x 00000000
     list [string is integer $x] [expr { $x }]
-} {0 18446744073709551616}
-test obj-33.4 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+} {1 18446744073709551616}
+test obj-33.4 {integer overflow on input} {longIs32bit} {
     set x -0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483648}
-test obj-33.5 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.5 {integer overflow on input} {longIs32bit} {
     set x -0x8000; append x 0001
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483649}
-test obj-33.6 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.6 {integer overflow on input} {longIs32bit} {
     set x -0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 -4294967295}
 test obj-33.7 {integer overflow on input} {
     set x -0x100000000; append x 00000000
     list [string is integer $x] [expr { $x }]
-} {0 -18446744073709551616}
+} {1 -18446744073709551616}
 
 test obj-34.1 {mp_iseven} testobj {
     set result ""

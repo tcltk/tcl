@@ -813,10 +813,10 @@ test expr-old-32.32 {math functions in expressions} {
 } {-1}
 test expr-old-32.33 {math functions in expressions} {
     expr int(1e60)
-} 0
+} 999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.34 {math functions in expressions} {
     expr int(-1e60)
-} 0
+} -999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.35 {math functions in expressions} {
     expr round(1.49)
 } {1}
