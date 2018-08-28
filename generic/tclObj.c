@@ -3123,6 +3123,74 @@ Tcl_GetWideIntFromObj(
     return TCL_ERROR;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetLeastSign64bits --
+ *
+ *	Attempt to return a wide integer from the Tcl object "objPtr". If the
+ *	object is not already a wide int object, an attempt will be made to
+ *	convert it to one. Integer out-of-range values don't result in an
+ *  error, but only the least significant 64 bit will be returned. 
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If the object is not already an int object, the conversion will free
+ *	any old internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetLeastSign64bits(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,            /* Object from which to get a wide int. */
+    Tcl_WideInt *wideIntPtr)    /* Place to store resulting wide integer. */
+{
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    *wideIntPtr = objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (interp != NULL) {
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        TclGetString(objPtr)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    mp_int big;
+
+	    Tcl_WideUInt value = 0, scratch;
+	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    unsigned char *bytes = (unsigned char *) &scratch;
+
+	    Tcl_GetBignumFromObj(NULL, objPtr, &big);
+	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+	    mp_to_unsigned_bin_n(&big, bytes, &numBytes);
+	    while (numBytes-- > 0) {
+		value = (value << CHAR_BIT) | *bytes++;
+	    }
+	    if (big.sign) {
+		value = -value;
+	    }
+	    *wideIntPtr = (Tcl_WideInt) value;
+	    mp_clear(&big);
+	    return TCL_OK;
+	}
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    return TCL_ERROR;
+}
+
 /*
  *----------------------------------------------------------------------
  *

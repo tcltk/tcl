@@ -19,11 +19,8 @@ if {"::tcltest" ni [namespace children]} {
 # procedure that returns the range of integers
 
 proc int_range {} {
-    for { set MIN_INT 1 } { int($MIN_INT) > 0 } {} {
-	set MIN_INT [expr { $MIN_INT << 1 }]
-    }
-    set MIN_INT [expr {int($MIN_INT)}]
-    set MAX_INT [expr { ~ $MIN_INT }]
+    set MAX_INT [expr {[format %lu -2]/2}]
+    set MIN_INT [expr { ~ $MAX_INT }]
     return [list $MIN_INT $MAX_INT]
 }
 
@@ -446,14 +443,14 @@ test scan-4.61 {Tcl_ScanObjCmd, set errors} -setup {
 
 test scan-4.62 {scanning of large and negative octal integers} {
     lassign [int_range] MIN_INT MAX_INT
-    set scanstring [format {%o %o %o} -1 $MIN_INT $MAX_INT]
-    list [scan $scanstring {%o %o %o} a b c] \
+    set scanstring [format {%lo %lo %lo} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%lo %lo %lo} a b c] \
 	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
 } {3 1 1 1}
 test scan-4.63 {scanning of large and negative hex integers} {
     lassign [int_range] MIN_INT MAX_INT
-    set scanstring [format {%x %x %x} -1 $MIN_INT $MAX_INT]
-    list [scan $scanstring {%x %x %x} a b c] \
+    set scanstring [format {%lx %lx %lx} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%lx %lx %lx} a b c] \
 	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
 } {3 1 1 1}
 test scan-4.64 {scanning of hex with %X} {
