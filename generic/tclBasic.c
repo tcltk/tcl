@@ -91,7 +91,6 @@ static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(ClientData clientData);
 static void		DeleteInterpProc(Tcl_Interp *interp);
 static void		DeleteOpCmdClientData(ClientData clientData);
-static void		AddObjErrorInfo(Tcl_Interp *, const char *, size_t length);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
 static Tcl_NRPostProc	DTraceCmdReturn;
@@ -6225,7 +6224,6 @@ Tcl_ExprString(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_AddObjErrorInfo
 void
 Tcl_AppendObjToErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6234,43 +6232,9 @@ Tcl_AppendObjToErrorInfo(
 {
     size_t length;
     const char *message = TclGetStringFromObj(objPtr, &length);
+    register Interp *iPtr = (Interp *) interp;
 
     Tcl_IncrRefCount(objPtr);
-    AddObjErrorInfo(interp, message, objPtr->length);
-    Tcl_DecrRefCount(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AddObjErrorInfo --
- *
- *	Add information to the errorInfo field that describes the current
- *	error. This routine differs from Tcl_AddErrorInfo by taking a byte
- *	pointer and length.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	"length" bytes from "message" are appended to the errorInfo field. If
- *	"length" is negative, use bytes up to the first NULL byte. If we are
- *	just starting to log an error, errorInfo is initialized from the error
- *	message in the interpreter's result.
- *
- *----------------------------------------------------------------------
- */
-
-void
-AddObjErrorInfo(
-    Tcl_Interp *interp,		/* Interpreter to which error information
-				 * pertains. */
-    const char *message,	/* Points to the first byte of an array of
-				 * bytes of the message. */
-    size_t length)		/* The number of bytes in the message. If (size_t)-1,
-				 * then append all bytes up to a NULL byte. */
-{
-    register Interp *iPtr = (Interp *) interp;
 
     /*
      * If we are just starting to log an error, errorInfo is initialized from
@@ -6290,14 +6254,15 @@ AddObjErrorInfo(
      * Now append "message" to the end of errorInfo.
      */
 
-    if (length != 0) {
+    if (objPtr->length != 0) {
 	if (Tcl_IsShared(iPtr->errorInfo)) {
 	    Tcl_DecrRefCount(iPtr->errorInfo);
 	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
 	    Tcl_IncrRefCount(iPtr->errorInfo);
 	}
-	Tcl_AppendToObj(iPtr->errorInfo, message, length);
+	Tcl_AppendToObj(iPtr->errorInfo, message, objPtr->length);
     }
+    Tcl_DecrRefCount(objPtr);
 }
 
 /*
@@ -6947,7 +6912,7 @@ ExprEntierFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((const double *) ptr);
-	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
+	if ((d >= (double)LLONG_MAX) || (d <= (double)LLONG_MIN)) {
 	    mp_int big;
 
 	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
@@ -6957,9 +6922,9 @@ ExprEntierFunc(
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
 	} else {
-	    long result = (long) d;
+	    Tcl_WideInt result = (Tcl_WideInt) d;
 
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
 	    return TCL_OK;
 	}
     }
