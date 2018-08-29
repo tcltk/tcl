@@ -1473,7 +1473,7 @@ QuoteCmdLineBackslash(
 	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
 	}
 	while (bspos++ < current) { /* each backslash twice */
-	    Tcl_DStringAppend(dsPtr, "\\\\", 2);
+	    TclDStringAppendLiteral(dsPtr, "\\\\");
 	}
     }
 }
@@ -1501,7 +1501,7 @@ QuoteCmdLinePart(
      * so `\` remains `\`, but important - not at end of part, because results as 
      * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
      */
-    Tcl_DStringAppend(dsPtr, "\"", 1); /* opening escape quote-char */
+    TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
     do {
     	*bspos = NULL;
 	special++;
@@ -1518,7 +1518,7 @@ QuoteCmdLinePart(
 	/* unescaped rest before first backslash (rather belongs to the main block) */
 	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
     }
-    Tcl_DStringAppend(dsPtr, "\"", 1); /* closing escape quote-char */
+    TclDStringAppendLiteral(dsPtr, "\""); /* closing escape quote-char */
     return special;
 }
 
@@ -1553,9 +1553,9 @@ BuildCommandLine(
      * Prime the path. Add a space separator if we were primed with something.
      */
 
-    Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
+    TclDStringAppendDString(&ds, linePtr);
     if (Tcl_DStringLength(linePtr) > 0) {
-	Tcl_DStringAppend(&ds, " ", 1);
+	TclDStringAppendLiteral(&ds, " ");
     }
 
     for (i = 0; i < argc; i++) {
@@ -1563,7 +1563,7 @@ BuildCommandLine(
 	    arg = executable;
 	} else {
 	    arg = argv[i];
-	    Tcl_DStringAppend(&ds, " ", 1);
+	    TclDStringAppendLiteral(&ds, " ");
 	}
 
 	quote &= ~(CL_ESCAPE|CL_QUOTE); /* reset escape flags */
@@ -1609,7 +1609,7 @@ BuildCommandLine(
 	}
 	if (quote & CL_QUOTE) {
 	    /* start of argument (main opening quote-char) */
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
 	if (!(quote & CL_ESCAPE)) {
 	    /* nothing to escape */
@@ -1630,7 +1630,7 @@ BuildCommandLine(
 		    QuoteCmdLineBackslash(&ds, start, special, bspos);
 		    bspos = NULL;
 		    /* escape using backslash */
-		    Tcl_DStringAppend(&ds, "\\\"", 2);
+		    TclDStringAppendLiteral(&ds, "\\\"");
 		    start = ++special;
 		    continue;
 		}
@@ -1658,7 +1658,7 @@ BuildCommandLine(
 	}
 	if (quote & CL_QUOTE) {
 	    /* end of argument (main closing quote-char) */
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
     }
     Tcl_DStringFree(linePtr);
