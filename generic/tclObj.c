@@ -2814,11 +2814,11 @@ Tcl_GetLongFromObj(
 
 	    if (
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-		    w <= (Tcl_WideInt)(ULONG_MAX)) {
+		    (w <= (Tcl_WideInt)(ULONG_MAX))
 #else
-		    w <= (Tcl_WideInt)(LONG_MAX)) {
+		    (w <= (Tcl_WideInt)(LONG_MAX))
 #endif
-		    && w >= (Tcl_WideInt)(LONG_MIN)
+		    && (w >= (Tcl_WideInt)(LONG_MIN))) {
 		*longPtr = Tcl_WideAsLong(w);
 		return TCL_OK;
 	    }
