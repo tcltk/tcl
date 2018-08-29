@@ -308,10 +308,50 @@ test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
     lappend x [catch {close $f} msg] $msg
 } {writable timeout 0 {}}
 
-set path(echoArgs.tcl) [makeFile {
-    puts "[list $argv0 $argv]"
-} echoArgs.tcl]
-
+proc _testExecArgs {single args} {
+    variable path
+    if {![info exists path(echoArgs.tcl)] || ![file exists $path(echoArgs.tcl)]} {
+	set path(echoArgs.tcl) [makeFile {
+	    puts "[list [file tail $argv0] {*}$argv]"
+	} echoArgs.tcl]
+    }
+    if {![info exists path(echoArgs.bat)] || ![file exists $path(echoArgs.bat)]} {
+	set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" "echoArgs.bat"]
+    }
+    set cmds [list [list [interpreter] $path(echoArgs.tcl)]]
+    if {!($single & 2)} {
+	lappend cmds [list $path(echoArgs.bat)]
+    } else {
+	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
+	    file mkdir [file join [temporaryDirectory] test(Dir)Check]
+	    set path(echoArgs2.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		"test(Dir)Check/echo(Cmd)Test Args & Batch.bat"]
+	}
+	lappend cmds [list $path(echoArgs2.bat)]
+    }
+    set broken {}
+    foreach args $args {
+	if {$single & 1} {
+	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated 
+	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
+	    set args [list "1st" $args "3rd"]
+	}
+	set args [list {*}$args]; # normalized canonical list
+	foreach cmd $cmds {
+	    set e [linsert $args 0 [file tail $path(echoArgs.tcl)]]
+	    tcltest::DebugPuts 4 "  ## test exec [file extension [lindex $cmd 0]] ($cmd) for\n  ##   $args"
+	    if {[catch {
+		exec {*}$cmd {*}$args
+	    } r]} {
+		set r "ERROR: $r"
+	    }
+	    if {$r ne $e} {
+		append broken "\[ERROR\]: exec [file extension [lindex $cmd 0]] on $args\n  -- result:\n$r\n  -- expected:\n$e\n"
+	    }
+	}
+    }
+    return $broken
+}
 
 ### validate the raw output of BuildCommandLine().
 ###
@@ -370,65 +410,152 @@ test winpipe-7.18 {BuildCommandLine: special chars #5} {win exec} {
     exec $env(COMSPEC) /c echo foo \} bar
 } "foo \} bar"
 
+set injectList {
+    {test"whoami}     {test""whoami}
+    {test"""whoami}   {test""""whoami}
+
+    "test\"whoami\\"     "test\"\"whoami\\"
+    "test\"\"\"whoami\\" "test\"\"\"\"whoami\\"
+
+    {test\\&\\test}    {test"\\&\\test}
+    {"test\\&\\test}   {"test"\\&\\"test"}
+    {test\\"&"\\test}  {test"\\"&"\\test}
+    {"test\\"&"\\test} {"test"\\"&"\\"test"}
+
+    {test\"&whoami}    {test"\"&whoami}
+    {test""\"&whoami}  {test"""\"&whoami}
+    {test\"\&whoami}   {test"\"\&whoami}
+    {test""\"\&whoami} {test"""\"\&whoami}
+
+    {test&whoami}    {test|whoami}
+    {"test&whoami}   {"test|whoami}
+    {test"&whoami}   {test"|whoami}
+    {"test"&whoami}  {"test"|whoami}
+    {""test"&whoami} {""test"|whoami}
+
+    {test&echo "}    {test|echo "}
+    {"test&echo "}   {"test|echo "}
+    {test"&echo "}   {test"|echo "}
+    {"test"&echo "}  {"test"|echo "}
+    {""test"&echo "} {""test"|echo "}
+
+    {test&echo ""}    {test|echo ""}
+    {"test&echo ""}   {"test|echo ""}
+    {test"&echo ""}   {test"|echo ""}
+    {"test"&echo ""}  {"test"|echo ""}
+    {""test"&echo ""} {""test"|echo ""}
+
+    {test>whoami}    {test<whoami}
+    {"test>whoami}   {"test<whoami}
+    {test">whoami}   {test"<whoami}
+    {"test">whoami}  {"test"<whoami}
+    {""test">whoami} {""test"<whoami}
+    {test(whoami)}   {test(whoami)}
+    {test"(whoami)}  {test"(whoami)}
+    {test^whoami}    {test^^echo ^^^}
+    {test"^whoami}   {test"^^echo ^^^}
+    {test"^echo ^^^"} {test""^echo" ^^^"}
+
+    {test%USERDOMAIN%\%USERNAME%}
+    {test" %USERDOMAIN%\%USERNAME%}
+    {test%USERDOMAIN%\\%USERNAME%}
+    {test" %USERDOMAIN%\\%USERNAME%}
+    {test%USERDOMAIN%&%USERNAME%}
+    {test" %USERDOMAIN%&%USERNAME%}
+    {test%USERDOMAIN%\&\%USERNAME%}
+    {test" %USERDOMAIN%\&\%USERNAME%}
+
+    {test%USERDOMAIN%\&\test}
+    {test" %USERDOMAIN%\&\test}
+    {test%USERDOMAIN%\\&\\test}
+    {test" %USERDOMAIN%\\&\\test}
+
+    {test%USERDOMAIN%\&\"test}
+    {test" %USERDOMAIN%\&\"test}
+    {test%USERDOMAIN%\\&\\"test}
+    {test" %USERDOMAIN%\\&\\"test}
+}
+
 ### validate the pass-thru from BuildCommandLine() to the crt's parse_cmdline().
 ###
-test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: null arguments} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo "" bar
-} [list $path(echoArgs.tcl) [list foo {} bar]]
-test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: null arguments} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {} bar
-} [list $path(echoArgs.tcl) [list foo {} bar]]
-test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #1} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo "\"" bar
-} [list $path(echoArgs.tcl) [list foo "\"" bar]]
-test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #2} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {""} bar
-} [list $path(echoArgs.tcl) [list foo {""} bar]]
-test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #3} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo "\" " bar
-} [list $path(echoArgs.tcl) [list foo "\" " bar]]
-test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #4} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {a="b"} bar
-} [list $path(echoArgs.tcl) [list foo {a="b"} bar]]
-test winpipe-8.7 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #5} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {a = "b"} bar
-} [list $path(echoArgs.tcl) [list foo {a = "b"} bar]]
-test winpipe-8.8 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #6} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}
-} [list $path(echoArgs.tcl) [list {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}]]
-test winpipe-8.9 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #1} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\ bar
-} [list $path(echoArgs.tcl) [list foo \\ bar]]
-test winpipe-8.10 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #2} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\\ bar
-} [list $path(echoArgs.tcl) [list foo \\\\ bar]]
-test winpipe-8.11 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #3} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\ bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\ bar]]
-test winpipe-8.12 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #4} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\ bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\\\ bar]]
-test winpipe-8.13 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #5} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\\ bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\\\\\ bar]]
-test winpipe-8.14 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #6} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\" bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\\" bar]]
-test winpipe-8.15 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #7} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\" bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\\\\" bar]]
-test winpipe-8.16 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #8} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\\\" bar
-} [list $path(echoArgs.tcl) [list foo \\\ \\\\\\\" bar]]
-test winpipe-8.17 {BuildCommandLine/parse_cmdline pass-thru: special chars #1} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \{ bar
-} [list $path(echoArgs.tcl) [list foo \{ bar]]
-test winpipe-8.18 {BuildCommandLine/parse_cmdline pass-thru: special chars #2} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo \} bar
-} [list $path(echoArgs.tcl) [list foo \} bar]]
-test winpipe-8.19 {ensure parse_cmdline isn't doing wildcard replacement} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo * makefile.?c bar
-} [list $path(echoArgs.tcl) [list foo * makefile.?c bar]]
+test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: dumped arguments are equal original} \
+-constraints {win exec} -body {
+    _testExecArgs 0 \
+	[list foo "" bar] \
+	[list foo {} bar] \
+	[list foo "\"" bar] \
+	[list foo {""} bar] \
+	[list foo "\" " bar] \
+	[list foo {a="b"} bar] \
+	[list foo {a = "b"} bar] \
+	[list {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}] \
+	[list foo \\ bar] \
+	[list foo \\\\ bar] \
+	[list foo \\\ \\ bar] \
+	[list foo \\\ \\\\ bar] \
+	[list foo \\\ \\\\\\ bar] \
+	[list foo \\\ \\\" bar] \
+	[list foo \\\ \\\\\" bar] \
+	[list foo \\\ \\\\\\\" bar] \
+	[list foo \{ bar] \
+	[list foo \} bar] \
+	[list foo * makefile.?c bar]
+} -result {}
+
+test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (particular)} \
+-constraints {win exec slowTest} -body {
+    _testExecArgs 1 {*}$injectList
+} -result {}
+
+test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (jointly)} \
+-constraints {win exec} -body {
+    _testExecArgs 0 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (command/jointly args)} \
+-constraints {win exec} -body {
+    _testExecArgs 2 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (random mix)} \
+-constraints {win exec} -body {
+    set lst {}
+    set maps {
+	{\&|^<>!()%}
+	{\&|^<>!()% }
+	{"\&|^<>!()%}
+	{"\&|^<>!()% }
+	{"""""\\\\\&|^<>!()%}
+	{"""""\\\\\&|^<>!()% }
+    }
+    set i 0
+    time {
+	set args {[incr i].}
+	time {
+	    set map [lindex $maps [expr {int(rand()*[llength $maps])}]]
+	    # be sure arg has some prefix (avoid special handling, like |& etc)
+	    set a {x}
+	    while {[string length $a] < 50} {
+		append a [string index $map [expr {int(rand()*[string length $map])}]]
+	    }
+	    lappend args $a
+	} 20
+	lappend lst $args
+    } 10
+    _testExecArgs 0 {*}$lst
+} -result {} -cleanup {
+    unset -nocomplain lst args a map maps
+}
+
+rename _testExecArgs {}
 
 # restore old values for env(TMP) and env(TEMP)
 
@@ -440,6 +567,7 @@ if {[catch {set env(TEMP) $env_temp}]} {
 }
 
 # cleanup
-file delete big little stdout stderr nothing echoArgs.tcl
+file delete big little stdout stderr nothing echoArgs.tcl echoArgs.bat 
+file delete -force [file join [temporaryDirectory] test(Dir)Check]
 ::tcltest::cleanupTests
 return
