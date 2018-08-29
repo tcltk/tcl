@@ -29,6 +29,10 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
+#if defined(__GNUC__)
+int _CRT_glob = 0;
+#endif /* __GNUC__ */
+
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
 extern Tcl_PackageInitProc Registry_Init;
 extern Tcl_PackageInitProc Dde_Init;
