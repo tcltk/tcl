@@ -64,7 +64,7 @@ test get-1.13 {Tcl_GetInt procedure} {testgetint longIs32bit} {
 } {0 -2}
 test get-1.14 {Tcl_GetInt procedure} {testgetint longIs32bit} {
     list [catch {testgetint -4294967294} msg] $msg
-} {0 2}
+} {1 {integer value too large to represent}}
 
 test get-2.1 {Tcl_GetInt procedure} {
     format %g 1.23
