@@ -1254,6 +1254,10 @@ proc tcltest::DefineConstraintInitializers {} {
     ConstraintInitializer interactive \
 	    {expr {[info exists ::tcl_interactive] && $::tcl_interactive}}
 
+    # Skip slow tests (to enable slow tests add parameter `-constraints slowTest`)
+
+    ConstraintInitializer slowTest {format 0}
+
     # Some tests can only be run if the installation came from a CD
     # image instead of a web image.  Some tests must be skipped if you
     # are running as root on Unix.  Other tests can only be run if you
