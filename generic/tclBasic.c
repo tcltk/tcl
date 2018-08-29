@@ -6254,13 +6254,13 @@ Tcl_AppendObjToErrorInfo(
      * Now append "message" to the end of errorInfo.
      */
 
-    if (objPtr->length != 0) {
+    if (length != 0) {
 	if (Tcl_IsShared(iPtr->errorInfo)) {
 	    Tcl_DecrRefCount(iPtr->errorInfo);
 	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
 	    Tcl_IncrRefCount(iPtr->errorInfo);
 	}
-	Tcl_AppendToObj(iPtr->errorInfo, message, objPtr->length);
+	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
     Tcl_DecrRefCount(objPtr);
 }
