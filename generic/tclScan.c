@@ -960,12 +960,14 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetLeastSign64bits(NULL, objPtr, &wideValue) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			value = LONG_MIN;
 		    } else {
 			value = LONG_MAX;
 		    }
+		} else {
+		    value = (long) wideValue;	
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
 		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
