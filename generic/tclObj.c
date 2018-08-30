@@ -3102,11 +3102,16 @@ Tcl_GetWideIntFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			if (value <= -(Tcl_WideUInt)LLONG_MIN) {
+			    *wideIntPtr = - (Tcl_WideInt) value;
+			    return TCL_OK;
+			}
 		    } else {
-			*wideIntPtr = (Tcl_WideInt) value;
+			if (value <= (Tcl_WideUInt)LLONG_MAX) {
+			    *wideIntPtr = (Tcl_WideInt) value;
+			    return TCL_OK;
+			}
 		    }
-		    return TCL_OK;
 		}
 	    }
 	    if (interp != NULL) {
