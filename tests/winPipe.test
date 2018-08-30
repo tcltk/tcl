@@ -348,6 +348,10 @@ proc _testExecArgs {single args} {
 	    if {$r ne $e} {
 		append broken "\[ERROR\]: exec [file extension [lindex $cmd 0]] on $args\n  -- result:\n$r\n  -- expected:\n$e\n"
 	    }
+	    if {$single & 8} {
+		# if test exe only:
+		break
+	    }
 	}
     }
     return $broken
@@ -554,6 +558,32 @@ test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 } -result {} -cleanup {
     unset -nocomplain lst args a map maps
 }
+
+set injectList {
+    "test\"\nwhoami"     "test\"\"\nwhoami"
+    "test\"\"\"\nwhoami" "test\"\"\"\"\nwhoami"
+    "test;\n&echo \""    "\"test;\n&echo \""
+    "test\";\n&echo \""  "\"test\";\n&echo \""
+    "\"\"test\";\n&echo \""
+}
+
+test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args} \
+-constraints {win exec} -body {
+    # test exe only, because currently there is no proper way to escape a new-line char resp. 
+    # to supply a new-line to the batch-files within arguments (command line is truncated).
+    _testExecArgs 8 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.7 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args (batch)} \
+-constraints {win exec knownBug} -body {
+    # this will fail if executed batch-file, because currently there is no proper way to escape a new-line char.
+    _testExecArgs 0 $injectList
+} -result {}
+
 
 rename _testExecArgs {}
 
