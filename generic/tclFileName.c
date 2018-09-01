@@ -537,7 +537,7 @@ TclpNativeSplitPath(
  *	*argcPtr will get filled in with the number of valid elements in the
  *	array. A single block of memory is dynamically allocated to hold both
  *	the argv array and a copy of the path elements. The caller must
- *	eventually free this memory by calling ckfree() on *argvPtr. Note:
+ *	eventually free this memory by calling Tcl_Free() on *argvPtr. Note:
  *	*argvPtr and *argcPtr are only modified if the procedure returns
  *	normally.
  *
@@ -587,7 +587,7 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = ckalloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = Tcl_Alloc((((*argcPtr) + 1) * sizeof(char *)) + size);
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -821,12 +821,12 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(2, pair);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj *));
+	Tcl_Obj *ret, **elemv = Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
 	ret = TclJoinPath(elemc, elemv);
-	ckfree(elemv);
+	Tcl_Free(elemv);
 	return ret;
     }
 }
@@ -2512,7 +2512,7 @@ DoGlob(
  *
  * Results:
  *	A pointer to a Tcl_StatBuf which may be deallocated by being passed to
- *	ckfree().
+ *	Tcl_Free().
  *
  * Side effects:
  *	None.
@@ -2523,7 +2523,7 @@ DoGlob(
 Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
-    return ckalloc(sizeof(Tcl_StatBuf));
+    return Tcl_Alloc(sizeof(Tcl_StatBuf));
 }
 
 /*

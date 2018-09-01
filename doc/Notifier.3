@@ -89,7 +89,7 @@ is NULL, it means there is no maximum wait time:  wait forever if
 necessary.
 .AP Tcl_Event *evPtr in
 An event to add to the event queue.  The storage for the event must
-have been allocated by the caller using \fBTcl_Alloc\fR or \fBckalloc\fR.
+have been allocated by the caller using \fBTcl_Alloc\fR.
 .AP Tcl_QueuePosition position in
 Where to add the new event in the queue:  \fBTCL_QUEUE_TAIL\fR,
 \fBTCL_QUEUE_HEAD\fR, or \fBTCL_QUEUE_MARK\fR.
@@ -399,7 +399,7 @@ of window events.
 When \fIproc\fR returns 1, \fBTcl_ServiceEvent\fR will remove the
 event from the event queue and free its storage.
 Note that the storage for an event must be allocated by
-the event source (using \fBTcl_Alloc\fR or the Tcl macro \fBckalloc\fR)
+the event source (using \fBTcl_Alloc\fR)
 before calling \fBTcl_QueueEvent\fR, but it
 will be freed by \fBTcl_ServiceEvent\fR, not by the event source.
 .PP

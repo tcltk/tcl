@@ -416,7 +416,7 @@ Tcl_MutexLock(
 	     * Double inside master lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = ckalloc(sizeof(pthread_mutex_t));
+	    pmutexPtr = Tcl_Alloc(sizeof(pthread_mutex_t));
 	    pthread_mutex_init(pmutexPtr, NULL);
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -480,7 +480,7 @@ TclpFinalizeMutex(
 
     if (pmutexPtr != NULL) {
 	pthread_mutex_destroy(pmutexPtr);
-	ckfree(pmutexPtr);
+	Tcl_Free(pmutexPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -526,7 +526,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = Tcl_Alloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -613,7 +613,7 @@ TclpFinalizeCondition(
 
     if (pcondPtr != NULL) {
 	pthread_cond_destroy(pcondPtr);
-	ckfree(pcondPtr);
+	Tcl_Free(pcondPtr);
 	*condPtr = NULL;
     }
 }

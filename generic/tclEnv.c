@@ -226,11 +226,11 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = ckalloc((length + 5) * sizeof(char *));
+	    char **newEnviron = Tcl_Alloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
-		ckfree(env.ourEnviron);
+		Tcl_Free(env.ourEnviron);
 	    }
 	    environ = env.ourEnviron = newEnviron;
 	    env.ourEnvironSize = length + 5;
@@ -270,7 +270,7 @@ TclSetEnv(
      */
 
     valueLength = strlen(value);
-    p = ckalloc(nameLength + valueLength + 2);
+    p = Tcl_Alloc(nameLength + valueLength + 2);
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
@@ -280,7 +280,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
+    p = Tcl_Realloc(p, Tcl_DStringLength(&envString) + 1);
     memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
@@ -309,7 +309,7 @@ TclSetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(p);
+	Tcl_Free(p);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 
@@ -440,18 +440,18 @@ TclUnsetEnv(
      */
 
 #if defined(_WIN32)
-    string = ckalloc(length + 2);
+    string = Tcl_Alloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = ckalloc(length + 1);
+    string = Tcl_Alloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
+    string = Tcl_Realloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
@@ -472,7 +472,7 @@ TclUnsetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(string);
+	Tcl_Free(string);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 #else /* !USE_PUTENV_FOR_UNSET */
@@ -669,7 +669,7 @@ ReplaceString(
 	 */
 
 	if (env.cache[i]) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 
 	if (newStr) {
@@ -687,7 +687,7 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = ckrealloc(env.cache,
+	env.cache = Tcl_Realloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
 	(void) memset(env.cache+env.cacheSize+1, 0,
@@ -730,15 +730,15 @@ TclFinalizeEnvironment(void)
 #ifdef PURIFY
 	int i;
 	for (i = 0; i < env.cacheSize; i++) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 #endif
-	ckfree(env.cache);
+	Tcl_Free(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
 #ifndef USE_PUTENV
 	if ((env.ourEnviron != NULL)) {
-	    ckfree(env.ourEnviron);
+	    Tcl_Free(env.ourEnviron);
 	    env.ourEnviron = NULL;
 	}
 	env.ourEnvironSize = 0;

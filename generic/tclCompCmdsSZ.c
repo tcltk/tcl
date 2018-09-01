@@ -1909,10 +1909,10 @@ TclCompileSwitchCmd(
 	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * maxLen);
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = ckalloc(sizeof(int) * maxLen);
-	bodyContLines = ckalloc(sizeof(int*) * maxLen);
+	bodyTokenArray = Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = Tcl_Alloc(sizeof(int) * maxLen);
+	bodyContLines = Tcl_Alloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -1950,10 +1950,10 @@ TclCompileSwitchCmd(
 	}
 	if (numWords % 2) {
 	abort:
-	    ckfree(bodyToken);
-	    ckfree(bodyTokenArray);
-	    ckfree(bodyLines);
-	    ckfree(bodyContLines);
+	    Tcl_Free(bodyToken);
+	    Tcl_Free(bodyTokenArray);
+	    Tcl_Free(bodyLines);
+	    Tcl_Free(bodyContLines);
 	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
@@ -1971,9 +1971,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = ckalloc(sizeof(int) * numWords);
-	bodyContLines = ckalloc(sizeof(int*) * numWords);
+	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = Tcl_Alloc(sizeof(int) * numWords);
+	bodyContLines = Tcl_Alloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -2032,11 +2032,11 @@ TclCompileSwitchCmd(
      */
 
   freeTemporaries:
-    ckfree(bodyToken);
-    ckfree(bodyLines);
-    ckfree(bodyContLines);
+    Tcl_Free(bodyToken);
+    Tcl_Free(bodyLines);
+    Tcl_Free(bodyContLines);
     if (bodyTokenArray != NULL) {
-	ckfree(bodyTokenArray);
+	Tcl_Free(bodyTokenArray);
     }
     return result;
 }
@@ -2337,7 +2337,7 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = ckalloc(sizeof(JumptableInfo));
+    jtPtr = Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
     finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
@@ -2509,7 +2509,7 @@ DupJumptableInfo(
     ClientData clientData)
 {
     JumptableInfo *jtPtr = clientData;
-    JumptableInfo *newJtPtr = ckalloc(sizeof(JumptableInfo));
+    JumptableInfo *newJtPtr = Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
@@ -2531,7 +2531,7 @@ FreeJumptableInfo(
     JumptableInfo *jtPtr = clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
-    ckfree(jtPtr);
+    Tcl_Free(jtPtr);
 }
 
 static void

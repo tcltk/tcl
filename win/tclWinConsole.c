@@ -455,7 +455,7 @@ ConsoleCheckProc(
 	}
 
 	if (needEvent) {
-	    ConsoleEvent *evPtr = ckalloc(sizeof(ConsoleEvent));
+	    ConsoleEvent *evPtr = Tcl_Alloc(sizeof(ConsoleEvent));
 
 	    infoPtr->flags |= CONSOLE_PENDING;
 	    evPtr->header.proc = ConsoleEventProc;
@@ -599,10 +599,10 @@ ConsoleCloseProc(
 	}
     }
     if (consolePtr->writeBuf != NULL) {
-	ckfree(consolePtr->writeBuf);
+	Tcl_Free(consolePtr->writeBuf);
 	consolePtr->writeBuf = 0;
     }
-    ckfree(consolePtr);
+    Tcl_Free(consolePtr);
 
     return errorCode;
 }
@@ -766,10 +766,10 @@ ConsoleOutputProc(
 	     */
 
 	    if (infoPtr->writeBuf) {
-		ckfree(infoPtr->writeBuf);
+		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
@@ -1303,7 +1303,7 @@ TclWinOpenConsoleChannel(
      * See if a channel with this handle already exists.
      */
 
-    infoPtr = ckalloc(sizeof(ConsoleInfo));
+    infoPtr = Tcl_Alloc(sizeof(ConsoleInfo));
     memset(infoPtr, 0, sizeof(ConsoleInfo));
 
     infoPtr->validMask = permissions;

@@ -662,12 +662,12 @@ TclCreateEnsembleInNs(
     EnsembleConfig *ensemblePtr;
     Tcl_Command token;
 
-    ensemblePtr = ckalloc(sizeof(EnsembleConfig));
+    ensemblePtr = Tcl_Alloc(sizeof(EnsembleConfig));
     token = TclNRCreateCommandInNs(interp, name,
 	    (Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
 	    NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
     if (token == NULL) {
-	ckfree(ensemblePtr);
+	Tcl_Free(ensemblePtr);
 	return NULL;
     }
 
@@ -1631,7 +1631,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	ckfree(nameParts);
+	Tcl_Free(nameParts);
     }
     return ensemble;
 }
@@ -2086,8 +2086,8 @@ FreeER(
 {
     Tcl_Obj **tmp = (Tcl_Obj **)data[0];
 
-    ckfree(tmp[2]);
-    ckfree(tmp);
+    Tcl_Free(tmp[2]);
+    Tcl_Free(tmp);
     return result;
 }
 
@@ -2158,11 +2158,11 @@ TclSpellFix(
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
     } else {
-	Tcl_Obj **tmp = ckalloc(3 * sizeof(Tcl_Obj *));
+	Tcl_Obj **tmp = Tcl_Alloc(3 * sizeof(Tcl_Obj *));
 
 	tmp[0] = NULL;
 	tmp[1] = (Tcl_Obj *) iPtr->ensembleRewrite.sourceObjs;
-	tmp[2] = (Tcl_Obj *) ckalloc(size * sizeof(Tcl_Obj *));
+	tmp[2] = (Tcl_Obj *) Tcl_Alloc(size * sizeof(Tcl_Obj *));
 	memcpy(tmp[2], tmp[1], size * sizeof(Tcl_Obj *));
 
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
@@ -2393,7 +2393,7 @@ MakeCachedEnsembleCommand(
 	 */
 
 	TclFreeIntRep(objPtr);
-	ensembleCmd = ckalloc(sizeof(EnsembleCmdRep));
+	ensembleCmd = Tcl_Alloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
 	objPtr->typePtr = &ensembleCmdType;
     }
@@ -2447,7 +2447,7 @@ ClearTable(
             Tcl_DecrRefCount(prefixObj);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        ckfree(ensemblePtr->subcommandArrayPtr);
+        Tcl_Free(ensemblePtr->subcommandArrayPtr);
     }
     Tcl_DeleteHashTable(hash);
 }
@@ -2713,7 +2713,7 @@ BuildEnsembleConfig(
      */
 
     ensemblePtr->subcommandArrayPtr =
-	    ckalloc(sizeof(char *) * hash->numEntries);
+	    Tcl_Alloc(sizeof(char *) * hash->numEntries);
 
     /*
      * Fill array from both ends as this makes us less likely to end up with
@@ -2806,7 +2806,7 @@ FreeEnsembleCmdRep(
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
     }
-    ckfree(ensembleCmd);
+    Tcl_Free(ensembleCmd);
     objPtr->typePtr = NULL;
 }
 
@@ -2834,7 +2834,7 @@ DupEnsembleCmdRep(
     Tcl_Obj *copyPtr)
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-    EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
+    EnsembleCmdRep *ensembleCopy = Tcl_Alloc(sizeof(EnsembleCmdRep));
 
     copyPtr->typePtr = &ensembleCmdType;
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
@@ -3152,7 +3152,7 @@ TclCompileEnsemble(
 
     while (mapPtr->nuloc - 1 > eclIndex) {
         mapPtr->nuloc--;
-        ckfree(mapPtr->loc[mapPtr->nuloc].line);
+        Tcl_Free(mapPtr->loc[mapPtr->nuloc].line);
         mapPtr->loc[mapPtr->nuloc].line = NULL;
     }
 

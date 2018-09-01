@@ -407,12 +407,12 @@ DeleteKey(
      */
 
     keyName = Tcl_GetString(keyNameObj);
-    buffer = ckalloc(keyNameObj->length + 1);
+    buffer = Tcl_Alloc(keyNameObj->length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
 	    &keyName) != TCL_OK) {
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
 
@@ -420,7 +420,7 @@ DeleteKey(
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", NULL);
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
 
@@ -435,7 +435,7 @@ DeleteKey(
     mode |= KEY_ENUMERATE_SUB_KEYS | DELETE;
     result = OpenSubKey(hostName, rootKey, keyName, mode, 0, &subkey);
     if (result != ERROR_SUCCESS) {
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
@@ -463,7 +463,7 @@ DeleteKey(
     }
 
     RegCloseKey(subkey);
-    ckfree(buffer);
+    Tcl_Free(buffer);
     return result;
 }
 
@@ -943,7 +943,7 @@ OpenKey(
 
     keyName = Tcl_GetString(keyNameObj);
     length = keyNameObj->length;
-    buffer = ckalloc(length + 1);
+    buffer = Tcl_Alloc(length + 1);
     strcpy(buffer, keyName);
 
     result = ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName);
@@ -959,7 +959,7 @@ OpenKey(
 	}
     }
 
-    ckfree(buffer);
+    Tcl_Free(buffer);
     return result;
 }
 

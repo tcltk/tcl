@@ -4057,7 +4057,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = ckalloc(length * sizeof(SortElement));
+    elementArray = Tcl_Alloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -4190,7 +4190,7 @@ Tcl_LsortObjCmd(
 	TclStackFree(interp, sortInfo.indexv);
     }
     if (elementArray) {
-	ckfree(elementArray);
+	Tcl_Free(elementArray);
     }
     return sortInfo.resultCode;
 }

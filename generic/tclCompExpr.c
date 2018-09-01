@@ -536,7 +536,7 @@ static size_t		ParseLexeme(const char *start, size_t numBytes,
  * Side effects:
  *	Memory will be allocated. If TCL_OK is returned, the caller must clean
  *	up the returned data structures. The (OpNode *) value written to
- *	opTreePtr should be passed to ckfree() and the parsePtr argument
+ *	opTreePtr should be passed to Tcl_Free() and the parsePtr argument
  *	should be passed to Tcl_FreeParse(). The elements appended to the
  *	litList and funcList will automatically be freed whenever the refcount
  *	on those lists indicates they can be freed.
@@ -623,7 +623,7 @@ ParseExpr(
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
-    nodes = attemptckalloc(nodesAvailable * sizeof(OpNode));
+    nodes = Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	errCode = "NOMEM";
@@ -667,7 +667,7 @@ ParseExpr(
 
 	    do {
 	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
+		newPtr = Tcl_AttemptRealloc(nodes, size * sizeof(OpNode));
 	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
@@ -1377,7 +1377,7 @@ ParseExpr(
      */
 
     if (nodes != NULL) {
-	ckfree(nodes);
+	Tcl_Free(nodes);
     }
 
     if (interp == NULL) {
@@ -1853,7 +1853,7 @@ Tcl_ParseExpr(
 
     Tcl_FreeParse(exprParsePtr);
     TclStackFree(interp, exprParsePtr);
-    ckfree(opTree);
+    Tcl_Free(opTree);
     return code;
 }
 
@@ -2150,7 +2150,7 @@ TclCompileExpr(
     TclStackFree(interp, parsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
-    ckfree(opTree);
+    Tcl_Free(opTree);
 }
 
 /*

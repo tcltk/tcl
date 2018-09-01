@@ -522,7 +522,7 @@ SerialCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= SERIAL_PENDING;
-	    evPtr = ckalloc(sizeof(SerialEvent));
+	    evPtr = Tcl_Alloc(sizeof(SerialEvent));
 	    evPtr->header.proc = SerialEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -654,10 +654,10 @@ SerialCloseProc(
      */
 
     if (serialPtr->writeBuf != NULL) {
-	ckfree(serialPtr->writeBuf);
+	Tcl_Free(serialPtr->writeBuf);
 	serialPtr->writeBuf = NULL;
     }
-    ckfree(serialPtr);
+    Tcl_Free(serialPtr);
 
     if (errorCode == 0) {
 	return result;
@@ -1019,10 +1019,10 @@ SerialOutputProc(
 	     */
 
 	    if (infoPtr->writeBuf) {
-		ckfree(infoPtr->writeBuf);
+		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
@@ -1421,7 +1421,7 @@ TclWinOpenSerialChannel(
 
     SerialInit();
 
-    infoPtr = ckalloc(sizeof(SerialInfo));
+    infoPtr = Tcl_Alloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
     infoPtr->validMask = permissions;
@@ -1721,7 +1721,7 @@ SerialSetOptionProc(
 			" two elements with each a single character", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    return TCL_ERROR;
 	}
 
@@ -1752,7 +1752,7 @@ SerialSetOptionProc(
 	    }
 	    dcb.XoffChar = (char) character;
 	}
-	ckfree(argv);
+	Tcl_Free(argv);
 
 	if (!SetCommState(infoPtr->handle, &dcb)) {
 	    goto setStateFailed;
@@ -1777,7 +1777,7 @@ SerialSetOptionProc(
 			"a list of signal,value pairs", value));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", NULL);
 	    }
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    return TCL_ERROR;
 	}
 
@@ -1835,7 +1835,7 @@ SerialSetOptionProc(
 	    }
 	}
 
-	ckfree(argv);
+	Tcl_Free(argv);
 	return result;
     }
 
@@ -1861,7 +1861,7 @@ SerialSetOptionProc(
 	    inSize  = atoi(argv[0]);
 	    outSize = atoi(argv[1]);
 	}
-	ckfree(argv);
+	Tcl_Free(argv);
 
 	if ((argc < 1) || (argc > 2) || (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {

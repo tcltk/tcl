@@ -868,7 +868,7 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
-    argv = ckalloc((size * sizeof(char *)) + length + 1);
+    argv = Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -879,14 +879,14 @@ Tcl_SplitList(
 		&elSize, &literal);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    return result;
 	}
 	if (*element == 0) {
 	    break;
 	}
 	if (i >= size) {
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));
@@ -1554,7 +1554,7 @@ Tcl_Merge(
      */
 
     if (argc == 0) {
-	result = ckalloc(1);
+	result = Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -1566,7 +1566,7 @@ Tcl_Merge(
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = ckalloc(argc);
+	flagPtr = Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1578,7 +1578,7 @@ Tcl_Merge(
      * Pass two: copy into the result area.
      */
 
-    result = ckalloc(bytesNeeded);
+    result = Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1589,7 +1589,7 @@ Tcl_Merge(
     dst[-1] = 0;
 
     if (flagPtr != localFlags) {
-	ckfree(flagPtr);
+	Tcl_Free(flagPtr);
     }
     return result;
 }
@@ -1920,7 +1920,7 @@ Tcl_Concat(
      */
 
     if (argc == 0) {
-	result = (char *) ckalloc(1);
+	result = (char *) Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -1937,7 +1937,7 @@ Tcl_Concat(
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = ckalloc(bytesNeeded + argc);
+    result = Tcl_Alloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	size_t triml, trimr;
@@ -2673,7 +2673,7 @@ Tcl_DStringAppend(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2686,7 +2686,7 @@ Tcl_DStringAppend(
 		offset = bytes - dsPtr->string;
 	    }
 
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		bytes = dsPtr->string + offset;
@@ -2775,7 +2775,7 @@ Tcl_DStringAppendElement(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2788,7 +2788,7 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
@@ -2866,12 +2866,12 @@ Tcl_DStringSetLength(
 	    dsPtr->spaceAvl = length + 1;
 	}
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 	}
     }
     dsPtr->length = length;
@@ -2901,7 +2901,7 @@ Tcl_DStringFree(
     Tcl_DString *dsPtr)		/* Structure describing dynamic string. */
 {
     if (dsPtr->string != dsPtr->staticSpace) {
-	ckfree(dsPtr->string);
+	Tcl_Free(dsPtr->string);
     }
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
@@ -3200,7 +3200,7 @@ Tcl_PrintDouble(
 	}
 	*dst++ = '\0';
     }
-    ckfree(digits);
+    Tcl_Free(digits);
 }
 
 /*
@@ -3820,7 +3820,7 @@ GetThreadHash(
 	    Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
 
     if (NULL == *tablePtrPtr) {
-	*tablePtrPtr = ckalloc(sizeof(Tcl_HashTable));
+	*tablePtrPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_CreateThreadExitHandler(FreeThreadHash, *tablePtrPtr);
 	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
     }
@@ -3849,7 +3849,7 @@ FreeThreadHash(
 
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
-    ckfree(tablePtr);
+    Tcl_Free(tablePtr);
 }
 
 /*
@@ -3871,7 +3871,7 @@ FreeProcessGlobalValue(
 
     pgvPtr->epoch++;
     pgvPtr->numBytes = 0;
-    ckfree(pgvPtr->value);
+    Tcl_Free(pgvPtr->value);
     pgvPtr->value = NULL;
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -3910,13 +3910,13 @@ TclSetProcessGlobalValue(
 
     pgvPtr->epoch++;
     if (NULL != pgvPtr->value) {
-	ckfree(pgvPtr->value);
+	Tcl_Free(pgvPtr->value);
     } else {
 	Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
-    pgvPtr->value = ckalloc(pgvPtr->numBytes + 1);
+    pgvPtr->value = Tcl_Alloc(pgvPtr->numBytes + 1);
     memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -3979,8 +3979,8 @@ TclGetProcessGlobalValue(
 	    Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
-	    ckfree(pgvPtr->value);
-	    pgvPtr->value = ckalloc(Tcl_DStringLength(&newValue) + 1);
+	    Tcl_Free(pgvPtr->value);
+	    pgvPtr->value = Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    (size_t) Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);

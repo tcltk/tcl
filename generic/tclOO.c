@@ -359,7 +359,7 @@ InitFoundation(
     static Tcl_ThreadDataKey tsdKey;
     ThreadLocalData *tsdPtr =
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = ckalloc(sizeof(Foundation));
+    Foundation *fPtr = Tcl_Alloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
     Command *cmdPtr;
@@ -527,7 +527,7 @@ InitClassSystemRoots(
      * incremented reference count of fPtr->objectCls that was swallowed by
      * fakeObject. */
     fPtr->objectCls->superclasses.num = 0;
-    ckfree(fPtr->objectCls->superclasses.list);
+    Tcl_Free(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
 
     /* special initialization for the primordial objects */
@@ -634,7 +634,7 @@ KillFoundation(
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
-    ckfree(fPtr);
+    Tcl_Free(fPtr);
 }
 
 /*
@@ -674,7 +674,7 @@ AllocObject(
     CommandTrace *tracePtr;
     size_t creationEpoch;
 
-    oPtr = ckalloc(sizeof(Object));
+    oPtr = Tcl_Alloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -788,7 +788,7 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
+    cmdPtr->tracePtr = tracePtr = Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
@@ -926,7 +926,7 @@ DeleteDescendants(
 	}
     }
     if (clsPtr->mixinSubs.size > 0) {
-	ckfree(clsPtr->mixinSubs.list);
+	Tcl_Free(clsPtr->mixinSubs.list);
 	clsPtr->mixinSubs.size = 0;
     }
 
@@ -944,7 +944,7 @@ DeleteDescendants(
 	}
     }
     if (clsPtr->subclasses.size > 0) {
-	ckfree(clsPtr->subclasses.list);
+	Tcl_Free(clsPtr->subclasses.list);
 	clsPtr->subclasses.list = NULL;
 	clsPtr->subclasses.size = 0;
     }
@@ -967,7 +967,7 @@ DeleteDescendants(
 	}
     }
     if (clsPtr->instances.size > 0) {
-	ckfree(clsPtr->instances.list);
+	Tcl_Free(clsPtr->instances.list);
 	clsPtr->instances.list = NULL;
 	clsPtr->instances.size = 0;
     }
@@ -1033,7 +1033,7 @@ ReleaseClassContents(
 	    TclOODeleteChain(callPtr);
 	}
 	Tcl_DeleteHashTable(clsPtr->classChainCache);
-	ckfree(clsPtr->classChainCache);
+	Tcl_Free(clsPtr->classChainCache);
 	clsPtr->classChainCache = NULL;
     }
 
@@ -1047,7 +1047,7 @@ ReleaseClassContents(
 	FOREACH(filterObj, clsPtr->filters) {
 	    TclDecrRefCount(filterObj);
 	}
-	ckfree(clsPtr->filters.list);
+	Tcl_Free(clsPtr->filters.list);
 	clsPtr->filters.list = NULL;
 	clsPtr->filters.num = 0;
     }
@@ -1064,7 +1064,7 @@ ReleaseClassContents(
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(clsPtr->metadataPtr);
-	ckfree(clsPtr->metadataPtr);
+	Tcl_Free(clsPtr->metadataPtr);
 	clsPtr->metadataPtr = NULL;
     }
 
@@ -1073,7 +1073,7 @@ ReleaseClassContents(
 	    TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
 	    TclOODecrRefCount(tmpClsPtr->thisPtr);
 	}
-	ckfree(clsPtr->mixins.list);
+	Tcl_Free(clsPtr->mixins.list);
 	clsPtr->mixins.list = NULL;
 	clsPtr->mixins.num = 0;
     }
@@ -1083,7 +1083,7 @@ ReleaseClassContents(
 	    TclOORemoveFromSubclasses(clsPtr, tmpClsPtr);
 	    TclOODecrRefCount(tmpClsPtr->thisPtr);
 	}
-	ckfree(clsPtr->superclasses.list);
+	Tcl_Free(clsPtr->superclasses.list);
 	clsPtr->superclasses.num = 0;
 	clsPtr->superclasses.list = NULL;
     }
@@ -1099,7 +1099,7 @@ ReleaseClassContents(
 	TclDecrRefCount(variableObj);
     }
     if (i) {
-	ckfree(clsPtr->variables.list);
+	Tcl_Free(clsPtr->variables.list);
     }
 
     FOREACH_STRUCT(privateVariable, clsPtr->privateVariables) {
@@ -1107,7 +1107,7 @@ ReleaseClassContents(
 	TclDecrRefCount(privateVariable->fullNameObj);
     }
     if (i) {
-	ckfree(clsPtr->privateVariables.list);
+	Tcl_Free(clsPtr->privateVariables.list);
     }
 
     if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
@@ -1235,14 +1235,14 @@ ObjectNamespaceDeleted(
 	    TclOORemoveFromInstances(oPtr, mixinPtr);
 	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
-	ckfree(oPtr->mixins.list);
+	Tcl_Free(oPtr->mixins.list);
     }
 
     FOREACH(filterObj, oPtr->filters) {
 	TclDecrRefCount(filterObj);
     }
     if (i) {
-	ckfree(oPtr->filters.list);
+	Tcl_Free(oPtr->filters.list);
     }
 
     if (oPtr->methodsPtr) {
@@ -1250,14 +1250,14 @@ ObjectNamespaceDeleted(
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
-	ckfree(oPtr->methodsPtr);
+	Tcl_Free(oPtr->methodsPtr);
     }
 
     FOREACH(variableObj, oPtr->variables) {
 	TclDecrRefCount(variableObj);
     }
     if (i) {
-	ckfree(oPtr->variables.list);
+	Tcl_Free(oPtr->variables.list);
     }
 
     FOREACH_STRUCT(privateVariable, oPtr->privateVariables) {
@@ -1265,7 +1265,7 @@ ObjectNamespaceDeleted(
 	TclDecrRefCount(privateVariable->fullNameObj);
     }
     if (i) {
-	ckfree(oPtr->privateVariables.list);
+	Tcl_Free(oPtr->privateVariables.list);
     }
 
     if (oPtr->chainCache) {
@@ -1282,7 +1282,7 @@ ObjectNamespaceDeleted(
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(oPtr->metadataPtr);
-	ckfree(oPtr->metadataPtr);
+	Tcl_Free(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
     }
 
@@ -1338,9 +1338,9 @@ TclOODecrRefCount(
     if (oPtr->refCount-- <= 1) {
 
 	if (oPtr->classPtr != NULL) {
-	    ckfree(oPtr->classPtr);
+	    Tcl_Free(oPtr->classPtr);
 	}
-	ckfree(oPtr);
+	Tcl_Free(oPtr);
 	return 1;
     }
     return 0;
@@ -1398,9 +1398,9 @@ TclOOAddToInstances(
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
-	    clsPtr->instances.list = ckalloc(sizeof(Object *) * ALLOC_CHUNK);
+	    clsPtr->instances.list = Tcl_Alloc(sizeof(Object *) * ALLOC_CHUNK);
 	} else {
-	    clsPtr->instances.list = ckrealloc(clsPtr->instances.list,
+	    clsPtr->instances.list = Tcl_Realloc(clsPtr->instances.list,
 		    sizeof(Object *) * clsPtr->instances.size);
 	}
     }
@@ -1462,9 +1462,9 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list,
+	    superPtr->subclasses.list = Tcl_Realloc(superPtr->subclasses.list,
 		    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
@@ -1527,9 +1527,9 @@ TclOOAddToMixinSubs(
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
-	    superPtr->mixinSubs.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->mixinSubs.list = Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->mixinSubs.list = ckrealloc(superPtr->mixinSubs.list,
+	    superPtr->mixinSubs.list = Tcl_Realloc(superPtr->mixinSubs.list,
 		    sizeof(Class *) * superPtr->mixinSubs.size);
 	}
     }
@@ -1575,7 +1575,7 @@ AllocClass(
 				 * representation. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Class *clsPtr = ckalloc(sizeof(Class));
+    Class *clsPtr = Tcl_Alloc(sizeof(Class));
 
     memset(clsPtr, 0, sizeof(Class));
     clsPtr->thisPtr = useThisObj;
@@ -1592,7 +1592,7 @@ AllocClass(
      */
 
     clsPtr->superclasses.num = 1;
-    clsPtr->superclasses.list = ckalloc(sizeof(Class *));
+    clsPtr->superclasses.list = Tcl_Alloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
     AddRef(fPtr->objectCls->thisPtr);
 
@@ -1953,7 +1953,7 @@ Tcl_CopyObjectInstance(
 	    }
 	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
-	ckfree(o2Ptr->mixins.list);
+	Tcl_Free(o2Ptr->mixins.list);
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
@@ -2049,11 +2049,11 @@ Tcl_CopyObjectInstance(
 	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = ckrealloc(cls2Ptr->superclasses.list,
+	    cls2Ptr->superclasses.list = Tcl_Realloc(cls2Ptr->superclasses.list,
 		    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
 	    cls2Ptr->superclasses.list =
-		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
+		    Tcl_Alloc(sizeof(Class *) * clsPtr->superclasses.num);
 	}
 	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
 		sizeof(Class *) * clsPtr->superclasses.num);
@@ -2102,7 +2102,7 @@ Tcl_CopyObjectInstance(
 		TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    ckfree(clsPtr->mixins.list);
+	    Tcl_Free(clsPtr->mixins.list);
 	}
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
@@ -2341,7 +2341,7 @@ Tcl_ClassSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	clsPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
+	clsPtr->metadataPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(clsPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2421,7 +2421,7 @@ Tcl_ObjectSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	oPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
+	oPtr->metadataPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(oPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 

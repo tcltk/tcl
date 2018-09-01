@@ -911,7 +911,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = ckalloc(sizeof(TclRegexp));
+    regexpPtr = Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -938,7 +938,7 @@ CompileRegexp(
 	 * Clean up and report errors in the interpreter, if possible.
 	 */
 
-	ckfree(regexpPtr);
+	Tcl_Free(regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
 		    "couldn't compile regular expression pattern: ", status);
@@ -966,7 +966,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    Tcl_Alloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -985,14 +985,14 @@ CompileRegexp(
 	if (oldRegexpPtr->refCount-- <= 1) {
 	    FreeRegexp(oldRegexpPtr);
 	}
-	ckfree(tsdPtr->patterns[NUM_REGEXPS-1]);
+	Tcl_Free(tsdPtr->patterns[NUM_REGEXPS-1]);
     }
     for (i = NUM_REGEXPS - 2; i >= 0; i--) {
 	tsdPtr->patterns[i+1] = tsdPtr->patterns[i];
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc(length + 1);
+    tsdPtr->patterns[0] = Tcl_Alloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, (unsigned) length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1025,9 +1025,9 @@ FreeRegexp(
 	TclDecrRefCount(regexpPtr->globObjPtr);
     }
     if (regexpPtr->matches) {
-	ckfree(regexpPtr->matches);
+	Tcl_Free(regexpPtr->matches);
     }
-    ckfree(regexpPtr);
+    Tcl_Free(regexpPtr);
 }
 
 /*
@@ -1059,7 +1059,7 @@ FinalizeRegexp(
 	if (regexpPtr->refCount-- <= 1) {
 	    FreeRegexp(regexpPtr);
 	}
-	ckfree(tsdPtr->patterns[i]);
+	Tcl_Free(tsdPtr->patterns[i]);
 	tsdPtr->patterns[i] = NULL;
     }
 

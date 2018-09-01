@@ -255,8 +255,8 @@ TclWinEncodingsCleanup(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree(dlIter->volumeName);
-	ckfree(dlIter);
+	Tcl_Free(dlIter->volumeName);
+	Tcl_Free(dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -349,8 +349,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree(dlPtr2->volumeName);
-	    ckfree(dlPtr2);
+	    Tcl_Free(dlPtr2->volumeName);
+	    Tcl_Free(dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -385,7 +385,7 @@ TclWinDriveLetterForVolMountPoint(
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = ckalloc(sizeof(MountPointMap));
+		dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
@@ -411,7 +411,7 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = ckalloc(sizeof(MountPointMap));
+    dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
     dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;

@@ -178,7 +178,7 @@ TclWinThreadStart(
     lpOrigStartAddress = winThreadPtr->lpStartAddress;
     lpOrigParameter = winThreadPtr->lpParameter;
 
-    ckfree(winThreadPtr);
+    Tcl_Free(winThreadPtr);
     return lpOrigStartAddress(lpOrigParameter);
 }
 
@@ -211,7 +211,7 @@ TclpThreadCreate(
     WinThread *winThreadPtr;		/* Per-thread startup info */
     HANDLE tHandle;
 
-    winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
+    winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
     winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
     winThreadPtr->lpParameter = clientData;
     winThreadPtr->fpControl = _controlfp(0, 0);
@@ -568,7 +568,7 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = ckalloc(sizeof(CRITICAL_SECTION));
+	    csPtr = Tcl_Alloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
@@ -629,7 +629,7 @@ TclpFinalizeMutex(
 
     if (csPtr != NULL) {
 	DeleteCriticalSection(csPtr);
-	ckfree(csPtr);
+	Tcl_Free(csPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -711,7 +711,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    winCondPtr = ckalloc(sizeof(WinCondition));
+	    winCondPtr = Tcl_Alloc(sizeof(WinCondition));
 	    InitializeCriticalSection(&winCondPtr->condLock);
 	    winCondPtr->firstPtr = NULL;
 	    winCondPtr->lastPtr = NULL;
@@ -922,7 +922,7 @@ TclpFinalizeCondition(
 
     if (winCondPtr != NULL) {
 	DeleteCriticalSection(&winCondPtr->condLock);
-	ckfree(winCondPtr);
+	Tcl_Free(winCondPtr);
 	*condPtr = NULL;
     }
 }

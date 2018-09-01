@@ -697,11 +697,11 @@ Tcl_ZlibStreamInit(
 	case TCL_ZLIB_FORMAT_GZIP:
 	    wbits = WBITS_GZIP;
 	    if (dictObj) {
-		gzHeaderPtr = ckalloc(sizeof(GzipHeader));
+		gzHeaderPtr = Tcl_Alloc(sizeof(GzipHeader));
 		memset(gzHeaderPtr, 0, sizeof(GzipHeader));
 		if (GenerateHeader(interp, dictObj, gzHeaderPtr,
 			NULL) != TCL_OK) {
-		    ckfree(gzHeaderPtr);
+		    Tcl_Free(gzHeaderPtr);
 		    return TCL_ERROR;
 		}
 	    }
@@ -731,7 +731,7 @@ Tcl_ZlibStreamInit(
 	    break;
 	case TCL_ZLIB_FORMAT_GZIP:
 	    wbits = WBITS_GZIP;
-	    gzHeaderPtr = ckalloc(sizeof(GzipHeader));
+	    gzHeaderPtr = Tcl_Alloc(sizeof(GzipHeader));
 	    memset(gzHeaderPtr, 0, sizeof(GzipHeader));
 	    gzHeaderPtr->header.name = (Bytef *)
 		    gzHeaderPtr->nativeFilenameBuf;
@@ -757,7 +757,7 @@ Tcl_ZlibStreamInit(
 		" TCL_ZLIB_STREAM_INFLATE");
     }
 
-    zshPtr = ckalloc(sizeof(ZlibStreamHandle));
+    zshPtr = Tcl_Alloc(sizeof(ZlibStreamHandle));
     zshPtr->interp = interp;
     zshPtr->mode = mode;
     zshPtr->format = format;
@@ -857,9 +857,9 @@ Tcl_ZlibStreamInit(
 	Tcl_DecrRefCount(zshPtr->compDictObj);
     }
     if (zshPtr->gzHeaderPtr) {
-	ckfree(zshPtr->gzHeaderPtr);
+	Tcl_Free(zshPtr->gzHeaderPtr);
     }
-    ckfree(zshPtr);
+    Tcl_Free(zshPtr);
     return TCL_ERROR;
 }
 
@@ -970,10 +970,10 @@ ZlibStreamCleanup(
 	Tcl_DecrRefCount(zshPtr->compDictObj);
     }
     if (zshPtr->gzHeaderPtr) {
-	ckfree(zshPtr->gzHeaderPtr);
+	Tcl_Free(zshPtr->gzHeaderPtr);
     }
 
-    ckfree(zshPtr);
+    Tcl_Free(zshPtr);
 }
 
 /*
@@ -1232,7 +1232,7 @@ Tcl_ZlibStreamPut(
 	if (outSize > BUFFER_SIZE_LIMIT) {
 	    outSize = BUFFER_SIZE_LIMIT;
 	}
-	dataTmp = ckalloc(outSize);
+	dataTmp = Tcl_Alloc(outSize);
 
 	while (1) {
 	    e = Deflate(&zshPtr->stream, dataTmp, outSize, flush, &toStore);
@@ -1266,7 +1266,7 @@ Tcl_ZlibStreamPut(
 	    if (outSize < BUFFER_SIZE_LIMIT) {
 		outSize = BUFFER_SIZE_LIMIT;
 		/* There may be *lots* of data left to output... */
-		dataTmp = ckrealloc(dataTmp, outSize);
+		dataTmp = Tcl_Realloc(dataTmp, outSize);
 	    }
 	}
 
@@ -1275,7 +1275,7 @@ Tcl_ZlibStreamPut(
 	 */
 
 	AppendByteArray(zshPtr->outData, dataTmp, toStore);
-	ckfree(dataTmp);
+	Tcl_Free(dataTmp);
     } else {
 	/*
 	 * This is easy. Just append to the inData list.
@@ -1754,10 +1754,10 @@ Tcl_ZlibInflate(
     if (gzipHeaderDictObj) {
 	headerPtr = &header;
 	memset(headerPtr, 0, sizeof(gz_header));
-	nameBuf = ckalloc(MAXPATHLEN);
+	nameBuf = Tcl_Alloc(MAXPATHLEN);
 	header.name = (Bytef *) nameBuf;
 	header.name_max = MAXPATHLEN - 1;
-	commentBuf = ckalloc(MAX_COMMENT_LEN);
+	commentBuf = Tcl_Alloc(MAX_COMMENT_LEN);
 	header.comment = (Bytef *) commentBuf;
 	header.comm_max = MAX_COMMENT_LEN - 1;
     }
@@ -1863,8 +1863,8 @@ Tcl_ZlibInflate(
 	ExtractHeader(&header, gzipHeaderDictObj);
 	SetValue(gzipHeaderDictObj, "size",
 		Tcl_NewLongObj((long) stream.total_out));
-	ckfree(nameBuf);
-	ckfree(commentBuf);
+	Tcl_Free(nameBuf);
+	Tcl_Free(commentBuf);
     }
     Tcl_SetObjResult(interp, obj);
     return TCL_OK;
@@ -1873,10 +1873,10 @@ Tcl_ZlibInflate(
     TclDecrRefCount(obj);
     ConvertError(interp, e, stream.adler);
     if (nameBuf) {
-	ckfree(nameBuf);
+	Tcl_Free(nameBuf);
     }
     if (commentBuf) {
-	ckfree(commentBuf);
+	Tcl_Free(commentBuf);
     }
     return TCL_ERROR;
 }
@@ -2969,14 +2969,14 @@ ZlibTransformClose(
     Tcl_DStringFree(&cd->decompressed);
 
     if (cd->inBuffer) {
-	ckfree(cd->inBuffer);
+	Tcl_Free(cd->inBuffer);
 	cd->inBuffer = NULL;
     }
     if (cd->outBuffer) {
-	ckfree(cd->outBuffer);
+	Tcl_Free(cd->outBuffer);
 	cd->outBuffer = NULL;
     }
-    ckfree(cd);
+    Tcl_Free(cd);
     return result;
 }
 
@@ -3600,7 +3600,7 @@ ZlibStackChannelTransform(
 				 * dictionary (not dictObj!) to use if
 				 * necessary. */
 {
-    ZlibChannelData *cd = ckalloc(sizeof(ZlibChannelData));
+    ZlibChannelData *cd = Tcl_Alloc(sizeof(ZlibChannelData));
     Tcl_Channel chan;
     int wbits = 0;
 
@@ -3660,7 +3660,7 @@ ZlibStackChannelTransform(
 	    goto error;
 	}
 	cd->inAllocated = DEFAULT_BUFFER_SIZE;
-	cd->inBuffer = ckalloc(cd->inAllocated);
+	cd->inBuffer = Tcl_Alloc(cd->inAllocated);
 	if (cd->flags & IN_HEADER) {
 	    if (inflateGetHeader(&cd->inStream, &cd->inHeader.header) != Z_OK) {
 		goto error;
@@ -3677,7 +3677,7 @@ ZlibStackChannelTransform(
 	    goto error;
 	}
 	cd->outAllocated = DEFAULT_BUFFER_SIZE;
-	cd->outBuffer = ckalloc(cd->outAllocated);
+	cd->outBuffer = Tcl_Alloc(cd->outAllocated);
 	if (cd->flags & OUT_HEADER) {
 	    if (deflateSetHeader(&cd->outStream, &cd->outHeader.header) != Z_OK) {
 		goto error;
@@ -3704,17 +3704,17 @@ ZlibStackChannelTransform(
 
   error:
     if (cd->inBuffer) {
-	ckfree(cd->inBuffer);
+	Tcl_Free(cd->inBuffer);
 	inflateEnd(&cd->inStream);
     }
     if (cd->outBuffer) {
-	ckfree(cd->outBuffer);
+	Tcl_Free(cd->outBuffer);
 	deflateEnd(&cd->outStream);
     }
     if (cd->compDictObj) {
 	Tcl_DecrRefCount(cd->compDictObj);
     }
-    ckfree(cd);
+    Tcl_Free(cd);
     return NULL;
 }
 

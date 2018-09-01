@@ -724,7 +724,7 @@ better functions to use for most purposes.
 \fBTcl_FSGetTranslatedStringPath\fR does the same as
 \fBTcl_FSGetTranslatedPath\fR, but returns a character string or NULL.
 The string returned is dynamically allocated and owned by the caller,
-which must store it or call \fBckfree\fR to ensure it is freed. Again,
+which must store it or call \fBTcl_Free\fR to ensure it is freed. Again,
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
 better functions to use for most purposes.
 .PP
@@ -791,7 +791,7 @@ It returns one of \fBTCL_PATH_ABSOLUTE\fR, \fBTCL_PATH_RELATIVE\fR, or
 .SS "PORTABLE STAT RESULT API"
 .PP
 \fBTcl_AllocStatBuf\fR allocates a \fITcl_StatBuf\fR on the system heap (which
-may be deallocated by being passed to \fBckfree\fR). This allows extensions to
+may be deallocated by being passed to \fBTcl_Free\fR). This allows extensions to
 invoke \fBTcl_FSStat\fR and \fBTcl_FSLstat\fR without being dependent on the
 size of the buffer. That in turn depends on the flags used to build Tcl.
 .PP
