@@ -464,7 +464,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = ckalloc(sizeof(FileHandler));
+	    filePtr = Tcl_Alloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -583,7 +583,7 @@ Tcl_DeleteFileHandler(
 	} else {
 	    prevPtr->nextPtr = filePtr->nextPtr;
 	}
-	ckfree(filePtr);
+	Tcl_Free(filePtr);
     }
 }
 
@@ -877,7 +877,7 @@ Tcl_WaitForEvent(
 
 	    if (filePtr->readyMask == 0) {
 		FileHandlerEvent *fileEvPtr =
-			ckalloc(sizeof(FileHandlerEvent));
+			Tcl_Alloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
 		fileEvPtr->fd = filePtr->fd;

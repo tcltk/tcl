@@ -401,12 +401,12 @@ Tcl_LoadObjCmd(
 	 * Create a new record to describe this package.
 	 */
 
-	pkgPtr = ckalloc(sizeof(LoadedPackage));
+	pkgPtr = Tcl_Alloc(sizeof(LoadedPackage));
 	len = strlen(fullFileName) + 1;
-	pkgPtr->fileName	   = ckalloc(len);
+	pkgPtr->fileName	   = Tcl_Alloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
 	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
-	pkgPtr->packageName	   = ckalloc(len);
+	pkgPtr->packageName	   = Tcl_Alloc(len);
 	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
 	pkgPtr->initProc	   = initProc;
@@ -506,7 +506,7 @@ Tcl_LoadObjCmd(
      */
 
     ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    ipPtr = ckalloc(sizeof(InterpPackage));
+    ipPtr = Tcl_Alloc(sizeof(InterpPackage));
     ipPtr->pkgPtr = pkgPtr;
     ipPtr->nextPtr = ipFirstPtr;
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
@@ -890,10 +890,10 @@ Tcl_UnloadObjCmd(
 		}
 		Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc,
 			ipFirstPtr);
-		ckfree(defaultPtr->fileName);
-		ckfree(defaultPtr->packageName);
-		ckfree(defaultPtr);
-		ckfree(ipPtr);
+		Tcl_Free(defaultPtr->fileName);
+		Tcl_Free(defaultPtr->packageName);
+		Tcl_Free(defaultPtr);
+		Tcl_Free(ipPtr);
 		Tcl_MutexUnlock(&packageMutex);
 	    } else {
 		code = TCL_ERROR;
@@ -980,10 +980,10 @@ Tcl_StaticPackage(
      */
 
     if (pkgPtr == NULL) {
-	pkgPtr = ckalloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	= ckalloc(1);
+	pkgPtr = Tcl_Alloc(sizeof(LoadedPackage));
+	pkgPtr->fileName	= Tcl_Alloc(1);
 	pkgPtr->fileName[0]	= 0;
-	pkgPtr->packageName	= ckalloc(strlen(pkgName) + 1);
+	pkgPtr->packageName	= Tcl_Alloc(strlen(pkgName) + 1);
 	strcpy(pkgPtr->packageName, pkgName);
 	pkgPtr->loadHandle	= NULL;
 	pkgPtr->initProc	= initProc;
@@ -1013,7 +1013,7 @@ Tcl_StaticPackage(
 	 * loaded.
 	 */
 
-	ipPtr = ckalloc(sizeof(InterpPackage));
+	ipPtr = Tcl_Alloc(sizeof(InterpPackage));
 	ipPtr->pkgPtr = pkgPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
@@ -1157,7 +1157,7 @@ LoadCleanupProc(
     ipPtr = clientData;
     while (ipPtr != NULL) {
 	nextPtr = ipPtr->nextPtr;
-	ckfree(ipPtr);
+	Tcl_Free(ipPtr);
 	ipPtr = nextPtr;
     }
 }
@@ -1208,9 +1208,9 @@ TclFinalizeLoad(void)
 	}
 #endif
 
-	ckfree(pkgPtr->fileName);
-	ckfree(pkgPtr->packageName);
-	ckfree(pkgPtr);
+	Tcl_Free(pkgPtr->fileName);
+	Tcl_Free(pkgPtr->packageName);
+	Tcl_Free(pkgPtr);
     }
 }
 

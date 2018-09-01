@@ -705,7 +705,7 @@ UpdateStringOfOSType(
     string[4] = '\0';
     Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
     len = (unsigned) Tcl_DStringLength(&ds) + 1;
-    objPtr->bytes = ckalloc(len);
+    objPtr->bytes = Tcl_Alloc(len);
     memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
     objPtr->length = Tcl_DStringLength(&ds);
     Tcl_DStringFree(&ds);

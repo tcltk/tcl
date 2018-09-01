@@ -325,7 +325,7 @@ CleanupVar(
 	    && (VarHashRefCount(varPtr) == (unsigned)
 		    !TclIsVarDeadHash(varPtr))) {
 	if (VarHashRefCount(varPtr) == 0) {
-	    ckfree(varPtr);
+	    Tcl_Free(varPtr);
 	} else {
 	    VarHashDeleteEntry(varPtr);
 	}
@@ -335,7 +335,7 @@ CleanupVar(
 	    (VarHashRefCount(arrayPtr) == (unsigned)
 		    !TclIsVarDeadHash(arrayPtr))) {
 	if (VarHashRefCount(arrayPtr) == 0) {
-	    ckfree(arrayPtr);
+	    Tcl_Free(arrayPtr);
 	} else {
 	    VarHashDeleteEntry(arrayPtr);
 	}
@@ -932,7 +932,7 @@ TclLookupSimpleVar(
 	tablePtr = varFramePtr->varTablePtr;
 	if (create) {
 	    if (tablePtr == NULL) {
-		tablePtr = ckalloc(sizeof(TclVarHashTable));
+		tablePtr = Tcl_Alloc(sizeof(TclVarHashTable));
 		TclInitVarHashTable(tablePtr, NULL);
 		varFramePtr->varTablePtr = tablePtr;
 	    }
@@ -1046,7 +1046,7 @@ TclLookupArrayElement(
 	}
 
 	TclSetVarArray(arrayPtr);
-	tablePtr = ckalloc(sizeof(TclVarHashTable));
+	tablePtr = Tcl_Alloc(sizeof(TclVarHashTable));
 	arrayPtr->value.tablePtr = tablePtr;
 
 	if (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr)) {
@@ -2906,7 +2906,7 @@ ArrayForNRCmd(
      * Make a new array search, put it on the stack.
      */
 
-    searchPtr = ckalloc(sizeof(ArraySearch));
+    searchPtr = Tcl_Alloc(sizeof(ArraySearch));
     ArrayPopulateSearch(interp, arrayNameObj, varPtr, searchPtr);
 
     /*
@@ -3027,7 +3027,7 @@ ArrayForLoopCallback(
 
 	ArrayDoneSearch(iPtr, varPtr, searchPtr);
 	Tcl_DecrRefCount(searchPtr->name);
-	ckfree(searchPtr);
+	Tcl_Free(searchPtr);
     }
 
     TclDecrRefCount(varListObj);
@@ -3115,7 +3115,7 @@ ArrayStartSearchCmd(
      * Make a new array search with a free name.
      */
 
-    searchPtr = ckalloc(sizeof(ArraySearch));
+    searchPtr = Tcl_Alloc(sizeof(ArraySearch));
     ArrayPopulateSearch(interp, objv[1], varPtr, searchPtr);
     Tcl_SetObjResult(interp, searchPtr->name);
     return TCL_OK;
@@ -3382,7 +3382,7 @@ ArrayDoneSearchCmd(
 
     ArrayDoneSearch(iPtr, varPtr, searchPtr);
     Tcl_DecrRefCount(searchPtr->name);
-    ckfree(searchPtr);
+    Tcl_Free(searchPtr);
     return TCL_OK;
 }
 
@@ -3928,7 +3928,7 @@ ArraySetCmd(
 	}
     }
     TclSetVarArray(varPtr);
-    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+    varPtr->value.tablePtr = Tcl_Alloc(sizeof(TclVarHashTable));
     TclInitVarHashTable(varPtr->value.tablePtr, TclGetVarNsPtr(varPtr));
     return TCL_OK;
 }
@@ -4044,7 +4044,7 @@ ArrayStatsCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
-    ckfree(stats);
+    Tcl_Free(stats);
     return TCL_OK;
 }
 
@@ -5051,7 +5051,7 @@ DeleteSearches(
 		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
 	    Tcl_DecrRefCount(searchPtr->name);
-	    ckfree(searchPtr);
+	    Tcl_Free(searchPtr);
 	}
 	arrayVarPtr->flags &= ~VAR_SEARCH_ACTIVE;
 	Tcl_DeleteHashEntry(sPtr);
@@ -5343,7 +5343,7 @@ DeleteArray(
 	TclClearVarNamespaceVar(elPtr);
     }
     VarHashDeleteTable(varPtr->value.tablePtr);
-    ckfree(varPtr->value.tablePtr);
+    Tcl_Free(varPtr->value.tablePtr);
 }
 
 /*
@@ -6195,7 +6195,7 @@ AllocVarEntry(
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
-    varPtr = ckalloc(sizeof(VarInHash));
+    varPtr = Tcl_Alloc(sizeof(VarInHash));
     varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;
@@ -6217,7 +6217,7 @@ FreeVarEntry(
 
     if (TclIsVarUndefined(varPtr) && !TclIsVarTraced(varPtr)
 	    && (VarHashRefCount(varPtr) == 1)) {
-	ckfree(varPtr);
+	Tcl_Free(varPtr);
     } else {
 	VarHashInvalidateEntry(varPtr);
 	TclSetVarUndefined(varPtr);

@@ -1204,14 +1204,14 @@ FreeAssemblyEnv(
 	    Tcl_DecrRefCount(thisBB->jumpTarget);
 	}
 	if (thisBB->foreignExceptions != NULL) {
-	    ckfree(thisBB->foreignExceptions);
+	    Tcl_Free(thisBB->foreignExceptions);
 	}
 	nextBB = thisBB->successor1;
 	if (thisBB->jtPtr != NULL) {
 	    DeleteMirrorJumpTable(thisBB->jtPtr);
 	    thisBB->jtPtr = NULL;
 	}
-	ckfree(thisBB);
+	Tcl_Free(thisBB);
     }
 
     /*
@@ -1529,7 +1529,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 
-	jtPtr = ckalloc(sizeof(JumptableInfo));
+	jtPtr = Tcl_Alloc(sizeof(JumptableInfo));
 
 	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
 	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
@@ -1928,7 +1928,7 @@ MoveExceptionRangesToBasicBlock(
     curr_bb->foreignExceptionBase = savedExceptArrayNext;
     curr_bb->foreignExceptionCount = exceptionCount;
     curr_bb->foreignExceptions =
-	    ckalloc(exceptionCount * sizeof(ExceptionRange));
+	    Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
     memcpy(curr_bb->foreignExceptions,
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
@@ -1993,7 +1993,7 @@ CreateMirrorJumpTable(
      * Allocate the jumptable.
      */
 
-    jtPtr = ckalloc(sizeof(JumptableInfo));
+    jtPtr = Tcl_Alloc(sizeof(JumptableInfo));
     jtHashPtr = &jtPtr->hashTable;
     Tcl_InitHashTable(jtHashPtr, TCL_STRING_KEYS);
 
@@ -2058,7 +2058,7 @@ DeleteMirrorJumpTable(
 	Tcl_SetHashValue(entry, NULL);
     }
     Tcl_DeleteHashTable(jtHashPtr);
-    ckfree(jtPtr);
+    Tcl_Free(jtPtr);
 }
 
 /*
@@ -2641,7 +2641,7 @@ AllocBB(
     AssemblyEnv* assemEnvPtr)	/* Assembly environment */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
-    BasicBlock *bb = ckalloc(sizeof(BasicBlock));
+    BasicBlock *bb = Tcl_Alloc(sizeof(BasicBlock));
 
     bb->originalStartOffset =
 	    bb->startOffset = envPtr->codeNext - envPtr->codeStart;
@@ -3919,8 +3919,8 @@ BuildExceptionRanges(
      * Allocate memory for a stack of active catches.
      */
 
-    catches = ckalloc(maxCatchDepth * sizeof(BasicBlock*));
-    catchIndices = ckalloc(maxCatchDepth * sizeof(int));
+    catches = Tcl_Alloc(maxCatchDepth * sizeof(BasicBlock*));
+    catchIndices = Tcl_Alloc(maxCatchDepth * sizeof(int));
     for (i = 0; i < maxCatchDepth; ++i) {
 	catches[i] = NULL;
 	catchIndices[i] = -1;
@@ -3959,8 +3959,8 @@ BuildExceptionRanges(
 
     /* Free temp storage */
 
-    ckfree(catchIndices);
-    ckfree(catches);
+    Tcl_Free(catchIndices);
+    Tcl_Free(catches);
 
     return TCL_OK;
 }

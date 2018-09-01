@@ -106,5 +106,5 @@ closedir(
     close(dirp->dd_fd);
     dirp->dd_fd = -1;
     dirp->dd_loc = 0;
-    ckfree(dirp);
+    Tcl_Free(dirp);
 }

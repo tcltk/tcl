@@ -844,7 +844,7 @@ Tcl_CreateCloseHandler(
     ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr;
 
-    cbPtr = ckalloc(sizeof(CloseCallback));
+    cbPtr = Tcl_Alloc(sizeof(CloseCallback));
     cbPtr->proc = proc;
     cbPtr->clientData = clientData;
 
@@ -890,7 +890,7 @@ Tcl_DeleteCloseHandler(
 	    } else {
 		cbPrevPtr->nextPtr = cbPtr->nextPtr;
 	    }
-	    ckfree(cbPtr);
+	    Tcl_Free(cbPtr);
 	    break;
 	}
 	cbPrevPtr = cbPtr;
@@ -925,7 +925,7 @@ GetChannelTable(
 
     hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, "tclIO",
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
@@ -1017,7 +1017,7 @@ DeleteChannelTable(
 			TclChannelEventScriptInvoker, sPtr);
 
 		TclDecrRefCount(sPtr->scriptPtr);
-		ckfree(sPtr);
+		Tcl_Free(sPtr);
 	    } else {
 		prevPtr = sPtr;
 	    }
@@ -1040,7 +1040,7 @@ DeleteChannelTable(
 
     }
     Tcl_DeleteHashTable(hTblPtr);
-    ckfree(hTblPtr);
+    Tcl_Free(hTblPtr);
 }
 
 /*
@@ -1552,7 +1552,7 @@ TclGetChannelFromObj(
     } else {
 	TclFreeIntRep(objPtr);
 
-	resPtr = (ResolvedChanName *) ckalloc(sizeof(ResolvedChanName));
+	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 1;
 	objPtr->internalRep.twoPtrValue.ptr1 = (ClientData) resPtr;
 	objPtr->typePtr = &chanObjType;
@@ -1637,8 +1637,8 @@ Tcl_CreateChannel(
      * assignments to 0/NULL below.
      */
 
-    chanPtr = ckalloc(sizeof(Channel));
-    statePtr = ckalloc(sizeof(ChannelState));
+    chanPtr = Tcl_Alloc(sizeof(Channel));
+    statePtr = Tcl_Alloc(sizeof(ChannelState));
     chanPtr->state = statePtr;
 
     chanPtr->instanceData = instanceData;
@@ -1657,10 +1657,10 @@ Tcl_CreateChannel(
          * later.
          */
 
-	tmp = ckalloc((len < 7) ? 7 : len);
+	tmp = Tcl_Alloc((len < 7) ? 7 : len);
 	strcpy(tmp, chanName);
     } else {
-	tmp = ckalloc(7);
+	tmp = Tcl_Alloc(7);
 	tmp[0] = '\0';
     }
     statePtr->channelName = tmp;
@@ -1933,7 +1933,7 @@ Tcl_StackChannel(
 	statePtr->inQueueTail = NULL;
     }
 
-    chanPtr = ckalloc(sizeof(Channel));
+    chanPtr = Tcl_Alloc(sizeof(Channel));
 
     /*
      * Save some of the current state into the new structure, reinitialize the
@@ -1995,7 +1995,7 @@ TclChannelRelease(
 	return;
     }
     if (chanPtr->typePtr == NULL) {
-	ckfree(chanPtr);
+	Tcl_Free(chanPtr);
     }
 }
 
@@ -2004,7 +2004,7 @@ ChannelFree(
     Channel *chanPtr)
 {
     if (chanPtr->refCount == 0) {
-	ckfree(chanPtr);
+	Tcl_Free(chanPtr);
 	return;
     }
     chanPtr->typePtr = NULL;
@@ -2462,7 +2462,7 @@ AllocChannelBuffer(
     int n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
-    bufPtr = ckalloc(n);
+    bufPtr = Tcl_Alloc(n);
     bufPtr->nextAdded	= BUFFER_PADDING;
     bufPtr->nextRemoved	= BUFFER_PADDING;
     bufPtr->bufLength	= length + BUFFER_PADDING;
@@ -2488,7 +2488,7 @@ ReleaseChannelBuffer(
     if (--bufPtr->refCount) {
 	return;
     }
-    ckfree(bufPtr);
+    Tcl_Free(bufPtr);
 }
 
 static int
@@ -3067,7 +3067,7 @@ CloseChannel(
 
     if (chanPtr == statePtr->bottomChanPtr) {
 	if (statePtr->channelName != NULL) {
-	    ckfree(statePtr->channelName);
+	    Tcl_Free(statePtr->channelName);
 	    statePtr->channelName = NULL;
 	}
 
@@ -3458,7 +3458,7 @@ Tcl_Close(
 	cbPtr = statePtr->closeCbPtr;
 	statePtr->closeCbPtr = cbPtr->nextPtr;
 	cbPtr->proc(cbPtr->clientData);
-	ckfree(cbPtr);
+	Tcl_Free(cbPtr);
     }
 
     ResetFlag(statePtr, CHANNEL_INCLOSE);
@@ -3928,7 +3928,7 @@ Tcl_ClearChannelHandlers(
 
     for (chPtr = statePtr->chPtr; chPtr != NULL; chPtr = chNext) {
 	chNext = chPtr->nextPtr;
-	ckfree(chPtr);
+	Tcl_Free(chPtr);
     }
     statePtr->chPtr = NULL;
 
@@ -3955,7 +3955,7 @@ Tcl_ClearChannelHandlers(
     for (ePtr = statePtr->scriptRecordPtr; ePtr != NULL; ePtr = eNextPtr) {
 	eNextPtr = ePtr->nextPtr;
 	TclDecrRefCount(ePtr->scriptPtr);
-	ckfree(ePtr);
+	Tcl_Free(ePtr);
     }
     statePtr->scriptRecordPtr = NULL;
 }
@@ -7658,7 +7658,7 @@ Tcl_BadChannelOption(
 	Tcl_AppendPrintfToObj(errObj, "or -%s", argv[i]);
         Tcl_SetObjResult(interp, errObj);
 	Tcl_DStringFree(&ds);
-	ckfree(argv);
+	Tcl_Free(argv);
     }
     Tcl_SetErrno(EINVAL);
     return TCL_ERROR;
@@ -8049,7 +8049,7 @@ Tcl_SetChannelOption(
                             "bad value for -eofchar: must be non-NUL ASCII"
                             " character", -1));
 		}
-		ckfree(argv);
+		Tcl_Free(argv);
 		return TCL_ERROR;
 	    }
 	    if (GotFlag(statePtr, TCL_READABLE)) {
@@ -8064,11 +8064,11 @@ Tcl_SetChannelOption(
 			"bad value for -eofchar: should be a list of zero,"
 			" one, or two elements", -1));
 	    }
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    return TCL_ERROR;
 	}
 	if (argv != NULL) {
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	}
 
 	/*
@@ -8102,7 +8102,7 @@ Tcl_SetChannelOption(
 			"bad value for -translation: must be a one or two"
 			" element list", -1));
 	    }
-	    ckfree(argv);
+	    Tcl_Free(argv);
 	    return TCL_ERROR;
 	}
 
@@ -8132,7 +8132,7 @@ Tcl_SetChannelOption(
 			    "bad value for -translation: must be one of "
                             "auto, binary, cr, lf, crlf, or platform", -1));
 		}
-		ckfree(argv);
+		Tcl_Free(argv);
 		return TCL_ERROR;
 	    }
 
@@ -8182,11 +8182,11 @@ Tcl_SetChannelOption(
 			    "bad value for -translation: must be one of "
                             "auto, binary, cr, lf, crlf, or platform", -1));
 		}
-		ckfree(argv);
+		Tcl_Free(argv);
 		return TCL_ERROR;
 	    }
 	}
-	ckfree(argv);
+	Tcl_Free(argv);
 	return TCL_OK;
     } else if (chanPtr->typePtr->setOptionProc != NULL) {
 	return chanPtr->typePtr->setOptionProc(chanPtr->instanceData, interp,
@@ -8245,7 +8245,7 @@ CleanupChannelHandlers(
 		    TclChannelEventScriptInvoker, sPtr);
 
 	    TclDecrRefCount(sPtr->scriptPtr);
-	    ckfree(sPtr);
+	    Tcl_Free(sPtr);
 	} else {
 	    prevPtr = sPtr;
 	}
@@ -8592,7 +8592,7 @@ Tcl_CreateChannelHandler(
 	}
     }
     if (chPtr == NULL) {
-	chPtr = ckalloc(sizeof(ChannelHandler));
+	chPtr = Tcl_Alloc(sizeof(ChannelHandler));
 	chPtr->mask = 0;
 	chPtr->proc = proc;
 	chPtr->clientData = clientData;
@@ -8696,7 +8696,7 @@ Tcl_DeleteChannelHandler(
     } else {
 	prevChPtr->nextPtr = chPtr->nextPtr;
     }
-    ckfree(chPtr);
+    Tcl_Free(chPtr);
 
     /*
      * Recompute the interest list for the channel, so that infinite loops
@@ -8755,7 +8755,7 @@ DeleteScriptRecord(
 		    TclChannelEventScriptInvoker, esPtr);
 
 	    TclDecrRefCount(esPtr->scriptPtr);
-	    ckfree(esPtr);
+	    Tcl_Free(esPtr);
 
 	    break;
 	}
@@ -8804,7 +8804,7 @@ CreateScriptRecord(
     makeCH = (esPtr == NULL);
 
     if (makeCH) {
-	esPtr = ckalloc(sizeof(EventScriptRecord));
+	esPtr = Tcl_Alloc(sizeof(EventScriptRecord));
     }
 
     /*
@@ -9120,7 +9120,7 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
+    csPtr = Tcl_Alloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -10045,7 +10045,7 @@ StopCopy(
     }
     inStatePtr->csPtrR = NULL;
     outStatePtr->csPtrW = NULL;
-    ckfree(csPtr);
+    Tcl_Free(csPtr);
 }
 
 /*
@@ -11018,7 +11018,7 @@ FixLevelCode(
 	lcn += 2;
     }
 
-    lvn = ckalloc(lcn * sizeof(Tcl_Obj *));
+    lvn = Tcl_Alloc(lcn * sizeof(Tcl_Obj *));
 
     /*
      * New level/code information is spliced into the first occurence of
@@ -11071,7 +11071,7 @@ FixLevelCode(
 
     msg = Tcl_NewListObj(j, lvn);
 
-    ckfree(lvn);
+    Tcl_Free(lvn);
     return msg;
 }
 
@@ -11218,7 +11218,7 @@ FreeChannelIntRep(
 	return;
     }
     Tcl_Release(resPtr->statePtr);
-    ckfree(resPtr);
+    Tcl_Free(resPtr);
 }
 
 #if 0

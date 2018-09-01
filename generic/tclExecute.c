@@ -698,7 +698,7 @@ ReleaseDictIterator(
 
     searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_DictObjDone(searchPtr);
-    ckfree(searchPtr);
+    Tcl_Free(searchPtr);
 
     dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
@@ -773,8 +773,8 @@ TclCreateExecEnv(
     size_t size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
+    ExecEnv *eePtr = Tcl_Alloc(sizeof(ExecEnv));
+    ExecStack *esPtr = Tcl_Alloc(sizeof(ExecStack)
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -834,7 +834,7 @@ DeleteExecStack(
     if (esPtr->nextPtr) {
 	esPtr->nextPtr->prevPtr = esPtr->prevPtr;
     }
-    ckfree(esPtr);
+    Tcl_Free(esPtr);
 }
 
 void
@@ -866,7 +866,7 @@ TclDeleteExecEnv(
     if (eePtr->corPtr && !cachedInExit) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
-    ckfree(eePtr);
+    Tcl_Free(eePtr);
 }
 
 /*
@@ -1043,7 +1043,7 @@ GrowEvaluationStack(
     newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = ckalloc(newBytes);
+    esPtr = Tcl_Alloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -1142,7 +1142,7 @@ TclStackFree(
     Tcl_Obj **markerPtr, *marker;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	ckfree(freePtr);
+	Tcl_Free(freePtr);
 	return;
     }
 
@@ -1206,7 +1206,7 @@ TclStackAlloc(
     int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	return (void *) ckalloc(numBytes);
+	return (void *) Tcl_Alloc(numBytes);
     }
     numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
     return (void *) StackAllocWords(interp, numWords);
@@ -1225,7 +1225,7 @@ TclStackRealloc(
     int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	return (void *) ckrealloc((char *) ptr, numBytes);
+	return (void *) Tcl_Realloc((char *) ptr, numBytes);
     }
 
     eePtr = iPtr->execEnvPtr;
@@ -2549,7 +2549,7 @@ TEBCresume(
 	 * command starts.
 	 *
 	 * Use a Tcl_Obj as linked list element; slight mem waste, but faster
-	 * allocation than ckalloc. This also abuses the Tcl_Obj structure, as
+	 * allocation than Tcl_Alloc. This also abuses the Tcl_Obj structure, as
 	 * we do not define a special tclObjType for it. It is not dangerous
 	 * as the obj is never passed anywhere, so that all manipulations are
 	 * performed here and in INST_INVOKE_EXPANDED (in case of an expansion
@@ -3905,7 +3905,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	    TclSetVarArray(varPtr);
-	    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+	    varPtr->value.tablePtr = Tcl_Alloc(sizeof(TclVarHashTable));
 	    TclInitVarHashTable(varPtr->value.tablePtr,
 		    TclGetVarNsPtr(varPtr));
 #ifdef TCL_COMPILE_DEBUG
@@ -6730,7 +6730,7 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = POP_OBJECT();
-	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
+	searchPtr = Tcl_Alloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
 
@@ -6741,7 +6741,7 @@ TEBCresume(
 	     */
 
 	    Tcl_DecrRefCount(dictPtr);
-	    ckfree(searchPtr);
+	    Tcl_Free(searchPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -9517,7 +9517,7 @@ EvalStatsCmd(
     litTableStats = TclLiteralStats(globalTablePtr);
     Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal table statistics:\n%s\n",
 	    litTableStats);
-    ckfree(litTableStats);
+    Tcl_Free(litTableStats);
 
     /*
      * Source and ByteCode size distributions.

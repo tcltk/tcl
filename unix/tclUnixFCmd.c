@@ -610,7 +610,7 @@ TclUnixCopyFile(
     if (blockSize <= 0) {
 	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
-    buffer = ckalloc(blockSize);
+    buffer = Tcl_Alloc(blockSize);
     while (1) {
 	nread = (size_t) read(srcFd, buffer, blockSize);
 	if ((nread == (size_t) -1) || (nread == 0)) {
@@ -622,7 +622,7 @@ TclUnixCopyFile(
 	}
     }
 
-    ckfree(buffer);
+    Tcl_Free(buffer);
     close(srcFd);
     if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
 	unlink(dst);					/* INTL: Native. */
@@ -2295,7 +2295,7 @@ winPathFromObj(
     WCHAR *winPath;
 
     size = cygwin_conv_path(1, native, NULL, 0);
-    winPath = ckalloc(size);
+    winPath = Tcl_Alloc(size);
     cygwin_conv_path(1, native, winPath, size);
 
     return winPath;
@@ -2333,7 +2333,7 @@ GetUnixFileAttributes(
     WCHAR *winPath = winPathFromObj(fileName);
 
     fileAttributes = GetFileAttributesW(winPath);
-    ckfree(winPath);
+    Tcl_Free(winPath);
 
     if (fileAttributes == -1) {
 	StatError(interp, fileName);
@@ -2380,7 +2380,7 @@ SetUnixFileAttributes(
     fileAttributes = old = GetFileAttributesW(winPath);
 
     if (fileAttributes == -1) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -2393,12 +2393,12 @@ SetUnixFileAttributes(
 
     if ((fileAttributes != old)
 	    && !SetFileAttributesW(winPath, fileAttributes)) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
 
-    ckfree(winPath);
+    Tcl_Free(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)

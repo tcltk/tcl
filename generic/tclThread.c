@@ -72,13 +72,13 @@ Tcl_GetThreadData(
     result = TclThreadStorageKeyGet(keyPtr);
 
     if (result == NULL) {
-	result = ckalloc(size);
+	result = Tcl_Alloc(size);
 	memset(result, 0, size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
-	result = ckalloc(size);
+	result = Tcl_Alloc(size);
 	memset(result, 0, size);
 	*keyPtr = result;
 	RememberSyncObject(keyPtr, &keyRecord);
@@ -164,14 +164,14 @@ RememberSyncObject(
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
-	newList = ckalloc(recPtr->max * sizeof(void *));
+	newList = Tcl_Alloc(recPtr->max * sizeof(void *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
 	    }
 	}
 	if (recPtr->list != NULL) {
-	    ckfree(recPtr->list);
+	    Tcl_Free(recPtr->list);
 	}
 	recPtr->list = newList;
 	recPtr->num = j;
@@ -392,9 +392,9 @@ TclFinalizeSynchronization(void)
 	for (i=0 ; i<keyRecord.num ; i++) {
 	    keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
 	    blockPtr = *keyPtr;
-	    ckfree(blockPtr);
+	    Tcl_Free(blockPtr);
 	}
-	ckfree(keyRecord.list);
+	Tcl_Free(keyRecord.list);
 	keyRecord.list = NULL;
     }
     keyRecord.max = 0;
@@ -414,7 +414,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (mutexRecord.list != NULL) {
-	ckfree(mutexRecord.list);
+	Tcl_Free(mutexRecord.list);
 	mutexRecord.list = NULL;
     }
     mutexRecord.max = 0;
@@ -427,7 +427,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (condRecord.list != NULL) {
-	ckfree(condRecord.list);
+	Tcl_Free(condRecord.list);
 	condRecord.list = NULL;
     }
     condRecord.max = 0;

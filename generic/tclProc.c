@@ -228,11 +228,11 @@ Tcl_ProcObjCmd(
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
 		int isNew;
 		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = Tcl_Alloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -260,9 +260,9 @@ Tcl_ProcObjCmd(
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
 			cfOldPtr->data.eval.path = NULL;
 		    }
-		    ckfree(cfOldPtr->line);
+		    Tcl_Free(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
-		    ckfree(cfOldPtr);
+		    Tcl_Free(cfOldPtr);
 		}
 		Tcl_SetHashValue(hePtr, cfPtr);
 	    }
@@ -437,7 +437,7 @@ TclCreateProc(
 
 	Tcl_IncrRefCount(bodyPtr);
 
-	procPtr = ckalloc(sizeof(Proc));
+	procPtr = Tcl_Alloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
@@ -605,7 +605,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = ckalloc(TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = Tcl_Alloc(TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -651,9 +651,9 @@ TclCreateProc(
 		Tcl_DecrRefCount(defPtr);
 	    }
 
-	    ckfree(localPtr);
+	    Tcl_Free(localPtr);
 	}
-	ckfree(procPtr);
+	Tcl_Free(procPtr);
     }
     return TCL_ERROR;
 }
@@ -1190,7 +1190,7 @@ InitResolvedLocals(
 	    if (localPtr->resolveInfo->deleteProc) {
 		localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
 	    } else {
-		ckfree(localPtr->resolveInfo);
+		Tcl_Free(localPtr->resolveInfo);
 	    }
 	    localPtr->resolveInfo = NULL;
 	}
@@ -1276,7 +1276,7 @@ TclFreeLocalCache(
 	    TclReleaseLiteral(interp, objPtr);
 	}
     }
-    ckfree(localCachePtr);
+    Tcl_Free(localCachePtr);
 }
 
 static void
@@ -1300,7 +1300,7 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = ckalloc(sizeof(LocalCache)
+    localCachePtr = Tcl_Alloc(sizeof(LocalCache)
 	    + (localCt - 1) * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
@@ -1980,10 +1980,10 @@ TclProcCompileProc(
 		    if (toFree->resolveInfo->deleteProc) {
 			toFree->resolveInfo->deleteProc(toFree->resolveInfo);
 		    } else {
-			ckfree(toFree->resolveInfo);
+			Tcl_Free(toFree->resolveInfo);
 		    }
 		}
-		ckfree(toFree);
+		Tcl_Free(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
@@ -2126,7 +2126,7 @@ TclProcCleanupProc(
 	    if (resVarInfo->deleteProc) {
 		resVarInfo->deleteProc(resVarInfo);
 	    } else {
-		ckfree(resVarInfo);
+		Tcl_Free(resVarInfo);
 	    }
 	}
 
@@ -2134,10 +2134,10 @@ TclProcCleanupProc(
 	    defPtr = localPtr->defValuePtr;
 	    Tcl_DecrRefCount(defPtr);
 	}
-	ckfree(localPtr);
+	Tcl_Free(localPtr);
 	localPtr = nextPtr;
     }
-    ckfree(procPtr);
+    Tcl_Free(procPtr);
 
     /*
      * TIP #280: Release the location data associated with this Proc
@@ -2161,9 +2161,9 @@ TclProcCleanupProc(
 	    Tcl_DecrRefCount(cfPtr->data.eval.path);
 	    cfPtr->data.eval.path = NULL;
 	}
-	ckfree(cfPtr->line);
+	Tcl_Free(cfPtr->line);
 	cfPtr->line = NULL;
-	ckfree(cfPtr);
+	Tcl_Free(cfPtr);
     }
     Tcl_DeleteHashEntry(hePtr);
 }
@@ -2497,12 +2497,12 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		cfPtr = ckalloc(sizeof(CmdFrame));
+		cfPtr = Tcl_Alloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;

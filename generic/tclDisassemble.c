@@ -827,7 +827,7 @@ UpdateStringOfInstName(
     }
     len = strlen(s);
     /* assert (len < UINT_MAX) */
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = Tcl_Alloc(len + 1);
     memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;
 }

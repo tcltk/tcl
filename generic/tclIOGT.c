@@ -230,7 +230,7 @@ ReleaseData(
     }
     ResultClear(&dataPtr->result);
     Tcl_DecrRefCount(dataPtr->command);
-    ckfree(dataPtr);
+    Tcl_Free(dataPtr);
 }
 
 /*
@@ -287,7 +287,7 @@ TclChannelTransform(
      * regime of the underlying channel and to use the same for us too.
      */
 
-    dataPtr = ckalloc(sizeof(TransformChannelData));
+    dataPtr = Tcl_Alloc(sizeof(TransformChannelData));
 
     dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
@@ -1273,7 +1273,7 @@ ResultClear(
     r->used = 0;
 
     if (r->allocated) {
-	ckfree(r->buf);
+	Tcl_Free(r->buf);
 	r->buf = NULL;
 	r->allocated = 0;
     }
@@ -1417,10 +1417,10 @@ ResultAdd(
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = ckalloc(r->allocated);
+	    r->buf = Tcl_Alloc(r->allocated);
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = ckrealloc(r->buf, r->allocated);
+	    r->buf = Tcl_Realloc(r->buf, r->allocated);
 	}
     }
 

@@ -131,7 +131,7 @@ TclDeleteLiteralTable(
 	    objPtr = entryPtr->objPtr;
 	    TclDecrRefCount(objPtr);
 	    nextPtr = entryPtr->nextPtr;
-	    ckfree(entryPtr);
+	    Tcl_Free(entryPtr);
 	    entryPtr = nextPtr;
 	}
     }
@@ -141,7 +141,7 @@ TclDeleteLiteralTable(
      */
 
     if (tablePtr->buckets != tablePtr->staticBuckets) {
-	ckfree(tablePtr->buckets);
+	Tcl_Free(tablePtr->buckets);
     }
 }
 
@@ -215,7 +215,7 @@ TclCreateLiteral(
 		*globalPtrPtr = globalPtr;
 	    }
 	    if ((flags & LITERAL_ON_HEAP)) {
-		ckfree((void *)bytes);
+		Tcl_Free((void *)bytes);
 	    }
 	    globalPtr->refCount++;
 	    return objPtr;
@@ -223,7 +223,7 @@ TclCreateLiteral(
     }
     if (!newPtr) {
 	if ((flags & LITERAL_ON_HEAP)) {
-	    ckfree((void *)bytes);
+	    Tcl_Free((void *)bytes);
 	}
 	return NULL;
     }
@@ -263,7 +263,7 @@ TclCreateLiteral(
     }
 #endif
 
-    globalPtr = ckalloc(sizeof(LiteralEntry));
+    globalPtr = Tcl_Alloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     globalPtr->refCount = 1;
@@ -415,7 +415,7 @@ TclRegisterLiteral(
 		|| ((objPtr->bytes[0] == bytes[0])
 		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
-		ckfree((void *)bytes);
+		Tcl_Free((void *)bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -746,14 +746,14 @@ ExpandLocalLiteralArray(
     }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = ckrealloc(currArrayPtr, newSize);
+	newArrayPtr = Tcl_Realloc(currArrayPtr, newSize);
     } else {
 	/*
-	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
-	 * code a ckrealloc equivalent for ourselves.
+	 * envPtr->literalArrayPtr isn't a Tcl_Alloc'd pointer, so we must
+	 * code a Tcl_Realloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = ckalloc(newSize);
+	newArrayPtr = Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -846,7 +846,7 @@ TclReleaseLiteral(
 		} else {
 		    prevPtr->nextPtr = entryPtr->nextPtr;
 		}
-		ckfree(entryPtr);
+		Tcl_Free(entryPtr);
 		globalTablePtr->numEntries--;
 
 		TclDecrRefCount(objPtr);
@@ -979,7 +979,7 @@ RebuildLiteralTable(
     }
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
+    tablePtr->buckets = Tcl_Alloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
 	*newChainPtr = NULL;
@@ -1009,7 +1009,7 @@ RebuildLiteralTable(
      */
 
     if (oldBuckets != tablePtr->staticBuckets) {
-	ckfree(oldBuckets);
+	Tcl_Free(oldBuckets);
     }
 }
 
@@ -1116,7 +1116,7 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = ckalloc(NUM_COUNTERS*60 + 300);
+    result = Tcl_Alloc(NUM_COUNTERS*60 + 300);
     sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);

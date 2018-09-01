@@ -1309,7 +1309,7 @@ TclNewFSPathObj(
     }
 
     pathPtr = Tcl_NewObj();
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
 
     /*
      * Set up the path.
@@ -1520,7 +1520,7 @@ MakePathFromNormalized(
 	TclFreeIntRep(pathPtr);
     }
 
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
 
     /*
      * It's a pure normalized absolute path.
@@ -1560,7 +1560,7 @@ MakePathFromNormalized(
  *	Any memory which is allocated for 'clientData' should be retained
  *	until clientData is passed to the filesystem's freeInternalRepProc
  *	when it can be freed. The built in platform-specific filesystems use
- *	'ckalloc' to allocate clientData, and ckfree to free it.
+ *	'Tcl_Alloc' to allocate clientData, and Tcl_Free to free it.
  *
  * Results:
  *	NULL or a valid path object pointer, with refCount zero.
@@ -1602,7 +1602,7 @@ Tcl_FSNewNativePath(
 	TclFreeIntRep(pathPtr);
     }
 
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = NULL;
 
@@ -1732,7 +1732,7 @@ Tcl_FSGetTranslatedStringPath(
     if (transPtr != NULL) {
 	int len;
 	const char *orig = TclGetStringFromObj(transPtr, &len);
-	char *result = ckalloc(len+1);
+	char *result = Tcl_Alloc(len+1);
 
 	memcpy(result, orig, (size_t) len+1);
 	TclDecrRefCount(transPtr);
@@ -2471,7 +2471,7 @@ SetFsPathFromAny(
      * slashes on Windows, and will not contain any ~user sequences.
      */
 
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = transPtr;
     if (transPtr != pathPtr) {
@@ -2527,7 +2527,7 @@ FreeFsPathInternalRep(
 	}
     }
 
-    ckfree(fsPathPtr);
+    Tcl_Free(fsPathPtr);
     pathPtr->typePtr = NULL;
 }
 
@@ -2537,7 +2537,7 @@ DupFsPathInternalRep(
     Tcl_Obj *copyPtr)		/* Path obj with internal rep to set. */
 {
     FsPath *srcFsPathPtr = PATHOBJ(srcPtr);
-    FsPath *copyFsPathPtr = ckalloc(sizeof(FsPath));
+    FsPath *copyFsPathPtr = Tcl_Alloc(sizeof(FsPath));
 
     SETPATHOBJ(copyPtr, copyFsPathPtr);
 

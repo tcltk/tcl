@@ -494,7 +494,7 @@ Tcl_CreateInterp(void)
      * object type table and other object management code.
      */
 
-    iPtr = ckalloc(sizeof(Interp));
+    iPtr = Tcl_Alloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
     iPtr->legacyResult = NULL;
@@ -523,10 +523,10 @@ Tcl_CreateInterp(void)
      */
 
     iPtr->cmdFramePtr = NULL;
-    iPtr->linePBodyPtr = ckalloc(sizeof(Tcl_HashTable));
-    iPtr->lineBCPtr = ckalloc(sizeof(Tcl_HashTable));
-    iPtr->lineLAPtr = ckalloc(sizeof(Tcl_HashTable));
-    iPtr->lineLABCPtr = ckalloc(sizeof(Tcl_HashTable));
+    iPtr->linePBodyPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
+    iPtr->lineBCPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
+    iPtr->lineLAPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
+    iPtr->lineLABCPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
     Tcl_InitHashTable(iPtr->linePBodyPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineBCPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLAPtr, TCL_ONE_WORD_KEYS);
@@ -620,7 +620,7 @@ Tcl_CreateInterp(void)
      */
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
-    framePtr = ckalloc(sizeof(CallFrame));
+    framePtr = Tcl_Alloc(sizeof(CallFrame));
     (void) Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
 	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
     framePtr->objc = 0;
@@ -650,7 +650,7 @@ Tcl_CreateInterp(void)
 
     iPtr->asyncCancelMsg = Tcl_NewObj();
 
-    cancelInfo = ckalloc(sizeof(CancelInfo));
+    cancelInfo = Tcl_Alloc(sizeof(CancelInfo));
     cancelInfo->interp = interp;
 
     iPtr->asyncCancel = Tcl_AsyncCreate(CancelEvalProc, cancelInfo);
@@ -743,7 +743,7 @@ Tcl_CreateInterp(void)
 	hPtr = Tcl_CreateHashEntry(&iPtr->globalNsPtr->cmdTable,
 		cmdInfoPtr->name, &isNew);
 	if (isNew) {
-	    cmdPtr = ckalloc(sizeof(Command));
+	    cmdPtr = Tcl_Alloc(sizeof(Command));
 	    cmdPtr->hPtr = hPtr;
 	    cmdPtr->nsPtr = iPtr->globalNsPtr;
 	    cmdPtr->refCount = 1;
@@ -863,7 +863,7 @@ Tcl_CreateInterp(void)
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
     memcpy(mathFuncName, "::tcl::mathop::", MATH_OP_PREFIX_LEN);
     for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++){
-	TclOpCmdClientData *occdPtr = ckalloc(sizeof(TclOpCmdClientData));
+	TclOpCmdClientData *occdPtr = Tcl_Alloc(sizeof(TclOpCmdClientData));
 
 	occdPtr->op = opcmdInfoPtr->name;
 	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
@@ -970,7 +970,7 @@ DeleteOpCmdClientData(
 {
     TclOpCmdClientData *occdPtr = clientData;
 
-    ckfree(occdPtr);
+    Tcl_Free(occdPtr);
 }
 
 /*
@@ -1042,14 +1042,14 @@ Tcl_CallWhenDeleted(
 	    Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
     int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
-    AssocData *dPtr = ckalloc(sizeof(AssocData));
+    AssocData *dPtr = Tcl_Alloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
     sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
-	iPtr->assocData = ckalloc(sizeof(Tcl_HashTable));
+	iPtr->assocData = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
     hPtr = Tcl_CreateHashEntry(iPtr->assocData, buffer, &isNew);
@@ -1098,7 +1098,7 @@ Tcl_DontCallWhenDeleted(
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
 	dPtr = Tcl_GetHashValue(hPtr);
 	if ((dPtr->proc == proc) && (dPtr->clientData == clientData)) {
-	    ckfree(dPtr);
+	    Tcl_Free(dPtr);
 	    Tcl_DeleteHashEntry(hPtr);
 	    return;
 	}
@@ -1138,14 +1138,14 @@ Tcl_SetAssocData(
     int isNew;
 
     if (iPtr->assocData == NULL) {
-	iPtr->assocData = ckalloc(sizeof(Tcl_HashTable));
+	iPtr->assocData = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
     hPtr = Tcl_CreateHashEntry(iPtr->assocData, name, &isNew);
     if (isNew == 0) {
 	dPtr = Tcl_GetHashValue(hPtr);
     } else {
-	dPtr = ckalloc(sizeof(AssocData));
+	dPtr = Tcl_Alloc(sizeof(AssocData));
     }
     dPtr->proc = proc;
     dPtr->clientData = clientData;
@@ -1190,7 +1190,7 @@ Tcl_DeleteAssocData(
     if (dPtr->proc != NULL) {
 	dPtr->proc(dPtr->clientData, interp);
     }
-    ckfree(dPtr);
+    Tcl_Free(dPtr);
     Tcl_DeleteHashEntry(hPtr);
 }
 
@@ -1386,9 +1386,9 @@ DeleteInterpProc(
 
 	if (cancelInfo != NULL) {
 	    if (cancelInfo->result != NULL) {
-		ckfree(cancelInfo->result);
+		Tcl_Free(cancelInfo->result);
 	    }
-	    ckfree(cancelInfo);
+	    Tcl_Free(cancelInfo);
 	}
 
 	Tcl_DeleteHashEntry(hPtr);
@@ -1443,7 +1443,7 @@ DeleteInterpProc(
 	    Tcl_DeleteCommandFromToken(interp, Tcl_GetHashValue(hPtr));
 	}
 	Tcl_DeleteHashTable(hTablePtr);
-	ckfree(hTablePtr);
+	Tcl_Free(hTablePtr);
     }
 
     /*
@@ -1464,10 +1464,10 @@ DeleteInterpProc(
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
-	    ckfree(dPtr);
+	    Tcl_Free(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
-	ckfree(hTablePtr);
+	Tcl_Free(hTablePtr);
     }
 
     /*
@@ -1479,7 +1479,7 @@ DeleteInterpProc(
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
-    ckfree(iPtr->rootFramePtr);
+    Tcl_Free(iPtr->rootFramePtr);
     iPtr->rootFramePtr = NULL;
     Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
 
@@ -1527,8 +1527,8 @@ DeleteInterpProc(
     resPtr = iPtr->resolverPtr;
     while (resPtr) {
 	nextResPtr = resPtr->nextPtr;
-	ckfree(resPtr->name);
-	ckfree(resPtr);
+	Tcl_Free(resPtr->name);
+	Tcl_Free(resPtr);
 	resPtr = nextResPtr;
     }
 
@@ -1555,13 +1555,13 @@ DeleteInterpProc(
 	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount(cfPtr->data.eval.path);
 	    }
-	    ckfree(cfPtr->line);
-	    ckfree(cfPtr);
+	    Tcl_Free(cfPtr->line);
+	    Tcl_Free(cfPtr);
 	}
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(iPtr->linePBodyPtr);
-    ckfree(iPtr->linePBodyPtr);
+    Tcl_Free(iPtr->linePBodyPtr);
     iPtr->linePBodyPtr = NULL;
 
     /*
@@ -1577,18 +1577,18 @@ DeleteInterpProc(
 	    Tcl_DecrRefCount(eclPtr->path);
 	}
 	for (i=0; i< eclPtr->nuloc; i++) {
-	    ckfree(eclPtr->loc[i].line);
+	    Tcl_Free(eclPtr->loc[i].line);
 	}
 
 	if (eclPtr->loc != NULL) {
-	    ckfree(eclPtr->loc);
+	    Tcl_Free(eclPtr->loc);
 	}
 
-	ckfree(eclPtr);
+	Tcl_Free(eclPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(iPtr->lineBCPtr);
-    ckfree(iPtr->lineBCPtr);
+    Tcl_Free(iPtr->lineBCPtr);
     iPtr->lineBCPtr = NULL;
 
     /*
@@ -1607,7 +1607,7 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLAPtr);
-    ckfree(iPtr->lineLAPtr);
+    Tcl_Free(iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
     if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
@@ -1620,7 +1620,7 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLABCPtr);
-    ckfree(iPtr->lineLABCPtr);
+    Tcl_Free(iPtr->lineLABCPtr);
     iPtr->lineLABCPtr = NULL;
 
     /*
@@ -1631,7 +1631,7 @@ DeleteInterpProc(
     Tcl_DeleteHashTable(&iPtr->varTraces);
     Tcl_DeleteHashTable(&iPtr->varSearches);
 
-    ckfree(iPtr);
+    Tcl_Free(iPtr);
 }
 
 /*
@@ -1735,7 +1735,7 @@ Tcl_HideCommand(
 
     hiddenCmdTablePtr = iPtr->hiddenCmdTablePtr;
     if (hiddenCmdTablePtr == NULL) {
-	hiddenCmdTablePtr = ckalloc(sizeof(Tcl_HashTable));
+	hiddenCmdTablePtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hiddenCmdTablePtr, TCL_STRING_KEYS);
 	iPtr->hiddenCmdTablePtr = hiddenCmdTablePtr;
     }
@@ -2099,7 +2099,7 @@ Tcl_CreateCommand(
 	 * stuck in an infinite loop).
 	 */
 
-	ckfree(Tcl_GetHashValue(hPtr));
+	Tcl_Free(Tcl_GetHashValue(hPtr));
     }
 
     if (!deleted) {
@@ -2125,7 +2125,7 @@ Tcl_CreateCommand(
 	TclInvalidateNsCmdLookup(nsPtr);
 	TclInvalidateNsPath(nsPtr);
     }
-    cmdPtr = ckalloc(sizeof(Command));
+    cmdPtr = Tcl_Alloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
@@ -2345,7 +2345,7 @@ TclCreateObjCommandInNs(
 	 * infinite loop).
 	 */
 
-	ckfree(Tcl_GetHashValue(hPtr));
+	Tcl_Free(Tcl_GetHashValue(hPtr));
     }
 
     if (!deleted) {
@@ -2370,7 +2370,7 @@ TclCreateObjCommandInNs(
 	TclInvalidateNsCmdLookup(nsPtr);
 	TclInvalidateNsPath(nsPtr);
     }
-    cmdPtr = ckalloc(sizeof(Command));
+    cmdPtr = Tcl_Alloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
@@ -3125,7 +3125,7 @@ Tcl_DeleteCommandFromToken(
 	    CommandTrace *nextPtr = tracePtr->nextPtr;
 
 	    if (tracePtr->refCount-- <= 1) {
-		ckfree(tracePtr);
+		Tcl_Free(tracePtr);
 	    }
 	    tracePtr = nextPtr;
 	}
@@ -3164,10 +3164,10 @@ Tcl_DeleteCommandFromToken(
 	 * If you are getting a crash during the call to deleteProc and
 	 * cmdPtr->deleteProc is a pointer to the function free(), the most
 	 * likely cause is that your extension allocated memory for the
-	 * clientData argument to Tcl_CreateObjCommand with the ckalloc()
+	 * clientData argument to Tcl_CreateObjCommand with the Tcl_Alloc()
 	 * macro and you are now trying to deallocate this memory with free()
-	 * instead of ckfree(). You should pass a pointer to your own method
-	 * that calls ckfree().
+	 * instead of Tcl_Free(). You should pass a pointer to your own method
+	 * that calls Tcl_Free().
 	 */
 
 	cmdPtr->deleteProc(cmdPtr->deleteData);
@@ -3319,7 +3319,7 @@ CallCommandTraces(
 		oldName, newName, flags);
 	cmdPtr->flags &= ~tracePtr->flags;
 	if (tracePtr->refCount-- <= 1) {
-	    ckfree(tracePtr);
+	    Tcl_Free(tracePtr);
 	}
     }
 
@@ -3451,7 +3451,7 @@ TclCleanupCommand(
 				 * be freed. */
 {
     if (cmdPtr->refCount-- <= 1) {
-	ckfree(cmdPtr);
+	Tcl_Free(cmdPtr);
     }
 }
 
@@ -3738,7 +3738,7 @@ Tcl_CancelEval(
 
     if (resultObjPtr != NULL) {
 	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
-	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
+	cancelInfo->result = Tcl_Realloc(cancelInfo->result,cancelInfo->length);
 	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
@@ -4744,9 +4744,9 @@ TclEvalEx(
 	     */
 
 	    if (numWords > minObjs) {
-		expand =    ckalloc(numWords * sizeof(int));
-		objvSpace = ckalloc(numWords * sizeof(Tcl_Obj *));
-		lineSpace = ckalloc(numWords * sizeof(int));
+		expand =    Tcl_Alloc(numWords * sizeof(int));
+		objvSpace = Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
+		lineSpace = Tcl_Alloc(numWords * sizeof(int));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
@@ -4832,8 +4832,8 @@ TclEvalEx(
 
 		if ((numWords > minObjs) || (objectsNeeded > minObjs)) {
 		    objv = objvSpace =
-			    ckalloc(objectsNeeded * sizeof(Tcl_Obj *));
-		    lines = lineSpace = ckalloc(objectsNeeded * sizeof(int));
+			    Tcl_Alloc(objectsNeeded * sizeof(Tcl_Obj *));
+		    lines = lineSpace = Tcl_Alloc(objectsNeeded * sizeof(int));
 		}
 
 		objectsUsed = 0;
@@ -4860,10 +4860,10 @@ TclEvalEx(
 		objv += objIdx+1;
 
 		if (copy != stackObjArray) {
-		    ckfree(copy);
+		    Tcl_Free(copy);
 		}
 		if (lcopy != linesStack) {
-		    ckfree(lcopy);
+		    Tcl_Free(lcopy);
 		}
 	    }
 
@@ -4908,9 +4908,9 @@ TclEvalEx(
 	    }
 	    objectsUsed = 0;
 	    if (objvSpace != stackObjArray) {
-		ckfree(objvSpace);
+		Tcl_Free(objvSpace);
 		objvSpace = stackObjArray;
-		ckfree(lineSpace);
+		Tcl_Free(lineSpace);
 		lineSpace = linesStack;
 	    }
 
@@ -4920,7 +4920,7 @@ TclEvalEx(
 	     */
 
 	    if (expand != expandStack) {
-		ckfree(expand);
+		Tcl_Free(expand);
 		expand = expandStack;
 	    }
 	}
@@ -4986,11 +4986,11 @@ TclEvalEx(
 	Tcl_FreeParse(parsePtr);
     }
     if (objvSpace != stackObjArray) {
-	ckfree(objvSpace);
-	ckfree(lineSpace);
+	Tcl_Free(objvSpace);
+	Tcl_Free(lineSpace);
     }
     if (expand != expandStack) {
-	ckfree(expand);
+	Tcl_Free(expand);
     }
     iPtr->varFramePtr = savedVarFramePtr;
 
@@ -5154,7 +5154,7 @@ TclArgumentEnter(
 	     * and initialize references.
 	     */
 
-	    cfwPtr = ckalloc(sizeof(CFWord));
+	    cfwPtr = Tcl_Alloc(sizeof(CFWord));
 	    cfwPtr->framePtr = cfPtr;
 	    cfwPtr->word = i;
 	    cfwPtr->refCount = 1;
@@ -5214,7 +5214,7 @@ TclArgumentRelease(
 	    continue;
 	}
 
-	ckfree(cfwPtr);
+	Tcl_Free(cfwPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
 }
@@ -5296,7 +5296,7 @@ TclArgumentBCEnter(
 	    int isnew;
 	    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(iPtr->lineLABCPtr,
 		objv[word], &isnew);
-	    CFWordBC *cfwPtr = ckalloc(sizeof(CFWordBC));
+	    CFWordBC *cfwPtr = Tcl_Alloc(sizeof(CFWordBC));
 
 	    cfwPtr->framePtr = cfPtr;
 	    cfwPtr->obj = objv[word];
@@ -5374,7 +5374,7 @@ TclArgumentBCRelease(
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 
-	ckfree(cfwPtr);
+	Tcl_Free(cfwPtr);
 	cfwPtr = nextPtr;
     }
 
@@ -6297,7 +6297,7 @@ Tcl_VarEval(
     /*
      * Copy the strings one after the other into a single larger string. Use
      * stack-allocated space for small commands, but if the command gets too
-     * large than call ckalloc to create the space.
+     * large than call Tcl_Alloc to create the space.
      */
 
     Tcl_DStringInit(&buf);
@@ -8041,7 +8041,7 @@ NRCoroutineCallerCallback(
 	NRE_ASSERT(iPtr->varFramePtr == corPtr->caller.varFramePtr);
 	NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
 	NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
-	ckfree(corPtr);
+	Tcl_Free(corPtr);
 	return result;
     }
 
@@ -8100,7 +8100,7 @@ NRCoroutineExitCallback(
      */
 
     Tcl_DeleteHashTable(corPtr->lineLABCPtr);
-    ckfree(corPtr->lineLABCPtr);
+    Tcl_Free(corPtr->lineLABCPtr);
     corPtr->lineLABCPtr = NULL;
 
     RESTORE_CONTEXT(corPtr->caller);
@@ -8392,7 +8392,7 @@ TclNRCoroutineObjCmd(
      * struct and create the corresponding command.
      */
 
-    corPtr = ckalloc(sizeof(CoroutineData));
+    corPtr = Tcl_Alloc(sizeof(CoroutineData));
 
     cmdPtr = (Command *) TclNRCreateCommandInNs(interp, simpleName,
 	    (Tcl_Namespace *)nsPtr, /*objProc*/ NULL, TclNRInterpCoroutine,
@@ -8414,7 +8414,7 @@ TclNRCoroutineObjCmd(
 	Tcl_HashSearch hSearch;
 	Tcl_HashEntry *hePtr;
 
-	corPtr->lineLABCPtr = ckalloc(sizeof(Tcl_HashTable));
+	corPtr->lineLABCPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(corPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
 	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);

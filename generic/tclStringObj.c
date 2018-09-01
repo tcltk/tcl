@@ -143,7 +143,7 @@ GrowStringBuffer(
     if (flag == 0 || stringPtr->allocated > 0) {
 	if (needed <= STRING_MAXCHARS / 2) {
 	    attempt = 2 * needed;
-	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	    ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
 	}
 	if (ptr == NULL) {
 	    /*
@@ -156,7 +156,7 @@ GrowStringBuffer(
 	    size_t growth = (extra > limit) ? limit : extra;
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	    ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
 	}
     }
     if (ptr == NULL) {
@@ -165,7 +165,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
-	ptr = ckrealloc(objPtr->bytes, attempt + 1);
+	ptr = Tcl_Realloc(objPtr->bytes, attempt + 1);
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
@@ -840,9 +840,9 @@ Tcl_SetObjLength(
 	     * Need to enlarge the buffer.
 	     */
 	    if (objPtr->bytes == &tclEmptyString) {
-		objPtr->bytes = ckalloc(length + 1);
+		objPtr->bytes = Tcl_Alloc(length + 1);
 	    } else {
-		objPtr->bytes = ckrealloc(objPtr->bytes, length + 1);
+		objPtr->bytes = Tcl_Realloc(objPtr->bytes, length + 1);
 	    }
 	    stringPtr->allocated = length;
 	}
@@ -938,9 +938,9 @@ Tcl_AttemptSetObjLength(
 	    char *newBytes;
 
 	    if (objPtr->bytes == &tclEmptyString) {
-		newBytes = attemptckalloc(length + 1);
+		newBytes = Tcl_AttemptAlloc(length + 1);
 	    } else {
-		newBytes = attemptckrealloc(objPtr->bytes, length + 1);
+		newBytes = Tcl_AttemptRealloc(objPtr->bytes, length + 1);
 	    }
 	    if (newBytes == NULL) {
 		return 0;
@@ -4226,7 +4226,7 @@ static void
 FreeStringInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ckfree(GET_STRING(objPtr));
+    Tcl_Free(GET_STRING(objPtr));
     objPtr->typePtr = NULL;
 }
 

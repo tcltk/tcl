@@ -119,7 +119,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 /*
  * Mutex to serialize allocations. This is a low-level mutex that must be
  * explicitly initialized. This is necessary because the self initializing
- * mutexes use ckalloc...
+ * mutexes use Tcl_Alloc...
  */
 
 static Tcl_Mutex *ckallocMutexPtr;
@@ -374,7 +374,7 @@ Tcl_DumpActiveMemory(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DbCkalloc - debugging ckalloc
+ * Tcl_DbCkalloc - debugging Tcl_Alloc
  *
  *	Allocate the requested amount of space plus some extra for guard bands
  *	at both ends of the request, plus a size, panicing if there isn't
@@ -383,7 +383,7 @@ Tcl_DumpActiveMemory(
  *
  *	The second and third arguments are file and line, these contain the
  *	filename and line number corresponding to the caller. These are sent
- *	by the ckalloc macro; it uses the preprocessor autodefines __FILE__
+ *	by the Tcl_Alloc macro; it uses the preprocessor autodefines __FILE__
  *	and __LINE__.
  *
  *----------------------------------------------------------------------
@@ -455,7 +455,7 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -544,7 +544,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -571,7 +571,7 @@ Tcl_AttemptDbCkalloc(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DbCkfree - debugging ckfree
+ * Tcl_DbCkfree - debugging Tcl_Free
  *
  *	Verify that the low and high guards are intact, and if so then free
  *	the buffer else Tcl_Panic.
@@ -580,7 +580,7 @@ Tcl_AttemptDbCkalloc(
  *
  *	The second and third arguments are file and line, these contain the
  *	filename and line number corresponding to the caller. These are sent
- *	by the ckfree macro; it uses the preprocessor autodefines __FILE__ and
+ *	by the Tcl_Free macro; it uses the preprocessor autodefines __FILE__ and
  *	__LINE__.
  *
  *----------------------------------------------------------------------
@@ -609,7 +609,7 @@ Tcl_DbCkfree(
     memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
-	fprintf(stderr, "ckfree %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr, "Tcl_Free %p %" TCL_Z_MODIFIER "u %s %d\n",
 		memp->body, memp->length, file, line);
     }
 
@@ -653,7 +653,7 @@ Tcl_DbCkfree(
 /*
  *--------------------------------------------------------------------
  *
- * Tcl_DbCkrealloc - debugging ckrealloc
+ * Tcl_DbCkrealloc - debugging Tcl_Realloc
  *
  *	Reallocate a chunk of memory by allocating a new one of the right
  *	size, copying the old data to the new location, and then freeing the

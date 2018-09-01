@@ -177,7 +177,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 
 #define PACK_BIGNUM(bignum, objPtr) \
     if ((bignum).used > 0x7fff) {                                       \
-	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
+	mp_int *temp = (void *) Tcl_Alloc((unsigned) sizeof(mp_int));     \
 	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
@@ -430,12 +430,12 @@ TclFinalizeThreadObjects(void)
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
-		ckfree(objData);
+		Tcl_Free(objData);
 	    }
 	}
 
 	Tcl_DeleteHashTable(tablePtr);
-	ckfree(tablePtr);
+	Tcl_Free(tablePtr);
 	tsdPtr->objThreadMap = NULL;
     }
 #endif
@@ -511,7 +511,7 @@ TclGetContLineTable(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->lineCLPtr) {
-	tsdPtr->lineCLPtr = ckalloc(sizeof(Tcl_HashTable));
+	tsdPtr->lineCLPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
 	Tcl_CreateThreadExitHandler(TclThreadFinalizeContLines,NULL);
     }
@@ -546,7 +546,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = Tcl_Alloc(sizeof(ContLineLoc) + num*sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -570,7 +570,7 @@ TclContinuationsEnter(
 	 * doing.
 	 */
 
-	ckfree(Tcl_GetHashValue(hPtr));
+	Tcl_Free(Tcl_GetHashValue(hPtr));
     }
 
     clLocPtr->num = num;
@@ -775,11 +775,11 @@ TclThreadFinalizeContLines(
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	ckfree(Tcl_GetHashValue(hPtr));
+	Tcl_Free(Tcl_GetHashValue(hPtr));
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
-    ckfree(tsdPtr->lineCLPtr);
+    Tcl_Free(tsdPtr->lineCLPtr);
     tsdPtr->lineCLPtr = NULL;
 }
 
@@ -1050,7 +1050,7 @@ TclDbInitNewObj(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
-	    tsdPtr->objThreadMap = ckalloc(sizeof(Tcl_HashTable));
+	    tsdPtr->objThreadMap = Tcl_Alloc(sizeof(Tcl_HashTable));
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
@@ -1063,7 +1063,7 @@ TclDbInitNewObj(
 	 * Record the debugging information.
 	 */
 
-	objData = ckalloc(sizeof(ObjData));
+	objData = Tcl_Alloc(sizeof(ObjData));
 	objData->objPtr = objPtr;
 	objData->file = file;
 	objData->line = line;
@@ -1188,7 +1188,7 @@ Tcl_DbNewObj(
  * TclAllocateFreeObjects --
  *
  *	Function to allocate a number of free Tcl_Objs. This is done using a
- *	single ckalloc to reduce the overhead for Tcl_Obj allocation.
+ *	single Tcl_Alloc to reduce the overhead for Tcl_Obj allocation.
  *
  *	Assumes mutex is held.
  *
@@ -1217,12 +1217,12 @@ TclAllocateFreeObjects(void)
      * This has been noted by Purify to be a potential leak. The problem is
      * that Tcl, when not TCL_MEM_DEBUG compiled, keeps around all allocated
      * Tcl_Obj's, pointed to by tclFreeObjList, when freed instead of actually
-     * freeing the memory. TclFinalizeObjects() does not ckfree() this memory,
+     * freeing the memory. TclFinalizeObjects() does not Tcl_Free() this memory,
      * but leaves it to Tcl's memory subsystem finalization to release it.
      * Purify apparently can't figure that out, and fires a false alarm.
      */
 
-    basePtr = ckalloc(bytesToAlloc);
+    basePtr = Tcl_Alloc(bytesToAlloc);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
@@ -1297,7 +1297,7 @@ TclFreeObj(
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
-		ckfree(objData);
+		Tcl_Free(objData);
 	    }
 
 	    Tcl_DeleteHashEntry(hPtr);
@@ -1341,7 +1341,7 @@ TclFreeObj(
 	}
 
 	Tcl_MutexLock(&tclObjMutex);
-	ckfree(objPtr);
+	Tcl_Free(objPtr);
 	Tcl_MutexUnlock(&tclObjMutex);
 	TclIncrObjsFreed();
 	ObjDeletionLock(context);
@@ -1353,7 +1353,7 @@ TclFreeObj(
 	    TclFreeIntRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
-	    ckfree(objToFree);
+	    Tcl_Free(objToFree);
 	    Tcl_MutexUnlock(&tclObjMutex);
 	    TclIncrObjsFreed();
 	}
@@ -1377,7 +1377,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		ckfree(Tcl_GetHashValue(hPtr));
+		Tcl_Free(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
@@ -1468,7 +1468,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		ckfree(Tcl_GetHashValue(hPtr));
+		Tcl_Free(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
@@ -2205,7 +2205,7 @@ UpdateStringOfDouble(
     len = strlen(buffer);
 
     objPtr->length = len;
-    objPtr->bytes = ckalloc(++len);
+    objPtr->bytes = Tcl_Alloc(++len);
     memcpy(objPtr->bytes, buffer, len);
 }
 
@@ -2320,7 +2320,7 @@ UpdateStringOfInt(
     len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
 
     objPtr->length = len;
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = Tcl_Alloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
 }
 
@@ -2690,7 +2690,7 @@ FreeBignum(
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
     if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr2) < 0) {
-	ckfree(objPtr->internalRep.twoPtrValue.ptr1);
+	Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
     }
     objPtr->typePtr = NULL;
 }
@@ -2773,7 +2773,7 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = ckalloc(size);
+    stringVal = Tcl_Alloc(size);
     status = mp_toradix_n(&bignumVal, stringVal, 10, size);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
@@ -3399,7 +3399,7 @@ AllocObjEntry(
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    Tcl_HashEntry *hPtr = ckalloc(sizeof(Tcl_HashEntry));
+    Tcl_HashEntry *hPtr = Tcl_Alloc(sizeof(Tcl_HashEntry));
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
@@ -3493,7 +3493,7 @@ TclFreeObjEntry(
     Tcl_Obj *objPtr = (Tcl_Obj *) hPtr->key.oneWordValue;
 
     Tcl_DecrRefCount(objPtr);
-    ckfree(hPtr);
+    Tcl_Free(hPtr);
 }
 
 /*
@@ -3683,7 +3683,7 @@ SetCmdNameObj(
     if (resPtr) {
 	fillPtr = resPtr;
     } else {
-	fillPtr = ckalloc(sizeof(ResolvedCmdName));
+	fillPtr = Tcl_Alloc(sizeof(ResolvedCmdName));
 	fillPtr->refCount = 1;
     }
 
@@ -3786,7 +3786,7 @@ FreeCmdNameInternalRep(
 	    Command *cmdPtr = resPtr->cmdPtr;
 
 	    TclCleanupCommandMacro(cmdPtr);
-	    ckfree(resPtr);
+	    Tcl_Free(resPtr);
 	}
     objPtr->typePtr = NULL;
 }

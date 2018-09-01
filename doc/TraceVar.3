@@ -107,7 +107,7 @@ before an array set, but that will trigger write traces.
 \fBTCL_TRACE_RESULT_DYNAMIC\fR
 The result of invoking the \fIproc\fR is a dynamically allocated
 string that will be released by the Tcl library via a call to
-\fBckfree\fR.  Must not be specified at the same time as
+\fBTcl_Free\fR.  Must not be specified at the same time as
 \fBTCL_TRACE_RESULT_OBJECT\fR.
 .TP
 \fBTCL_TRACE_RESULT_OBJECT\fR
@@ -312,7 +312,7 @@ The return value must be a pointer to a static character string
 containing an error message,
 unless (\fIexactly\fR one of) the \fBTCL_TRACE_RESULT_DYNAMIC\fR and
 \fBTCL_TRACE_RESULT_OBJECT\fR flags is set, which specify that the result is
-either a dynamic string (to be released with \fBckfree\fR) or a
+either a dynamic string (to be released with \fBTcl_Free\fR) or a
 Tcl_Obj* (cast to char* and to be released with
 \fBTcl_DecrRefCount\fR) containing the error message.
 If a trace procedure returns an error, no further traces are

@@ -505,7 +505,7 @@ TclpInitLibraryPath(
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
 	}
-	ckfree(pathv);
+	Tcl_Free(pathv);
     }
 
     /*
@@ -539,7 +539,7 @@ TclpInitLibraryPath(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     str = TclGetString(pathPtr);
     *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }

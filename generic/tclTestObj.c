@@ -59,7 +59,7 @@ static void VarPtrDeleteProc(ClientData clientData, Tcl_Interp *interp)
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
     }
     Tcl_DeleteAssocData(interp, VARPTR_KEY);
-    ckfree(varPtr);
+    Tcl_Free(varPtr);
 }
 
 static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
@@ -99,7 +99,7 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+    varPtr = (Tcl_Obj **) Tcl_Alloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -616,7 +616,7 @@ TestindexobjCmd(
 	return TCL_ERROR;
     }
 
-    argv = ckalloc((objc-3) * sizeof(char *));
+    argv = Tcl_Alloc((objc-3) * sizeof(char *));
     for (i = 4; i < objc; i++) {
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
@@ -625,7 +625,7 @@ TestindexobjCmd(
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
 	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
-    ckfree(argv);
+    Tcl_Free(argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
     }

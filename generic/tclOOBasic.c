@@ -97,7 +97,7 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
-    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
+    invoke = Tcl_Alloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc-1];
@@ -132,7 +132,7 @@ DecrRefsPostClassConstructor(
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    ckfree(invoke);
+    Tcl_Free(invoke);
     return result;
 }
 
@@ -579,7 +579,7 @@ TclOO_Object_Unknown(
 	Tcl_AppendToObj(errorMsg, " or ", -1);
     }
     Tcl_AppendToObj(errorMsg, methodNames[i], -1);
-    ckfree(methodNames);
+    Tcl_Free(methodNames);
     Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(objv[skip]), NULL);
