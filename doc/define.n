@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 2007 Donal K. Fellows
+'\" Copyright (c) 2007-2018 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -38,6 +38,27 @@ used as the \fIdefScript\fR argument.
 .PP
 The following commands are supported in the \fIdefScript\fR for
 \fBoo::define\fR, each of which may also be used in the \fIsubcommand\fR form:
+.TP
+\fBclassmethod\fI name\fR ?\fIargList bodyScrip\fR?
+.VS TIP478
+This creates a class method, or (if \fIargList\fR and \fIbodyScript\fR are
+omitted) promotes an existing method on the class object to be a class
+method. The \fIname\fR, \fIargList\fR and \fIbodyScript\fR arguments are as in
+the \fBmethod\fR definition, below.
+.RS
+.PP
+Class methods can be called on either the class itself or on the instances of
+that class. When they are called, the current object (see the \fBself\R and
+\fBmy\fR commands) is the class on which they are called or the class of the
+instance on which they are called, depending on whether they are called on the
+class or an instance of the class, respectively. If called on a subclass or
+instance of the subclass, the current object is the subclass.
+.PP
+In a private definition context, the methods as invoked on classes are
+\fInot\fR private, but the methods as invoked on instances of classes are
+private.
+.RE
+.VE TIP478
 .TP
 \fBconstructor\fI argList bodyScript\fR
 .
@@ -109,6 +130,15 @@ If in a private definition context (see the \fBprivate\fR definition command,
 below), this command creates private forwarded methods.
 .VE TIP500
 .RE
+.TP
+\fBinitialise\fI script\fR
+.TP
+\fBinitialize\fI script\fR
+.VS TIP478
+This evaluates \fIscript\fR in a context which supports local variables and
+where the current namespace is the instance namespace of the class object
+itself. This is useful for setting up, e.g., class-scoped variables.
+.VE TIP478
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -496,6 +526,84 @@ oo::class create B {
 inst m1              \fI\(-> prints "red brick"\fR
 inst m2              \fI\(-> prints "blue brick"\fR
 .CE
+.PP
+.VS TIP478
+This example shows how to create and use class variables. It is a class that
+counts how many instances of itself have been made.
+.PP
+.CS
+oo::class create Counted
+\fBoo::define\fR Counted {
+    \fBinitialise\fR {
+        variable count 0
+    }
+
+    \fBvariable\fR number
+    \fBconstructor\fR {} {
+        classvariable count
+        set number [incr count]
+    }
+
+    \fBmethod\fR report {} {
+        classvariable count
+        puts "This is instance $number of $count"
+    }
+}
+
+set a [Counted new]
+set b [Counted new]
+$a report
+        \fI\(-> This is instance 1 of 2\fR
+set c [Counted new]
+$b report
+        \fI\(-> This is instance 2 of 3\fR
+$c report
+        \fI\(-> This is instance 3 of 3\fR
+.CE
+.PP
+This example demonstrates how to use class methods. (Note that the constructor
+for \fBoo::class\fR calls \fBoo::define\fR on the class.)
+.PP
+.CS
+oo::class create DBTable {
+    \fBclassmethod\fR find {description} {
+        puts "DB: locate row from [self] matching $description"
+        return [my new]
+    }
+    \fBclassmethod\fR insert {description} {
+        puts "DB: create row in [self] matching $description"
+        return [my new]
+    }
+    \fBmethod\fR update {description} {
+        puts "DB: update row [self] with $description"
+    }
+    \fBmethod\fR delete {} {
+        puts "DB: delete row [self]"
+        my destroy; # Just delete the object, not the DB row
+    }
+}
+
+oo::class create Users {
+    \fBsuperclass\fR DBTable
+}
+oo::class create Groups {
+    \fBsuperclass\fR DBTable
+}
+
+set u1 [Users insert "username=abc"]
+        \fI\(-> DB: create row from ::Users matching username=abc\fR
+set u2 [Users insert "username=def"]
+        \fI\(-> DB: create row from ::Users matching username=def\fR
+$u2 update "group=NULL"
+        \fI\(-> DB: update row ::oo::Obj124 with group=NULL\fR
+$u1 delete
+        \fI\(-> DB: delete row ::oo::Obj123\fR
+set g [Group find "groupname=webadmins"]
+        \fI\(-> DB: locate row ::Group with groupname=webadmins\fR
+$g update "emailaddress=admins"
+        \fI\(-> DB: update row ::oo::Obj125 with emailaddress=admins\fR
+.CE
+.VE TIP478
 .SH "SEE ALSO"
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS
