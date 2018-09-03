@@ -312,7 +312,7 @@ test tcltest-5.5 {InitConstraints: list of built-in constraints} \
 	-result [lsort {
     95 98 asyncPipeClose eformat emptyTest exec hasIsoLocale interactive
     knownBug mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles
-    nonPortable notRoot nt pc pcCrash pcOnly root singleTestInterp socket
+    nonPortable notRoot nt pc pcCrash pcOnly root singleTestInterp slowTest socket
     stdio tempNotMac tempNotPc tempNotUnix tempNotWin unix unixCrash unixExecs
     unixOnly unixOrPc unixOrWin userInteraction win winCrash winOnly
 }]
@@ -908,7 +908,9 @@ removeFile load.tcl
 
 # [interpreter]
 test tcltest-13.1 {interpreter} {
+    -constraints notValgrind 
     -setup {
+	#to do:  Why is $::tcltest::tcltest being saved and restored here?
 	set old $::tcltest::tcltest
 	set ::tcltest::tcltest tcltest
     }
@@ -920,6 +922,11 @@ test tcltest-13.1 {interpreter} {
     }
     -result {tcltest tclsh tclsh}
     -cleanup {
+	# writing ::tcltest::tcltest triggers a trace that sets up the stdio
+	# constraint, which involves a call to [exec] that might fail after
+	# "fork" and before "exec", in which case the forked process will not
+	# have a chance to clean itself up before exiting, which causes
+	# valgrind to issue numerous "still reachable" reports. 
 	set ::tcltest::tcltest $old
     }
 }

@@ -1210,8 +1210,6 @@ namespace eval ::tcl::test::main {
 	Bug 1775878
     } -constraints {
 	exec Tcltest
-    } -setup {
-	catch {set f [open "|[list [interpreter]]" w+]}
     } -body {
 	exec [interpreter] << "testsetmainloop\nputs \\\npwd\ntestexitmainloop" >& result
 	set f [open result]

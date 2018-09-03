@@ -112,7 +112,12 @@ static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
-static int		ToUtf(const WCHAR *wSrc, char *dst);
+
+#if TCL_UTF_MAX < 4
+static void		ToUtf(const WCHAR *wSrc, char *dst);
+#else
+#define ToUtf(wSrc, dst) WideCharToMultiByte(CP_UTF8, 0, wSrc, -1, dst, MAX_PATH * TCL_UTF_MAX, NULL, NULL)
+#endif
 
 #ifdef WIN32_USE_TICKCOUNT
 static CRITICAL_SECTION TickMutex;
@@ -465,7 +470,7 @@ InitializeSourceLibraryDir(
  *
  * ToUtf --
  *
- *	Convert a char string to a UTF string.
+ *	Convert a wchar string to a UTF string.
  *
  * Results:
  *	None.
@@ -476,14 +481,12 @@ InitializeSourceLibraryDir(
  *---------------------------------------------------------------------------
  */
 
-static int
+#if TCL_UTF_MAX < 4
+static void
 ToUtf(
     const WCHAR *wSrc,
     char *dst)
 {
-    char *start;
-
-    start = dst;
     while (*wSrc != '\0') {
 #if TCL_UTF_MAX >= 4
 	Tcl_UniChar ch = *wSrc;
@@ -511,8 +514,8 @@ ToUtf(
 	wSrc++;
     }
     *dst = '\0';
-    return (int) (dst - start);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -712,7 +715,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensitive, on Windows this matches mioxed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name

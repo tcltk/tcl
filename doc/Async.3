@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_AsyncCreate, Tcl_AsyncMark, Tcl_AsyncInvoke, Tcl_AsyncDelete, Tcl_AsyncReady \- handle asynchronous events
+Tcl_AsyncCreate, Tcl_AsyncMark, Tcl_AsyncMarkFromSignal, Tcl_AsyncInvoke, Tcl_AsyncDelete, Tcl_AsyncReady \- handle asynchronous events
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -18,6 +18,9 @@ Tcl_AsyncHandler
 \fBTcl_AsyncCreate\fR(\fIproc, clientData\fR)
 .sp
 \fBTcl_AsyncMark\fR(\fIasync\fR)
+.sp
+int
+\fBTcl_AsyncMarkFromSignal\fR(\fIasync, sigNumber\fR)
 .sp
 int
 \fBTcl_AsyncInvoke\fR(\fIinterp, code\fR)
@@ -34,6 +37,8 @@ Procedure to invoke to handle an asynchronous event.
 One-word value to pass to \fIproc\fR.
 .AP Tcl_AsyncHandler async in
 Token for asynchronous event handler.
+.AP int sigNumber in
+POSIX signal number, when used in a signal context.
 .AP Tcl_Interp *interp in
 Tcl interpreter in which command was being evaluated when handler was
 invoked, or NULL if handler was invoked when there was no interpreter
@@ -60,10 +65,11 @@ to a clean state, such as after the current Tcl command completes.
 .PP
 \fBTcl_AsyncCreate\fR, \fBTcl_AsyncDelete\fR, and \fBTcl_AsyncReady\fR
 are thread sensitive.  They access and/or set a thread-specific data
-structure in the event of a core built with \fI\-\-enable\-threads\fR.  The token
-created by \fBTcl_AsyncCreate\fR contains the needed thread information it
-was called from so that calling \fBTcl_AsyncMark\fR(\fItoken\fR) will only yield
-the origin thread into the asynchronous handler.
+structure in the event of a core built with \fI\-\-enable\-threads\fR.
+The token created by \fBTcl_AsyncCreate\fR contains the needed thread
+information it was called from so that calling \fBTcl_AsyncMarkFromSignal\fR
+or \fBTcl_AsyncMark\fR with this token will only yield the origin
+thread into the asynchronous handler.
 .PP
 \fBTcl_AsyncCreate\fR creates an asynchronous handler and returns
 a token for it.
@@ -72,13 +78,16 @@ any occurrences of the asynchronous event that it is intended
 to handle (it is not safe to create a handler at the time of
 an event).
 When an asynchronous event occurs the code that detects the event
-(such as a signal handler) should call \fBTcl_AsyncMark\fR with the
-token for the handler.
-\fBTcl_AsyncMark\fR will mark the handler as ready to execute, but it
-will not invoke the handler immediately.
-Tcl will call the \fIproc\fR associated with the handler later, when
-the world is in a safe state, and \fIproc\fR can then carry out
-the actions associated with the asynchronous event.
+(such as a POSIX signal handler) should call \fBTcl_AsyncMarkFromSignal\fR
+with the token for the handler and the POSIX signal number. The
+return value of this function is true, when the handler will be
+marked, false otherwise.
+For non-signal contexts, \fBTcl_AsyncMark\fR serves the same purpose.
+\fBTcl_AsyncMarkFromSignal\fR and \fBTcl_AsyncMark\fR will mark
+the handler as ready to execute, but will not invoke the handler
+immediately. Tcl will call the \fIproc\fR associated with the
+handler later, when the world is in a safe state, and \fIproc\fR
+can then carry out the actions associated with the asynchronous event.
 \fIProc\fR should have arguments and result that match the
 type \fBTcl_AsyncProc\fR:
 .PP

@@ -192,9 +192,6 @@ Tcl_AsyncMark(
 {
     AsyncHandler *token = (AsyncHandler *) async;
 
-    if (TclAsyncInNotifier(&token->ready, -1)) {
-	return;
-    }
     Tcl_MutexLock(&asyncMutex);
     token->ready = 1;
     if (!token->originTsd->asyncActive) {
@@ -203,6 +200,39 @@ Tcl_AsyncMark(
     }
     Tcl_MutexUnlock(&asyncMutex);
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AsyncMarkFromSignal --
+ *
+ *	This procedure is similar to Tcl_AsyncMark but must be used
+ *	in POSIX signal contexts. In addition to Tcl_AsyncMark the
+ *	signal number is passed.
+ *
+ * Results:
+ *	True, when the handler will be marked, false otherwise.
+ *
+ * Side effects:
+ *	The handler gets marked for invocation later.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_AsyncMarkFromSignal(
+    Tcl_AsyncHandler async,		/* Token for handler. */
+    int sigNumber)			/* Signal number. */
+{
+#ifdef TCL_THREADS
+    AsyncHandler *token = (AsyncHandler *) async;
+
+    return TclAsyncNotifier(sigNumber, token->originThrdId, &token->ready, -1);
+#else
+    Tcl_AsyncMark(async);
+    return 1;
+#endif
 }
 
 /*

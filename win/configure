@@ -4374,7 +4374,7 @@ if test "$tcl_ok" = "yes"; then
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  if test "$do64bit" = "yes"; then
+  if test "$do64bit" != "no"; then
 
     if test "$GCC" == "yes"; then
 
@@ -5301,7 +5301,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win, but needs sub'ing
-
 
 
 
