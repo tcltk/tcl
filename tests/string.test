@@ -2015,6 +2015,12 @@ test string-29.4 {string cat, many args} {
     list $r1 $r2
 } {0 0}
 
+test string-30.1.1 {[Bug ba921a8d98]: string cat} {
+    string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]
+} hellohello
+test string-30.1.2 {[Bug ba921a8d98]: inplace cat by subst (compiled to "strcat" instruction)} {
+    set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"
+} hellohello
 
 
 # cleanup
