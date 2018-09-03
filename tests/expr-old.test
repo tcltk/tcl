@@ -22,7 +22,8 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -1035,8 +1036,8 @@ test expr-old-37.8 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -0x80000000
 } {This is a result: -2147483648}
 test expr-old-37.9 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -0xffffffff
-} {This is a result: 1}
+    testexprlong -0x7fffffff
+} {This is a result: -2147483647}
 test expr-old-37.10 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \
@@ -1060,9 +1061,13 @@ test expr-old-37.13 {Tcl_ExprLong handles overflows} \
 test expr-old-37.14 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -2147483648.
 } {This is a result: -2147483648}
-test expr-old-37.15 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -4294967295.
-} {This is a result: 1}
+test expr-old-37.15 {Tcl_ExprLong handles overflows} \
+    -constraints {testexprlong longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlong -2147483649.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
 test expr-old-37.16 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \

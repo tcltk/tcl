@@ -340,10 +340,10 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
 	    lappend x [info object class ::oo::$initial]
 	}
 	return $x
-    }] {lsort $x}
+    }] {lsort [lmap y $x {if {[string match *::delegate $y]} continue; set y}]}
 } -cleanup {
     interp delete $fresh
-} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -4845,6 +4845,75 @@ test oo-40.3 {TIP 500: private and unexport} -setup {
 } -cleanup {
     cls destroy
 } -result {{} {} foo {} foo {}}
+
+test oo-41.1 {TIP 478: myclass command, including class morphing} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method count {} {
+	    my variable c
+	    incr c
+	}
+	method act {} {
+	    myclass count
+	}
+    }
+    cls1 create x
+    lappend result [x act] [x act]
+    cls1 create y
+    lappend result [y act] [y act] [x act]
+    oo::class create cls2 {
+	superclass cls1
+	self method count {} {
+	    my variable d
+	    expr {1.0 * [incr d]}
+	}
+    }
+    oo::objdefine x {class cls2}
+    lappend result [x act] [y act] [x act] [y act]
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 5 1.0 6 2.0 7}
+test oo-41.2 {TIP 478: myclass command cleanup} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method hi {} {
+	    return "this is [self]"
+	}
+	method hi {} {
+	    return "this is [self]"
+	}
+    }
+    cls1 create x
+    rename [info object namespace x]::my foo
+    rename [info object namespace x]::myclass bar
+    lappend result [cls1 hi] [x hi] [foo hi] [bar hi]
+    x destroy
+    lappend result [catch {foo hi}] [catch {bar hi}]
+} -cleanup {
+    parent destroy
+} -result {{this is ::cls1} {this is ::x} {this is ::x} {this is ::cls1} 1 1}
+test oo-41.3 {TIP 478: myclass command calls unexported methods, via forward} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method Hi {} {
+	    return "this is [self]"
+	}
+	forward poke myclass Hi
+    }
+    cls1 create x
+    lappend result [catch {cls1 Hi}] [x poke]
+} -cleanup {
+    parent destroy
+} -result {1 {this is ::cls1}}
 
 cleanupTests
 return
