@@ -34,7 +34,7 @@ testConstraint testobj [expr {
     && [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
 # Tests for the omnibus TclExecuteByteCode function:
