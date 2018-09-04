@@ -397,8 +397,8 @@ test info-10.3 {info library option} -body {
 set tcl_library $savedLibrary; unset savedLibrary
 
 test info-11.1 {info loaded option} -body {
-    info loaded a b
-} -returnCodes error -result {wrong # args: should be "info loaded ?interp?"}
+    info loaded a b c
+} -returnCodes error -result {wrong # args: should be "info loaded ?interp? ?packageName?"}
 test info-11.2 {info loaded option} -body {
     info loaded {}; info loaded gorp
 } -returnCodes error -result {could not find interpreter "gorp"}
@@ -2099,7 +2099,7 @@ proc foo::bar {} {
     foreach {*}{
 	x y
 	{set res [info frame 0]}
-    } 
+    }
     return $res
 }
 test info-33.13 {{*}, literal, simple, bytecompiled} -body {
@@ -2114,7 +2114,7 @@ proc foo::bar {} {
     if {*}{
 	{[return [info frame 0]]}
 	{}
-    } 
+    }
 }
 test info-33.14 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2128,7 +2128,7 @@ proc foo::bar {} {
     if 0 {*}{
 	{} else
 	{return [info frame 0]}
-    } 
+    }
 }
 test info-33.15 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2229,7 +2229,7 @@ namespace eval foo {}
 proc foo::bar {} {
     try {*}{
 	{set res [info frame 0]}
-    } 
+    }
     return $res
 }
 test info-33.23 {{*}, literal, simple, bytecompiled} -body {
@@ -2522,6 +2522,23 @@ namespace delete ::testinfocmdtype
 
 # -------------------------------------------------------------------------
 unset -nocomplain res
+
+test info-39.2 {Bug 4b61afd660} -setup {
+    proc probe {} {
+	return [dict get [info frame -1] line]
+    }
+    set body {
+	set cmd probe
+	$cmd
+    }
+    proc demo {} $body
+} -body {
+    demo
+} -cleanup {
+    unset -nocomplain body
+    rename demo {}
+    rename probe {}
+} -result 3
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

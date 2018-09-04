@@ -15,13 +15,17 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
 } -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad switch "a": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -32,16 +36,16 @@ test subst-2.2 {simple strings} {
 test subst-2.3 {simple strings} {
     subst abcdefg
 } abcdefg
-test subst-2.4 {simple strings} {
+test subst-2.4 {simple strings} testbytestring {
     # Tcl Bug 685106
-    subst [bytestring bar\x00soom]
-} [bytestring bar\x00soom]
+    expr {[subst [testbytestring bar\x00soom]] eq [testbytestring bar\x00soom]}
+} 1
 
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
 } "x\$x\[foo bar]\\"
 test subst-3.2 {backslash substitutions with utf chars} {
-    # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
+    # 'j' is just a char that doesn't mean anything, and \344 is 'Ã¤'
     # that also doesn't mean anything, but is multi-byte in UTF-8.
     list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
 } "j j \344 \344"
@@ -87,29 +91,29 @@ test subst-5.4 {command substitutions} {
 } {1 {invalid command name "bogus_command"}}
 test subst-5.5 {command substitutions} {
     set a 0
-    list [catch {subst {[set a 1}} msg] $a $msg 
+    list [catch {subst {[set a 1}} msg] $a $msg
 } {1 0 {missing close-bracket}}
 test subst-5.6 {command substitutions} {
     set a 0
-    list [catch {subst {0[set a 1}} msg] $a $msg 
+    list [catch {subst {0[set a 1}} msg] $a $msg
 } {1 0 {missing close-bracket}}
 test subst-5.7 {command substitutions} {
     set a 0
-    list [catch {subst {0[set a 1; set a 2}} msg] $a $msg 
+    list [catch {subst {0[set a 1; set a 2}} msg] $a $msg
 } {1 1 {missing close-bracket}}
 
 # repeat the tests above simulating cmd line input
 test subst-5.8 {command substitutions} {
     set script {[subst {[set a 1}]}
-    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg
 } {1 {missing close-bracket}}
 test subst-5.9 {command substitutions} {
     set script {[subst {0[set a 1}]}
-    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg
 } {1 {missing close-bracket}}
 test subst-5.10 {command substitutions} {
     set script {[subst {0[set a 1; set a 2}]}
-    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg
 } {1 {missing close-bracket}}
 
 test subst-6.1 {clear the result after command substitution} -body {
@@ -119,13 +123,13 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad switch "foo": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous switch "-no": must be -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad switch "-bogus": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr 1+2] \\\x41}
@@ -162,7 +166,7 @@ test subst-8.6 {return in a subst} -returnCodes error -body {
     subst "foo \[return {x}; bogus code bar"
 } -result {missing close-bracket}
 test subst-8.7 {return in a subst, parse error} -body {
-    subst {foo [return {x} ; set a {}"" ; stuff] bar} 
+    subst {foo [return {x} ; set a {}"" ; stuff] bar}
 } -returnCodes error -result {extra characters after close-brace}
 test subst-8.8 {return in a subst, parse error} -body {
     subst {foo [return {x} ; set bar baz ; set a {}"" ; stuff] bar}

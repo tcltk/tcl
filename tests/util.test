@@ -16,9 +16,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint controversialNaN 1
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
+testConstraint testprint [llength [info commands testprint]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -207,7 +209,7 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
 } \xe0
 test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
     # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
-    # symptoms was Bug #2055782. 
+    # symptoms was Bug #2055782.
     testconcatobj
 } {}
 
@@ -274,10 +276,10 @@ test util-5.17 {Tcl_StringMatch: UTF-8} {
     # get 1 UTF-8 character
     Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
 } 1
-test util-5.18 {Tcl_StringMatch: UTF-8} {
+test util-5.18 {Tcl_StringMatch: UTF-8} testbytestring {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance: wrong answer would match on UTF trail byte of \u4e4f
-    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [bytestring a\u008fc]
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\u008fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
@@ -551,6 +553,12 @@ test util-9.0.6 {TclGetIntForIndex} {
 test util-9.0.7 {TclGetIntForIndex} {
     string index abcd { 01 }
 } b
+test util-9.0.8 {TclGetIntForIndex} {
+    string index abcd { 0d0 }
+} a
+test util-9.0.9 {TclGetIntForIndex} {
+    string index abcd { -0d0 }
+} a
 test util-9.1.0 {TclGetIntForIndex} {
     string index abcd 3
 } d
@@ -563,9 +571,15 @@ test util-9.1.2 {TclGetIntForIndex} {
 test util-9.1.3 {TclGetIntForIndex} {
     string index abcdefghijk { 0xa }
 } k
+test util-9.1.4 {TclGetIntForIndex} {
+    string index abcdefghijk 0d10
+} k
+test util-9.1.5 {TclGetIntForIndex} {
+    string index abcdefghijk { 0d10 }
+} k
 test util-9.2.0 {TclGetIntForIndex} {
     string index abcd end
-} d 
+} d
 test util-9.2.1 {TclGetIntForIndex} -body {
     string index abcd { end}
 } -returnCodes error -match glob -result *
@@ -670,11 +684,17 @@ test util-9.30 {TclGetIntForIndex} -body {
 test util-9.31 {TclGetIntForIndex} -body {
     string index a 0x
 } -returnCodes error -match glob -result *
+test util-9.31.1 {TclGetIntForIndex} -body {
+    string index a 0d
+} -returnCodes error -match glob -result *
 test util-9.32 {TclGetIntForIndex} -body {
     string index a 0x1FFFFFFFF+0
 } -returnCodes error -match glob -result *
 test util-9.33 {TclGetIntForIndex} -body {
     string index a 100000000000+0
+} -returnCodes error -match glob -result *
+test util-9.33.1 {TclGetIntForIndex} -body {
+    string index a 0d100000000000+0
 } -returnCodes error -match glob -result *
 test util-9.34 {TclGetIntForIndex} -body {
     string index a 1.0
@@ -4006,7 +4026,7 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     }
     set r
 } [list {*}{
-    0x43fffffffffffffc 0xc3fffffffffffffc 
+    0x43fffffffffffffc 0xc3fffffffffffffc
     0x43fffffffffffffc 0xc3fffffffffffffc
     0x43fffffffffffffd 0xc3fffffffffffffd
     0x43fffffffffffffe 0xc3fffffffffffffe
@@ -4015,6 +4035,54 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     0x43ffffffffffffff 0xc3ffffffffffffff
     0x4400000000000000 0xc400000000000000
 }]
+
+test util-18.1 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.2 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.3 {Tcl_ObjPrintf} {testprint} {
+    testprint %qd [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.4 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.5 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.6 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.7 {Tcl_ObjPrintf} {testprint} {
+    testprint %qd [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.8 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.9 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %I32d" [expr -2**63+2]
+} {-9223372036854775806 2}
+
+test util-18.10 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %p" 65535
+} {65535 0xffff}
+
+test util-18.11 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %td" 65536
+} {65536 65536}
+
+test util-18.12 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %Id" 65537
+} {65537 65537}
 
 set ::tcl_precision $saved_precision
 

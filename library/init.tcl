@@ -12,11 +12,11 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# This test intentionally written in pre-7.5 Tcl 
+# This test intentionally written in pre-7.5 Tcl
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6.0
+package require -exact Tcl 8.7a2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -73,44 +73,9 @@ namespace eval tcl {
 	    encoding dirs $Path
         }
     }
-
-    # TIP #255 min and max functions
-    namespace eval mathfunc {
-	proc min {args} {
-	    if {![llength $args]} {
-		return -code error \
-		    "too few arguments to math function \"min\""
-	    }
-	    set val Inf
-	    foreach arg $args {
-		# This will handle forcing the numeric value without
-		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
-		    return -code error $err
-		}
-		if {$arg < $val} {set val $arg}
-	    }
-	    return $val
-	}
-	proc max {args} {
-	    if {![llength $args]} {
-		return -code error \
-		    "too few arguments to math function \"max\""
-	    }
-	    set val -Inf
-	    foreach arg $args {
-		# This will handle forcing the numeric value without
-		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
-		    return -code error $err
-		}
-		if {$arg > $val} {set val $arg}
-	    }
-	    return $val
-	}
-	namespace export min max
-    }
 }
+
+namespace eval tcl::Pkg {}
 
 # Windows specific end of initialization
 
@@ -130,9 +95,9 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
-			    if {![info exists env($u)]} {
-				set env($u) $env($p)
-			    }
+			    set temp $env($p)
+			    unset env($p)
+			    set env($u) $temp
 			    trace add variable env($p) write \
 				    [namespace code [list EnvTraceProc $p]]
 			    trace add variable env($u) write \
@@ -142,11 +107,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		}
 	    }
 	    if {![info exists env(COMSPEC)]} {
-		if {$tcl_platform(os) eq "Windows NT"} {
-		    set env(COMSPEC) cmd.exe
-		} else {
-		    set env(COMSPEC) command.com
-		}
+		set env(COMSPEC) cmd.exe
 	    }
 	}
 	InitWinEnv
@@ -173,13 +134,7 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc clock args {
-	namespace eval ::tcl::clock [list namespace ensemble create -command \
-		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
-		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
-		}]
-
+    proc ::tcl::initClock {} {
 	# Auto-loading stubs for 'clock.tcl'
 
 	foreach cmd {add format scan} {
@@ -190,8 +145,9 @@ if {[interp issafe]} {
 	    }
 	}
 
-	return [uplevel 1 [info level 0]]
+	rename ::tcl::initClock {}
     }
+    ::tcl::initClock
 }
 
 # Conditionalize for presence of exec.
@@ -293,14 +249,9 @@ proc unknown args {
 		    }
 		    append cinfo ...
 		}
-		append cinfo "\"\n    (\"uplevel\" body line 1)"
-		append cinfo "\n    invoked from within"
-		append cinfo "\n\"uplevel 1 \$args\""
-		#
-		# Try each possible form of the stack trace
-		# and trim the extra contribution from the matching case
-		#
-		set expect "$msg\n    while executing\n\"$cinfo"
+		set tail "\n    (\"uplevel\" body line 1)\n    invoked\
+			from within\n\"uplevel 1 \$args\""
+		set expect "$msg\n    while executing\n\"$cinfo\"$tail"
 		if {$errInfo eq $expect} {
 		    #
 		    # The stack has only the eval from the expanded command
@@ -314,21 +265,32 @@ proc unknown args {
 		# Stack trace is nested, trim off just the contribution
 		# from the extra "eval" of $args due to the "catch" above.
 		#
-		set expect "\n    invoked from within\n\"$cinfo"
-		set exlen [string length $expect]
-		set eilen [string length $errInfo]
-		set i [expr {$eilen - $exlen - 1}]
-		set einfo [string range $errInfo 0 $i]
-		#
-		# For now verify that $errInfo consists of what we are about
-		# to return plus what we expected to trim off.
-		#
-		if {$errInfo ne "$einfo$expect"} {
-		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $einfo $expect $errInfo]
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    # Very likely cannot happen
+		    return -options $opts $msg
 		}
-		return -code error -errorcode $errCode \
-			-errorinfo $einfo $msg
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\"$cinfo\""
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo $errInfo $msg
+		}
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\n    invoked from within\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		set tail "\n    while executing\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		return -options $opts $msg
 	    } else {
 		dict incr opts -level
 		return -options $opts $msg
@@ -336,7 +298,7 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && ([info script] eq "") 
+    if {([info level] == 1) && ([info script] eq "")
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
@@ -402,7 +364,8 @@ proc unknown args {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	"invalid command name \"$name\""
 }
 
 # auto_load --
@@ -460,6 +423,22 @@ proc auto_load {cmd {namespace {}}} {
     return 0
 }
 
+# ::tcl::Pkg::source --
+# This procedure provides an alternative "source" command, which doesn't
+# register the file for the "package files" command. Safe interpreters
+# don't have to do anything special.
+#
+# Arguments:
+# filename
+
+proc ::tcl::Pkg::source {filename} {
+    if {[interp issafe]} {
+	uplevel 1 [list ::source $filename]
+    } else {
+	uplevel 1 [list ::source -nopkg $filename]
+    }
+}
+
 # auto_load_index --
 # Loads the contents of tclIndex files on the auto_path directory
 # list.  This is usually invoked within auto_load to load the index
@@ -502,7 +481,7 @@ proc auto_load_index {} {
 			}
 			set name [lindex $line 0]
 			set auto_index($name) \
-				"source [file join $dir [lindex $line 1]]"
+				"::tcl::Pkg::source [file join $dir [lindex $line 1]]"
 		    }
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
@@ -626,7 +605,7 @@ proc auto_import {pattern} {
 if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
 #
-# Note that info executable doesn't work under Windows, so we have to
+# Note that file executable doesn't work under Windows, so we have to
 # look for files with .exe, .com, or .bat extensions.  Also, the path
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
@@ -639,12 +618,8 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del erase dir echo mkdir \
-	    md rename ren rmdir rd time type ver vol]
-    if {$tcl_platform(os) eq "Windows NT"} {
-	# NT includes the 'start' built-in
-	lappend shellBuiltins "start"
-    }
+    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
@@ -678,10 +653,7 @@ proc auto_execok name {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	if {$tcl_platform(os) eq "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
+	append path "$windir/system32;$windir/system;$windir;"
     }
 
     foreach var {PATH Path path} {

@@ -717,7 +717,7 @@ proc char {name} {
 	    textSetup
 	    puts -nonewline $file "\\'d7 "
 	}
-	{\(em} {
+	{\(em} - {\(en} {
 	    textSetup
 	    puts -nonewline $file "-"
 	}
