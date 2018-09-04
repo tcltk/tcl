@@ -7680,27 +7680,14 @@ ExprIntFunc(
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    long iResult;
+    Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (TclGetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in long range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &iResult);
-	Tcl_DecrRefCount(objPtr);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
+    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)wResult));
     return TCL_OK;
 }
 
@@ -7719,20 +7706,7 @@ ExprWideFunc(
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (TclGetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in wide int range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetWideIntFromObj(NULL, objPtr, &wResult);
-	Tcl_DecrRefCount(objPtr);
-    }
+    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
 }
@@ -7979,7 +7953,7 @@ ExprSrandFunc(
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
-    long i = 0;			/* Initialized to avoid compiler warning. */
+    Tcl_WideInt w = 0;			/* Initialized to avoid compiler warning. */
 
     /*
      * Convert argument and use it to reset the seed.
@@ -7990,20 +7964,8 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
-	Tcl_Obj *objPtr;
-	mp_int big;
-
-	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
-	    /* TODO: more ::errorInfo here? or in caller? */
-	    return TCL_ERROR;
-	}
-
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &i);
-	Tcl_DecrRefCount(objPtr);
+    if (TclGetWideBitsFromObj(NULL, objv[1], &w) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     /*
@@ -8012,8 +7974,7 @@ ExprSrandFunc(
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
+    iPtr->randSeed = (unsigned long) (w & 0x7fffffff);
     if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	iPtr->randSeed ^= 123459876;
     }
