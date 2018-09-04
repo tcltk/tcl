@@ -494,6 +494,18 @@ test incr-2.31 {incr command (compiled): bad increment} {
     (reading increment)
     invoked from within
 "incr x 1a"}}
+test incr-2.32 {incr command (compiled): bad pure list increment} {
+    list [catch {incr x [list 1 2]} msg] $msg $::errorInfo
+} {1 {expected integer but got "1 2"} {expected integer but got "1 2"
+    (reading increment)
+    invoked from within
+"incr x [list 1 2]"}}
+test incr-2.33 {incr command (compiled): bad pure dict increment} {
+    list [catch {incr x [dict create 1 2]} msg] $msg $::errorInfo
+} {1 {expected integer but got "1 2"} {expected integer but got "1 2"
+    (reading increment)
+    invoked from within
+"incr x [dict create 1 2]"}}
 
 test incr-3.1 {increment by wide amount: bytecode route} {
     set x 0

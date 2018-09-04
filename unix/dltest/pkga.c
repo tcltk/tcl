@@ -14,14 +14,6 @@
 #include "tcl.h"
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkga_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -124,14 +116,14 @@ Pkga_QuoteObjCmd(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkga_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "Pkga", "1.0");

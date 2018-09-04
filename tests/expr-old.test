@@ -22,13 +22,8 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
-
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -420,13 +415,13 @@ test expr-old-21.3 {parenthesization} {expr +(3-4)} -1
 
 # Embedded commands and variable names.
 
-set a 16 
-test expr-old-22.1 {embedded variables} {expr {2*$a}} 32 
+set a 16
+test expr-old-22.1 {embedded variables} {expr {2*$a}} 32
 test expr-old-22.2 {embedded variables} {
     set x -5
     set y 10
     expr {$x + $y}
-} {5} 
+} {5}
 test expr-old-22.3 {embedded variables} {
     set x "  -5"
     set y "  +10"
@@ -847,12 +842,6 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
-test expr-old-32.43 {math functions in expressions} testmathfunctions {
-    expr 2*T1()
-} 246
-test expr-old-32.44 {math functions in expressions} testmathfunctions {
-    expr T2()*3
-} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -952,11 +941,6 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
-test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
-    -body {
-        list [catch {expr T1(4)} msg] $msg
-    } -match glob -result {1 {too many arguments for math function*}}
-
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0o289
 } -returnCodes error -match glob -result {*invalid octal number*}
@@ -1120,7 +1104,7 @@ test expr-old-37.25 {Tcl_ExprDouble and NaN} \
     {ieeeFloatingPoint testexprdouble} {
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {domain error: argument not in valid range}}
-    
+
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {testexprstring} -body {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
@@ -1159,8 +1143,8 @@ test expr-old-40.2 {min math function} -body {
     expr {min(0.0)}
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
-    list [catch {expr {min()}} msg] $msg
-} -result {1 {too few arguments to math function "min"}}
+    expr {min()}
+} -returnCodes error -result {too few arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1170,6 +1154,12 @@ test expr-old-40.5 {min math function} -body {
 test expr-old-40.6 {min math function} -body {
     expr {min(300, "0xFF")}
 } -result 255
+test expr-old-40.7 {min math function} -body {
+    expr min(1[string repeat 0 10000], 1e300)
+} -result 1e+300
+test expr-old-40.8 {min math function} -body {
+    expr {min(0, "a")}
+} -returnCodes error -match glob -result *
 
 test expr-old-41.1 {max math function} -body {
     expr {max(0)}
@@ -1178,8 +1168,8 @@ test expr-old-41.2 {max math function} -body {
     expr {max(0.0)}
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
-    list [catch {expr {max()}} msg] $msg
-} -result {1 {too few arguments to math function "max"}}
+    expr {max()}
+} -returnCodes error -result {too few arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]
@@ -1189,6 +1179,12 @@ test expr-old-41.5 {max math function} -body {
 test expr-old-41.6 {max math function} -body {
     expr {max(200, "0xFF")}
 } -result 255
+test expr-old-41.7 {max math function} -body {
+    expr max(1[string repeat 0 10000], 1e300)
+} -result 1[string repeat 0 10000]
+test expr-old-41.8 {max math function} -body {
+    expr {max(0, "a")}
+} -returnCodes error -match glob -result *
 
 # Special test for Pentium arithmetic bug of 1994:
 

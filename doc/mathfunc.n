@@ -5,9 +5,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -142,7 +142,7 @@ than \fI0\fR, this is equivalent to
 \fBbool \fIarg\fR
 .
 Accepts any numeric value, or any string acceptable to
-\fBstring is boolean\fR, and returns the corresponding 
+\fBstring is boolean\fR, and returns the corresponding
 boolean value \fB0\fR or \fB1\fR.  Non-zero numbers are true.
 Other numbers are false.  Non-numeric strings produce boolean value in
 agreement with \fBstring is true\fR and \fBstring is false\fR.
@@ -243,7 +243,7 @@ is negative, \fIy\fR must be an integer value.
 .TP
 \fBrand\fR
 .
-Returns a pseudo-random floating-point value in the range (\fI0\fR,\fI1\fR).  
+Returns a pseudo-random floating-point value in the range (\fI0\fR,\fI1\fR).
 The generator algorithm is a simple linear congruential generator that
 is not cryptographically secure.  Each result from \fBrand\fR completely
 determines all future results from subsequent calls to \fBrand\fR, so
@@ -290,7 +290,7 @@ Returns the hyperbolic tangent of \fIarg\fR.
 .
 The argument may be any numeric value.  The integer part of \fIarg\fR
 is determined, and then the low order 64 bits of that integer value
-are returned as an integer value.  
+are returned as an integer value.
 .SH "SEE ALSO"
 expr(n), mathop(n), namespace(n)
 .SH "COPYRIGHT"

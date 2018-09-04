@@ -212,14 +212,16 @@ test foreach-6.4 {break tests} {
     set msg
 } {wrong # args: should be "break"}
 # Check for bug #406709
-test foreach-6.5 {break tests} {
+test foreach-6.5 {break tests} -body {
     proc a {} {
 	set a 1
 	foreach b b {list [concat a; break]; incr a}
 	incr a
     }
     a
-} {2}
+} -cleanup {
+    rename a {}
+} -result {2}
 
 # Test for incorrect "double evaluation" semantics
 test foreach-7.1 {delayed substitution of body} {
@@ -253,6 +255,17 @@ test foreach-9.1 {compiled empty var list} {
     }
     list [catch { foo } msg] $msg
 } {1 {foreach varlist is empty}}
+
+test foreach-9.2 {line numbers} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        foreach x y {*}{
+        } {return [incr n -[linenumber]]}
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
 
 test foreach-10.1 {foreach: [Bug 1671087]} -setup {
     proc demo {} {

@@ -2,8 +2,6 @@
 # \
 exec tclsh "$0" ${1+"$@"}
 
-package require Tcl 8.4
-
 # man2html.tcl --
 #
 # This file contains procedures that work in conjunction with the
@@ -27,8 +25,8 @@ proc sarray {file args} {
 	if {![array exists array]} {
 	    puts "sarray: \"$a\" isn't an array"
 	    break
-	}	
-    
+	}
+
 	foreach name [lsort [array names array]] {
 	    regsub -all " " $name "\\ " name1
 	    puts $file "set ${a}($name1) \{$array($name)\}"
@@ -141,12 +139,12 @@ proc main {argv} {
 
     foreach package $packages {
 	file mkdir $html_dir/$package
-    
+
 	# build hyperlink database arrays: NAME_file and KEY_file
 	#
 	puts "\nScanning man pages in $tcl_dir/$package/doc..."
 	uplevel \#0 [list source $homeDir/man2html1.tcl]
-    
+
 	doDir $tcl_dir/$package/doc
 
 	# clean up the NAME_file and KEY_file database arrays

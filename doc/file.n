@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -23,7 +23,7 @@ substitution is done before executing the command (see the manual entry for
 file name.  Any unique abbreviation for \fIoption\fR is acceptable.  The
 valid options are:
 .TP
-\fBfile atime \fIname\fR ?\fBtime\fR?
+\fBfile atime \fIname\fR ?\fItime\fR?
 .
 Returns a decimal string giving the time at which file \fIname\fR was last
 accessed.  If \fItime\fR is specified, it is an access time to set
@@ -34,9 +34,9 @@ generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
 .TP
-\fBfile attributes \fIname\fR ?\fBoption\fR?
+\fBfile attributes \fIname\fR ?\fIoption\fR?
 .TP
-\fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
+\fBfile attributes \fIname\fR ?\fIoption value option value...\fR?
 .
 This subcommand returns or sets platform specific values associated
 with a file. The first form returns a list of the platform specific
@@ -80,7 +80,7 @@ set to the value 0, which results in the resource fork being stripped
 off the file.
 .RE
 .TP
-\fBfile channels ?\fIpattern\fR?
+\fBfile channels\fR ?\fIpattern\fR?
 .
 If \fIpattern\fR is not specified, returns a list of names of all
 registered open channels in this interpreter.  If \fIpattern\fR is
@@ -141,7 +141,7 @@ returned.  For example,
 \fBfile dirname\fR c:/
 .CE
 .PP
-returns \fBc:/\fR. 
+returns \fBc:/\fR.
 .PP
 Note that tilde substitution will only be
 performed if it is necessary to complete the command. For example,
@@ -162,7 +162,9 @@ returns \fB/home\fR (or something similar).
 \fBfile executable \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is executable by the current user,
-\fB0\fR otherwise.  
+\fB0\fR otherwise. On Windows, which does not have an executable attribute,
+the command treats all directories and any files with extensions
+\fBexe\fR, \fBcom\fR, \fBcmd\fR or \fBbat\fR as executable.
 .TP
 \fBfile exists \fIname\fR
 .
@@ -203,7 +205,7 @@ is always canonical for the current platform: \fB/\fR for Unix and
 Windows.
 .RE
 .TP
-\fBfile link ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
+\fBfile link\fR ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
 .
 If only one argument is given, that argument is assumed to be
 \fIlinkName\fR, and this command returns the value of the link given by
@@ -241,11 +243,9 @@ as relative to the cwd).  Furthermore,
 paths are always expanded
 to absolute form.  When creating links on filesystems that either do not
 support any links, or do not support the specific type requested, an
-error message will be returned.  In particular Windows 95, 98 and ME do
-not support any links at present, but most Unix platforms support both
-symbolic and hard links (the latter for files only) and Windows
-NT/2000/XP (on NTFS drives) support symbolic
-directory links and hard file links.
+error message will be returned.  Most Unix platforms support both
+symbolic and hard links (the latter for files only). Windows
+supports symbolic directory links and hard file links on NTFS drives.
 .RE
 .TP
 \fBfile lstat \fIname varName\fR
@@ -257,7 +257,7 @@ is for the link rather than the file it refers to.  On systems that
 do not support symbolic links this option behaves exactly the same
 as the \fBstat\fR option.
 .TP
-\fBfile mkdir ?\fIdir\fR ...?
+\fBfile mkdir\fR ?\fIdir\fR ...?
 .
 Creates each directory specified.  For each pathname \fIdir\fR specified,
 this command will create all non-existing parent directories as
@@ -302,7 +302,7 @@ operate on the actual symbolic link itself (for example \fBfile delete\fR,
 \fBfile rename\fR, \fBfile copy\fR are defined to operate on symbolic
 links, not on the things that they point to).
 .TP
-\fBfile owned \fIname\fR 
+\fBfile owned \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is owned by the current user, \fB0\fR
 otherwise.
@@ -320,7 +320,7 @@ type is \fBvolumerelative\fR.
 \fBfile readable \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is readable by the current user,
-\fB0\fR otherwise. 
+\fB0\fR otherwise.
 .TP
 \fBfile readlink \fIname\fR
 .
@@ -358,7 +358,7 @@ component of \fIname\fR does not contain a dot, then returns \fIname\fR.
 .TP
 \fBfile separator\fR ?\fIname\fR?
 .
-If no argument is given, returns the character which is used to separate 
+If no argument is given, returns the character which is used to separate
 path segments for native files on this platform.  If a path is given,
 the filesystem responsible for that path is asked to return its
 separator character.  If no file system accepts \fIname\fR, an error
@@ -390,7 +390,7 @@ that use the third component do not attempt to perform tilde
 substitution.
 .RE
 .TP
-\fBfile stat  \fIname varName\fR
+\fBfile stat \fIname varName\fR
 .
 Invokes the \fBstat\fR kernel call on \fIname\fR, and uses the variable
 given by \fIvarName\fR to hold information returned from the kernel call.
@@ -429,7 +429,7 @@ If the file does not belong to any filesystem, an error is generated.
 .
 Returns all of the characters in the last filesystem component of
 \fIname\fR.  Any trailing directory separator in \fIname\fR is ignored.
-If \fIname\fR contains no separators then returns \fIname\fR.  So, 
+If \fIname\fR contains no separators then returns \fIname\fR.  So,
 \fBfile tail a/b\fR, \fBfile tail a/b/\fR and \fBfile tail b\fR all
 return \fBb\fR.
 .TP
@@ -459,7 +459,7 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfifo\fR, \fBlink\fR, or \fBsocket\fR.
 .TP
 \fBfile volumes\fR
-. 
+.
 Returns the absolute paths to the volumes mounted on the system, as a
 proper Tcl list.  Without any virtual filesystems mounted as root
 volumes, on UNIX, the command will always return
@@ -480,14 +480,13 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 \fBUnix\fR\0\0\0\0\0\0\0
 .
 These commands always operate using the real user and group identifiers,
-not the effective ones. 
+not the effective ones.
 .TP
 \fBWindows\fR\0\0\0\0
 .
-The \fbfile owned\fR subcommand currently always reports that the current user
-is the owner of the file, without regard for what the operating system
-believes to be true, making an ownership test useless. This issue (#3613671)
-may be fixed in a future release of Tcl.
+The \fBfile owned\fR subcommand uses the user identifier (SID) of
+the process token, not the thread token which may be impersonating
+some other user.
 .SH EXAMPLES
 .PP
 This procedure shows how to search for C files in a given directory

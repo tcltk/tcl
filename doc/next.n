@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH next n 0.1 TclOO "TclOO Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -62,14 +62,14 @@ The method chain is cached for future use.
 When constructing the method chain, method implementations are searched for in
 the following order:
 .IP [1]
-In the object.
-.IP [2]
 In the classes mixed into the object, in class traversal order. The list of
 mixins is checked in natural order.
-.IP [3]
+.IP [2]
 In the classes mixed into the classes of the object, with sources of mixing in
 being searched in class traversal order. Within each class, the list of mixins
 is processed in natural order.
+.IP [3]
+In the object itself.
 .IP [4]
 In the object's class.
 .IP [5]
@@ -77,7 +77,10 @@ In the superclasses of the class, following each superclass in a depth-first
 fashion in the natural order of the superclass list.
 .PP
 Any particular method implementation always comes as \fIlate\fR in the
-resulting list of implementations as possible.
+resulting list of implementations as possible; this means that if some class,
+A, is both mixed into a class, B, and is also a superclass of B, the instances
+of B will always treat A as a superclass from the perspective of inheritance.
+This is true even when the multiple inheritance is processed indirectly.
 .SS FILTERS
 .PP
 When an object has a list of filter names set upon it, or is an instance of a
@@ -93,9 +96,11 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are not invoked when processing an invocation of the \fBunknown\fR
-method because of a failure to locate a method implementation, or when
-invoking either constructors or destructors.
+Filters are invoked when processing an invokation of the \fBunknown\fR
+method because of a failure to locate a method implementation, but \fInot\fR
+when invoking either constructors or destructors. (Note however that the
+\fBdestroy\fR method is a conventional method, and filters are invoked as
+normal when it is called.)
 .SH EXAMPLES
 .PP
 This example demonstrates how to use the \fBnext\fR command to call the
@@ -107,6 +112,7 @@ oo::class create theSuperclass {
         puts "in the superclass, args = $args"
     }
 }
+
 oo::class create theSubclass {
     superclass theSuperclass
     method example {args} {
@@ -116,8 +122,9 @@ oo::class create theSubclass {
         puts "after chaining from subclass"
     }
 }
+
 theSubclass create obj
-oo::define obj method example args {
+oo::objdefine obj method example args {
     puts "per-object method, args = $args"
     \fBnext\fR x {*}$args y
     \fBnext\fR
@@ -133,7 +140,7 @@ before chaining from subclass, args = x 1 2 3 y
 in the superclass, args = a x 1 2 3 y b
 in the superclass, args = pureSynthesis
 after chaining from subclass
-before chaining from subclass, args = 
+before chaining from subclass, args =
 in the superclass, args = a b
 in the superclass, args = pureSynthesis
 after chaining from subclass
@@ -162,6 +169,7 @@ oo::class create cache {
         \fI# Compute value, insert into cache, and return it\fR
         return [set ValueCache($key) [\fBnext\fR {*}$args]]
     }
+
     method flushCache {} {
         my variable ValueCache
         unset ValueCache
@@ -171,12 +179,14 @@ oo::class create cache {
 }
 
 oo::object create demo
-oo::define demo {
+oo::objdefine demo {
     mixin cache
+
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a + $b * $c}]
     }
+
     method compute2 {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a * $b + $c}]

@@ -1,10 +1,10 @@
 #!/usr/bin/env tclsh
 
-if {[catch {package require Tcl 8.6} msg]} {
+if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+	tclsh8.7 (or the equivalent tclsh87.exe\non Windows)."
     exit 1
 }
 
@@ -22,7 +22,7 @@ if {[catch {package require Tcl 8.6} msg]} {
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-set ::Version "50/8.6"
+set ::Version "50/8.7"
 set ::CSSFILE "docs.css"
 
 ##
@@ -470,6 +470,7 @@ proc plus-pkgs {type args} {
 		continue
 	    }
 	}
+	set dir [string trimright $dir "0123456789-."]
 	switch $type {
 	    n {
 		set title "$name Package Commands"
@@ -585,6 +586,7 @@ array set exclude_refs_map {
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
+    text.n		{bind image lower raise}
     tkvars.n		{tk}
     tkwait.n		{variable}
     tm.n		{exec}
@@ -647,10 +649,12 @@ try {
 	append appdir "$tkdir"
     }
 
+    apply {{} {
+    global packageBuildList tcltkdir tcldir build_tcl
 
     # When building docs for Tcl, try to build docs for bundled packages too
     set packageBuildList {}
-    if  {$build_tcl} {
+    if {$build_tcl} {
 	set pkgsDir [file join $tcltkdir $tcldir pkgs]
 	set subdirs [glob -nocomplain -types d -tails -directory $pkgsDir *]
 
@@ -664,7 +668,7 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.in]]
+		set f [open [file join $pkgsDir $dir configure.ac]]
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
@@ -693,7 +697,8 @@ try {
 		foreach line [split [read $f] \n] {
 		    if {[string trim $line] eq ""} continue
 		    if {[string match #* $line]} continue
-		    lappend packageDirNameMap {*}$line
+		    lassign $line dir name
+		    lappend packageDirNameMap $dir $name
 		}
 	    } finally {
 		close $f
@@ -714,6 +719,7 @@ try {
 	    lset packageBuildList $idx+1 [dict get $packageDirNameMap $n]
 	}
     }
+    }}
 
     #
     # Invoke the scraper/converter engine.

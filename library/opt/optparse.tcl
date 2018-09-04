@@ -8,10 +8,10 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 
-package require Tcl 8.2
+package require Tcl 8.5-
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.6
+package provide opt 0.4.7
 
 namespace eval ::tcl {
 
@@ -435,7 +435,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    } elseif {$state == "optValue"} {
 		set state next; # not used, for debug only
 		# go to next state
-		return 
+		return
 	    } else {
 		return -code error [OptMissingValue $descriptions]
 	    }
@@ -538,7 +538,7 @@ proc ::tcl::OptKeyParse {descKey arglist} {
 
     # Analyse the result
     # Walk through the tree:
-    OptTreeVars $desc "#[expr {[info level]-1}]" 
+    OptTreeVars $desc "#[expr {[info level]-1}]"
 }
 
     # determine string length for nice tabulated output
