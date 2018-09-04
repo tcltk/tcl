@@ -2974,6 +2974,8 @@ MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
 				const char *targetName,
 				const char *packageName);
+MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
+				Tcl_WideInt *);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);

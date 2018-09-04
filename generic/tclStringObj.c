@@ -2041,33 +2041,15 @@ Tcl_AppendFormatToObj(
 		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
-		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
-		    Tcl_Obj *objPtr;
-
-		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
-			goto error;
-		    }
-		    mp_mod_2d(&big, (int) CHAR_BIT*sizeof(Tcl_WideInt), &big);
-		    objPtr = Tcl_NewBignumObj(&big);
-		    Tcl_IncrRefCount(objPtr);
-		    TclGetWideIntFromObj(NULL, objPtr, &w);
-		    Tcl_DecrRefCount(objPtr);
+		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
+		    goto error;
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
 		if (w == (Tcl_WideInt) 0) gotHash = 0;
 #endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
-		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
-		    Tcl_Obj *objPtr;
-
-		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
-			goto error;
-		    }
-		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-		    objPtr = Tcl_NewBignumObj(&big);
-		    Tcl_IncrRefCount(objPtr);
-		    TclGetLongFromObj(NULL, objPtr, &l);
-		    Tcl_DecrRefCount(objPtr);
+		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
+		    goto error;
 		} else {
 		    l = Tcl_WideAsLong(w);
 		}
