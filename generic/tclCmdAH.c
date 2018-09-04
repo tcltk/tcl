@@ -1261,9 +1261,9 @@ FileAttrAccessTimeCmd(
 	 * platforms. [Bug 698146]
 	 */
 
-	long newTime;
+	Tcl_WideInt newTime;
 
-	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &newTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -1342,9 +1342,9 @@ FileAttrModifyTimeCmd(
 	 * platforms. [Bug 698146]
 	 */
 
-	long newTime;
+	Tcl_WideInt newTime;
 
-	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &newTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
