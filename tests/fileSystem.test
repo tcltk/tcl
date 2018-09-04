@@ -146,7 +146,7 @@ test filesystem-1.10 {link normalisation: double link} -constraints {
 	[file normalize [file join dir2.link inside.file foo]]
 } -cleanup {
     file delete dir2.link
-} -result ok 
+} -result ok
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link dir2.link dir.link
@@ -264,6 +264,12 @@ removeDirectory dir.dir
 test filesystem-1.30 {normalisation of nonexistent user} -body {
     file normalize ~noonewiththisname
 } -returnCodes error -result {user "noonewiththisname" doesn't exist}
+test filesystem-1.30.1 {normalisation of existing user} -body {
+    catch {file normalize ~$::tcl_platform(user)}
+} -result {0}
+test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
+    file normalize ~nonexistentuser@nonexistentdomain
+} -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
@@ -367,6 +373,32 @@ test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
     testPathEqual [file norm /../../] [file norm /]
 } ok
+test filesystem-1.52 {bug f9f390d0fa: file join where strep is not canonical} -constraints unix -body {
+    set x //foo
+    file normalize $x
+    file join $x bar
+} -result /foo/bar
+test filesystem-1.52.1 {bug f9f390d0fa: file join where strep is not canonical} -body {
+    set x //foo
+    file normalize $x
+    file join $x
+} -result /foo
+test filesystem-1.53 {[Bug 3559678] - normalize when tail is empty} {
+  string match */ [file normalize [lindex [glob -dir [pwd] {{}}] 0]]
+} 0
+test filesystem-1.54 {[Bug ce3a211dcb] - normalize when tail is empty} -setup {
+    set save [pwd]
+    cd [set home [makeDirectory ce3a211dcb]]
+    makeDirectory A $home
+    cd [lindex [glob */] 0]
+} -body {
+    string match */A [pwd]
+} -cleanup {
+    cd $home
+    removeDirectory A $home
+    cd $save
+    removeDirectory ce3a211dcb
+} -result 1
 
 test filesystem-2.0 {new native path} {unix} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
@@ -513,6 +545,9 @@ test filesystem-6.32 {empty file name} -returnCodes error -body {
     file type ""
 } -result {could not read "": no such file or directory}
 test filesystem-6.33 {empty file name} {file writable ""} 0
+test filesystem-6.34 {file name with (invalid) nul character} {
+    list [catch "open foo\x00" msg] $msg
+} [list 1 "couldn't open \"foo\x00\": filename is invalid on this platform"]
 
 # Make sure the testfilesystem hasn't been registered.
 if {[testConstraint testfilesystem]} {
@@ -871,7 +906,7 @@ test filesystem-9.5 {path objects and file tail and object rep} -setup {
     }
     return $res
 } -cleanup {
-    file delete -force dgp 
+    file delete -force dgp
     cd $origdir
 } -result {test test}
 test filesystem-9.6 {path objects and file tail and object rep} win {

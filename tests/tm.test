@@ -6,7 +6,7 @@
 # Copyright (c) 2004 by Donal K. Fellows.
 # All rights reserved.
 
-package require Tcl 8.5
+package require Tcl 8.5-
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -200,7 +200,7 @@ test tm-3.11 {tm: module path management, remove ignores unknown path} -setup {
 proc genpaths {base} {
     # Normalizing picks up drive letters on windows [Bug 1053568]
     set base [file normalize $base]
-    lassign [split [package present Tcl] .] major minor 
+    lassign [split [package present Tcl] .] major minor
     set results {}
     set base [file join $base tcl$major]
     lappend results [file join $base site-tcl]

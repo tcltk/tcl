@@ -14,7 +14,7 @@
 
 #include "tclInt.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 
 /*
  * The information about each joinable thread is remembered in a structure as
@@ -305,7 +305,7 @@ TclSignalExitThread(
 
     Tcl_MutexUnlock(&threadPtr->threadMutex);
 }
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

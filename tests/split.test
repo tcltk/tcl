@@ -43,7 +43,7 @@ test split-1.8 {basic split commands} {
         foreach f [split {]\n} {}] {
             append x $f
         }
-        return $x	
+        return $x
     }
     foo
 } {]\n}
@@ -70,6 +70,9 @@ test split-1.13 {basic split commands} {
 test split-1.14 {basic split commands} {
     split ",12,,,34,56," {,}
 } {{} 12 {} {} 34 56 {}}
+test split-1.15 {basic split commands} -body {
+    split "a\U01f4a9b" {}
+} -result "a \U01f4a9 b"
 
 test split-2.1 {split errors} {
     list [catch split msg] $msg $errorCode

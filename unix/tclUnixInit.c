@@ -14,11 +14,11 @@
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
-#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+#	if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 	    /* Support for weakly importing nl_langinfo on Darwin. */
 #	    define WEAK_IMPORT_NL_LANGINFO
 	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#       endif
+#	endif
 #    endif
 #endif
 #include <sys/resource.h>
@@ -33,21 +33,19 @@
 #endif
 
 #ifdef __CYGWIN__
-DLLIMPORT extern __stdcall unsigned char GetVersionExA(void *);
+DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
+DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
+DLLIMPORT extern __stdcall void FreeLibrary(void *);
+DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 
-#define NUMPLATFORMS 4
-static const char *const platforms[NUMPLATFORMS] = {
-    "Win32s", "Windows 95", "Windows NT", "Windows CE"
-};
-
 #define NUMPROCESSORS 11
-static const char *const  processors[NUMPROCESSORS] = {
+static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
     "amd64", "ia32_on_win64"
 };
 
-typedef struct _SYSTEM_INFO {
+typedef struct {
   union {
     DWORD  dwOemId;
     struct {
@@ -66,14 +64,14 @@ typedef struct _SYSTEM_INFO {
   int      wProcessorRevision;
 } SYSTEM_INFO;
 
-typedef struct _OSVERSIONINFOA {
+typedef struct {
   DWORD dwOSVersionInfoSize;
   DWORD dwMajorVersion;
   DWORD dwMinorVersion;
   DWORD dwBuildNumber;
   DWORD dwPlatformId;
-  char szCSDVersion[128];
-} OSVERSIONINFOA;
+  wchar_t szCSDVersion[128];
+} OSVERSIONINFOW;
 #endif
 
 #ifdef HAVE_COREFOUNDATION
@@ -112,7 +110,7 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
  * first list checked for a mapping from env encoding to Tcl encoding name.
  */
 
-typedef struct LocaleTable {
+typedef struct {
     const char *lang;
     const char *encoding;
 } LocaleTable;
@@ -318,7 +316,7 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 #endif /* HAVE_COREFOUNDATION */
 #if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
-	(defined(TCL_THREADS) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
+	(TCL_THREADS && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
 	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
 	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
 	)))
@@ -388,14 +386,6 @@ TclpInitPlatform(void)
 #endif /* SIGPIPE */
 
 #if defined(__FreeBSD__) && defined(__GNUC__)
-    /*
-     * Adjust the rounding mode to be more conventional. Note that FreeBSD
-     * only provides the __fpsetreg() used by the following two for the GNU
-     * Compiler. When using, say, Intel's icc they break. (Partially based on
-     * patch in BSD ports system from root@celsius.bychok.com)
-     */
-
-    fpsetround(FP_RN);
     (void) fpsetmask(0L);
 #endif
 
@@ -458,7 +448,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -547,9 +537,10 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
+    str = TclGetString(pathPtr);
+    *lengthPtr = pathPtr->length;
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -586,12 +577,6 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void
-TclpSetInterfaces(void)
-{
-    /* do nothing */
-}
-
 static const char *
 SearchKnownEncodings(
     const char *encoding)
@@ -599,7 +584,7 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
-    while (left <= right) {
+    while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
@@ -741,13 +726,51 @@ Tcl_GetEncodingNameFromEnvironment(
  *----------------------------------------------------------------------
  */
 
+#if defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020
+/*
+ * Helper because whether CFLocaleCopyCurrent and CFLocaleGetIdentifier are
+ * strongly or weakly bound varies by version of OSX, triggering warnings.
+ */
+
+static inline void
+InitMacLocaleInfoVar(
+    CFLocaleRef (*localeCopyCurrent)(void),
+    CFStringRef (*localeGetIdentifier)(CFLocaleRef),
+    Tcl_Interp *interp)
+{
+    CFLocaleRef localeRef;
+    CFStringRef locale;
+    char loc[256];
+
+    if (localeCopyCurrent == NULL || localeGetIdentifier == NULL) {
+	return;
+    }
+
+    localeRef = localeCopyCurrent();
+    if (!localeRef) {
+	return;
+    }
+
+    locale = localeGetIdentifier(localeRef);
+    if (locale && CFStringGetCString(locale, loc, 256,
+	    kCFStringEncodingUTF8)) {
+	if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
+	    Tcl_ResetResult(interp);
+	}
+	Tcl_SetVar2(interp, "::tcl::mac::locale", NULL, loc, TCL_GLOBAL_ONLY);
+    }
+    CFRelease(localeRef);
+}
+#endif /*defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020*/
+
 void
 TclpSetVariables(
     Tcl_Interp *interp)
 {
 #ifdef __CYGWIN__
     SYSTEM_INFO sysInfo;
-    OSVERSIONINFOA osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     char buffer[TCL_INTEGER_SPACE * 2];
 #elif !defined(NO_UNAME)
     struct utsname name;
@@ -758,38 +781,21 @@ TclpSetVariables(
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
     /*
      * Set msgcat fallback locale to current CFLocale identifier.
      */
 
-    CFLocaleRef localeRef;
-    
-    if (CFLocaleCopyCurrent != NULL && CFLocaleGetIdentifier != NULL &&
-	    (localeRef = CFLocaleCopyCurrent())) {
-	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
-
-	if (locale) {
-	    char loc[256];
-
-	    if (CFStringGetCString(locale, loc, 256, kCFStringEncodingUTF8)) {
-		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
-		    Tcl_ResetResult(interp);
-		}
-		Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
-	    }
-	}
-	CFRelease(localeRef);
-    }
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
+    InitMacLocaleInfoVar(CFLocaleCopyCurrent, CFLocaleGetIdentifier, interp);
 #endif /* MAC_OS_X_VERSION_MAX_ALLOWED > 1020 */
 
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
 	const char *str;
 	CFBundleRef bundleRef;
 
-	Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
@@ -805,9 +811,9 @@ TclpSetVariables(
 		    *p = ' ';
 		}
 	    } while (*p++);
-	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_DStringValue(&ds),
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 	    Tcl_DStringFree(&ds);
 	}
@@ -822,9 +828,9 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
@@ -835,20 +841,20 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath,
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
     } else
 #endif /* HAVE_COREFOUNDATION */
     {
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
 #ifdef DJGPP
@@ -860,14 +866,20 @@ TclpSetVariables(
     unameOK = 0;
 #ifdef __CYGWIN__
 	unameOK = 1;
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
+    if (!osInfoInitialized) {
+	HANDLE handle = GetModuleHandleW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	osInfoInitialized = 1;
+    }
+
     GetSystemInfo(&sysInfo);
 
-    if (osInfo.dwPlatformId < NUMPLATFORMS) {
-	Tcl_SetVar2(interp, "tcl_platform", "os",
-		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
-    }
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
     sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
@@ -1015,7 +1027,6 @@ TclpFindVariable(
     Tcl_DStringFree(&envString);
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------

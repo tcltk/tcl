@@ -91,10 +91,10 @@ static int		SetPermissionsAttribute(Tcl_Interp *interp,
 			    Tcl_Obj *attributePtr);
 static int		GetModeFromPermString(Tcl_Interp *interp,
 			    const char *modeStringPtr, mode_t *modePtr);
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
-static int		GetReadOnlyAttribute(Tcl_Interp *interp, int objIndex,
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
+static int		GetUnixFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
-static int		SetReadOnlyAttribute(Tcl_Interp *interp, int objIndex,
+static int		SetUnixFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 #endif
 
@@ -124,9 +124,19 @@ extern const char *const tclpFileAttrStrings[];
 
 #else /* !DJGPP */
 enum {
-    UNIX_GROUP_ATTRIBUTE, UNIX_OWNER_ATTRIBUTE, UNIX_PERMISSIONS_ATTRIBUTE,
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
+#if defined(__CYGWIN__)
+    UNIX_ARCHIVE_ATTRIBUTE,
+#endif
+    UNIX_GROUP_ATTRIBUTE,
+#if defined(__CYGWIN__)
+    UNIX_HIDDEN_ATTRIBUTE,
+#endif
+    UNIX_OWNER_ATTRIBUTE, UNIX_PERMISSIONS_ATTRIBUTE,
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
     UNIX_READONLY_ATTRIBUTE,
+#endif
+#if defined(__CYGWIN__)
+    UNIX_SYSTEM_ATTRIBUTE,
 #endif
 #ifdef MAC_OSX_TCL
     MACOSX_CREATOR_ATTRIBUTE, MACOSX_TYPE_ATTRIBUTE, MACOSX_HIDDEN_ATTRIBUTE,
@@ -137,9 +147,19 @@ enum {
 
 MODULE_SCOPE const char *const tclpFileAttrStrings[];
 const char *const tclpFileAttrStrings[] = {
-    "-group", "-owner", "-permissions",
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
+#if defined(__CYGWIN__)
+    "-archive",
+#endif
+    "-group",
+#if defined(__CYGWIN__)
+    "-hidden",
+#endif
+    "-owner", "-permissions",
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
     "-readonly",
+#endif
+#if defined(__CYGWIN__)
+    "-system",
 #endif
 #ifdef MAC_OSX_TCL
     "-creator", "-type", "-hidden", "-rsrclength",
@@ -149,11 +169,20 @@ const char *const tclpFileAttrStrings[] = {
 
 MODULE_SCOPE const TclFileAttrProcs tclpFileAttrProcs[];
 const TclFileAttrProcs tclpFileAttrProcs[] = {
+#if defined(__CYGWIN__)
+    {GetUnixFileAttributes, SetUnixFileAttributes},
+#endif
     {GetGroupAttribute, SetGroupAttribute},
+#if defined(__CYGWIN__)
+    {GetUnixFileAttributes, SetUnixFileAttributes},
+#endif
     {GetOwnerAttribute, SetOwnerAttribute},
     {GetPermissionsAttribute, SetPermissionsAttribute},
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
-    {GetReadOnlyAttribute, SetReadOnlyAttribute},
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
+    {GetUnixFileAttributes, SetUnixFileAttributes},
+#endif
+#if defined(__CYGWIN__)
+    {GetUnixFileAttributes, SetUnixFileAttributes},
 #endif
 #ifdef MAC_OSX_TCL
     {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
@@ -227,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && defined(TCL_THREADS) && \
+#if defined(__APPLE__) && TCL_THREADS && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*
@@ -340,13 +369,13 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = opendir(dst);			/* INTL: Native. */
+	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
@@ -356,11 +385,11 @@ DoRenameFile(
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			closedir(dirPtr);
+			TclOSclosedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		closedir(dirPtr);
+		TclOSclosedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -462,10 +491,10 @@ DoCopyFile(
     switch ((int) (statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
     case S_IFLNK: {
-	char linkBuf[MAXPATHLEN];
+	char linkBuf[MAXPATHLEN+1];
 	int length;
 
-	length = readlink(src, linkBuf, sizeof(linkBuf));
+	length = readlink(src, linkBuf, MAXPATHLEN);
 							/* INTL: Native. */
 	if (length == -1) {
 	    return TCL_ERROR;
@@ -535,7 +564,7 @@ TclUnixCopyFile(
 #define BINMODE
 #endif /* DJGPP */
 
-#define DEFAULT_COPY_BLOCK_SIZE 4069
+#define DEFAULT_COPY_BLOCK_SIZE 4096
 
     if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
 	return TCL_ERROR;
@@ -936,7 +965,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    TclDIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -961,7 +990,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = opendir(source);				/* INTL: Native. */
+    dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -973,7 +1002,7 @@ TraverseUnixTree(
     result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	closedir(dirPtr);
+	TclOSclosedir(dirPtr);
 	return result;
     }
 
@@ -1023,11 +1052,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    rewinddir(dirPtr);
+	    TclOSrewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    closedir(dirPtr);
+    TclOSclosedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added
@@ -1478,11 +1507,10 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetString(attributePtr);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1545,11 +1573,10 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetString(attributePtr);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1917,9 +1944,9 @@ TclpObjNormalizePath(
     int nextCheckpoint)
 {
     const char *currentPathEndPosition;
-    int pathLen;
     char cur;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetString(pathPtr);
+    size_t pathLen = pathPtr->length;
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2148,15 +2175,15 @@ TclUnixOpenTemporaryFile(
 {
     Tcl_DString template, tmp;
     const char *string;
-    int len, fd;
+    int fd;
 
     /*
      * We should also check against making more then TMP_MAX of these.
      */
 
     if (dirObj) {
-	string = Tcl_GetStringFromObj(dirObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &template);
+	string = TclGetString(dirObj);
+	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &template);
     } else {
 	Tcl_DStringInit(&template);
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
@@ -2165,8 +2192,8 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
-	string = Tcl_GetStringFromObj(basenameObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	string = TclGetString(basenameObj);
+	Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
@@ -2177,8 +2204,8 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = Tcl_GetStringFromObj(extensionObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	string = TclGetString(extensionObj);
+	Tcl_UtfToExternalDString(NULL, string, extensionObj->length, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2246,11 +2273,139 @@ DefaultTempDir(void)
     return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
+#if defined(__CYGWIN__)
+
+static void
+StatError(
+    Tcl_Interp *interp,		/* The interp that has the error */
+    Tcl_Obj *fileName)		/* The name of the file which caused the
+				 * error. */
+{
+    TclWinConvertError(GetLastError());
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
+	    TclGetString(fileName), Tcl_PosixError(interp)));
+}
+
+static WCHAR *
+winPathFromObj(
+    Tcl_Obj *fileName)
+{
+    int size;
+    const char *native =  Tcl_FSGetNativePath(fileName);
+    WCHAR *winPath;
+
+    size = cygwin_conv_path(1, native, NULL, 0);
+    winPath = ckalloc(size);
+    cygwin_conv_path(1, native, winPath, size);
+
+    return winPath;
+}
+
+static const int attributeArray[] = {
+    0x20, 0, 2, 0, 0, 1, 4
+};
+
 /*
  *----------------------------------------------------------------------
  *
- * GetReadOnlyAttribute
+ * GetUnixFileAttributes
+ *
+ *	Gets the readonly attribute of a file.
+ *
+ * Results:
+ *	Standard TCL result. Returns a new Tcl_Obj in attributePtrPtr if there
+ *	is no error. The object will have ref count 0.
+ *
+ * Side effects:
+ *	A new object is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetUnixFileAttributes(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+{
+    int fileAttributes;
+    WCHAR *winPath = winPathFromObj(fileName);
+
+    fileAttributes = GetFileAttributesW(winPath);
+    ckfree(winPath);
+
+    if (fileAttributes == -1) {
+	StatError(interp, fileName);
+	return TCL_ERROR;
+    }
+
+    *attributePtrPtr = Tcl_NewIntObj(
+	    (fileAttributes & attributeArray[objIndex]) != 0);
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * SetUnixFileAttributes
+ *
+ *	Sets the readonly attribute of a file.
+ *
+ * Results:
+ *	Standard TCL result.
+ *
+ * Side effects:
+ *	The readonly attribute of the file is changed.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+SetUnixFileAttributes(
+    Tcl_Interp *interp,	    /* The interp we are using for errors. */
+    int objIndex,           /* The index of the attribute. */
+    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)  /* The attribute to set. */
+{
+    int yesNo, fileAttributes, old;
+    WCHAR *winPath;
+
+    if (Tcl_GetBooleanFromObj(interp, attributePtr, &yesNo) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    winPath = winPathFromObj(fileName);
+
+    fileAttributes = old = GetFileAttributesW(winPath);
+
+    if (fileAttributes == -1) {
+	ckfree(winPath);
+	StatError(interp, fileName);
+	return TCL_ERROR;
+    }
+
+    if (yesNo) {
+	fileAttributes |= attributeArray[objIndex];
+    } else {
+	fileAttributes &= ~attributeArray[objIndex];
+    }
+
+    if ((fileAttributes != old)
+	    && !SetFileAttributesW(winPath, fileAttributes)) {
+	ckfree(winPath);
+	StatError(interp, fileName);
+	return TCL_ERROR;
+    }
+
+    ckfree(winPath);
+    return TCL_OK;
+}
+#elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetUnixFileAttributes
  *
  *	Gets the readonly attribute (user immutable flag) of a file.
  *
@@ -2265,7 +2420,7 @@ DefaultTempDir(void)
  */
 
 static int
-GetReadOnlyAttribute(
+GetUnixFileAttributes(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
@@ -2285,15 +2440,14 @@ GetReadOnlyAttribute(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
-
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags & UF_IMMUTABLE);
     return TCL_OK;
 }
 
 /*
  *---------------------------------------------------------------------------
  *
- * SetReadOnlyAttribute
+ * SetUnixFileAttributes
  *
  *	Sets the readonly attribute (user immutable flag) of a file.
  *
@@ -2307,7 +2461,7 @@ GetReadOnlyAttribute(
  */
 
 static int
-SetReadOnlyAttribute(
+SetUnixFileAttributes(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */

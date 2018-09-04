@@ -27,6 +27,8 @@ const TclOOIntStubs *tclOOIntStubsPtr = NULL;
  *----------------------------------------------------------------------
  */
 
+#undef TclOOInitializeStubs
+
 MODULE_SCOPE const char *
 TclOOInitializeStubs(
     Tcl_Interp *interp,

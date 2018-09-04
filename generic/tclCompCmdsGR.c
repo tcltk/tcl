@@ -27,7 +27,41 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetIndexFromToken --
+ *
+ *	Parse a token to determine if an index value is known at
+ *	compile time.
+ *
+ * Returns:
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *
+ * Side effects:
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *index.
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+TclGetIndexFromToken(
+    Tcl_Token *tokenPtr,
+    int before,
+    int after,
+    int *indexPtr)
+{
+    Tcl_Obj *tmpObj = Tcl_NewObj();
+    int result = TCL_ERROR;
+
+    if (TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	result = TclIndexEncode(NULL, tmpObj, before, after, indexPtr);
+    }
+    Tcl_DecrRefCount(tmpObj);
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -85,14 +119,20 @@ TclCompileGlobalCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=2; i<=numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
+    for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	/*
+	 * TODO: Consider what value can pass through the
+	 * IndexTailVarIfKnown() screen. Full CompileWord() likely does not
+	 * apply here. Push known value instead.
+	 */
+
+	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
     }
 
@@ -232,7 +272,7 @@ TclCompileIfCmd(
 		jumpIndex = jumpFalseFixupArray.next;
 		jumpFalseFixupArray.next++;
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			jumpFalseFixupArray.fixup+jumpIndex);
+			jumpFalseFixupArray.fixup + jumpIndex);
 	    }
 	    code = TCL_OK;
 	}
@@ -279,7 +319,7 @@ TclCompileIfCmd(
 	    }
 	    jumpEndFixupArray.next++;
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    jumpEndFixupArray.fixup+jumpIndex);
+		    jumpEndFixupArray.fixup + jumpIndex);
 
 	    /*
 	     * Fix the target of the jumpFalse after the test. Generate a 4
@@ -291,7 +331,7 @@ TclCompileIfCmd(
 
 	    TclAdjustStackDepth(-1, envPtr);
 	    if (TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup+jumpIndex, 120)) {
+		    jumpFalseFixupArray.fixup + jumpIndex, 120)) {
 		/*
 		 * Adjust the code offset for the proceeding jump to the end
 		 * of the "if" command.
@@ -374,7 +414,7 @@ TclCompileIfCmd(
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
 	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup+jumpIndex, 127)) {
+		jumpEndFixupArray.fixup + jumpIndex, 127)) {
 	    /*
 	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
@@ -584,6 +624,7 @@ TclCompileInfoCommandsCmd(
      * that the result needs to be list-ified.
      */
 
+    /* TODO: Just push the known value */
     CompileWord(envPtr, tokenPtr,		interp, 1);
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
@@ -810,28 +851,16 @@ TclCompileLappendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex, numWords, i, fwd, offsetFwd;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
-
-    /*
-     * If we're not in a procedure, don't compile.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords < 3) {
 	return TCL_ERROR;
     }
-    if (numWords != 3) {
-	/*
-	 * LAPPEND instructions currently only handle one value, but we can
-	 * handle some multi-value cases by stringing them together.
-	 */
 
+    if (numWords != 3 || envPtr->procPtr == NULL) {
 	goto lappendMultiple;
     }
 
@@ -885,42 +914,28 @@ TclCompileLappendCmd(
     return TCL_OK;
 
   lappendMultiple:
-    /*
-     * Can only handle the case where we are appending to a local scalar when
-     * there are multiple values to append.  Fortunately, this is common.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
 	    &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex < 0) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Definitely appending to a local scalar; generate the words and append
-     * them.
-     */
-
     valueTokenPtr = TokenAfter(varTokenPtr);
     for (i = 2 ; i < numWords ; i++) {
 	CompileWord(envPtr, valueTokenPtr, interp, i);
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	  INST_LIST, numWords-2,		envPtr);
-    TclEmitInstInt4(	  INST_EXIST_SCALAR, localIndex,	envPtr);
-    offsetFwd = CurrentOffset(envPtr);
-    TclEmitInstInt1(	  INST_JUMP_FALSE1, 0,			envPtr);
-    Emit14Inst(		  INST_LOAD_SCALAR, localIndex,		envPtr);
-    TclEmitInstInt4(	  INST_REVERSE, 2,			envPtr);
-    TclEmitOpcode(	  INST_LIST_CONCAT,			envPtr);
-    fwd = CurrentOffset(envPtr) - offsetFwd;
-    TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-    Emit14Inst(		  INST_STORE_SCALAR, localIndex,	envPtr);
-
+    TclEmitInstInt4(	    INST_LIST, numWords - 2,		envPtr);
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_STK,		envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST, localIndex,	envPtr);
+	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_ARRAY_STK,	envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST_ARRAY, localIndex,envPtr);
+	}
+    }
     return TCL_OK;
 }
 
@@ -984,7 +999,7 @@ TclCompileLassignCmd(
 	 */
 
 	PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-		&isScalar, idx+2);
+		&isScalar, idx + 2);
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
@@ -1023,7 +1038,7 @@ TclCompileLassignCmd(
      */
 
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(		-2 /* == "end" */,		envPtr);
+    TclEmitInt4(			TCL_INDEX_END,		envPtr);
 
     return TCL_OK;
 }
@@ -1056,7 +1071,7 @@ TclCompileLindexCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *idxTokenPtr, *valTokenPtr;
-    int i, numWords = parsePtr->numWords;
+    int i, idx, numWords = parsePtr->numWords;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1074,44 +1089,26 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	Tcl_Obj *tmpObj;
-	int idx, result;
-
-	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = TclGetIntFromObj(NULL, tmpObj, &idx);
-	if (result == TCL_OK) {
-	    if (idx < 0) {
-		result = TCL_ERROR;
-	    }
-	} else {
-	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
-	    if (result == TCL_OK && idx > -2) {
-		result = TCL_ERROR;
-	    }
-	}
-	TclDecrRefCount(tmpObj);
-
-	if (result == TCL_OK) {
-	    /*
-	     * All checks have been completed, and we have exactly one of
-	     * these constructs:
-	     *	 lindex <arbitraryValue> <posInt>
-	     *	 lindex <arbitraryValue> end-<posInt>
-	     * This is best compiled as a push of the arbitrary value followed
-	     * by an "immediate lindex" which is the most efficient variety.
-	     */
-
-	    CompileWord(envPtr, valTokenPtr, interp, 1);
-	    TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
-	    return TCL_OK;
-	}
-
+    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_BEFORE,
+	    &idx) == TCL_OK) {
 	/*
-	 * If the conversion failed or the value was negative, we just keep on
-	 * going with the more complex compilation.
+	 * The idxTokenPtr parsed as a valid index value and was
+	 * encoded as expected by INST_LIST_INDEX_IMM.
+	 *
+	 * NOTE: that we rely on indexing before a list producing the
+	 * same result as indexing after a list.
 	 */
+
+	CompileWord(envPtr, valTokenPtr, interp, 1);
+	TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
+	return TCL_OK;
     }
+
+    /*
+     * If the value was not known at compile time, the conversion failed or
+     * the value was negative, we just keep on going with the more complex
+     * compilation.
+     */
 
     /*
      * Push the operands onto the stack.
@@ -1198,20 +1195,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
-
-	PushLiteral(envPtr, bytes, len);
-	Tcl_DecrRefCount(listObj);
-	if (len > 0) {
-	    /*
-	     * Force list interpretation!
-	     */
-
-	    TclEmitOpcode(	INST_DUP,		envPtr);
-	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
-	    TclEmitOpcode(	INST_POP,		envPtr);
-	}
+	TclEmitPush(TclAddLiteralObj(envPtr, listObj, NULL), envPtr);
 	return TCL_OK;
     }
 
@@ -1259,7 +1243,7 @@ TclCompileListCmd(
 
     if (concat && numWords == 2) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			-2,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,	envPtr);
     }
     return TCL_OK;
 }
@@ -1326,67 +1310,32 @@ TclCompileLrangeCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    /*
-     * Parse the first index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
-
     tokenPtr = TokenAfter(listTokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
     /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
+     * Token was an index value, and we treat all "first" indices
+     * before the list same as the start of the list.
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
+    /*
+     * Token was an index value, and we treat all "last" indices
+     * after the list same as the end of the list.
+     */
 
     /*
      * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
@@ -1403,13 +1352,113 @@ TclCompileLrangeCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLinsertCmd --
+ *
+ *	How to compile the "linsert" command. We only bother with the case
+ *	where the index is constant.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLinsertCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int idx, i;
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing) or an end-based index greater than 'end' itself.
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+
+    /*
+     * NOTE: This command treats all inserts at indices before the list
+     * the same as inserts at the start of the list, and all inserts
+     * after the list the same as inserts at the end of the list. We
+     * make that transformation here so we can use the optimized bytecode
+     * as much as possible.
+     */
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_END,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * There are four main cases. If there are no values to insert, this is
+     * just a confirm-listiness check. If the index is '0', this is a prepend.
+     * If the index is 'end' (== TCL_INDEX_END), this is an append. Otherwise,
+     * this is a splice (== split, insert values as list, concat-3).
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    if (parsePtr->numWords == 3) {
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	return TCL_OK;
+    }
+
+    for (i=3 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+    TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
+
+    if (idx == TCL_INDEX_START) {
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    } else if (idx == TCL_INDEX_END) {
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    } else {
+	/*
+	 * Here we handle two ranges for idx. First when idx > 0, we
+	 * want the first half of the split to end at index idx-1 and
+	 * the second half to start at index idx.
+	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
+	 * we want the first half of the split to end at index end-N and
+	 * the second half to start at index end-N+1. We accomplish this
+	 * with a pre-adjustment of the end-N value.
+	 * The root of this is that the commands [lrange] and [linsert]
+	 * differ in their interpretation of the "end" index.
+	 */
+
+	if (idx < TCL_INDEX_END) {
+	    idx++;
+	}
+	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			idx - 1,		envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLreplaceCmd --
  *
  *	How to compile the "lreplace" command. We only bother with the case
- *	where there are no elements to insert and where both the 'first' and
- *	'last' arguments are constant and one can be deterined to be at the
- *	end of the list. (This is the case that could also be written with
- *	"lrange".)
+ *	where the indices are constant.
  *
  *----------------------------------------------------------------------
  */
@@ -1425,102 +1474,167 @@ TclCompileLreplaceCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result, guaranteedDropAll = 0;
+    int idx1, idx2, i, offset, offset2;
+    int emptyPrefix=1, suffixStart = 0;
 
-    if (parsePtr->numWords != 4) {
+    if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    /*
-     * Parse the first index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
-
     tokenPtr = TokenAfter(listTokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     /*
-     * Sanity check: can only issue when we're removing a range at one or
-     * other end of the list. If we're at one end or the other, convert the
-     * indices into the equivalent for an [lrange].
+     * idx1, idx2 are the conventional encoded forms of the tokens parsed
+     * as all forms of index values.  Values of idx1 that come before the
+     * list are treated the same as if they were the start of the list.
+     * Values of idx2 that come after the list are treated the same as if
+     * they were the end of the list.
      */
 
-    if (idx1 == 0) {
-	if (idx2 == -2) {
-	    guaranteedDropAll = 1;
-	}
-	idx1 = idx2 + 1;
-	idx2 = -2;
-    } else if (idx2 == -2) {
-	idx2 = idx1 - 1;
-	idx1 = 0;
-    } else {
+    if (idx1 == TCL_INDEX_AFTER) {
+	/*
+	 * [lreplace] treats idx1 value end+1 differently from end+2, etc.
+	 * The operand encoding cannot distinguish them, so we must bail
+	 * out to direct evaluation.
+	 */
 	return TCL_ERROR;
     }
 
     /*
-     * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
-     * we've not proved that the 'list' argument is really a list. Not that it
-     * is worth trying to do that given current knowledge.
+     * General structure of the [lreplace] result is
+     *		prefix replacement suffix
+     * In a few cases we can predict various parts will be empty and
+     * take advantage.
+     *
+     * The proper suffix begins with the greater of indices idx1 or
+     * idx2 + 1. If we cannot tell at compile time which is greater,
+     * we must defer to direct evaluation.
      */
 
+    if (idx2 == TCL_INDEX_BEFORE) {
+	suffixStart = idx1;
+    } else if (idx2 == TCL_INDEX_END) {
+	suffixStart = TCL_INDEX_AFTER;
+    } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
+	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
+	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
+    } else {
+	return TCL_ERROR;
+    }
+
+    /* All paths start with computing/pushing the original value. */
     CompileWord(envPtr, listTokenPtr, interp, 1);
-    if (guaranteedDropAll) {
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
-	PushStringLiteral(envPtr, "");
-    } else {
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx1,	envPtr);
-	TclEmitInt4(		idx2,				envPtr);
+
+    /*
+     * Push all the replacement values next so any errors raised in
+     * creating them get raised first.
+     */
+    if (parsePtr->numWords > 4) {
+	/* Push the replacement arguments */
+	tokenPtr = TokenAfter(tokenPtr);
+	for (i=4 ; i<parsePtr->numWords ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp, i);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+
+	/* Make a list of them... */
+	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
+
+	emptyPrefix = 0;
     }
+
+    /*
+     * [lreplace] raises an error when idx1 points after the list, but
+     * only when the list is not empty. This is maximum stupidity.
+     *
+     * TODO: TIP this nonsense away!
+     */
+    if (idx1 >= TCL_INDEX_START) {
+	if (emptyPrefix) {
+	    TclEmitOpcode(	INST_DUP,			envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	}
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	offset = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
+
+	/* List is not empty */
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewIntObj(idx1),
+							NULL),	envPtr);
+	TclEmitOpcode(		INST_GT,			envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/* Idx1 >= list length ===> raise an error */
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
+		"list doesn't contain element %d", idx1), NULL), envPtr);
+	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
+		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+		envPtr->codeStart + offset + 1);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
+    }
+
+    if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
+	/*
+	 * This is a "no-op". Example: [lreplace {a b c} 2 0]
+	 * We still do a list operation to get list-verification
+	 * and canonicalization side effects.
+	 */
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	return TCL_OK;
+    }
+
+    if (idx1 != TCL_INDEX_START) {
+	/* Prefix may not be empty; generate bytecode to push it */
+	if (emptyPrefix) {
+	    TclEmitOpcode(	INST_DUP,			envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	}
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			idx1 - 1,		envPtr);
+	if (!emptyPrefix) {
+	    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
+	}
+	emptyPrefix = 0;
+    }
+
+    if (!emptyPrefix) {
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+    }
+
+    if (suffixStart == TCL_INDEX_AFTER) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+	if (emptyPrefix) {
+	    PushStringLiteral(envPtr, "");
+	}
+    } else {
+	/* Suffix may not be empty; generate bytecode to push it */
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, suffixStart, envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	if (!emptyPrefix) {
+	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
+	}
+    }
+
     return TCL_OK;
 }
 
@@ -1787,6 +1901,28 @@ TclCompileNamespaceCodeCmd(
 }
 
 int
+TclCompileNamespaceOriginCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    CompileWord(envPtr,	tokenPtr,			interp, 1);
+    TclEmitOpcode(	INST_ORIGIN_COMMAND,		envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileNamespaceQualifiersCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -1869,7 +2005,7 @@ TclCompileNamespaceUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
@@ -1899,15 +2035,13 @@ TclCompileNamespaceUpvarCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for (i=3; i<=numWords; i+=2) {
+    for (i=2; i<numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, 1);
-
-	if ((localIndex < 0) || !isScalar) {
+	CompileWord(envPtr, otherTokenPtr, interp, i);
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
@@ -2093,7 +2227,7 @@ TclCompileRegexpCmd(
 	 * converted pattern as a literal.
 	 */
 
-	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
+	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
 	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
@@ -2102,7 +2236,7 @@ TclCompileRegexpCmd(
     }
 
     if (!simple) {
-	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-2);
+	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 2);
     }
 
     /*
@@ -2110,7 +2244,7 @@ TclCompileRegexpCmd(
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
-    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-1);
+    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 1);
 
     if (simple) {
 	if (exact && !nocase) {
@@ -2185,7 +2319,7 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    int len, exact, quantified, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2244,8 +2378,9 @@ TclCompileRegsubCmd(
      * replacement "simple"?
      */
 
-    bytes = Tcl_GetStringFromObj(patternObj, &len);
-    if (TclReToGlob(NULL, bytes, len, &pattern, &exact) != TCL_OK || exact) {
+    bytes = TclGetStringFromObj(patternObj, &len);
+    if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
+	    != TCL_OK || exact || quantified) {
 	goto done;
     }
     bytes = Tcl_DStringValue(&pattern);
@@ -2291,9 +2426,9 @@ TclCompileRegsubCmd(
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
     PushLiteral(envPtr,	bytes, len);
-    bytes = Tcl_GetStringFromObj(replacementObj, &len);
+    bytes = TclGetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
-    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords-2);
+    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords - 2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
 
   done:
@@ -2363,7 +2498,7 @@ TclCompileReturnCmd(
 
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
-	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	TclEmitInvoke(envPtr, INST_RETURN_STK);
 	return TCL_OK;
     }
 
@@ -2377,6 +2512,10 @@ TclCompileReturnCmd(
      * Scan through the return options. If any are unknown at compile time,
      * there is no value in bytecompiling. Save the option values known in an
      * objv array for merging into a return options dictionary.
+     *
+     * TODO: There is potential for improvement if all option keys are known
+     * at compile time and all option values relating to '-code' and '-level'
+     * are known at compile time.
      */
 
     for (objc = 0; objc < numOptionWords; objc++) {
@@ -2384,7 +2523,7 @@ TclCompileReturnCmd(
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    /*
-	     * Non-literal, so punt to run-time.
+	     * Non-literal, so punt to run-time assembly of the dictionary.
 	     */
 
 	    for (; objc>=0 ; objc--) {
@@ -2418,7 +2557,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	 CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	 CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.
@@ -2496,7 +2635,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	PushStringLiteral(envPtr, "");
     }
@@ -2505,7 +2644,7 @@ TclCompileReturnCmd(
      * Issue the RETURN itself.
      */
 
-    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    TclEmitInvoke(envPtr, INST_RETURN_STK);
     return TCL_OK;
 }
 
@@ -2517,6 +2656,23 @@ CompileReturnInternal(
     int level,
     Tcl_Obj *returnOpts)
 {
+    if (level == 0 && (code == TCL_BREAK || code == TCL_CONTINUE)) {
+	ExceptionRange *rangePtr;
+	ExceptionAux *exceptAux;
+
+	rangePtr = TclGetInnermostExceptionRange(envPtr, code, &exceptAux);
+	if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
+	    if (code == TCL_BREAK) {
+		TclAddLoopBreakFixup(envPtr, exceptAux);
+	    } else {
+		TclAddLoopContinueFixup(envPtr, exceptAux);
+	    }
+	    Tcl_DecrRefCount(returnOpts);
+	    return;
+	}
+    }
+
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
     TclEmitInstInt4(op, code, envPtr);
     TclEmitInt4(level, envPtr);
@@ -2532,7 +2688,7 @@ TclCompileSyntaxError(
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
-    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
+    TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
     Tcl_ResetResult(interp);
@@ -2566,18 +2722,16 @@ TclCompileUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
     if (envPtr->procPtr == NULL) {
-	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
     numWords = parsePtr->numWords;
     if (numWords < 3) {
-	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
@@ -2585,6 +2739,7 @@ TclCompileUpvarCmd(
      * Push the frame index if it is known at compile time
      */
 
+    objPtr = Tcl_NewObj();
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	CallFrame *framePtr;
@@ -2603,16 +2758,17 @@ TclCompileUpvarCmd(
 	    if (numWords%2) {
 		return TCL_ERROR;
 	    }
+	    /* TODO: Push the known value instead? */
 	    CompileWord(envPtr, tokenPtr, interp, 1);
 	    otherTokenPtr = TokenAfter(tokenPtr);
-	    i = 4;
+	    i = 2;
 	} else {
 	    if (!(numWords%2)) {
 		return TCL_ERROR;
 	    }
 	    PushStringLiteral(envPtr, "1");
 	    otherTokenPtr = tokenPtr;
-	    i = 3;
+	    i = 1;
 	}
     } else {
 	Tcl_DecrRefCount(objPtr);
@@ -2625,14 +2781,12 @@ TclCompileUpvarCmd(
      * be called at runtime.
      */
 
-    for (; i<=numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
+    for (; i<numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, 1);
-
-	if ((localIndex < 0) || !isScalar) {
+	CompileWord(envPtr, otherTokenPtr, interp, i);
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_UPVAR, localIndex,		envPtr);
@@ -2706,15 +2860,18 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
+	/* TODO: Consider what value can pass through the
+	 * IndexTailVarIfKnown() screen.  Full CompileWord()
+	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
-	if (i+1 < numWords) {
+	if (i + 1 < numWords) {
 	    /*
 	     * A value has been given: set the variable, pop the value
 	     */
 
-	    CompileWord(envPtr, valueTokenPtr, interp, i+1);
+	    CompileWord(envPtr, valueTokenPtr, interp, i + 1);
 	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
@@ -2779,16 +2936,18 @@ IndexTailVarIfKnown(
     } else {
 	full = 0;
 	lastTokenPtr = varTokenPtr + n;
-	if (!TclWordKnownAtCompileTime(lastTokenPtr, tailPtr)) {
+
+	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
 	    Tcl_DecrRefCount(tailPtr);
 	    return -1;
 	}
+	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
     tailName = TclGetStringFromObj(tailPtr, &len);
 
     if (len) {
-	if (*(tailName+len-1) == ')') {
+	if (*(tailName + len - 1) == ')') {
 	    /*
 	     * Possible array: bail out
 	     */
@@ -2802,7 +2961,7 @@ IndexTailVarIfKnown(
 	 */
 
 	for (p = tailName + len -1; p > tailName; p--) {
-	    if ((*p == ':') && (*(p-1) == ':')) {
+	    if ((*p == ':') && (*(p - 1) == ':')) {
 		p++;
 		break;
 	    }
@@ -2824,6 +2983,66 @@ IndexTailVarIfKnown(
     return localIndex;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclCompileObjectNextCmd, TclCompileObjectSelfCmd --
+ *
+ *	Compilations of the TclOO utility commands [next] and [self].
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclCompileObjectNextCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    int i;
+
+    if (parsePtr->numWords > 255) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt1(	INST_TCLOO_NEXT, i,		envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileObjectNextToCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    int i;
+
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 255) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt1(	INST_TCLOO_NEXT_CLASS, i,	envPtr);
+    return TCL_OK;
+}
+
 int
 TclCompileObjectSelfCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */

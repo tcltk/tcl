@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH self n 0.1 TclOO "TclOO Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -32,7 +32,12 @@ implement the current call chain. The first element is the same as would be
 reported by \fBinfo object\fR \fBcall\fR for the current method (except that this
 also reports useful values from within constructors and destructors, whose
 names are reported as \fB<constructor>\fR and \fB<destructor>\fR
-respectively), and the second element is an index into the first element's
+respectively,
+.VS TIP500
+and for private methods, which are described as being \fBprivate\fR instead of
+being a \fBmethod\fR),
+.VE TIP500
+and the second element is an index into the first element's
 list that indicates which actual implementation is currently executing (the
 first implementation to execute is always at index 0).
 .TP
