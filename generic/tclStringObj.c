@@ -2097,14 +2097,14 @@ Tcl_AppendFormatToObj(
 		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
-		if (TclGetLeastSign64bits(interp, segment, &w) != TCL_OK) {
+		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
 		    goto error;
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
 		if (w == (Tcl_WideInt) 0) gotHash = 0;
 #endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
-		if (TclGetLeastSign64bits(interp, segment, &w) != TCL_OK) {
+		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
 		    goto error;
 		} else {
 		    l = Tcl_WideAsLong(w);

@@ -2516,14 +2516,7 @@ Tcl_GetIntFromObj(
     if (TclGetLongFromObj(interp, objPtr, &l) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-	    (l > (long)(UINT_MAX))
-#else
-	    (l > (long)(INT_MAX))
-#endif
-	    || (l < (long)(INT_MIN))
-	) {
+    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent as non-long integer";
@@ -2812,13 +2805,8 @@ Tcl_GetLongFromObj(
 
 	    Tcl_WideInt w = objPtr->internalRep.wideValue;
 
-	    if (
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-		    (w <= (Tcl_WideInt)(ULONG_MAX))
-#else
-		    (w <= (Tcl_WideInt)(LONG_MAX))
-#endif
-		    && (w >= (Tcl_WideInt)(LONG_MIN))) {
+	    if (w >= (Tcl_WideInt)(LONG_MIN)
+		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
 		*longPtr = Tcl_WideAsLong(w);
 		return TCL_OK;
 	    }
@@ -2854,19 +2842,16 @@ Tcl_GetLongFromObj(
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
-		    if (
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 8
-			    big.sign ? (value <= 1 + (unsigned long)LONG_MAX) : (value <= (unsigned long)ULONG_MAX)
-#else
-			    big.sign ? (value <= 1 + (unsigned long)LONG_MAX) : (value <= (unsigned long)LONG_MAX)
-#endif
-		    ) {
-			if (big.sign) {
+		    if (big.sign) {
+			if (value <= 1 + (unsigned long)LONG_MAX) {    
 			    *longPtr = - (long) value;
-			} else {
+			    return TCL_OK;
+			}
+		    } else {
+			if (value <= (unsigned long)ULONG_MAX) {    
 			    *longPtr = (long) value;
-			    }
-			return TCL_OK;
+			    return TCL_OK;
+			}
 		    }
 		}
 	    }
@@ -3128,16 +3113,15 @@ Tcl_GetWideIntFromObj(
     return TCL_ERROR;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * TclGetLeastSign64bits --
+ * TclGetWideBitsFromObj --
  *
  *	Attempt to return a wide integer from the Tcl object "objPtr". If the
- *	object is not already a wide int object, an attempt will be made to
- *	convert it to one. Integer out-of-range values don't result in an
- *  error, but only the least significant 64 bit will be returned. 
+ *	object is not already a int, double or bignum, an attempt will be made
+ *	to convert it to one of these. Out-of-range values don't result in an
+ *  error, but only the least significant 64 bits will be returned. 
  *
  * Results:
  *	The return value is a standard Tcl object result. If an error occurs
@@ -3145,14 +3129,14 @@ Tcl_GetWideIntFromObj(
  *	result unless "interp" is NULL.
  *
  * Side effects:
- *	If the object is not already an int object, the conversion will free
- *	any old internal representation.
+ *	If the object is not already an int, double or bignum object, the
+ *	conversion will free any old internal representation.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclGetLeastSign64bits(
+TclGetWideBitsFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,            /* Object from which to get a wide int. */
     Tcl_WideInt *wideIntPtr)    /* Place to store resulting wide integer. */
@@ -3179,7 +3163,7 @@ TclGetLeastSign64bits(
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+	    mp_mod_2d(&big, (int) (CHAR_BIT * sizeof(Tcl_WideInt)), &big);
 	    mp_to_unsigned_bin_n(&big, bytes, &numBytes);
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
