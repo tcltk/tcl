@@ -58,7 +58,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 static int
 TclpIsAtty(int fd)
@@ -88,10 +88,10 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-int
+size_t
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (size_t) pid;
 }
 
 char *

@@ -309,10 +309,10 @@ declare 74 {
     void TclpFree(char *ptr)
 }
 declare 75 {
-    unsigned long TclpGetClicks(void)
+    Tcl_WideUInt TclpGetClicks(void)
 }
 declare 76 {
-    unsigned long TclpGetSeconds(void)
+    Tcl_WideUInt TclpGetSeconds(void)
 }
 
 # Removed in 9.0:
@@ -1102,7 +1102,7 @@ declare 5 win {
 #	    const char *optval, int optlen)
 #}
 declare 8 win {
-    int TclpGetPid(Tcl_Pid pid)
+    size_t TclpGetPid(Tcl_Pid pid)
 }
 # Removed in 9.0:
 #declare 9 win {
@@ -1160,7 +1160,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+    void TclWinAddProcess(HANDLE hProcess, size_t id)
 }
 # Removed in 9.0:
 #declare 21 win {
