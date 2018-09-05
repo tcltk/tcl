@@ -7684,7 +7684,7 @@ ExprWideFunc(
     if (ExprIntFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    TclGetLeastSign64bits(NULL, Tcl_GetObjResult(interp), &wResult);
+    TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
 }
@@ -7942,7 +7942,7 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetLeastSign64bits(NULL, objv[1], &w) != TCL_OK) {
+    if (TclGetWideBitsFromObj(NULL, objv[1], &w) != TCL_OK) {
 	return TCL_ERROR;
     }
 

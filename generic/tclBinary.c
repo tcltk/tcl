@@ -2024,7 +2024,7 @@ FormatNumber(
     case 'w':
     case 'W':
     case 'm':
-	if (TclGetLeastSign64bits(interp, src, &wvalue) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
@@ -2054,7 +2054,7 @@ FormatNumber(
     case 'i':
     case 'I':
     case 'n':
-	if (TclGetLeastSign64bits(interp, src, &wvalue) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
@@ -2076,7 +2076,7 @@ FormatNumber(
     case 's':
     case 'S':
     case 't':
-	if (TclGetLeastSign64bits(interp, src, &wvalue) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
@@ -2092,7 +2092,7 @@ FormatNumber(
 	 * 8-bit integer values.
 	 */
     case 'c':
-	if (TclGetLeastSign64bits(interp, src, &wvalue) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	*(*cursorPtr)++ = UCHAR(wvalue);
