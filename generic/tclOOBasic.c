@@ -83,7 +83,7 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj **invoke;
+    Tcl_Obj **invoke, *nameObj;
 
     if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -92,6 +92,17 @@ TclOO_Class_Constructor(
     } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
 	return TCL_OK;
     }
+
+    /*
+     * Make the class definition delegate. This is special; it doesn't reenter
+     * here (and the class definition delegate doesn't run any constructors).
+     */
+
+    nameObj = Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1);
+    Tcl_AppendToObj(nameObj, ":: oo ::delegate", -1);
+    Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
+	    TclGetString(nameObj), NULL, -1, NULL, -1);
+    Tcl_DecrRefCount(nameObj);
 
     /*
      * Delegate to [oo::define] to do the work.
@@ -111,7 +122,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
     TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, NULL, NULL, NULL);
+	    invoke, oPtr, NULL, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -128,12 +139,27 @@ DecrRefsPostClassConstructor(
     int result)
 {
     Tcl_Obj **invoke = data[0];
+    Object *oPtr = data[1];
+    Tcl_InterpState saved;
+    int code;
 
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
+    invoke[0] = Tcl_NewStringObj("::oo::MixinClassDelegates", -1);
+    invoke[1] = TclOOObjectName(interp, oPtr);
+    Tcl_IncrRefCount(invoke[0]);
+    Tcl_IncrRefCount(invoke[1]);
+    saved = Tcl_SaveInterpState(interp, result);
+    code = Tcl_EvalObjv(interp, 2, invoke, 0);
+    TclDecrRefCount(invoke[0]);
+    TclDecrRefCount(invoke[1]);
     Tcl_Free(invoke);
-    return result;
+    if (code != TCL_OK) {
+	Tcl_DiscardInterpState(saved);
+	return code;
+    }
+    return Tcl_RestoreInterpState(interp, saved);
 }
 
 /*
