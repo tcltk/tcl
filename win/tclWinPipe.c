@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (DWORD) pid) {
+	if (infoPtr->dwProcessId == (DWORD) (size_t) pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -1163,7 +1163,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1478,10 +1478,10 @@ QuoteCmdLinePart(
 	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
 	start = *bspos;
     }
-    /* 
-     * escape all special chars enclosed in quotes like `"..."`, note that here we 
+    /*
+     * escape all special chars enclosed in quotes like `"..."`, note that here we
      * don't must escape `\` (with `\`), because it's outside of the main quotes,
-     * so `\` remains `\`, but important - not at end of part, because results as 
+     * so `\` remains `\`, but important - not at end of part, because results as
      * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
      */
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
@@ -1636,7 +1636,7 @@ BuildCommandLine(
 		special++;
 	    }
 	    /* rest of argument (and escape backslashes before closing main quote) */
-	    QuoteCmdLineBackslash(&ds, start, special, 
+	    QuoteCmdLineBackslash(&ds, start, special,
 	    	(quote & CL_QUOTE) ? bspos : NULL);
 	}
 	if (quote & CL_QUOTE) {
@@ -2476,7 +2476,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (DWORD) pid) {
+	 if (infoPtr->dwProcessId == (DWORD) (size_t) pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}

@@ -7700,13 +7700,11 @@ ExprWideFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Tcl_WideInt wResult;
-    Tcl_Obj *objPtr;
 
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    objPtr = Tcl_GetObjResult(interp);
-    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
+    TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
 }
@@ -7809,7 +7807,7 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7fffffff;
+	iPtr->randSeed &= 0x7fffffff;
 	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	    iPtr->randSeed ^= 123459876;
 	}
@@ -7974,7 +7972,7 @@ ExprSrandFunc(
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = (unsigned long) (w & 0x7fffffff);
+    iPtr->randSeed = (long) w & 0x7fffffff;
     if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	iPtr->randSeed ^= 123459876;
     }
