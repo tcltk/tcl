@@ -2674,7 +2674,7 @@ Tcl_GetWideIntFromObj(
  *	Attempt to return a wide integer from the Tcl object "objPtr". If the
  *	object is not already a int, double or bignum, an attempt will be made
  *	to convert it to one of these. Out-of-range values don't result in an
- *  error, but only the least significant 64 bits will be returned. 
+ *	error, but only the least significant 64 bits will be returned.
  *
  * Results:
  *	The return value is a standard Tcl object result. If an error occurs
