@@ -925,8 +925,11 @@ Tcl_ScanObjCmd(
 		break;
 	    }
 	    if (flags & SCAN_LONGER) {
-		if (TclGetLeastSign64bits(NULL, objPtr, &wideValue) != TCL_OK) {
-		    goto done;
+		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
+		    wideValue = LLONG_MAX;
+		    if (TclGetString(objPtr)[0] == '-') {
+			wideValue = LLONG_MIN;
+		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
@@ -960,14 +963,12 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLeastSign64bits(NULL, objPtr, &wideValue) != TCL_OK) {
+		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			value = LONG_MIN;
 		    } else {
 			value = LONG_MAX;
 		    }
-		} else {
-		    value = (long) wideValue;	
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
 		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
