@@ -2330,8 +2330,6 @@ declare 631 {
 	    ClientData callbackData)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 ----- #
-
 # TIP #430
 declare 632 {
     int TclZipfs_Mount(
@@ -2354,6 +2352,9 @@ declare 635 {
     size_t datalen,
     int copy)
 }
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
@@ -2364,7 +2365,7 @@ interface tclPlat
 ################################
 # Unix specific functions
 #   (none)
-declare 0 unix {
+declare 2 unix {
     int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
