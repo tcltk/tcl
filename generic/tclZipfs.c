@@ -172,9 +172,9 @@ typedef struct ZipFile {
     char is_membuf;           /* When true, not a file but a memory buffer */
     Tcl_Channel chan;         /* Channel handle or NULL */
     unsigned char *data;      /* Memory mapped or malloc'ed file */
-    size_t length;            /* Length of memory mapped file */
+    Tcl_WideUInt length;      /* Length of memory mapped file */
     unsigned char *tofree;    /* Non-NULL if malloc'ed file */
-    size_t nfiles;               /* Number of files in archive */
+    size_t nfiles;            /* Number of files in archive */
     size_t baseoffs;          /* Archive start */
     size_t baseoffsp;         /* Password start */
     size_t centoffs;          /* Archive directory start */
@@ -1039,7 +1039,7 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
             goto error;
         }
         zf->length = Tcl_Seek(zf->chan, 0, SEEK_END);
-        if ((zf->length <= 0) || (zf->length > 64 * 1024 * 1024)) {
+        if ((zf->length < ZIP_CENTRAL_END_LEN) || (zf->length > 64 * 1024 * 1024)) {
             ZIPFS_ERROR(interp,"illegal file size");
             goto error;
         }
@@ -1058,9 +1058,9 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
         zf->chan = NULL;
     } else {
 #if defined(_WIN32) || defined(_WIN64)
-        zf->length = GetFileSize((HANDLE) handle, 0);
+        i = GetFileSizeEx((HANDLE) handle, (PLARGE_INTEGER)&zf->length);
         if (
-            (zf->length == (size_t)INVALID_FILE_SIZE) ||
+            (i == 0) ||
             (zf->length < ZIP_CENTRAL_END_LEN)
         ) {
             ZIPFS_ERROR(interp,"invalid file size");
@@ -1078,15 +1078,15 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
             goto error;
         }
 #else
-        zf->length = lseek((int) (long) handle, 0, SEEK_END);
+        zf->length = lseek(PTR2INT(handle), 0, SEEK_END);
         if ((zf->length == (size_t)-1) || (zf->length < ZIP_CENTRAL_END_LEN)) {
             ZIPFS_ERROR(interp,"invalid file size");
             goto error;
         }
-        lseek((int) (long) handle, 0, SEEK_SET);
+        lseek(PTR2INT(handle), 0, SEEK_SET);
         zf->data = (unsigned char *) mmap(0, zf->length, PROT_READ,
                           MAP_FILE | MAP_PRIVATE,
-                          (int) (long) handle, 0);
+						  PTR2INT(handle), 0);
         if (zf->data == MAP_FAILED) {
             ZIPFS_ERROR(interp,"file mapping failed");
             goto error;
@@ -2103,7 +2103,7 @@ wrerr:
          * Compressed file larger than input,
          * write it again uncompressed.
          */
-        if ((int) Tcl_Seek(in, 0, SEEK_SET) != 0) {
+        if (Tcl_Seek(in, 0, SEEK_SET) != 0) {
             goto seekErr;
         }
         if ((int) Tcl_Seek(out, pos[2], SEEK_SET) != pos[2]) {
@@ -4311,14 +4311,15 @@ TclZipfs_Init(Tcl_Interp *interp)
     Unlock();
     if(interp != NULL) {
         static const EnsembleImplMap initMap[] = {
-            {"mount",      ZipFSMountObjCmd,    NULL, NULL, NULL, 0},
-            {"mount_data",      ZipFSMountBufferObjCmd,    NULL, NULL, NULL, 0},
-            {"unmount",      ZipFSUnmountObjCmd,    NULL, NULL, NULL, 0},
-            {"mkkey",      ZipFSMkKeyObjCmd,    NULL, NULL, NULL, 0},
             {"mkimg",      ZipFSMkImgObjCmd,    NULL, NULL, NULL, 0},
             {"mkzip",      ZipFSMkZipObjCmd,    NULL, NULL, NULL, 0},
             {"lmkimg",      ZipFSLMkImgObjCmd,    NULL, NULL, NULL, 0},
             {"lmkzip",      ZipFSLMkZipObjCmd,    NULL, NULL, NULL, 0},
+            /* The 4 entries above are not available in safe interpreters */
+            {"mount",      ZipFSMountObjCmd,    NULL, NULL, NULL, 0},
+            {"mount_data",      ZipFSMountBufferObjCmd,    NULL, NULL, NULL, 0},
+            {"unmount",      ZipFSUnmountObjCmd,    NULL, NULL, NULL, 0},
+            {"mkkey",      ZipFSMkKeyObjCmd,    NULL, NULL, NULL, 0},
             {"exists",      ZipFSExistsObjCmd,    NULL, NULL, NULL, 1},
             {"info",      ZipFSInfoObjCmd,    NULL, NULL, NULL, 1},
             {"list",      ZipFSListObjCmd,    NULL, NULL, NULL, 1},
@@ -4349,7 +4350,7 @@ TclZipfs_Init(Tcl_Interp *interp)
             "}\n";
         Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
         Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,TCL_LINK_INT);
-        TclMakeEnsemble(interp, "zipfs", initMap);
+        TclMakeEnsemble(interp, "zipfs", Tcl_IsSafe(interp) ? (initMap+4) : initMap);
         Tcl_PkgProvide(interp, "zipfs", "2.0");
     }
     return TCL_OK;
