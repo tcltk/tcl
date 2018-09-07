@@ -391,6 +391,14 @@ test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
     interp delete slave
     unset lambda
 } {}
+
+test proc-7.5 {[631b4c45df] Crash in argument processing} {
+    binary scan A c val
+    proc foo [list  [list from $val]] {}
+    rename foo {}
+    unset -nocomplain val
+} {}
+
 
 # cleanup
 catch {rename p ""}
