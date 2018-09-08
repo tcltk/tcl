@@ -37,14 +37,17 @@ struct DeclaredSlot {
     const char *name;
     const Tcl_MethodType getterType;
     const Tcl_MethodType setterType;
+    const Tcl_MethodType resolverType;
 };
 
-#define SLOT(name,getter,setter)					\
+#define SLOT(name,getter,setter,resolver)				\
     {"::oo::" name,							\
 	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
 		    getter, NULL, NULL},				\
 	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
-		    setter, NULL, NULL}}
+		    setter, NULL, NULL},				\
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+		    resolver, NULL, NULL}}
 
 /*
  * Forward declarations.
@@ -109,20 +112,23 @@ static int		ObjVarsGet(ClientData clientData,
 static int		ObjVarsSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
+static int		ResolveClasses(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 
 /*
  * Now define the slots used in declarations.
  */
 
 static const struct DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilterGet, ClassFilterSet),
-    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet),
-    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet),
-    SLOT("define::variable",    ClassVarsGet,   ClassVarsSet),
-    SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet),
-    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet),
-    SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet),
-    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
+    SLOT("define::filter",      ClassFilterGet, ClassFilterSet, NULL),
+    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet, ResolveClasses),
+    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet, ResolveClasses),
+    SLOT("define::variable",    ClassVarsGet,   ClassVarsSet, NULL),
+    SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet, NULL),
+    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet, ResolveClasses),
+    SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet, NULL),
+    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
 
 /*
@@ -2063,6 +2069,7 @@ TclOODefineSlots(
     const struct DeclaredSlot *slotInfoPtr;
     Tcl_Obj *getName = Tcl_NewStringObj("Get", -1);
     Tcl_Obj *setName = Tcl_NewStringObj("Set", -1);
+    Tcl_Obj *resolveName = Tcl_NewStringObj("Resolve", -1);
     Class *slotCls;
 
     slotCls = ((Object *) Tcl_NewObjectInstance(fPtr->interp, (Tcl_Class)
@@ -2072,9 +2079,10 @@ TclOODefineSlots(
     }
     Tcl_IncrRefCount(getName);
     Tcl_IncrRefCount(setName);
+    Tcl_IncrRefCount(resolveName);
     for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(fPtr->interp,
-		(Tcl_Class) slotCls, slotInfoPtr->name, NULL,-1,NULL,0);
+		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, -1, NULL, 0);
 
 	if (slotObject == NULL) {
 	    continue;
@@ -2083,9 +2091,14 @@ TclOODefineSlots(
 		&slotInfoPtr->getterType, NULL);
 	Tcl_NewInstanceMethod(fPtr->interp, slotObject, setName, 0,
 		&slotInfoPtr->setterType, NULL);
+	if (slotInfoPtr->resolverType.callProc) {
+	    Tcl_NewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
+		    &slotInfoPtr->resolverType, NULL);
+	}
     }
     Tcl_DecrRefCount(getName);
     Tcl_DecrRefCount(setName);
+    Tcl_DecrRefCount(resolveName);
     return TCL_OK;
 }
 
@@ -2811,6 +2824,57 @@ ObjVarsSet(
     } else {
 	InstallStandardVariableMapping(&oPtr->variables, varc, varv);
     }
+    return TCL_OK;
+}
+
+
+static int
+ResolveClasses(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int cmdc, i, mustReset = 0;
+    Tcl_Obj **cmdv, **cmdv2;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"list");
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+    if (Tcl_ListObjGetElements(interp, objv[0], &cmdc,
+	    &cmdv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    cmdv2 = TclStackAlloc(interp, sizeof(Tcl_Obj *) * cmdc);
+
+    /*
+     * Resolve each o
+     */
+
+    for (i=0 ; i<cmdc ; i++) {
+	Class *clsPtr = GetClassInOuterContext(interp, cmdv[i],
+		"USER SHOULD NOT SEE THIS MESSAGE");
+	if (clsPtr == NULL) {
+	    cmdv2[i] = cmdv[i];
+	    mustReset = 1;
+	} else {
+	    cmdv2[i] = TclOOObjectName(interp, clsPtr->thisPtr);
+	}
+    }
+
+    if (mustReset) {
+	Tcl_ResetResult(interp);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewListObj(cmdc, cmdv2));
+    TclStackFree(interp, cmdv2);
     return TCL_OK;
 }
 
