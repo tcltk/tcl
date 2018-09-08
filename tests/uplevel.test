@@ -139,25 +139,25 @@ test uplevel-4.16 {level parsing} {
 } {}
 test uplevel-4.17 {level parsing} -returnCodes error -body {
     apply {{} {uplevel -0xffffffff {}}}
-} -result {invalid command name "-0xffffffff"}
+} -result {bad level "-0xffffffff"}
 test uplevel-4.18 {level parsing} -returnCodes error -body {
     apply {{} {uplevel #-0xffffffff {}}}
 } -result {bad level "#-0xffffffff"}
 test uplevel-4.19 {level parsing} -returnCodes error -body {
     apply {{} {uplevel [expr -0xffffffff] {}}}
-} -result {invalid command name "-4294967295"}
+} -result {bad level "-4294967295"}
 test uplevel-4.20 {level parsing} -returnCodes error -body {
     apply {{} {uplevel #[expr -0xffffffff] {}}}
 } -result {bad level "#-4294967295"}
 test uplevel-4.21 {level parsing} -body {
     apply {{} {uplevel -1 {}}}
-} -returnCodes error -result {invalid command name "-1"}
+} -returnCodes error -result {bad level "-1"}
 test uplevel-4.22 {level parsing} -body {
     apply {{} {uplevel #-1 {}}}
 } -returnCodes error -result {bad level "#-1"}
 test uplevel-4.23 {level parsing} -body {
     apply {{} {uplevel [expr -1] {}}}
-} -returnCodes error -result {invalid command name "-1"}
+} -returnCodes error -result {bad level "-1"}
 test uplevel-4.24 {level parsing} -body {
     apply {{} {uplevel #[expr -1] {}}}
 } -returnCodes error -result {bad level "#-1"}
@@ -175,13 +175,13 @@ test uplevel-4.28 {level parsing} -body {
 } -returnCodes error -result {bad level "#4294967295"}
 test uplevel-4.29 {level parsing} -body {
     apply {{} {uplevel 0.2 {}}}
-} -returnCodes error -result {bad level "0.2"}
+} -returnCodes error -result {invalid command name "0.2"}
 test uplevel-4.30 {level parsing} -body {
     apply {{} {uplevel #0.2 {}}}
 } -returnCodes error -result {bad level "#0.2"}
 test uplevel-4.31 {level parsing} -body {
     apply {{} {uplevel [expr 0.2] {}}}
-} -returnCodes error -result {bad level "0.2"}
+} -returnCodes error -result {invalid command name "0.2"}
 test uplevel-4.32 {level parsing} -body {
     apply {{} {uplevel #[expr 0.2] {}}}
 } -returnCodes error -result {bad level "#0.2"}
@@ -193,7 +193,7 @@ test uplevel-4.34 {level parsing} -body {
 } -returnCodes error -result {bad level "#.2"}
 test uplevel-4.35 {level parsing} -body {
     apply {{} {uplevel [expr .2] {}}}
-} -returnCodes error -result {bad level "0.2"}
+} -returnCodes error -result {invalid command name "0.2"}
 test uplevel-4.36 {level parsing} -body {
     apply {{} {uplevel #[expr .2] {}}}
 } -returnCodes error -result {bad level "#0.2"}
