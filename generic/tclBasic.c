@@ -6519,7 +6519,7 @@ Tcl_ExprLongObj(
 	resultPtr = Tcl_NewBignumObj(&big);
 	/* FALLTHROUGH */
     }
-    case TCL_NUMBER_WIDE:
+    case TCL_NUMBER_INT:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
 	break;
@@ -7495,7 +7495,7 @@ ExprAbsFunc(
 	return TCL_ERROR;
     }
 
-    if (type == TCL_NUMBER_WIDE) {
+    if (type == TCL_NUMBER_INT) {
 	Tcl_WideInt l = *((const Tcl_WideInt *) ptr);
 
 	if (l > (Tcl_WideInt)0) {
