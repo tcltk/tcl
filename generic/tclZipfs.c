@@ -172,7 +172,7 @@ typedef struct ZipFile {
     char is_membuf;           /* When true, not a file but a memory buffer */
     Tcl_Channel chan;         /* Channel handle or NULL */
     unsigned char *data;      /* Memory mapped or malloc'ed file */
-    Tcl_WideUInt length;      /* Length of memory mapped file */
+    size_t length;            /* Length of memory mapped file */
     unsigned char *tofree;    /* Non-NULL if malloc'ed file */
     size_t nfiles;            /* Number of files in archive */
     size_t baseoffs;          /* Archive start */
@@ -1057,10 +1057,16 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
         Tcl_Close(interp, zf->chan);
         zf->chan = NULL;
     } else {
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32)
+#   ifdef _WIN64
         i = GetFileSizeEx((HANDLE) handle, (PLARGE_INTEGER)&zf->length);
         if (
             (i == 0) ||
+#   else
+        zf->length = GetFileSize((HANDLE) handle, 0);
+        if (
+            (zf->length == (size_t)INVALID_FILE_SIZE) ||
+#   endif
             (zf->length < ZIP_CENTRAL_END_LEN)
         ) {
             ZIPFS_ERROR(interp,"invalid file size");
