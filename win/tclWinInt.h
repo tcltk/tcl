@@ -90,6 +90,8 @@ MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
 #endif /* TCL_THREADS */
 
+MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
+
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
 #define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400
