@@ -4169,7 +4169,8 @@ TEBCresume(
 	}
 	TRACE(("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), opnd, O2S(part2Ptr)));
-	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)) {
+	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
+		&& !(arrayPtr->flags & VAR_SEARCH_ACTIVE)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectUnsettable(varPtr)) {
 		/*
@@ -4294,17 +4295,12 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
     doArrayExists:
-	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	    DECACHE_STACK_INFO();
-	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
-		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
-		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
-	    CACHE_STACK_INFO();
-	    if (result == TCL_ERROR) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	DECACHE_STACK_INFO();
+	result = TclCheckArrayTraces(interp, varPtr, arrayPtr, part1Ptr, opnd);
+	CACHE_STACK_INFO();
+	if (result == TCL_ERROR) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
 	    objResultPtr = TCONST(1);
@@ -5388,88 +5384,10 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	if (valuePtr == value2Ptr) {
-	    match = 0;
-	} else {
-	    /*
-	     * We only need to check (in)equality when we have equal length
-	     * strings.  We can use memcmp in all (n)eq cases because we
-	     * don't need to worry about lexical LE/BE variance.
-	     */
-
-	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
-	    memCmpFn_t memCmpFn;
+	{
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-
-	    if (TclIsPureByteArray(valuePtr)
-		    && TclIsPureByteArray(value2Ptr)) {
-		s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
-		memCmpFn = memcmp;
-	    } else if ((valuePtr->typePtr == &tclStringType)
-		    && (value2Ptr->typePtr == &tclStringType)) {
-		/*
-		 * Do a unicode-specific comparison if both of the args are of
-		 * String type. If the char length == byte length, we can do a
-		 * memcmp. In benchmark testing this proved the most efficient
-		 * check between the unicode and string comparison operations.
-		 */
-
-		s1len = Tcl_GetCharLength(valuePtr);
-		s2len = Tcl_GetCharLength(value2Ptr);
-		if ((s1len == valuePtr->length)
-			&& (valuePtr->bytes != NULL)
-			&& (s2len == value2Ptr->length)
-			&& (value2Ptr->bytes != NULL)) {
-		    s1 = valuePtr->bytes;
-		    s2 = value2Ptr->bytes;
-		    memCmpFn = memcmp;
-		} else {
-		    s1 = (char *) Tcl_GetUnicode(valuePtr);
-		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
-		    if (
-#ifdef WORDS_BIGENDIAN
-			1
-#else
-			checkEq
-#endif
-			) {
-			memCmpFn = memcmp;
-			s1len *= sizeof(Tcl_UniChar);
-			s2len *= sizeof(Tcl_UniChar);
-		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
-		    }
-		}
-	    } else {
-		/*
-		 * strcmp can't do a simple memcmp in order to handle the
-		 * special Tcl \xC0\x80 null encoding for utf-8.
-		 */
-
-		s1 = TclGetStringFromObj(valuePtr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
-		if (checkEq) {
-		    memCmpFn = memcmp;
-		} else {
-		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
-		}
-	    }
-
-	    if (checkEq && (s1len != s2len)) {
-		match = 1;
-	    } else {
-		/*
-		 * The comparison function should compare up to the minimum
-		 * byte length only.
-		 */
-		match = memCmpFn(s1, s2,
-			(size_t) ((s1len < s2len) ? s1len : s2len));
-		if (match == 0) {
-		    match = s1len - s2len;
-		}
-	    }
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
 	}
 
 	/*
@@ -6145,6 +6063,14 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+
+	/*
+	    Try to determine, without triggering generation of a string
+	    representation, whether one value is not a number.
+	*/
+	if (TclCheckEmptyString(valuePtr) > 0 || TclCheckEmptyString(value2Ptr) > 0) {
+	    goto stringCompare;
+	}
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK
 		|| GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
