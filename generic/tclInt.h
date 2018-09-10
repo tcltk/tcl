@@ -2735,6 +2735,10 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
+enum CheckEmptyStringResult {
+	TCL_EMPTYSTRING_UNKNOWN = -1, TCL_EMPTYSTRING_NO, TCL_EMPTYSTRING_YES
+};
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world,
@@ -2864,8 +2868,6 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
-MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
-			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -2873,8 +2875,11 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 MODULE_SCOPE double	TclCeil(const mp_int *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
+MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
+			    Var *arrayPtr, Tcl_Obj *name, int index);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 			    const char *value);
+MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -2929,7 +2934,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
-Tcl_Namespace * 	TclEnsureNamespace(
+MODULE_SCOPE Tcl_Namespace * 	TclEnsureNamespace(
 			    Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 
@@ -3150,6 +3155,12 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
+
+typedef int (*memCmpFn_t)(const void*, const void*, size_t);
+MODULE_SCOPE int	TclStringCmp (Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
+			    int checkEq, int nocase, int reqlength);
+MODULE_SCOPE int	TclStringCmpOpts (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+			    int *nocase, int *reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -4455,6 +4466,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclIsPureByteArray(objPtr) \
 	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
+#define TclIsPureDict(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+
+#define TclIsPureList(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclListType))
 
 /*
  *----------------------------------------------------------------

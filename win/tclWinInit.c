@@ -112,7 +112,12 @@ static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
-static int		ToUtf(const WCHAR *wSrc, char *dst);
+
+#if TCL_UTF_MAX < 4
+static void		ToUtf(const WCHAR *wSrc, char *dst);
+#else
+#define ToUtf(wSrc, dst) WideCharToMultiByte(CP_UTF8, 0, wSrc, -1, dst, MAX_PATH * TCL_UTF_MAX, NULL, NULL)
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -435,7 +440,7 @@ InitializeSourceLibraryDir(
  *
  * ToUtf --
  *
- *	Convert a char string to a UTF string.
+ *	Convert a wchar string to a UTF string.
  *
  * Results:
  *	None.
@@ -446,21 +451,19 @@ InitializeSourceLibraryDir(
  *---------------------------------------------------------------------------
  */
 
-static int
+#if TCL_UTF_MAX < 4
+static void
 ToUtf(
     const WCHAR *wSrc,
     char *dst)
 {
-    char *start;
-
-    start = dst;
     while (*wSrc != '\0') {
 	dst += Tcl_UniCharToUtf(*wSrc, dst);
 	wSrc++;
     }
     *dst = '\0';
-    return (int) (dst - start);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -514,6 +517,27 @@ Tcl_GetEncodingNameFromEnvironment(
     return Tcl_DStringValue(bufPtr);
 }
 
+const char *
+TclpGetUserName(
+    Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
+				 * the name of user. */
+{
+    Tcl_DStringInit(bufferPtr);
+
+    if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
+	TCHAR szUserName[UNLEN+1];
+	DWORD cchUserNameLen = UNLEN;
+
+	if (!GetUserName(szUserName, &cchUserNameLen)) {
+	    return NULL;
+	}
+	cchUserNameLen--;
+	cchUserNameLen *= sizeof(TCHAR);
+	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+    }
+    return Tcl_DStringValue(bufferPtr);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -544,8 +568,6 @@ TclpSetVariables(
     static OSVERSIONINFOW osInfo;
     static int osInfoInitialized = 0;
     Tcl_DString ds;
-    TCHAR szUserName[UNLEN+1];
-    DWORD cchUserNameLen = UNLEN;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
@@ -623,15 +645,8 @@ TclpSetVariables(
      * Note: cchUserNameLen is number of characters including nul terminator.
      */
 
-    Tcl_DStringInit(&ds);
-    if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (GetUserName(szUserName, &cchUserNameLen) != 0) {
-	    int cbUserNameLen = cchUserNameLen - 1;
-	    cbUserNameLen *= sizeof(TCHAR);
-	    Tcl_WinTCharToUtf(szUserName, cbUserNameLen, &ds);
-	}
-    }
-    Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+    ptr = TclpGetUserName(&ds);
+    Tcl_SetVar2(interp, "tcl_platform", "user", ptr ? ptr : "",
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 
@@ -648,7 +663,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensitive, on Windows this matches mioxed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
