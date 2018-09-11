@@ -3875,7 +3875,7 @@ test oo-32.3 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {a b c g h i} {1 Resolve {g h i} 1 Get 1 Set {a b c g h i}}}
+}] -result {0 {} {a b c g h i} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {a b c g h i}}}
 test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3883,7 +3883,7 @@ test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {d e f} {1 Resolve {d e f} 1 Set {d e f}}}
+}] -result {0 {} {d e f} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f}}}
 test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3891,7 +3891,7 @@ test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {} {d e f g h i} {1 Resolve {d e f} 1 Set {d e f} 1 Resolve {g h i} 1 Get 1 Set {d e f g h i}}}
+}] -result {0 {} {} {d e f g h i} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f} 1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {d e f g h i}}}
 test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3899,7 +3899,7 @@ test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {g h i a b c} {1 Resolve {g h i} 1 Get 1 Set {g h i a b c}}}
+}] -result {0 {} {g h i a b c} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {g h i a b c}}}
 test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3907,7 +3907,7 @@ test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} b {1 Resolve {c a} 1 Get 1 Set b}}
+}] -result {0 {} b {1 Resolve c 1 Resolve a 1 Get 1 Set b}}
 
 test oo-33.1 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]

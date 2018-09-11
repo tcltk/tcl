@@ -112,7 +112,7 @@ static int		ObjVarsGet(ClientData clientData,
 static int		ObjVarsSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ResolveClasses(ClientData clientData,
+static int		ResolveClass(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 
@@ -122,11 +122,11 @@ static int		ResolveClasses(ClientData clientData,
 
 static const struct DeclaredSlot slots[] = {
     SLOT("define::filter",      ClassFilterGet, ClassFilterSet, NULL),
-    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet, ResolveClasses),
-    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet, ResolveClasses),
+    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet, ResolveClass),
+    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet, ResolveClass),
     SLOT("define::variable",    ClassVarsGet,   ClassVarsSet, NULL),
     SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet, NULL),
-    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet, ResolveClasses),
+    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet, ResolveClass),
     SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet, NULL),
     {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
@@ -2827,54 +2827,56 @@ ObjVarsSet(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ResolveClass --
+ *
+ *	Implementation of the "Resolve" support method for some slots (those
+ *	that are slots around a list of classes). This resolves possible class
+ *	names to their fully-qualified names if possible.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
-ResolveClasses(
+ResolveClass(
     ClientData clientData,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    int idx = Tcl_ObjectContextSkippedArgs(context);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int cmdc, i, mustReset = 0;
-    Tcl_Obj **cmdv, **cmdv2;
-
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"list");
-	return TCL_ERROR;
-    } else if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    objv += Tcl_ObjectContextSkippedArgs(context);
-    if (Tcl_ListObjGetElements(interp, objv[0], &cmdc,
-	    &cmdv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    cmdv2 = TclStackAlloc(interp, sizeof(Tcl_Obj *) * cmdc);
+    Class *clsPtr;
 
     /*
-     * Resolve each o
+     * Check if were called wrongly. The definition context isn't used...
+     * except that GetClassInOuterContext() assumes that it is there.
      */
 
-    for (i=0 ; i<cmdc ; i++) {
-	Class *clsPtr = GetClassInOuterContext(interp, cmdv[i],
-		"USER SHOULD NOT SEE THIS MESSAGE");
-	if (clsPtr == NULL) {
-	    cmdv2[i] = cmdv[i];
-	    mustReset = 1;
-	} else {
-	    cmdv2[i] = TclOOObjectName(interp, clsPtr->thisPtr);
-	}
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (objc != idx + 1) {
+	Tcl_WrongNumArgs(interp, idx, objv, "slotElement");
+	return TCL_ERROR;
     }
 
-    if (mustReset) {
+    /*
+     * Resolve the class if possible. If not, remove any resolution error and
+     * return what we've got anyway as the failure might not be fatal overall.
+     */
+
+    clsPtr = GetClassInOuterContext(interp, objv[idx],
+	    "USER SHOULD NOT SEE THIS MESSAGE");
+    if (clsPtr == NULL) {
 	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, objv[idx]);
+    } else {
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->thisPtr));
     }
-    Tcl_SetObjResult(interp, Tcl_NewListObj(cmdc, cmdv2));
-    TclStackFree(interp, cmdv2);
+
     return TCL_OK;
 }
 
