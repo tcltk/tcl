@@ -91,11 +91,13 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d ${prefix}/lib 2>/dev/null` \
-			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
+			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tcl8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tclConfig.sh" ; then
 			ac_cv_c_tclconfig="`(cd $i; pwd)`"
@@ -224,8 +226,11 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 			`ls -d ${prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tk8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tk8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tkConfig.sh" ; then
 			ac_cv_c_tkconfig="`(cd $i; pwd)`"
@@ -2412,7 +2417,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #	Might define the following vars:
 #		TCL_WIDE_INT_IS_LONG
 #		TCL_WIDE_INT_TYPE
-#		HAVE_STRUCT_DIRENT64
+#		HAVE_STRUCT_DIRENT64, HAVE_DIR64
 #		HAVE_STRUCT_STAT64
 #		HAVE_TYPE_OFF64_T
 #
@@ -2446,6 +2451,15 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
 	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
+	fi
+
+	AC_CACHE_CHECK([for DIR64], tcl_cv_DIR64,[
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <dirent.h>],[struct dirent64 *p; DIR64 d = opendir64(".");
+            p = readdir64(d); rewinddir64(d); closedir64(d);],
+		tcl_cv_DIR64=yes,tcl_cv_DIR64=no)])
+	if test "x${tcl_cv_DIR64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
 	fi
 
 	AC_CACHE_CHECK([for struct stat64], tcl_cv_struct_stat64,[

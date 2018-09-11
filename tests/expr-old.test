@@ -22,7 +22,8 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
