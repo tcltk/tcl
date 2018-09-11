@@ -298,25 +298,26 @@
 	# ------------------------------------------------------------------
 
 	method -set args {
-	    set args [uplevel 1 [list [namespace which my] Resolve $args]]
+	    set my [namespace which my]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    tailcall my Set $args
 	}
 	method -append args {
 	    set my [namespace which my]
-	    set args [uplevel 1 [list $my Resolve $args]]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$current {*}$args]
 	}
 	method -clear {} {tailcall my Set {}}
 	method -prepend args {
 	    set my [namespace which my]
-	    set args [uplevel 1 [list $my Resolve $args]]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$args {*}$current]
 	}
 	method -remove args {
 	    set my [namespace which my]
-	    set args [uplevel 1 [list $my Resolve $args]]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [lmap val $current {
 		if {$val in $args} continue else {set val}
