@@ -1881,7 +1881,7 @@ TclGlob(
 	separators = "/\\";
 
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-	if (pathPrefix == NULL && tail[0] == '/') {
+	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);
