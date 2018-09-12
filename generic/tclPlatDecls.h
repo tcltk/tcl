@@ -50,6 +50,10 @@ extern "C" {
  * Exported function declarations:
  */
 
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+/* 0 */
+EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
@@ -57,12 +61,12 @@ EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
 /* 1 */
 EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
 				Tcl_DString *dsPtr);
+/* 2 */
+EXTERN int		TclZipfs_AppHook(int *argc, TCHAR ***argv);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
-EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-				const char *bundleName, int hasResourceFile,
-				int maxPathLen, char *libraryPath);
+EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
@@ -75,12 +79,16 @@ typedef struct TclPlatStubs {
     int magic;
     void *hooks;
 
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+    int (*tclZipfs_AppHook) (int *argc, char ***argv); /* 0 */
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
+    int (*tclZipfs_AppHook) (int *argc, TCHAR ***argv); /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
+    int (*tclZipfs_AppHook) (int *argc, char ***argv); /* 0 */
     int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
 #endif /* MACOSX */
 } TclPlatStubs;
@@ -97,15 +105,21 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#define TclZipfs_AppHook \
+	(tclPlatStubsPtr->tclZipfs_AppHook) /* 0 */
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
+#define TclZipfs_AppHook \
+	(tclPlatStubsPtr->tclZipfs_AppHook) /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#define Tcl_MacOSXOpenBundleResources \
-	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
+#define TclZipfs_AppHook \
+	(tclPlatStubsPtr->tclZipfs_AppHook) /* 0 */
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
 #endif /* MACOSX */

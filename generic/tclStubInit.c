@@ -837,12 +837,16 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+    TclZipfs_AppHook, /* 0 */
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    TclZipfs_AppHook, /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_MacOSXOpenBundleResources, /* 0 */
+    TclZipfs_AppHook, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
 #endif /* MACOSX */
 };
@@ -1590,6 +1594,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_Mount_Buffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */
