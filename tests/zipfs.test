@@ -61,7 +61,7 @@ test zipfs-0.3 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -dir . http*]
 } -cleanup {
     cd $pwd
-} -result {./http ./http1.0}
+} -result {./http}
 
 test zipfs-0.4 {zipfs basics: glob} -constraints zipfs -body {
     set pwd [pwd]
@@ -69,23 +69,23 @@ test zipfs-0.4 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -dir [pwd] http*]
 } -cleanup {
     cd $pwd
-} -result [list $tcl_library/http $tcl_library/http1.0]
+} -result [list $tcl_library/http]
 
 test zipfs-0.5 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -dir $tcl_library http*]
-} -result [list $tcl_library/http $tcl_library/http1.0]
+} -result [list $tcl_library/http]
 
 test zipfs-0.6 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob $tcl_library/http*]
-} -result [list $tcl_library/http $tcl_library/http1.0]
+} -result [list $tcl_library/http]
 
 test zipfs-0.7 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -tails -dir $tcl_library http*]
-} -result {http http1.0}
+} -result {http}
 
 test zipfs-0.8 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -nocomplain -tails -types d -dir $tcl_library http*]
-} -result {http http1.0}
+} -result {http}
 
 test zipfs-0.9 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -nocomplain -tails -types f -dir $tcl_library http*]
