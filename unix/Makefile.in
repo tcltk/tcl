@@ -242,6 +242,8 @@ ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
+OBJEXT		        = @OBJEXT@
+
 #CC			= purify -best-effort @CC@ -DPURIFY
 
 # Flags to be passed to installManPage to control how the manpages should be
@@ -311,7 +313,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
-	tclTomMathInterface.o
+	tclTomMathInterface.o tclZipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
@@ -467,7 +469,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
-	$(GENERIC_DIR)/tclZlib.c
+	$(GENERIC_DIR)/tclZlib.c \
+	$(GENERIC_DIR)/tclZipfs.c
 
 OO_SRCS = \
 	$(GENERIC_DIR)/tclOO.c \
@@ -620,6 +623,44 @@ ZLIB_SRCS = \
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
+###
+# Tip 430 - ZipFS Modifications
+###
+
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+HOST_CC		        = @CC_FOR_BUILD@
+HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
+HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
+ZIPFS_BUILD	        = @ZIPFS_BUILD@
+NATIVE_ZIP		= @ZIP_PROG@
+ZIP_PROG_OPTIONS		= @ZIP_PROG_OPTIONS@
+ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
+SHARED_BUILD		= @SHARED_BUILD@
+INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+INSTALL_MSGS            = @INSTALL_MSGS@
+
+# Minizip
+MINIZIP_OBJS = \
+        adler32.$(HOST_OBJEXT) \
+        compress.$(HOST_OBJEXT) \
+        crc32.$(HOST_OBJEXT) \
+        deflate.$(HOST_OBJEXT) \
+        infback.$(HOST_OBJEXT) \
+        inffast.$(HOST_OBJEXT) \
+        inflate.$(HOST_OBJEXT) \
+        inftrees.$(HOST_OBJEXT) \
+        ioapi.$(HOST_OBJEXT) \
+        trees.$(HOST_OBJEXT) \
+        uncompr.$(HOST_OBJEXT) \
+        zip.$(HOST_OBJEXT) \
+        zutil.$(HOST_OBJEXT) \
+        minizip.$(HOST_OBJEXT)
+
+ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
+
 #--------------------------------------------------------------------------
 # Start of rules
 #--------------------------------------------------------------------------
@@ -632,11 +673,23 @@ libraries:
 
 doc:
 
+tclzipfile: ${TCL_ZIP_FILE}
+
+
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
+	rm -rf ${TCL_VFS_ROOT}
+	mkdir -p ${TCL_VFS_PATH}
+	cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
+	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
+
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
-${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
+${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	rm -f $@
 	@MAKE_LIB@
+ifeq (${ZIPFS_BUILD},1)
+	cat ${TCL_ZIP_FILE} >> ${LIB_FILE}
+endif
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
@@ -659,6 +712,7 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
+		cat ${TOOL_DIR}/empty.zip >> ${TCL_EXE}
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
@@ -670,7 +724,8 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 
 clean: clean-packages
 	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
+		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
+		minizip${HOST_EXEEXT} *.${HOST_OBJEXT} *.zip *.vfs
 	cd dltest ; $(MAKE) clean
 
 distclean: distclean-packages clean
@@ -786,7 +841,7 @@ trace-test: ${TCLTEST_EXE}
 # Installation rules
 #--------------------------------------------------------------------------
 
-INSTALL_BASE_TARGETS = install-binaries install-libraries install-msgs $(INSTALL_TZDATA)
+INSTALL_BASE_TARGETS = install-binaries $(INSTALL_LIBRARIES) $(INSTALL_MSGS) $(INSTALL_TZDATA)
 INSTALL_DOC_TARGETS = install-doc
 INSTALL_PACKAGE_TARGETS = install-packages
 INSTALL_DEV_TARGETS = install-headers
@@ -829,6 +884,25 @@ install-binaries: binaries
 	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
 	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
 	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
+
+install-libraries-zipfs-shared: libraries
+	@for i in "$(SCRIPT_INSTALL_DIR)"; \
+	    do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/";
+	@for i in \
+		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; \
+	    do \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
+	    done;
+
+install-libraries-zipfs-static: install-libraries-zipfs-shared
+	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)" ;\
 
 install-libraries: libraries
 	@for i in "$(SCRIPT_INSTALL_DIR)"; \
@@ -879,6 +953,7 @@ install-libraries: libraries
 	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
 	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
 	fi
+	end
 
 install-tzdata:
 	@for i in tzdata; \
@@ -1286,6 +1361,8 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		\
 		$(GENERIC_DIR)/tclPkgConfig.c
 
@@ -1336,6 +1413,14 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
+
+tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) \
+	-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
+	-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
@@ -1743,6 +1828,54 @@ tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
+
+#--------------------------------------------------------------------------
+# Minizip implementation
+#--------------------------------------------------------------------------
+adler32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/adler32.c
+
+compress.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/compress.c
+
+crc32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/crc32.c
+
+deflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
+
+ioapi.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+
+infback.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c
+
+inffast.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inffast.c
+
+inflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inflate.c
+
+inftrees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inftrees.c
+
+trees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/trees.c
+
+uncompr.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/uncompr.c
+
+zip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/zip.c
+
+zutil.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
+
+minizip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR)  -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+
+minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
+	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
 
 #--------------------------------------------------------------------------
 # Bundled Package targets
@@ -2167,6 +2300,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
+.PHONY: iinstall-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
