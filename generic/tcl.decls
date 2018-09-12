@@ -2332,8 +2332,28 @@ declare 631 {
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
-
-
+# TIP #430
+declare 632 {
+    int TclZipfs_Mount(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    const char *zipname,
+    const char *passwd)
+}
+declare 633 {
+    int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+}
+declare 634 {
+    Tcl_Obj *TclZipfs_TclLibrary(void)
+}
+declare 635 {
+    int TclZipfs_Mount_Buffer(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    unsigned char *data,
+    size_t datalen,
+    int copy)
+}
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
@@ -2344,6 +2364,9 @@ interface tclPlat
 ################################
 # Unix specific functions
 #   (none)
+declare 0 unix {
+    int TclZipfs_AppHook(int *argc, char ***argv)
+}
 
 ################################
 # Windows specific functions
@@ -2356,7 +2379,9 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
-
+declare 2 win {
+    int TclZipfs_AppHook(int *argc, TCHAR ***argv)
+}
 ################################
 # Mac OS X specific functions
 
