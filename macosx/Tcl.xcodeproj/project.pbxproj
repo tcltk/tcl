@@ -1342,7 +1342,6 @@
 				F96D3F3B08F272A8004A47F5 /* dde */,
 				F96D3F8C08F272A8004A47F5 /* history.tcl */,
 				F96D3F8D08F272A8004A47F5 /* http */,
-				F96D3F9008F272A8004A47F5 /* http1.0 */,
 				F96D3F9308F272A8004A47F5 /* init.tcl */,
 				F96D3F9408F272A8004A47F5 /* msgcat */,
 				F96D401708F272AA004A47F5 /* opt */,
@@ -1374,15 +1373,6 @@
 				F96D3F8F08F272A8004A47F5 /* pkgIndex.tcl */,
 			);
 			path = http;
-			sourceTree = "<group>";
-		};
-		F96D3F9008F272A8004A47F5 /* http1.0 */ = {
-			isa = PBXGroup;
-			children = (
-				F96D3F9108F272A8004A47F5 /* http.tcl */,
-				F96D3F9208F272A8004A47F5 /* pkgIndex.tcl */,
-			);
-			path = http1.0;
 			sourceTree = "<group>";
 		};
 		F96D3F9408F272A8004A47F5 /* msgcat */ = {

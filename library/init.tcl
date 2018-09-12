@@ -6,7 +6,10 @@
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2004 by Kevin B. Kenny.
+# Copyright (c) 2018 by Sean Woods
+#
+# All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -794,4 +797,21 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
+}
+set isafe [interp issafe]
+###
+# Package manifest for all Tcl packages included in the /library file system
+###
+set isafe [interp issafe]
+set dir [file dirname [info script]]
+foreach {safe package version file} {
+  0 http            2.8.13 {http http.tcl}
+  1 msgcat          1.7.0  {msgcat msgcat.tcl}
+  1 opt             0.4.7  {opt optparse.tcl}
+  0 platform        1.0.14 {platform platform.tcl}
+  0 platform::shell 1.1.4  {platform shell.tcl}
+  1 tcltest         2.4.1  {tcltest tcltest.tcl}
+} {
+  if {$isafe && !$safe} continue
+  package ifneeded $package $version  [list source [file join $dir {*}$file]]
 }
