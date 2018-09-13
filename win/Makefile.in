@@ -486,6 +486,8 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
+	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
+	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
 	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
@@ -864,6 +866,7 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
 
@@ -871,6 +874,7 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 

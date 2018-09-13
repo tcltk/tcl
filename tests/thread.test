@@ -11,14 +11,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
 
 #  when thread::release is used, -wait is passed in order allow the thread to
 #  be fully finalized, which avoids valgrind "still reachable" reports.
 
-package require tcltests
-
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+package require tcltests
 
 # Some tests require the testthread command
 
