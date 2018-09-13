@@ -445,20 +445,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
