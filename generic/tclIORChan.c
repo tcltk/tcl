@@ -1544,7 +1544,7 @@ ReflectSeekWide(
         goto invalid;
     }
 
-    if (newLoc < Tcl_LongAsWide(0)) {
+    if (newLoc < 0) {
 	SetChannelErrorStr(rcPtr->chan, msg_seek_beforestart);
         goto invalid;
     }
@@ -1576,7 +1576,7 @@ ReflectSeek(
      * routine.
      */
 
-    return (int) ReflectSeekWide(clientData, Tcl_LongAsWide(offset), seekMode,
+    return ReflectSeekWide(clientData, offset, seekMode,
 	    errorCodePtr);
 }
 
@@ -3079,7 +3079,7 @@ ForwardProc(
 	    Tcl_WideInt newLoc;
 
 	    if (Tcl_GetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
-		if (newLoc < Tcl_LongAsWide(0)) {
+		if (newLoc < 0) {
 		    ForwardSetStaticError(paramPtr, msg_seek_beforestart);
 		    paramPtr->seek.offset = -1;
 		} else {

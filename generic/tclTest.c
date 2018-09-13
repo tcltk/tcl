@@ -2832,7 +2832,7 @@ TestlinkCmd(
     static int intVar = 43;
     static int boolVar = 4;
     static double realVar = 1.23;
-    static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
+    static Tcl_WideInt wideVar = 79;
     static char *stringVar = NULL;
     static char charVar = '@';
     static unsigned char ucharVar = 130;
@@ -2842,7 +2842,7 @@ TestlinkCmd(
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
-    static Tcl_WideUInt uwideVar = (Tcl_WideUInt) Tcl_LongAsWide(123);
+    static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
