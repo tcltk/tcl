@@ -249,7 +249,7 @@ Tcl_WinUtfToTChar(
     }
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
-    return wp;
+    return (char *) wp;
 }
 
 char *
