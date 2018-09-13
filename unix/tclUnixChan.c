@@ -383,7 +383,7 @@ FileSeekProc(
      */
 
     oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
-    if (oldLoc == Tcl_LongAsWide(-1)) {
+    if (oldLoc == -1) {
 	/*
 	 * Bad things are happening. Error out...
 	 */
@@ -398,14 +398,14 @@ FileSeekProc(
      * Check for expressability in our return type, and roll-back otherwise.
      */
 
-    if (newLoc > Tcl_LongAsWide(INT_MAX)) {
+    if (newLoc > INT_MAX) {
 	*errorCodePtr = EOVERFLOW;
 	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
 	return -1;
     } else {
-	*errorCodePtr = (newLoc == Tcl_LongAsWide(-1)) ? errno : 0;
+	*errorCodePtr = (newLoc == -1) ? errno : 0;
     }
-    return (int) Tcl_WideAsLong(newLoc);
+    return (int) newLoc;
 }
 
 /*
