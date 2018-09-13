@@ -10,7 +10,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require tcltest 2
-package require tcltests
 
 namespace eval ::tcl::test::platform {
     namespace import ::tcltest::testConstraint
@@ -23,6 +22,7 @@ namespace eval ::tcl::test::platform {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+package require tcltests
 
 testConstraint testCPUID [llength [info commands testcpuid]]
 testConstraint testlongsize [llength [info commands testlongsize]]

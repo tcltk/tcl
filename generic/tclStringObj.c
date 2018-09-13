@@ -2030,7 +2030,7 @@ Tcl_AppendFormatToObj(
 		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
 		    goto error;
 		} else {
-		    l = Tcl_WideAsLong(w);
+		    l = (long) w;
 		}
 		if (useShort) {
 		    s = (short) l;
