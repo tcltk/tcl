@@ -189,6 +189,13 @@ Tcl_UniCharToUtf(
 	    buf[0] = (char) ((ch >> 18) | 0xF0);
 	    return 4;
 	}
+    } else if (ch == -1) {
+	if (((buf[0] & 0xF8) == 0xF0) && ((buf[1] & 0xC0) == 0x80)
+		&& ((buf[2] & 0xCF) == 0)) {
+	    ch = 0xD7C0 + ((buf[0] & 0x07) << 8) + ((buf[1] & 0x3F) << 2)
+		    + ((buf[2] & 0x30) >> 4);
+	    goto three;
+	}
 #endif
     }
 
@@ -762,10 +769,18 @@ Tcl_UtfAtIndex(
     register int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
+    int len = 1;
 
     while (index-- > 0) {
+	len = TclUtfToUniChar(src, &ch);
+	src += len;
+    }
+#if TCL_UTF_MAX == 4
+     if (!len) {
+	/* Index points at character following High Surrogate */
 	src += TclUtfToUniChar(src, &ch);
     }
+#endif
     return src;
 }
 
@@ -976,7 +991,11 @@ Tcl_UtfToTitle(
     }
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	lowChar = Tcl_UniCharToLower(ch);
+	lowChar = ch;
+	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
+	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
+	    lowChar = Tcl_UniCharToLower(lowChar);
+	}
 
 	if (bytes < UtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
@@ -1248,8 +1267,9 @@ Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
     int info = GetUniCharInfo(ch);
+    int mode = GetCaseType(info);
 
-    if (GetCaseType(info) & 0x02) {
+    if ((mode & 0x02) && (mode != 0x7)) {
 	ch += GetDelta(info);
     }
     return (Tcl_UniChar) ch;
@@ -1283,7 +1303,9 @@ Tcl_UniCharToTitle(
 	 * Subtract or add one depending on the original case.
 	 */
 
-	ch += ((mode & 0x4) ? -1 : 1);
+	if (mode != 0x7) {
+	    ch += ((mode & 0x4) ? -1 : 1);
+	}
     } else if (mode == 0x4) {
 	ch -= GetDelta(info);
     }

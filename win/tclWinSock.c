@@ -686,7 +686,7 @@ WaitForConnect(
 	}
 
 	/*
-	 * A non blocking socket waiting for an asyncronous connect
+	 * A non blocking socket waiting for an asynchronous connect
 	 * returns directly the error EWOULDBLOCK
 	 */
 
@@ -1606,9 +1606,9 @@ TcpGetHandleProc(
  *
  *	This might be called in 3 circumstances:
  *	-   By a regular socket command
- *	-   By the event handler to continue an asynchroneous connect
+ *	-   By the event handler to continue an asynchronously connect
  *	-   By a blocking socket function (gets/puts) to terminate the
- *	    connect synchroneously
+ *	    connect synchronously
  *
  * Results:
  *      TCL_OK, if the socket was successfully connected or an asynchronous
@@ -1620,7 +1620,7 @@ TcpGetHandleProc(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1628,7 +1628,7 @@ TcpGetHandleProc(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  *----------------------------------------------------------------------
  */
@@ -1718,7 +1718,7 @@ TcpConnect(
 		continue;
 	    }
 	    /*
-	     * For asyncroneous connect set the socket in nonblocking mode
+	     * For asynchroneous connect set the socket in nonblocking mode
 	     * and activate connect notification
 	     */
 	    if (async_connect) {
@@ -1806,7 +1806,7 @@ TcpConnect(
 
 	    /*
 	     * Clear the tsd socket list pointer if we did not wait for
-	     * the FD_CONNECT asyncroneously
+	     * the FD_CONNECT asynchroneously
 	     */
 	    tsdPtr->pendingTcpState = NULL;
 
@@ -1868,7 +1868,7 @@ out:
 	    SetEvent(tsdPtr->socketListLock);
 	}
 	/*
-	 * Error message on syncroneous connect
+	 * Error message on synchroneous connect
 	 */
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
