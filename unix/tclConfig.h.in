@@ -196,6 +196,9 @@
 /* Is 'struct dirent64' in <sys/types.h>? */
 #undef HAVE_STRUCT_DIRENT64
 
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Define to 1 if the system has the type `struct in6_addr'. */
 #undef HAVE_STRUCT_IN6_ADDR
 

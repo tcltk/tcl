@@ -663,6 +663,13 @@ test http11-4.3 "normal post request, check channel query length" -setup {
 
 # -------------------------------------------------------------------------
 
+# Eliminate valgrind "still reachable" reports on outstanding "Detached"
+# structures in the detached list which stem from PipeClose2Proc not waiting
+# around for background processes to complete, meaning that previous calls to
+# Tcl_ReapDetachedProcs might not have had a chance to reap all processes.
+after 10
+exec [info nameofexecutable] << {}
+
 foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
     if {[llength [info proc $p]]} {rename $p {}}
 }
