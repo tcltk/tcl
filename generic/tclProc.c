@@ -504,10 +504,11 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	nameLength = Tcl_NumUtfChars(Tcl_GetString(fieldValues[0]), fieldValues[0]->length);
+	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
+	nameLength = Tcl_NumUtfChars(argname, plen);
 	if (fieldCount == 2) {
-	    valueLength = Tcl_NumUtfChars(Tcl_GetString(fieldValues[1]),
-		fieldValues[1]->length);
+	    const char * value = TclGetString(fieldValues[1]);
+	    valueLength = Tcl_NumUtfChars(value, fieldValues[1]->length);
 	} else {
 	    valueLength = 0;
 	}
@@ -516,7 +517,6 @@ TclCreateProc(
 	 * Check that the formal parameter name is a scalar.
 	 */
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
 	argnamei = argname;
 	argnamelast = argname[plen-1];
 	while (plen--) {
@@ -611,7 +611,7 @@ TclCreateProc(
 		procPtr->lastLocalPtr = localPtr;
 	    }
 	    localPtr->nextPtr = NULL;
-	    localPtr->nameLength = Tcl_NumUtfChars(argname, fieldValues[0]->length);
+	    localPtr->nameLength = nameLength;
 	    localPtr->frameIndex = i;
 	    localPtr->flags = VAR_ARGUMENT;
 	    localPtr->resolveInfo = NULL;
