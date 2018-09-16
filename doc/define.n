@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 2007 Donal K. Fellows
+'\" Copyright (c) 2007-2018 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -39,6 +39,27 @@ used as the \fIdefScript\fR argument.
 The following commands are supported in the \fIdefScript\fR for
 \fBoo::define\fR, each of which may also be used in the \fIsubcommand\fR form:
 .TP
+\fBclassmethod\fI name\fR ?\fIargList bodyScrip\fR?
+.VS TIP478
+This creates a class method, or (if \fIargList\fR and \fIbodyScript\fR are
+omitted) promotes an existing method on the class object to be a class
+method. The \fIname\fR, \fIargList\fR and \fIbodyScript\fR arguments are as in
+the \fBmethod\fR definition, below.
+.RS
+.PP
+Class methods can be called on either the class itself or on the instances of
+that class. When they are called, the current object (see the \fBself\R and
+\fBmy\fR commands) is the class on which they are called or the class of the
+instance on which they are called, depending on whether they are called on the
+class or an instance of the class, respectively. If called on a subclass or
+instance of the subclass, the current object is the subclass.
+.PP
+In a private definition context, the methods as invoked on classes are
+\fInot\fR private, but the methods as invoked on instances of classes are
+private.
+.RE
+.VE TIP478
+.TP
 \fBconstructor\fI argList bodyScript\fR
 .
 This creates or updates the constructor for a class. The formal arguments to
@@ -50,7 +71,7 @@ being constructed. Within the constructor, the \fBnext\fR command should be
 used to call the superclasses' constructors. If \fIbodyScript\fR is the empty
 string, the constructor will be deleted.
 .TP
-\fBdeletemethod\fI name\fR ?\fIname ...\fR
+\fBdeletemethod\fI name\fR ?\fIname ...\fR?
 .
 This deletes each of the methods called \fIname\fR from a class. The methods
 must have previously existed in that class. Does not affect the superclasses
@@ -82,17 +103,14 @@ by a superclass; subclass exports override superclass visibility, and may in
 turn be overridden by instances.
 .TP
 \fBfilter\fR ?\fI\-slotOperation\fR? ?\fImethodName ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
-.VE
 sets or updates the list of method names that are used to guard whether
 method call to instances of the class may be called and what the method's
 results are. Each \fImethodName\fR names a single filtering method (which may
 be exposed or not exposed); it is not an error for a non-existent method to be
 named since they may be defined by subclasses.
-.VS
 By default, this slot works by appending.
-.VE
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
@@ -105,6 +123,22 @@ fully-qualified, the command will be searched for in each object's namespace,
 using the instances' namespace's path, or by looking in the global namespace.
 The method will be exported if \fIname\fR starts with a lower-case letter, and
 non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private forwarded methods.
+.VE TIP500
+.RE
+.TP
+\fBinitialise\fI script\fR
+.TP
+\fBinitialize\fI script\fR
+.VS TIP478
+This evaluates \fIscript\fR in a context which supports local variables and
+where the current namespace is the instance namespace of the class object
+itself. This is useful for setting up, e.g., class-scoped variables.
+.VE TIP478
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -117,17 +151,40 @@ be a namespace that is unique to the current object. The method will be
 exported if \fIname\fR starts with a lower-case letter, and non-exported
 otherwise; this behavior can be overridden via \fBexport\fR and
 \fBunexport\fR.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private procedure-like methods.
+.VE TIP500
+.RE
 .TP
 \fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
-.VE
 sets or updates the list of additional classes that are to be mixed into
 all the instances of the class being defined. Each \fIclassName\fR argument
 names a single class that is to be mixed in.
-.VS
 By default, this slot works by replacement.
-.VE
+.TP
+\fBprivate \fIcmd arg...\fR
+.TP
+\fBprivate \fIscript\fR
+.
+.VS TIP500
+This evaluates the \fIscript\fR (or the list of command and arguments given by
+\fIcmd\fR and \fIarg\fRs) in a context where the definitions made on the
+current class will be private definitions.
+.RS
+.PP
+The following class definition commands are affected by \fBprivate\fR:
+\fBforward\fR, \fBmethod\fR, \fBself\fR, and \fBvariable\fR. Nesting
+\fBprivate\fR inside \fBprivate\fR has no cumulative effect; the innermost
+definition context is just a private definition context. All other definition
+commands have no difference in behavior when used in a private definition
+context.
+.RE
+.VE TIP500
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -142,6 +199,8 @@ be afterwards.
 \fBself\fI subcommand arg ...\fR
 .TP
 \fBself\fI script\fR
+.TP
+\fBself\fR
 .
 This command is equivalent to calling \fBoo::objdefine\fR on the class being
 defined (see \fBCONFIGURING OBJECTS\fR below for a description of the
@@ -151,20 +210,29 @@ and
 .QW "\fBoo::define \fIcls \fBself \fIsubcommand ...\fR"
 operates identically to
 .QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
+.RS
+.PP
+.VS TIP470
+If no arguments at all are used, this gives the name of the class currently
+being configured.
+.VE TIP470
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), the definitions on the class object will also be made in a private
+definition context.
+.VE TIP500
+.RE
 .TP
 \fBsuperclass\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
-.VE
 allows the alteration of the superclasses of the class being defined.
 Each \fIclassName\fR argument names one class that is to be a superclass of
 the defined class. Note that objects must not be changed from being classes to
 being non-classes or vice-versa, that an empty parent class is equivalent to
 \fBoo::object\fR, and that the parent classes of \fBoo::object\fR and
 \fBoo::class\fR may not be modified.
-.VS
 By default, this slot works by replacement.
-.VE
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
@@ -176,18 +244,31 @@ actually defined by a superclass; subclass unexports override superclass
 visibility, and may be overridden by instance unexports.
 .TP
 \fBvariable\fR ?\fI\-slotOperation\fR? ?\fIname ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below) arranges for each of the named
 variables to be automatically made
 available in the methods, constructor and destructor declared by the class
 being defined. Each variable name must not have any namespace
 separators and must not look like an array access. All variables will be
-actually present in the instance object on which the method is executed. Note
+actually present in the namespace of the instance object on which the method
+is executed. Note
 that the variable lists declared by a superclass or subclass are completely
 disjoint, as are variable lists declared by instances; the list of variable
 names is just for methods (and constructors and destructors) declared by this
 class. By default, this slot works by appending.
-.VE
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this slot manipulates the list of private variable bindings for this
+class. In a private variable binding, the name of the variable within the
+instance object is different to the name given in the definition; the name
+used in the definition is the name that you use to access the variable within
+the methods of this class, and the name of the variable in the instance
+namespace has a unique prefix that makes accidental use from other classes
+extremely unlikely.
+.VE TIP500
+.RE
 .SS "CONFIGURING OBJECTS"
 .PP
 The following commands are supported in the \fIdefScript\fR for
@@ -214,18 +295,15 @@ being defined. Note that the methods themselves may be actually defined by a
 class or superclass; object exports override class visibility.
 .TP
 \fBfilter\fR ?\fI\-slotOperation\fR? ?\fImethodName ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
-.VE
 sets or updates the list of method names that are used to guard whether a
 method call to the object may be called and what the method's results are.
 Each \fImethodName\fR names a single filtering method (which may be exposed or
 not exposed); it is not an error for a non-existent method to be named. Note
 that the actual list of filters also depends on the filters set upon any
 classes that the object is an instance of.
-.VS
 By default, this slot works by appending.
-.VE
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
@@ -235,6 +313,13 @@ additional arguments, \fIarg\fR etc., added before those arguments specified
 by the caller of the method. Forwarded methods should be deleted using the
 \fBmethod\fR subcommand. The method will be exported if \fIname\fR starts with
 a lower-case letter, and non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private forwarded methods.
+.VE TIP500
+.RE
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -245,17 +330,38 @@ method will be \fIbodyScript\fR. When the body of the method is evaluated, the
 current namespace of the method will be a namespace that is unique to the
 object. The method will be exported if \fIname\fR starts with a lower-case
 letter, and non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private procedure-like methods.
+.VE TIP500
+.RE
 .TP
 \fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
-.VE
 sets or updates a per-object list of additional classes that are to be
 mixed into the object. Each argument, \fIclassName\fR, names a single class
 that is to be mixed in.
-.VS
 By default, this slot works by replacement.
-.VE
+.TP
+\fBprivate \fIcmd arg...\fR
+.TP
+\fBprivate \fIscript\fR
+.VS TIP500
+This evaluates the \fIscript\fR (or the list of command and arguments given by
+\fIcmd\fR and \fIarg\fRs) in a context where the definitions made on the
+current object will be private definitions.
+.RS
+.PP
+The following class definition commands are affected by \fBprivate\fR:
+\fBforward\fR, \fBmethod\fR, and \fBvariable\fR. Nesting \fBprivate\fR inside
+\fBprivate\fR has no cumulative effect; the innermost definition context is
+just a private definition context. All other definition commands have no
+difference in behavior when used in a private definition context.
+.RE
+.VE TIP500
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -264,6 +370,11 @@ The method must have previously existed in the object, and \fItoName\fR must
 not previously refer to a method in that object. Does not affect the classes
 that the object is an instance of. Does not change the export status of the
 method; if it was exported before, it will be afterwards.
+.TP
+\fBself \fR
+.VS TIP470
+This gives the name of the object currently being configured.
+.VE TIP470
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
@@ -274,15 +385,42 @@ object being defined. Note that the methods themselves may be actually defined
 by a class; instance unexports override class visibility.
 .TP
 \fBvariable\fR ?\fI\-slotOperation\fR? ?\fIname ...\fR?
-.VS
+.
 This slot (see \fBSLOTTED DEFINITIONS\fR below) arranges for each of the named
 variables to be automatically made available in the methods declared by the
 object being defined.  Each variable name must not have any namespace
 separators and must not look like an array access. All variables will be
-actually present in the object on which the method is executed. Note that the
+actually present in the namespace of the object on which the method is
+executed. Note that the
 variable lists declared by the classes and mixins of which the object is an
 instance are completely disjoint; the list of variable names is just for
 methods declared by this object. By default, this slot works by appending.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this slot manipulates the list of private variable bindings for this
+object.  In a private variable binding, the name of the variable within the
+instance object is different to the name given in the definition; the name
+used in the definition is the name that you use to access the variable within
+the methods of this instance object, and the name of the variable in the
+instance namespace has a unique prefix that makes accidental use from
+superclass methods extremely unlikely.
+.VE TIP500
+.RE
+.SH "PRIVATE METHODS"
+.VS TIP500
+When a class or instance has a private method, that private method can only be
+invoked from within methods of that class or instance. Other callers of the
+object's methods \fIcannot\fR invoke private methods, it is as if the private
+methods do not exist. However, a private method of a class \fIcan\fR be
+invoked from the class's methods when those methods are being used on another
+instance object; this means that a class can use them to coordinate behaviour
+between several instances of itself without interfering with how other
+classes (especially either subclasses or superclasses) interact. Private
+methods precede all mixed in classes in the method call order (as reported by
+\fBself call\fR).
+.VE TIP500
 .SH "SLOTTED DEFINITIONS"
 Some of the configurable definitions of a class or object are \fIslotted
 definitions\fR. This means that the configuration is implemented by a slot
@@ -290,20 +428,17 @@ object, that is an instance of the class \fBoo::Slot\fR, which manages a list
 of values (class names, variable names, etc.) that comprises the contents of
 the slot. The class defines three operations (as methods) that may be done on
 the slot:
-.VE
 .TP
 \fIslot\fR \fB\-append\fR ?\fImember ...\fR?
-.VS
+.
 This appends the given \fImember\fR elements to the slot definition.
-.VE
 .TP
 \fIslot\fR \fB\-clear\fR
-.VS
+.
 This sets the slot definition to the empty list.
-.VE
 .TP
 \fIslot\fR \fB\-set\fR ?\fImember ...\fR?
-.VS
+.
 This replaces the slot definition with the given \fImember\fR elements.
 .PP
 A consequence of this is that any use of a slot's default operation where the
@@ -316,17 +451,15 @@ which is forwarded to the default operation of the slot (thus, for the class
 slot, this is forwarded to
 .QW "\fBmy \-append\fR" ),
 and these methods which provide the implementation interface:
-.VE
 .TP
 \fIslot\fR \fBGet\fR
-.VS
+.
 Returns a list that is the current contents of the slot. This method must
 always be called from a stack frame created by a call to \fBoo::define\fR or
 \fBoo::objdefine\fR.
-.VE
 .TP
 \fIslot\fR \fBSet \fIelementList\fR
-.VS
+.
 Sets the contents of the slot to the list \fIelementList\fR and returns the
 empty string. This method must always be called from a stack frame created by
 a call to \fBoo::define\fR or \fBoo::objdefine\fR.
@@ -337,7 +470,6 @@ an unknown method handler to tie all these pieces together, and they hide
 their \fBdestroy\fR method so that it is not invoked inadvertently. It is
 \fIrecommended\fR that any user changes to the slot mechanism be restricted to
 defining new operations whose names start with a hyphen.
-.VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
 \fBoo::objdefine\fR commands (they work in the same way), as well as
@@ -394,6 +526,84 @@ oo::class create B {
 inst m1              \fI\(-> prints "red brick"\fR
 inst m2              \fI\(-> prints "blue brick"\fR
 .CE
+.PP
+.VS TIP478
+This example shows how to create and use class variables. It is a class that
+counts how many instances of itself have been made.
+.PP
+.CS
+oo::class create Counted
+\fBoo::define\fR Counted {
+    \fBinitialise\fR {
+        variable count 0
+    }
+
+    \fBvariable\fR number
+    \fBconstructor\fR {} {
+        classvariable count
+        set number [incr count]
+    }
+
+    \fBmethod\fR report {} {
+        classvariable count
+        puts "This is instance $number of $count"
+    }
+}
+
+set a [Counted new]
+set b [Counted new]
+$a report
+        \fI\(-> This is instance 1 of 2\fR
+set c [Counted new]
+$b report
+        \fI\(-> This is instance 2 of 3\fR
+$c report
+        \fI\(-> This is instance 3 of 3\fR
+.CE
+.PP
+This example demonstrates how to use class methods. (Note that the constructor
+for \fBoo::class\fR calls \fBoo::define\fR on the class.)
+.PP
+.CS
+oo::class create DBTable {
+    \fBclassmethod\fR find {description} {
+        puts "DB: locate row from [self] matching $description"
+        return [my new]
+    }
+    \fBclassmethod\fR insert {description} {
+        puts "DB: create row in [self] matching $description"
+        return [my new]
+    }
+    \fBmethod\fR update {description} {
+        puts "DB: update row [self] with $description"
+    }
+    \fBmethod\fR delete {} {
+        puts "DB: delete row [self]"
+        my destroy; # Just delete the object, not the DB row
+    }
+}
+
+oo::class create Users {
+    \fBsuperclass\fR DBTable
+}
+oo::class create Groups {
+    \fBsuperclass\fR DBTable
+}
+
+set u1 [Users insert "username=abc"]
+        \fI\(-> DB: create row from ::Users matching username=abc\fR
+set u2 [Users insert "username=def"]
+        \fI\(-> DB: create row from ::Users matching username=def\fR
+$u2 update "group=NULL"
+        \fI\(-> DB: update row ::oo::Obj124 with group=NULL\fR
+$u1 delete
+        \fI\(-> DB: delete row ::oo::Obj123\fR
+set g [Group find "groupname=webadmins"]
+        \fI\(-> DB: locate row ::Group with groupname=webadmins\fR
+$g update "emailaddress=admins"
+        \fI\(-> DB: update row ::oo::Obj125 with emailaddress=admins\fR
+.CE
+.VE TIP478
 .SH "SEE ALSO"
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS

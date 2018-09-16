@@ -137,7 +137,7 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
 	    /*
 	     * The code below provides backwards compatibility with an old
@@ -439,7 +439,7 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    /*
 	     * The code below provides backwards compatibility with an old
 	     * form of the command that is no longer recommended or
@@ -454,7 +454,7 @@ Tcl_ReadObjCmd(
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    }
 	    newline = 1;
 #endif
@@ -559,7 +559,7 @@ Tcl_SeekObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_Seek(chan, offset, mode);
-    if (result == Tcl_LongAsWide(-1)) {
+    if (result == -1) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -1913,7 +1913,7 @@ ChanTruncateObjCmd(
 	 */
 
 	length = Tcl_Tell(chan);
-	if (length == Tcl_WideAsLong(-1)) {
+	if (length == -1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not determine current location in \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp)));

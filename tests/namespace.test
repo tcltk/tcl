@@ -196,6 +196,19 @@ test namespace-7.7 {Bug 1655305} -setup {
     interp delete slave
 } -result {}
 
+test namespace-7.8 {Bug ba1419303b4c} -setup {
+    namespace eval ns1 {
+	namespace ensemble create
+    }
+
+    trace add command ns1 delete {
+	namespace delete ns1
+    }
+} -body {
+    # No segmentation fault given --enable-symbols=mem.
+    namespace delete ns1
+} -result {}
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp
@@ -1784,8 +1797,11 @@ test namespace-42.7 {ensembles: nested} -body {
     list [ns x0 z] [ns x1] [ns x2] [ns x3]
 } -cleanup {
     namespace delete ns
-} -result {{1 ::ns::x0::z} 1 2 3}
-test namespace-42.8 {ensembles: [Bug 1670091]} -setup {
+} -result {{1 z} 1 2 3}
+test namespace-42.8 {
+    ensembles: [Bug 1670091], panic due to pointer to a deallocated List
+    struct.
+} -setup {
     proc demo args {}
     variable target [list [namespace which demo] x]
     proc trial args {variable target; string length $target}
@@ -1799,6 +1815,34 @@ test namespace-42.8 {ensembles: [Bug 1670091]} -setup {
     rename trial {}
     rename foo {}
 } -result {}
+
+test namespace-42.9 {
+    ensembles: [Bug 4f6a1ebd64], segmentation fault due to pointer to a
+    deallocated List struct.
+} -setup {
+    namespace eval n {namespace ensemble create}
+    set lst [dict create one ::two]
+    namespace ensemble configure n -subcommands $lst -map $lst
+} -body {
+    n one
+} -cleanup {
+    namespace delete n
+    unset -nocomplain lst
+} -returnCodes error -match glob -result {invalid command name*}
+
+test namespace-42.10 {
+    ensembles: [Bug 4f6a1ebd64] segmentation fault due to pointer to a
+    deallocated List struct (this time with duplicate of one in "dict").
+} -setup {
+    namespace eval n {namespace ensemble create}
+    set lst [list one ::two one ::three]
+    namespace ensemble configure n -subcommands $lst -map $lst
+} -body {
+    n one
+} -cleanup {
+    namespace delete n
+    unset -nocomplain lst
+} -returnCodes error -match glob -result {invalid command name *three*}
 
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
@@ -1920,7 +1964,7 @@ test namespace-44.5 {ensemble: errors} -setup {
     foobar foobarcon
 } -cleanup {
     rename foobar {}
-} -returnCodes error -result {invalid command name "::foobarconfigure"}
+} -returnCodes error -result {invalid command name "foobarconfigure"}
 test namespace-44.6 {ensemble: errors} -returnCodes error -body {
     namespace ensemble create gorp
 } -result {wrong # args: should be "namespace ensemble create ?option value ...?"}
@@ -2084,7 +2128,7 @@ test namespace-47.1 {ensemble: unknown handler} {
     lappend result [catch {ns c d e} msg] $msg
     lappend result [catch {ns Magic foo bar spong wibble} msg] $msg
     list $result [lsort [info commands ::ns::*]] $log [namespace delete ns]
-} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running ::ns::a b c} {running ::ns::a b c} {making b} {running ::ns::b c d} {making c} {running ::ns::c d e} {unknown Magic - args = foo bar spong wibble}} {}}
+} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running a b c} {running a b c} {making b} {running b c d} {making c} {running c d e} {unknown Magic - args = foo bar spong wibble}} {}}
 test namespace-47.2 {ensemble: unknown handler} {
     namespace eval ns {
 	namespace export {[a-z]*}
@@ -3183,7 +3227,7 @@ test namespace-53.10 {ensembles: nested rewrite} -setup {
     1 {wrong # args: should be "ns z1 x a1"}\
     1 {wrong # args: should be "ns z2 x a1 a2"}\
     1 {wrong # args: should be "ns z2 x a1 a2"}\
-    1 {wrong # args: should be "::ns::x::z0"}\
+    1 {wrong # args: should be "z0"}\
     0 {1 v}\
     1 {wrong # args: should be "ns v x z2 a2"}\
     0 {2 v v2}}
@@ -3267,6 +3311,18 @@ test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
 	}
     }
 } {::testing::abc::def ::testing::abc::ghi}
+
+test namespace-56.4 {bug 16fe1b5807: names starting with ":"} {
+namespace eval : {
+    namespace ensemble create
+    namespace export *
+    proc p1 {} {
+	    return 16fe1b5807
+    }
+}
+
+: p1
+} 16fe1b5807
 
 # cleanup
 catch {rename cmd1 {}}

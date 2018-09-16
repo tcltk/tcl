@@ -482,13 +482,13 @@ ChanSeek(
 		offset, mode, errnoPtr);
     }
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+    if (offset<LONG_MIN || offset>LONG_MAX) {
 	*errnoPtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
-    return Tcl_LongAsWide(chanPtr->typePtr->seekProc(chanPtr->instanceData,
-	    Tcl_WideAsLong(offset), mode, errnoPtr));
+    return chanPtr->typePtr->seekProc(chanPtr->instanceData,
+	    offset, mode, errnoPtr);
 }
 
 static inline void
@@ -721,17 +721,18 @@ Tcl_SetStdChannel(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    int init = channel ? 1 : -1;
     switch (type) {
     case TCL_STDIN:
-	tsdPtr->stdinInitialized = 1;
+	tsdPtr->stdinInitialized = init;
 	tsdPtr->stdinChannel = channel;
 	break;
     case TCL_STDOUT:
-	tsdPtr->stdoutInitialized = 1;
+	tsdPtr->stdoutInitialized = init;
 	tsdPtr->stdoutChannel = channel;
 	break;
     case TCL_STDERR:
-	tsdPtr->stderrInitialized = 1;
+	tsdPtr->stderrInitialized = init;
 	tsdPtr->stderrChannel = channel;
 	break;
     }
@@ -768,8 +769,8 @@ Tcl_GetStdChannel(
     switch (type) {
     case TCL_STDIN:
 	if (!tsdPtr->stdinInitialized) {
+	    tsdPtr->stdinInitialized = -1;
 	    tsdPtr->stdinChannel = TclpGetDefaultStdChannel(TCL_STDIN);
-	    tsdPtr->stdinInitialized = 1;
 
 	    /*
 	     * Artificially bump the refcount to ensure that the channel is
@@ -781,6 +782,7 @@ Tcl_GetStdChannel(
 	     */
 
 	    if (tsdPtr->stdinChannel != NULL) {
+		tsdPtr->stdinInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdinChannel);
 	    }
 	}
@@ -788,9 +790,10 @@ Tcl_GetStdChannel(
 	break;
     case TCL_STDOUT:
 	if (!tsdPtr->stdoutInitialized) {
+	    tsdPtr->stdoutInitialized = -1;
 	    tsdPtr->stdoutChannel = TclpGetDefaultStdChannel(TCL_STDOUT);
-	    tsdPtr->stdoutInitialized = 1;
 	    if (tsdPtr->stdoutChannel != NULL) {
+		tsdPtr->stdoutInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdoutChannel);
 	    }
 	}
@@ -798,9 +801,10 @@ Tcl_GetStdChannel(
 	break;
     case TCL_STDERR:
 	if (!tsdPtr->stderrInitialized) {
+	    tsdPtr->stderrInitialized = -1;
 	    tsdPtr->stderrChannel = TclpGetDefaultStdChannel(TCL_STDERR);
-	    tsdPtr->stderrInitialized = 1;
 	    if (tsdPtr->stderrChannel != NULL) {
+		tsdPtr->stderrInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stderrChannel);
 	    }
 	}
@@ -1068,7 +1072,7 @@ CheckForStdChannelsBeingClosed(
     ChannelState *statePtr = ((Channel *) chan)->state;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (tsdPtr->stdinInitialized
+    if (tsdPtr->stdinInitialized == 1
 	    && tsdPtr->stdinChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -1076,7 +1080,7 @@ CheckForStdChannelsBeingClosed(
 	    tsdPtr->stdinChannel = NULL;
 	    return;
 	}
-    } else if (tsdPtr->stdoutInitialized
+    } else if (tsdPtr->stdoutInitialized == 1
 	    && tsdPtr->stdoutChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -1084,7 +1088,7 @@ CheckForStdChannelsBeingClosed(
 	    tsdPtr->stdoutChannel = NULL;
 	    return;
 	}
-    } else if (tsdPtr->stderrInitialized
+    } else if (tsdPtr->stderrInitialized == 1
 	    && tsdPtr->stderrChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -6708,7 +6712,7 @@ Tcl_Flush(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_ERROR;
     }
 
     result = FlushChannel(NULL, chanPtr, 0);
@@ -6949,7 +6953,7 @@ Tcl_Seek(
 				 * non-blocking mode after the seek. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6960,7 +6964,7 @@ Tcl_Seek(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6976,7 +6980,7 @@ Tcl_Seek(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6989,7 +6993,7 @@ Tcl_Seek(
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
 	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7032,7 +7036,7 @@ Tcl_Seek(
 	wasAsync = 1;
 	result = StackSetBlockMode(chanPtr, TCL_MODE_BLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
 	ResetFlag(statePtr, CHANNEL_NONBLOCKING);
 	if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
@@ -7057,7 +7061,7 @@ Tcl_Seek(
 	 */
 
 	curPos = ChanSeek(chanPtr, offset, mode, &result);
-	if (curPos == Tcl_LongAsWide(-1)) {
+	if (curPos == -1) {
 	    Tcl_SetErrno(result);
 	}
     }
@@ -7073,7 +7077,7 @@ Tcl_Seek(
 	SetFlag(statePtr, CHANNEL_NONBLOCKING);
 	result = StackSetBlockMode(chanPtr, TCL_MODE_NONBLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
     }
 
@@ -7113,7 +7117,7 @@ Tcl_Tell(
     Tcl_WideInt curPos;		/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7124,7 +7128,7 @@ Tcl_Tell(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7140,7 +7144,7 @@ Tcl_Tell(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7157,10 +7161,10 @@ Tcl_Tell(
      * wideSeekProc if that is available and non-NULL...
      */
 
-    curPos = ChanSeek(chanPtr, Tcl_LongAsWide(0), SEEK_CUR, &result);
-    if (curPos == Tcl_LongAsWide(-1)) {
+    curPos = ChanSeek(chanPtr, 0, SEEK_CUR, &result);
+    if (curPos == -1) {
 	Tcl_SetErrno(result);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     if (inputBuffered != 0) {
@@ -9032,6 +9036,7 @@ ZeroTransferTimerProc(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 int
 TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -9043,6 +9048,7 @@ TclCopyChannelOld(
     return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
             cmdPtr);
 }
+#endif
 
 int
 TclCopyChannel(

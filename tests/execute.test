@@ -34,7 +34,7 @@ testConstraint testobj [expr {
     && [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
 # Tests for the omnibus TclExecuteByteCode function:
@@ -724,7 +724,7 @@ test execute-6.14 {Tcl_ExprObj: exprcode context validation} -setup {
     }
     set result {}
     lappend result [expr $e]
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}
@@ -733,11 +733,11 @@ test execute-6.15 {Tcl_ExprObj: exprcode name resolution epoch validation} -setu
 } -body {
     set e { [llength {}]+1 }
     set result {}
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
     namespace eval foo {
 	proc llength {args} {return 1}
     }
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}

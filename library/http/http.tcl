@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.11
+package provide http 2.8.13
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -602,7 +602,7 @@ proc http::geturl {url args} {
 	if {[info exists state(-myaddr)]} {
 	    lappend sockopts -myaddr $state(-myaddr)
 	}
-        if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
+        if {[catch {eval $defcmd $sockopts $targetAddr} sock errdict]} {
 	    # something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
 	    # callback (if available) because we're going to throw an
@@ -611,7 +611,8 @@ proc http::geturl {url args} {
 	    set state(sock) $sock
 	    Finish $token "" 1
 	    cleanup $token
-	    return -code error $sock
+	    dict unset errdict -level
+	    return -options $errdict $sock
         }
     }
     set state(sock) $sock
@@ -1027,6 +1028,7 @@ proc http::Event {sock token} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
 	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
+		set state(state) "connecting"
 		return
 	    }
 

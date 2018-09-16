@@ -31,17 +31,21 @@
 #undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
+#undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
+#undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef Tcl_SetLongObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
@@ -49,7 +53,7 @@
 #undef TclWinNToHS
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#if defined(_WIN64) || defined(TCL_NO_DEPRECATED)
+#if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSockMinimumBuffersOld 0
 #else
 #define TclSockMinimumBuffersOld sockMinimumBuffersOld
@@ -59,16 +63,31 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
-#if defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
 #   define TclGetStartupScriptFileName 0
+#   define TclPrecTraceProc 0
 #   define TclpInetNtoa 0
 #   define TclWinGetServByName 0
 #   define TclWinGetSockOpt 0
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
+#   define TclWinGetPlatformId 0
+#   define TclWinResetInterfaces 0
+#   define TclWinSetInterfaces 0
+#   define TclWinGetPlatformId 0
+#   define TclBNInitBignumFromWideUInt 0
+#   define TclBNInitBignumFromWideInt 0
+#   define TclBNInitBignumFromLong 0
+#   define Tcl_Backslash 0
+#   define Tcl_GetDefaultEncodingDir 0
+#   define Tcl_SetDefaultEncodingDir 0
+#   define Tcl_EvalTokens 0
+#   define Tcl_CreateMathFunc 0
+#   define Tcl_GetMathFuncInfo 0
+#   define Tcl_ListMathFuncs 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -95,14 +114,32 @@ static const char *TclGetStartupScriptFileName(void)
     }
     return Tcl_GetString(path);
 }
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
+#undef TclWinGetPlatformId
+#undef TclWinResetInterfaces
+#undef TclWinSetInterfaces
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
+#define TclWinGetPlatformId winGetPlatformId
+static int
+TclWinGetPlatformId(void)
+{
+    return 2; /* VER_PLATFORM_WIN32_NT */;
+}
+#define TclWinResetInterfaces doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
 #endif
+#   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
+#   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
+#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -113,12 +150,15 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
+#endif
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
-
-static Tcl_Encoding winTCharEncoding;
 
 static int
 TclpIsAtty(int fd)
@@ -126,24 +166,15 @@ TclpIsAtty(int fd)
     return isatty(fd);
 }
 
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
-}
-
 void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&winTCharEncoding, &hInstance);
+	    (const char *)&TclpIsAtty, &hInstance);
     return hInstance;
 }
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinSetSockOpt winSetSockOpt
 static int
 TclWinSetSockOpt(SOCKET s, int level, int optname,
@@ -188,23 +219,37 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
+    WCHAR *wp, *p;
+    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
+
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, 2*size+2);
+    p = wp = (WCHAR *)Tcl_DStringValue(dsPtr);
+    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
+    if (len == -1) --size; /* account for 0-byte at string end */
+
+    /* It turns out that MultiByteToWideChar() cannot handle the 'modified'
+     * UTF-8 as used by Tcl. Every sequence of 0xC0 followed by 0x80 will
+     * be translated to two 0xfffd characters. This results in a test-failure
+     * of the registry-6.20 test-case. The simplest solution is to search for
+     * those two 0xfffd characters and replace them by a \u0000 character. */
+    while (p < wp + size - 1) {
+	if (p[0] == 0xfffd && p[1] == 0xfffd) {
+	    memmove(p+1, p+2, sizeof(WCHAR) * (p - wp + size - 2));
+	    p[0] = 0;
+	    ++p; --size;
+	}
+	++p;
     }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
+    Tcl_DStringSetLength(dsPtr, 2*size);
+    wp[size] = 0;
+    return (char *) wp;
 }
 
 char *
@@ -213,11 +258,21 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
+    char *p;
+    int size;
+
+    if (len > 0) {
+	len /= 2;
     }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
+    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, size+1);
+    p = (char *)Tcl_DStringValue(dsPtr);
+    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
+    if (len == -1) --size; /* account for 0-byte at string end */
+    Tcl_DStringSetLength(dsPtr, size);
+    p[size] = 0;
+    return p;
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -226,28 +281,6 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))dbNewLongObj)
-static Tcl_Obj *dbNewLongObj(
-    int intValue,
-    const char *file,
-    int line
-) {
-#ifdef TCL_MEM_DEBUG
-    register Tcl_Obj *objPtr;
-
-    TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = (long) intValue;
-    objPtr->typePtr = &tclIntType;
-    return objPtr;
-#else
-    return Tcl_NewIntObj(intValue);
-#endif
-}
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetIntFromObj
-#define Tcl_NewLongObj (Tcl_Obj*(*)(long))Tcl_NewIntObj
-#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))Tcl_SetIntObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -296,16 +329,12 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
 #define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
-static int formatInt(char *buffer, int n){
-   return TclFormatInt(buffer, (long)n);
-}
-#define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #endif /* __CYGWIN__ */
 
-#ifdef TCL_NO_DEPRECATED
+#if defined(TCL_NO_DEPRECATED)
 #   define Tcl_SeekOld 0
 #   define Tcl_TellOld 0
 #   undef Tcl_SetBooleanObj
@@ -360,6 +389,26 @@ static int formatInt(char *buffer, int n){
 #   define TclBackgroundException 0
 #   undef TclpReaddir
 #   define TclpReaddir 0
+#   define TclSetStartupScript 0
+#   define TclGetStartupScript 0
+#   define TclCreateNamespace 0
+#   define TclDeleteNamespace 0
+#   define TclAppendExportList 0
+#   define TclExport 0
+#   define TclImport 0
+#   define TclForgetImport 0
+#   define TclGetCurrentNamespace_ 0
+#   define TclGetGlobalNamespace_ 0
+#   define TclFindNamespace 0
+#   define TclFindCommand 0
+#   define TclGetCommandFromObj 0
+#   define TclGetCommandFullName 0
+#   define TclCopyChannelOld 0
+#   define Tcl_AppendResultVA 0
+#   define Tcl_AppendStringsToObjVA 0
+#   define Tcl_SetErrorCodeVA 0
+#   define Tcl_PanicVA 0
+#   define Tcl_VarEvalVA 0
 #   undef TclpGetDate
 #   define TclpGetDate 0
 #   undef TclpLocaltime
@@ -368,10 +417,25 @@ static int formatInt(char *buffer, int n){
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   define Tcl_GetUnicode 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
 #   define TclBackgroundException Tcl_BackgroundException
+#   define TclSetStartupScript Tcl_SetStartupScript
+#   define TclGetStartupScript Tcl_GetStartupScript
+#   define TclCreateNamespace Tcl_CreateNamespace
+#   define TclDeleteNamespace Tcl_DeleteNamespace
+#   define TclAppendExportList Tcl_AppendExportList
+#   define TclExport Tcl_Export
+#   define TclImport Tcl_Import
+#   define TclForgetImport Tcl_ForgetImport
+#   define TclGetCurrentNamespace_ Tcl_GetCurrentNamespace
+#   define TclGetGlobalNamespace_ Tcl_GetGlobalNamespace
+#   define TclFindNamespace Tcl_FindNamespace
+#   define TclFindCommand Tcl_FindCommand
+#   define TclGetCommandFromObj Tcl_GetCommandFromObj
+#   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 
@@ -381,20 +445,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -406,6 +464,15 @@ tellOld(
 
 MODULE_SCOPE const TclStubs tclStubs;
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
+
+#ifdef __GNUC__
+/*
+ * The rest of this file shouldn't warn about deprecated functions; they're
+ * there because we intend them to be so and know that this file is OK to
+ * touch those fields.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -524,22 +591,22 @@ static const TclIntStubs tclIntStubs = {
     TclUpdateReturnInfo, /* 109 */
     TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
-    Tcl_AppendExportList, /* 112 */
-    Tcl_CreateNamespace, /* 113 */
-    Tcl_DeleteNamespace, /* 114 */
-    Tcl_Export, /* 115 */
-    Tcl_FindCommand, /* 116 */
-    Tcl_FindNamespace, /* 117 */
+    TclAppendExportList, /* 112 */
+    TclCreateNamespace, /* 113 */
+    TclDeleteNamespace, /* 114 */
+    TclExport, /* 115 */
+    TclFindCommand, /* 116 */
+    TclFindNamespace, /* 117 */
     Tcl_GetInterpResolvers, /* 118 */
     Tcl_GetNamespaceResolvers, /* 119 */
     Tcl_FindNamespaceVar, /* 120 */
-    Tcl_ForgetImport, /* 121 */
-    Tcl_GetCommandFromObj, /* 122 */
-    Tcl_GetCommandFullName, /* 123 */
-    Tcl_GetCurrentNamespace, /* 124 */
-    Tcl_GetGlobalNamespace, /* 125 */
+    TclForgetImport, /* 121 */
+    TclGetCommandFromObj, /* 122 */
+    TclGetCommandFullName, /* 123 */
+    TclGetCurrentNamespace_, /* 124 */
+    TclGetGlobalNamespace_, /* 125 */
     Tcl_GetVariableFullName, /* 126 */
-    Tcl_Import, /* 127 */
+    TclImport, /* 127 */
     Tcl_PopCallFrame, /* 128 */
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
@@ -590,8 +657,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    Tcl_SetStartupScript, /* 178 */
-    Tcl_GetStartupScript, /* 179 */
+    TclSetStartupScript, /* 178 */
+    TclGetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     TclpLocaltime, /* 182 */
@@ -664,6 +731,11 @@ static const TclIntStubs tclIntStubs = {
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
+    TclPtrGetVar, /* 252 */
+    TclPtrSetVar, /* 253 */
+    TclPtrIncrObjVar, /* 254 */
+    TclPtrObjMakeUpvar, /* 255 */
+    TclPtrUnsetVar, /* 256 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -773,13 +845,20 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+    0, /* 0 */
+    0, /* 1 */
+    TclZipfs_AppHook, /* 2 */
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    TclZipfs_AppHook, /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    TclZipfs_AppHook, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -854,6 +933,11 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
+    TclBN_mp_set_long_long, /* 68 */
+    TclBN_mp_get_long_long, /* 69 */
+    TclBN_mp_set_long, /* 70 */
+    TclBN_mp_get_long, /* 71 */
+    TclBN_mp_get_int, /* 72 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -1521,6 +1605,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_Mount_Buffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

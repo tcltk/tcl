@@ -16,7 +16,7 @@
  */
 
 /* reduces a modulo n where n is of the form 2**p - d */
-int mp_reduce_2k(mp_int *a, mp_int *n, mp_digit d)
+int mp_reduce_2k(mp_int *a, const mp_int *n, mp_digit d)
 {
    mp_int q;
    int    p, res;
@@ -32,7 +32,7 @@ top:
       goto ERR;
    }
 
-   if (d != 1) {
+   if (d != 1u) {
       /* q = q * d */
       if ((res = mp_mul_d(&q, d, &q)) != MP_OKAY) {
          goto ERR;
@@ -58,6 +58,6 @@ ERR:
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
