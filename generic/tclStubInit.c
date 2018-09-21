@@ -225,17 +225,31 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
+    WCHAR *wp, *p;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
+    p = wp = (WCHAR *)Tcl_DStringValue(dsPtr);
     MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
     if (len == -1) --size; /* account for 0-byte at string end */
+
+    /* It turns out that MultiByteToWideChar() cannot handle the 'modified'
+     * UTF-8 as used by Tcl. Every sequence of 0xC0 followed by 0x80 will
+     * be translated to two 0xfffd characters. This results in a test-failure
+     * of the registry-6.20 test-case. The simplest solution is to search for
+     * those two 0xfffd characters and replace them by a \u0000 character. */
+    while (p < wp + size - 1) {
+	if (p[0] == 0xfffd && p[1] == 0xfffd) {
+	    memmove(p+1, p+2, sizeof(WCHAR) * (p - wp + size - 2));
+	    p[0] = 0;
+	    ++p; --size;
+	}
+	++p;
+    }
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
-    return (char *)wp;
+    return (char *) wp;
 }
 
 char *
@@ -431,20 +445,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -837,13 +845,20 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+    0, /* 0 */
+    0, /* 1 */
+    TclZipfs_AppHook, /* 2 */
+#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    TclZipfs_AppHook, /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    TclZipfs_AppHook, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -1590,6 +1605,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_Mount_Buffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */
