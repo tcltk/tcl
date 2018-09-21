@@ -2882,18 +2882,18 @@ proc tcltest::runAllTests { {shell ""} } {
 
 # tcltest::loadTestedCommands --
 #
-#     Uses the specified script to load the commands to test. Allowed to
-#     be empty, as the tested commands could have been compiled into the
-#     interpreter.
+#	Uses the specified script to load the commands to test. Allowed to
+#	be empty, as the tested commands could have been compiled into the
+#	interpreter.
 #
-# Arguments
-#     none
+# Arguments:
+#	none
 #
-# Results
-#     none
+# Results:
+#	none
 #
 # Side Effects:
-#     none.
+#	none
 
 proc tcltest::loadTestedCommands {} {
     return [uplevel 1 [loadScript]]
@@ -3337,8 +3337,7 @@ proc tcltest::threadReap {} {
     }
     return 0
 }
-
-
+
 ##
 ## Begin TIP 452
 ##
@@ -3351,14 +3350,16 @@ proc tcltest::threadReap {} {
 #
 #>>BEGIN MODULE<<
 #
-# Public Functions :
-#   testSetup       - Defines which procedures/commands are stubbed out
-#                     and how they should behave for each invocation. This should
+# Public Functions:
+#   testSetup       - Defines which procedures/commands are stubbed out and
+#                     how they should behave for each invocation. This should
 #                     only be called once per test.
-#   addStub         - Adds a procedures/commands  to the list that are stubbed out.
-#   saveVars        - Saves the values of variables to be restored later. This should
-#                     only be called once per test.
-#   addVars         - Add a variable to the list of variables to be restored later
+#   addStub         - Adds a procedures/commands to the list that are stubbed
+#		      out.
+#   saveVars        - Saves the values of variables to be restored later. This
+#		      should only be called once per test.
+#   addVars         - Add a variable to the list of variables to be restored
+#		      later.
 #   callCount       - Returns a dictionary sorted list of the stubbed out
 #                     procedures and how many times they were called.
 #   testCleanup     - Restores saved variables and stubbed out procedures.
@@ -3367,9 +3368,9 @@ proc tcltest::threadReap {} {
 #   callProc        - Call the real implementation of a stubbed out procedure.
 #   seam            - Test seam definition and injection (aka enabling)
 #
-# Public Variables : none
+# Public Variables: none
 #
-# Other Files : none
+# Other Files: none
 #
 #>>END MODULE<<
 #
@@ -3383,9 +3384,7 @@ namespace eval ::tcltest:: {
 
    namespace export testSetup addStub saveVars addVars
    namespace export callCount testCleanup sortedArrayData callProc seam
-
 }
-
 
 ###########################################################################
 #
@@ -3394,20 +3393,20 @@ namespace eval ::tcltest:: {
 #
 #>>BEGIN MODULE<<
 #
-# Module : ::tcltest::Stubbedout::
+# Module: ::tcltest::Stubbedout::
 #
-# Description : Namespace to hold renamed stubbed out routines
+# Description: Namespace to hold renamed stubbed out routines
 #
-# Public Functions :    none
+# Public Functions:    none
 #
-# Public Variables :    none
+# Public Variables:    none
 #
-# Other Files : none
+# Other Files: none
 #
 #>>END MODULE<<
 ###########################################################################
-namespace eval ::tcltest::Stubbedout:: {}
 
+namespace eval ::tcltest::Stubbedout:: {}
 
 ###########################################################################
 #
@@ -3416,73 +3415,52 @@ namespace eval ::tcltest::Stubbedout:: {}
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::Seam
+# Procedure Name:  ::tcltest::Seam
 #
-# Description : Handle definition, activation (aka enable or injection) and
+# Description: Handle definition, activation (aka enable or injection) and
 #               deactivation of a test seam.
 #
-# Arguments :
-#   action  - must be one of:
-#               define      - Define a test seam
-#               activiate   - Activate a test seam and sepcify the "injected" behavior
-#               deactivate  - Deactivate a test seam
-#   args    - depends on the action as follows:
-#               define:
-#                   seamName - the name of the seam being defined. Seam names
-#                               are relative to the procedure where they are
-#                               defined.
-#                   body     - the body of code to execute when the seam
-#                               is not active
-#               activiate:
-#                   procName - the fully qualified procedure name the seam is in.
-#                   seamName - the name of the seam being activated.
-#                   body     - the body of code to execute
-#               deactivate  - Deactivate a test seam
-#                   procName - the fully qualified procedure name the seam is in.
-#                   seamName - the name of the seam being deactivated.
+# Arguments:
+#   action - must be one of:
+#	define     - Define a test seam
+#	activiate  - Activate a test seam and sepcify the "injected" behavior
+#	deactivate - Deactivate a test seam
+#   args   - depends on the action as follows:
+#	define:
+#	    seamName - The name of the seam being defined. Seam names are
+#		       relative to the procedure where they are defined.
+#	    body     - the body of code to execute when the seam is not active
+#	activate:
+#	    procName - the fully qualified procedure name the seam is in.
+#	    seamName - the name of the seam being activated.
+#	    body     - the body of code to execute
+#	deactivate  - Deactivate a test seam
+#	    procName - the fully qualified procedure name the seam is in.
+#	    seamName - the name of the seam being deactivated.
 #
-# Returns :         1 success
+# Returns:         1 success
 #
-# Side-Effects :    None
+# Side-Effects:    None
 #
-# Exception Conditions :
-#   tcltest Seam BADARGS   - Incorrect number of arguments for the action
-#   tcltest Seam UNKACT    - Uknown action
+# Exception Conditions:
+#   TCL WRONGARGS          - Incorrect number of arguments for the action
+#   TCL LOOKUP SUBCOMMAND  - Unknown action
 #
-# Pre-requisite Conditions :    None
+#   NB: Subcommand implementations may raise other exceptions.
 #
-# Original Author : Gerald Lester
+# Pre-requisite Conditions:    None
+#
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
 ###########################################################################
-proc ::tcltest::seam {action args} {
-    set argCount [llength $args]
-    switch -exact -- $action {
-        define {
-            if {$argCount != 2} {
-                return -code error -errorcode [list tcltest seam BADARGS $argCount] "Usage: ::tcltest::Seam define seamName body"
-            }
-            ::tcltest::SeamDefine {*}$args
-        }
-        activate {
-            if {$argCount != 3} {
-                return -code error -errorcode [list tcltest seam BADARGS $argCount] "Usage: ::tcltest::Seam activate procName seamName body"
-            }
-            ::tcltest::SeamActivate {*}$args
-        }
-        deactivate {
-            if {$argCount != 2} {
-                return -code error -errorcode [list tcltest seam BADARGS $argCount] "Usage: ::tcltest::Seam deactivate procName seamName"
-            }
-            ::tcltest::SeamDeactivate {*}$args
-        }
-        default {
-            return -code error -errorcode [list tcltest seam UNKACT $action] "Uknown action: '$action' -- must be 'define, activate or deactivate'"
-        }
+namespace eval ::tcltest {
+    namespace ensemble create -command seam -map {
+	define     ::tcltest::SeamDefine
+	activate   ::tcltest::SeamActivate
+	deactivate ::tcltest::SeamDeactivate
     }
-
-    return
 }
 
 ###########################################################################
@@ -3492,47 +3470,64 @@ proc ::tcltest::seam {action args} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::testSetup
+# Procedure Name:  ::tcltest::testSetup
 #
-# Description : Setup stubs for testing.
+# Description: Setup stubs for testing.
 #
-# Arguments :
-#   dataList    - a structured list specifing commands/procedures to stub
-#                   out.  The format of each entry of the list is as follows:
-#                       procName procData
-#                   Where procData is structed as follows:
-#                       invocationNumber behaviorDict
-#                   The invocationNumber is a positive number, defining the behaviour of a
-#                     given invocation, or an asterisk ("*") defining the behavior for an invocation
-#                     not specified otherwise.
-#                   The behaviorDict may have any of the following key value pairs:
-#                       use     - this specifies what routine is to handle this invocation.
-#                                 Defaults to "standard".  It must be one of the following:
-#                                   standard - the standard stub processing is to be done.
-#                                                The other keys in the dictionary define the behvaior.
+# Arguments:
+#   dataList -	a structured list specifing commands/procedures to stub out.
+#		The format of each entry of the list is as follows:
+#                  procName procData
+#		Where procData is structed as follows:
+#                  invocationNumber behaviorDict
+#
+#		The invocationNumber is a positive number, defining the
+#		behaviour of a given invocation, or an asterisk ("*") defining
+#		the behavior for an invocation not specified otherwise.
+#
+#		The behaviorDict may have any of the following key value
+#		pairs:
+#                  use -	this specifies what routine is to handle this
+#				invocation.  Defaults to "standard".  It must
+#				be one of the following:
+#
+#                                   standard - the standard stub processing is
+#                                              to be done.  The other keys in
+#                                              the dictionary define the
+#                                              behavior.
 #                                   actual   - use the actual implementation.
-#                                   prefix   - use the prefix specified as a value.
-#                       returns - the value of which is returned from the stub, defaults to {}.
-#                       code - the value given to the -code option on return, defaults to "ok".
-#                       errorcode - the value given to the -errorcode option if the code is not "ok".
-#                       set - a list of triplets specifing variables to be modified and their values.
-#                               This is only done for a code of "ok".  The triplets are as follows:
-#                                   varName varType value
+#                                   prefix   - use the prefix specified as a
+#					       value.
+#
+#                  returns -	the value of which is returned from the
+#				stub, defaults to {}.
+#                  code -	the value given to the -code option on return,
+#				defaults to "ok".
+#                  errorcode -	the value given to the -errorcode option if
+#				the code is not "ok".
+#                  set -	a list of triplets specifying variables to be
+#				modified and their values. This is only done
+#				for a code of "ok". The triplets are as follows:
+#
+#                                  varName varType value
+#
 #                               Where:
-#                                   varName - the name of the variable
-#                                   varType - an "S" for a scalar variable and an "A" for an array
-#                                   value - For a scalar, the value.
-#                                           For an array, a list suitable to be used by [array set]
+#                                  varName - the name of the variable
+#                                  varType - an "S" for a scalar variable and
+#					an "A" for an array
+#                                  value - For a scalar, the value. For an
+#					array, a list suitable to be used by
+#					[array set].
 #
-# Returns :         Nothing
+# Returns:         Nothing
 #
-# Side-Effects :    Clears saved stub list.
+# Side-Effects:    Clears saved stub list.
 #
-# Exception Conditions :    None
+# Exception Conditions:    None
 #
-# Pre-requisite Conditions :    This may only be called once per test.
+# Pre-requisite Conditions:    This may only be called once per test.
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 ###########################################################################
@@ -3544,9 +3539,8 @@ proc ::tcltest::testSetup {dataList} {
     foreach {procName procData} $dataList {
         addStub $procName $procData
     }
-    return;
+    return
 }
-
 
 ###########################################################################
 #
@@ -3555,23 +3549,23 @@ proc ::tcltest::testSetup {dataList} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::testSetup
+# Procedure Name:  ::tcltest::testSetup
 #
-# Description : Setup stubs for testing.
+# Description: Setup stubs for testing.
 #
-# Arguments :
+# Arguments:
 #   procName    -- See definition in ::tcltest::testSetup
 #   procData    -- See definition in ::tcltest::testSetup
 #
-# Returns :         Nothing
+# Returns:         Nothing
 #
-# Side-Effects :    None.
+# Side-Effects:    None.
 #
-# Exception Conditions :    None
+# Exception Conditions:    None
 #
-# Pre-requisite Conditions :    ::tcltest::testSetup must have been called
+# Pre-requisite Conditions:    ::tcltest::testSetup must have been called
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 ###########################################################################
@@ -3593,7 +3587,7 @@ proc ::tcltest::addStub {procName procData} {
     }
     ::tcltest::CreateNamespace $procName
 
-    return;
+    return
 }
 
 ###########################################################################
@@ -3603,22 +3597,27 @@ proc ::tcltest::addStub {procName procData} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::callCount
+# Procedure Name:  ::tcltest::callCount
 #
-# Description : Returns a dictionary sorted list of stubbed routines and
-#               the number of times they were invoked.
+# Description:	Returns a dictionary sorted list of stubbed routines and
+#		the number of times they were invoked.
 #
-# Arguments :       none
+# Arguments:
+#	none
 #
-# Returns : A list of stubbed routines and the number of times they were invoked
+# Returns:
+#	A list of stubbed routines and the number of times they were invoked
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3637,23 +3636,27 @@ proc ::tcltest::callCount {} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::sortedArrayData
+# Procedure Name:  ::tcltest::sortedArrayData
 #
-# Description : Return the values of an array as a list of key value pairs
-#               sorted by the keys.
+# Description:	Return the values of an array as a list of key value pairs
+#		sorted by the keys.
 #
-# Arguments :
+# Arguments:
 #   varName - name of array to process
 #
-# Returns : sorted list of key value pairs
+# Returns:
+#	sorted list of key value pairs
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3674,23 +3677,27 @@ proc ::tcltest::sortedArrayData {varName} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::saveVars
+# Procedure Name:  ::tcltest::saveVars
 #
-# Description : Save the values of variables to be restored at the end
-#               of the current test.
+# Description:	Save the values of variables to be restored at the end
+#		of the current test.
 #
 # Arguments :
-#   args    - a list of variable names to save the values of.
+#	args - a list of variable names to save the values of.
 #
-# Returns :        Nothing
+# Returns:
+#	Nothing
 #
-# Side-Effects :    Clears list of saved variables
+# Side-Effects:
+#	Clears list of saved variables
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    Should only be called once per test.
+# Pre-requisite Conditions:
+#	Should only be called once per test.
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3699,12 +3706,9 @@ proc ::tcltest::saveVars {args} {
     variable SavedVars
 
     array unset SavedVars
-
     addVars {*}$args
-
     return
 }
-
 
 ###########################################################################
 #
@@ -3713,23 +3717,27 @@ proc ::tcltest::saveVars {args} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::addVars
+# Procedure Name:  ::tcltest::addVars
 #
-# Description : Save the values of variables to be restored at the end
-#               of the current test.
+# Description:	Save the values of variables to be restored at the end
+#		of the current test.
 #
 # Arguments :
-#   args    - a list of variable names to save the values of.
+#	args - a list of variable names to save the values of.
 #
-# Returns :        Nothing
+# Returns:
+#	Nothing
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    ::tcltest::saveVars must be called first.
+# Pre-requisite Conditions:
+#	::tcltest::saveVars must be called first.
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3745,9 +3753,8 @@ proc ::tcltest::addVars {args} {
         }
         ::tcltest::CreateNamespace $var
     }
-    return;
+    return
 }
-
 
 ###########################################################################
 #
@@ -3756,23 +3763,28 @@ proc ::tcltest::addVars {args} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::testCleanup
+# Procedure Name:  ::tcltest::testCleanup
 #
-# Description : Resets saved variables, undoes alias definitions and
-#               renames the saved definitions of stubbed out commands to
-#               their originals.
+# Description:	Resets saved variables, undoes alias definitions and
+#		renames the saved definitions of stubbed out commands to
+#		their originals.
 #
-# Arguments :       none
+# Arguments:
+#	none
 #
-# Returns :         nothing
+# Returns:
+#	nothing
 #
-# Side-Effects :    Unsets the TestData and SavedVars arrays
+# Side-Effects:
+#	Unsets the TestData and SavedVars arrays
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3809,7 +3821,7 @@ proc ::tcltest::testCleanup {} {
 
     set ::errorInfo $wasErrorInfo
     set ::errorCode $wasErrorCode
-    return -errorinfo $wasErrorInfo -errorcode $wasErrorCode;
+    return -errorinfo $wasErrorInfo -errorcode $wasErrorCode
 }
 
 ###########################################################################
@@ -3819,27 +3831,30 @@ proc ::tcltest::testCleanup {} {
 #
 #>>BEGIN PRIVATE<<
 #
-# Procedure Name :  ::tcltest::StandardStub
+# Procedure Name:  ::tcltest::StandardStub
 #
-# Description : The standard stub used to replace stubbed out routines.
-#               See the description of ::tcltest::testSetup for this
-#               routine's behavior.
+# Description:	The standard stub used to replace stubbed out routines. See
+#		the description of ::tcltest::testSetup for this routine's
+#		behavior.
 #
 # Arguments :
-#   procName    - the name of the stubbed out procedure
-#   args        - the arguments passsed in this invocation
+#	procName - the name of the stubbed out procedure
+#	args - the arguments passsed in this invocation
 #
-# Returns :     As defined by ::tcltest::TestData
+# Returns:
+#	As defined by ::tcltest::TestData
 #
-# Side-Effects :    Increments the invocation count
-#                       (i.e. ::tcltest::TestData($procName,count))
-#                       for the stubbed out procedure
+# Side-Effects:
+#	Increments the invocation count (i.e., the variable
+#	::tcltest::TestData($procName,count)) for the stubbed out procedure
 #
-# Exception Conditions :    As defined by ::tcltest::TestData
+# Exception Conditions:
+#	As defined by ::tcltest::TestData
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PRIVATE<<
 ###########################################################################
@@ -3847,54 +3862,50 @@ proc ::tcltest::StandardStub {procName args} {
     variable TestData
     variable debugLevel
 
-    if {[info exists debugLevel] && [string is boolean -strict $debugLevel] && $debugLevel} {
+    if {[info exists debugLevel] && [string is true -strict $debugLevel]} {
         puts stderr "Entering [info level 0]"
     }
 
     if {![info exists TestData($procName,count)]} {
-        return \
-            -code error \
+        return -code error \
             -errorcode [list tcltest StandardStub UNKPROC $procName] \
             "Undefined test: $procName"
-    } else {
-        set count [incr TestData($procName,count)]
     }
-    if {![dict exists $TestData($procName,data) $count] &&
-        ![dict exists $TestData($procName,data) {*}]} {
-        return \
-            -code error \
-            -errorcode [list tcltest StandardStub UNKCASE [list $procName $count]] \
-            "Undefined test invocation number $count for procedure: $procName"
-    } elseif {[dict exists $TestData($procName,data) $count]} {
+    set count [incr TestData($procName,count)]
+
+    if {[dict exists $TestData($procName,data) $count]} {
         set dataDict [dict get $TestData($procName,data) $count]
-    } else {
+    } elseif {[dict exists $TestData($procName,data) {*}]} {
         set dataDict [dict get $TestData($procName,data) {*}]
+    } else {
+        return -code error \
+            -errorcode [list tcltest StandardStub UNKCASE [list $procName $count]] \
+            [format "Undefined test invocation number %s for procedure: %s" \
+		 $count $procName]
     }
-    if {[info exists debugLevel] && [string is boolean -strict $debugLevel] && $debugLevel} {
+
+    if {[info exists debugLevel] && [string is true -strict $debugLevel]} {
         puts stderr "\t invocation $count.  Using $dataDict"
     }
     if {[dict exists $dataDict use]} {
         switch -exact -- [lindex [dict get $dataDict use] 0] {
             actual {
                 set idx $TestData($procName,idx)
-
                 set cmd [concat ::tcltest::Stubbedout::Rtn_$idx $args]
                 set status [catch {uplevel 1 $cmd} result options]
                 if {$status} {
                     return -options $options $result
-                } else {
-                    return $result
                 }
+		return $result
             }
             prefix {
                 set cmd [concat [dict get $dataDict use prefix] $args]
                 set status [catch [list uplevel 1 $cmd] result options]
                 if {$status} {
                     return -options $options $result
-                } else {
-                    lappend ::traceList [list Proc $procName returning $result]
-                    return $result
                 }
+		lappend ::traceList [list Proc $procName returning $result]
+		return $result
             }
             standard -
             default {
@@ -3909,24 +3920,7 @@ proc ::tcltest::StandardStub {procName args} {
     } else {
         set result {}
     }
-    if {![dict exists $dataDict code] || ([dict get $dataDict code] eq "ok")} {
-        if {[dict exists $dataDict set]} {
-            foreach {varName type value} [dict get $dataDict set] {
-                upvar 1 $varName dataVar
-                if {$type eq "A"} {
-                    array set dataVar $value
-                } elseif {$type eq "S"} {
-                    set dataVar $value
-                } else {
-                     return \
-                        -code error \
-                        -errorcode [list tcltest StandardStub UNKTYPE [list $procName $count $varName $type]] \
-                        "Undefined type '$type' for side effect variable '$varName' in test invocation number $count for procedure: $procName"
-                }
-            }
-        }
-        return $result
-    } else {
+    if {[dict exists $dataDict code] && [dict get $dataDict code] ni {0 ok}} {
         set code [dict get $dataDict code]
         if {[dict exists $dataDict errorcode]} {
             set errorcode [dict get $dataDict errorcode]
@@ -3935,6 +3929,27 @@ proc ::tcltest::StandardStub {procName args} {
         }
         return -code $code -errorcode $errorcode $result
     }
+    if {[dict exists $dataDict set]} {
+	foreach {varName type value} [dict get $dataDict set] {
+	    upvar 1 $varName dataVar
+	    switch $type {
+		A {
+		    array set dataVar $value
+		}
+		S {
+		    set dataVar $value
+		}
+		default {
+		    return -code error \
+			-errorcode [list tcltest StandardStub UNKTYPE \
+					[list $procName $count $varName $type]] \
+			[format "Undefined type '%s' for side effect variable '%s' in test invocation number %s for procedure: %s" \
+			     $type $varName $count $procName]
+		}
+	    }
+	}
+    }
+    return $result
 }
 
 ###########################################################################
@@ -3944,24 +3959,27 @@ proc ::tcltest::StandardStub {procName args} {
 #
 #>>BEGIN PUBLIC<<
 #
-# Procedure Name :  ::tcltest::callProc
+# Procedure Name:  ::tcltest::callProc
 #
-# Description : Call the real implementation of a stubbed out procedure.
+# Description: Call the real implementation of a stubbed out procedure.
 #
 # Arguments :
-#   procName - The orignal name of the procedure to call
-#   args     - The arguements to call it with
+#	procName - The orignal name of the procedure to call
+#	args - The arguements to call it with
 #
-# Returns :  As returned by procedure
+# Returns:
+#	As returned by procedure
 #
-# Side-Effects : Side effects of procedure.
+# Side-Effects:
+#	Side effects of procedure.
 #
-# Exception Conditions :  As raised by procedure
+# Exception Conditions:
+#	As raised by procedure
 #
-# Pre-requisite Conditions : The procedure must not query for its namespace
-#                            of invcation name.
+# Pre-requisite Conditions:
+#	The procedure must not query for its namespace of invocation name.
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PUBLIC<<
 #
@@ -3987,22 +4005,26 @@ proc ::tcltest::callProc {procName args} {
 #
 #>>BEGIN PRIVATE<<
 #
-# Procedure Name :  ::tcltest::CreateNamespace
+# Procedure Name:  ::tcltest::CreateNamespace
 #
-# Description : Description.
+# Description: Description.
 #
 # Arguments :
-#   item    - procedure/variable whose namespace is to be created
+#	item - procedure/variable whose namespace is to be created
 #
-# Returns :         Nothing
+# Returns:
+#	Nothing
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PRIVATE<<
 #
@@ -4024,7 +4046,6 @@ proc ::tcltest::CreateNamespace {item} {
     return
 }
 
-
 ###########################################################################
 #
 # Private Procedure Header - as this procedure is modified, please be sure
@@ -4032,23 +4053,26 @@ proc ::tcltest::CreateNamespace {item} {
 #
 #>>BEGIN PRIVATE<<
 #
-# Procedure Name :  ::tcltest::SeamDefine
+# Procedure Name:  ::tcltest::SeamDefine
 #
-# Description : Description.
+# Description: Description.
 #
-# Arguments :       none
+# Arguments:
+#	none
 #
-# Returns :         1 success
+# Returns:
+#	1 success
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :
-#   This must be called from ::tcltest::Seam and not directly since the code
-#   assumes it is two call levels deep.
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PRIVATE<<
 #
@@ -4060,18 +4084,18 @@ proc ::tcltest::SeamDefine {seamName body} {
     ## Get fully qualified procedure name
     ##
     set procName "::"
-    append procName [string trim [uplevel 2 {namespace current}]  {:}] "::"
-    append procName [lindex [split [lindex [info level -2] 0] {:}] end]
+    append procName [string trim [uplevel 1 {namespace current}] ":"] "::"
+    append procName [lindex [split [lindex [info level -1] 0] ":"] end]
     set SeamData($procName,$seamName,definition) $body
+
     if {[info exists SeamData($procName,$seamName,useBody)]} {
         set useBody $SeamData($procName,$seamName,useBody)
     } else {
         set useBody $body
     }
 
-    return [uplevel 2 $useBody]
+    return [uplevel 1 $useBody]
 }
-
 
 ###########################################################################
 #
@@ -4080,33 +4104,35 @@ proc ::tcltest::SeamDefine {seamName body} {
 #
 #>>BEGIN PRIVATE<<
 #
-# Procedure Name :  ::tcltest::SeamActivate
+# Procedure Name:  ::tcltest::SeamActivate
 #
-# Description : Description.
+# Description: Implementation of [::tcltest::seam activate]
 #
-# Arguments :       none
+# Arguments:
+#	none
 #
-# Returns :         1 success
+# Returns:
+#	1 success
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PRIVATE<<
 #
 ###########################################################################
 proc ::tcltest::SeamActivate {procName seamName body} {
     variable SeamData
-
     set SeamData($procName,$seamName,useBody) $body
-
     return 1
 }
-
 
 ###########################################################################
 #
@@ -4115,28 +4141,32 @@ proc ::tcltest::SeamActivate {procName seamName body} {
 #
 #>>BEGIN PRIVATE<<
 #
-# Procedure Name :  ::tcltest::SeamDeactivate
+# Procedure Name:  ::tcltest::SeamDeactivate
 #
-# Description : Description.
+# Description: Implementation of [::tcltest::seam deactivate]
 #
-# Arguments :       none
+# Arguments:
+#	none
 #
-# Returns :         1 success
+# Returns:
+#	1 success
 #
-# Side-Effects :    None
+# Side-Effects:
+#	None
 #
-# Exception Conditions :    None
+# Exception Conditions:
+#	None
 #
-# Pre-requisite Conditions :    None
+# Pre-requisite Conditions:
+#	None
 #
-# Original Author : Gerald Lester
+# Original Author: Gerald Lester
 #
 #>>END PRIVATE<<
 #
 ###########################################################################
 proc ::tcltest::SeamDeactivate {procName seamName} {
     variable SeamData
-
     unset -nocomplain SeamData($procName,$seamName,useBody)
     return 1
 }
@@ -4146,144 +4176,148 @@ proc ::tcltest::SeamDeactivate {procName seamName} {
 ##
 
 oo::class create ::tcltest::object {
-
-  # An independant constructor that tcltest can control
-  constructor args {
-    my variable tcltest
-    set tcltest(mixinmap) {}
-    my tcltest_configure {*}$args
-  }
-
-  destructor {
-    my variable tcltest
-    if {[info exists tcltest(destructor)]} {
-      eval $tcltest(destructor)
-    } else {
-      next
+    # An independant constructor that tcltest can control
+    constructor args {
+	my variable tcltest
+	set tcltest(mixinmap) {}
+	my tcltest_configure {*}$args
     }
-  }
 
-  method tcltest_destructor body {
-    my variable tcltest
-    set tcltest(destructor) $body
-  }
-
-  # A means of controlling the tcltest framework class
-  # Note the method names are designed to minimize conflict
-  # with existing classes
-  method tcltest_configure args {
-    foreach {key value} $args {
-      switch [string trimleft $key -] {
-        class {
-          set tcltest(class) $value
-          my tcltest_morph $value
-        }
-        eval {
-          eval $value
-        }
-        destructor {
-          my tcltest_destructor $value
-        }
-      }
+    destructor {
+	my variable tcltest
+	if {[info exists tcltest(destructor)]} {
+	    eval $tcltest(destructor)
+	} else {
+	    next
+	}
     }
-  }
 
-  method tcltest_set args {
-    my variable tcltest
-    array set tcltest $args
-  }
-
-  method tcltest_morph classname {
-    my variable tcltest
-    if {[info commands ::tcltest::hybrid::$classname] eq {}} {
-      oo::class create ::tcltest::hybrid::$classname [list superclass ::tcltest::object $classname]
+    method tcltest_destructor body {
+	my variable tcltest
+	set tcltest(destructor) $body
     }
-    set tcltest(class) $classname
-    ::oo::objdefine [self] class ::tcltest::hybrid::$classname
-    if {[info exists tcltest(mixinmap)]} {
-      my Tcltest_mixin_apply $tcltest(mixinmap)
-    }
-  }
 
-  # A method to allow tcltest to invoke code internally to
-  # objects. Including access to private methods and variables
-  method tcltest_eval script {
-    eval $script
-  }
-
-  method Tcltest_mixin_apply {map} {
-    set mixlist {}
-    foreach {s c} $map {
-      if {$c eq {}} continue
-      lappend mixlist $c
+    # A means of controlling the tcltest framework class
+    # Note the method names are designed to minimize conflict
+    # with existing classes
+    method tcltest_configure args {
+	foreach {key value} $args {
+	    switch [string trimleft $key -] {
+		class {
+		    set tcltest(class) $value
+		    my tcltest_morph $value
+		}
+		eval {
+		    eval $value
+		}
+		destructor {
+		    my tcltest_destructor $value
+		}
+	    }
+	}
     }
-    ::oo::objdefine [self] mixin {*}$mixlist
-  }
 
-  # A formalized slot-based mechanism for managing mixins. Because we
-  # break the space up into slots, individual aspects of behavior
-  # can be added, removed, and combined with other mixins.
-  # We use a dict internally for storage to allow the order in which mixins
-  # were applied to be preserved. Not the difference between:
-  # tcltest_mixin map FOO {}
-  # and
-  # tcltest_mixin unmap FOO
-  #
-  # A blank mapping will removed the effect, but preserve FOO's place in line
-  # Unmap removes the concept completely.
-  #
-  method tcltest_mixin {command args} {
-    my variable tcltest
-    switch $command {
-      dump {
-        return $tcltest(mixinmap)
-      }
-      map {
-        if {[llength $args]!=2} {
-          error "Usage: [self method] map STUB CLASS"
-        }
-        lassign $args stub class
-        # Placed here as a safety in case the before or after did not actually exist
-        # And it's a handy place to make the call even if we didn't use before/after
-        dict set tcltest(mixinmap) $stub $class
-        # Build the list of classes to mixin, in the order proscribed by the dict
-        my Tcltest_mixin_apply $tcltest(mixinmap)
-      }
-      replace {
-        # Allows users to specify the order of mixins
-        # Note we always include ::tcltest::object
-        set tcltest(mixinmap) $args
-        my Tcltest_mixin_apply $tcltest(mixinmap)
-      }
-      unmap {
-        if {[llength $args]!=1} {
-          error "Usage: mixinmap unmap STUB"
-        }
-        lassign $args stub
-        if {[dict exists $tcltest(mixinmap) $stub]} {
-          dict unset tcltest(mixinmap) $stub
-        }
-        my Tcltest_mixin_apply $tcltest(mixinmap)
-      }
-      default {
-        error "Valid commands are: dump, map, replace, unmap"
-      }
+    method tcltest_set args {
+	my variable tcltest
+	array set tcltest $args
     }
-  }
+
+    method tcltest_morph classname {
+	my variable tcltest
+	if {[info commands ::tcltest::hybrid::$classname] eq {}} {
+	    oo::class create ::tcltest::hybrid::$classname [list \
+		superclass ::tcltest::object $classname]
+	}
+	set tcltest(class) $classname
+	::oo::objdefine [self] class ::tcltest::hybrid::$classname
+	if {[info exists tcltest(mixinmap)]} {
+	    my Tcltest_mixin_apply $tcltest(mixinmap)
+	}
+    }
+
+    # A method to allow tcltest to invoke code internally to objects.
+    # Including access to private methods and variables
+    method tcltest_eval script {
+	eval $script
+    }
+
+    method Tcltest_mixin_apply {map} {
+	set mixlist {}
+	foreach {s c} $map {
+	    if {$c eq {}} continue
+	    lappend mixlist $c
+	}
+	::oo::objdefine [self] mixin {*}$mixlist
+    }
+
+    # A formalized slot-based mechanism for managing mixins. Because we break
+    # the space up into slots, individual aspects of behavior can be added,
+    # removed, and combined with other mixins.
+    #
+    # We use a dict internally for storage to allow the order in which mixins
+    # were applied to be preserved. Note the difference between:
+    #	tcltest_mixin map FOO {}
+    # and
+    #	tcltest_mixin unmap FOO
+    #
+    # A blank mapping will removed the effect, but preserve FOO's place in line
+    # Unmap removes the concept completely.
+    #
+    method tcltest_mixin {command args} {
+	my variable tcltest
+	switch $command {
+	    dump {
+		return $tcltest(mixinmap)
+	    }
+	    map {
+		if {[llength $args]!=2} {
+		    error "Usage: [self method] map STUB CLASS"
+		}
+		lassign $args stub class
+		# Placed here as a safety in case the before or after did not
+		# actually exist, and it's a handy place to make the call even
+		# if we didn't use before/after
+		dict set tcltest(mixinmap) $stub $class
+		# Build the list of classes to mixin, in the order proscribed
+		# by the dict
+		my Tcltest_mixin_apply $tcltest(mixinmap)
+	    }
+	    replace {
+		# Allows users to specify the order of mixins
+		# Note we always include ::tcltest::object
+		set tcltest(mixinmap) $args
+		my Tcltest_mixin_apply $tcltest(mixinmap)
+	    }
+	    unmap {
+		if {[llength $args]!=1} {
+		    error "Usage: mixinmap unmap STUB"
+		}
+		lassign $args stub
+		if {[dict exists $tcltest(mixinmap) $stub]} {
+		    dict unset tcltest(mixinmap) $stub
+		}
+		my Tcltest_mixin_apply $tcltest(mixinmap)
+	    }
+	    default {
+		error "Valid commands are: dump, map, replace, unmap"
+	    }
+	}
+    }
 }
 
 ##
 ## Define the "Static" methods on the ::tcltest::object
 ##
 oo::objdefine ::tcltest::object {
-  method hijack object {
-    set classname [info object class $object]
-    if {[info commands ::tcltest::hybrid::$classname] eq {}} {
-      oo::class create ::tcltest::hybrid::$classname [list superclass ::tcltest::object $classname]
+    method hijack object {
+	set classname [info object class $object]
+	if {[info commands ::tcltest::hybrid::$classname] eq {}} {
+	    oo::class create ::tcltest::hybrid::$classname [list \
+		superclass ::tcltest::object $classname]
+	}
+	::oo::objdefine $object class ::tcltest::hybrid::$classname
+	$object tcltest_set class $classname
     }
-    ::oo::objdefine $object class ::tcltest::hybrid::$classname
-    $object tcltest_set class $classname
-  }
 }
 
 ##
@@ -4295,9 +4329,9 @@ namespace eval ::tcltest:: {
         destructor  {}
     }
 
-    proc  testObject {name description class args} {
+    proc testObject {name description class args} {
         if {([llength $args] % 2) != 0 } {
-            return -code error {Unpaired options and values.}
+            return -code error "Unpaired options and values"
         }
         array set optionArr {
             -objectVar cut
@@ -4316,9 +4350,8 @@ namespace eval ::tcltest:: {
         }
         set consScript {}
         if {[llength [lindex $consList 0]]} {
-            append consScript \
-                [format {lassign {%s} %s} $optionArr(-arguments) [lindex $consList 0]] \
-                "\n"
+            append consScript [format "lassign %s %s\n" \
+		    [list $optionArr(-arguments)] [lindex $consList 0]]
         }
         append consScript $optionArr(-constructor)
 

@@ -799,6 +799,16 @@ proc tcl::CopyDirectory {action src dest} {
     return
 }
 
+## TIP 452 hack --
+##	Creates a stub for part of tcltest to let code use one specific
+##	operation without needing to explicitly import the tcltest package.
+##
+namespace eval ::tcltest {
+    namespace ensemble create -command seam -map {
+	define {::apply {{seamName body} {tailcall if true $body}}}
+    }
+}
+
 set isafe [interp issafe]
 ###
 # Package manifest for all Tcl packages included in the /library file system
