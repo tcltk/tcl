@@ -276,6 +276,7 @@ Tcl_WinTCharToUtf(
 	    memmove(r+2, r+1, p-r+size-1);
 	    memcpy(r++, "\xC0\x80", 2);
 	    Tcl_DStringSetLength(dsPtr, ++size + 1);
+	    r = p = (char *)Tcl_DStringValue(dsPtr);
 	}
 	++r;
     }
