@@ -15,8 +15,8 @@
 #
 # DO NOT DELETE THIS LINE
 
-if {{::tcltest} ni [namespace children]} {
-    package require tcltest 2
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 

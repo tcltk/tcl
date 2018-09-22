@@ -11,9 +11,8 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require Tcl 8.5-
-
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 

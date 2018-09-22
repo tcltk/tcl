@@ -10,8 +10,8 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.3.4
+package require tcltest 2.3.4
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 

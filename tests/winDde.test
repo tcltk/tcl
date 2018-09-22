@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
-    #tcltest::configure -verbose {pass start}
+package require tcltest 2
+# tcltest::configure -verbose {pass start}
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 

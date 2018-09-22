@@ -3989,7 +3989,7 @@ proc ::tcltest::callProc {procName args} {
 
     set idx $TestData($procName,idx)
 
-    set cmd [concat ::tcltest::Stubbedout::Rtn_$idx $args]
+    set cmd [list ::tcltest::Stubbedout::Rtn_$idx {*}$args]
     set status [catch {uplevel 1 $cmd} result options]
     if {$status} {
         return -options $options $result
@@ -4055,7 +4055,7 @@ proc ::tcltest::CreateNamespace {item} {
 #
 # Procedure Name:  ::tcltest::SeamDefine
 #
-# Description: Description.
+# Description: Implementation of [::tcltest::seam define]
 #
 # Arguments:
 #	none

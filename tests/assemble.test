@@ -11,8 +11,8 @@
 
 # Commands covered: assemble
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+package require tcltest 2.2
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 namespace eval tcl::unsupported {namespace export assemble}
