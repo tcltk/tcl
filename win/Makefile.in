@@ -482,7 +482,7 @@ doc:
 
 tclzipfile: ${TCL_ZIP_FILE}
 
-${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
