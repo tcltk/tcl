@@ -515,10 +515,7 @@ proc handler {var sock token} {
     set chunk [read $sock]
     append data $chunk
     #::http::Log "handler read [string length $chunk] ([chan configure $sock -buffersize])"
-    if {[eof $sock]} {
-        #::http::Log "handler eof $sock"
-	chan event $sock readable {}
-    }
+    return [string length $chunk]
 }
 
 test http11-3.0 "-handler,close,identity" -setup {
