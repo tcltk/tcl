@@ -805,7 +805,7 @@ set isafe [interp issafe]
 set isafe [interp issafe]
 set dir [file dirname [info script]]
 foreach {safe package version file} {
-  0 http            2.8.13 {http http.tcl}
+  0 http            2.9.0 {http http.tcl}
   1 msgcat          1.7.0  {msgcat msgcat.tcl}
   1 opt             0.4.7  {opt optparse.tcl}
   0 platform        1.0.14 {platform platform.tcl}
