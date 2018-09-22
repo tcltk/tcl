@@ -3087,12 +3087,12 @@ Tcl_GetWideIntFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			if (value <= -(Tcl_WideUInt)LLONG_MIN) {
+			if (value <= -(Tcl_WideUInt)WIDE_MIN) {
 			    *wideIntPtr = - (Tcl_WideInt) value;
 			    return TCL_OK;
 			}
 		    } else {
-			if (value <= (Tcl_WideUInt)LLONG_MAX) {
+			if (value <= (Tcl_WideUInt)WIDE_MAX) {
 			    *wideIntPtr = (Tcl_WideInt) value;
 			    return TCL_OK;
 			}
