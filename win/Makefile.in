@@ -482,7 +482,7 @@ doc:
 
 tclzipfile: ${TCL_ZIP_FILE}
 
-${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
@@ -786,8 +786,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@echo "Installing package http 2.8.13 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.13.tm;
+	@echo "Installing package http 2.9.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.9.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
