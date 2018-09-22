@@ -2807,7 +2807,7 @@ Tcl_GetLongFromObj(
 
 	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
-		*longPtr = Tcl_WideAsLong(w);
+		*longPtr = (long) w;
 		return TCL_OK;
 	    }
 	    goto tooLarge;
@@ -3546,7 +3546,7 @@ Tcl_SetBignumObj(
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
-	if (value > (((~(Tcl_WideUInt)0) >> 1) + bignumValue->sign)) {
+	if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
