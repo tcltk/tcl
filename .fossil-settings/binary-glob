@@ -4,6 +4,7 @@ compat/zlib/win64/zdll.lib
 compat/zlib/win64/zlib1.dll
 compat/zlib/win64/libz.dll.a
 compat/zlib/zlib.3.pdf
+tools/empty.zip
 *.bmp
 *.gif
 *.png
