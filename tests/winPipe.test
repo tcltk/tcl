@@ -41,7 +41,7 @@ append big $big
 append big $big
 
 set path(little) [makeFile {} little]
-set f [open $path(little) w] 
+set f [open $path(little) w]
 puts -nonewline $f "little"
 close $f
 
@@ -332,7 +332,7 @@ proc _testExecArgs {single args} {
     set broken {}
     foreach args $args {
 	if {$single & 1} {
-	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated 
+	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated
 	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
 	    set args [list "1st" $args "3rd"]
 	}
@@ -569,7 +569,7 @@ set injectList {
 
 test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args} \
 -constraints {win exec} -body {
-    # test exe only, because currently there is no proper way to escape a new-line char resp. 
+    # test exe only, because currently there is no proper way to escape a new-line char resp.
     # to supply a new-line to the batch-files within arguments (command line is truncated).
     _testExecArgs 8 \
 	[list START     {*}$injectList END] \
