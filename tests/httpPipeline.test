@@ -532,7 +532,7 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 #  Proc MakeMessage
 # ------------------------------------------------------------------------------
 # WHD's one-line command to generate multi-line strings from readable code.
-# 
+#
 # Example:
 #   set blurb [MakeMessage {
 #            |This command allows multi-line strings to be created with readable
