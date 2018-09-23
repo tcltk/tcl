@@ -496,7 +496,7 @@ proc httpTestScript::runHttpTestScript {scr} {
 proc httpTestScript::cleanupHttpTestScript {} {
     variable TimeOutDone
     variable RequestsWhenStopped
-    
+
     if {![info exists RequestsWhenStopped]} {
 	return -code error {Cleanup Failed: RequestsWhenStopped is undefined}
     }
