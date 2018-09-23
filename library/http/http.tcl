@@ -100,7 +100,6 @@ namespace eval http {
 	array set socketWrQueue {}
 	array set socketClosing {}
 	array set socketPlayCmd {}
-	return
     }
     init
 
@@ -161,7 +160,6 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 proc http::register {proto port command} {
     variable urlTypes
     set urlTypes([string tolower $proto]) [list $port $command]
-    # N.B. Implicit Return.
 }
 
 # http::unregister --
@@ -219,7 +217,6 @@ proc http::config {args} {
 	    }
 	    set http($flag) $value
 	}
-	return
     }
 }
 
@@ -293,8 +290,6 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     } {
 	http::CloseQueuedQueries $connId $token
     }
-
-    return
 }
 
 # http::KeepSocket -
@@ -335,9 +330,6 @@ proc http::KeepSocket {token} {
 	# ONLY for testing reaction to server eof.
 	# No server timeouts will be caught.
 	catch {fileevent $state(sock) readable {}}
-    } else {
-	# Normal operation.
-	# Test constraint normalEof.
     }
 
     if {    [info exists state(socketinfo)]
@@ -476,8 +468,6 @@ proc http::KeepSocket {token} {
 	} elseif {(!$state(-pipeline))} {
 	    set socketWrState($connId) Wready
 	    # Rready and Wready and idle: nothing to do.
-	} else {
-	    # Rready and idle: nothing to do.
 	}
 
     } else {
@@ -485,7 +475,6 @@ proc http::KeepSocket {token} {
 	# There is no socketMapping($state(socketinfo)), so it does not matter
 	# that CloseQueuedQueries is not called.
     }
-    return
 }
 
 # http::CheckEof -
@@ -511,7 +500,6 @@ proc http::CheckEof {sock} {
 	# will then be error-handled.
 	CloseSocket $sock
     }
-    return
 }
 
 # http::CloseSocket -
@@ -539,7 +527,6 @@ proc http::CloseSocket {s {token {}}} {
 	upvar 0 $token state
 	if {[info exists state(socketinfo)]} {
 	    set connId $state(socketinfo)
-	} else {
 	}
     } else {
 	set map [array get socketMapping]
@@ -547,7 +534,6 @@ proc http::CloseSocket {s {token {}}} {
 	if {$ndx != -1} {
 	    incr ndx -1
 	    set connId [lindex $map $ndx]
-	} else {
 	}
     }
     if {    ($connId ne {})
@@ -557,22 +543,18 @@ proc http::CloseSocket {s {token {}}} {
 	Log "Closing connection $connId (sock $socketMapping($connId))"
 	if {[catch {close $socketMapping($connId)} err]} {
 	    Log "Error closing connection: $err"
-	} else {
 	}
 	if {$token eq {}} {
 	    # Cases with a non-empty token are handled by Finish, so the tokens
 	    # are finished in connection order.
 	    http::CloseQueuedQueries $connId
-	} else {
 	}
     } else {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
 	    Log "Error closing socket: $err"
-	} else {
 	}
     }
-    return
 }
 
 # http::CloseQueuedQueries
@@ -629,7 +611,6 @@ proc http::CloseQueuedQueries {connId {token {}}} {
 		- token $token
 	{*}$unfinished
     }
-    return
 }
 
 # http::Unset
@@ -655,8 +636,6 @@ proc http::Unset {connId} {
     unset -nocomplain socketWrQueue($connId)
     unset -nocomplain socketClosing($connId)
     unset -nocomplain socketPlayCmd($connId)
-
-    return
 }
 
 # http::reset --
@@ -682,7 +661,6 @@ proc http::reset {token {why reset}} {
 	unset state
 	eval ::error $errorlist
     }
-    return
 }
 
 # http::geturl --
@@ -1248,9 +1226,6 @@ proc http::geturl {url args} {
 	    #Log re-use nonpipeline, GRANT r/w access to $token in geturl
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
-
-	} else {
-	    # (!$reusing)
 	}
 
 	# All (!$reusing) cases come here, and also some $reusing cases if the
@@ -1528,17 +1503,12 @@ proc http::Connected {token proto phost srvurl} {
 	    registerError $sock {}
 	    if {$msg eq {}} {
 		set msg {failed to use socket}
-	    } else {
 	    }
 	    Finish $token $msg
 	} elseif {$state(status) ne "error"} {
 	    Finish $token $err
-	} else {
-	    # if state(status) is error, it means someone's already called
-	    # Finish to do the above-described clean up.
 	}
     }
-    return
 }
 
 # http::registerError
@@ -1567,7 +1537,6 @@ proc http::registerError {sock args} {
 	return
     }
     set registeredErrors($sock) {*}$args
-    # N.B. Implicit Return
 }
 
 # http::DoneRequest --
@@ -1645,7 +1614,6 @@ proc http::DoneRequest {token} {
 	# In the nonpipeline case, connection for reading always occurs.
 	ReceiveResponse $token
     }
-    return
 }
 
 # http::ReceiveResponse
@@ -1666,7 +1634,6 @@ proc http::ReceiveResponse {token} {
 
     coroutine ${token}EventCoroutine http::Event $sock $token
     fileevent $sock readable ${token}EventCoroutine
-    return
 }
 
 # http::NextPipelinedWrite
@@ -1778,12 +1745,7 @@ proc http::NextPipelinedWrite {token} {
 
 	#Log re-use nonpipeline, GRANT delayed write access to $token in NextP..
 	set socketWrState($connId) peNding
-
-    } else {
-	# No requests in socketWrQueue.  Nothing to do.
     }
-
-    return
 }
 
 # http::CancelReadPipeline
@@ -1816,7 +1778,6 @@ proc http::CancelReadPipeline {name1 connId op} {
 	}
 	set socketRdQueue($connId) {}
     }
-    return
 }
 
 # http::CancelWritePipeline
@@ -1850,7 +1811,6 @@ proc http::CancelWritePipeline {name1 connId op} {
 	}
 	set socketWrQueue($connId) {}
     }
-    return
 }
 
 # http::ReplayIfDead --
@@ -1907,7 +1867,6 @@ proc http::ReplayIfDead {tokenArg doing} {
 	    lappend InFlightR $socketRdState($stateArg(socketinfo))
 	} elseif {($doing eq "read")} {
 	    lappend InFlightR $tokenArg
-	} else {
 	}
 
 	if {    [info exists socketWrState($stateArg(socketinfo))]
@@ -1916,7 +1875,6 @@ proc http::ReplayIfDead {tokenArg doing} {
 	    lappend InFlightW $socketWrState($stateArg(socketinfo))
 	} elseif {($doing eq "write")} {
 	    lappend InFlightW $tokenArg
-	} else {
 	}
 
 	# Report any inconsistency of $tokenArg with socket*state.
@@ -1936,7 +1894,6 @@ proc http::ReplayIfDead {tokenArg doing} {
 	    Log WARNING - ReplayIfDead pipelined tokenArg $tokenArg $doing \
 		    ne socketWrState($stateArg(socketinfo)) \
 		      $socketWrState($stateArg(socketinfo))
-	} else {
 	}
     } else {
 	# One transaction should be in flight.
@@ -1948,7 +1905,6 @@ proc http::ReplayIfDead {tokenArg doing} {
 	    Log WARNING - ReplayIfDead nonpipeline tokenArg $tokenArg $doing \
 		    ne socketRdState($stateArg(socketinfo)) \
 		      $socketRdState($stateArg(socketinfo))
-	} else {
 	}
 
 	# Report the inconsistency that socketRdQueue is non-empty.
@@ -1958,7 +1914,6 @@ proc http::ReplayIfDead {tokenArg doing} {
 	    Log WARNING - ReplayIfDead nonpipeline tokenArg $tokenArg $doing \
 		    has read queue socketRdQueue($stateArg(socketinfo)) \
 		    $socketRdQueue($stateArg(socketinfo)) ne {}
-	} else {
 	}
 
 	lappend InFlightW $socketRdState($stateArg(socketinfo))
@@ -1989,7 +1944,6 @@ proc http::ReplayIfDead {tokenArg doing} {
     #   to new values in ReplayCore.
 
     ReplayCore $newQueue
-    return
 }
 
 # http::ReplayIfClose --
@@ -2029,7 +1983,6 @@ proc http::ReplayIfClose {Wstate Rqueue Wqueue} {
     # 2. Cleanup - none needed, done by the caller.
 
     ReplayCore $newQueue
-    return
 }
 
 # http::ReInit --
@@ -2236,7 +2189,6 @@ proc http::ReplayCore {newQueue} {
     # Connect does its own fconfigure.
     fileevent $sock writable [list http::Connect $token {*}$tmpConnArgs]
     #Log ---- $sock << conn to $token for HTTP request (e)
-    return
 }
 
 # Data access functions:
@@ -2314,7 +2266,6 @@ proc http::cleanup {token} {
     if {[info exists state]} {
 	unset state
     }
-    return
 }
 
 # http::Connect
@@ -2358,7 +2309,6 @@ proc http::Connect {token proto phost srvurl} {
 	fileevent $state(sock) writable {}
 	::http::Connected $token $proto $phost $srvurl
     }
-    return
 }
 
 # http::Write
@@ -2463,7 +2413,6 @@ proc http::Write {token} {
 	eval $state(-queryprogress) \
 	    [list $token $state(querylength) $state(queryoffset)]
     }
-    return
 }
 
 # http::Event
@@ -2560,10 +2509,6 @@ proc http::Event {sock token} {
 		# last use.
 		# If any other requests are in flight or pipelined/queued, they
 		# will be discarded.
-	    } else {
-		##Log - connecting 2 - token $token
-		# nsl is -1 so either fblocked (OK) or (eof and not reusing).
-		# Continue. Any eof is processed at the end of this proc.
 	    }
 	} elseif {$state(state) eq "header"} {
 	    if {[catch {gets $sock line} nhl]} {
@@ -2795,7 +2740,6 @@ proc http::Event {sock token} {
 			    set n 0
 			    set state(state) complete
 			}
-		    } else {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
 		    # This code forgives EOF in place of the final CRLF.
@@ -2955,8 +2899,6 @@ proc http::Event {sock token} {
 	    }
 	} elseif {$cc} {
 	    return
-	} else {
-	    # Not eof, continue and yield.
 	}
     }
 }
@@ -3478,7 +3420,6 @@ proc http::ReceiveChunked {chan command} {
 proc http::make-transformation-chunked {chan command} {
     coroutine [namespace current]::dechunk$chan ::http::ReceiveChunked $chan $command
     chan event $chan readable [namespace current]::dechunk$chan
-    return
 }
 
 # Local variables:

@@ -224,10 +224,10 @@ Although it is the common escape algorithm, but, in fact, the way how the
 executable parses the command-line (resp. splits it into single arguments)
 is decisive.
 .PP
-Unfortunately, there is currently no way to supply newline character within 
-an argument to the batch files (\fB.cmd\fR or \fB.bat\fR) or to the command 
+Unfortunately, there is currently no way to supply newline character within
+an argument to the batch files (\fB.cmd\fR or \fB.bat\fR) or to the command
 processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
-(also the argument chain) on the first newline character. 
+(also the argument chain) on the first newline character.
 But it works properly with an executable (using CommandLineToArgv, etc).
 .PP
 The Tk console text widget does not provide real standard IO capabilities.

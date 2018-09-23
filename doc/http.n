@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "http" n 2.8 http "Tcl Bundled Packages"
+.TH "http" n 2.9 http "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -21,6 +21,8 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
 .sp
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
+.sp
+\fB::http::quoteString\fR \fIvalue\fR
 .sp
 \fB::http::quoteString\fR \fIvalue\fR
 \fB::http::reset\fR \fItoken\fR ?\fIwhy\fR?
