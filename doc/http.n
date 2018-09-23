@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "http" n 2.8 http "Tcl Bundled Packages"
+.TH "http" n 2.9 http "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -21,6 +21,8 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
 .sp
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
+.sp
+\fB::http::quoteString\fR \fIvalue\fR
 .sp
 \fB::http::reset\fR \fItoken\fR ?\fIwhy\fR?
 .sp
@@ -146,12 +148,13 @@ default is 0.
 \fB\-urlencoding\fR \fIencoding\fR
 .
 The \fIencoding\fR used for creating the x-url-encoded URLs with
-\fB::http::formatQuery\fR.  The default is \fButf-8\fR, as specified by RFC
+\fB::http::formatQuery\fR and \fB::http::quoteString\fR.
+The default is \fButf-8\fR, as specified by RFC
 2718.  Prior to http 2.5 this was unspecified, and that behavior can be
 returned by specifying the empty string (\fB{}\fR), although
 \fIiso8859-1\fR is recommended to restore similar behavior but without the
-\fB::http::formatQuery\fR throwing an error processing non-latin-1
-characters.
+\fB::http::formatQuery\fR or \fB::http::quoteString\fR
+throwing an error processing non-latin-1 characters.
 .TP
 \fB\-useragent\fR \fIstring\fR
 .
@@ -374,6 +377,11 @@ number of arguments that are the keys and values of the query.  It
 encodes the keys and values, and generates one string that has the
 proper & and = separators.  The result is suitable for the
 \fB\-query\fR value passed to \fB::http::geturl\fR.
+.TP
+\fB::http::quoteString\fR \fIvalue\fR
+.
+This procedure does x-url-encoding of string.  It takes a single argument and
+encodes it.
 .TP
 \fB::http::reset\fR \fItoken\fR ?\fIwhy\fR?
 .
@@ -755,7 +763,7 @@ Option \fB-postfresh\fR, if boolean \fBtrue\fR, will override the \fBhttp::getur
 .PP
 Option \fB-repost\fR, if \fBtrue\fR, permits automatic retry of a POST request
 that fails because it uses a persistent connection that the server has
-half-closed (an 
+half-closed (an
 .QW "asynchronous close event" ).
 Subsequent GET and HEAD requests in a failed pipeline will also be retried.
 \fIThe -repost option should be used only if the application understands
