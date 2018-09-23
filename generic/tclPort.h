@@ -24,7 +24,8 @@
 #endif
 #include "tcl.h"
 
-#define WIDE_MAX ((Tcl_WideInt)((~(Tcl_WideUInt)0) >> 1))
+#define UWIDE_MAX ((Tcl_WideUInt)-1)
+#define WIDE_MAX ((Tcl_WideInt)(UWIDE_MAX >> 1))
 #define WIDE_MIN ((Tcl_WideInt)((Tcl_WideUInt)WIDE_MAX+1))
 
 #endif /* _TCLPORT */
