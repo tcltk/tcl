@@ -1495,10 +1495,10 @@ QuoteCmdLinePart(
 	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
 	start = *bspos;
     }
-    /* 
-     * escape all special chars enclosed in quotes like `"..."`, note that here we 
+    /*
+     * escape all special chars enclosed in quotes like `"..."`, note that here we
      * don't must escape `\` (with `\`), because it's outside of the main quotes,
-     * so `\` remains `\`, but important - not at end of part, because results as 
+     * so `\` remains `\`, but important - not at end of part, because results as
      * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
      */
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
@@ -1653,7 +1653,7 @@ BuildCommandLine(
 		special++;
 	    }
 	    /* rest of argument (and escape backslashes before closing main quote) */
-	    QuoteCmdLineBackslash(&ds, start, special, 
+	    QuoteCmdLineBackslash(&ds, start, special,
 	    	(quote & CL_QUOTE) ? bspos : NULL);
 	}
 	if (quote & CL_QUOTE) {
