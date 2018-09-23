@@ -38,6 +38,23 @@
 
 #define AVOID_HACKS_FOR_ITCL 1
 
+
+/*
+ * Used to tag functions that are only to be visible within the module being
+ * built and not outside it (where this is supported by the linker).
+ * Also used in the platform-specific *Port.h files.
+ */
+
+#ifndef MODULE_SCOPE
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
+#endif
+
+
+
 /*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
@@ -95,19 +112,6 @@ typedef int ptrdiff_t;
 #endif
 
 /*
- * Used to tag functions that are only to be visible within the module being
- * built and not outside it (where this is supported by the linker).
- */
-
-#ifndef MODULE_SCOPE
-#   ifdef __cplusplus
-#	define MODULE_SCOPE extern "C"
-#   else
-#	define MODULE_SCOPE extern
-#   endif
-#endif
-
-/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
@@ -134,6 +138,26 @@ typedef int ptrdiff_t;
 
 #if defined(_WIN32) && defined(_MSC_VER)
 #   define vsnprintf _vsnprintf
+#endif
+
+#if !defined(TCL_THREADS)
+#   define TCL_THREADS 1
+#endif
+#if !TCL_THREADS
+#   undef TCL_DECLARE_MUTEX
+#   define TCL_DECLARE_MUTEX(name)
+#   undef  Tcl_MutexLock
+#   define Tcl_MutexLock(mutexPtr)
+#   undef  Tcl_MutexUnlock
+#   define Tcl_MutexUnlock(mutexPtr)
+#   undef  Tcl_MutexFinalize
+#   define Tcl_MutexFinalize(mutexPtr)
+#   undef  Tcl_ConditionNotify
+#   define Tcl_ConditionNotify(condPtr)
+#   undef  Tcl_ConditionWait
+#   define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#   undef  Tcl_ConditionFinalize
+#   define Tcl_ConditionFinalize(condPtr)
 #endif
 
 /*
@@ -1146,6 +1170,10 @@ typedef struct CallFrame {
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. Part of
 				 * TIP#257. */
+#define FRAME_IS_PRIVATE_DEFINE 0x10
+				/* Marks this frame as being used for private
+				 * declarations with [oo::define]. Usually
+				 * OR'd with FRAME_IS_OO_DEFINE. TIP#500. */
 
 /*
  * TIP #280
@@ -3013,6 +3041,8 @@ MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
 				const char *targetName,
 				const char *packageName);
+MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
+				Tcl_WideInt *);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
@@ -3231,12 +3261,20 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInit(Tcl_Interp *interp);
+MODULE_SCOPE int        TclZipfsMount(Tcl_Interp *interp, const char *zipname,
+			 const char *mntpt, const char *passwd);
+MODULE_SCOPE int 	TclZipfsUnmount(Tcl_Interp *interp, const char *zipname);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, int length);
+/* Tip 430 */
+MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
+MODULE_SCOPE int    TclZipfs_SafeInit(Tcl_Interp *interp);
+
 
 /*
  *----------------------------------------------------------------
@@ -4206,6 +4244,10 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
+#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
+#   define USE_THREAD_ALLOC 1
+#endif
+
 #if defined(PURIFY)
 
 /*
@@ -4223,7 +4265,7 @@ typedef const char *TclDTraceStr;
 
 #undef USE_THREAD_ALLOC
 #undef USE_TCLALLOC
-#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#elif TCL_THREADS && defined(USE_THREAD_ALLOC)
 
 /*
  * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
@@ -4288,7 +4330,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 #   define USE_TCLALLOC 0
 #endif
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /* declared in tclObj.c */
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif

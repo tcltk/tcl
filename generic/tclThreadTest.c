@@ -18,7 +18,7 @@
 #endif
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  * Each thread has an single instance of the following structure. There is one
  * instance of this structure per thread even if that thread contains multiple
@@ -174,7 +174,6 @@ TclThread_Init(
     Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1157,6 +1156,14 @@ ThreadExitProc(
     }
 
     Tcl_MutexLock(&threadMutex);
+
+    if (self == errorThreadId) {
+	if (errorProcString) {	/* Extra safety */
+	    ckfree(errorProcString);
+	    errorProcString = NULL;
+	}
+	errorThreadId = 0;
+    }
 
     if (threadEvalScript) {
 	ckfree(threadEvalScript);

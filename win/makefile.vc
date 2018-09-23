@@ -55,7 +55,7 @@
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 
@@ -582,7 +582,6 @@ $(OUT_DIR)\tcl.nmake:
 	@type << >$@
 CORE_MACHINE = $(MACHINE)
 CORE_DEBUG = $(DEBUG)
-CORE_TCL_THREADS = $(TCL_THREADS)
 CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
 CORE_USE_WIDECHAR_API = $(USE_WIDECHAR_API)
 <<
@@ -638,7 +637,6 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
-@TCL_THREADS@        $(TCL_THREADS)
 @TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
 @TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
 @TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
@@ -711,7 +709,6 @@ $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
-### *ALL* extensions need to built with -DTCL_THREADS=1
 
 $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
