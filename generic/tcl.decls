@@ -104,7 +104,7 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-declare 22 {
+declare 22 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 }
 declare 23 {
@@ -119,7 +119,7 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
-declare 26 {
+declare 26 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
 }
 declare 27 {
@@ -152,7 +152,7 @@ declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
 }
-declare 36 {
+declare 36 {deprecated {No longer in use, changed to macro}} {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
 }
@@ -198,7 +198,7 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-declare 49 {
+declare 49 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 {
@@ -207,13 +207,13 @@ declare 50 {
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
 }
-declare 52 {
+declare 52 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewIntObj(int intValue)
 }
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
 }
-declare 54 {
+declare 54 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewLongObj(long longValue)
 }
 declare 55 {
@@ -222,7 +222,7 @@ declare 55 {
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-declare 57 {
+declare 57 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 {
@@ -235,13 +235,13 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
-declare 61 {
+declare 61 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
 }
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[])
 }
-declare 63 {
+declare 63 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
 }
 declare 64 {
@@ -250,10 +250,10 @@ declare 64 {
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
-declare 66 {
+declare 66 {deprecated {No longer in use, changed to macro}} {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
 }
-declare 67 {
+declare 67 {deprecated {No longer in use, changed to macro}} {
     void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
 	    int length)
 }
@@ -472,7 +472,7 @@ declare 129 {
 declare 130 {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
-declare 131 {
+declare 131 {deprecated {No longer in use, changed to macro}} {
     int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 132 {
@@ -624,7 +624,7 @@ declare 173 {
 declare 174 {
     const char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
-declare 175 {
+declare 175 {deprecated {No longer in use, changed to macro}} {
     const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
 	    int flags)
 }
@@ -635,7 +635,7 @@ declare 176 {
 declare 177 {
     int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 }
-declare 178 {
+declare 178 {deprecated {No longer in use, changed to macro}} {
     int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 179 {
@@ -834,7 +834,7 @@ declare 235 {
 declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
-declare 237 {
+declare 237 {deprecated {No longer in use, changed to macro}} {
     const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
 	    const char *newValue, int flags)
 }
@@ -869,7 +869,7 @@ declare 245 {
 declare 246 {deprecated {}} {
     int Tcl_TellOld(Tcl_Channel chan)
 }
-declare 247 {
+declare 247 {deprecated {No longer in use, changed to macro}} {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
@@ -890,14 +890,14 @@ declare 251 {
 declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 253 {
+declare 253 {deprecated {No longer in use, changed to macro}} {
     int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
 }
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
-declare 255 {
+declare 255 {deprecated {No longer in use, changed to macro}} {
     void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
@@ -909,7 +909,7 @@ declare 256 {
 declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
-declare 258 {
+declare 258 {deprecated {No longer in use, changed to macro}} {
     int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 	    const char *varName, const char *localName, int flags)
 }
@@ -920,7 +920,7 @@ declare 259 {
 declare 260 {
     int Tcl_VarEval(Tcl_Interp *interp, ...)
 }
-declare 261 {
+declare 261 {deprecated {No longer in use, changed to macro}} {
     ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
 	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
 }
@@ -955,7 +955,7 @@ declare 270 {
     const char *Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 	    const char **termPtr)
 }
-declare 271 {
+declare 271 {deprecated {No longer in use, changed to macro}} {
     const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
@@ -964,12 +964,12 @@ declare 272 {
 	    const char *name, const char *version, int exact,
 	    void *clientDataPtr)
 }
-declare 273 {
+declare 273 {deprecated {No longer in use, changed to macro}} {
     int Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
 	    const char *version)
 }
 # TIP #268: The internally used new Require function is in slot 573.
-declare 274 {
+declare 274 {deprecated {No longer in use, changed to macro}} {
     const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
@@ -1350,7 +1350,7 @@ declare 380 {
 declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
-declare 382 {
+declare 382 {deprecated {No longer in use, changed to macro}} {
     Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
@@ -2330,9 +2330,30 @@ declare 631 {
 	    ClientData callbackData)
 }
 
+# TIP #430
+declare 632 {
+    int TclZipfs_Mount(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    const char *zipname,
+    const char *passwd)
+}
+declare 633 {
+    int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+}
+declare 634 {
+    Tcl_Obj *TclZipfs_TclLibrary(void)
+}
+declare 635 {
+    int TclZipfs_Mount_Buffer(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    unsigned char *data,
+    size_t datalen,
+    int copy)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
-
-
 
 ##############################################################################
 
@@ -2344,6 +2365,9 @@ interface tclPlat
 ################################
 # Unix specific functions
 #   (none)
+declare 2 unix {
+    int TclZipfs_AppHook(int *argc, char ***argv)
+}
 
 ################################
 # Windows specific functions
@@ -2356,7 +2380,9 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
-
+declare 2 win {
+    int TclZipfs_AppHook(int *argc, TCHAR ***argv)
+}
 ################################
 # Mac OS X specific functions
 
@@ -2377,6 +2403,10 @@ declare 1 macosx {
 
 export {
     void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+}
+export {
+    void Tcl_MainEx(int argc, char **argv, Tcl_AppInitProc *appInitProc,
+    Tcl_Interp *interp)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,

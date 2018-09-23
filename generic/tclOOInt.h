@@ -125,6 +125,18 @@ typedef struct ForwardMethod {
 } ForwardMethod;
 
 /*
+ * Structure used in private variable mappings. Describes the mapping of a
+ * single variable from the user's local name to the system's storage name.
+ * [TIP #500]
+ */
+
+typedef struct {
+    Tcl_Obj *variableObj;	/* Name used within methods. This is the part
+				 * that is properly under user control. */
+    Tcl_Obj *fullNameObj;	/* Name used at the instance namespace level. */
+} PrivateVariableMapping;
+
+/*
  * Helper definitions that declare a "list" array. The two varieties are
  * either optimized for simplicity (in the case that the whole array is
  * typically assigned at once) or efficiency (in the case that the array is
@@ -140,6 +152,13 @@ typedef struct ForwardMethod {
     struct { int num; listType_t *list; }
 #define LIST_DYNAMIC(listType_t) \
     struct { int num, size; listType_t *list; }
+
+/*
+ * These types are needed in function arguments.
+ */
+
+typedef LIST_STATIC(Tcl_Obj *) VariableNameList;
+typedef LIST_STATIC(PrivateVariableMapping) PrivateVariableList;
 
 /*
  * Now, the definition of what an object actually is.
@@ -186,7 +205,12 @@ typedef struct Object {
     Tcl_ObjectMapMethodNameProc *mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
-    LIST_STATIC(Tcl_Obj *) variables;
+    VariableNameList variables;
+    PrivateVariableList privateVariables;
+				/* Configurations for the variable resolver
+				 * used inside methods. */
+    Tcl_Command myclassCommand;	/* Reference to this object's class dispatcher
+				 * command. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -214,6 +238,10 @@ typedef struct Object {
 				 * other spots). */
 #define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
 				 * unknown method handler at that point. */
+#define HAS_PRIVATE_METHODS 0x20000
+				/* Object/class has (or had) private methods,
+				 * and so shouldn't be cached so
+				 * aggressively. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -268,7 +296,10 @@ typedef struct Class {
 				 * object doesn't override with its own mixins
 				 * (and filters and method implementations for
 				 * when getting method chains). */
-    LIST_STATIC(Tcl_Obj *) variables;
+    VariableNameList variables;
+    PrivateVariableList privateVariables;
+				/* Configurations for the variable resolver
+				 * used inside methods. */
 } Class;
 
 /*
@@ -370,10 +401,15 @@ typedef struct CallContext {
 
 #define PUBLIC_METHOD     0x01	/* This is a public (exported) method. */
 #define PRIVATE_METHOD    0x02	/* This is a private (class's direct instances
-				 * only) method. */
+				 * only) method. Supports itcl. */
 #define OO_UNKNOWN_METHOD 0x04	/* This is an unknown method. */
 #define CONSTRUCTOR	  0x08	/* This is a constructor. */
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
+#define TRUE_PRIVATE_METHOD 0x20
+				/* This is a private method only accessible
+				 * from other methods defined on this class
+				 * or instance. [TIP #500] */
+#define SCOPE_FLAGS (PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD)
 
 /*
  * Structure containing definition information about basic class methods.
@@ -429,6 +465,9 @@ MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineObjSelfObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefinePrivateObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
@@ -504,6 +543,7 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
+			    Object *contextObjPtr, Class *contextClsPtr,
 			    Tcl_Obj *cacheInThisObj);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
@@ -513,7 +553,8 @@ MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
+MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
+			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
@@ -558,13 +599,24 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define FOREACH(var,ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
-    } else if (var = (ary).list[i], 1) 
+    } else if (var = (ary).list[i], 1)
+
+/*
+ * A variation where the array is an array of structs. There's no issue with
+ * possible NULLs; every element of the array will be iterated over and the
+ * varable set to a pointer to each of those elements in turn.
+ * REQUIRES DECLARATION: int i;
+ */
+
+#define FOREACH_STRUCT(var,ary) \
+    for(i=0 ; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
  * sets up the declarations needed for the main macro, FOREACH_HASH, which
  * does the actual iteration. FOREACH_HASH_VALUE is a restricted version that
  * only iterates over values.
+ * REQUIRES DECLARATION: FOREACH_HASH_DECLS;
  */
 
 #define FOREACH_HASH_DECLS \

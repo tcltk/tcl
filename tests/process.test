@@ -63,7 +63,7 @@ test process-4.1 {exec one child} -body {
     set statuses [tcl::process status -wait]
     set status [lindex [tcl::process status $pid] 1]
     expr {
-           [llength $list] eq 1 
+           [llength $list] eq 1
         && [lindex $list 0] eq $pid
         && [dict size $statuses] eq 1
         && [dict get $statuses $pid] eq $status
@@ -139,7 +139,7 @@ test process-5.1 {exec one child} -body {
     set statuses [tcl::process status -wait]
     set status [lindex [tcl::process status $pid] 1]
     expr {
-           [llength $list] eq 1 
+           [llength $list] eq 1
         && [lindex $list 0] eq $pid
         && [dict size $statuses] eq 1
         && [dict get $statuses $pid] eq $status
@@ -271,7 +271,7 @@ test process-7.2 {abnormal exit} -body {
     tcl::process purge
     tcl::process autopurge 1
 }
-test process-7.3 {child killed} -body {
+test process-7.3 {child killed} -constraints {win} -body {
     tcl::process autopurge 0
     set pid [exec [interpreter] $path(exit) -1 &]
     lindex [tcl::process status -wait $pid] 1

@@ -41,7 +41,7 @@ static CRITICAL_SECTION initLock;
  * obvious reasons, cannot use any dyamically allocated storage.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 static struct Tcl_Mutex_ {
     CRITICAL_SECTION crit;
@@ -76,7 +76,7 @@ static CRITICAL_SECTION joinLock;
  * The per-thread event and queue pointers.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 typedef struct ThreadSpecificData {
     HANDLE condEvent;			/* Per-thread condition event */
@@ -241,7 +241,7 @@ TclpThreadCreate(
 
 	/*
 	 * The only purpose of this is to decrement the reference count so the
-	 * OS resources will be reaquired when the thread closes.
+	 * OS resources will be reacquired when the thread closes.
 	 */
 
 	CloseHandle(tHandle);
@@ -399,7 +399,7 @@ TclpInitUnlock(void)
  *	mutexes, condition variables, and thread local storage keys.
  *
  *	This lock must be different than the initLock because the initLock is
- *	held during creation of syncronization objects.
+ *	held during creation of synchronization objects.
  *
  * Results:
  *	None.
@@ -474,7 +474,7 @@ TclpMasterUnlock(void)
 Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     if (!allocOnce) {
 	InitializeCriticalSection(&allocLock.crit);
 	allocOnce = 1;
@@ -516,7 +516,7 @@ TclFinalizeLock(void)
     DeleteCriticalSection(&masterLock);
     initialized = 0;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     if (allocOnce) {
 	DeleteCriticalSection(&allocLock.crit);
 	allocOnce = 0;
@@ -532,7 +532,7 @@ TclFinalizeLock(void)
     DeleteCriticalSection(&initLock);
 }
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 /* locally used prototype */
 static void		FinalizeConditionEvent(ClientData data);
@@ -549,7 +549,7 @@ static void		FinalizeConditionEvent(ClientData data);
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *
  *----------------------------------------------------------------------
  */
@@ -649,7 +649,7 @@ TclpFinalizeMutex(
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *	Will allocate memory for a HANDLE and initialize this the first time
  *	this Tcl_Condition is used.
  *
