@@ -37,7 +37,7 @@ Tcl_Obj *tclFreeObjList = NULL;
  * TclNewObj macro, however, so must be visible.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 MODULE_SCOPE Tcl_Mutex tclObjMutex;
 Tcl_Mutex tclObjMutex;
 #endif
@@ -50,7 +50,7 @@ Tcl_Mutex tclObjMutex;
 
 char tclEmptyString = '\0';
 
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
 /*
  * Structure for tracking the source file and line number where a given
  * Tcl_Obj was allocated.  We also track the pointer to the Tcl_Obj itself,
@@ -87,7 +87,7 @@ typedef struct {
                                  * tclCompile.h for the definition of this
                                  * structure, and for references to all
                                  * related places in the core. */
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
     Tcl_HashTable *objThreadMap;/* Thread local table that is used to check
                                  * that a Tcl_Obj was not allocated by some
                                  * other thread. */
@@ -156,7 +156,7 @@ typedef struct PendingObjData {
 /*
  * Macro to set up the local reference to the deletion context.
  */
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *const contextPtr = &pendingObjData
@@ -452,7 +452,7 @@ TclInitObjSubsystem(void)
 void
 TclFinalizeThreadObjects(void)
 {
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1009,7 +1009,7 @@ void
 TclDbDumpActiveObjects(
     FILE *outFile)
 {
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
@@ -1069,7 +1069,7 @@ TclDbInitNewObj(
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Add entry to a thread local map used to check if a Tcl_Obj was
      * allocated by the currently executing thread.
@@ -1305,7 +1305,7 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
-# ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -1632,32 +1632,30 @@ Tcl_GetString(
     register Tcl_Obj *objPtr)	/* Object whose string rep byte pointer should
 				 * be returned. */
 {
-    if (objPtr->bytes != NULL) {
-	return objPtr->bytes;
-    }
-
-    /*
-     * Note we do not check for objPtr->typePtr == NULL.  An invariant of
-     * a properly maintained Tcl_Obj is that at least  one of objPtr->bytes
-     * and objPtr->typePtr must not be NULL.  If broken extensions fail to
-     * maintain that invariant, we can crash here.
-     */
-
-    if (objPtr->typePtr->updateStringProc == NULL) {
+    if (objPtr->bytes == NULL) {
 	/*
-	 * Those Tcl_ObjTypes which choose not to define an updateStringProc
-	 * must be written in such a way that (objPtr->bytes) never becomes
-	 * NULL.  This panic was added in Tcl 8.1.
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
 	 */
 
-	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		objPtr->typePtr->name);
-    }
-    objPtr->typePtr->updateStringProc(objPtr);
-    if (objPtr->bytes == NULL || objPtr->length < 0
-	    || objPtr->bytes[objPtr->length] != '\0') {
-	Tcl_Panic("UpdateStringProc for type '%s' "
-		"failed to create a valid string rep", objPtr->typePtr->name);
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes == NULL || objPtr->length < 0
+		|| objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep",
+		    objPtr->typePtr->name);
+	}
     }
     return objPtr->bytes;
 }
@@ -1693,8 +1691,31 @@ Tcl_GetStringFromObj(
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
-    (void) TclGetString(objPtr);
+    if (objPtr->bytes == NULL) {
+	/*
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
+	 */
 
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes == NULL || objPtr->length < 0
+		|| objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep",
+		    objPtr->typePtr->name);
+	}
+    }
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
     }
@@ -2786,7 +2807,7 @@ Tcl_GetLongFromObj(
 
 	    if (w >= -(Tcl_WideInt)(ULONG_MAX)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
-		*longPtr = Tcl_WideAsLong(w);
+		*longPtr = (long) w;
 		return TCL_OK;
 	    }
 	    goto tooLarge;
@@ -2812,10 +2833,9 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(unsigned long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
-		unsigned long value = 0, numBytes = sizeof(long);
-		long scratch;
+		unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
 		unsigned char *bytes = (unsigned char *) &scratch;
 
 		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
@@ -3077,6 +3097,73 @@ Tcl_GetWideIntFromObj(
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	    }
 	    return TCL_ERROR;
+	}
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetWideBitsFromObj --
+ *
+ *	Attempt to return a wide integer from the Tcl object "objPtr". If the
+ *	object is not already a int, double or bignum, an attempt will be made
+ *	to convert it to one of these. Out-of-range values don't result in an
+ *	error, but only the least significant 64 bits will be returned.
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If the object is not already an int, double or bignum object, the
+ *	conversion will free any old internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetWideBitsFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,            /* Object from which to get a wide int. */
+    Tcl_WideInt *wideIntPtr)    /* Place to store resulting wide integer. */
+{
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    *wideIntPtr = objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (interp != NULL) {
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        TclGetString(objPtr)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    mp_int big;
+
+	    Tcl_WideUInt value = 0, scratch;
+	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    unsigned char *bytes = (unsigned char *) &scratch;
+
+	    Tcl_GetBignumFromObj(NULL, objPtr, &big);
+	    mp_mod_2d(&big, (int) (CHAR_BIT * sizeof(Tcl_WideInt)), &big);
+	    mp_to_unsigned_bin_n(&big, bytes, &numBytes);
+	    while (numBytes-- > 0) {
+		value = (value << CHAR_BIT) | *bytes++;
+	    }
+	    if (big.sign) {
+		value = -value;
+	    }
+	    *wideIntPtr = (Tcl_WideInt) value;
+	    mp_clear(&big);
+	    return TCL_OK;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3449,7 +3536,7 @@ Tcl_SetBignumObj(
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
-	if (value > (((~(Tcl_WideUInt)0) >> 1) + bignumValue->sign)) {
+	if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
@@ -3598,7 +3685,7 @@ Tcl_DbIncrRefCount(
 	Tcl_Panic("incrementing refCount of previously disposed object");
     }
 
-# ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -3661,7 +3748,7 @@ Tcl_DbDecrRefCount(
 	Tcl_Panic("decrementing refCount of previously disposed object");
     }
 
-# ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -3726,7 +3813,7 @@ Tcl_DbIsShared(
 	Tcl_Panic("checking whether previously disposed object is shared");
     }
 
-# ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
