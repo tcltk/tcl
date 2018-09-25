@@ -258,8 +258,8 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    char *p, *r;
-    int size;
+    char *p;
+    int size, i = 0;
 
     if (len > 0) {
 	len /= 2;
@@ -267,18 +267,18 @@ Tcl_WinTCharToUtf(
     size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
     Tcl_DStringInit(dsPtr);
     Tcl_DStringSetLength(dsPtr, size+8); /* Add some spare, in case of NULL-bytes */
-    r = p = (char *)Tcl_DStringValue(dsPtr);
+    p = (char *)Tcl_DStringValue(dsPtr);
     WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
     if (len == -1) --size; /* account for 0-byte at string end */
-    while (r < p+size) {
-	if (!*r) {
+    while (i < size) {
+	if (!p[i]) {
 	    /* Output contains '\0'-byte, but Tcl expect two-bytes: C0 80 */
-	    memmove(r+2, r+1, p-r+size-1);
-	    memcpy(r++, "\xC0\x80", 2);
+	    memmove(p+i+2, p+i+1, size-i-1);
+	    memcpy(p + i++, "\xC0\x80", 2);
 	    Tcl_DStringSetLength(dsPtr, ++size + 1);
-	    r = p = (char *)Tcl_DStringValue(dsPtr);
+	    p = (char *)Tcl_DStringValue(dsPtr);
 	}
-	++r;
+	++i;
     }
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
