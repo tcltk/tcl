@@ -6535,7 +6535,7 @@ ArrayDefaultCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
 	    return TCL_ERROR;
 	}
-	if (!varPtr || !isArray) {
+	if (!varPtr || TclIsVarUndefined(varPtr) || !isArray) {
 	    return NotArrayError(interp, arrayNameObj);
 	}
 
@@ -6621,11 +6621,11 @@ ArrayDefaultCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
 	    return TCL_ERROR;
 	}
-	if (varPtr && !isArray) {
-	    return NotArrayError(interp, arrayNameObj);
-	}
-        
-	if (varPtr) {
+
+	if (varPtr && !TclIsVarUndefined(varPtr)) {
+	    if (!isArray) {
+		return NotArrayError(interp, arrayNameObj);
+	    }
 	    SetArrayDefault(varPtr, NULL);
 	}
 	return TCL_OK;
