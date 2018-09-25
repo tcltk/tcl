@@ -1390,6 +1390,73 @@ test var-24.15 {array default set and get: two-level} {
 	}}
     }}
 } {3 7 7 1 0 0 7}
+test var-24.16 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default set ary 7
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {can't array default set "ary": variable isn't array}
+test var-24.17 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.18 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.19 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default get ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.20 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default get ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.21 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default exists ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.22 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default exists ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.23 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default unset ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.24 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default unset ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
 
 catch {namespace delete ns}
 catch {unset arr}
