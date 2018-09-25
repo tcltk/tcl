@@ -209,6 +209,8 @@ typedef struct Object {
     PrivateVariableList privateVariables;
 				/* Configurations for the variable resolver
 				 * used inside methods. */
+    Tcl_Command myclassCommand;	/* Reference to this object's class dispatcher
+				 * command. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -597,7 +599,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define FOREACH(var,ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
-    } else if (var = (ary).list[i], 1) 
+    } else if (var = (ary).list[i], 1)
 
 /*
  * A variation where the array is an array of structs. There's no issue with

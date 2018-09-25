@@ -1447,6 +1447,9 @@ StringIndexCmd(
 	    char buf[4];
 
 	    length = Tcl_UniCharToUtf(ch, buf);
+	    if (!length) {
+		length = Tcl_UniCharToUtf(-1, buf);
+	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
 	}
     }

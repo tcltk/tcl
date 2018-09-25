@@ -1340,7 +1340,7 @@ ReflectSeekWide(
 
     if (seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -1390,16 +1390,15 @@ ReflectSeekWide(
 	parent->typePtr->wideSeekProc != NULL) {
 	curPos = parent->typePtr->wideSeekProc(parent->instanceData, offset,
 		seekMode, errorCodePtr);
-    } else if (offset < Tcl_LongAsWide(LONG_MIN) ||
-	    offset > Tcl_LongAsWide(LONG_MAX)) {
+    } else if (offset < LONG_MIN || offset > LONG_MAX) {
 	*errorCodePtr = EOVERFLOW;
-	curPos = Tcl_LongAsWide(-1);
+	curPos = -1;
     } else {
-	curPos = Tcl_LongAsWide(parent->typePtr->seekProc(
-		parent->instanceData, Tcl_WideAsLong(offset), seekMode,
-		errorCodePtr));
+	curPos = parent->typePtr->seekProc(
+		parent->instanceData, offset, seekMode,
+		errorCodePtr);
     }
-    if (curPos == Tcl_LongAsWide(-1)) {
+    if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
     }
 
@@ -1422,7 +1421,7 @@ ReflectSeek(
      * routine.
      */
 
-    return (int) ReflectSeekWide(clientData, Tcl_LongAsWide(offset), seekMode,
+    return ReflectSeekWide(clientData, offset, seekMode,
 	    errorCodePtr);
 }
 
