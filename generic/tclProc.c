@@ -1035,7 +1035,6 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    register Var *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, i;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
@@ -1059,23 +1058,26 @@ ProcWrongNumArgs(
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
-    defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
-    for (i=1 ; i<=numArgs ; i++, defPtr++) {
-	Tcl_Obj *argObj;
-	Tcl_Obj *namePtr = localName(framePtr, i-1);
+    if (localCt > 0) {
+	register Var *defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
 
-	if (defPtr->value.objPtr != NULL) {
-	    TclNewObj(argObj);
-	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
-	} else if (defPtr->flags & VAR_IS_ARGS) {
-	    numArgs--;
-	    final = "?arg ...?";
-	    break;
-	} else {
-	    argObj = namePtr;
-	    Tcl_IncrRefCount(namePtr);
+	for (i=1 ; i<=numArgs ; i++, defPtr++) {
+	    Tcl_Obj *argObj;
+	    Tcl_Obj *namePtr = localName(framePtr, i-1);
+
+	    if (defPtr->value.objPtr != NULL) {
+		TclNewObj(argObj);
+		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
+	    } else if (defPtr->flags & VAR_IS_ARGS) {
+		numArgs--;
+		final = "?arg ...?";
+		break;
+	    } else {
+		argObj = namePtr;
+		Tcl_IncrRefCount(namePtr);
+	    }
+	    desiredObjs[i] = argObj;
 	}
-	desiredObjs[i] = argObj;
     }
 
     Tcl_ResetResult(interp);
