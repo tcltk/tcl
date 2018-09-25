@@ -1907,8 +1907,27 @@ TclPtrSetVarIdx(
 	     */
 
 	    if (oldValuePtr == NULL) {
-		varPtr->value.objPtr = newValuePtr;
-		Tcl_IncrRefCount(newValuePtr);
+		if (arrayPtr) {
+		    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
+
+		    if (defValuePtr) {
+			Tcl_Obj *valuePtr = Tcl_DuplicateObj(defValuePtr);
+
+			varPtr->value.objPtr = valuePtr;
+			TclContinuationsCopy(valuePtr, defValuePtr);
+			Tcl_IncrRefCount(valuePtr);
+			Tcl_AppendObjToObj(valuePtr, newValuePtr);
+			if (newValuePtr->refCount == 0) {
+			    Tcl_DecrRefCount(newValuePtr);
+			}
+		    } else {
+			varPtr->value.objPtr = newValuePtr;
+			Tcl_IncrRefCount(newValuePtr);
+		    }
+		} else {
+		    varPtr->value.objPtr = newValuePtr;
+		    Tcl_IncrRefCount(newValuePtr);
+		}
 	    } else {
 		if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
