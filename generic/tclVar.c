@@ -247,7 +247,6 @@ static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, NULL, NULL
 };
-
 
 Var *
 TclVarHashCreateVar(
@@ -6572,7 +6571,8 @@ ArrayDefaultCmd(
 	     */
 	    
 	    CleanupVar(varPtr, arrayPtr);
-	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array default set", needArray, -1);
+	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array default set",
+		    needArray, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    TclGetString(arrayNameObj), NULL);
 	    return TCL_ERROR;
@@ -6600,12 +6600,16 @@ ArrayDefaultCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
 	    return TCL_ERROR;
 	}
-	if (varPtr && !isArray) {
-	    return NotArrayError(interp, arrayNameObj);
-	}
 
-	if (!varPtr) {
+	/*
+	 * Undefined variables (whether or not they have storage allocated) do
+	 * not have defaults, and this is not an error case.
+	 */
+
+	if (!varPtr || TclIsVarUndefined(varPtr)) {
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	} else if (!isArray) {
+	    return NotArrayError(interp, arrayNameObj);
 	} else {
 	    defaultValueObj = GetArrayDefault(varPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!!defaultValueObj));
