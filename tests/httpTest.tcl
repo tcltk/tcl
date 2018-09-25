@@ -25,7 +25,7 @@ package require http
 
 namespace eval ::http {
     variable TestStartTimeInMs [clock milliseconds]
-    catch {puts stdout "Start time (zero ms) is $TestStartTimeInMs"}
+#    catch {puts stdout "Start time (zero ms) is $TestStartTimeInMs"}
 }
 
 namespace eval ::httpTest {
