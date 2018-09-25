@@ -293,6 +293,8 @@ static int		TestgetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetintCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestlongsizeCmd(ClientData dummy,
+			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetplatformCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetvarfullnameCmd(
@@ -644,6 +646,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetint", TestgetintCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testlongsize", TestlongsizeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
 	    NULL, NULL);
@@ -2828,7 +2832,7 @@ TestlinkCmd(
     static int intVar = 43;
     static int boolVar = 4;
     static double realVar = 1.23;
-    static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
+    static Tcl_WideInt wideVar = 79;
     static char *stringVar = NULL;
     static char charVar = '@';
     static unsigned char ucharVar = 130;
@@ -2838,7 +2842,7 @@ TestlinkCmd(
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
-    static Tcl_WideUInt uwideVar = (Tcl_WideUInt) Tcl_LongAsWide(123);
+    static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
@@ -6934,6 +6938,24 @@ TestgetintCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	return TCL_OK;
     }
+}
+
+/*
+ * Used for determining sizeof(long) at script level.
+ */
+static int
+TestlongsizeCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int argc,
+    const char **argv)
+{
+    if (argc != 1) {
+	Tcl_AppendResult(interp, "wrong # args", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)sizeof(long)));
+    return TCL_OK;
 }
 
 static int

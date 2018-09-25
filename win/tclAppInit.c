@@ -35,8 +35,10 @@ extern Tcl_PackageInitProc Dde_Init;
 extern Tcl_PackageInitProc Dde_SafeInit;
 #endif
 
-#ifdef TCL_BROKEN_MAINARGS
+#if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
 int _CRT_glob = 0;
+#endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
+#ifdef TCL_BROKEN_MAINARGS
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif /* TCL_BROKEN_MAINARGS */
 
@@ -124,6 +126,8 @@ _tmain(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
+#else
+    TclZipfs_AppHook(&argc, &argv);
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);

@@ -49,7 +49,7 @@ namespace eval msgcat {
 namespace eval msgcat::mcutil {
     namespace export getsystemlocale getpreferences
     namespace ensemble create -prefix 0
-    
+
     # Map of language codes used in Windows registry to those of ISO-639
     if {[info sharedlibextension] eq ".dll"} {
 	variable WinRegToISO639 [dict create  {*}{
@@ -292,7 +292,7 @@ proc msgcat::mcexists {args} {
 	}
     }
     set src [lindex $args 0]
-    
+
     if {![info exists ns]} { set ns [PackageNamespaceGet] }
 
     set loclist [PackagePreferences $ns]
@@ -537,7 +537,7 @@ proc msgcat::mcpackagelocale {subcommand args} {
 	set - preferences {
 	    # set a package locale or add a package locale
 	    set fSet [expr {$subcommand eq "set"}]
-	    
+
 	    # Check parameter
 	    if {$fSet && 1 < [llength $args] } {
 		return -code error "wrong # args: should be\
@@ -1241,7 +1241,7 @@ proc ::msgcat::PackageNamespaceGet {} {
 	}
     }
 }
-  
+
 # Initialize the default locale
 proc msgcat::mcutil::getsystemlocale {} {
     global env
