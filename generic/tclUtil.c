@@ -2833,8 +2833,7 @@ Tcl_DStringAppendElement(
  *
  * Side effects:
  *	The length of dsPtr is changed to length and a null byte is stored at
- *	that position in the string. If length is larger than the space
- *	allocated for dsPtr, then a panic occurs.
+ *	that position in the string.
  *
  *----------------------------------------------------------------------
  */
@@ -2846,7 +2845,14 @@ Tcl_DStringSetLength(
 {
     size_t newsize;
 
-    if (length >= (size_t)dsPtr->spaceAvl) {
+#if defined(_WIN32) || defined(__CYGWIN__)
+    /* The "registry" extension calls this function with length -2 or -1,
+	 * so we have to take that into account. Should actually be fixed there! */
+    if (length >= (size_t)-2) {
+	length = 0;
+    }
+#endif
+    if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
 	 * may be trying to allocate a large buffer of a specific size. It
@@ -2868,7 +2874,7 @@ Tcl_DStringSetLength(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
