@@ -165,6 +165,18 @@ typedef struct ArraySearch {
 } ArraySearch;
 
 /*
+ * TIP #508: [array default]
+ *
+ * The following structure extends the regular TclVarHashTable used by array
+ * variables to store their optional default value.
+ */
+
+typedef struct ArrayVarHashTable {
+    TclVarHashTable table;
+    Tcl_Obj *defaultObj;
+} ArrayVarHashTable;
+
+/*
  * Forward references to functions defined later in this file:
  */
 
@@ -205,7 +217,6 @@ static int		ArrayDefaultCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		DeleteArrayVar(Var *arrayPtr);
-static Tcl_Obj *	GetArrayDefault(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
 /*
@@ -1414,8 +1425,21 @@ TclPtrGetVarIdx(
     /*
      * Return the array default value if any.
      */
-    if (arrayPtr && TclIsVarArray(arrayPtr) && GetArrayDefault(arrayPtr)) {
-	return GetArrayDefault(arrayPtr);
+
+    if (arrayPtr && TclIsVarArray(arrayPtr) && TclGetArrayDefault(arrayPtr)) {
+	return TclGetArrayDefault(arrayPtr);
+    }
+    if (TclIsVarArrayElement(varPtr) && !arrayPtr) {
+	/*
+	 * UGLY! Peek inside the implementation of things.
+	 */
+
+	ArrayVarHashTable *avhtPtr = (ArrayVarHashTable *)
+		((VarInHash *) varPtr)->entry.tablePtr;
+
+	if (avhtPtr->defaultObj) {
+	    return avhtPtr->defaultObj;
+	}
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
@@ -1809,7 +1833,7 @@ ListAppendInVar(
 	 */
 
 	if (arrayPtr) {
-	    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
+	    Tcl_Obj *defValuePtr = TclGetArrayDefault(arrayPtr);
 
 	    if (defValuePtr) {
 		oldValuePtr = Tcl_DuplicateObj(defValuePtr);
@@ -1851,7 +1875,7 @@ StringAppendInVar(
 
     if (oldValuePtr == NULL) {
 	if (arrayPtr) {
-	    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
+	    Tcl_Obj *defValuePtr = TclGetArrayDefault(arrayPtr);
 
 	    if (defValuePtr) {
 		/*
@@ -6564,25 +6588,11 @@ CompareVarKeys(
     return ((l1 == l2) && !memcmp(p1, p2, l1));
 }
 
-/*
- * TIP #508: [array default]
- */
-
-/*
- * The following structure extends the regular TclVarHashTable used by array
- * variables to store their optional default value.
- */
-
-typedef struct ArrayVarHashTable {
-    TclVarHashTable table;
-    Tcl_Obj *defaultObj;
-} ArrayVarHashTable;
-
 /*----------------------------------------------------------------------
  *
  * ArrayDefaultCmd --
  *
- *	This function implements the 'array default' Tcl command. 
+ *	This function implements the 'array default' Tcl command.
  *	Refer to the user documentation for details on what it does.
  *
  * Results:
@@ -6639,7 +6649,7 @@ ArrayDefaultCmd(
 	    return NotArrayError(interp, arrayNameObj);
 	}
 
-	defaultValueObj = GetArrayDefault(varPtr);
+	defaultValueObj = TclGetArrayDefault(varPtr);
 	if (!defaultValueObj) {
 	    /* Array default must exist. */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -6660,7 +6670,7 @@ ArrayDefaultCmd(
 	 * Attempt to create array if needed.
 	 */
 	varPtr = TclObjLookupVarEx(interp, arrayNameObj, NULL,
-		/*flags*/ TCL_LEAVE_ERR_MSG, /*msg*/ "array default set", 
+		/*flags*/ TCL_LEAVE_ERR_MSG, /*msg*/ "array default set",
 		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
@@ -6669,7 +6679,7 @@ ArrayDefaultCmd(
 	    /*
 	     * Not a valid array name.
 	     */
-	    
+
 	    CleanupVar(varPtr, arrayPtr);
 	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array default set",
 		    needArray, -1);
@@ -6711,7 +6721,7 @@ ArrayDefaultCmd(
 	} else if (!isArray) {
 	    return NotArrayError(interp, arrayNameObj);
 	} else {
-	    defaultValueObj = GetArrayDefault(varPtr);
+	    defaultValueObj = TclGetArrayDefault(varPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!!defaultValueObj));
 	}
 	return TCL_OK;
@@ -6743,17 +6753,25 @@ void
 TclInitArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr;
+    ArrayVarHashTable *tablePtr = ckalloc(sizeof(ArrayVarHashTable));
+
+    /*
+     * Mark the variable as an array.
+     */
 
     TclSetVarArray(arrayPtr);
 
-    tablePtr = ckalloc(sizeof(ArrayVarHashTable));
+    /*
+     * Regular TclVarHashTable initialization.
+     */
 
-    // Regular TclVarHashTable initialization.
     arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
     TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
 
-    // Default value initialization.
+    /*
+     * Default value initialization.
+     */
+
     tablePtr->defaultObj = NULL;
 }
 
@@ -6765,14 +6783,20 @@ static void
 DeleteArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
+	    arrayPtr->value.tablePtr;
 
-    // Default value cleanup.
+    /*
+     * Default value cleanup.
+     */
+
     SetArrayDefault(arrayPtr, NULL);
 
-    // Regular TclVarHashTable cleanup.
-    VarHashDeleteTable(arrayPtr->value.tablePtr);
+    /*
+     * Regular TclVarHashTable cleanup.
+     */
 
+    VarHashDeleteTable(arrayPtr->value.tablePtr);
     ckfree(tablePtr);
 }
 
@@ -6780,11 +6804,13 @@ DeleteArrayVar(
  * Get array default value if any.
  */
 
-static Tcl_Obj *
-GetArrayDefault(
+Tcl_Obj *
+TclGetArrayDefault(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
+	    arrayPtr->value.tablePtr;
+
     return tablePtr->defaultObj;
 }
 
@@ -6797,16 +6823,18 @@ SetArrayDefault(
     Var *arrayPtr,
     Tcl_Obj *defaultObj)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->value.tablePtr;
-    
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
+	    arrayPtr->value.tablePtr;
+
     /*
      * Increment/decrement refcount twice to ensure that the object is shared,
      * so that it doesn't get modified accidentally by the folling code:
-     * 
+     *
      *      array default set v 1
      *      lappend v(a) 2; # returns a new object {1 2}
      *      set v(b); # returns the original default object "1"
      */
+
     if (tablePtr->defaultObj) {
         Tcl_DecrRefCount(tablePtr->defaultObj);
         Tcl_DecrRefCount(tablePtr->defaultObj);

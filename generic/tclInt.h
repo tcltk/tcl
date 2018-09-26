@@ -4142,6 +4142,7 @@ MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
  */
 
 MODULE_SCOPE void	TclInitArrayVar(Var *arrayPtr);
+MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 /*
  * Utility routines for encoding index values as integers. Used by both
