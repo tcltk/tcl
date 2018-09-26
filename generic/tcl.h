@@ -2244,6 +2244,9 @@ EXTERN TCL_NORETURN void		Tcl_MainEx(int argc, char **argv,
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+#ifndef _WIN32
+EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#endif
 
 /*
  *----------------------------------------------------------------------------

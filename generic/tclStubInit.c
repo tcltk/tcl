@@ -608,20 +608,13 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    0, /* 0 */
-    0, /* 1 */
-    TclZipfs_AppHook, /* 2 */
-#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
-    TclZipfs_AppHook, /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-    TclZipfs_AppHook, /* 2 */
 #endif /* MACOSX */
 };
 
