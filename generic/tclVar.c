@@ -912,20 +912,24 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	int localLen, localCt = varFramePtr->numCompiledLocals;
-	Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
-	const char *localNameStr;
+	int localCt = varFramePtr->numCompiledLocals;
 
-	for (i=0 ; i<localCt ; i++, objPtrPtr++) {
-	    register Tcl_Obj *objPtr = *objPtrPtr;
+	if (localCt > 0) {
+	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
+	    const char *localNameStr;
+	    int localLen;
 
-	    if (objPtr) {
-		localNameStr = TclGetStringFromObj(objPtr, &localLen);
+	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
+		register Tcl_Obj *objPtr = *objPtrPtr;
 
-		if ((varLen == localLen) && (varName[0] == localNameStr[0])
+		if (objPtr) {
+		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+
+		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
 			&& !memcmp(varName, localNameStr, varLen)) {
-		    *indexPtr = i;
-		    return (Var *) &varFramePtr->compiledLocals[i];
+			*indexPtr = i;
+			return (Var *) &varFramePtr->compiledLocals[i];
+		    }
 		}
 	    }
 	}
@@ -6036,7 +6040,7 @@ AppendLocals(
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
     int i, localVarCt, added;
-    Tcl_Obj **varNamePtr, *objNamePtr;
+    Tcl_Obj *objNamePtr;
     const char *varName;
     TclVarHashTable *localVarTablePtr;
     Tcl_HashSearch search;
@@ -6046,27 +6050,30 @@ AppendLocals(
     localVarCt = iPtr->varFramePtr->numCompiledLocals;
     varPtr = iPtr->varFramePtr->compiledLocals;
     localVarTablePtr = iPtr->varFramePtr->varTablePtr;
-    varNamePtr = &iPtr->varFramePtr->localCachePtr->varName0;
     if (includeLinks) {
 	Tcl_InitObjHashTable(&addedTable);
     }
 
-    for (i = 0; i < localVarCt; i++, varNamePtr++) {
-	/*
-	 * Skip nameless (temporary) variables and undefined variables.
-	 */
+    if (localVarCt > 0) {
+	Tcl_Obj **varNamePtr = &iPtr->varFramePtr->localCachePtr->varName0;
 
-	if (*varNamePtr && !TclIsVarUndefined(varPtr)
+	for (i = 0; i < localVarCt; i++, varNamePtr++) {
+	    /*
+	     * Skip nameless (temporary) variables and undefined variables.
+	     */
+
+	    if (*varNamePtr && !TclIsVarUndefined(varPtr)
 		&& (includeLinks || !TclIsVarLink(varPtr))) {
-	    varName = TclGetString(*varNamePtr);
-	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
-		if (includeLinks) {
-		    Tcl_CreateHashEntry(&addedTable, *varNamePtr, &added);
+		varName = TclGetString(*varNamePtr);
+		if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
+		    Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
+		    if (includeLinks) {
+			Tcl_CreateHashEntry(&addedTable, *varNamePtr, &added);
+		    }
 		}
 	    }
+	    varPtr++;
 	}
-	varPtr++;
     }
 
     /*
