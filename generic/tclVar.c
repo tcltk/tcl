@@ -1774,6 +1774,130 @@ TclPtrSetVar(
 /*
  *----------------------------------------------------------------------
  *
+ * ListAppendInVar, StringAppendInVar --
+ *
+ *	Support functions for TclPtrSetVarIdx that implement various types of
+ *	appending operations.
+ *
+ * Results:
+ *	ListAppendInVar returns a Tcl result code (from the core list append
+ *	operation). StringAppendInVar has no return value.
+ *
+ * Side effects:
+ *	The variable or element of the array is updated. This may make the
+ *	variable/element exist. Reference counts of values may be updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+ListAppendInVar(
+    Tcl_Interp *interp,
+    Var *varPtr,
+    Var *arrayPtr,
+    Tcl_Obj *oldValuePtr,
+    Tcl_Obj *newValuePtr)
+{
+    if (oldValuePtr == NULL) {
+	/*
+	 * No previous value. Check for defaults if there's an array we can
+	 * ask this of.
+	 */
+
+	if (arrayPtr) {
+	    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
+
+	    if (defValuePtr) {
+		oldValuePtr = Tcl_DuplicateObj(defValuePtr);
+	    }
+	}
+
+	if (oldValuePtr == NULL) {
+	    /*
+	     * No default. [lappend] semantics say this is like being an empty
+	     * string.
+	     */
+
+	    TclNewObj(oldValuePtr);
+	}
+	varPtr->value.objPtr = oldValuePtr;
+	Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
+    } else if (Tcl_IsShared(oldValuePtr)) {
+	varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+	TclDecrRefCount(oldValuePtr);
+	oldValuePtr = varPtr->value.objPtr;
+	Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
+    }
+
+    return Tcl_ListObjAppendElement(interp, oldValuePtr, newValuePtr);
+}
+
+static inline void
+StringAppendInVar(
+    Var *varPtr,
+    Var *arrayPtr,
+    Tcl_Obj *oldValuePtr,
+    Tcl_Obj *newValuePtr)
+{
+    /*
+     * If there was no previous value, either we use the array's default (if
+     * this is an array with a default at all) or we treat this as a simple
+     * set.
+     */
+
+    if (oldValuePtr == NULL) {
+	if (arrayPtr) {
+	    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
+
+	    if (defValuePtr) {
+		/*
+		 * This is *almost* the same as the shared path below, except
+		 * that the original value reference in defValuePtr is not
+		 * decremented.
+		 */
+
+		Tcl_Obj *valuePtr = Tcl_DuplicateObj(defValuePtr);
+
+		varPtr->value.objPtr = valuePtr;
+		TclContinuationsCopy(valuePtr, defValuePtr);
+		Tcl_IncrRefCount(valuePtr);
+		Tcl_AppendObjToObj(valuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
+		return;
+	    }
+	}
+	varPtr->value.objPtr = newValuePtr;
+	Tcl_IncrRefCount(newValuePtr);
+	return;
+    }
+
+    /*
+     * We append newValuePtr's bytes but don't change its ref count. Unless
+     * the reference is shared, when we have to duplicate in order to be safe
+     * to modify at all.
+     */
+
+    if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
+	varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+
+	TclContinuationsCopy(varPtr->value.objPtr, oldValuePtr);
+
+	TclDecrRefCount(oldValuePtr);
+	oldValuePtr = varPtr->value.objPtr;
+	Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
+    }
+
+    Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+    if (newValuePtr->refCount == 0) {
+	Tcl_DecrRefCount(newValuePtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclPtrSetVarIdx --
  *
  *	This function is the same as Tcl_SetVar2Ex above, except that it
@@ -1886,63 +2010,13 @@ TclPtrSetVarIdx(
     }
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
 	if (flags & TCL_LIST_ELEMENT) {		/* Append list element. */
-	    if (oldValuePtr == NULL) {
-		TclNewObj(oldValuePtr);
-		varPtr->value.objPtr = oldValuePtr;
-		Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
-	    } else if (Tcl_IsShared(oldValuePtr)) {
-		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		TclDecrRefCount(oldValuePtr);
-		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
-	    }
-	    result = Tcl_ListObjAppendElement(interp, oldValuePtr,
+	    result = ListAppendInVar(interp, varPtr, arrayPtr, oldValuePtr,
 		    newValuePtr);
 	    if (result != TCL_OK) {
 		goto earlyError;
 	    }
 	} else {				/* Append string. */
-	    /*
-	     * We append newValuePtr's bytes but don't change its ref count.
-	     */
-
-	    if (oldValuePtr == NULL) {
-		if (arrayPtr) {
-		    Tcl_Obj *defValuePtr = GetArrayDefault(arrayPtr);
-
-		    if (defValuePtr) {
-			Tcl_Obj *valuePtr = Tcl_DuplicateObj(defValuePtr);
-
-			varPtr->value.objPtr = valuePtr;
-			TclContinuationsCopy(valuePtr, defValuePtr);
-			Tcl_IncrRefCount(valuePtr);
-			Tcl_AppendObjToObj(valuePtr, newValuePtr);
-			if (newValuePtr->refCount == 0) {
-			    Tcl_DecrRefCount(newValuePtr);
-			}
-		    } else {
-			varPtr->value.objPtr = newValuePtr;
-			Tcl_IncrRefCount(newValuePtr);
-		    }
-		} else {
-		    varPtr->value.objPtr = newValuePtr;
-		    Tcl_IncrRefCount(newValuePtr);
-		}
-	    } else {
-		if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
-		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-
-		    TclContinuationsCopy(varPtr->value.objPtr, oldValuePtr);
-
-		    TclDecrRefCount(oldValuePtr);
-		    oldValuePtr = varPtr->value.objPtr;
-		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
-		}
-		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
-		if (newValuePtr->refCount == 0) {
-		    Tcl_DecrRefCount(newValuePtr);
-		}
-	    }
+	    StringAppendInVar(varPtr, arrayPtr, oldValuePtr, newValuePtr);
 	}
     } else if (newValuePtr != oldValuePtr) {
 	/*
