@@ -1431,7 +1431,9 @@ TclPtrGetVarIdx(
     }
     if (TclIsVarArrayElement(varPtr) && !arrayPtr) {
 	/*
-	 * UGLY! Peek inside the implementation of things.
+	 * UGLY! Peek inside the implementation of things. This lets us get
+	 * the default of an array even when we've been [upvar]ed to just an
+	 * element of the array.
 	 */
 
 	ArrayVarHashTable *avhtPtr = (ArrayVarHashTable *)
