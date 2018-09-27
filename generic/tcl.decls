@@ -2365,9 +2365,6 @@ interface tclPlat
 ################################
 # Unix specific functions
 #   (none)
-declare 2 unix {
-    int TclZipfs_AppHook(int *argc, char ***argv)
-}
 
 ################################
 # Windows specific functions
@@ -2380,9 +2377,7 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
-declare 2 win {
-    int TclZipfs_AppHook(int *argc, TCHAR ***argv)
-}
+
 ################################
 # Mac OS X specific functions
 

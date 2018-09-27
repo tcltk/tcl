@@ -242,7 +242,7 @@ Tcl_WinUtfToTChar(
     while (p < wp + size - 1) {
 	if (p[0] == 0xfffd && p[1] == 0xfffd) {
 	    memmove(p+1, p+2, sizeof(WCHAR) * (p - wp + size - 2));
-	    p[0] = 0;
+	    p[0] = '\0';
 	    ++p; --size;
 	}
 	++p;
@@ -259,17 +259,27 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)
 {
     char *p;
-    int size;
+    int size, i = 0;
 
     if (len > 0) {
 	len /= 2;
     }
     size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
+    Tcl_DStringSetLength(dsPtr, size+8); /* Add some spare, in case of NULL-bytes */
     p = (char *)Tcl_DStringValue(dsPtr);
     WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
     if (len == -1) --size; /* account for 0-byte at string end */
+    while (i < size) {
+	if (!p[i]) {
+	    /* Output contains '\0'-byte, but Tcl expect two-bytes: C0 80 */
+	    memmove(p+i+2, p+i+1, size-i-1);
+	    memcpy(p + i++, "\xC0\x80", 2);
+	    Tcl_DStringSetLength(dsPtr, ++size + 1);
+	    p = (char *)Tcl_DStringValue(dsPtr);
+	}
+	++i;
+    }
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
@@ -845,20 +855,13 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    0, /* 0 */
-    0, /* 1 */
-    TclZipfs_AppHook, /* 2 */
-#endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
-    TclZipfs_AppHook, /* 2 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-    TclZipfs_AppHook, /* 2 */
 #endif /* MACOSX */
 };
 

@@ -1046,7 +1046,7 @@ test var-22.2 {leak in parsedVarName} -constraints memory -body {
 } -cleanup {
     unset -nocomplain i x
 } -result 0
-
+
 unset -nocomplain a k v
 test var-23.1 {array command, for loop, too many args} -returnCodes error -body {
     array for {k v} c d e {}
@@ -1202,6 +1202,261 @@ test var-23.14 {array for, shared arguments} -setup {
 } -cleanup {
     unset -nocomplain $vn vn
 } -result {}
+
+test var-24.1 {array default set and get: interpreted} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {a 3}
+    array default set ary 7
+    list $ary(a) $ary(b) [info exist ary(a)] [info exist ary(b)] \
+	[array default get ary]
+} -cleanup {
+    unset -nocomplain ary
+} -result {3 7 1 0 7}
+test var-24.2 {array default set and get: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	list $ary(a) $ary(b) [info exist ary(a)] [info exist ary(b)] \
+	    [array default get ary]
+    }}
+} {3 7 1 0 7}
+test var-24.3 {array default unset: interpreted} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {a 3}
+    array default set ary 7
+    list $ary(a) $ary(b) [array default unset ary] $ary(a) [catch {set ary(b)}]
+} -cleanup {
+    unset -nocomplain ary
+} -result {3 7 {} 3 1}
+test var-24.4 {array default unset: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	list $ary(a) $ary(b) [array default unset ary] $ary(a) \
+	    [catch {set ary(b)}]
+    }}
+} {3 7 {} 3 1}
+test var-24.5 {array default exists: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array set ary {a 3}
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default set ary 7
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default unset ary
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    unset ary
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default set ary 11
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+} -cleanup {
+    unset -nocomplain ary result
+} -result {1,1,0 1,1,1 1,1,0 0,0,0 1,1,1}
+test var-24.6 {array default exists: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default set ary 7
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default unset ary
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	unset ary
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default set ary 11
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+    }}
+} {1,1,0 1,1,1 1,1,0 0,0,0 1,1,1}
+test var-24.7 {array default and append: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary grill
+    lappend result [array size ary] [info exist ary(x)]
+    append ary(x) abc
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    append ary(x) def
+    append ary(y) ghi
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 grillabc 2 grillabcdef ghi}
+test var-24.8 {array default and append: compiled} {
+    apply {{} {
+	array default set ary grill
+	lappend result [array size ary] [info exist ary(x)]
+	append ary(x) abc
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	append ary(x) def
+	append ary(y) ghi
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 grillabc 2 grillabcdef ghi}
+test var-24.9 {array default and lappend: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary grill
+    lappend result [array size ary] [info exist ary(x)]
+    lappend ary(x) abc
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    lappend ary(x) def
+    lappend ary(y) ghi
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 {grill abc} 2 {grill abc def} ghi}
+test var-24.10 {array default and lappend: compiled} {
+    apply {{} {
+	array default set ary grill
+	lappend result [array size ary] [info exist ary(x)]
+	lappend ary(x) abc
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	lappend ary(x) def
+	lappend ary(y) ghi
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 {grill abc} 2 {grill abc def} ghi}
+test var-24.11 {array default and incr: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary 7
+    lappend result [array size ary] [info exist ary(x)]
+    incr ary(x) 11
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    incr ary(x)
+    incr ary(y)
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 18 2 19 1}
+test var-24.12 {array default and incr: compiled} {
+    apply {{} {
+	array default set ary 7
+	lappend result [array size ary] [info exist ary(x)]
+	incr ary(x) 11
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	incr ary(x)
+	incr ary(y)
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 18 2 19 1}
+test var-24.13 {array default and dict: interpreted} -setup {
+    unset -nocomplain ary x y z
+} -body {
+    array default set ary {x y}
+    dict lappend ary(p) x z
+    dict update ary(q) x y {
+	set y z
+    }
+    dict with ary(r) {
+	set x 123
+    }
+    lsort -stride 2 -index 0 [array get ary]
+} -cleanup {
+    unset -nocomplain ary x y z
+} -result {p {x {y z}} q {x z} r {x 123}}
+test var-24.14 {array default and dict: compiled} {
+    lsort -stride 2 -index 0 [apply {{} {
+	array default set ary {x y}
+	dict lappend ary(p) x z
+	dict update ary(q) x y {
+	    set y z
+	}
+	dict with ary(r) {
+	    set x 123
+	}
+	array get ary
+    }}]
+} {p {x {y z}} q {x z} r {x 123}}
+test var-24.15 {array default set and get: two-level} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	apply {{} {
+	    upvar 1 ary ary ary(c) c
+	    lappend result $ary(a) $ary(b) $c
+	    lappend result [info exist ary(a)] [info exist ary(b)] [info exist c]
+	    lappend result [array default get ary]
+	}}
+    }}
+} {3 7 7 1 0 0 7}
+test var-24.16 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default set ary 7
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {can't array default set "ary": variable isn't array}
+test var-24.17 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.18 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.19 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default get ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.20 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default get ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.21 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default exists ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.22 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default exists ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.23 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default unset ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.24 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default unset ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
 
 catch {namespace delete ns}
 catch {unset arr}
