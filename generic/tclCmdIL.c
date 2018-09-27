@@ -138,6 +138,8 @@ static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		InfoCmdTypeCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
@@ -156,6 +158,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 1},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
@@ -2127,6 +2130,60 @@ InfoTclVersionCmd(
 	return TCL_OK;
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoCmdTypeCmd --
+ *
+ *	Called to implement the "info cmdtype" command that returns the type
+ *	of a given command. Handles the following syntax:
+ *
+ *	    info cmdtype cmdName
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a type name. If there is an error, the result is an error
+ *	message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoCmdTypeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Command command;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "commandName");
+	return TCL_ERROR;
+    }
+    command = Tcl_FindCommand(interp, Tcl_GetString(objv[1]), NULL,
+	    TCL_LEAVE_ERR_MSG);
+    if (command == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * There's one special case: safe slave interpreters can't see aliases as
+     * aliases as they're part of the security mechanisms.
+     */
+
+    if (Tcl_IsSafe(interp)
+	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
+	Tcl_AppendResult(interp, "native", NULL);
+    } else {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+    }
+    return TCL_OK;
 }
 
 /*
