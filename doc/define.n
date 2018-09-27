@@ -426,7 +426,7 @@ Some of the configurable definitions of a class or object are \fIslotted
 definitions\fR. This means that the configuration is implemented by a slot
 object, that is an instance of the class \fBoo::Slot\fR, which manages a list
 of values (class names, variable names, etc.) that comprises the contents of
-the slot. The class defines three operations (as methods) that may be done on
+the slot. The class defines five operations (as methods) that may be done on
 the slot:
 .TP
 \fIslot\fR \fB\-append\fR ?\fImember ...\fR?
@@ -436,6 +436,16 @@ This appends the given \fImember\fR elements to the slot definition.
 \fIslot\fR \fB\-clear\fR
 .
 This sets the slot definition to the empty list.
+.TP
+\fIslot\fR \fB\-prepend\fR ?\fImember ...\fR?
+.VS TIP516
+This prepends the given \fImember\fR elements to the slot definition.
+.VE TIP516
+.TP
+\fIslot\fR \fB\-remove\fR ?\fImember ...\fR?
+.VS TIP516
+This removes the given \fImember\fR elements from the slot definition.
+.VE TIP516
 .TP
 \fIslot\fR \fB\-set\fR ?\fImember ...\fR?
 .
@@ -454,15 +464,52 @@ and these methods which provide the implementation interface:
 .TP
 \fIslot\fR \fBGet\fR
 .
-Returns a list that is the current contents of the slot. This method must
-always be called from a stack frame created by a call to \fBoo::define\fR or
-\fBoo::objdefine\fR.
+Returns a list that is the current contents of the slot, but does not modify
+the slot. This method must always be called from a stack frame created by a
+call to \fBoo::define\fR or \fBoo::objdefine\fR. This method \fIshould not\fR
+return an error unless it is called from outside a definition context or with
+the wrong number of arguments.
+.RS
+.PP
+.VS TIP516
+The elements of the list should be fully resolved, if that is a meaningful
+concept to the slot.
+.VE TIP516
+.RE
+.TP
+\fIslot\fR \fBResolve\fR \fIslotElement\fR
+.VS TIP516
+Returns \fIslotElement\fR with a resolution operation applied to it, but does
+not modify the slot. For slots of simple strings, this is an operation that
+does nothing, whereas for slots of classes, this maps a class name to its
+fully-qualified class name.  This method must always be called from a stack
+frame created by a call to \fBoo::define\fR or \fBoo::objdefine\fR.  This
+method \fIshould not\fR return an error unless it is called from outside a
+definition context or with the wrong number of arguments; unresolvable
+arguments should be returned as is (as not all slot operations strictly
+require that values are resolvable to work).
+.RS
+.PP
+Implementations \fIshould not\fR enforce uniqueness and ordering constraints
+in this method; that is the responsibility of the \fBSet\fR method.
+.RE
+.VE TIP516
 .TP
 \fIslot\fR \fBSet \fIelementList\fR
 .
 Sets the contents of the slot to the list \fIelementList\fR and returns the
 empty string. This method must always be called from a stack frame created by
-a call to \fBoo::define\fR or \fBoo::objdefine\fR.
+a call to \fBoo::define\fR or \fBoo::objdefine\fR. This method may return an
+error if it rejects the change to the slot contents (e.g., because of invalid
+values) as well as if it is called from outside a definition context or with
+the wrong number of arguments.
+.RS
+.PP
+This method \fImay\fR reorder and filter the elements if this is necessary in
+order to satisfy the underlying constraints of the slot. (For example, slots
+of classes enforce a uniqueness constraint that places each element in the
+earliest location in the slot that it can.)
+.RE
 .PP
 The implementation of these methods is slot-dependent (and responsible for
 accessing the correct part of the class or object definition). Slots also have
@@ -470,6 +517,14 @@ an unknown method handler to tie all these pieces together, and they hide
 their \fBdestroy\fR method so that it is not invoked inadvertently. It is
 \fIrecommended\fR that any user changes to the slot mechanism be restricted to
 defining new operations whose names start with a hyphen.
+.PP
+.VS TIP516
+Most slot operations will initially \fBResolve\fR their argument list, combine
+it with the results of the \fBGet\fR method, and then \fBSet\fR the result.
+Some operations omit one or both of the first two steps; omitting the third
+would result in an idempotent read-only operation (but the standard mechanism
+for reading from slots is via \fBinfo class\fR and \fBinfo object\fR).
+.VE TIP516
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
 \fBoo::objdefine\fR commands (they work in the same way), as well as
