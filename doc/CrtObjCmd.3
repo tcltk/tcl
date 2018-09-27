@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateObjCommand, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
+Tcl_CreateObjCommand, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj Tcl_RegisterCommandTypeName, Tcl_GetCommandTypeName \- implement new commands in C
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -42,6 +42,14 @@ void
 .sp
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
+.sp
+.VS "info cmdtype feature"
+void
+\fBTcl_RegisterCommandTypeName\fR(\fIproc, typeName\fR)
+.sp
+const char *
+\fBTcl_GetCommandTypeName\fR(\fItoken\fR)
+.VE "info cmdtype feature"
 .SH ARGUMENTS
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
@@ -65,6 +73,9 @@ Pointer to structure containing various information about a
 Tcl command.
 .AP Tcl_Obj *objPtr in
 Value containing the name of a Tcl command.
+.AP "const char" *typeName in
+Indicates the name of the type of command implementation associated
+with a particular \fIproc\fR, or NULL to break the association.
 .BE
 .SH DESCRIPTION
 .PP
@@ -296,6 +307,22 @@ is appended to the value specified by \fIobjPtr\fR.
 specified by the name in a \fBTcl_Obj\fR.
 The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
+.PP
+.VS "info cmdtype feature"
+\fBTcl_RegisterCommandTypeName\fR is used to associate a name (the
+\fItypeName\fR argument) with a particular implementation function so that it
+can then be looked up with \fBTcl_GetCommandTypeName\fR, which in turn is
+called with a command token that information is wanted for and which returns
+the name of the type that was registered for the implementation function used
+for that command. (The lookup functionality is surfaced virtually directly in Tcl via
+\fBinfo cmdtype\fR.) If there is no function registered for a particular
+function, the result will be the string literal
+.QW \fBnative\fR .
+The registration of a name can be undone by registering a mapping to NULL
+instead. The result from \fBTcl_GetCommandTypeName\fR will be exactly that
+string which was registered, and not a copy; use of a compile-time constant
+string is \fIstrongly recommended\fR.
+.VE "info cmdtype feature"
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_ResetResult(3), Tcl_SetObjResult(3)
 .SH KEYWORDS
