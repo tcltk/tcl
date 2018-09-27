@@ -3238,6 +3238,10 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
+MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
+MODULE_SCOPE void	TclRegisterCommandTypeName(
+			    Tcl_ObjCmdProc *implementationProc,
+			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
@@ -4114,6 +4118,19 @@ MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
 /*
+ * Just for the purposes of command-type registration.
+ */
+
+MODULE_SCOPE Tcl_ObjCmdProc TclEnsembleImplementationCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclLocalAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSlaveObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclInvokeImportedCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclOOPublicObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclOOPrivateObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclOOMyClassObjCmd;
+
+/*
  * TIP #462.
  */
 
@@ -4136,6 +4153,13 @@ MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
+
+/*
+ * TIP #508: [array default]
+ */
+
+MODULE_SCOPE void	TclInitArrayVar(Var *arrayPtr);
+MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 /*
  * Utility routines for encoding index values as integers. Used by both

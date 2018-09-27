@@ -3909,6 +3909,12 @@ TclZlibInit(
     Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
 
     /*
+     * Allow command type introspection to do something sensible with streams.
+     */
+
+    TclRegisterCommandTypeName(ZlibStreamCmd, "zlibStream");
+
+    /*
      * Formally provide the package as a Tcl built-in.
      */
 
