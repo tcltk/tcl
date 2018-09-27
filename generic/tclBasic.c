@@ -71,7 +71,18 @@ typedef struct {
 } CancelInfo;
 static Tcl_HashTable cancelTable;
 static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
+TCL_DECLARE_MUTEX(cancelLock);
+
+/*
+ * Table used to map command implementation functions to a human-readable type
+ * name, for [info type]. The keys in the table are function addresses, and
+ * the values in the table are static char* containing strings in Tcl's
+ * internal encoding (almost UTF-8).
+ */
+
+static Tcl_HashTable commandTypeTable;
+static int commandTypeInit = 0;
+TCL_DECLARE_MUTEX(commandTypeLock);
 
 /*
  * Declarations for managing contexts for non-recursive coroutines. Contexts
@@ -430,6 +441,13 @@ TclFinalizeEvaluation(void)
 	cancelTableInitialized = 0;
     }
     Tcl_MutexUnlock(&cancelLock);
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_DeleteHashTable(&commandTypeTable);
+        commandTypeInit = 0;
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
 }
 
 /*
@@ -503,7 +521,21 @@ Tcl_CreateInterp(void)
 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
 	    cancelTableInitialized = 1;
 	}
+
 	Tcl_MutexUnlock(&cancelLock);
+    }
+
+    if (commandTypeInit == 0) {
+        TclRegisterCommandTypeName(TclObjInterpProc, "proc");
+        TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
+        TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclSlaveObjCmd, "slave");
+        TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
+        TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
+        TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
+        TclRegisterCommandTypeName(TclOOMyClassObjCmd, "privateClass");
+        TclRegisterCommandTypeName(TclNRInterpCoroutine, "coroutine");
     }
 
     /*
@@ -1014,6 +1046,71 @@ DeleteOpCmdClientData(
     TclOpCmdClientData *occdPtr = clientData;
 
     ckfree(occdPtr);
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclRegisterCommandTypeName, TclGetCommandTypeName --
+ *
+ *      Command type registration and lookup mechanism. Everything is keyed by
+ *      the Tcl_ObjCmdProc for the command, and that is used as the *key* into
+ *      the hash table that maps to constant strings that are names. (It is
+ *      recommended that those names be ASCII.)
+ *
+ * ---------------------------------------------------------------------
+ */
+
+void
+TclRegisterCommandTypeName(
+    Tcl_ObjCmdProc *implementationProc,
+    const char *nameStr)
+{
+    Tcl_HashEntry *hPtr;
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit == 0) {
+        Tcl_InitHashTable(&commandTypeTable, TCL_ONE_WORD_KEYS);
+        commandTypeInit = 1;
+    }
+    if (nameStr != NULL) {
+        int isNew;
+
+        hPtr = Tcl_CreateHashEntry(&commandTypeTable,
+                (void *) implementationProc, &isNew);
+        Tcl_SetHashValue(hPtr, (void *) nameStr);
+    } else {
+        hPtr = Tcl_FindHashEntry(&commandTypeTable,
+                (void *) implementationProc);
+        if (hPtr != NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+}
+
+const char *
+TclGetCommandTypeName(
+    Tcl_Command command)
+{
+    Command *cmdPtr = (Command *) command;
+    void *procPtr = cmdPtr->objProc;
+    const char *name = "native";
+
+    if (procPtr == NULL) {
+        procPtr = cmdPtr->nreProc;
+    }
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&commandTypeTable, procPtr);
+
+        if (hPtr && Tcl_GetHashValue(hPtr)) {
+            name = (const char *) Tcl_GetHashValue(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+
+    return name;
 }
 
 /*
