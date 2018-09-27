@@ -4070,10 +4070,7 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    TclSetVarArray(varPtr);
-	    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
-	    TclInitVarHashTable(varPtr->value.tablePtr,
-		    TclGetVarNsPtr(varPtr));
+	    TclInitArrayVar(varPtr);
 #ifdef TCL_COMPILE_DEBUG
 	    TRACE_APPEND(("done\n"));
 	} else {
