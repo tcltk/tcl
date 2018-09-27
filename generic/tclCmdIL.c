@@ -158,7 +158,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 1},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
@@ -2171,8 +2171,18 @@ InfoCmdTypeCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+    /*
+     * There's one special case: safe slave interpreters can't see aliases as
+     * aliases as they're part of the security mechanisms.
+     */
+
+    if (Tcl_IsSafe(interp)
+	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
+	Tcl_AppendResult(interp, "native", NULL);
+    } else {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+    }
     return TCL_OK;
 }
 
