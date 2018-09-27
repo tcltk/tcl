@@ -2730,21 +2730,10 @@ Tcl_LreplaceObjCmd(
     if (first < 0) {
 	first = 0;
     }
-
-    /*
-     * Complain if the user asked for a start element that is greater than the
-     * list length. This won't ever trigger for the "end-*" case as that will
-     * be properly constrained by TclGetIntForIndex because we use listLen-1
-     * (to allow for replacing the last elem).
-     */
-
-    if ((first >= listLen) && (listLen > 0)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"list doesn't contain element %s", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
-		NULL);
-	return TCL_ERROR;
+    if (first > listLen) {
+	first = listLen;
     }
+
     if (last >= listLen) {
 	last = listLen - 1;
     }
