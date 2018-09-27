@@ -6555,7 +6555,7 @@ void
 TclInitArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = ckalloc(sizeof(ArrayVarHashTable));
+    ArrayVarHashTable *tablePtr = Tcl_Alloc(sizeof(ArrayVarHashTable));
 
     /*
      * Mark the variable as an array.
@@ -6599,7 +6599,7 @@ DeleteArrayVar(
      */
 
     VarHashDeleteTable(arrayPtr->value.tablePtr);
-    ckfree(tablePtr);
+    Tcl_Free(tablePtr);
 }
 
 /*
