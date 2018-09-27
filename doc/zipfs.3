@@ -47,6 +47,10 @@ If a file named \fBmain.tcl\fR is located in that file system, it is treated
 as the startup script for the process. If the file \fIZIPROOT\fR\fB/app/tcl_library/init.tcl\fR
 is present, \fBtcl_library\fR is set to  \fIZIPROOT\fR\fB/app/tcl_library.
 .PP
+On Windows, \fBTclZipfs_AppHook()\fR has a slightly different signature, it uses
+WCHAR in stead of char. As a result, it only works if your application is compiled
+using -DUNICODE.
+.PP
 If the \fBtcl_library\fR was not found in the application, the system will then search for it
 as either a VFS attached to the application dynamic library, or as a zip archive named
 libtcl_\fIMAJOR\fR_\fIMINOR\fR_\fIpatchLevel\fR.zip either in the present working directory
