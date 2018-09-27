@@ -1414,7 +1414,8 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != TclAliasObjCmd) {
+    if (cmdPtr->objProc != TclAliasObjCmd
+	    && cmdPtr->objProc != TclLocalAliasObjCmd) {
 	return TCL_OK;
     }
 
@@ -1469,7 +1470,8 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != TclAliasObjCmd) {
+	if (aliasCmdPtr->objProc != TclAliasObjCmd
+		&& aliasCmdPtr->objProc != TclLocalAliasObjCmd) {
 	    return TCL_OK;
 	}
 	nextAliasPtr = aliasCmdPtr->objClientData;
@@ -1535,8 +1537,8 @@ AliasCreate(
 
     if (slaveInterp == masterInterp) {
 	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), TclAliasObjCmd, AliasNRCmd, aliasPtr,
-		AliasObjCmdDeleteProc);
+		TclGetString(namePtr), TclLocalAliasObjCmd, AliasNRCmd,
+		aliasPtr, AliasObjCmdDeleteProc);
     } else {
 	aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
 		TclGetString(namePtr), TclAliasObjCmd, aliasPtr,
@@ -1776,13 +1778,18 @@ AliasList(
 /*
  *----------------------------------------------------------------------
  *
- * TclAliasObjCmd --
+ * TclAliasObjCmd, TclLocalAliasObjCmd --
  *
  *	This is the function that services invocations of aliases in a slave
  *	interpreter. One such command exists for each alias. When invoked,
  *	this function redirects the invocation to the target command in the
  *	master interpreter as designated by the Alias record associated with
  *	this command.
+ *
+ *	TclLocalAliasObjCmd is a stripped down version used when the source
+ *	and target interpreters of the alias are the same. That lets a number
+ *	of safety precautions be avoided: the state is much more precisely
+ *	known.
  *
  * Results:
  *	A standard Tcl result.
@@ -1922,6 +1929,73 @@ TclAliasObjCmd(
     if (targetInterp != interp) {
 	Tcl_TransferResult(targetInterp, result, interp);
 	Tcl_Release(targetInterp);
+    }
+
+    for (i=0; i<cmdc; i++) {
+	Tcl_DecrRefCount(cmdv[i]);
+    }
+    if (cmdv != cmdArr) {
+	TclStackFree(interp, cmdv);
+    }
+    return result;
+#undef ALIAS_CMDV_PREALLOC
+}
+
+int
+TclLocalAliasObjCmd(
+    ClientData clientData,	/* Alias record. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument vector. */
+{
+#define ALIAS_CMDV_PREALLOC 10
+    Alias *aliasPtr = clientData;
+    int result, prefc, cmdc, i;
+    Tcl_Obj **prefv, **cmdv;
+    Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
+    Interp *iPtr = (Interp *) interp;
+    int isRootEnsemble;
+
+    /*
+     * Append the arguments to the command prefix and invoke the command in
+     * the global namespace.
+     */
+
+    prefc = aliasPtr->objc;
+    prefv = &aliasPtr->objPtr;
+    cmdc = prefc + objc - 1;
+    if (cmdc <= ALIAS_CMDV_PREALLOC) {
+	cmdv = cmdArr;
+    } else {
+	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
+    }
+
+    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
+    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+
+    for (i=0; i<cmdc; i++) {
+	Tcl_IncrRefCount(cmdv[i]);
+    }
+
+    /*
+     * Use the ensemble rewriting machinery to ensure correct error messages:
+     * only the source command should show, not the full target prefix.
+     */
+
+    isRootEnsemble = TclInitRewriteEnsemble((Tcl_Interp *)iPtr, 1, prefc, objv);
+
+    /*
+     * Execute the target command in the target interpreter.
+     */
+
+    result = Tcl_EvalObjv(interp, cmdc, cmdv, TCL_EVAL_INVOKE);
+
+    /*
+     * Clean up the ensemble rewrite info if we set it in the first place.
+     */
+
+    if (isRootEnsemble) {
+	TclResetRewriteEnsemble((Tcl_Interp *)iPtr, 1);
     }
 
     for (i=0; i<cmdc; i++) {

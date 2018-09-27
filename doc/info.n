@@ -45,12 +45,14 @@ Returns a count of the total number of commands that have been invoked
 in this interpreter.
 .TP
 \fBinfo cmdtype \fIcommandName\fR
-.VS "info cmdtype feature"
+.VS TIP426
 Returns a description of the kind of command named by \fIcommandName\fR.  The
 supported types are:
 .RS
 .IP \fBalias\fR
-Indicates that \fIcommandName\fR was created by \fBinterp alias\fR.
+Indicates that \fIcommandName\fR was created by \fBinterp alias\fR. Note that
+safe interpreters can only see a subset of aliases (specifically those between
+two commands within themselves).
 .IP \fBcoroutine\fR
 Indicates that \fIcommandName\fR was created by \fBcoroutine\fR.
 .IP \fBensemble\fR
@@ -76,7 +78,7 @@ Indicates that \fIcommandName\fR was created by \fBzlib stream\fR.
 There may be other registered types as well; this is a set that is extensible
 at the implementation level with \fBTcl_RegisterCommandTypeName\fR.
 .RE
-.VE "info cmdtype feature"
+.VE TIP426
 .TP
 \fBinfo commands \fR?\fIpattern\fR?
 .

@@ -2518,6 +2518,49 @@ test info-40.16 {info cmdtype: dynamic behavior} -setup {
 	catch {rename bar {}}
     }
 } -result {0 1 ::testinfocmdtype::foo {} ::testinfocmdtype::bar 1 0}
+test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
+    set i [interp create]
+} -body {
+    $i alias foo gorp
+    $i eval {
+	info cmdtype foo
+    }
+} -cleanup {
+    interp delete $i
+} -result alias
+test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    $safe alias foo gorp
+    $safe eval {
+	info cmdtype foo
+    }
+} -cleanup {
+    interp delete $safe
+} -result native
+test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    set inner [interp create [list $safe bar]]
+    interp alias $inner foo $safe gorp
+    $safe eval {
+	bar eval {
+	    info cmdtype foo
+	}
+    }
+} -cleanup {
+    interp delete $safe
+} -result native
+test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    $safe eval {
+	interp alias {} foo {} gorp
+	info cmdtype foo
+    }
+} -cleanup {
+    interp delete $safe
+} -result alias
 namespace delete ::testinfocmdtype
 
 # -------------------------------------------------------------------------

@@ -530,6 +530,7 @@ Tcl_CreateInterp(void)
         TclRegisterCommandTypeName(TclObjInterpProc, "proc");
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
         TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
         TclRegisterCommandTypeName(TclSlaveObjCmd, "slave");
         TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
         TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
