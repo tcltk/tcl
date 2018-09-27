@@ -276,6 +276,20 @@
 
 	# ------------------------------------------------------------------
 	#
+	# Slot Resolve --
+	#
+	#	Helper that lets a slot convert a list of arguments of a
+	#	particular type to their canonical forms. Defaults to doing
+	#	nothing (suitable for simple strings).
+	#
+	# ------------------------------------------------------------------
+
+	method Resolve list {
+	    return $list
+	}
+
+	# ------------------------------------------------------------------
+	#
 	# Slot -set, -append, -clear, --default-operation --
 	#
 	#	Standard public slot operations. If a slot can't figure out
@@ -283,12 +297,32 @@
 	#
 	# ------------------------------------------------------------------
 
-	method -set args {tailcall my Set $args}
+	method -set args {
+	    set my [namespace which my]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
+	    tailcall my Set $args
+	}
 	method -append args {
-	    set current [uplevel 1 [list [namespace which my] Get]]
+	    set my [namespace which my]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
+	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$current {*}$args]
 	}
 	method -clear {} {tailcall my Set {}}
+	method -prepend args {
+	    set my [namespace which my]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
+	    set current [uplevel 1 [list $my Get]]
+	    tailcall my Set [list {*}$args {*}$current]
+	}
+	method -remove args {
+	    set my [namespace which my]
+	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
+	    set current [uplevel 1 [list $my Get]]
+	    tailcall my Set [lmap val $current {
+		if {$val in $args} continue else {set val}
+	    }]
+	}
 
 	# Default handling
 	forward --default-operation my -append
@@ -303,7 +337,7 @@
 	}
 
 	# Set up what is exported and what isn't
-	export -set -append -clear
+	export -set -append -clear -prepend -remove
 	unexport unknown destroy
     }
 
