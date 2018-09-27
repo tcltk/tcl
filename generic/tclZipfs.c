@@ -18,10 +18,10 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-#if !defined(_WIN32) && !defined(_WIN64)
-#include <sys/mman.h>
-#else
+#ifdef _WIN32
 #include <winbase.h>
+#else
+#include <sys/mman.h>
 #endif
 #include <errno.h>
 #include <string.h>
@@ -142,19 +142,16 @@
  * Windows drive letters.
  */
 
-#if defined(_WIN32) || defined(_WIN64)
-#define HAS_DRIVES 1
+#ifdef _WIN32
 static const char drvletters[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-#else
-#define HAS_DRIVES 0
 #endif
 
 /*
  * Mutex to protect localtime(3) when no reentrant version available.
  */
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #ifndef HAVE_LOCALTIME_R
 #ifdef TCL_THREADS
 TCL_DECLARE_MUTEX(localtimeMutex)
@@ -173,23 +170,21 @@ typedef struct ZipFile {
     Tcl_Channel chan;         /* Channel handle or NULL */
     unsigned char *data;      /* Memory mapped or malloc'ed file */
     size_t length;            /* Length of memory mapped file */
-    unsigned char *tofree;    /* Non-NULL if malloc'ed file */
+    void *tofree;             /* Non-NULL if malloc'ed file */
     size_t nfiles;            /* Number of files in archive */
     size_t baseoffs;          /* Archive start */
     size_t baseoffsp;         /* Password start */
     size_t centoffs;          /* Archive directory start */
     unsigned char pwbuf[264]; /* Password buffer */
-#if defined(_WIN32) || defined(_WIN64)
-    HANDLE mh;
-#endif
     size_t nopen;             /* Number of open files on archive */
     struct ZipEntry *entries; /* List of files in archive */
     struct ZipEntry *topents; /* List of top-level dirs in archive */
-#if HAS_DRIVES
-    int mntdrv;               /* Drive letter of mount point */
-#endif
     size_t mntptlen;
     char *mntpt;              /* Mount point */
+#ifdef _WIN32
+    HANDLE mh;
+    int mntdrv;               /* Drive letter of mount point */
+#endif
 } ZipFile;
 
 /*
@@ -516,7 +511,7 @@ ToDosTime(time_t when)
     struct tm *tmp, tm;
 
 #ifdef TCL_THREADS
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
     /* Win32 uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
@@ -544,7 +539,7 @@ ToDosDate(time_t when)
     struct tm *tmp, tm;
 
 #ifdef TCL_THREADS
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
     /* Win32 uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
@@ -621,7 +616,7 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
     char *path;
     char *result;
     int i, j, c, isunc = 0, isvfs=0, n=0;
-#if HAS_DRIVES
+#ifdef _WIN32
     int zipfspath=1;
     if (
         (tail[0] != '\0')
@@ -655,7 +650,7 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
             isunc = 1;
             }
         }
-#if HAS_DRIVES
+#ifdef _WIN32
     }
 #endif
     if(isvfs!=2) {
@@ -707,7 +702,7 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
             memcpy(path + i, tail, j);
         }
     }
-#if HAS_DRIVES
+#ifdef _WIN32
     for (i = 0; path[i] != '\0'; i++) {
         if (path[i] == '\\') {
             path[i] = '/';
@@ -857,13 +852,13 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
     if(zf->is_membuf==1) {
         /* Pointer to memory */
         if (zf->tofree != NULL) {
-            Tcl_Free((char *) zf->tofree);
+            Tcl_Free(zf->tofree);
             zf->tofree = NULL;
         }
         zf->data = NULL;
         return;
     }
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
     if ((zf->data != NULL) && (zf->tofree == NULL)) {
         UnmapViewOfFile(zf->data);
         zf->data = NULL;
@@ -878,7 +873,7 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
     }
 #endif
     if (zf->tofree != NULL) {
-        Tcl_Free((char *) zf->tofree);
+        Tcl_Free(zf->tofree);
         zf->tofree = NULL;
     }
     if(zf->chan != NULL) {
@@ -1016,7 +1011,7 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
     ClientData handle;
     zf->namelen=0;
     zf->is_membuf=0;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
     zf->data = NULL;
     zf->mh = INVALID_HANDLE_VALUE;
 #else
@@ -1057,7 +1052,7 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
         Tcl_Close(interp, zf->chan);
         zf->chan = NULL;
     } else {
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #   ifdef _WIN64
         i = GetFileSizeEx((HANDLE) handle, (PLARGE_INTEGER)&zf->length);
         if (
@@ -1919,8 +1914,8 @@ ZipAddFile(
     ZipEntry *z;
     z_stream stream;
     const char *zpath;
-    int crc, flush, zpathlen, olen;
-    size_t nbyte, nbytecompr, len, align = 0;
+    int crc, flush, zpathlen;
+    size_t nbyte, nbytecompr, len, olen, align = 0;
     Tcl_WideInt pos[3];
     int mtime = 0, isNew, cmeth;
     unsigned long keys[3], keys0[3];
@@ -1944,7 +1939,7 @@ ZipAddFile(
         || (Tcl_SetChannelOption(interp, in, "-translation", "binary") != TCL_OK)
         || (Tcl_SetChannelOption(interp, in, "-encoding", "binary") != TCL_OK)
     ) {
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
          /* hopefully a directory */
          if (strcmp("permission denied", Tcl_PosixError(interp)) == 0) {
             Tcl_Close(interp, in);
@@ -2088,13 +2083,14 @@ wrerr:
         }
         olen = sizeof (obuf) - stream.avail_out;
         if (passwd != NULL) {
-            int i, tmp;
+            size_t i;
+            int tmp;
 
             for (i = 0; i < olen; i++) {
                 obuf[i] = (char) zencode(keys, crc32tab, obuf[i], tmp);
             }
         }
-        if (olen && (Tcl_Write(out, obuf, olen) != olen)) {
+        if (olen && ((size_t)Tcl_Write(out, obuf, olen) != olen)) {
             Tcl_AppendResult(interp, "write error", (char *) NULL);
             deflateEnd(&stream);
             Tcl_Close(interp, in);
@@ -2873,7 +2869,7 @@ ZipFSListObjCmd(
     return TCL_OK;
 }
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define LIBRARY_SIZE        64
 static int
 ToUtf(
@@ -2898,7 +2894,7 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
     } else {
         Tcl_Obj *vfsinitscript;
         int found=0;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
         HMODULE hModule = TclWinGetTclInstance();
         WCHAR wName[MAX_PATH + LIBRARY_SIZE];
         char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
@@ -2912,7 +2908,7 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
             zipfs_literal_tcl_library=ZIPFS_APP_MOUNT "/tcl_library";
             return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
         if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
             GetModuleFileNameA(hModule, dllname, MAX_PATH);
         } else {
@@ -4401,12 +4397,15 @@ static int TclZipfs_AppHook_FindTclInit(const char *archive){
     return TCL_ERROR;
 }
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 int TclZipfs_AppHook(int *argc, TCHAR ***argv)
 #else
 int TclZipfs_AppHook(int *argc, char ***argv)
 #endif
 {
+#ifdef _WIN32
+    Tcl_DString ds;
+#endif
     /*
      * Tclkit_MainHook --
      * Performs the argument munging for the shell
@@ -4442,14 +4441,13 @@ int TclZipfs_AppHook(int *argc, char ***argv)
             }
         }
     } else if (*argc>1) {
-#if defined(_WIN32) || defined(_WIN64)
-        Tcl_DString ds;
-          strcpy(archive, Tcl_WinTCharToUtf((*argv)[1], -1, &ds));
-        Tcl_DStringFree(&ds);
+        return TCL_OK;
+#ifdef _WIN32
+        archive = Tcl_WinTCharToUtf((*argv)[1], -1, &ds);
 #else
         archive=(*argv)[1];
 #endif
-        if(strcmp(archive,"install")==0) {
+        if (strcmp(archive,"install")==0) {
             /* If the first argument is mkzip, run the mkzip program */
             Tcl_Obj *vfsinitscript;
             /* Run this now to ensure the file is present by the time Tcl_Main wants it */
@@ -4483,10 +4481,12 @@ int TclZipfs_AppHook(int *argc, char ***argv)
                 }
             }
         }
+#ifdef _WIN32
+        Tcl_DStringFree(&ds);
+#endif
     }
     return TCL_OK;
 }
-
 
 
 #ifndef HAVE_ZLIB
