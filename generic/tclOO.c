@@ -90,19 +90,10 @@ static inline void	RemoveClass(Class **list, int num, int idx);
 static inline void	RemoveObject(Object **list, int num, int idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
-static int		PublicObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 static int		PublicNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static int		PrivateObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		MyClassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 static int		MyClassNRObjCmd(ClientData clientData,
@@ -721,10 +712,9 @@ AllocObject(
 	if (nsPtr->parentPtr != NULL) {
 	    nsPtr = nsPtr->parentPtr;
 	}
-
     }
     oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
-	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
+	(Tcl_Namespace *)nsPtr, TclOOPublicObjectCmd, oPtr, NULL);
 
     /*
      * Add the NRE command and trace directly. While this breaks a number of
@@ -741,9 +731,9 @@ AllocObject(
     tracePtr->refCount = 1;
 
     oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
-	    PrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
+	    TclOOPrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
-	    oPtr->namespacePtr, MyClassObjCmd, MyClassNRObjCmd, oPtr,
+	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
             MyClassDeleted);
     return oPtr;
 }
@@ -2412,7 +2402,7 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
+ * TclOOPublicObjectCmd, TclOOPrivateObjectCmd, TclOOInvokeObject --
  *
  *	Main entry point for object invocations. The Public* and Private*
  *	wrapper functions (implementations of both object instance commands
@@ -2422,8 +2412,8 @@ Tcl_ObjectSetMetadata(
  * ----------------------------------------------------------------------
  */
 
-static int
-PublicObjectCmd(
+int
+TclOOPublicObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2443,8 +2433,8 @@ PublicNRObjectCmd(
 	    NULL);
 }
 
-static int
-PrivateObjectCmd(
+int
+TclOOPrivateObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2497,15 +2487,15 @@ TclOOInvokeObject(
 /*
  * ----------------------------------------------------------------------
  *
- * MyClassObjCmd, MyClassNRObjCmd --
+ * TclOOMyClassObjCmd, MyClassNRObjCmd --
  *
  *	Special trap door to allow an object to delegate simply to its class.
  *
  * ----------------------------------------------------------------------
  */
 
-static int
-MyClassObjCmd(
+int
+TclOOMyClassObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2888,9 +2878,9 @@ Tcl_GetObjectFromObj(
     if (cmdPtr == NULL) {
 	goto notAnObject;
     }
-    if (cmdPtr->objProc != PublicObjectCmd) {
+    if (cmdPtr->objProc != TclOOPublicObjectCmd) {
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-	if (cmdPtr == NULL || cmdPtr->objProc != PublicObjectCmd) {
+	if (cmdPtr == NULL || cmdPtr->objProc != TclOOPublicObjectCmd) {
 	    goto notAnObject;
 	}
     }
