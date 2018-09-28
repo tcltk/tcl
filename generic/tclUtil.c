@@ -897,7 +897,7 @@ Tcl_SplitList(
 	}
 	argv[i] = p;
 	if (literal) {
-	    memcpy(p, element, (size_t) elSize);
+	    memcpy(p, element, elSize);
 	    p += elSize;
 	    *p = 0;
 	    p++;
@@ -973,7 +973,7 @@ Tcl_ScanCountedElement(
 				 * Tcl_ConvertElement. */
 {
     char flags = CONVERT_ANY;
-    size_t numBytes = TclScanElement(src, length, &flags);
+    int numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -1025,7 +1025,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    size_t bytesNeeded;		/* Buffer length computed to complete the
+    int bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1269,6 +1269,9 @@ TclScanElement(
     *flagPtr = CONVERT_NONE;
 
   overflowCheck:
+    if (bytesNeeded < 0) {
+	Tcl_Panic("TclScanElement: string length overflow");
+    }
     return bytesNeeded;
 }
 
@@ -1650,9 +1653,9 @@ UtfWellFormedEnd(
 static inline int
 TrimRight(
     const char *bytes,		/* String to be trimmed... */
-    size_t numBytes,		/* ...and its length in bytes */
+    int numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    size_t numTrim)		/* ...and its length in bytes */
+    int numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes + numBytes;
     int pInc;
@@ -1911,8 +1914,8 @@ Tcl_Concat(
     int argc,			/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    int i, needSpace = 0;
-    size_t bytesNeeded = 0;
+    int i;
+    size_t needSpace = 0, bytesNeeded = 0;
     char *result, *p;
 
     /*
@@ -1940,8 +1943,7 @@ Tcl_Concat(
     result = Tcl_Alloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
-	size_t triml, trimr;
-	int elemLength;
+	size_t triml, trimr, elemLength;
 	const char *element;
 
 	element = argv[i];
@@ -2678,7 +2680,7 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    int offset = -1;
+	    size_t offset = (size_t)-1;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
@@ -2688,7 +2690,7 @@ Tcl_DStringAppend(
 
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (offset >= 0) {
+	    if (offset != (size_t)-1) {
 		bytes = dsPtr->string + offset;
 	    }
 	}
@@ -2845,13 +2847,6 @@ Tcl_DStringSetLength(
 {
     size_t newsize;
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-    /* The "registry" extension calls this function with length -2 or -1,
-	 * so we have to take that into account. Should actually be fixed there! */
-    if (length >= (size_t)-2) {
-	length = 0;
-    }
-#endif
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
@@ -3988,7 +3983,7 @@ TclGetProcessGlobalValue(
 	    Tcl_Free(pgvPtr->value);
 	    pgvPtr->value = Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
-		    (size_t) Tcl_DStringLength(&newValue) + 1);
+		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
 	    pgvPtr->encoding = current;
