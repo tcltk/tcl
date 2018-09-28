@@ -45,7 +45,9 @@ int
 .AP Tcl_Condition *condPtr in
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
-A mutex lock.
+.VS TIP509
+A recursive mutex lock.
+.VE TIP509
 .AP "const Tcl_Time" *timePtr in
 A time limit on the condition wait.  NULL to wait forever.
 Note that a polling value of 0 seconds does not make much sense.
@@ -135,7 +137,11 @@ Tcl provides \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR
 for handling event queuing in multithreaded applications.  See
 the \fBNotifier\fR manual page for more information on these procedures.
 .PP
-A mutex is a lock that is used to serialize all threads through a piece
+A mutex is a
+.VS TIP509
+recursive
+.VE TIP509
+lock that is used to serialize all threads through a piece
 of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
