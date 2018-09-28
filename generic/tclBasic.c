@@ -71,7 +71,18 @@ typedef struct {
 } CancelInfo;
 static Tcl_HashTable cancelTable;
 static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
+TCL_DECLARE_MUTEX(cancelLock);
+
+/*
+ * Table used to map command implementation functions to a human-readable type
+ * name, for [info type]. The keys in the table are function addresses, and
+ * the values in the table are static char* containing strings in Tcl's
+ * internal encoding (almost UTF-8).
+ */
+
+static Tcl_HashTable commandTypeTable;
+static int commandTypeInit = 0;
+TCL_DECLARE_MUTEX(commandTypeLock);
 
 /*
  * Declarations for managing contexts for non-recursive coroutines. Contexts
@@ -431,6 +442,13 @@ TclFinalizeEvaluation(void)
 	cancelTableInitialized = 0;
     }
     Tcl_MutexUnlock(&cancelLock);
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_DeleteHashTable(&commandTypeTable);
+        commandTypeInit = 0;
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
 }
 
 /*
@@ -504,7 +522,21 @@ Tcl_CreateInterp(void)
 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
 	    cancelTableInitialized = 1;
 	}
+
 	Tcl_MutexUnlock(&cancelLock);
+    }
+
+    if (commandTypeInit == 0) {
+        TclRegisterCommandTypeName(TclObjInterpProc, "proc");
+        TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
+        TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclSlaveObjCmd, "slave");
+        TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
+        TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
+        TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
+        TclRegisterCommandTypeName(TclOOMyClassObjCmd, "privateClass");
+        TclRegisterCommandTypeName(TclNRInterpCoroutine, "coroutine");
     }
 
     /*
@@ -999,6 +1031,9 @@ Tcl_CreateInterp(void)
     if (TclZlibInit(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
+    if (TclZipfs_Init(interp) != TCL_OK) {
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
 #endif
 
     TOP_CB(iPtr) = NULL;
@@ -1012,6 +1047,71 @@ DeleteOpCmdClientData(
     TclOpCmdClientData *occdPtr = clientData;
 
     ckfree(occdPtr);
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclRegisterCommandTypeName, TclGetCommandTypeName --
+ *
+ *      Command type registration and lookup mechanism. Everything is keyed by
+ *      the Tcl_ObjCmdProc for the command, and that is used as the *key* into
+ *      the hash table that maps to constant strings that are names. (It is
+ *      recommended that those names be ASCII.)
+ *
+ * ---------------------------------------------------------------------
+ */
+
+void
+TclRegisterCommandTypeName(
+    Tcl_ObjCmdProc *implementationProc,
+    const char *nameStr)
+{
+    Tcl_HashEntry *hPtr;
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit == 0) {
+        Tcl_InitHashTable(&commandTypeTable, TCL_ONE_WORD_KEYS);
+        commandTypeInit = 1;
+    }
+    if (nameStr != NULL) {
+        int isNew;
+
+        hPtr = Tcl_CreateHashEntry(&commandTypeTable,
+                (void *) implementationProc, &isNew);
+        Tcl_SetHashValue(hPtr, (void *) nameStr);
+    } else {
+        hPtr = Tcl_FindHashEntry(&commandTypeTable,
+                (void *) implementationProc);
+        if (hPtr != NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+}
+
+const char *
+TclGetCommandTypeName(
+    Tcl_Command command)
+{
+    Command *cmdPtr = (Command *) command;
+    void *procPtr = cmdPtr->objProc;
+    const char *name = "native";
+
+    if (procPtr == NULL) {
+        procPtr = cmdPtr->nreProc;
+    }
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&commandTypeTable, procPtr);
+
+        if (hPtr && Tcl_GetHashValue(hPtr)) {
+            name = (const char *) Tcl_GetHashValue(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+
+    return name;
 }
 
 /*
@@ -7513,7 +7613,7 @@ ExprAbsFunc(
 		}
 	    }
 	    goto unChanged;
-	} else if (l == LLONG_MIN) {
+	} else if (l == WIDE_MIN) {
 	    TclInitBignumFromWideInt(&big, l);
 	    goto tooLarge;
 	}
@@ -7638,7 +7738,7 @@ ExprEntierFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((const double *) ptr);
-	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
+	if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 	    mp_int big;
 
 	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
@@ -7648,9 +7748,9 @@ ExprEntierFunc(
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
 	} else {
-	    long result = (long) d;
+	    Tcl_WideInt result = (Tcl_WideInt) d;
 
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
 	    return TCL_OK;
 	}
     }
@@ -7680,27 +7780,14 @@ ExprIntFunc(
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    long iResult;
+    Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (TclGetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in long range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &iResult);
-	Tcl_DecrRefCount(objPtr);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
+    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)wResult));
     return TCL_OK;
 }
 
@@ -7713,26 +7800,11 @@ ExprWideFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Tcl_WideInt wResult;
-    Tcl_Obj *objPtr;
 
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    objPtr = Tcl_GetObjResult(interp);
-    if (TclGetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in wide int range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetWideIntFromObj(NULL, objPtr, &wResult);
-	Tcl_DecrRefCount(objPtr);
-    }
+    TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
 }
@@ -7835,7 +7907,7 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7fffffff;
+	iPtr->randSeed &= 0x7fffffff;
 	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	    iPtr->randSeed ^= 123459876;
 	}
@@ -7979,7 +8051,7 @@ ExprSrandFunc(
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
-    long i = 0;			/* Initialized to avoid compiler warning. */
+    Tcl_WideInt w = 0;			/* Initialized to avoid compiler warning. */
 
     /*
      * Convert argument and use it to reset the seed.
@@ -7990,20 +8062,8 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
-	Tcl_Obj *objPtr;
-	mp_int big;
-
-	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
-	    /* TODO: more ::errorInfo here? or in caller? */
-	    return TCL_ERROR;
-	}
-
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &i);
-	Tcl_DecrRefCount(objPtr);
+    if (TclGetWideBitsFromObj(NULL, objv[1], &w) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     /*
@@ -8012,8 +8072,7 @@ ExprSrandFunc(
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
+    iPtr->randSeed = (long) w & 0x7fffffff;
     if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	iPtr->randSeed ^= 123459876;
     }
@@ -8500,18 +8559,12 @@ TclNRTailcallObjCmd(
     if (objc > 1) {
         Tcl_Obj *listPtr, *nsObjPtr;
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-        Tcl_Namespace *ns1Ptr;
 
         /* The tailcall data is in a Tcl list: the first element is the
          * namespace, the rest the command to be tailcalled. */
 
-        listPtr = Tcl_NewListObj(objc, objv);
-
         nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-        if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
-                || (nsPtr != ns1Ptr)) {
-            Tcl_Panic("Tailcall failed to find the proper namespace");
-        }
+        listPtr = Tcl_NewListObj(objc, objv);
  	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
         iPtr->varFramePtr->tailcallPtr = listPtr;
