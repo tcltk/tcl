@@ -1453,7 +1453,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #endif
 
 #define TclGetInt4AtPtr(p) \
-    (((int) TclGetInt1AtPtr(p) << 24) |				\
+    (((int) (TclGetUInt1AtPtr(p) << 24)) |				\
 		     (*((p)+1) << 16) |				\
 		     (*((p)+2) <<  8) |				\
 		     (*((p)+3)))
