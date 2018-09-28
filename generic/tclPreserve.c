@@ -37,9 +37,9 @@ typedef struct {
  */
 
 static Reference *refArray = NULL;	/* First in array of references. */
-static int spaceAvl = 0;	/* Total number of structures available at
+static size_t spaceAvl = 0;	/* Total number of structures available at
 				 * *firstRefPtr. */
-static int inUse = 0;		/* Count of structures currently in use in
+static size_t inUse = 0;		/* Count of structures currently in use in
 				 * refArray. */
 TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
@@ -121,7 +121,7 @@ Tcl_Preserve(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     /*
      * See if there is already a reference for this pointer. If so, just
@@ -184,7 +184,7 @@ Tcl_Release(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     Tcl_MutexLock(&preserveMutex);
     for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
@@ -264,7 +264,7 @@ Tcl_EventuallyFree(
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     /*
      * See if there is a reference for this pointer. If so, set its "mustFree"
