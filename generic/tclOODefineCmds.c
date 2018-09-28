@@ -46,7 +46,7 @@ struct DeclaredSlot {
 		    getter, NULL, NULL},				\
 	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
 		    setter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
 		    resolver, NULL, NULL}}
 
 /*
