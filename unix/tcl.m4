@@ -2356,6 +2356,9 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     LIBS="$LIBS $THREADS_LIBS"
     AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
     LIBS=$ac_saved_libs
+
+    # TIP #509
+    AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
 ])
 
 #--------------------------------------------------------------------
