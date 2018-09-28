@@ -34,6 +34,7 @@
 #undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
+#undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -224,17 +225,31 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
+    WCHAR *wp, *p;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
+    p = wp = (WCHAR *)Tcl_DStringValue(dsPtr);
     MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
     if (len == -1) --size; /* account for 0-byte at string end */
+
+    /* It turns out that MultiByteToWideChar() cannot handle the 'modified'
+     * UTF-8 as used by Tcl. Every sequence of 0xC0 followed by 0x80 will
+     * be translated to two 0xfffd characters. This results in a test-failure
+     * of the registry-6.20 test-case. The simplest solution is to search for
+     * those two 0xfffd characters and replace them by a \u0000 character. */
+    while (p < wp + size - 1) {
+	if (p[0] == 0xfffd && p[1] == 0xfffd) {
+	    memmove(p+1, p+2, sizeof(WCHAR) * (p - wp + size - 2));
+	    p[0] = '\0';
+	    ++p; --size;
+	}
+	++p;
+    }
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
-    return (char *)wp;
+    return (char *) wp;
 }
 
 char *
@@ -244,17 +259,27 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)
 {
     char *p;
-    int size;
+    int size, i = 0;
 
     if (len > 0) {
 	len /= 2;
     }
     size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
+    Tcl_DStringSetLength(dsPtr, size+8); /* Add some spare, in case of NULL-bytes */
     p = (char *)Tcl_DStringValue(dsPtr);
     WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
     if (len == -1) --size; /* account for 0-byte at string end */
+    while (i < size) {
+	if (!p[i]) {
+	    /* Output contains '\0'-byte, but Tcl expect two-bytes: C0 80 */
+	    memmove(p+i+2, p+i+1, size-i-1);
+	    memcpy(p + i++, "\xC0\x80", 2);
+	    Tcl_DStringSetLength(dsPtr, ++size + 1);
+	    p = (char *)Tcl_DStringValue(dsPtr);
+	}
+	++i;
+    }
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
@@ -402,6 +427,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   define Tcl_GetUnicode 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -429,20 +455,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -920,6 +940,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_long_long, /* 69 */
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
+    TclBN_mp_get_int, /* 72 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -1587,6 +1608,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_Mount_Buffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */
