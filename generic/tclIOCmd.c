@@ -559,7 +559,7 @@ Tcl_SeekObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_Seek(chan, offset, mode);
-    if (result == Tcl_LongAsWide(-1)) {
+    if (result == -1) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -1913,7 +1913,7 @@ ChanTruncateObjCmd(
 	 */
 
 	length = Tcl_Tell(chan);
-	if (length == Tcl_WideAsLong(-1)) {
+	if (length == -1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not determine current location in \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp)));

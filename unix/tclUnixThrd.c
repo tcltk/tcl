@@ -424,7 +424,7 @@ TclpInitUnlock(void)
  *	in finalization; it is hidden during creation of the objects.
  *
  *	This lock must be different than the initLock because the initLock is
- *	held during creation of syncronization objects.
+ *	held during creation of synchronization objects.
  *
  * Results:
  *	None.
@@ -516,7 +516,7 @@ Tcl_GetAllocMutex(void)
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *	Will allocate memory for a pthread_mutex_t and initialize this the
  *	first time this Tcl_Mutex is used.
  *
@@ -620,7 +620,7 @@ TclpFinalizeMutex(
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *	Will allocate memory for a pthread_mutex_t and initialize this the
  *	first time this Tcl_Mutex is used.
  *
