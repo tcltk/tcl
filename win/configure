@@ -717,6 +717,7 @@ CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
 DL_LIBS
+WINE
 CYGPATH
 SHARED_BUILD
 SET_MAKE
@@ -3824,6 +3825,43 @@ CYGPATH=$ac_cv_prog_CYGPATH
 if test -n "$CYGPATH"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGPATH" >&5
 $as_echo "$CYGPATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    # Extract the first word of "wine", so it can be a program name with args.
+set dummy wine; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_WINE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$WINE"; then
+  ac_cv_prog_WINE="$WINE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_WINE="wine"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+WINE=$ac_cv_prog_WINE
+if test -n "$WINE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WINE" >&5
+$as_echo "$WINE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
