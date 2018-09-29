@@ -517,6 +517,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
+    AC_CHECK_PROG(WINE, wine, wine,)
 
     SHLIB_SUFFIX=".dll"
 
