@@ -4007,7 +4007,7 @@ test oo-34.10 {TIP 516: slots - resolution} -setup {
 	}
     }
     lappend result [info class mixin 516test::516a]
-    # Must not remove class with just simple name match 
+    # Must not remove class with just simple name match
     oo::define 516test::516a {
 	mixin -remove 516b
     }
