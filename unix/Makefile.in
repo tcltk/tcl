@@ -677,12 +677,12 @@ doc:
 
 tclzipfile: ${TCL_ZIP_FILE}
 
-
 ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
-	rm -rf ${TCL_VFS_ROOT}
-	mkdir -p ${TCL_VFS_PATH}
+	@rm -rf ${TCL_VFS_ROOT}
+	@mkdir -p ${TCL_VFS_PATH}
 	cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	(cd ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH})
+	( cd ${TCL_VFS_ROOT} ; \
+		${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH})
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
@@ -694,8 +694,8 @@ ifeq (${ZIPFS_BUILD},1)
 endif
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
+	@if [ "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
+	    ( cd ${TOP_DIR}/win; ${MAKE} winextensions ); \
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
@@ -788,13 +788,14 @@ gdb-test: ${TCLTEST_EXE}
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	rm gdb.run
+	@rm gdb.run
 
 lldb-test: ${TCLTEST_EXE}
 	@echo "settings set target.env-vars @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > lldb.run
 	@echo "settings set target.env-vars TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> lldb.run
-	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1
-	rm lldb.run
+	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl \
+		$(TESTFLAGS) -singleproc 1
+	@rm lldb.run
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
@@ -828,7 +829,9 @@ gdb: ${TCL_EXE}
 	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind $(TESTFLAGS)
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
+		$(TESTFLAGS)
 
 valgrindshell: ${TCL_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
@@ -860,14 +863,12 @@ install-strip:
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
-		"$(CONFIG_INSTALL_DIR)"; \
-	    do \
+		"$(CONFIG_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
@@ -888,66 +889,71 @@ install-binaries: binaries
 	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
 
 install-libraries-zipfs-shared: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)"; do \
+	@for i in "$(SCRIPT_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/";
-	@for i in $(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; do \
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
+	@for i in $(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
 	done
 
 install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)" ;\
+	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+
+MODULE_INSTALL_DIR=$(SCRIPT_INSTALL_DIR)/..
 
 install-libraries: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)"; do \
+	@for i in "$(SCRIPT_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@for i in opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6 ../tcl8/8.7; do \
+	@for i in opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6 ../tcl8/8.7 ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
 	    fi; \
 	done
-	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/";
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex \
-		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; do \
+		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
 	done
-	@echo "Installing package http 2.9.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.9.0.tm;
-	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
+	@echo "Installing package http 2.9.0 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.6/http-2.9.0.tm
+	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	done
-	@echo "Installing package msgcat 1.7.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.7/msgcat-1.7.0.tm;
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.4.1.tm;
-
-	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
-	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
-
-	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
+	@echo "Installing package msgcat 1.7.0 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.7/msgcat-1.7.0.tm
+	@echo "Installing package tcltest 2.4.1 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.5/tcltest-2.4.1.tm
+	@echo "Installing package platform 1.0.14 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.4/platform-1.0.14.tm
+	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.4/platform/shell-1.1.4.tm
+	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
 	done
-	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ]; then \
+	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
 	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
 	fi
 
 install-tzdata:
-	@for i in tzdata; do \
+	@for i in tzdata ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
@@ -979,7 +985,7 @@ install-tzdata:
 	done
 
 install-msgs:
-	@for i in msgs; do \
+	@for i in msgs ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
@@ -987,7 +993,7 @@ install-msgs:
 	done
 	@echo "Installing message catalog files to $(SCRIPT_INSTALL_DIR)/msgs/"
 	@for i in $(TOP_DIR)/library/msgs/*.msg ; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
 	done
 
 install-doc: doc
@@ -998,54 +1004,56 @@ install-doc: doc
 	    fi; \
 	done
 	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/"
-	@for i in $(TOP_DIR)/doc/*.1; do \
+	@for i in $(TOP_DIR)/doc/*.1 ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN1_INSTALL_DIR)"; \
 	done
-
 	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/"
-	@for i in $(TOP_DIR)/doc/*.3; do \
+	@for i in $(TOP_DIR)/doc/*.3 ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN3_INSTALL_DIR)"; \
 	done
-
 	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/";
-	@for i in $(TOP_DIR)/doc/*.n; do \
+	@for i in $(TOP_DIR)/doc/*.n ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
 	done
 
+# Public headers that define Tcl's API
+TCL_PUBLIC_HEADERS = $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
+	$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
+	$(GENERIC_DIR)/tclPlatDecls.h $(GENERIC_DIR)/tclTomMath.h \
+	$(GENERIC_DIR)/tclTomMathDecls.h
+# Private headers that define Tcl's internal API
+TCL_PRIVATE_HEADERS = $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
+	$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
+	$(GENERIC_DIR)/tclOOInt.h $(GENERIC_DIR)/tclOOIntDecls.h \
+	$(UNIX_DIR)/tclUnixPort.h
+# Any other headers you find in the Tcl sources are purely part of Tcl's
+# implementation, and aren't to be installed.
+
 install-headers:
-	@for i in "$(INCLUDE_INSTALL_DIR)"; do \
+	@for i in "$(INCLUDE_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
 	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h \
-		$(GENERIC_DIR)/tclTomMath.h \
-		$(GENERIC_DIR)/tclTomMathDecls.h ; \
-	    do \
-		$(INSTALL_DATA) $$i "$(INCLUDE_INSTALL_DIR)"; \
-	    done
+	@for i in $(TCL_PUBLIC_HEADERS) ; do \
+	    $(INSTALL_DATA) $$i "$(INCLUDE_INSTALL_DIR)"; \
+	done
 
 # Optional target to install private headers
 install-private-headers:
-	@for i in "$(PRIVATE_INCLUDE_INSTALL_DIR)"; do \
+	@for i in "$(PRIVATE_INCLUDE_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
 	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
-		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
-		$(GENERIC_DIR)/tclOOInt.h $(GENERIC_DIR)/tclOOIntDecls.h \
-		$(UNIX_DIR)/tclUnixPort.h; \
-	    do \
-		$(INSTALL_DATA) $$i "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    done
-	@if test -f tclConfig.h; then\
+	@for i in $(TCL_PRIVATE_HEADERS) ; do \
+	    $(INSTALL_DATA) $$i "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
+	done
+	@if test -f tclConfig.h ; then \
 	    $(INSTALL_DATA) tclConfig.h "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
 	fi
 
@@ -1070,7 +1078,7 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f tclTestInit.o
+	@rm -f tclTestInit.o
 	mv tclAppInit.o tclTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
@@ -1084,7 +1092,7 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST -DTCL_XT_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f xtTestInit.o
+	@rm -f xtTestInit.o
 	mv tclAppInit.o xtTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
@@ -1875,94 +1883,94 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 configure-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    if [ -x $$i/configure ]; then \
-	      pkg=`basename $$i`; \
-	      echo "Configuring package '$$pkg'"; \
-	      mkdir -p $(PKG_DIR)/$$pkg; \
-	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-		( cd $(PKG_DIR)/$$pkg; \
-		  $$i/configure --with-tcl=../.. \
-		      --with-tclinclude=$(GENERIC_DIR) \
-		      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-		      --enable-shared; ) || exit $$?; \
-	      fi; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		if [ -x $$i/configure ] ; then \
+		    pkg=`basename $$i`; \
+		    echo "Configuring package '$$pkg'"; \
+		    mkdir -p $(PKG_DIR)/$$pkg; \
+		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+			( cd $(PKG_DIR)/$$pkg; \
+			  $$i/configure --with-tcl=../.. \
+			      --with-tclinclude=$(GENERIC_DIR) \
+			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+			      --enable-shared; ) || exit $$?; \
+		    fi; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 packages: configure-packages ${STUB_LIB_FILE}
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Building package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 install-packages: packages
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Installing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
-		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Installing package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
+			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 test-packages: ${TCLTEST_EXE} packages
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Testing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
-		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
-		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
-		  "TCLLIBPATH=../../pkgs" test \
-		  "TCLSH_PROG=../../${TCLTEST_EXE}"; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Testing package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
+			  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
+			  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
+			  "TCLLIBPATH=../../pkgs" test \
+			  "TCLSH_PROG=../../${TCLTEST_EXE}"; ) \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 clean-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 distclean-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+		fi; \
+		rm -rf $(PKG_DIR)/$$pkg; \
 	    fi; \
-	    rm -rf $(PKG_DIR)/$$pkg; \
-	  fi; \
 	done; \
 	rm -rf $(PKG_DIR)
 
 dist-packages: configure-packages
 	@rm -rf $(DISTROOT)/pkgs; \
 	mkdir -p $(DISTROOT)/pkgs; \
-	for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
-		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+	for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
+			  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 #--------------------------------------------------------------------------
@@ -2039,14 +2047,14 @@ genscript:
 checkstubs: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) \
 		| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
-		| sort -n`; do \
+		| sort -n` ; do \
 	    match=0; \
-	    for j in $(TCL_DECLS); do \
-		if [ `grep -c "$$i *(" $$j` -gt 0 ]; then \
+	    for j in $(TCL_DECLS) ; do \
+		if [ `grep -c "$$i *(" $$j` -gt 0 ] ; then \
 		    match=1; \
 		fi; \
 	    done; \
-	    if [ $$match -eq 0 ]; then \
+	    if [ $$match -eq 0 ] ; then \
 		echo $$i; \
 	    fi; \
 	done
@@ -2058,14 +2066,14 @@ checkstubs: $(TCL_LIB_FILE)
 
 checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
-		| grep -v 'Cmd$$' | sort -n`; do \
+		| grep -v 'Cmd$$' | sort -n` ; do \
 	    match=0; \
-	    for j in $(TOP_DIR)/doc/*.3; do \
-		if [ `grep '\-' $$j | grep -c $$i` -gt 0 ]; then \
+	    for j in $(TOP_DIR)/doc/*.3 ; do \
+		if [ `grep '\-' $$j | grep -c $$i` -gt 0 ] ; then \
 		    match=1; \
 		fi; \
 	    done; \
-	    if [ $$match -eq 0 ]; then \
+	    if [ $$match -eq 0 ] ; then \
 		echo $$i; \
 	    fi; \
 	done
@@ -2115,6 +2123,8 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
+BUILTIN_PACKAGE_LIST = http opt msgcat reg dde tcltest platform
+
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
 	cd $(UNIX_DIR); autoconf
@@ -2149,11 +2159,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http opt msgcat reg dde tcltest platform; \
-	    do \
-		mkdir $(DISTDIR)/library/$$i ;\
-		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
-	    done;
+	for i in $(BUILTIN_PACKAGE_LIST) ; do \
+	    mkdir $(DISTDIR)/library/$$i;\
+	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
+	done
 	@mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	@mkdir $(DISTDIR)/library/msgs
@@ -2222,14 +2231,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/pkgs
 	cp $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	cp $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
-	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
+	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null` ; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
-	cd $(DISTROOT); tar cf $(DISTNAME)-src.tar $(DISTNAME); \
-		gzip -9 $(DISTNAME)-src.tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
+	( cd $(DISTROOT); \
+		tar cf $(DISTNAME)-src.tar $(DISTNAME); \
+		gzip -9 $(DISTNAME)-src.tar; \
+		zip -qr8 $(ZIPNAME) $(DISTNAME) )
 
 #--------------------------------------------------------------------------
 # This target creates the HTML folder for Tcl & Tk and places it in
