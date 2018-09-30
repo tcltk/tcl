@@ -2933,6 +2933,11 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
         if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
             return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+#else
+
 #endif
     }
     if(zipfs_literal_tcl_library) {
