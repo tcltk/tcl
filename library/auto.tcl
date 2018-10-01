@@ -22,178 +22,182 @@
 proc auto_reset {} {
     global auto_execs auto_index auto_path
     if {[array exists auto_index]} {
-        foreach cmdName [array names auto_index] {
-            set fqcn [namespace which $cmdName]
-            if {$fqcn eq ""} {
-                continue
-            }
-            rename $fqcn {}
-        }
+	foreach cmdName [array names auto_index] {
+	    set fqcn [namespace which $cmdName]
+	    if {$fqcn eq ""} {
+		continue
+	    }
+	    rename $fqcn {}
+	}
     }
     unset -nocomplain auto_execs auto_index ::tcl::auto_oldpath
     if {[catch {llength $auto_path}]} {
-        set auto_path [list [info library]]
+	set auto_path [list [info library]]
     } elseif {[info library] ni $auto_path} {
-        lappend auto_path [info library]
+	lappend auto_path [info library]
     }
 }
 
 # tcl_findLibrary --
 #
-#        This is a utility for extensions that searches for a library directory
-#        using a canonical searching algorithm. A side effect is to source the
-#        initialization script and set a global library variable.
+#	This is a utility for extensions that searches for a library directory
+#	using a canonical searching algorithm. A side effect is to source the
+#	initialization script and set a global library variable.
 #
 # Arguments:
-#         basename        Prefix of the directory name, (e.g., "tk")
-#        version                Version number of the package, (e.g., "8.0")
-#        patch                Patchlevel of the package, (e.g., "8.0.3")
-#        initScript        Initialization script to source (e.g., tk.tcl)
-#        enVarName        environment variable to honor (e.g., TK_LIBRARY)
-#        varName                Global variable to set when done (e.g., tk_library)
+# 	basename	Prefix of the directory name, (e.g., "tk")
+#	version		Version number of the package, (e.g., "8.0")
+#	patch		Patchlevel of the package, (e.g., "8.0.3")
+#	initScript	Initialization script to source (e.g., tk.tcl)
+#	enVarName	environment variable to honor (e.g., TK_LIBRARY)
+#	varName		Global variable to set when done (e.g., tk_library)
 
 proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     upvar #0 $varName the_library
     global auto_path env tcl_platform
+
     set dirs {}
     set errors {}
 
     # The C application may have hardwired a path, which we honor
 
     if {[info exists the_library] && $the_library ne ""} {
-        lappend dirs $the_library
+	lappend dirs $the_library
     } else {
-        # Do the canonical search
-        #
-        # 1. From an environment variable, if it exists.  Placing this first
-        #    gives the end-user ultimate control to work-around any bugs, or
-        #    to customize.
+	# Do the canonical search
+
+	# 1. From an environment variable, if it exists.  Placing this first
+	#    gives the end-user ultimate control to work-around any bugs, or
+	#    to customize.
+
         if {[info exists env($enVarName)]} {
             lappend dirs $env($enVarName)
         }
 
-        catch {
-        set found 0
-        set root [zipfs root]
-        set mountpoint [file join $root lib [string tolower $basename]]
-        lappend dirs [file join $root app ${basename}_library]
-        lappend dirs [file join $root lib $mountpoint ${basename}_library]
-        lappend dirs [file join $root lib $mountpoint]
-        if {![zipfs exists [file join $root app ${basename}_library]] \
-          && ![zipfs exists $mountpoint]} {
-          set found 0
-          foreach pkgdat [info loaded] {
-              lassign $pkgdat dllfile dllpkg
-              if {[string tolower $dllpkg] ne [string tolower $basename]} continue
-              if {$dllfile eq {}} {
-                  # Loaded statically
-                  break
-              }
+	catch {
+      set found 0
+	    set root [zipfs root]
+	    set mountpoint [file join $root lib [string tolower $basename]]
+      lappend dirs [file join $root app ${basename}_library]
+      lappend dirs [file join $root lib $mountpoint ${basename}_library]
+      lappend dirs [file join $root lib $mountpoint]
+	    if {![zipfs exists [file join $root app ${basename}_library]] \
+	      && ![zipfs exists $mountpoint]} {
+	      set found 0
+	      foreach pkgdat [info loaded] {
+	        lassign $pkgdat dllfile dllpkg
+	        if {[string tolower $dllpkg] ne [string tolower $basename]} continue
+	        if {$dllfile eq {}} {
+	          # Loaded statically
+	          break
+	        }
+          set found 1
+	        zipfs mount $mountpoint $dllfile
+	        break
+	      }
+	      if {!$found} {
+  	      set paths {}
+  	      lappend paths [file join $root app]
+    	    lappend paths [::${basename}::pkgconfig get libdir,runtime]
+	        lappend paths [::${basename}::pkgconfig get bindir,runtime]
+	        if {[catch {::${basename}::pkgconfig get zipfile,runtime} zipfile]} {
+  	        set zipfile [string tolower \
+  	          "lib${basename}_[join [list {*}[split $version .] {*}$patch] _].zip"]
+  	      }
+  	      lappend paths [file dirname [file join [pwd] [info nameofexecutable]]]
+          foreach path $paths {
+            set archive [file join $path $zipfile]
+            if {![file exists $archive]} continue
+            zipfs mount $mountpoint $archive
+            if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
+              lappend dirs [file join $mountpoint ${basename}_library]
               set found 1
-              zipfs mount $mountpoint $dllfile
               break
-          }
-          if {!$found} {
-            set paths {}
-            lappend paths [file join $root app]
-            lappend paths [::${basename}::pkgconfig get libdir,runtime]
-            lappend paths [::${basename}::pkgconfig get bindir,runtime]
-            if {[catch {::${basename}::pkgconfig get zipfile,runtime} zipfile]} {
-              set zipfile [string tolower \
-                "lib${basename}_[join [list {*}[split $version .] {*}$patch] _].zip"]
-            }
-            lappend paths [file dirname [file join [pwd] [info nameofexecutable]]]
-            foreach path $paths {
-              set archive [file join $path $zipfile]
-              if {![file exists $archive]} continue
-              zipfs mount $mountpoint $archive
-              if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
-                  lappend dirs [file join $mountpoint ${basename}_library]
-                  set found 1
-                  break
-              } elseif {[zipfs exists [file join $mountpoint $initScript]]} {
-                  lappend dirs [file join $mountpoint $initScript]
-                  set found 1
-                  break
-              } else {
-                  catch {zipfs unmount $archive}
-              }
+            } elseif {[zipfs exists [file join $mountpoint $initScript]]} {
+              lappend dirs [file join $mountpoint $initScript]
+              set found 1
+              break
+            } else {
+              catch {zipfs unmount $archive}
             }
           }
         }
-        } ; # catch
+      }
+   }
 
-        # 2. In the package script directory registered within the
-        #    configuration of the package itself.
-        catch {
-            lappend dirs [::${basename}::pkgconfig get scriptdir,runtime]
-        }
+	# 2. In the package script directory registered within the
+	#    configuration of the package itself.
 
-        # 3. Relative to auto_path directories.  This checks relative to the
-        # Tcl library as well as allowing loading of libraries added to the
-        # auto_path that is not relative to the core library or binary paths.
-        foreach d $auto_path {
-            lappend dirs [file join $d $basename$version]
-            if {$tcl_platform(platform) eq "unix"
-              && $tcl_platform(os) eq "Darwin"} {
-                # 4. On MacOSX, check the Resources/Scripts subdir too
-                lappend dirs [file join $d $basename$version Resources Scripts]
-            }
-        }
+	catch {
+	    lappend dirs [::${basename}::pkgconfig get scriptdir,runtime]
+	}
 
-        # 3. Various locations relative to the executable
-        # ../lib/foo1.0                (From bin directory in install hierarchy)
-        # ../../lib/foo1.0        (From bin/arch directory in install hierarchy)
-        # ../library                (From unix directory in build hierarchy)
-        #
-        # Remaining locations are out of date (when relevant, they ought to be
-        # covered by the $::auto_path seach above) and disabled.
-        #
-        # ../../library                (From unix/arch directory in build hierarchy)
-        # ../../foo1.0.1/library
-        #                (From unix directory in parallel build hierarchy)
-        # ../../../foo1.0.1/library
-        #                (From unix/arch directory in parallel build hierarchy)
+	# 3. Relative to auto_path directories.  This checks relative to the
+	# Tcl library as well as allowing loading of libraries added to the
+	# auto_path that is not relative to the core library or binary paths.
+	foreach d $auto_path {
+	    lappend dirs [file join $d $basename$version]
+	    if {$tcl_platform(platform) eq "unix"
+		    && $tcl_platform(os) eq "Darwin"} {
+		# 4. On MacOSX, check the Resources/Scripts subdir too
+		lappend dirs [file join $d $basename$version Resources Scripts]
+	    }
+	}
+
+	# 3. Various locations relative to the executable
+	# ../lib/foo1.0		(From bin directory in install hierarchy)
+	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../library		(From unix directory in build hierarchy)
+	#
+	# Remaining locations are out of date (when relevant, they ought to be
+	# covered by the $::auto_path seach above) and disabled.
+	#
+	# ../../library		(From unix/arch directory in build hierarchy)
+	# ../../foo1.0.1/library
+	#		(From unix directory in parallel build hierarchy)
+	# ../../../foo1.0.1/library
+	#		(From unix/arch directory in parallel build hierarchy)
 
         set parentDir [file dirname [file dirname [info nameofexecutable]]]
         set grandParentDir [file dirname $parentDir]
         lappend dirs [file join $parentDir lib $basename$version]
         lappend dirs [file join $grandParentDir lib $basename$version]
         lappend dirs [file join $parentDir library]
-        if {0} {
-            lappend dirs [file join $grandParentDir library]
-            lappend dirs [file join $grandParentDir $basename$patch library]
-            lappend dirs [file join [file dirname $grandParentDir] \
-                  $basename$patch library]
-        }
+	if {0} {
+	    lappend dirs [file join $grandParentDir library]
+	    lappend dirs [file join $grandParentDir $basename$patch library]
+	    lappend dirs [file join [file dirname $grandParentDir] \
+			      $basename$patch library]
+	}
     }
     # uniquify $dirs in order
     array set seen {}
     foreach i $dirs {
-    # Make sure $i is unique under normalization. Avoid repeated [source].
-    if {[interp issafe]} {
-      # Safe interps have no [file normalize].
-      set norm $i
-    } else {
-      set norm [file normalize $i]
-    }
-    if {[info exists seen($norm)]} {
-      continue
-    }
-    set seen($norm) {}
-    set the_library $i
-    set file [file join $i $initScript]
+	# Make sure $i is unique under normalization. Avoid repeated [source].
+	if {[interp issafe]} {
+	    # Safe interps have no [file normalize].
+	    set norm $i
+	} else {
+	    set norm [file normalize $i]
+	}
+	if {[info exists seen($norm)]} {
+	    continue
+	}
+	set seen($norm) {}
 
-    # source everything when in a safe interpreter because we have a
-    # source command, but no file exists command
+        set the_library $i
+        set file [file join $i $initScript]
 
-    if {[interp issafe] || [file exists $file]} {
-        if {![catch {uplevel #0 [list source $file]} msg opts]} {
-            return
+	# source everything when in a safe interpreter because we have a
+	# source command, but no file exists command
+
+        if {[interp issafe] || [file exists $file]} {
+            if {![catch {uplevel #0 [list source $file]} msg opts]} {
+                return
+            }
+	    append errors "$file: $msg\n"
+	    append errors [dict get $opts -errorinfo]\n
         }
-        append errors "$file: $msg\n"
-        append errors [dict get $opts -errorinfo]\n
-    }
     }
     unset -nocomplain the_library
     set msg "Can't find a usable $initScript in the following directories: \n"
@@ -214,7 +218,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 # can't create the special parser and mess with its commands.
 
 if {[interp issafe]} {
-    return        ;# Stop sourcing the file here
+    return	;# Stop sourcing the file here
 }
 
 # auto_mkindex --
@@ -224,11 +228,11 @@ if {[interp issafe]} {
 # relevant files.
 #
 # Arguments:
-# dir -                Name of the directory in which to create an index.
+# dir -		Name of the directory in which to create an index.
 
-# args -        Any number of additional arguments giving the names of files
-#                within dir.  If no additional are given auto_mkindex will look
-#                for *.tcl.
+# args -	Any number of additional arguments giving the names of files
+#		within dir.  If no additional are given auto_mkindex will look
+#		for *.tcl.
 
 proc auto_mkindex {dir args} {
     if {[interp issafe]} {
@@ -246,17 +250,17 @@ proc auto_mkindex {dir args} {
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
     if {![llength $args]} {
-        set args *.tcl
+	set args *.tcl
     }
 
     auto_mkindex_parser::init
     foreach file [lsort [glob -- {*}$args]] {
-        try {
-            append index [auto_mkindex_parser::mkindex $file]
-        } on error {msg opts} {
-            cd $oldDir
-            return -options $opts $msg
-        }
+	try {
+	    append index [auto_mkindex_parser::mkindex $file]
+	} on error {msg opts} {
+	    cd $oldDir
+	    return -options $opts $msg
+	}
     }
     auto_mkindex_parser::cleanup
 
@@ -281,39 +285,39 @@ proc auto_mkindex_old {dir args} {
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
     if {![llength $args]} {
-              set args *.tcl
+	set args *.tcl
     }
     foreach file [lsort [glob -- {*}$args]] {
-        set f ""
-        set error [catch {
-            set f [open $file]
-            while {[gets $f line] >= 0} {
-                if {[regexp {^proc[         ]+([^         ]*)} $line match procName]} {
-                    set procName [lindex [auto_qualify $procName "::"] 0]
-                    append index "set [list auto_index($procName)]"
-                    append index " \[list source \[file join \$dir [list $file]\]\]\n"
-                }
-            }
-            close $f
-        } msg opts]
-        if {$error} {
-            catch {close $f}
-            cd $oldDir
-            return -options $opts $msg
-        }
+	set f ""
+	set error [catch {
+	    set f [open $file]
+	    while {[gets $f line] >= 0} {
+		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
+		    set procName [lindex [auto_qualify $procName "::"] 0]
+		    append index "set [list auto_index($procName)]"
+		    append index " \[list source \[file join \$dir [list $file]\]\]\n"
+		}
+	    }
+	    close $f
+	} msg opts]
+	if {$error} {
+	    catch {close $f}
+	    cd $oldDir
+	    return -options $opts $msg
+	}
     }
     set f ""
     set error [catch {
-        set f [open tclIndex w]
-        puts -nonewline $f $index
-        close $f
-        cd $oldDir
+	set f [open tclIndex w]
+	puts -nonewline $f $index
+	close $f
+	cd $oldDir
     } msg opts]
     if {$error} {
-        catch {close $f}
-        cd $oldDir
-        error $msg $info $code
-        return -options $opts $msg
+	catch {close $f}
+	cd $oldDir
+	error $msg $info $code
+	return -options $opts $msg
     }
 }
 
@@ -330,50 +334,50 @@ namespace eval auto_mkindex_parser {
     variable imports ""         ;# keeps track of all imported cmds
     variable initCommands       ;# list of commands that create aliases
     if {![info exists initCommands]} {
-        set initCommands [list]
+	set initCommands [list]
     }
 
     proc init {} {
-        variable parser
-        variable initCommands
+	variable parser
+	variable initCommands
 
-        if {![interp issafe]} {
-            set parser [interp create -safe]
-            $parser hide info
-            $parser hide rename
-            $parser hide proc
-            $parser hide namespace
-            $parser hide eval
-            $parser hide puts
-            foreach ns [$parser invokehidden namespace children ::] {
-                # MUST NOT DELETE "::tcl" OR BAD THINGS HAPPEN!
-                if {$ns eq "::tcl"} continue
-                $parser invokehidden namespace delete $ns
-            }
-            foreach cmd [$parser invokehidden info commands ::*] {
-                $parser invokehidden rename $cmd {}
-            }
-            $parser invokehidden proc unknown {args} {}
+	if {![interp issafe]} {
+	    set parser [interp create -safe]
+	    $parser hide info
+	    $parser hide rename
+	    $parser hide proc
+	    $parser hide namespace
+	    $parser hide eval
+	    $parser hide puts
+	    foreach ns [$parser invokehidden namespace children ::] {
+		# MUST NOT DELETE "::tcl" OR BAD THINGS HAPPEN!
+		if {$ns eq "::tcl"} continue
+		$parser invokehidden namespace delete $ns
+	    }
+	    foreach cmd [$parser invokehidden info commands ::*] {
+		$parser invokehidden rename $cmd {}
+	    }
+	    $parser invokehidden proc unknown {args} {}
 
-            # We'll need access to the "namespace" command within the
-            # interp.  Put it back, but move it out of the way.
+	    # We'll need access to the "namespace" command within the
+	    # interp.  Put it back, but move it out of the way.
 
-            $parser expose namespace
-            $parser invokehidden rename namespace _%@namespace
-            $parser expose eval
-            $parser invokehidden rename eval _%@eval
+	    $parser expose namespace
+	    $parser invokehidden rename namespace _%@namespace
+	    $parser expose eval
+	    $parser invokehidden rename eval _%@eval
 
-            # Install all the registered psuedo-command implementations
+	    # Install all the registered psuedo-command implementations
 
-            foreach cmd $initCommands {
-                eval $cmd
-            }
-        }
+	    foreach cmd $initCommands {
+		eval $cmd
+	    }
+	}
     }
     proc cleanup {} {
-        variable parser
-        interp delete $parser
-        unset parser
+	variable parser
+	interp delete $parser
+	unset parser
     }
 }
 
@@ -385,7 +389,7 @@ namespace eval auto_mkindex_parser {
 # that represents the index file.
 #
 # Arguments:
-#        file        Name of Tcl source file to be indexed.
+#	file	Name of Tcl source file to be indexed.
 
 proc auto_mkindex_parser::mkindex {file} {
     variable parser
@@ -462,9 +466,9 @@ proc auto_mkindex_parser::slavehook {cmd} {
 # "tclIndex" file for auto-loading.
 #
 # Arguments:
-#        name         Name of command recognized in Tcl files.
-#        arglist        Argument list for command.
-#        body         Implementation of command to handle indexing.
+#	name 	Name of command recognized in Tcl files.
+#	arglist	Argument list for command.
+#	body 	Implementation of command to handle indexing.
 
 proc auto_mkindex_parser::command {name arglist body} {
     hook [list auto_mkindex_parser::commandInit $name $arglist $body]
@@ -476,9 +480,9 @@ proc auto_mkindex_parser::command {name arglist body} {
 # called when the interpreter used by the parser is created.
 #
 # Arguments:
-#        name         Name of command recognized in Tcl files.
-#        arglist        Argument list for command.
-#        body         Implementation of command to handle indexing.
+#	name 	Name of command recognized in Tcl files.
+#	arglist	Argument list for command.
+#	body 	Implementation of command to handle indexing.
 
 proc auto_mkindex_parser::commandInit {name arglist body} {
     variable parser
@@ -500,15 +504,15 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
         set exportCmd [list _%@namespace export [namespace tail $name]]
         $parser eval [list _%@namespace eval $ns $exportCmd]
 
-        # The following proc definition does not work if you want to tolerate
-        # space or something else diabolical in the procedure name, (i.e.,
-        # space in $alias). The following does not work:
-        #   "_%@eval {$alias} \$args"
-        # because $alias gets concat'ed to $args.  The following does not work
-        # because $cmd is somehow undefined
-        #   "set cmd {$alias} \; _%@eval {\$cmd} \$args"
-        # A gold star to someone that can make test autoMkindex-3.3 work
-        # properly
+	# The following proc definition does not work if you want to tolerate
+	# space or something else diabolical in the procedure name, (i.e.,
+	# space in $alias). The following does not work:
+	#   "_%@eval {$alias} \$args"
+	# because $alias gets concat'ed to $args.  The following does not work
+	# because $cmd is somehow undefined
+	#   "set cmd {$alias} \; _%@eval {\$cmd} \$args"
+	# A gold star to someone that can make test autoMkindex-3.3 work
+	# properly
 
         set alias [namespace tail $fakeName]
         $parser invokehidden proc $name {args} "_%@eval {$alias} \$args"
@@ -530,7 +534,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
 # simple name.  That way, the Tcl autoloader will recognize it properly.
 #
 # Arguments:
-# name -                Name that is being added to index.
+# name -		Name that is being added to index.
 
 proc auto_mkindex_parser::fullname {name} {
     variable contextStack
@@ -562,7 +566,7 @@ proc auto_mkindex_parser::fullname {name} {
 # *right*, in one place.
 #
 # Arguments:
-# name -                Name that is being added to index.
+# name -		Name that is being added to index.
 
 proc auto_mkindex_parser::indexEntry {name} {
     variable index
@@ -576,8 +580,8 @@ proc auto_mkindex_parser::indexEntry {name} {
     set filenameParts [file split $scriptFile]
 
     append index [format \
-            {set auto_index(%s) [list source [file join $dir %s]]%s} \
-            $name $filenameParts \n]
+	    {set auto_index(%s) [list source [file join $dir %s]]%s} \
+	    $name $filenameParts \n]
     return
 }
 
@@ -605,22 +609,22 @@ auto_mkindex_parser::command proc {name args} {
 
 auto_mkindex_parser::hook {
     try {
-        package require tbcload
+	package require tbcload
     } on error {} {
-        # OK, don't have it so do nothing
+	# OK, don't have it so do nothing
     } on ok {} {
-        if {[namespace which -command tbcload::bcproc] eq ""} {
-            auto_load tbcload::bcproc
-        }
-        load {} tbcload $auto_mkindex_parser::parser
+	if {[namespace which -command tbcload::bcproc] eq ""} {
+	    auto_load tbcload::bcproc
+	}
+	load {} tbcload $auto_mkindex_parser::parser
 
-        # AUTO MKINDEX:  tbcload::bcproc name arglist body
-        # Adds an entry to the auto index list for the given pre-compiled
-        # procedure name.
+	# AUTO MKINDEX:  tbcload::bcproc name arglist body
+	# Adds an entry to the auto index list for the given pre-compiled
+	# procedure name.
 
-        auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
-            indexEntry $name
-        }
+	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
+	    indexEntry $name
+	}
     }
 }
 
@@ -645,7 +649,7 @@ auto_mkindex_parser::command namespace {op args} {
             set args [lrange $args 1 end]
 
             set contextStack [linsert $contextStack 0 $name]
-            $parser eval [list _%@namespace eval $name] $args
+	    $parser eval [list _%@namespace eval $name] $args
             set contextStack [lrange $contextStack 1 end]
         }
         import {
@@ -658,22 +662,22 @@ auto_mkindex_parser::command namespace {op args} {
             }
             catch {$parser eval "_%@namespace import $args"}
         }
-        ensemble {
-            variable parser
-            variable contextStack
-            if {[lindex $args 0] eq "create"} {
-                set name ::[join [lreverse $contextStack] ::]
-                catch {
-                    set name [dict get [lrange $args 1 end] -command]
-                    if {![string match ::* $name]} {
-                        set name ::[join [lreverse $contextStack] ::]$name
-                    }
-                    regsub -all ::+ $name :: name
-                }
-                # create artifical proc to force an entry in the tclIndex
-                $parser eval [list ::proc $name {} {}]
-            }
-        }
+	ensemble {
+	    variable parser
+	    variable contextStack
+	    if {[lindex $args 0] eq "create"} {
+		set name ::[join [lreverse $contextStack] ::]
+		catch {
+		    set name [dict get [lrange $args 1 end] -command]
+		    if {![string match ::* $name]} {
+			set name ::[join [lreverse $contextStack] ::]$name
+		    }
+		    regsub -all ::+ $name :: name
+		}
+		# create artifical proc to force an entry in the tclIndex
+		$parser eval [list ::proc $name {} {}]
+	    }
+	}
     }
 }
 
@@ -681,12 +685,12 @@ auto_mkindex_parser::command namespace {op args} {
 # Adds an entry to the auto index list for the given class name.
 auto_mkindex_parser::command oo::class {op name {body ""}} {
     if {$op eq "create"} {
-        indexEntry $name
+	indexEntry $name
     }
 }
 auto_mkindex_parser::command class {op name {body ""}} {
     if {$op eq "create"} {
-        indexEntry $name
+	indexEntry $name
     }
 }
 
