@@ -243,7 +243,7 @@ Tcl_UniCharToUtfDString(
      */
 
     oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, (oldLength + uniLength + 1) * TCL_UTF_MAX);
+    Tcl_DStringSetLength(dsPtr, oldLength + (uniLength + 1) * TCL_UTF_MAX);
     string = Tcl_DStringValue(dsPtr) + oldLength;
 
     p = string;
@@ -432,15 +432,25 @@ Tcl_UtfToUniCharDString(
      */
 
     oldLength = Tcl_DStringLength(dsPtr);
-/* TODO: fix overreach! */
+
     Tcl_DStringSetLength(dsPtr,
-	    (int) ((oldLength + length + 1) * sizeof(Tcl_UniChar)));
+	    oldLength + (int) ((length + 1) * sizeof(Tcl_UniChar)));
     wString = (Tcl_UniChar *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;
-    end = src + length;
-    for (p = src; p < end; ) {
+    p = src;
+    end = src + length - TCL_UTF_MAX;
+    while (p < end) {
 	p += TclUtfToUniChar(p, &ch);
+	*w++ = ch;
+    }
+    end += TCL_UTF_MAX;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
 	*w++ = ch;
     }
     *w = '\0';
