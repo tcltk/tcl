@@ -55,3 +55,7 @@ This command returns the contents of \fBtcl_platform(platform)\fR for
 the specified Tcl shell.
 .SH KEYWORDS
 operating system, cpu architecture, platform, architecture
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
