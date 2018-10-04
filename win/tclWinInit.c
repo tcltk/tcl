@@ -653,7 +653,7 @@ TclpFindVariable(
 	if (p1 == NULL) {
 	    continue;
 	}
-	length = (size_t) (p1 - envUpper);
+	length = p1 - envUpper;
 	Tcl_DStringSetLength(&envString, length+1);
 	Tcl_UtfToUpper(envUpper);
 
