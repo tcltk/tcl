@@ -156,7 +156,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.2");
+    return Tcl_PkgProvide(interp, "registry", "1.3.3");
 }
 
 /*
@@ -596,8 +596,7 @@ GetKeyNames(
 	    }
 	    break;
 	}
-	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
-	name = Tcl_DStringValue(&ds);
+	name = Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
 	if (pattern && !Tcl_StringMatch(name, pattern)) {
 	    Tcl_DStringFree(&ds);
 	    continue;
@@ -1012,7 +1011,9 @@ OpenSubKey(
      * this key must be closed by the caller.
      */
 
-    keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
+    if (keyName) {
+	keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
+    }
     if (flags & REG_CREATE) {
 	DWORD create;
 
@@ -1030,7 +1031,9 @@ OpenSubKey(
 	result = RegOpenKeyEx(rootKey, (TCHAR *)keyName, 0, mode,
 		keyPtr);
     }
-    Tcl_DStringFree(&buf);
+    if (keyName) {
+	Tcl_DStringFree(&buf);
+    }
 
     /*
      * Be sure to close the root key since we are done with it now.

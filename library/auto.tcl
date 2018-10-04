@@ -81,7 +81,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
       lappend dirs [file join $root app ${basename}_library]
       lappend dirs [file join $root lib $mountpoint ${basename}_library]
       lappend dirs [file join $root lib $mountpoint]
-	    if {![zipfs exists [file join $root app ${basename}_library]] && ![zipfs exists $mountpoint]} {
+	    if {![zipfs exists [file join $root app ${basename}_library]] \
+	      && ![zipfs exists $mountpoint]} {
 	      set found 0
 	      foreach pkgdat [info loaded] {
 	        lassign $pkgdat dllfile dllpkg
@@ -91,7 +92,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	          break
 	        }
           set found 1
-	        zipfs mount $dllfile $mountpoint
+	        zipfs mount $mountpoint $dllfile
 	        break
 	      }
 	      if {!$found} {
@@ -100,12 +101,14 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     	    lappend paths [::${basename}::pkgconfig get libdir,runtime]
 	        lappend paths [::${basename}::pkgconfig get bindir,runtime]
 	        if {[catch {::${basename}::pkgconfig get zipfile,runtime} zipfile]} {
-  	        set zipfile [string tolower "lib${basename}_[join [list {*}[split $version .] {*}$patch] _].zip"]
+  	        set zipfile [string tolower \
+  	          "lib${basename}_[join [list {*}[split $version .] {*}$patch] _].zip"]
   	      }
+  	      lappend paths [file dirname [file join [pwd] [info nameofexecutable]]]
           foreach path $paths {
             set archive [file join $path $zipfile]
             if {![file exists $archive]} continue
-            zipfs mount $archive $mountpoint
+            zipfs mount $mountpoint $archive
             if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
               lappend dirs [file join $mountpoint ${basename}_library]
               set found 1

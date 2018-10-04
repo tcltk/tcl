@@ -2722,10 +2722,7 @@ TclGetWideBitsFromObj(
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
-	    if (big.sign) {
-		value = -value;
-	    }
-	    *wideIntPtr = (Tcl_WideInt) value;
+	    *wideIntPtr = !big.sign ? (Tcl_WideInt)value : -(Tcl_WideInt)value;
 	    mp_clear(&big);
 	    return TCL_OK;
 	}
