@@ -36604,6 +36604,68 @@ test clock-46.17$idx {scan: validation rules: invalid year} -setup {
 }; # foreach
 unset -nocomplain idx relstr
 
+set dst_hole_check {
+    {":Europe/Berlin"
+	"2017-03-26 01:59:59" "2017-03-26 02:00:00" "2017-03-26 02:59:59" "2017-03-26 03:00:00" 
+	"2017-10-29 01:59:59" "2017-10-29 02:00:00"}
+    {":Europe/Berlin"
+	"2018-03-25 01:59:59" "2018-03-25 02:00:00" "2018-03-25 02:59:59" "2018-03-25 03:00:00"
+	"2018-10-28 01:59:59" "2018-10-28 02:00:00"}
+    {":America/New_York"
+	"2017-03-12 01:59:59" "2017-03-12 02:00:00" "2017-03-12 02:59:59" "2017-03-12 03:00:00"
+	"2017-11-05 01:59:59" "2017-11-05 02:00:00"}
+    {":America/New_York"
+	"2018-03-11 01:59:59" "2018-03-11 02:00:00" "2018-03-11 02:59:59" "2018-03-11 03:00:00" 
+	"2018-11-04 01:59:59" "2018-11-04 02:00:00"}
+}
+test clock-46.19-1 {free-scan: validation rules: invalid time (DST-hole, out of range in time-zone)} \
+    -body {
+	set res {}
+	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -valid 1} msg]] 
+	    if {$v} { lappend res $msg }
+	}}
+	set res
+    } -cleanup {
+	unset -nocomplain res v dt tz
+    } -result [lrepeat 4 \
+	{*}[list 0 {*}[lrepeat 2 1 {unable to convert input string: invalid time (does not exist in this time-zone)}] 0 0 0]]
+test clock-46.19-2 {free-scan: validation rules regression: all scans successful, if -valid 0} \
+    -body {
+	set res {}
+	set res {}
+	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
+	    lappend res [set v [catch {clock scan $dt -timezone $tz} msg]] 
+	}}
+	set res
+    } -cleanup {
+	unset -nocomplain res v dt tz
+    } -result [lrepeat 4 {*}[if {$valid_mode} {list 0 1 1 0 0 0} else {list 0 0 0 0 0 0}]]
+test clock-46.19-3 {scan: validation rules: invalid time (DST-hole, out of range in time-zone)} \
+    -body {
+	set res {}
+	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S" -valid 1} msg]] 
+	    if {$v} { lappend res $msg }
+	}}
+	set res
+    } -cleanup {
+	unset -nocomplain res v dt tz
+    } -result [lrepeat 4 \
+	{*}[list 0 {*}[lrepeat 2 1 {unable to convert input string: invalid time (does not exist in this time-zone)}] 0 0 0]]
+test clock-46.19-4 {scan: validation rules regression: all scans successful, if -valid 0} \
+    -body {
+	set res {}
+	set res {}
+	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S"} msg]] 
+	}}
+	set res
+    } -cleanup {
+	unset -nocomplain res v dt tz
+    } -result [lrepeat 4 {*}[if {$valid_mode} {list 0 1 1 0 0 0} else {list 0 0 0 0 0 0}]]
+unset -nocomplain dst_hole_check
+
 test clock-46.20 {scan: validation rules: invalid time} \
     -body {
 	# 13:00 am/pm are invalid input strings...
