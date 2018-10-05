@@ -56,6 +56,10 @@
 				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | \
 				CLF_DAYOFWEEK | CLF_ISO8601WEAK)
 
+#define TCL_MIN_SECONDS			-0x00F0000000000000L
+#define TCL_MAX_SECONDS			 0x00F0000000000000L
+#define TCL_INV_SECONDS			(TCL_MIN_SECONDS-1)
+
 /*
  * Enumeration of the string literals used in [clock]
  */
@@ -274,6 +278,18 @@ typedef struct ClockFmtScnCmdArgs {
     Tcl_Obj *mcDictObj;	    /* Current dictionary of tcl::clock package for given localeObj*/
 } ClockFmtScnCmdArgs;
 
+/* Last-period cache for fast UTC to local and backwards conversion */
+typedef struct ClockLastTZOffs {
+    /* keys */
+    Tcl_Obj    *timezoneObj;
+    int		changeover;
+    Tcl_WideInt localSeconds;
+    Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
+    /* values */
+    int		tzOffset;
+    Tcl_Obj    *tzName;		/* Name (abbreviation) of this area in TZ */
+} ClockLastTZOffs;
+
 /*
  * Structure containing the client data for [clock]
  */
@@ -294,6 +310,7 @@ typedef struct ClockClientData {
     int yearOfCenturySwitch;
     int validMinYear;
     int validMaxYear;
+
     Tcl_Obj *systemTimeZone;
     Tcl_Obj *systemSetupTZData;
     Tcl_Obj *gmtSetupTimeZoneUnnorm;
@@ -306,7 +323,7 @@ typedef struct ClockClientData {
     Tcl_Obj *prevSetupTimeZoneUnnorm;
     Tcl_Obj *prevSetupTimeZone;
     Tcl_Obj *prevSetupTZData;
-
+    
     Tcl_Obj *defaultLocale;
     Tcl_Obj *defaultLocaleDict;
     Tcl_Obj *currentLocale;
@@ -323,27 +340,9 @@ typedef struct ClockClientData {
 	Tcl_Obj *timezoneObj;
 	TclDateFields date;
     } lastBase;
-    /* Las-period cache for fast UTC2Local conversion */
-    struct {
-	/* keys */
-	Tcl_Obj	   *timezoneObj;
-	int	    changeover;
-	Tcl_WideInt seconds;
-	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
-	/* values */
-	int	    tzOffset;
-	Tcl_Obj	   *tzName;
-    } utc2local;
-    /* Las-period cache for fast local2utc conversion */
-    struct {
-	/* keys */
-	Tcl_Obj	   *timezoneObj;
-	int	    changeover;
-	Tcl_WideInt localSeconds;
-	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
-	/* values */
-	int	    tzOffset;
-    } local2utc;
+
+    /* Last-period cache for fast UTC to Local and backwards conversion */
+    ClockLastTZOffs lastTZOffsCache[2];
 
     int defFlags;		    /* Default flags (from configure), ATM
 				     * only CLF_VALIDATE supported */

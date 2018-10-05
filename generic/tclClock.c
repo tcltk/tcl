@@ -262,9 +262,8 @@ TclClockInit(
     data->prevUsedLocaleDict = NULL;
 
     data->lastBase.timezoneObj = NULL;
-    data->utc2local.timezoneObj = NULL;
-    data->utc2local.tzName = NULL;
-    data->local2utc.timezoneObj = NULL;
+
+    memset(&data->lastTZOffsCache, 0, sizeof(data->lastTZOffsCache));
 
     data->defFlags = 0;
 
@@ -337,9 +336,11 @@ ClockConfigureClear(
     data->prevUsedLocaleDict = NULL;
 
     Tcl_UnsetObjRef(data->lastBase.timezoneObj);
-    Tcl_UnsetObjRef(data->utc2local.timezoneObj);
-    Tcl_UnsetObjRef(data->utc2local.tzName);
-    Tcl_UnsetObjRef(data->local2utc.timezoneObj);
+    
+    Tcl_UnsetObjRef(data->lastTZOffsCache[0].timezoneObj);
+    Tcl_UnsetObjRef(data->lastTZOffsCache[0].tzName);
+    Tcl_UnsetObjRef(data->lastTZOffsCache[1].timezoneObj);
+    Tcl_UnsetObjRef(data->lastTZOffsCache[1].tzName);
 
     Tcl_UnsetObjRef(data->mcDicts);
 }
@@ -1869,6 +1870,7 @@ ConvertLocalToUTC(
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
     Tcl_WideInt seconds;
+    ClockLastTZOffs * ltzoc = NULL;
 
     /* fast phase-out for shared GMT-object (don't need to convert UTC 2 UTC) */
     if (timezoneObj == dataPtr->literals[LIT_GMT]) {
@@ -1879,38 +1881,30 @@ ConvertLocalToUTC(
 
     /*
      * Check cacheable conversion could be used
-     * (last-period Local2UTC cache within the same TZ)
+     * (last-period UTC2Local cache within the same TZ and seconds)
      */
-    seconds = fields->localSeconds - dataPtr->local2utc.tzOffset;
-    if ( timezoneObj == dataPtr->local2utc.timezoneObj
-      && ( fields->localSeconds == dataPtr->local2utc.localSeconds
-	|| ( seconds >= dataPtr->local2utc.rangesVal[0]
-	  && seconds <	dataPtr->local2utc.rangesVal[1])
-      )
-      && changeover == dataPtr->local2utc.changeover
-    ) {
-	/* the same time zone and offset (UTC time inside the last minute) */
-	fields->tzOffset = dataPtr->local2utc.tzOffset;
-	fields->seconds = seconds;
-	return TCL_OK;
-    }
-
-    /*
-     * Check cacheable back-conversion could be used
-     * (last-period UTC2Local cache within the same TZ)
-     */
-    seconds = fields->localSeconds - dataPtr->utc2local.tzOffset;
-    if ( timezoneObj == dataPtr->utc2local.timezoneObj
-      && ( seconds == dataPtr->utc2local.seconds
-	|| ( seconds >= dataPtr->utc2local.rangesVal[0]
-	  && seconds <	dataPtr->utc2local.rangesVal[1])
-      )
-      && changeover == dataPtr->utc2local.changeover
-    ) {
-	/* the same time zone and offset (UTC time inside the last minute) */
-	fields->tzOffset = dataPtr->utc2local.tzOffset;
-	fields->seconds = seconds;
-	return TCL_OK;
+    for (rowc = 0; rowc < 2; rowc++) {
+	ltzoc = &dataPtr->lastTZOffsCache[rowc];
+	if (timezoneObj != ltzoc->timezoneObj || changeover != ltzoc->changeover) {
+	    ltzoc = NULL;
+	    continue;
+	}
+	seconds = fields->localSeconds - ltzoc->tzOffset;
+	if ( seconds >= ltzoc->rangesVal[0]
+	  && seconds <  ltzoc->rangesVal[1]
+	) {
+	    /* the same time zone and offset (UTC time inside the last minute) */
+	    fields->tzOffset = ltzoc->tzOffset;
+	    fields->seconds = seconds;
+	    return TCL_OK;
+	}
+	/* in the DST-hole (because of the check above) - correct localSeconds */
+	if (fields->localSeconds == ltzoc->localSeconds) {
+	    /* the same time zone and offset (but we'll shift local-time) */
+	    fields->tzOffset = ltzoc->tzOffset;
+	    fields->seconds = seconds;
+	    goto dstHole;
+	}
     }
 
     /*
@@ -1932,25 +1926,58 @@ ConvertLocalToUTC(
      */
 
     if (rowc == 0) {
-	dataPtr->local2utc.rangesVal[0] = 0;
-	dataPtr->local2utc.rangesVal[1] = 0;
 
 	if (ConvertLocalToUTCUsingC(interp, fields, changeover) != TCL_OK) {
 	    return TCL_ERROR;
 	};
+
+	/* we cannot cache (ranges unknown yet) - todo: check later the DST-hole here */
+	return TCL_OK;
+
     } else {
+	Tcl_WideInt rangesVal[2];   	
+
 	if (ConvertLocalToUTCUsingTable(interp, fields, rowc, rowv,
-		dataPtr->local2utc.rangesVal) != TCL_OK) {
+		rangesVal) != TCL_OK) {
 	    return TCL_ERROR;
 	};
+
+	seconds = fields->seconds;
+
+	/* Cache the last conversion */
+	if (ltzoc != NULL) { /* slot was found above */
+	    /* timezoneObj and changeover are the same */
+	    Tcl_SetObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	} else {
+	    /* no TZ in cache - just move second slot down and use the first one */
+	    ltzoc = &dataPtr->lastTZOffsCache[0];
+	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
+	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
+	    memcpy(&dataPtr->lastTZOffsCache[1], ltzoc, sizeof(*ltzoc));
+	    Tcl_InitObjRef(ltzoc->timezoneObj, timezoneObj);
+	    ltzoc->changeover = changeover;
+	    Tcl_InitObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	}
+	ltzoc->localSeconds = fields->localSeconds;
+	ltzoc->rangesVal[0] = rangesVal[0];
+	ltzoc->rangesVal[1] = rangesVal[1];
+	ltzoc->tzOffset = fields->tzOffset;
     }
 
-    /* Cache the last conversion */
-    Tcl_SetObjRef(dataPtr->local2utc.timezoneObj, timezoneObj);
-    dataPtr->local2utc.localSeconds = fields->localSeconds;
-    dataPtr->local2utc.changeover = changeover;
-    dataPtr->local2utc.tzOffset = fields->tzOffset;
 
+    /* check DST-hole: if retrieved seconds is out of range */
+    if ( ltzoc->rangesVal[0] > seconds || seconds >= ltzoc->rangesVal[1] ) {
+    dstHole:
+	#if 0
+	printf("given local-time is outside the time-zone (in DST-hole): "
+		"%d - offs %d => %d <= %d < %d\n", 
+		(int)fields->localSeconds, fields->tzOffset, 
+		(int)ltzoc->rangesVal[0], (int)seconds, (int)ltzoc->rangesVal[1]);
+	#endif
+	/* because we don't know real TZ (we're outsize), just invalidate local
+	 * time (which could be verified in ClockValidDate later) */
+	fields->localSeconds = TCL_INV_SECONDS; /* not valid seconds */
+    }
     return TCL_OK;
 }
 
@@ -1983,10 +2010,12 @@ ConvertLocalToUTCUsingTable(
     Tcl_Obj *row;
     int cellc;
     Tcl_Obj **cellv;
-    int have[8];
+    struct {
+	Tcl_Obj *tzName;
+	int tzOffset;
+    } have[8];
     int nHave = 0;
     int i;
-    int found;
 
     /*
      * Perform an initial lookup assuming that local == UTC, and locate the
@@ -1998,10 +2027,9 @@ ConvertLocalToUTCUsingTable(
      * Saving Time transition.
      */
 
-    found = 0;
     fields->tzOffset = 0;
     fields->seconds = fields->localSeconds;
-    while (!found) {
+    while (1) {
 	row = LookupLastTransition(interp, fields->seconds, rowc, rowv,
 		    rangesVal);
 	if ((row == NULL)
@@ -2011,57 +2039,23 @@ ConvertLocalToUTCUsingTable(
 		    &fields->tzOffset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	found = 0;
-	for (i = 0; !found && i < nHave; ++i) {
-	    if (have[i] == fields->tzOffset) {
-		found = 1;
-		break;
+	for (i = 0; i < nHave; ++i) {
+	    if (have[i].tzOffset == fields->tzOffset) {
+		goto found;
 	    }
 	}
-	if (!found) {
-	    if (nHave == 8) {
-		Tcl_Panic("loop in ConvertLocalToUTCUsingTable");
-	    }
-	    have[nHave++] = fields->tzOffset;
+	if (nHave == 8) {
+	    Tcl_Panic("loop in ConvertLocalToUTCUsingTable");
 	}
+	have[nHave].tzName = cellv[3];
+	have[nHave++].tzOffset = fields->tzOffset;
 	fields->seconds = fields->localSeconds - fields->tzOffset;
     }
-    fields->tzOffset = have[i];
+
+  found:
+    fields->tzOffset = have[i].tzOffset;
     fields->seconds = fields->localSeconds - fields->tzOffset;
-
-#if 0
-    /* currently unused, test purposes only */
-    /*
-     * Convert back from UTC, if local times are different - wrong local time
-     * (local time seems to be in between DST-hole).
-     */
-    if (fields->tzOffset) {
-
-	int corrOffset;
-	Tcl_WideInt backCompVal;
-	/* check DST-hole interval contains UTC time */
-	TclGetWideIntFromObj(NULL, cellv[0], &backCompVal);
-	if ( fields->seconds >= backCompVal - fields->tzOffset
-	  && fields->seconds <= backCompVal + fields->tzOffset
-	) {
-	    row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
-	    if (row == NULL ||
-		    TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK ||
-		    TclGetIntFromObj(interp, cellv[1], &corrOffset) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (fields->localSeconds != fields->seconds + corrOffset) {
-		Tcl_Panic("wrong local time %ld by LocalToUTC conversion,"
-		    " local time seems to be in between DST-hole",
-		    fields->localSeconds);
-		/* correcting offset * /
-		fields->tzOffset -= corrOffset;
-		fields->seconds += fields->tzOffset;
-		*/
-	    }
-	}
-    }
-#endif
+    Tcl_SetObjRef(fields->tzName, have[i].tzName);
 
     return TCL_OK;
 }
@@ -2176,6 +2170,7 @@ ConvertUTCToLocal(
     Tcl_Obj *tzdata;		/* Time zone data */
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
+    ClockLastTZOffs * ltzoc = NULL;
 
     /* fast phase-out for shared GMT-object (don't need to convert UTC 2 UTC) */
     if (timezoneObj == dataPtr->literals[LIT_GMT]) {
@@ -2196,20 +2191,23 @@ ConvertUTCToLocal(
 
     /*
      * Check cacheable conversion could be used
-     * (last-period UTC2Local cache within the same TZ)
+     * (last-period UTC2Local cache within the same TZ and seconds)
      */
-    if ( timezoneObj == dataPtr->utc2local.timezoneObj
-      && ( fields->seconds == dataPtr->utc2local.seconds
-	|| ( fields->seconds >= dataPtr->utc2local.rangesVal[0]
-	  && fields->seconds <	dataPtr->utc2local.rangesVal[1])
-      )
-      && changeover == dataPtr->utc2local.changeover
-    ) {
-	/* the same time zone and offset (UTC time inside the last minute) */
-	Tcl_SetObjRef(fields->tzName, dataPtr->utc2local.tzName);
-	fields->tzOffset = dataPtr->utc2local.tzOffset;
-	fields->localSeconds = fields->seconds + fields->tzOffset;
-	return TCL_OK;
+    for (rowc = 0; rowc < 2; rowc++) {
+	ltzoc = &dataPtr->lastTZOffsCache[rowc];
+	if (timezoneObj != ltzoc->timezoneObj || changeover != ltzoc->changeover) {
+	    ltzoc = NULL;
+	    continue;
+	}
+	if ( fields->seconds >= ltzoc->rangesVal[0]
+	  && fields->seconds <  ltzoc->rangesVal[1]
+	) {
+	    /* the same time zone and offset (UTC time inside the last minute) */
+	    fields->tzOffset = ltzoc->tzOffset;
+	    fields->localSeconds = fields->seconds + fields->tzOffset;
+	    Tcl_SetObjRef(fields->tzName, ltzoc->tzName);
+	    return TCL_OK;
+	}
     }
 
     /*
@@ -2231,25 +2229,40 @@ ConvertUTCToLocal(
      */
 
     if (rowc == 0) {
-	dataPtr->utc2local.rangesVal[0] = 0;
-	dataPtr->utc2local.rangesVal[1] = 0;
 
 	if (ConvertUTCToLocalUsingC(interp, fields, changeover) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/* we cannot cache (ranges unknown yet) */
     } else {
+	Tcl_WideInt rangesVal[2];   	
+
 	if (ConvertUTCToLocalUsingTable(interp, fields, rowc, rowv,
-		dataPtr->utc2local.rangesVal) != TCL_OK) {
+		rangesVal) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/* Cache the last conversion */
+	if (ltzoc != NULL) { /* slot was found above */
+	    /* timezoneObj and changeover are the same */
+	    Tcl_SetObjRef(ltzoc->tzName, fields->tzName);
+	} else {
+	    /* no TZ in cache - just move second slot down and use the first one */
+	    ltzoc = &dataPtr->lastTZOffsCache[0];
+	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
+	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
+	    memcpy(&dataPtr->lastTZOffsCache[1], ltzoc, sizeof(*ltzoc));
+	    Tcl_InitObjRef(ltzoc->timezoneObj, timezoneObj);
+	    ltzoc->changeover = changeover;
+	    Tcl_InitObjRef(ltzoc->tzName, fields->tzName);
+	}
+	ltzoc->localSeconds = fields->localSeconds;
+	ltzoc->rangesVal[0] = rangesVal[0];
+	ltzoc->rangesVal[1] = rangesVal[1];
+	ltzoc->tzOffset = fields->tzOffset;
     }
 
-    /* Cache the last conversion */
-    Tcl_SetObjRef(dataPtr->utc2local.timezoneObj, timezoneObj);
-    dataPtr->utc2local.seconds = fields->seconds;
-    dataPtr->utc2local.changeover = changeover;
-    dataPtr->utc2local.tzOffset = fields->tzOffset;
-    Tcl_SetObjRef(dataPtr->utc2local.tzName, fields->tzName);
     return TCL_OK;
 }
 
@@ -2421,7 +2434,7 @@ LookupLastTransition(
     int l = 0;
     int u;
     Tcl_Obj *compObj;
-    Tcl_WideInt compVal, fromVal = tick, toVal = tick;
+    Tcl_WideInt compVal, fromVal = LLONG_MIN, toVal = LLONG_MAX;
 
     /*
      * Examine the first row to make sure we're in bounds.
@@ -2437,7 +2450,7 @@ LookupLastTransition(
      * anyway.
      */
 
-    if (tick < compVal) {
+    if (tick < (fromVal = compVal)) {
 	if (rangesVal) {
 	    rangesVal[0] = fromVal;
 	    rangesVal[1] = toVal;
@@ -3422,7 +3435,7 @@ ClockParseFmtScnArgs(
 	 */
 
 	if ( baseObj->typePtr == &tclBignumType
-	  || baseVal < -0x00F0000000000000L || baseVal > 0x00F0000000000000L
+	  || baseVal < TCL_MIN_SECONDS || baseVal > TCL_MAX_SECONDS
 	) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    return TCL_ERROR;
@@ -3760,8 +3773,15 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
+    ClockClientData *dataPtr = opts->clientData;
 
-    // printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d\n", yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds);
+    #if 0
+    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
+	   "yySecondOfDay %d, sec %d, daySec %d, tzOffset %d\n",
+	  yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds, 
+	  yySecondOfDay, (int)yydate.localSeconds, (int)(yydate.localSeconds % SECONDS_PER_DAY),
+	  yydate.tzOffset);
+    #endif
 
     if (!(stage & 1)) {
 	goto stage_2;
@@ -3769,8 +3789,6 @@ ClockValidDate(
 
     /* first year (used later in hath / daysInPriorMonths) */
     if ((info->flags & (CLF_YEAR|CLF_ISO8601YEAR)) || yyHaveDate) {
-	ClockClientData *dataPtr = opts->clientData;
-
 	if ((info->flags & CLF_ISO8601YEAR)) {
 	    if ( yydate.iso8601Year < dataPtr->validMinYear
 	      || yydate.iso8601Year > dataPtr->validMaxYear ) {
@@ -3853,9 +3871,25 @@ ClockValidDate(
     }
 
     /* 
-     * Further tests expected ready calculated julianDay (inclusive relative)
+     * Further tests expected ready calculated julianDay (inclusive relative),
+     * and time-zone conversion (local to UTC time).
      */
   stage_2:
+
+    /* time, regarding the modifications by the time-zone (looks for given time
+     * in between DST-time hole, so does not exist in this time-zone) */
+    if (((info->flags & CLF_TIME) || yyHaveTime)) {
+	/* 
+	 * we don't need to do the backwards time-conversion (UTC to local) and 
+	 * compare results, because the after conversion (local to UTC) we 
+	 * should have valid localSeconds (was not invalidated to TCL_INV_SECONDS),
+	 * so if it was invalidated - invalid time, outside the time-zone (in DST-hole)
+	 */
+	if ( yydate.localSeconds == TCL_INV_SECONDS ) {
+	    errMsg = "invalid time (does not exist in this time-zone)"; 
+	    errCode = "out-of-time"; goto error;
+	}
+    }
 
     /* day of week */
     if (info->flags & CLF_DAYOFWEEK) {
