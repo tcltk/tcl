@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -106,10 +110,6 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
 
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
-
 static int
 TclpIsAtty(int fd)
 {
@@ -188,25 +188,8 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
@@ -215,29 +198,13 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
-    char *p;
-    int size;
-
     if (len > 0) {
 	len /= 2;
+    } else if (len == -1) {
+	len = wcslen((wchar_t *)string);
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
