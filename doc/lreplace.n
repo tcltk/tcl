@@ -17,7 +17,7 @@ lreplace \- Replace elements in a list with new elements
 .BE
 .SH DESCRIPTION
 .PP
-\fBlreplace\fR returns a new list formed by replacing one or more elements of
+\fBlreplace\fR returns a new list formed by replacing zero or more elements of
 \fIlist\fR with the \fIelement\fR arguments.
 \fIfirst\fR and \fIlast\fR are index values specifying the first and
 last elements of the range to replace.
@@ -27,36 +27,26 @@ supporting simple index arithmetic and indices relative to the
 end of the list.
 0 refers to the first element of the
 list, and \fBend\fR refers to the last element of the list.
-If \fIlist\fR is empty, then \fIfirst\fR and \fIlast\fR are ignored.
 .PP
-If \fIfirst\fR is less than zero, it is considered to refer to before the
-first element of the list.
+If either \fIfirst\fR or \fIlast\fR is less than zero, it is considered
+to refer to before the first element of the list. This allows \fBlreplace\fR
+to prepend elements to \fIlist\fR.
 .VS TIP505
-If \fIfirst\fR indicates a position greater than the index of the last element
-of the list, it is treated as if it is an index one greater than the last
-element. This allows this command to append elements to the list.
+If either \fIfirst\fR or \fIlast\fR indicates a position greater than the
+index of the last element of the list, it is treated as if it is an
+index one greater than the last element. This allows \fBlreplace\fR to
+append elements to \fIlist\fR.
 .VE TIP505
-For non-empty lists, the element indicated
-by \fIfirst\fR must exist, or \fIfirst\fR must indicate before the
-start of the list.
 .PP
 If \fIlast\fR is less than \fIfirst\fR, then any specified elements
-will be inserted into the list before the point specified by \fIfirst\fR
+will be inserted into the list before the element specified by \fIfirst\fR
 with no elements being deleted.
-.VS TIP505
-If \fIlast\fR is greater than the index of the last item of the list, it is
-treated as if it is an index one greater than the last element. This means
-that if it is also greater than than \fIfirst\fR, all elements from
-\fIfirst\fR to the end of the list will be replaced, and otherwise the
-elements will be appended.
-.VE TIP505
 .PP
-The \fIelement\fR arguments specify zero or more new arguments to
+The \fIelement\fR arguments specify zero or more new elements to
 be added to the list in place of those that were deleted.
 Each \fIelement\fR argument will become a separate element of
 the list.  If no \fIelement\fR arguments are specified, then the elements
-between \fIfirst\fR and \fIlast\fR are simply deleted.  If \fIlist\fR
-is empty, any \fIelement\fR arguments are added to the end of the list.
+between \fIfirst\fR and \fIlast\fR are simply deleted.
 .SH EXAMPLES
 .PP
 Replacing an element of a list with another:
@@ -93,7 +83,7 @@ proc lremove {listVariable value} {
 .CE
 .PP
 .VS TIP505
-Adding elements to the end of the list; note that \fBend+2\fR will initially
+Appending elements to the list; note that \fBend+2\fR will initially
 be treated as if it is \fB6\fR here, but both that and \fB12345\fR are greater
 than the index of the final item so they behave identically:
 .PP
