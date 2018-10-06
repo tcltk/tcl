@@ -115,6 +115,9 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
     return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
@@ -124,9 +127,13 @@ Tcl_WinTCharToUtf(
     size_t len,
     Tcl_DString *dsPtr)
 {
-    if (len != (size_t)-1) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len != TCL_AUTO_LENGTH) {
 	len /= 2;
-    } else if (len == -1) {
+    } else {
 	len = wcslen((wchar_t *)string);
     }
     Tcl_DStringInit(dsPtr);

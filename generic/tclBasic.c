@@ -4647,7 +4647,7 @@ Tcl_EvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
     const char *script,		/* First character of script to evaluate. */
-    size_t numBytes,		/* Number of bytes in script. If (size_t)-1, the
+    size_t numBytes,		/* Number of bytes in script. If -1, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4662,7 +4662,7 @@ TclEvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
     const char *script,		/* First character of script to evaluate. */
-    size_t numBytes,		/* Number of bytes in script. If (size_t)-1, the
+    size_t numBytes,		/* Number of bytes in script. If -1, the
 				 * script consists of all bytes up to the
 				 * first NUL character. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -4727,7 +4727,7 @@ TclEvalEx(
 	}
     }
 
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(script);
     }
     Tcl_ResetResult(interp);

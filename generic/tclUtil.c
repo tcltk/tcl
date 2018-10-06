@@ -390,7 +390,7 @@ TclMaxListLength(
 {
     size_t count = 0;
 
-    if ((numBytes == 0) || ((numBytes == (size_t)-1) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -406,7 +406,7 @@ TclMaxListLength(
      */
 
     while (numBytes) {
-	if ((numBytes == (size_t)-1) && (*bytes == '\0')) {
+	if ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0')) {
 	    break;
 	}
 	if (TclIsSpaceProc(*bytes)) {
@@ -417,9 +417,9 @@ TclMaxListLength(
 	    count++;
 	    do {
 		bytes++;
-		numBytes -= (numBytes != (size_t)-1);
+		numBytes -= (numBytes != TCL_AUTO_LENGTH);
 	    } while (numBytes && TclIsSpaceProc(*bytes));
-	    if ((numBytes == 0) || ((numBytes == (size_t)-1) && (*bytes == '\0'))) {
+	    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
 		break;
 	    }
 
@@ -428,7 +428,7 @@ TclMaxListLength(
 	     */
 	}
 	bytes++;
-	numBytes -= (numBytes != (size_t)-1);
+	numBytes -= (numBytes != TCL_AUTO_LENGTH);
     }
 
     /*
@@ -1012,7 +1012,7 @@ Tcl_ScanCountedElement(
 size_t
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or (size_t)-1. */
+    size_t length,		/* Number of bytes in src, or -1. */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1329,7 +1329,7 @@ Tcl_ConvertElement(
 size_t
 Tcl_ConvertCountedElement(
     register const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or (size_t)-1. */
+    size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1362,7 +1362,7 @@ Tcl_ConvertCountedElement(
 size_t
 TclConvertElement(
     register const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or (size_t)-1. */
+    size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1381,7 +1381,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == (size_t)-1)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_AUTO_LENGTH)) {
 	src = &tclEmptyString;
 	length = 0;
 	conversion = CONVERT_BRACE;
@@ -2656,12 +2656,12 @@ Tcl_DStringAppend(
     const char *bytes,		/* String to append. If length is -1 then this
 				 * must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * (size_t)-1, then append all of bytes, up to null
+				 * -1, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_AUTO_LENGTH) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -2680,7 +2680,7 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    size_t offset = (size_t)-1;
+	    size_t offset = TCL_AUTO_LENGTH;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
@@ -2690,7 +2690,7 @@ Tcl_DStringAppend(
 
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (offset != (size_t)-1) {
+	    if (offset != TCL_AUTO_LENGTH) {
 		bytes = dsPtr->string + offset;
 	    }
 	}

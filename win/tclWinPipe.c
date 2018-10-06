@@ -851,7 +851,7 @@ TclpCloseFile(
  * Results:
  *	Returns the process id for the child process. If the pid was not known
  *	by Tcl, either because the pid was not created by Tcl or the child
- *	process has already been reaped, -1 is returned.
+ *	process has already been reaped, (size_t)-1 is returned.
  *
  * Side effects:
  *	None.

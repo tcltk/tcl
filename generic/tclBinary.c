@@ -663,12 +663,12 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; (i < length) && (size != (size_t)-1); i++) {
+    for (i = 0; (i < length) && (size != TCL_AUTO_LENGTH); i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size == (size_t)-1) {
+    if (size == TCL_AUTO_LENGTH) {
 	Tcl_Panic("max size for a Tcl value exceeded");
     }
 
@@ -718,7 +718,7 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len == (size_t)-1) {
+    if (len == TCL_AUTO_LENGTH) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
