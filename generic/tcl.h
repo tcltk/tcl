@@ -224,7 +224,7 @@ extern "C" {
  * to be included in a shared library, then it should have the DLLEXPORT
  * storage class. If is being declared for use by a module that is going to
  * link against the shared library, then it should have the DLLIMPORT storage
- * class. If the symbol is beind declared for a static build or for use from a
+ * class. If the symbol is being declared for a static build or for use from a
  * stub library, then the storage class should be empty.
  *
  * The convention is that a macro called BUILD_xxxx, where xxxx is the name of
@@ -2332,6 +2332,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
  */
 #define TCL_TCPSERVER_REUSEADDR (1<<0)
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
+
+/*
+ * Constants for special int-typed values, see TIP #494
+ */
+
+#define TCL_IO_FAILURE	(-1)
+#define TCL_AUTO_LENGTH	(-1)
 
 /*
  *----------------------------------------------------------------------------

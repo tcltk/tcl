@@ -4726,9 +4726,6 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
     ***argvPtr)			/* Pointer to argv */
 {
-#ifdef _WIN32
-    Tcl_DString ds;
-#endif /* _WIN32 */
     char *archive;
 
     Tcl_FindExecutable((*argvPtr)[0]);
@@ -4773,6 +4770,9 @@ TclZipfs_AppHook(
 	}
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
     } else if (*argcPtr > 1) {
+#ifdef _WIN32
+	Tcl_DString ds;
+#endif /* _WIN32 */
 	/*
 	 * If the first argument is "install", run the supplied installer
 	 * script.
