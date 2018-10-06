@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -110,31 +114,8 @@ Tcl_WinUtfToTChar(
     size_t len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp, *p;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    p = wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == (size_t)-1) --size; /* account for 0-byte at string end */
-
-    /* It turns out that MultiByteToWideChar() cannot handle the 'modified'
-     * UTF-8 as used by Tcl. Every sequence of 0xC0 followed by 0x80 will
-     * be translated to two 0xfffd characters. This results in a test-failure
-     * of the registry-6.20 test-case. The simplest solution is to search for
-     * those two 0xfffd characters and replace them by a \u0000 character. */
-    while (p < wp + size - 1) {
-	if (p[0] == 0xfffd && p[1] == 0xfffd) {
-	    memmove(p+1, p+2, sizeof(WCHAR) * (p - wp + size - 2));
-	    p[0] = '\0';
-	    ++p; --size;
-	}
-	++p;
-    }
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *) wp;
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
@@ -143,31 +124,13 @@ Tcl_WinTCharToUtf(
     size_t len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size, i = 0;
-
     if (len != (size_t)-1) {
 	len /= 2;
+    } else if (len == -1) {
+	len = wcslen((wchar_t *)string);
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+8); /* Add some spare, in case of NULL-bytes */
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == (size_t)-1) --size; /* account for 0-byte at string end */
-    while (i < size) {
-	if (!p[i]) {
-	    /* Output contains '\0'-byte, but Tcl expect two-bytes: C0 80 */
-	    memmove(p+i+2, p+i+1, size-i-1);
-	    memcpy(p + i++, "\xC0\x80", 2);
-	    Tcl_DStringSetLength(dsPtr, ++size + 1);
-	    p = (char *)Tcl_DStringValue(dsPtr);
-	}
-	++i;
-    }
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -1374,7 +1337,7 @@ const TclStubs tclStubs = {
     TclZipfs_Mount, /* 632 */
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
-    TclZipfs_Mount_Buffer, /* 635 */
+    TclZipfs_MountBuffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */
