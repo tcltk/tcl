@@ -1807,7 +1807,7 @@ Tcl_FSEvalFileEx(
      * be handled especially.
      */
 
-    if (Tcl_ReadChars(chan, objPtr, 1, 0) == (size_t)-1) {
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1822,7 +1822,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == (size_t)-1) {
+	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1942,7 +1942,7 @@ TclNREvalFile(
      * be handled especially.
      */
 
-    if (Tcl_ReadChars(chan, objPtr, 1, 0) == (size_t)-1) {
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1958,7 +1958,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == (size_t)-1) {
+	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
