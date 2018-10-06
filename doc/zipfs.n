@@ -101,10 +101,10 @@ archives as Tcl applications.
 .
 Creates an image (potentially a new executable file) similar to \fBzipfs
 mkzip\fR. If the \fIinfile\fR parameter is specified, this file is prepended
-in front of the ZIP archive, otherwise the file returned by \fBinfo
-nameofexecutable\fR (i.e., the executable file of the running process) is
-used. If the \fIpassword\fR parameter is not empty, an obfuscated version of
-that password is placed between the image and ZIP chunks of the output file
+in front of the ZIP archive, otherwise the file returned by
+\fBinfo nameofexecutable\fR (i.e., the executable file of the running process)
+is used. If the \fIpassword\fR parameter is not empty, an obfuscated version
+of that password is placed between the image and ZIP chunks of the output file
 and the contents of the ZIP chunk are protected with that password.
 .RS
 .PP
