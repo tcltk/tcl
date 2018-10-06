@@ -425,7 +425,7 @@ Tcl_UtfToUniCharDString(
     const char *p, *end;
     size_t oldLength;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_AUTO_LENGTH) {
 	length = strlen(src);
     }
 
@@ -527,7 +527,7 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    if (length == (size_t)-1) {
+    if (length == TCL_AUTO_LENGTH) {
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -806,7 +806,7 @@ Tcl_UtfAtIndex(
     int len = 1;
 #endif
 
-    if (index != (size_t)-1) {
+    if (index != TCL_AUTO_LENGTH) {
 	while (index--) {
 #if TCL_UTF_MAX <= 4
 	    src += (len = TclUtfToUniChar(src, &ch));

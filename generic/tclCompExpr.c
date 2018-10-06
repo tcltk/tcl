@@ -1819,7 +1819,7 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    size_t numBytes,		/* Number of bytes in string. If (size_t)-1, the
+    size_t numBytes,		/* Number of bytes in string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
@@ -1833,7 +1833,7 @@ Tcl_ParseExpr(
     Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = (start ? strlen(start) : 0);
     }
 

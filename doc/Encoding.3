@@ -83,7 +83,7 @@ specified encoding that are to be converted to UTF-8.  For the
 UTF-8 characters to be converted to the specified encoding.
 .AP "const TCHAR" *tsrc in
 An array of Windows TCHAR characters to convert to UTF-8.
-.AP int srcLen in
+.AP size_t srcLen in
 Length of \fIsrc\fR or \fItsrc\fR in bytes.  If the length is negative, the
 encoding-specific length of the string is used.
 .AP Tcl_DString *dstPtr out

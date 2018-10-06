@@ -466,14 +466,14 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    size_t len,			/* Source string length in bytes, or (size_t)-1
+    size_t len,			/* Source string length in bytes, or -1
 				 * for strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
     if (!string) {
-	return (TCHAR *)Tcl_DStringValue(dsPtr);
+	return NULL;
     }
     return Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
@@ -481,18 +481,18 @@ Tcl_WinUtfToTChar(
 char *
 Tcl_WinTCharToUtf(
     const TCHAR *string,	/* Source string in Unicode. */
-    size_t len,			/* Source string length in bytes, or (size_t)-1
+    size_t len,			/* Source string length in bytes, or -1
 				 * for platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
     if (!string) {
-	return Tcl_DStringValue(dsPtr);
+	return NULL;
     }
-    if (len != (size_t)-1) {
+    if (len != TCL_AUTO_LENGTH) {
 	len /= 2;
-    } else if (len < 0) {
+    } else {
 	len = wcslen(string);
     }
     return Tcl_UniCharToUtfDString(string, len, dsPtr);

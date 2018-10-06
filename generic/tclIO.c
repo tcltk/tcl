@@ -3988,7 +3988,7 @@ size_t
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    size_t srcLen)			/* Length of data in bytes, or (size_t)-1 for
+    size_t srcLen)			/* Length of data in bytes, or -1 for
 				 * strlen(). */
 {
     /*
@@ -4002,14 +4002,14 @@ Tcl_Write(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
-    if (srcLen == (size_t)-1) {
+    if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
-	return -1;
+	return TCL_IO_FAILURE;
     }
     return srcLen;
 }
@@ -4109,12 +4109,12 @@ Tcl_WriteChars(
     Tcl_Obj *objPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len == (size_t)-1) {
+    if (len == TCL_AUTO_LENGTH) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -4182,7 +4182,7 @@ Tcl_WriteObj(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
     if (statePtr->encoding == NULL) {
 	src = (char *) TclGetByteArrayFromObj(objPtr, &srcLen);
@@ -4518,7 +4518,7 @@ Tcl_GetsObj(
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
     /*
@@ -4533,7 +4533,7 @@ Tcl_GetsObj(
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
     /*
@@ -5586,7 +5586,7 @@ Tcl_Read(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
     return DoRead(chanPtr, dst, bytesToRead, 0);
@@ -5627,7 +5627,7 @@ Tcl_ReadRaw(
 
     assert(bytesToRead > 0);
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
     /*
@@ -5737,7 +5737,7 @@ Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
     size_t toRead,		/* Maximum number of characters to store, or
-				 * (size_t)-1 to read all available data (up to EOF or
+				 * -1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
 				 * will be appended to the object. Otherwise,
@@ -5793,7 +5793,7 @@ DoReadChars(
     Channel *chanPtr,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
     size_t toRead,			/* Maximum number of characters to store, or
-				 * (size_t)-1 to read all available data (up to EOF or
+				 * -1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
 				 * will be appended to the object. Otherwise,

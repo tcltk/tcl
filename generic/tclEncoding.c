@@ -1048,7 +1048,7 @@ Tcl_ExternalToUtfDString(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    size_t srcLen,		/* Source string length in bytes, or (size_t)-1 for
+    size_t srcLen,		/* Source string length in bytes, or -1 for
 				 * encoding-specific string length. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
@@ -1070,7 +1070,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == (size_t)-1) {
+    } else if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1122,7 +1122,7 @@ Tcl_ExternalToUtf(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    size_t srcLen,		/* Source string length in bytes, or (size_t)-1
+    size_t srcLen,		/* Source string length in bytes, or -1
 				 * for encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1160,7 +1160,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == (size_t)-1) {
+    } else if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1239,7 +1239,7 @@ Tcl_UtfToExternalDString(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    size_t srcLen,		/* Source string length in bytes, or (size_t)-1 for
+    size_t srcLen,		/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
@@ -1261,7 +1261,7 @@ Tcl_UtfToExternalDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == (size_t)-1) {
+    } else if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = strlen(src);
     }
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
@@ -1315,7 +1315,7 @@ Tcl_UtfToExternal(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    size_t srcLen,		/* Source string length in bytes, or (size_t)-1
+    size_t srcLen,		/* Source string length in bytes, or -1
 				 * for strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1350,7 +1350,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == (size_t)-1) {
+    } else if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {
@@ -1940,7 +1940,7 @@ LoadEscapeEncoding(
 	Tcl_DString lineString;
 
 	Tcl_DStringInit(&lineString);
-	if (Tcl_Gets(chan, &lineString) == (size_t)-1) {
+	if (Tcl_Gets(chan, &lineString) == TCL_IO_FAILURE) {
 	    break;
 	}
 	line = Tcl_DStringValue(&lineString);

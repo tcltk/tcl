@@ -4170,7 +4170,7 @@ typedef const char *TclDTraceStr;
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == (size_t)-1'.
+ * 'length == TCL_AUTO_LENGTH'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4182,7 +4182,7 @@ typedef const char *TclDTraceStr;
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		Tcl_Free((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = (size_t)-1; \
+	    (objPtr)->length = TCL_AUTO_LENGTH; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
