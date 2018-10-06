@@ -964,7 +964,7 @@ Tcl_ExecObjCmd(
 
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
-	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
+	if (Tcl_ReadChars(chan, resultPtr, -1, 0) == TCL_IO_FAILURE) {
 	    /*
 	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area

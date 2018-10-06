@@ -2176,6 +2176,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
+ * Constants for special int-typed values, see TIP #494
+ */
+
+#define TCL_IO_FAILURE	(-1)
+#define TCL_AUTO_LENGTH	(-1)
+
+/*
  *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
