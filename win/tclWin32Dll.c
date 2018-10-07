@@ -548,6 +548,9 @@ Tcl_WinUtfToTChar(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
     return Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
@@ -559,12 +562,15 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    if (len > 0) {
-	len /= 2;
-    } else if (len < 0) {
-	len = wcslen(string);
-    }
     Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen(string);
+    } else {
+	len /= 2;
+    }
     return Tcl_UniCharToUtfDString(string, len, dsPtr);
 }
 
