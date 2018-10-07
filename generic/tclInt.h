@@ -3360,7 +3360,6 @@ MODULE_SCOPE int	TclNRAssembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitEncodingCmd(Tcl_Interp *interp);
-MODULE_SCOPE int	TclMakeEncodingCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3389,7 +3388,6 @@ MODULE_SCOPE int	Tcl_FcopyObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
-MODULE_SCOPE int	TclMakeFileCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_FileEventObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
