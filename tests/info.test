@@ -2535,9 +2535,9 @@ test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
     $safe eval {
 	info cmdtype foo
     }
-} -cleanup {
+} -returnCodes error -cleanup {
     interp delete $safe
-} -result native
+} -result {not allowed to invoke subcommand cmdtype of info}
 test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
     set safe [interp create -safe]
 } -body {
@@ -2548,9 +2548,9 @@ test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
 	    info cmdtype foo
 	}
     }
-} -cleanup {
+} -returnCodes error -cleanup {
     interp delete $safe
-} -result native
+} -result {not allowed to invoke subcommand cmdtype of info}
 test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
     set safe [interp create -safe]
 } -body {
@@ -2558,9 +2558,9 @@ test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
 	interp alias {} foo {} gorp
 	info cmdtype foo
     }
-} -cleanup {
+} -returnCodes error -cleanup {
     interp delete $safe
-} -result alias
+} -result {not allowed to invoke subcommand cmdtype of info}
 namespace delete ::testinfocmdtype
 
 # -------------------------------------------------------------------------

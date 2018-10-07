@@ -4713,21 +4713,21 @@ TclZipfs_Init(
 {
 #ifdef HAVE_ZLIB
     static const EnsembleImplMap initMap[] = {
-	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
-	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
-	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
-	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
+	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
+	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
+	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
 	/* The 4 entries above are not available in safe interpreters */
-	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
-	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 0},
-	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
-	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
-	{"tcl_library",	ZipFSTclLibraryObjCmd,	NULL, NULL, NULL, 0},
+	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
+	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
+	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
+	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 0},
+	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 0},
+	{"tcl_library",	ZipFSTclLibraryObjCmd,	NULL, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char findproc[] =
