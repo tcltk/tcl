@@ -442,10 +442,10 @@ unit	: tSEC_UNIT {
 	;
 
 INTNUM	: tUNUMBER {
-	    $$ = $1
+	    $$ = $1;
 	}
 	| tISOBASE {
-	    $$ = $1
+	    $$ = $1;
 	}
 	;
 
