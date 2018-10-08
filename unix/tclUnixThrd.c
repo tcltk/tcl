@@ -222,7 +222,7 @@ TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     ClientData clientData,	/* The one argument to Main() */
-    int stackSize,		/* Size of stack for the new thread */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -236,7 +236,7 @@ TclpThreadCreate(
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     if (stackSize != TCL_THREAD_STACK_DEFAULT) {
-	pthread_attr_setstacksize(&attr, (size_t) stackSize);
+	pthread_attr_setstacksize(&attr, stackSize);
 #ifdef TCL_THREAD_STACK_MIN
     } else {
 	/*
@@ -577,7 +577,7 @@ Tcl_MutexLock(
 	     * Double inside master lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = ckalloc(sizeof(PMutex));
+	    pmutexPtr = Tcl_Alloc(sizeof(PMutex));
 	    PMutexInit(pmutexPtr);
 	    *mutexPtr = (Tcl_Mutex) pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -641,7 +641,7 @@ TclpFinalizeMutex(
 
     if (pmutexPtr != NULL) {
 	PMutexDestroy(pmutexPtr);
-	ckfree(pmutexPtr);
+	Tcl_Free(pmutexPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -687,7 +687,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = Tcl_Alloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -775,7 +775,7 @@ TclpFinalizeCondition(
 
     if (pcondPtr != NULL) {
 	pthread_cond_destroy(pcondPtr);
-	ckfree(pcondPtr);
+	Tcl_Free(pcondPtr);
 	*condPtr = NULL;
     }
 }
@@ -869,7 +869,7 @@ TclpThreadCreateKey(void)
 {
     pthread_key_t *ptkeyPtr;
 
-    ptkeyPtr = TclpSysAlloc(sizeof(pthread_key_t), 0);
+    ptkeyPtr = TclpSysAlloc(sizeof(pthread_key_t));
     if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }

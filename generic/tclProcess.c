@@ -130,7 +130,7 @@ FreeProcessInfo(
      * Free allocated structure.
      */
 
-    ckfree(info);
+    Tcl_Free(info);
 }
 
 /*
@@ -833,7 +833,7 @@ TclProcessCreated(
      * Allocate and initialize info structure.
      */
 
-    info = (ProcessInfo *) ckalloc(sizeof(ProcessInfo));
+    info = (ProcessInfo *) Tcl_Alloc(sizeof(ProcessInfo));
     InitProcessInfo(info, pid, resolvedPid);
 
     /*

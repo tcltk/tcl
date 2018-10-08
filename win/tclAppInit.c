@@ -267,11 +267,10 @@ setargv(
 	}
     }
 
-    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    /* Make sure we don't call Tcl_Alloc through the (not yet initialized) stub table */
 #   undef Tcl_Alloc
-#   undef Tcl_DbCkalloc
 
-    argSpace = ckalloc(size * sizeof(char *)
+    argSpace = Tcl_Alloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));

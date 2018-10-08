@@ -737,7 +737,8 @@ TclCompileStringMatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, length, exactMatch = 0, nocase = 0;
+	size_t length;
+    int i, exactMatch = 0, nocase = 0;
     const char *str;
 
     if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
@@ -1464,7 +1465,7 @@ void
 TclSubstCompile(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     int flags,
     int line,
     CompileEnv *envPtr)
@@ -1526,7 +1527,8 @@ TclSubstCompile(
 	     */
 
 	    if (tokenPtr->numComponents > 1) {
-		int i, foundCommand = 0;
+		size_t i;	
+		int foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
 		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
@@ -1565,8 +1567,8 @@ TclSubstCompile(
 
 	    /* Start */
 	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
-		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %d",
-			(int) (CurrentOffset(envPtr) - startFixup.codeOffset));
+		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %" TCL_Z_MODIFIER "d",
+			CurrentOffset(envPtr) - startFixup.codeOffset);
 	    }
 	}
 
@@ -1624,8 +1626,8 @@ TclSubstCompile(
 	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
-		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - breakFixup.codeOffset);
 	}
 	OP(	POP);
 	OP(	POP);
@@ -1640,8 +1642,8 @@ TclSubstCompile(
 	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
 	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
-		    (int) (CurrentOffset(envPtr) - continueFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - continueFixup.codeOffset);
 	}
 	OP(	POP);
 	OP(	POP);
@@ -1650,12 +1652,12 @@ TclSubstCompile(
 	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
 	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
-		    (int) (CurrentOffset(envPtr) - returnFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - returnFixup.codeOffset);
 	}
 	if (TclFixupForwardJumpToHere(envPtr, &otherFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
-		    (int) (CurrentOffset(envPtr) - otherFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - otherFixup.codeOffset);
 	}
 
 	/*
@@ -1667,8 +1669,8 @@ TclSubstCompile(
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %d",
-		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - okFixup.codeOffset);
 	}
 	if (count > 1) {
 	    OP1(STR_CONCAT1, count);
@@ -1677,8 +1679,8 @@ TclSubstCompile(
 
 	/* CONTINUE jump to here */
 	if (TclFixupForwardJumpToHere(envPtr, &endFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %d",
-		    (int) (CurrentOffset(envPtr) - endFixup.codeOffset));
+	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %" TCL_Z_MODIFIER "d",
+		    CurrentOffset(envPtr) - endFixup.codeOffset);
 	}
 	bline = envPtr->line;
     }
@@ -1799,7 +1801,7 @@ TclCompileSwitchCmd(
      */
 
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
-	register unsigned size = tokenPtr[1].size;
+	register size_t size = tokenPtr[1].size;
 	register const char *chrs = tokenPtr[1].start;
 
 	/*
@@ -1890,7 +1892,7 @@ TclCompileSwitchCmd(
 
     if (numWords == 1) {
 	const char *bytes;
-	int maxLen, numBytes;
+	size_t maxLen, numBytes;
 	int bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
@@ -1907,10 +1909,10 @@ TclCompileSwitchCmd(
 	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * maxLen);
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = ckalloc(sizeof(int) * maxLen);
-	bodyContLines = ckalloc(sizeof(int*) * maxLen);
+	bodyTokenArray = Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = Tcl_Alloc(sizeof(int) * maxLen);
+	bodyContLines = Tcl_Alloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -1948,10 +1950,10 @@ TclCompileSwitchCmd(
 	}
 	if (numWords % 2) {
 	abort:
-	    ckfree(bodyToken);
-	    ckfree(bodyTokenArray);
-	    ckfree(bodyLines);
-	    ckfree(bodyContLines);
+	    Tcl_Free(bodyToken);
+	    Tcl_Free(bodyTokenArray);
+	    Tcl_Free(bodyLines);
+	    Tcl_Free(bodyContLines);
 	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
@@ -1969,9 +1971,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = ckalloc(sizeof(int) * numWords);
-	bodyContLines = ckalloc(sizeof(int*) * numWords);
+	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = Tcl_Alloc(sizeof(int) * numWords);
+	bodyContLines = Tcl_Alloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -2030,11 +2032,11 @@ TclCompileSwitchCmd(
      */
 
   freeTemporaries:
-    ckfree(bodyToken);
-    ckfree(bodyLines);
-    ckfree(bodyContLines);
+    Tcl_Free(bodyToken);
+    Tcl_Free(bodyLines);
+    Tcl_Free(bodyContLines);
     if (bodyTokenArray != NULL) {
-	ckfree(bodyTokenArray);
+	Tcl_Free(bodyTokenArray);
     }
     return result;
 }
@@ -2335,7 +2337,7 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = ckalloc(sizeof(JumptableInfo));
+    jtPtr = Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
     finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
@@ -2507,7 +2509,7 @@ DupJumptableInfo(
     ClientData clientData)
 {
     JumptableInfo *jtPtr = clientData;
-    JumptableInfo *newJtPtr = ckalloc(sizeof(JumptableInfo));
+    JumptableInfo *newJtPtr = Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
@@ -2529,7 +2531,7 @@ FreeJumptableInfo(
     JumptableInfo *jtPtr = clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
-    ckfree(jtPtr);
+    Tcl_Free(jtPtr);
 }
 
 static void

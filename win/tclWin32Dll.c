@@ -255,8 +255,8 @@ TclWinEncodingsCleanup(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree(dlIter->volumeName);
-	ckfree(dlIter);
+	Tcl_Free(dlIter->volumeName);
+	Tcl_Free(dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -349,8 +349,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree(dlPtr2->volumeName);
-	    ckfree(dlPtr2);
+	    Tcl_Free(dlPtr2->volumeName);
+	    Tcl_Free(dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -385,7 +385,7 @@ TclWinDriveLetterForVolMountPoint(
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = ckalloc(sizeof(MountPointMap));
+		dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
@@ -411,7 +411,7 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = ckalloc(sizeof(MountPointMap));
+    dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
     dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
@@ -466,8 +466,8 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * strlen(). */
+    size_t len,			/* Source string length in bytes, or -1
+				 * for strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -481,8 +481,8 @@ Tcl_WinUtfToTChar(
 char *
 Tcl_WinTCharToUtf(
     const TCHAR *string,	/* Source string in Unicode. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * platform-specific string length. */
+    size_t len,			/* Source string length in bytes, or -1
+				 * for platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -490,7 +490,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    if (len < 0) {
+    if (len == TCL_AUTO_LENGTH) {
 	len = wcslen(string);
     } else {
 	len /= 2;
