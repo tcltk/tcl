@@ -19,17 +19,9 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-#ifdef _WIN32
-#include <winbase.h>
-#else /* !_WIN32 */
+#ifndef _WIN32
 #include <sys/mman.h>
 #endif /* _WIN32*/
-#include <errno.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <stdlib.h>
-#include <fcntl.h>
 
 #ifndef MAP_FILE
 #define MAP_FILE 0
