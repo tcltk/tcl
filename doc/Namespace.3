@@ -57,7 +57,7 @@ The interpreter in which the namespace exists and where name lookups
 are performed. Also where error result messages are written.
 .AP "const char" *name in
 The name of the namespace or command to be created or accessed.
-.AP ClientData clientData in
+.AP void *clientData in
 A context pointer by the creator of the namespace.  Not interpreted by
 Tcl at all.
 .AP Tcl_NamespaceDeleteProc *deleteProc in
@@ -117,7 +117,7 @@ the global namespace.)
 .PP
 .CS
 typedef void \fBTcl_NamespaceDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 \fBTcl_DeleteNamespace\fR deletes a namespace, calling the

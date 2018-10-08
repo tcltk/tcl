@@ -102,7 +102,7 @@ NewListIntRep(
 	return NULL;
     }
 
-    listRepPtr = attemptckalloc(LIST_SIZE(objc));
+    listRepPtr = Tcl_AttemptAlloc(LIST_SIZE(objc));
     if (listRepPtr == NULL) {
 	if (p) {
 	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
@@ -666,18 +666,18 @@ Tcl_ListObjAppendElement(
 
 	attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -735,7 +735,7 @@ Tcl_ListObjAppendElement(
 	     */
 
 	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
-	    ckfree(listRepPtr);
+	    Tcl_Free(listRepPtr);
 	}
 	listRepPtr = newPtr;
     }
@@ -988,18 +988,18 @@ Tcl_ListObjReplace(
 	List *newPtr = NULL;
 	int attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -1126,7 +1126,7 @@ Tcl_ListObjReplace(
 			(size_t) numAfterLast * sizeof(Tcl_Obj *));
 	    }
 
-	    ckfree(oldListRepPtr);
+	    Tcl_Free(oldListRepPtr);
 	}
     }
 
@@ -1817,7 +1817,7 @@ FreeListInternalRep(
 	for (i = 0;  i < numElems;  i++) {
 	    Tcl_DecrRefCount(elemPtrs[i]);
 	}
-	ckfree(listRepPtr);
+	Tcl_Free(listRepPtr);
     }
 
     listPtr->typePtr = NULL;
@@ -1945,14 +1945,15 @@ SetListFromAny(
 
 	while (nextElem < limit) {
 	    const char *elemStart;
-	    int elemSize, literal;
+	    size_t elemSize;
+	    int literal;
 
 	    if (TCL_OK != TclFindElement(interp, nextElem, limit - nextElem,
 		    &elemStart, &nextElem, &elemSize, &literal)) {
 		while (--elemPtrs >= &listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
 		}
-		ckfree(listRepPtr);
+		Tcl_Free(listRepPtr);
 		return TCL_ERROR;
 	    }
 	    if (elemStart == limit) {
@@ -1964,7 +1965,7 @@ SetListFromAny(
 		TclNewStringObj(*elemPtrs, elemStart, elemSize);
 	    } else {
 		TclNewObj(*elemPtrs);
-		(*elemPtrs)->bytes = ckalloc((unsigned) elemSize + 1);
+		(*elemPtrs)->bytes = Tcl_Alloc((unsigned) elemSize + 1);
 		(*elemPtrs)->length = TclCopyAndCollapse(elemSize, elemStart,
 			(*elemPtrs)->bytes);
 	    }
@@ -2047,7 +2048,7 @@ UpdateStringOfList(
 	 * We know numElems <= LIST_MAX, so this is safe.
 	 */
 
-	flagPtr = ckalloc(numElems);
+	flagPtr = Tcl_Alloc(numElems);
     }
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
@@ -2068,7 +2069,7 @@ UpdateStringOfList(
      */
 
     listPtr->length = bytesNeeded - 1;
-    listPtr->bytes = ckalloc(bytesNeeded);
+    listPtr->bytes = Tcl_Alloc(bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
@@ -2079,7 +2080,7 @@ UpdateStringOfList(
     listPtr->bytes[listPtr->length] = '\0';
 
     if (flagPtr != localFlags) {
-	ckfree(flagPtr);
+	Tcl_Free(flagPtr);
     }
 }
 

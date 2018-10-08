@@ -228,7 +228,7 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = ckalloc(sizeof(*newPedPtr));
+        newPedPtr = Tcl_Alloc(sizeof(*newPedPtr));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
@@ -307,14 +307,14 @@ PlatformEventsFinalize(
 	tsdPtr->triggerPipe[1] = -1;
     }
 #endif /* HAVE_EVENTFD */
-    ckfree(tsdPtr->triggerFilePtr->pedPtr);
-    ckfree(tsdPtr->triggerFilePtr);
+    Tcl_Free(tsdPtr->triggerFilePtr->pedPtr);
+    Tcl_Free(tsdPtr->triggerFilePtr);
     if (tsdPtr->eventsFd > 0) {
 	close(tsdPtr->eventsFd);
 	tsdPtr->eventsFd = 0;
     }
     if (tsdPtr->readyEvents) {
-	ckfree(tsdPtr->readyEvents);
+	Tcl_Free(tsdPtr->readyEvents);
 	tsdPtr->maxReadyEvents = 0;
     }
     pthread_mutex_unlock(&tsdPtr->notifierMutex);
@@ -359,7 +359,7 @@ PlatformEventsInit(
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
-    filePtr = ckalloc(sizeof(*filePtr));
+    filePtr = Tcl_Alloc(sizeof(*filePtr));
 #ifdef HAVE_EVENTFD
     if ((tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) <= 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger eventfd");
@@ -379,7 +379,7 @@ PlatformEventsInit(
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = ckalloc(tsdPtr->maxReadyEvents
+	tsdPtr->readyEvents = Tcl_Alloc(tsdPtr->maxReadyEvents
 	    * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -538,7 +538,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = ckalloc(sizeof(FileHandler));
+	    filePtr = Tcl_Alloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -608,7 +608,7 @@ Tcl_DeleteFileHandler(
 
 	PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
 	if (filePtr->pedPtr) {
-	    ckfree(filePtr->pedPtr);
+	    Tcl_Free(filePtr->pedPtr);
 	}
 
 	/*
@@ -620,7 +620,7 @@ Tcl_DeleteFileHandler(
 	} else {
 	    prevPtr->nextPtr = filePtr->nextPtr;
 	}
-	ckfree(filePtr);
+	Tcl_Free(filePtr);
     }
 }
 
@@ -720,7 +720,7 @@ Tcl_WaitForEvent(
 
 	    if (filePtr->readyMask == 0) {
 		FileHandlerEvent *fileEvPtr =
-		    ckalloc(sizeof(FileHandlerEvent));
+		    Tcl_Alloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
 		fileEvPtr->fd = filePtr->fd;
@@ -788,7 +788,7 @@ Tcl_WaitForEvent(
 
 	    if (filePtr->readyMask == 0) {
 		FileHandlerEvent *fileEvPtr =
-			ckalloc(sizeof(FileHandlerEvent));
+			Tcl_Alloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
 		fileEvPtr->fd = filePtr->fd;

@@ -88,7 +88,7 @@ The initial value for the checksum algorithm.
 .AP "unsigned char" *bytes in
 An array of bytes to run the checksum algorithm over, or NULL to get the
 recommended initial value for the checksum algorithm.
-.AP int length in
+.AP size_t length in
 The number of bytes in the array.
 .AP int mode in
 What mode to operate the stream in. Should be either
@@ -107,8 +107,8 @@ if the currently compressed data must be made available for access using
 into a state where the decompressor can recover from on corruption, or
 \fBTCL_ZLIB_FINALIZE\fR to ensure that the stream is finished and that any
 trailer demanded by the format is written.
-.AP int count in
-The maximum number of bytes to get from the stream, or -1 to get all remaining
+.AP size_t count in
+The maximum number of bytes to get from the stream, or (size_t)-1 to get all remaining
 bytes from the stream's buffers.
 .AP Tcl_Obj *compDict in
 A byte array value that is the compression dictionary to use with the stream.

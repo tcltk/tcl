@@ -2161,7 +2161,7 @@ ZipAddFile(
     memset(buf, '\0', ZIP_LOCAL_HEADER_LEN);
     memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpath, zpathlen);
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
-    if ((size_t) Tcl_Write(out, buf, len) != len) {
+    if (Tcl_Write(out, buf, len) != len) {
     wrerr:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error on %s: %s", path, Tcl_PosixError(interp)));
@@ -2180,7 +2180,7 @@ ZipAddFile(
 	ZipWriteShort(abuf, 0xffff);
 	ZipWriteShort(abuf + 2, align - 4);
 	ZipWriteInt(abuf + 4, 0x03020100);
-	if ((size_t) Tcl_Write(out, (const char *) abuf, align) != align) {
+	if (Tcl_Write(out, (const char *) abuf, align) != align) {
 	    goto wrerr;
 	}
     }
@@ -2282,7 +2282,7 @@ ZipAddFile(
 		    obuf[i] = (char) zencode(keys, crc32tab, obuf[i], tmp);
 		}
 	    }
-	    if (olen && ((size_t) Tcl_Write(out, obuf, olen) != olen)) {
+	    if (olen && (Tcl_Write(out, obuf, olen) != olen)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
 		deflateEnd(&stream);
@@ -2329,7 +2329,7 @@ ZipAddFile(
 		    buf[i] = (char) zencode(keys0, crc32tab, buf[i], tmp);
 		}
 	    }
-	    if ((size_t) Tcl_Write(out, buf, len) != len) {
+	    if (Tcl_Write(out, buf, len) != len) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
 		Tcl_Close(interp, in);
@@ -2554,7 +2554,7 @@ ZipFSMkZipOrImgObjCmd(
 	    zf = &zf0;
 	}
 	if (isMounted || ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK) {
-	    if ((size_t) Tcl_Write(out, (char *) zf->data,
+	    if (Tcl_Write(out, (char *) zf->data,
 		    zf->passOffset) != zf->passOffset) {
 		memset(passBuf, 0, sizeof(passBuf));
 		Tcl_DecrRefCount(list);
@@ -2724,7 +2724,7 @@ ZipFSMkZipOrImgObjCmd(
 	ZipWriteInt(buf + ZIP_CENTRAL_LOCALHDR_OFFS, z->offset - pos[0]);
 	if ((Tcl_Write(out, buf,
 		    ZIP_CENTRAL_HEADER_LEN) != ZIP_CENTRAL_HEADER_LEN)
-		|| ((size_t) Tcl_Write(out, z->name, len) != len)) {
+		|| (Tcl_Write(out, z->name, len) != len)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "write error: %s", Tcl_PosixError(interp)));
 	    goto done;

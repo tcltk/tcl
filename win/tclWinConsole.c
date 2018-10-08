@@ -455,7 +455,7 @@ ConsoleCheckProc(
 	}
 
 	if (needEvent) {
-	    ConsoleEvent *evPtr = ckalloc(sizeof(ConsoleEvent));
+	    ConsoleEvent *evPtr = Tcl_Alloc(sizeof(ConsoleEvent));
 
 	    infoPtr->flags |= CONSOLE_PENDING;
 	    evPtr->header.proc = ConsoleEventProc;
@@ -599,10 +599,10 @@ ConsoleCloseProc(
 	}
     }
     if (consolePtr->writeBuf != NULL) {
-	ckfree(consolePtr->writeBuf);
+	Tcl_Free(consolePtr->writeBuf);
 	consolePtr->writeBuf = 0;
     }
-    ckfree(consolePtr);
+    Tcl_Free(consolePtr);
 
     return errorCode;
 }
@@ -660,11 +660,11 @@ ConsoleInputProc(
 	 */
 
 	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = bufSize;
 	    infoPtr->offset += bufSize;
 	} else {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
 	    /*
@@ -766,12 +766,12 @@ ConsoleOutputProc(
 	     */
 
 	    if (infoPtr->writeBuf) {
-		ckfree(infoPtr->writeBuf);
+		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(threadInfo->readyEvent);
 	TclPipeThreadSignal(&threadInfo->TI);
@@ -1303,7 +1303,7 @@ TclWinOpenConsoleChannel(
      * See if a channel with this handle already exists.
      */
 
-    infoPtr = ckalloc(sizeof(ConsoleInfo));
+    infoPtr = Tcl_Alloc(sizeof(ConsoleInfo));
     memset(infoPtr, 0, sizeof(ConsoleInfo));
 
     infoPtr->validMask = permissions;

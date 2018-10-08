@@ -258,7 +258,7 @@ TclpDlopen(
 		    module = NSLinkModule(dyldObjFileImage, nativePath, nsflags);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
-			modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
+			modulePtr = Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
 			modulePtr->module = module;
 			modulePtr->nextPtr = NULL;
 		    } else {
@@ -278,13 +278,13 @@ TclpDlopen(
 	    || dyldLibHeader || modulePtr
 #endif /* TCL_DYLD_USE_NSMODULE */
     ) {
-	dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
+	dyldLoadHandle = Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
 	dyldLoadHandle->dlHandle = dlHandle;
 #if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
 	dyldLoadHandle->dyldLibHeader = dyldLibHeader;
 	dyldLoadHandle->modulePtr = modulePtr;
 #endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
-	newHandle = ckalloc(sizeof(*newHandle));
+	newHandle = Tcl_Alloc(sizeof(*newHandle));
 	newHandle->clientData = dyldLoadHandle;
 	newHandle->findSymbolProcPtr = &FindSymbol;
 	newHandle->unloadFileProcPtr = &UnloadFile;
@@ -381,7 +381,7 @@ FindSymbol(
 		    modulePtr = modulePtr->nextPtr;
 		}
 		if (modulePtr == NULL) {
-		    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
+		    modulePtr = Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
 		    modulePtr->module = module;
 		    modulePtr->nextPtr = dyldLoadHandle->modulePtr;
 		    dyldLoadHandle->modulePtr = modulePtr;
@@ -456,12 +456,12 @@ UnloadFile(
 	    (void) NSUnLinkModule(modulePtr->module,
 		    NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
 	    modulePtr = modulePtr->nextPtr;
-	    ckfree(ptr);
+	    Tcl_Free(ptr);
 	}
 #endif /* TCL_DYLD_USE_NSMODULE */
     }
-    ckfree(dyldLoadHandle);
-    ckfree(loadHandle);
+    Tcl_Free(dyldLoadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*
@@ -693,14 +693,14 @@ TclpLoadMemory(
      * Stash the module reference within the load handle we create and return.
      */
 
-    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
+    modulePtr = Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
     modulePtr->module = module;
     modulePtr->nextPtr = NULL;
-    dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
+    dyldLoadHandle = Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
     dyldLoadHandle->dlHandle = NULL;
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = dyldLoadHandle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;

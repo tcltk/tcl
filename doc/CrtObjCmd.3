@@ -59,7 +59,7 @@ Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in
 Procedure to call before \fIcmdName\fR is deleted from the interpreter;
@@ -102,7 +102,7 @@ and it returns NULL.
 .PP
 .CS
 typedef int \fBTcl_ObjCmdProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
         Tcl_Obj *const \fIobjv\fR[]);
@@ -175,7 +175,7 @@ result that match the type \fBTcl_CmdDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
@@ -217,11 +217,11 @@ A \fBTcl_CmdInfo\fR structure has the following fields:
 typedef struct Tcl_CmdInfo {
     int \fIisNativeObjectProc\fR;
     Tcl_ObjCmdProc *\fIobjProc\fR;
-    ClientData \fIobjClientData\fR;
+    void *\fIobjClientData\fR;
     Tcl_CmdProc *\fIproc\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
-    ClientData \fIdeleteData\fR;
+    void *\fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
 } \fBTcl_CmdInfo\fR;
 .CE
@@ -247,7 +247,7 @@ otherwise, this is a compatibility procedure
 registered by \fBTcl_CreateObjCommand\fR
 that simply calls the command's
 value-based procedure after converting its string arguments to Tcl values.
-The field \fIdeleteData\fR is the ClientData value
+The field \fIdeleteData\fR is the clientData value
 to pass to \fIdeleteProc\fR;  it is normally the same as
 \fIclientData\fR but may be set independently using the
 \fBTcl_SetCommandInfo\fR procedure.
@@ -261,7 +261,7 @@ from \fBTcl_CreateObjCommand\fR in place of the command name.  If the
 and fills in the structure designated by \fIinfoPtr\fR.
 .PP
 \fBTcl_SetCommandInfo\fR is used to modify the procedures and
-ClientData values associated with a command.
+clientData values associated with a command.
 Its \fIcmdName\fR argument is the name of a command in \fIinterp\fR.
 \fIcmdName\fR may include \fB::\fR namespace qualifiers
 to identify a command in a particular namespace.
@@ -277,9 +277,9 @@ copies the information from \fI*infoPtr\fR to Tcl's internal structure
 for the command and returns 1.
 .PP
 Note that \fBTcl_SetCommandInfo\fR and
-\fBTcl_SetCommandInfoFromToken\fR both allow the ClientData for a
+\fBTcl_SetCommandInfoFromToken\fR both allow the clientData for a
 command's deletion procedure to be given a different value than the
-ClientData for its command procedure.
+clientData for its command procedure.
 .PP
 Note that neither \fBTcl_SetCommandInfo\fR nor
 \fBTcl_SetCommandInfoFromToken\fR will change a command's namespace.

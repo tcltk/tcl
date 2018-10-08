@@ -125,7 +125,7 @@ ENV_FLAGS =
 
 # To enable memory debugging, call configure with --enable-symbols=mem
 # Warning: if you enable memory debugging, you must do it *everywhere*,
-# including all the code that calls Tcl, and you must use ckalloc and ckfree
+# including all the code that calls Tcl, and you must use Tcl_Alloc and Tcl_Free
 # everywhere instead of malloc and free.
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@

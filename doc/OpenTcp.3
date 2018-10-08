@@ -50,12 +50,12 @@ If nonzero, the client socket is connected asynchronously to the server.
 .AP "unsigned int" flags in
 ORed combination of \fBTCL_TCPSERVER\fR flags that specify additional
 informations about the socket being created.
-.AP ClientData sock in
+.AP void *sock in
 Platform-specific handle for client TCP socket.
 .AP Tcl_TcpAcceptProc *proc in
 Pointer to a procedure to invoke each time a new connection is
 accepted via the socket.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -127,7 +127,7 @@ the channel. \fIProc\fR must match the following prototype:
 .PP
 .CS
 typedef void \fBTcl_TcpAcceptProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Channel \fIchannel\fR,
         char *\fIhostName\fR,
         int \fIport\fR);

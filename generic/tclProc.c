@@ -228,11 +228,11 @@ Tcl_ProcObjCmd(
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
 		int isNew;
 		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = Tcl_Alloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -260,9 +260,9 @@ Tcl_ProcObjCmd(
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
 			cfOldPtr->data.eval.path = NULL;
 		    }
-		    ckfree(cfOldPtr->line);
+		    Tcl_Free(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
-		    ckfree(cfOldPtr);
+		    Tcl_Free(cfOldPtr);
 		}
 		Tcl_SetHashValue(hePtr, cfPtr);
 	    }
@@ -305,7 +305,7 @@ Tcl_ProcObjCmd(
     }
 
     if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
-	int numBytes;
+	size_t numBytes;
 
 	procArgs +=4;
 	while (*procArgs != '\0') {
@@ -319,7 +319,8 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetString(objv[3]);
+	numBytes = objv[3]->length;
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -371,7 +372,8 @@ TclCreateProc(
     Interp *iPtr = (Interp *) interp;
 
     register Proc *procPtr;
-    int i, result, numArgs, plen;
+    int i, result, numArgs;
+    size_t plen;
     const char *bytes, *argname, *argnamei;
     char argnamelast;
     register CompiledLocal *localPtr = NULL;
@@ -412,7 +414,7 @@ TclCreateProc(
 	 */
 
 	if (Tcl_IsShared(bodyPtr)) {
-	    int length;
+	    size_t length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
 	    bytes = TclGetStringFromObj(bodyPtr, &length);
@@ -435,7 +437,7 @@ TclCreateProc(
 
 	Tcl_IncrRefCount(bodyPtr);
 
-	procPtr = ckalloc(sizeof(Proc));
+	procPtr = Tcl_Alloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
@@ -505,7 +507,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
+	argname = TclGetStringFromObj(fieldValues[0], &plen);
 	nameLength = Tcl_NumUtfChars(argname, plen);
 	if (fieldCount == 2) {
 	    const char * value = TclGetString(fieldValues[1]);
@@ -603,7 +605,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = ckalloc(TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = Tcl_Alloc(TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -649,9 +651,9 @@ TclCreateProc(
 		Tcl_DecrRefCount(defPtr);
 	    }
 
-	    ckfree(localPtr);
+	    Tcl_Free(localPtr);
 	}
-	ckfree(procPtr);
+	Tcl_Free(procPtr);
     }
     return TCL_ERROR;
 }
@@ -1162,7 +1164,7 @@ InitResolvedLocals(
 	    if (localPtr->resolveInfo->deleteProc) {
 		localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
 	    } else {
-		ckfree(localPtr->resolveInfo);
+		Tcl_Free(localPtr->resolveInfo);
 	    }
 	    localPtr->resolveInfo = NULL;
 	}
@@ -1248,7 +1250,7 @@ TclFreeLocalCache(
 	    TclReleaseLiteral(interp, objPtr);
 	}
     }
-    ckfree(localCachePtr);
+    Tcl_Free(localCachePtr);
 }
 
 static void
@@ -1272,7 +1274,7 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = ckalloc(sizeof(LocalCache)
+    localCachePtr = Tcl_Alloc(sizeof(LocalCache)
 	    + (localCt - 1) * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
@@ -1952,10 +1954,10 @@ TclProcCompileProc(
 		    if (toFree->resolveInfo->deleteProc) {
 			toFree->resolveInfo->deleteProc(toFree->resolveInfo);
 		    } else {
-			ckfree(toFree->resolveInfo);
+			Tcl_Free(toFree->resolveInfo);
 		    }
 		}
-		ckfree(toFree);
+		Tcl_Free(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
@@ -2016,13 +2018,14 @@ MakeProcError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    int overflow, limit = 60, nameLen;
+    unsigned int overflow, limit = 60;
+    size_t nameLen;
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
-	    (overflow ? limit : nameLen), procName,
+	    (int)(overflow ? limit :nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -2097,7 +2100,7 @@ TclProcCleanupProc(
 	    if (resVarInfo->deleteProc) {
 		resVarInfo->deleteProc(resVarInfo);
 	    } else {
-		ckfree(resVarInfo);
+		Tcl_Free(resVarInfo);
 	    }
 	}
 
@@ -2105,10 +2108,10 @@ TclProcCleanupProc(
 	    defPtr = localPtr->defValuePtr;
 	    Tcl_DecrRefCount(defPtr);
 	}
-	ckfree(localPtr);
+	Tcl_Free(localPtr);
 	localPtr = nextPtr;
     }
-    ckfree(procPtr);
+    Tcl_Free(procPtr);
 
     /*
      * TIP #280: Release the location data associated with this Proc
@@ -2132,9 +2135,9 @@ TclProcCleanupProc(
 	    Tcl_DecrRefCount(cfPtr->data.eval.path);
 	    cfPtr->data.eval.path = NULL;
 	}
-	ckfree(cfPtr->line);
+	Tcl_Free(cfPtr->line);
 	cfPtr->line = NULL;
-	ckfree(cfPtr);
+	Tcl_Free(cfPtr);
     }
     Tcl_DeleteHashEntry(hePtr);
 }
@@ -2468,12 +2471,12 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		cfPtr = ckalloc(sizeof(CmdFrame));
+		cfPtr = Tcl_Alloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2673,13 +2676,14 @@ MakeLambdaError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    int overflow, limit = 60, nameLen;
+    unsigned int overflow, limit = 60;
+    size_t nameLen;
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
-	    (overflow ? limit : nameLen), procName,
+	    (int)(overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 

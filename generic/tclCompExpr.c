@@ -501,16 +501,16 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
-static void		ConvertTreeToTokens(const char *start, int numBytes,
+static void		ConvertTreeToTokens(const char *start, size_t numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
-			    int numBytes, OpNode **opTreePtr,
+			    size_t numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
 			    Tcl_Parse *parsePtr, int parseOnly);
-static int		ParseLexeme(const char *start, int numBytes,
+static size_t		ParseLexeme(const char *start, size_t numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
 /*
@@ -536,7 +536,7 @@ static int		ParseLexeme(const char *start, int numBytes,
  * Side effects:
  *	Memory will be allocated. If TCL_OK is returned, the caller must clean
  *	up the returned data structures. The (OpNode *) value written to
- *	opTreePtr should be passed to ckfree() and the parsePtr argument
+ *	opTreePtr should be passed to Tcl_Free() and the parsePtr argument
  *	should be passed to Tcl_FreeParse(). The elements appended to the
  *	litList and funcList will automatically be freed whenever the refcount
  *	on those lists indicates they can be freed.
@@ -548,7 +548,7 @@ static int
 ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. */
+    size_t numBytes,		/* Number of bytes in string. */
     OpNode **opTreePtr,		/* Points to space where a pointer to the
 				 * allocated OpNode tree should go. */
     Tcl_Obj *litList,		/* List to append literals to. */
@@ -571,7 +571,7 @@ ParseExpr(
 				 * no need for array growth and
 				 * reallocation. */
     unsigned int nodesUsed = 0;	/* Number of OpNodes filled. */
-    int scanned = 0;		/* Capture number of byte scanned by parsing
+    size_t scanned = 0;		/* Capture number of byte scanned by parsing
 				 * routines. */
     int lastParsed;		/* Stores info about what the lexeme parsed
 				 * the previous pass through the parsing loop
@@ -615,7 +615,7 @@ ParseExpr(
 				 * error in the expression. */
     int insertMark = 0;		/* A boolean controlling whether the "mark"
 				 * should be inserted. */
-    const int limit = 25;	/* Portions of the error message are
+    const unsigned limit = 25;	/* Portions of the error message are
 				 * constructed out of substrings of the
 				 * original expression. In order to keep the
 				 * error message readable, we impose this
@@ -623,7 +623,7 @@ ParseExpr(
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
-    nodes = attemptckalloc(nodesAvailable * sizeof(OpNode));
+    nodes = Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	errCode = "NOMEM";
@@ -667,7 +667,7 @@ ParseExpr(
 
 	    do {
 	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
+		newPtr = Tcl_AttemptRealloc(nodes, size * sizeof(OpNode));
 	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
@@ -702,12 +702,12 @@ ParseExpr(
 	    switch (lexeme) {
 	    case INVALID:
 		msg = Tcl_ObjPrintf("invalid character \"%.*s\"",
-			scanned, start);
+			(int)scanned, start);
 		errCode = "BADCHAR";
 		goto error;
 	    case INCOMPLETE:
 		msg = Tcl_ObjPrintf("incomplete operator \"%.*s\"",
-			scanned, start);
+			(int)scanned, start);
 		errCode = "PARTOP";
 		goto error;
 	    case BAREWORD:
@@ -736,16 +736,16 @@ ParseExpr(
 		} else {
 		    Tcl_DecrRefCount(literal);
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
-			    (scanned < limit) ? scanned : limit - 3, start,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3, start,
 			    (scanned < limit) ? "" : "...");
 		    post = Tcl_ObjPrintf(
 			    "should be \"$%.*s%s\" or \"{%.*s%s}\"",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    Tcl_AppendPrintfToObj(post, " or \"%.*s%s(...)\" or ...",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    errCode = "BAREWORD";
 		    if (start[0] == '0') {
@@ -1377,7 +1377,7 @@ ParseExpr(
      */
 
     if (nodes != NULL) {
-	ckfree(nodes);
+	Tcl_Free(nodes);
     }
 
     if (interp == NULL) {
@@ -1406,13 +1406,13 @@ ParseExpr(
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
-			? (int) (start - parsePtr->string) : limit - 3,
+			? (int) (start - parsePtr->string) : (int)limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
-		(scanned < limit) ? scanned : limit - 3, start,
+		(scanned < limit) ? (int)scanned : (int)limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? (int) (parsePtr->end - start) - scanned : limit-3,
+			? (int) (parsePtr->end - start) - (int)scanned : (int)limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 
@@ -1434,7 +1434,7 @@ ParseExpr(
 	numBytes = parsePtr->end - parsePtr->string;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing expression \"%.*s%s\")",
-		(numBytes < limit) ? numBytes : limit - 3,
+		(numBytes < limit) ? (int)numBytes : (int)limit - 3,
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
@@ -1471,7 +1471,7 @@ ParseExpr(
 static void
 ConvertTreeToTokens(
     const char *start,
-    int numBytes,
+    size_t numBytes,
     OpNode *nodes,
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
@@ -1819,7 +1819,7 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. If < 0, the
+    size_t numBytes,		/* Number of bytes in string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
@@ -1833,7 +1833,7 @@ Tcl_ParseExpr(
     Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
-    if (numBytes < 0) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = (start ? strlen(start) : 0);
     }
 
@@ -1853,7 +1853,7 @@ Tcl_ParseExpr(
 
     Tcl_FreeParse(exprParsePtr);
     TclStackFree(interp, exprParsePtr);
-    ckfree(opTree);
+    Tcl_Free(opTree);
     return code;
 }
 
@@ -1874,17 +1874,16 @@ Tcl_ParseExpr(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ParseLexeme(
     const char *start,		/* Start of lexeme to parse. */
-    int numBytes,		/* Number of bytes in string. */
+    size_t numBytes,		/* Number of bytes in string. */
     unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
 				 * storage. */
     Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
 				   storage, if non-NULL. */
 {
     const char *end;
-    int scanned;
     Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
@@ -2063,12 +2062,13 @@ ParseLexeme(
      */
 
     if (!TclIsBareword(*start) || *start == '_') {
+	size_t scanned;
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
-	    memcpy(utfBytes, start, (size_t) numBytes);
+	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
 	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
@@ -2112,7 +2112,7 @@ void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. */
+    size_t numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int optimize)		/* 0 for one-off expressions. */
 {
@@ -2150,7 +2150,7 @@ TclCompileExpr(
     TclStackFree(interp, parsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
-    ckfree(opTree);
+    Tcl_Free(opTree);
 }
 
 /*
