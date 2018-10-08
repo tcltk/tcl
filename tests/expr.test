@@ -416,12 +416,9 @@ test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test expr-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test expr-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-test expr-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+test expr-9.5 {CompileRelationalExpr: shift expr producing LONG_MIN} {
     expr {int(1<<63)}
-} -9223372036854775808
-test expr-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
-    expr {int(1<<31)}
-} -2147483648
+} 9223372036854775808
 test expr-9.6 {CompileRelationalExpr: error in shift expr} -body {
     expr x>>3
 } -returnCodes error -match glob -result *
@@ -1404,8 +1401,8 @@ test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
 test expr-24.2 {expr edge cases; shifting} {expr int(5)>>63} 0
 test expr-24.3 {expr edge cases; shifting} {expr wide(5)>>32} 0
 test expr-24.4 {expr edge cases; shifting} {expr wide(5)>>63} 0
-test expr-24.5 {expr edge cases; shifting} longIs32bit {expr int(5<<32)} 0
-test expr-24.6 {expr edge cases; shifting} longIs32bit {expr int(5<<63)} 0
+test expr-24.5 {expr edge cases; shifting} {expr int(5<<32)} 21474836480
+test expr-24.6 {expr edge cases; shifting} {expr int(5<<63)} 46116860184273879040
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
 test expr-24.8 {expr edge cases; shifting} {expr wide(10<<63)} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
@@ -5808,7 +5805,7 @@ test expr-32.9 {bignum regression} {
     expr {0%-(1+(1<<63))}
 } 0
 
-test expr-33.1 {parse largest long value} longIs32bit {
+test expr-33.1 {parse largest long value} {
     set max_long_str 2147483647
     set max_long_hex "0x7FFFFFFF "
 
@@ -5822,7 +5819,7 @@ test expr-33.1 {parse largest long value} longIs32bit {
         [expr {$max_long + 0}] \
         [expr {2147483647 + 0}] \
         [expr {$max_long == $max_long_hex}] \
-        [expr {int(2147483647 + 1) < 0}] \
+        [expr {int(2147483647 + 1) > 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
 test expr-33.2 {parse smallest long value} longIs32bit {
@@ -5842,7 +5839,7 @@ test expr-33.2 {parse smallest long value} longIs32bit {
         [expr {$min_long + 0}] \
         [expr {-2147483648 + 0}] \
         [expr {$min_long == $min_long_hex}] \
-        [expr {int(-2147483648 - 1) == 0x7FFFFFFF}] \
+        [expr {int(-2147483648 - 1) == -0x80000001}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
 test expr-33.3 {parse largest wide value} wideIs64bit {
@@ -5922,17 +5919,17 @@ test expr-34.11 {expr edge cases} {
 test expr-34.12 {expr edge cases} {
     expr {$min % -2}
 } {0}
-test expr-34.13 {expr edge cases} longIs32bit {
+test expr-34.13 {expr edge cases} {
     expr {int($min / -1)}
-} {-2147483648}
+} {2147483648}
 test expr-34.14 {expr edge cases} {
     expr {$min % -1}
 } {0}
-test expr-34.15 {expr edge cases} longIs32bit {
-    expr {int($min * -1)}
+test expr-34.15 {expr edge cases} {
+    expr {-int($min * -1)}
 } $min
-test expr-34.16 {expr edge cases} longIs32bit {
-    expr {int(-$min)}
+test expr-34.16 {expr edge cases} {
+    expr {-int(-$min)}
 } $min
 test expr-34.17 {expr edge cases} {
     expr {$min / 1}
@@ -6719,8 +6716,8 @@ test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -0x80000000
 } {This is a result: -2147483648}
 test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -0xffffffff
-} {This is a result: 1}
+    testexprlongobj -0x7fffffff
+} {This is a result: -2147483647}
 test expr-39.10 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
@@ -6745,8 +6742,8 @@ test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -2147483648.
 } {This is a result: -2147483648}
 test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -4294967295.
-} {This is a result: 1}
+    testexprlongobj -2147483648.
+} {This is a result: -2147483648}
 test expr-39.16 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \

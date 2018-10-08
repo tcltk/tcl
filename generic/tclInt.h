@@ -2432,16 +2432,16 @@ typedef struct List {
 #else
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= -(Tcl_WideInt)(ULONG_MAX) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(ULONG_MAX))	\
+	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(LONG_MIN) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX))	\
 	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 #endif
 
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= -(Tcl_WideInt)(UINT_MAX) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(UINT_MAX))	\
+	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(INT_MIN) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX))	\
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
@@ -2644,8 +2644,11 @@ typedef struct ProcessGlobalValue {
  *----------------------------------------------------------------------
  */
 
-#define TCL_NUMBER_LONG		1
-#define TCL_NUMBER_WIDE		2
+#define TCL_NUMBER_INT		2
+#if (TCL_MAJOR_VERSION < 9) && !defined(TCL_NO_DEPRECATED)
+#   define TCL_NUMBER_LONG		1 /* deprecated, not used any more */
+#   define TCL_NUMBER_WIDE		TCL_NUMBER_INT /* deprecated */
+#endif
 #define TCL_NUMBER_BIG		3
 #define TCL_NUMBER_DOUBLE	4
 #define TCL_NUMBER_NAN		5

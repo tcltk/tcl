@@ -2252,7 +2252,7 @@ Tcl_GetIntFromObj(
     if (TclGetLongFromObj(interp, objPtr, &l) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < -(long)UINT_MAX))) {
+    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent as non-long integer";
@@ -2360,7 +2360,7 @@ Tcl_GetLongFromObj(
 #else
 	if (objPtr->typePtr == &tclIntType) {
 	    /*
-	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
+	     * We return any integer in the range LONG_MIN to ULONG_MAX
 	     * converted to a long, ignoring overflow. The rule preserves
 	     * existing semantics for conversion of integers on input, but
 	     * avoids inadvertent demotion of wide integers to 32-bit ones in
@@ -2369,7 +2369,7 @@ Tcl_GetLongFromObj(
 
 	    Tcl_WideInt w = objPtr->internalRep.wideValue;
 
-	    if (w >= -(Tcl_WideInt)(ULONG_MAX)
+	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
 		*longPtr = (long) w;
 		return TCL_OK;
@@ -2407,11 +2407,16 @@ Tcl_GetLongFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*longPtr = - (long) value;
+			if (value <= 1 + (unsigned long)LONG_MAX) {    
+			    *longPtr = - (long) value;
+			    return TCL_OK;
+			}
 		    } else {
-			*longPtr = (long) value;
+			if (value <= (unsigned long)ULONG_MAX) {    
+			    *longPtr = (long) value;
+			    return TCL_OK;
+			}
 		    }
-		    return TCL_OK;
 		}
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -2646,11 +2651,16 @@ Tcl_GetWideIntFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			if (value <= -(Tcl_WideUInt)WIDE_MIN) {
+			    *wideIntPtr = - (Tcl_WideInt) value;
+			    return TCL_OK;
+			}
 		    } else {
-			*wideIntPtr = (Tcl_WideInt) value;
+			if (value <= (Tcl_WideUInt)WIDE_MAX) {
+			    *wideIntPtr = (Tcl_WideInt) value;
+			    return TCL_OK;
+			}
 		    }
-		    return TCL_OK;
 		}
 	    }
 	    if (interp != NULL) {
@@ -3190,7 +3200,7 @@ TclGetNumberFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    *typePtr = TCL_NUMBER_WIDE;
+	    *typePtr = TCL_NUMBER_INT;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
