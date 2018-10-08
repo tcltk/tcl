@@ -1624,10 +1624,6 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsGraph;
 	break;
     case STR_IS_INT:
-	if (TCL_OK == TclGetIntFromObj(NULL, objPtr, &i)) {
-	    break;
-	}
-	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
 		(objPtr->typePtr == &tclBignumType)) {
@@ -1675,7 +1671,6 @@ StringIsCmd(
 	    break;
 	}
 
-    failedIntParse:
 	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0) {
 	    if (strict) {
