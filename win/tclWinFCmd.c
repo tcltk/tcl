@@ -337,7 +337,7 @@ DoRenameFile(
 	     * character is either end-of-string or a directory separator
 	     */
 
-	    if ((strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString))==0)
+	    if ((strncmp(src, dst, Tcl_DStringLength(&srcString))==0)
 		    && (dst[Tcl_DStringLength(&srcString)] == '\\'
 		    || dst[Tcl_DStringLength(&srcString)] == '/'
 		    || dst[Tcl_DStringLength(&srcString)] == '\0')) {
@@ -1649,7 +1649,6 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    Tcl_DStringInit(&ds);
 	    tempString = TclGetString(tempPath);
 	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
 	    Tcl_DecrRefCount(tempPath);

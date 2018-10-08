@@ -230,6 +230,9 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
     return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
@@ -239,12 +242,15 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    if (len > 0) {
-	len /= 2;
-    } else if (len == -1) {
-	len = wcslen((wchar_t *)string);
-    }
     Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((wchar_t *)string);
+    } else {
+	len /= 2;
+    }
     return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
