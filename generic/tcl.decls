@@ -2346,6 +2346,21 @@ declare 635 {
 	    unsigned char *data, size_t datalen, int copy)
 }
 
+# TIP #481
+declare 636 {
+    int Tcl_GetValue(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    void *intPtr, int flags)
+}
+declare 637 {
+    char *Tcl_GetStringFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 638 {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 639 {
+    unsigned char *Tcl_GetByteArrayFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

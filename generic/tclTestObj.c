@@ -1171,7 +1171,8 @@ TeststringobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
-    int varIndex, option, i, length;
+    int varIndex, option;
+    size_t length, i;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
     String *strPtr;
@@ -1238,7 +1239,7 @@ TeststringobjCmd(
 	    if (Tcl_IsShared(varPtr[varIndex])) {
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
-	    for (i = 3;  i < objc;  i++) {
+	    for (i = 3;  i < (size_t)objc;  i++) {
 		strings[i-3] = Tcl_GetString(objv[i]);
 	    }
 	    for ( ; i < 12 + 3; i++) {

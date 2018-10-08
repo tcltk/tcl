@@ -1106,6 +1106,13 @@ typedef struct Tcl_DString {
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_READ_ONLY	0x80
+
+/*
+ * Types for Tcl_GetValue():
+ */
+
+#define TCL_TYPE_I(type) (0x100 | (int)sizeof(type)) /* signed integer */
+#define TCL_TYPE_D(type) (0x300 | (int)sizeof(type)) /* float/double/long double */
 
 /*
  *----------------------------------------------------------------------------

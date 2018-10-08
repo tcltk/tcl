@@ -1581,6 +1581,10 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
+    Tcl_GetValue, /* 636 */
+    Tcl_GetStringFromObj2, /* 637 */
+    Tcl_GetUnicodeFromObj2, /* 638 */
+    Tcl_GetByteArrayFromObj2, /* 639 */
 };
 
 /* !END!: Do not edit above this line. */

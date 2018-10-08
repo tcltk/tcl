@@ -1663,7 +1663,7 @@ Tcl_GetString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringFromObj --
+ * Tcl_GetStringFromObj/Tcl_GetStringFromObj2 --
  *
  *	Returns the string representation's byte array pointer and length for
  *	an object.
@@ -1683,6 +1683,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1721,6 +1722,50 @@ Tcl_GetStringFromObj(
     }
     return objPtr->bytes;
 }
+
+char *
+Tcl_GetStringFromObj2(
+    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
+				 * be returned. */
+    size_t *lengthPtr)	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
+{
+    if (objPtr->bytes == NULL) {
+	/*
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
+	 */
+
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes == NULL || objPtr->length < 0
+		|| objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep",
+		    objPtr->typePtr->name);
+	}
+    }
+    if (lengthPtr != NULL) {
+#if TK_MAJOR_VERSION > 8
+	*lengthPtr = objPtr->length;
+#else
+	*lengthPtr = (unsigned)objPtr->length;
+#endif
+    }
+    return objPtr->bytes;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2292,6 +2337,7 @@ Tcl_SetDoubleObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetDoubleFromObj
 int
 Tcl_GetDoubleFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2479,7 +2525,7 @@ Tcl_SetIntObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetIntFromObj --
+ * Tcl_GetIntFromObj/Tcl_GetValue --
  *
  *	Attempt to return an int from the Tcl object "objPtr". If the object
  *	is not already an int, an attempt will be made to convert it to one.
@@ -2501,7 +2547,8 @@ Tcl_SetIntObj(
  *
  *----------------------------------------------------------------------
  */
-
+ 
+#undef Tcl_GetIntFromObj
 int
 Tcl_GetIntFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2529,6 +2576,33 @@ Tcl_GetIntFromObj(
     return TCL_OK;
 #endif
 }
+
+int
+Tcl_GetValue(
+    Tcl_Interp *interp,        /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,           /* The object from which to get a int. */
+    void *ptr,                 /* Place to store resulting int. */
+    int flags)
+{
+    double value;
+    int result;
+    if (flags == TCL_TYPE_I(int)) {
+	return Tcl_GetIntFromObj(interp, objPtr, ptr);
+    }
+    if (flags == TCL_TYPE_I(Tcl_WideInt)) {
+	return Tcl_GetWideIntFromObj(interp, objPtr, ptr);
+    }
+    result = Tcl_GetDoubleFromObj(interp, objPtr, &value);
+    if (flags == TCL_TYPE_D(double)) {
+	*(double *)ptr = value;
+    } else if (flags == TCL_TYPE_D(float)) {
+	*(float *)ptr = (float) value;
+    } else {
+	*(long double *)ptr = (long double) value;
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

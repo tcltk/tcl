@@ -1728,9 +1728,9 @@ TestdoubledigitsObjCmd(ClientData unused,
     };
 
     const Tcl_ObjType* doubleType;
-    double d;
+    long double d;
     int status;
-    int ndigits;
+    size_t ndigits;
     int type;
     int decpt;
     int signum;
@@ -1747,16 +1747,18 @@ TestdoubledigitsObjCmd(ClientData unused,
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
 	if (objv[1]->typePtr == doubleType
-	    || TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	    && TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	    double d1;
 	    status = TCL_OK;
-	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
+	    memcpy(&d1, &(objv[1]->internalRep.doubleValue), sizeof(double));
+	    d = d1;
 	}
     }
     if (status != TCL_OK
 	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
 	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
 			       TCL_EXACT, &type) != TCL_OK) {
-	fprintf(stderr, "bad value? %g\n", d);
+	fprintf(stderr, "bad value? %Lg\n", d);
 	return TCL_ERROR;
     }
     type = types[type];
@@ -3082,7 +3084,7 @@ TestlinkCmd(
 	}
 	if (argv[6][0] != 0) {
 	    tmp = Tcl_NewStringObj(argv[6], -1);
-	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
 	    }
@@ -3140,7 +3142,7 @@ TestlinkCmd(
 	if (argv[15][0]) {
 	    Tcl_WideInt w;
 	    tmp = Tcl_NewStringObj(argv[15], -1);
-	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, tmp, &w) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
 	    }
@@ -3190,7 +3192,7 @@ TestlinkCmd(
 	}
 	if (argv[6][0] != 0) {
 	    tmp = Tcl_NewStringObj(argv[6], -1);
-	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
 	    }
@@ -3257,7 +3259,7 @@ TestlinkCmd(
 	if (argv[15][0]) {
 	    Tcl_WideInt w;
 	    tmp = Tcl_NewStringObj(argv[15], -1);
-	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, tmp, &w) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
 	    }
@@ -3385,7 +3387,7 @@ TestparserObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int length, dummy;
+    size_t length, dummy;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -3441,7 +3443,7 @@ TestexprparserObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int length, dummy;
+    size_t length, dummy;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -3728,7 +3730,7 @@ TestprintObjCmd(
     }
 
     if (objc > 1) {
-	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
+	Tcl_GetIntFromObj(interp, objv[2], &argv1);
     }
     argv2 = (size_t)argv1;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
