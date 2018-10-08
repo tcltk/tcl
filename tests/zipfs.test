@@ -239,6 +239,42 @@ test zipfs-2.13 {zipfs unmount} -constraints {zipfs zipfsencbuf} -body {
 
 catch {file delete -force $tmpdir}
 
+test zipfs-3.1 {zipfs in child interpreters} -constraints zipfs -setup {
+    set interp [interp create]
+} -body {
+    interp eval $interp {
+	zipfs ?
+    }
+} -returnCodes error -cleanup {
+    interp delete $interp
+} -result {unknown or ambiguous subcommand "?": must be canonical, exists, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
+test zipfs-3.2 {zipfs in child interpreters} -constraints zipfs -setup {
+    set interp [interp create]
+} -body {
+    interp eval $interp {
+	zipfs mkzip
+    }
+} -returnCodes error -cleanup {
+    interp delete $interp
+} -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
+test zipfs-3.3 {zipfs in child interpreters} -constraints zipfs -setup {
+    set safe [interp create -safe]
+} -body {
+    interp eval $safe {
+	zipfs ?
+    }
+} -returnCodes error -cleanup {
+    interp delete $safe
+} -result {unknown or ambiguous subcommand "?": must be canonical, exists, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
+test zipfs-3.4 {zipfs in child interpreters} -constraints zipfs -setup {
+    set safe [interp create -safe]
+} -body {
+    interp eval $safe {
+	zipfs mkzip
+    }
+} -returnCodes error -cleanup {
+    interp delete $safe
+} -result {not allowed to invoke subcommand mkzip of zipfs}
 
 ::tcltest::cleanupTests
 return

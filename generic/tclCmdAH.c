@@ -46,9 +46,6 @@ struct ForeachState {
 
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
-static int		BadEncodingSubcommand(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static int		EncodingConvertfromObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -84,7 +81,6 @@ static Tcl_NRPostProc	ForPostNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
 
-static Tcl_ObjCmdProc	BadFileSubcommand;
 static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
 static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
 static Tcl_ObjCmdProc FileAttrIsExecutableCmd;
@@ -399,120 +395,13 @@ TclInitEncodingCmd(
     static const EnsembleImplMap encodingImplMap[] = {
 	{"convertfrom", EncodingConvertfromObjCmd, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
 	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
-	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
     };
 
     return TclMakeEnsemble(interp, "encoding", encodingImplMap);
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * TclMakeEncodingCommandSafe --
- *
- *	This function hides the unsafe 'dirs' and 'system' subcommands of
- *	the "encoding" Tcl command ensemble. It must be called only from
- *	TclHideUnsafeCommands.
- *
- * Results:
- *	A standard Tcl result
- *
- * Side effects:
- *	Adds commands to the table of hidden commands.
- *
- *-----------------------------------------------------------------------------
- */
-
-int
-TclMakeEncodingCommandSafe(
-    Tcl_Interp* interp)		/* Tcl interpreter */
-{
-    static const struct {
-	const char *cmdName;
-	int unsafe;
-    } unsafeInfo[] = {
-	{"convertfrom", 0},
-	{"convertto",   0},
-	{"dirs",        1},
-	{"names",       0},
-	{"system",      0},
-	{NULL,          0}
-    };
-
-    int i;
-    Tcl_DString oldBuf, newBuf;
-
-    Tcl_DStringInit(&oldBuf);
-    TclDStringAppendLiteral(&oldBuf, "::tcl::encoding::");
-    Tcl_DStringInit(&newBuf);
-    TclDStringAppendLiteral(&newBuf, "tcl:encoding:");
-    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
-	if (unsafeInfo[i].unsafe) {
-	    const char *oldName, *newName;
-
-	    Tcl_DStringSetLength(&oldBuf, 17);
-	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
-	    Tcl_DStringSetLength(&newBuf, 13);
-	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
-	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
-		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
-		Tcl_Panic("problem making 'encoding %s' safe: %s",
-			unsafeInfo[i].cmdName,
-			Tcl_GetString(Tcl_GetObjResult(interp)));
-	    }
-	    Tcl_CreateObjCommand(interp, oldName, BadEncodingSubcommand,
-		    (ClientData) unsafeInfo[i].cmdName, NULL);
-	}
-    }
-    Tcl_DStringFree(&oldBuf);
-    Tcl_DStringFree(&newBuf);
-
-    /*
-     * Ugh. The [encoding] command is now actually safe, but it is assumed by
-     * scripts that it is not, which messes up security policies.
-     */
-
-    if (Tcl_HideCommand(interp, "encoding", "encoding") != TCL_OK) {
-	Tcl_Panic("problem making 'encoding' safe: %s",
-		Tcl_GetString(Tcl_GetObjResult(interp)));
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * BadEncodingSubcommand --
- *
- *	Command used to act as a backstop implementation when subcommands of
- *	"encoding" are unsafe (the real implementations of the subcommands are
- *	hidden). The clientData is always the full official subcommand name.
- *
- * Results:
- *	A standard Tcl result (always a TCL_ERROR).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-BadEncodingSubcommand(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *subcommandName = (const char *) clientData;
-
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "not allowed to invoke subcommand %s of encoding", subcommandName));
-    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
-    return TCL_ERROR;
 }
 
 /*
@@ -1037,178 +926,43 @@ TclInitFileCmd(
      */
 
     static const EnsembleImplMap initMap[] = {
-	{"atime",	FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"attributes",	TclFileAttrsCmd,	NULL, NULL, NULL, 0},
+	{"atime",	FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 1},
+	{"attributes",	TclFileAttrsCmd,	NULL, NULL, NULL, 1},
 	{"channels",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-	{"copy",	TclFileCopyCmd,		NULL, NULL, NULL, 0},
-	{"delete",	TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-	{"dirname",	PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"copy",	TclFileCopyCmd,		NULL, NULL, NULL, 1},
+	{"delete",	TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+	{"dirname",	PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"join",	PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
-	{"link",	TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-	{"lstat",	FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"mtime",	FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"mkdir",	TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-	{"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"owned",	FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"link",	TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 1},
+	{"lstat",	FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
+	{"mtime",	FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 1},
+	{"mkdir",	TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+	{"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"owned",	FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"pathtype",	PathTypeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"rename",	TclFileRenameCmd,	NULL, NULL, NULL, 0},
-	{"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"rename",	TclFileRenameCmd,	NULL, NULL, NULL, 1},
+	{"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"separator",	FilesystemSeparatorCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-	{"size",	FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"size",	FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"split",	PathSplitCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
 	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
-	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 0},
-	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
+	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
+	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "file", initMap);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclMakeFileCommandSafe --
- *
- *	This function hides the unsafe subcommands of the "file" Tcl command
- *	ensemble. It must only be called from TclHideUnsafeCommands.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Adds commands to the table of hidden commands.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclMakeFileCommandSafe(
-    Tcl_Interp *interp)
-{
-    static const struct {
-	const char *cmdName;
-	int unsafe;
-    } unsafeInfo[] = {
-	{"atime",	 1},
-	{"attributes",	 1},
-	{"channels",	 0},
-	{"copy",	 1},
-	{"delete",	 1},
-	{"dirname",	 1},
-	{"executable",	 1},
-	{"exists",	 1},
-	{"extension",	 1},
-	{"isdirectory",	 1},
-	{"isfile",	 1},
-	{"join",	 0},
-	{"link",	 1},
-	{"lstat",	 1},
-	{"mtime",	 1},
-	{"mkdir",	 1},
-	{"nativename",	 1},
-	{"normalize",	 1},
-	{"owned",	 1},
-	{"pathtype",	 0},
-	{"readable",	 1},
-	{"readlink",	 1},
-	{"rename",	 1},
-	{"rootname",	 1},
-	{"separator",	 0},
-	{"size",	 1},
-	{"split",	 0},
-	{"stat",	 1},
-	{"system",	 0},
-	{"tail",	 1},
-	{"tempfile",	 1},
-	{"type",	 1},
-	{"volumes",	 1},
-	{"writable",	 1},
-	{NULL, 0}
-    };
-    int i;
-    Tcl_DString oldBuf, newBuf;
-
-    Tcl_DStringInit(&oldBuf);
-    TclDStringAppendLiteral(&oldBuf, "::tcl::file::");
-    Tcl_DStringInit(&newBuf);
-    TclDStringAppendLiteral(&newBuf, "tcl:file:");
-    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
-	if (unsafeInfo[i].unsafe) {
-	    const char *oldName, *newName;
-
-	    Tcl_DStringSetLength(&oldBuf, 13);
-	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
-	    Tcl_DStringSetLength(&newBuf, 9);
-	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
-	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
-		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
-		Tcl_Panic("problem making 'file %s' safe: %s",
-			unsafeInfo[i].cmdName,
-			Tcl_GetString(Tcl_GetObjResult(interp)));
-	    }
-	    Tcl_CreateObjCommand(interp, oldName, BadFileSubcommand,
-		    (ClientData) unsafeInfo[i].cmdName, NULL);
-	}
-    }
-    Tcl_DStringFree(&oldBuf);
-    Tcl_DStringFree(&newBuf);
-
-    /*
-     * Ugh. The [file] command is now actually safe, but it is assumed by
-     * scripts that it is not, which messes up security policies. [Bug
-     * 3211758]
-     */
-
-    if (Tcl_HideCommand(interp, "file", "file") != TCL_OK) {
-	Tcl_Panic("problem making 'file' safe: %s",
-		Tcl_GetString(Tcl_GetObjResult(interp)));
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * BadFileSubcommand --
- *
- *	Command used to act as a backstop implementation when subcommands of
- *	"file" are unsafe (the real implementations of the subcommands are
- *	hidden). The clientData is always the full official subcommand name.
- *
- * Results:
- *	A standard Tcl result (always a TCL_ERROR).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-BadFileSubcommand(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *subcommandName = (const char *) clientData;
-
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "not allowed to invoke subcommand %s of file", subcommandName));
-    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
-    return TCL_ERROR;
 }
 
 /*

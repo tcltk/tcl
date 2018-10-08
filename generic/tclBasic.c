@@ -93,6 +93,7 @@ TCL_DECLARE_MUTEX(commandTypeLock);
  * Static functions in this file:
  */
 
+static Tcl_ObjCmdProc   BadEnsembleSubcommand;
 static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 			    const char *oldName, const char *newName,
 			    int flags);
@@ -191,6 +192,24 @@ typedef struct {
  * it for it. Defined in tclInt.h. */
 
 /*
+ * The following struct states that the command it talks about (a subcommand
+ * of one of Tcl's built-in ensembles) is unsafe and must be hidden when an
+ * interpreter is made safe. (TclHideUnsafeCommands accesses an array of these
+ * structs.) Alas, we can't sensibly just store the information directly in
+ * the commands.
+ */
+
+typedef struct {
+    const char *ensembleNsName; /* The ensemble's name within ::tcl. NULL for
+                                 * the end of the list of commands to hide. */
+    const char *commandName;    /* The name of the command within the
+                                 * ensemble. If this is NULL, we want to also
+                                 * make the overall command be hidden, an ugly
+                                 * hack because it is expected by security
+                                 * policies in the wild. */
+} UnsafeEnsembleInfo;
+
+/*
  * The built-in commands, and the functions that implement them:
  */
 
@@ -285,6 +304,69 @@ static const CmdInfo builtInCmds[] = {
     {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {NULL,		NULL,			NULL,			NULL,	0}
+};
+
+/*
+ * Information about which pieces of ensembles to hide when making an
+ * interpreter safe:
+ */
+
+static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
+    /* [encoding] has two unsafe commands. Assumed by older security policies
+     * to be overall unsafe; it isn't but... */
+    {"encoding", NULL},
+    {"encoding", "dirs"},
+    {"encoding", "system"},
+    /* [file] has MANY unsafe commands! Assumed by older security policies to
+     * be overall unsafe; it isn't but... */
+    {"file", NULL},
+    {"file", "atime"},
+    {"file", "attributes"},
+    {"file", "copy"},
+    {"file", "delete"},
+    {"file", "dirname"},
+    {"file", "executable"},
+    {"file", "exists"},
+    {"file", "extension"},
+    {"file", "isdirectory"},
+    {"file", "isfile"},
+    {"file", "link"},
+    {"file", "lstat"},
+    {"file", "mtime"},
+    {"file", "mkdir"},
+    {"file", "nativename"},
+    {"file", "normalize"},
+    {"file", "owned"},
+    {"file", "readable"},
+    {"file", "readlink"},
+    {"file", "rename"},
+    {"file", "rootname"},
+    {"file", "size"},
+    {"file", "stat"},
+    {"file", "tail"},
+    {"file", "tempfile"},
+    {"file", "type"},
+    {"file", "volumes"},
+    {"file", "writable"},
+    /* [info] has two unsafe commands */
+    {"info", "cmdtype"},
+    {"info", "nameofexecutable"},
+    /* [tcl::process] has ONLY unsafe commands! */
+    {"process", "list"},
+    {"process", "status"},
+    {"process", "purge"},
+    {"process", "autopurge"},
+    /* [zipfs] has MANY unsafe commands! */
+    {"zipfs", "lmkimg"},
+    {"zipfs", "lmkzip"},
+    {"zipfs", "mkimg"},
+    {"zipfs", "mkkey"},
+    {"zipfs", "mkzip"},
+    {"zipfs", "mount"},
+    {"zipfs", "mount_data"},
+    {"zipfs", "tcl_library"},
+    {"zipfs", "unmount"},
+    {NULL, NULL}
 };
 
 /*
@@ -1094,6 +1176,7 @@ TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     register const CmdInfo *cmdInfoPtr;
+    register const UnsafeEnsembleInfo *unsafePtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -1103,9 +1186,80 @@ TclHideUnsafeCommands(
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
-    TclMakeEncodingCommandSafe(interp); /* Ugh! */
-    TclMakeFileCommandSafe(interp);     /* Ugh! */
+
+    for (unsafePtr = unsafeEnsembleCommands;
+            unsafePtr->ensembleNsName; unsafePtr++) {
+        if (unsafePtr->commandName) {
+            /*
+             * Hide an ensemble subcommand.
+             */
+
+            Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s",
+                    unsafePtr->ensembleNsName, unsafePtr->commandName);
+            Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
+                    unsafePtr->ensembleNsName, unsafePtr->commandName);
+
+            if (TclRenameCommand(interp, TclGetString(cmdName),
+                        "___tmp") != TCL_OK
+                    || Tcl_HideCommand(interp, "___tmp",
+                            TclGetString(hideName)) != TCL_OK) {
+                Tcl_Panic("problem making '%s %s' safe: %s",
+                        unsafePtr->ensembleNsName, unsafePtr->commandName,
+                        Tcl_GetString(Tcl_GetObjResult(interp)));
+            }
+            Tcl_CreateObjCommand(interp, TclGetString(cmdName),
+                    BadEnsembleSubcommand, (ClientData) unsafePtr, NULL);
+            TclDecrRefCount(cmdName);
+            TclDecrRefCount(hideName);
+        } else {
+            /*
+             * Hide an ensemble main command (for compatibility).
+             */
+
+            if (Tcl_HideCommand(interp, unsafePtr->ensembleNsName,
+                    unsafePtr->ensembleNsName) != TCL_OK) {
+                Tcl_Panic("problem making '%s' safe: %s",
+                        unsafePtr->ensembleNsName,
+                        Tcl_GetString(Tcl_GetObjResult(interp)));
+            }
+        }
+    }
+
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEnsembleSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	ensembles are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is description of what was hidden.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadEnsembleSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const UnsafeEnsembleInfo *infoPtr = clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+            "not allowed to invoke subcommand %s of %s",
+            infoPtr->commandName, infoPtr->ensembleNsName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
 }
 
 /*

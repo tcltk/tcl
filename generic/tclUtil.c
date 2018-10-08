@@ -3998,7 +3998,7 @@ TclGetProcessGlobalValue(
 	    ckfree(pgvPtr->value);
 	    pgvPtr->value = ckalloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
-		    (size_t) Tcl_DStringLength(&newValue) + 1);
+		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
 	    pgvPtr->encoding = current;

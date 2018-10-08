@@ -451,9 +451,9 @@ Tcl_UtfToUniCharDString(
 	if (Tcl_UtfCharComplete(p, end-p)) {
 	    p += TclUtfToUniChar(p, &ch);
 	} else if ((unsigned)((UCHAR(*p)-0x80)) < (unsigned) 0x20) {
-	    ch = (Tcl_UniChar) cp1252[UCHAR(*p)-0x80];
+	    ch = (Tcl_UniChar) cp1252[UCHAR(*p++)-0x80];
 	} else {
-	    ch = UCHAR(*p);
+	    ch = UCHAR(*p++);
 	}
 	*w++ = ch;
     }
@@ -783,8 +783,8 @@ Tcl_UniCharAtIndex(
  *
  *	Returns a pointer to the specified character (not byte) position in
  *	the UTF-8 string. If TCL_UTF_MAX <= 4, characters > U+FFFF count as
- *      2 positions, but then the pointer should never be placed between
- *      the two positions.
+ *	2 positions, but then the pointer should never be placed between
+ *	the two positions.
  *
  * Results:
  *	As above.
