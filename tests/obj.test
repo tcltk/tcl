@@ -560,7 +560,7 @@ test obj-33.2 {integer overflow on input} {longIs32bit wideIs64bit} {
 test obj-33.3 {integer overflow on input} {
     set x 0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
-} {0 4294967296}
+} {1 4294967296}
 test obj-33.4 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x -0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
@@ -576,7 +576,7 @@ test obj-33.6 {integer overflow on input} {longIs32bit wideIs64bit} {
 test obj-33.7 {integer overflow on input} {
     set x -0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
-} {0 -4294967296}
+} {1 -4294967296}
 
 test obj-34.1 {mp_iseven} testobj {
     set result ""

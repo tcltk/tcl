@@ -126,7 +126,6 @@ static Tcl_ObjCmdProc	ExprBinaryFunc;
 static Tcl_ObjCmdProc	ExprBoolFunc;
 static Tcl_ObjCmdProc	ExprCeilFunc;
 static Tcl_ObjCmdProc	ExprDoubleFunc;
-static Tcl_ObjCmdProc	ExprEntierFunc;
 static Tcl_ObjCmdProc	ExprFloorFunc;
 static Tcl_ObjCmdProc	ExprIntFunc;
 static Tcl_ObjCmdProc	ExprIsqrtFunc;
@@ -409,7 +408,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "cos",	ExprUnaryFunc,	(ClientData) cos	},
     { "cosh",	ExprUnaryFunc,	(ClientData) cosh	},
     { "double",	ExprDoubleFunc,	NULL			},
-    { "entier",	ExprEntierFunc,	NULL			},
+    { "entier",	ExprIntFunc,	NULL			},
     { "exp",	ExprUnaryFunc,	(ClientData) exp	},
     { "floor",	ExprFloorFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
@@ -6774,7 +6773,7 @@ Tcl_ExprLongObj(
 	resultPtr = Tcl_NewBignumObj(&big);
 	/* FALLTHROUGH */
     }
-    case TCL_NUMBER_WIDE:
+    case TCL_NUMBER_INT:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
 	break;
@@ -7750,7 +7749,7 @@ ExprAbsFunc(
 	return TCL_ERROR;
     }
 
-    if (type == TCL_NUMBER_WIDE) {
+    if (type == TCL_NUMBER_INT) {
 	Tcl_WideInt l = *((const Tcl_WideInt *) ptr);
 
 	if (l > (Tcl_WideInt)0) {
@@ -7871,7 +7870,7 @@ ExprDoubleFunc(
 }
 
 static int
-ExprEntierFunc(
+ExprIntFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
@@ -7927,25 +7926,6 @@ ExprEntierFunc(
 }
 
 static int
-ExprIntFunc(
-    ClientData clientData,	/* Ignored. */
-    Tcl_Interp *interp,		/* The interpreter in which to execute the
-				 * function. */
-    int objc,			/* Actual parameter count. */
-    Tcl_Obj *const *objv)	/* Actual parameter vector. */
-{
-    Tcl_WideInt wResult;
-    Tcl_Obj *objPtr;
-    if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    objPtr = Tcl_GetObjResult(interp);
-    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)wResult));
-    return TCL_OK;
-}
-
-static int
 ExprWideFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
@@ -7955,7 +7935,7 @@ ExprWideFunc(
 {
     Tcl_WideInt wResult;
 
-    if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
+    if (ExprIntFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
