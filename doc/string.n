@@ -12,7 +12,7 @@
 .SH NAME
 string \- Manipulate strings
 .SH SYNOPSIS
-\fBstring \fIoption arg \fR?\fIarg ...?\fR
+\fBstring \fIoption arg \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
