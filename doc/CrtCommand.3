@@ -25,7 +25,7 @@ Name of command.
 .AP Tcl_CmdProc *proc in
 Implementation of new command:  \fIproc\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
-.AP ClientData clientData in
+.AP voie *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in
 Procedure to call before \fIcmdName\fR is deleted from the interpreter;
@@ -75,7 +75,7 @@ and it returns NULL.
 .PP
 .CS
 typedef int \fBTcl_CmdProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIargc\fR,
         const char *\fIargv\fR[]);
@@ -131,7 +131,7 @@ result that match the type \fBTcl_CmdDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR

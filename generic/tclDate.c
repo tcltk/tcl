@@ -185,8 +185,8 @@ typedef struct DateInfo {
     int dateDigitCount;
 } DateInfo;
 
-#define YYMALLOC	ckalloc
-#define YYFREE(x)	(ckfree((void*) (x)))
+#define YYMALLOC	Tcl_Alloc
+#define YYFREE(x)	(Tcl_Free((void*) (x)))
 
 #define yyDSTmode	(info->dateDSTmode)
 #define yyDayOrdinal	(info->dateDayOrdinal)
@@ -1348,7 +1348,7 @@ yyparse (info)
 int yychar;
 
 /* The semantic value of the look-ahead symbol.  */
-YYSTYPE yylval;
+YYSTYPE yylval = {0};
 
 /* Number of syntax errors so far.  */
 int yynerrs;

@@ -699,6 +699,17 @@ VC_MANIFEST_EMBED_EXE
 VC_MANIFEST_EMBED_DLL
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
+INSTALL_MSGS
+INSTALL_LIBRARIES
+TCL_ZIP_FILE
+ZIPFS_BUILD
+ZIP_INSTALL_OBJS
+ZIP_PROG_VFSSEARCH
+ZIP_PROG_OPTIONS
+ZIP_PROG
+TCLSH_PROG
+EXEEXT_FOR_BUILD
+CC_FOR_BUILD
 ZLIB_OBJS
 ZLIB_LIBS
 ZLIB_DLL_FILE
@@ -706,8 +717,9 @@ CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
 DL_LIBS
+WINE
 CYGPATH
-TCL_THREADS
+SHARED_BUILD
 SET_MAKE
 RC
 RANLIB
@@ -759,14 +771,15 @@ PACKAGE_VERSION
 PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
-SHELL'
+SHELL
+OBJEXT_FOR_BUILD'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-enable_threads
 with_encoding
 enable_shared
 enable_64bit
+enable_zipfs
 enable_symbols
 enable_embedded_manifest
 '
@@ -1386,9 +1399,9 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-threads        build with threads (default: on)
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
+  --enable-zipfs          build with Zipfs support (default: on)
   --enable-symbols        build with debugging symbols (default: off)
   --enable-embedded-manifest
                           embed manifest if possible (default: yes)
@@ -3673,39 +3686,6 @@ fi
 
 
 
-#--------------------------------------------------------------------
-# Check whether --enable-threads or --disable-threads was given.
-#--------------------------------------------------------------------
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with threads" >&5
-$as_echo_n "checking for building with threads... " >&6; }
-    # Check whether --enable-threads was given.
-if test "${enable_threads+set}" = set; then :
-  enableval=$enable_threads; tcl_ok=$enableval
-else
-  tcl_ok=yes
-fi
-
-
-    if test "$tcl_ok" = "yes"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (default)" >&5
-$as_echo "yes (default)" >&6; }
-	TCL_THREADS=1
-	$as_echo "#define TCL_THREADS 1" >>confdefs.h
-
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	$as_echo "#define USE_THREAD_ALLOC 1" >>confdefs.h
-
-    else
-	TCL_THREADS=0
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-
-
-
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
 #------------------------------------------------------------------------
@@ -3765,6 +3745,7 @@ $as_echo "static" >&6; }
 $as_echo "#define STATIC_BUILD 1" >>confdefs.h
 
     fi
+
 
 
 #--------------------------------------------------------------------
@@ -3844,6 +3825,43 @@ CYGPATH=$ac_cv_prog_CYGPATH
 if test -n "$CYGPATH"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGPATH" >&5
 $as_echo "$CYGPATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    # Extract the first word of "wine", so it can be a program name with args.
+set dummy wine; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_WINE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$WINE"; then
+  ac_cv_prog_WINE="$WINE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_WINE="wine"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+WINE=$ac_cv_prog_WINE
+if test -n "$WINE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WINE" >&5
+$as_echo "$WINE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -4561,7 +4579,7 @@ if test "$tcl_ok" = "yes"; then :
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  if test "$do64bit" = "yes"; then :
+  if test "$do64bit" != "no"; then :
 
     if test "$GCC" == "yes"; then :
 
@@ -4694,6 +4712,223 @@ _ACEOF
     fi
 
 fi
+
+
+
+#--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+# Check whether --enable-zipfs was given.
+if test "${enable_zipfs+set}" = set; then :
+  enableval=$enable_zipfs; tcl_ok=$enableval
+else
+  tcl_ok=yes
+fi
+
+if test "$tcl_ok" = "yes" ; then
+    #
+    # Find a native compiler
+    #
+    # Put a plausible default for CC_FOR_BUILD in Makefile.
+if test -z "$CC_FOR_BUILD"; then
+  if test "x$cross_compiling" = "xno"; then
+    CC_FOR_BUILD='$(CC)'
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
+$as_echo_n "checking for gcc... " >&6; }
+    if ${ac_cv_path_cc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/gcc 2> /dev/null` \
+		    `ls -r $dir/gcc 2> /dev/null` ; do
+		if test x"$ac_cv_path_cc" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_cc=$j
+			break
+		    fi
+		fi
+	    done
+	done
+
+fi
+
+  fi
+fi
+
+# Also set EXEEXT_FOR_BUILD.
+if test "x$cross_compiling" = "xno"; then
+  EXEEXT_FOR_BUILD='$(EXEEXT)'
+  OBJEXT_FOR_BUILD='$(OBJEXT)'
+else
+  OBJEXT_FOR_BUILD='.no'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build system executable suffix" >&5
+$as_echo_n "checking for build system executable suffix... " >&6; }
+if ${bfd_cv_build_exeext+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  rm -f conftest*
+     echo 'int main () { return 0; }' > conftest.c
+     bfd_cv_build_exeext=
+     ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+     for file in conftest.*; do
+       case $file in
+       *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+       *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+       esac
+     done
+     rm -f conftest*
+     test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $bfd_cv_build_exeext" >&5
+$as_echo "$bfd_cv_build_exeext" >&6; }
+  EXEEXT_FOR_BUILD=""
+  test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+fi
+
+    #
+    # Find a native zip implementation
+    #
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tclsh" >&5
+$as_echo_n "checking for tclsh... " >&6; }
+
+    if ${ac_cv_path_tclsh+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/tclsh[8-9]*.exe 2> /dev/null` \
+		    `ls -r $dir/tclsh* 2> /dev/null` ; do
+		if test x"$ac_cv_path_tclsh" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_tclsh=$j
+			break
+		    fi
+		fi
+	    done
+	done
+
+fi
+
+
+    if test -f "$ac_cv_path_tclsh" ; then
+	TCLSH_PROG="$ac_cv_path_tclsh"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $TCLSH_PROG" >&5
+$as_echo "$TCLSH_PROG" >&6; }
+    else
+	# It is not an error if an installed version of Tcl can't be located.
+	TCLSH_PROG=""
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: No tclsh found on PATH" >&5
+$as_echo "No tclsh found on PATH" >&6; }
+    fi
+
+
+
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
+$as_echo_n "checking for zip... " >&6; }
+    # If our native tclsh processes the "install" command line option
+    # we can use it to mint zip files
+    if $TCLSH_PROG install; then :
+
+      ZIP_PROG=${TCLSH_PROG}
+      ZIP_PROG_OPTIONS="install mkzip"
+      ZIP_PROG_VFSSEARCH="."
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: Can use Native Tclsh for Zip encoding" >&5
+$as_echo "Can use Native Tclsh for Zip encoding" >&6; }
+
+fi
+
+    if test "x$ZIP_PROG" = "x" ; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
+$as_echo_n "checking for zip... " >&6; }
+        if ${ac_cv_path_zip+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+        for dir in $search_path ; do
+            for j in `ls -r $dir/zip 2> /dev/null` \
+                `ls -r $dir/zip 2> /dev/null` ; do
+            if test x"$ac_cv_path_zip" = x ; then
+                if test -f "$j" ; then
+                ac_cv_path_zip=$j
+                break
+                fi
+            fi
+            done
+        done
+
+fi
+
+        if test -f "$ac_cv_path_zip" ; then
+            ZIP_PROG="$ac_cv_path_zip "
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+$as_echo "$ZIP_PROG" >&6; }
+            ZIP_PROG_OPTIONS="-rq"
+            ZIP_PROG_VFSSEARCH="."
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
+$as_echo "Found INFO Zip in environment" >&6; }
+            # Use standard arguments for zip
+        else
+            # It is not an error if an installed version of Zip can't be located.
+            # We can use the locally distributed minizip instead
+            ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+            ZIP_PROG_OPTIONS="-o -r"
+            ZIP_PROG_VFSSEARCH="."
+            ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH building minizip" >&5
+$as_echo "No zip found on PATH building minizip" >&6; }
+        fi
+    fi
+
+
+
+
+
+	ZIPFS_BUILD=1
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
+	ZIPFS_BUILD=0
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
+$as_echo_n "checking for building with zipfs... " >&6; }
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+
+$as_echo "#define ZIPFS_BUILD 2" >>confdefs.h
+
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+     else
+
+$as_echo "#define ZIPFS_BUILD 1" >>confdefs.h
+\
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+else
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+
+
+
+
 
 
 #--------------------------------------------------------------------

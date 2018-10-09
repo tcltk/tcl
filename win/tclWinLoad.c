@@ -170,7 +170,7 @@ TclpDlopen(
      * Succeded; package everything up for Tcl.
      */
 
-    handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr = Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = (ClientData) hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
@@ -255,7 +255,7 @@ UnloadFile(
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
 
     FreeLibrary(hInstance);
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*
@@ -416,7 +416,7 @@ InitDLLDirectoryName(void)
      */
 
   copyToGlobalBuffer:
-    dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
+    dllDirectoryName = Tcl_Alloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
     return TCL_OK;
 }

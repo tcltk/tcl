@@ -18,15 +18,6 @@
 #include <dde.h>
 #include <ddeml.h>
 
-#ifndef UNICODE
-#   undef CP_WINUNICODE
-#   define CP_WINUNICODE CP_WINANSI
-#   undef Tcl_WinTCharToUtf
-#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
-#   undef Tcl_WinUtfToTChar
-#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
-#endif
-
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES
@@ -397,9 +388,9 @@ DdeSetServerName(
      * We have found a unique name. Now add it to the registry.
      */
 
-    riPtr = ckalloc(sizeof(RegisteredInterp));
+    riPtr = Tcl_Alloc(sizeof(RegisteredInterp));
     riPtr->interp = interp;
-    riPtr->name = ckalloc((_tcslen(actualName) + 1) * sizeof(TCHAR));
+    riPtr->name = Tcl_Alloc((_tcslen(actualName) + 1) * sizeof(TCHAR));
     riPtr->nextPtr = tsdPtr->interpListPtr;
     riPtr->handlerPtr = handlerPtr;
     if (riPtr->handlerPtr != NULL) {
@@ -500,7 +491,7 @@ DeleteProc(
 	    prevPtr->nextPtr = searchPtr->nextPtr;
 	}
     }
-    ckfree(riPtr->name);
+    Tcl_Free(riPtr->name);
     if (riPtr->handlerPtr) {
 	Tcl_DecrRefCount(riPtr->handlerPtr);
     }
@@ -670,7 +661,7 @@ DdeServerProc(
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
 	    if (_tcsicmp(riPtr->name, utilString) == 0) {
-		convPtr = ckalloc(sizeof(Conversation));
+		convPtr = Tcl_Alloc(sizeof(Conversation));
 		convPtr->nextPtr = tsdPtr->currentConversations;
 		convPtr->returnPackagePtr = NULL;
 		convPtr->hConv = hConv;
@@ -700,7 +691,7 @@ DdeServerProc(
 		if (convPtr->returnPackagePtr != NULL) {
 		    Tcl_DecrRefCount(convPtr->returnPackagePtr);
 		}
-		ckfree(convPtr);
+		Tcl_Free(convPtr);
 		break;
 	    }
 	}
@@ -1432,11 +1423,7 @@ DdeObjCmd(
     Initialize();
 
     if (firstArg != 1) {
-#ifdef UNICODE
 	serviceName = Tcl_GetUnicodeFromObj(objv[firstArg], &length);
-#else
-	serviceName = Tcl_GetStringFromObj(objv[firstArg], &length);
-#endif
     } else {
 	length = 0;
     }
@@ -1449,11 +1436,7 @@ DdeObjCmd(
     }
 
     if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-#ifdef UNICODE
 	topicName = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 1], &length);
-#else
-	topicName = Tcl_GetStringFromObj(objv[firstArg + 1], &length);
-#endif
 	if (length == 0) {
 	    topicName = NULL;
 	} else {
@@ -1467,11 +1450,7 @@ DdeObjCmd(
 	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
-#ifdef UNICODE
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj((Tcl_UniChar *) serviceName, -1));
-#else
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
-#endif
 	} else {
 	    Tcl_ResetResult(interp);
 	}
@@ -1530,13 +1509,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1590,13 +1564,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 	BYTE *dataString;
 
 	if (length == 0) {
@@ -1813,11 +1782,11 @@ DdeObjCmd(
 
 		resultPtr = Tcl_NewObj();
 		length = DdeGetData(ddeData, NULL, 0, 0);
-		ddeDataString = ckalloc(length);
+		ddeDataString = Tcl_Alloc(length);
 		DdeGetData(ddeData, (BYTE *) ddeDataString, (DWORD) length, 0);
 		length = (length >> 1) - 1;
 		resultPtr = Tcl_NewUnicodeObj(ddeDataString, length);
-		ckfree(ddeDataString);
+		Tcl_Free(ddeDataString);
 
 		if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr) != TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);

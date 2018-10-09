@@ -168,12 +168,12 @@ Tcl_PutsObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_WriteObj(chan, string);
-    if (result < 0) {
+    if (result == -1) {
 	goto error;
     }
     if (newline != 0) {
 	result = Tcl_WriteChars(chan, "\n", 1);
-	if (result < 0) {
+	if (result == -1) {
 	    goto error;
 	}
     }
@@ -532,7 +532,7 @@ Tcl_SeekObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_Seek(chan, offset, mode);
-    if (result == Tcl_LongAsWide(-1)) {
+    if (result == -1) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -964,7 +964,7 @@ Tcl_ExecObjCmd(
 
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
-	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
+	if (Tcl_ReadChars(chan, resultPtr, -1, 0) == TCL_IO_FAILURE) {
 	    /*
 	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area
@@ -1165,7 +1165,7 @@ Tcl_OpenObjCmd(
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
-	ckfree(cmdArgv);
+	Tcl_Free(cmdArgv);
     }
     if (chan == NULL) {
 	return TCL_ERROR;
@@ -1214,7 +1214,7 @@ TcpAcceptCallbacksDeleteProc(
 	acceptCallbackPtr->interp = NULL;
     }
     Tcl_DeleteHashTable(hTblPtr);
-    ckfree(hTblPtr);
+    Tcl_Free(hTblPtr);
 }
 
 /*
@@ -1254,7 +1254,7 @@ RegisterTcpServerInterpCleanup(
     hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
 
     if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
@@ -1429,7 +1429,7 @@ TcpServerCloseProc(
 		acceptCallbackPtr);
     }
     Tcl_DecrRefCount(acceptCallbackPtr->script);
-    ckfree(acceptCallbackPtr);
+    Tcl_Free(acceptCallbackPtr);
 }
 
 /*
@@ -1625,7 +1625,7 @@ Tcl_SocketObjCmd(
     port = TclGetString(objv[a]);
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr = ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = Tcl_Alloc(sizeof(AcceptCallback));
 
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;
@@ -1635,7 +1635,7 @@ Tcl_SocketObjCmd(
 		AcceptCallbackProc, acceptCallbackPtr);
 	if (chan == NULL) {
 	    Tcl_DecrRefCount(script);
-	    ckfree(acceptCallbackPtr);
+	    Tcl_Free(acceptCallbackPtr);
 	    return TCL_ERROR;
 	}
 
@@ -1886,7 +1886,7 @@ ChanTruncateObjCmd(
 	 */
 
 	length = Tcl_Tell(chan);
-	if (length == Tcl_WideAsLong(-1)) {
+	if (length == -1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not determine current location in \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp)));

@@ -253,6 +253,9 @@ declare 70 {
 declare 71 {
     unsigned long TclBN_mp_get_long(const mp_int *a)
 }
+declare 72 {
+    unsigned long TclBN_mp_get_int(const mp_int *a)
+}
 
 # Local Variables:
 # mode: tcl

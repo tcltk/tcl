@@ -13,11 +13,6 @@
 #ifndef _TCLINTPLATDECLS
 #define _TCLINTPLATDECLS
 
-#ifdef _WIN32
-#   define Tcl_DirEntry void
-#   define DIR void
-#endif
-
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
@@ -113,7 +108,7 @@ EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 6 is reserved */
 /* Slot 7 is reserved */
 /* 8 */
-EXTERN int		TclpGetPid(Tcl_Pid pid);
+EXTERN size_t		TclpGetPid(Tcl_Pid pid);
 /* Slot 9 is reserved */
 /* Slot 10 is reserved */
 /* 11 */
@@ -143,7 +138,7 @@ EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 19 */
 EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 20 */
-EXTERN void		TclWinAddProcess(HANDLE hProcess, DWORD id);
+EXTERN void		TclWinAddProcess(HANDLE hProcess, size_t id);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
@@ -279,7 +274,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
     void (*reserved6)(void);
     void (*reserved7)(void);
-    int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
+    size_t (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     void (*reserved9)(void);
     void (*reserved10)(void);
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
@@ -291,7 +286,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (HANDLE hProcess, DWORD id); /* 20 */
+    void (*tclWinAddProcess) (HANDLE hProcess, size_t id); /* 20 */
     void (*reserved21)(void);
     TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
     void (*reserved23)(void);
@@ -508,7 +503,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #if !defined(_WIN32)
 #   undef TclpGetPid
-#   define TclpGetPid(pid) ((unsigned long) (pid))
+#   define TclpGetPid(pid) ((size_t) (pid))
 #endif
 
 #endif /* _TCLINTPLATDECLS */

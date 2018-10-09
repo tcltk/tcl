@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -34,15 +38,27 @@
 #undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
+#undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+
+#ifdef TCL_MEM_DEBUG
+#   define Tcl_Alloc TclpAlloc
+#   define Tcl_Free TclpFree
+#   define Tcl_Realloc TclpRealloc
+#   undef Tcl_AttemptAlloc
+#   define Tcl_AttemptAlloc TclpAlloc
+#   undef Tcl_AttemptRealloc
+#   define Tcl_AttemptRealloc TclpRealloc
+#endif
 
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
@@ -56,7 +72,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 static int
 TclpIsAtty(int fd)
@@ -86,52 +102,41 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-int
+size_t
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (size_t) pid;
 }
 
 char *
 Tcl_WinUtfToTChar(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
+    if (!string) {
+	return NULL;
+    }
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len == TCL_AUTO_LENGTH) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -144,7 +149,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -160,7 +165,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -193,54 +198,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 
 #endif /* __CYGWIN__ */
 
-#if defined(TCL_NO_DEPRECATED)
-#   undef Tcl_SetBooleanObj
-#   define Tcl_SetBooleanObj 0
-#   undef Tcl_PkgPresent
-#   define Tcl_PkgPresent 0
-#   undef Tcl_PkgProvide
-#   define Tcl_PkgProvide 0
-#   undef Tcl_PkgRequire
-#   define Tcl_PkgRequire 0
-#   undef Tcl_GetIndexFromObj
-#   define Tcl_GetIndexFromObj 0
-#   define Tcl_NewBooleanObj 0
-#   undef Tcl_DbNewBooleanObj
-#   define Tcl_DbNewBooleanObj 0
-#   undef Tcl_SetBooleanObj
-#   define Tcl_SetBooleanObj 0
-#   undef Tcl_SetVar
-#   define Tcl_SetVar 0
-#   undef Tcl_UnsetVar
-#   define Tcl_UnsetVar 0
-#   undef Tcl_GetVar
-#   define Tcl_GetVar 0
-#   undef Tcl_TraceVar
-#   define Tcl_TraceVar 0
-#   undef Tcl_UntraceVar
-#   define Tcl_UntraceVar 0
-#   undef Tcl_VarTraceInfo
-#   define Tcl_VarTraceInfo 0
-#   undef Tcl_UpVar
-#   define Tcl_UpVar 0
-#   undef Tcl_AddErrorInfo
-#   define Tcl_AddErrorInfo 0
-#   undef Tcl_AddObjErrorInfo
-#   define Tcl_AddObjErrorInfo 0
-#   undef Tcl_Eval
-#   define Tcl_Eval 0
-#   undef Tcl_GlobalEval
-#   define Tcl_GlobalEval 0
-#   undef Tcl_SaveResult
-#   define Tcl_SaveResult 0
-#   undef Tcl_RestoreResult
-#   define Tcl_RestoreResult 0
-#   undef Tcl_DiscardResult
-#   define Tcl_DiscardResult 0
-#   undef Tcl_SetResult
-#   define Tcl_SetResult 0
-#endif /* !TCL_NO_DEPRECATED */
-
 /*
  * WARNING: The contents of this file is automatically generated by the
  * tools/genStubs.tcl script. Any modifications to the function declarations
@@ -249,6 +206,15 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 
 MODULE_SCOPE const TclStubs tclStubs;
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
+
+#ifdef __GNUC__
+/*
+ * The rest of this file shouldn't warn about deprecated functions; they're
+ * there because we intend them to be so and know that this file is OK to
+ * touch those fields.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -706,6 +672,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_long_long, /* 69 */
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
+    TclBN_mp_get_int, /* 72 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -769,7 +736,7 @@ const TclStubs tclStubs = {
     Tcl_GetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
-    Tcl_GetIndexFromObj, /* 36 */
+    0, /* 36 */
     Tcl_GetInt, /* 37 */
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
@@ -799,8 +766,8 @@ const TclStubs tclStubs = {
     0, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    Tcl_AddErrorInfo, /* 66 */
-    Tcl_AddObjErrorInfo, /* 67 */
+    0, /* 66 */
+    0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */
     Tcl_AppendResult, /* 70 */
@@ -862,7 +829,7 @@ const TclStubs tclStubs = {
     Tcl_Eof, /* 126 */
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
-    Tcl_Eval, /* 129 */
+    0, /* 129 */
     Tcl_EvalFile, /* 130 */
     0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
@@ -916,9 +883,9 @@ const TclStubs tclStubs = {
     Tcl_GetSlave, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
-    Tcl_GetVar, /* 175 */
+    0, /* 175 */
     Tcl_GetVar2, /* 176 */
-    Tcl_GlobalEval, /* 177 */
+    0, /* 177 */
     0, /* 178 */
     Tcl_HideCommand, /* 179 */
     Tcl_Init, /* 180 */
@@ -973,12 +940,12 @@ const TclStubs tclStubs = {
     Tcl_SetMaxBlockTime, /* 229 */
     Tcl_SetPanicProc, /* 230 */
     Tcl_SetRecursionLimit, /* 231 */
-    Tcl_SetResult, /* 232 */
+    0, /* 232 */
     Tcl_SetServiceMode, /* 233 */
     Tcl_SetObjErrorCode, /* 234 */
     Tcl_SetObjResult, /* 235 */
     Tcl_SetStdChannel, /* 236 */
-    Tcl_SetVar, /* 237 */
+    0, /* 237 */
     Tcl_SetVar2, /* 238 */
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
@@ -988,21 +955,21 @@ const TclStubs tclStubs = {
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
     0, /* 246 */
-    Tcl_TraceVar, /* 247 */
+    0, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
     Tcl_Ungets, /* 250 */
     Tcl_UnlinkVar, /* 251 */
     Tcl_UnregisterChannel, /* 252 */
-    Tcl_UnsetVar, /* 253 */
+    0, /* 253 */
     Tcl_UnsetVar2, /* 254 */
-    Tcl_UntraceVar, /* 255 */
+    0, /* 255 */
     Tcl_UntraceVar2, /* 256 */
     Tcl_UpdateLinkedVar, /* 257 */
-    Tcl_UpVar, /* 258 */
+    0, /* 258 */
     Tcl_UpVar2, /* 259 */
     Tcl_VarEval, /* 260 */
-    Tcl_VarTraceInfo, /* 261 */
+    0, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */
     Tcl_WrongNumArgs, /* 264 */
@@ -1012,10 +979,10 @@ const TclStubs tclStubs = {
     0, /* 268 */
     Tcl_HashStats, /* 269 */
     Tcl_ParseVar, /* 270 */
-    Tcl_PkgPresent, /* 271 */
+    0, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
-    Tcl_PkgProvide, /* 273 */
-    Tcl_PkgRequire, /* 274 */
+    0, /* 273 */
+    0, /* 274 */
     0, /* 275 */
     0, /* 276 */
     Tcl_WaitPid, /* 277 */
@@ -1031,7 +998,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
     Tcl_DeleteThreadExitHandler, /* 289 */
-    Tcl_DiscardResult, /* 290 */
+    0, /* 290 */
     Tcl_EvalEx, /* 291 */
     Tcl_EvalObjv, /* 292 */
     Tcl_EvalObjEx, /* 293 */
@@ -1055,8 +1022,8 @@ const TclStubs tclStubs = {
     Tcl_ConditionWait, /* 311 */
     Tcl_NumUtfChars, /* 312 */
     Tcl_ReadChars, /* 313 */
-    Tcl_RestoreResult, /* 314 */
-    Tcl_SaveResult, /* 315 */
+    0, /* 314 */
+    0, /* 315 */
     Tcl_SetSystemEncoding, /* 316 */
     Tcl_SetVar2Ex, /* 317 */
     Tcl_ThreadAlert, /* 318 */
@@ -1123,7 +1090,7 @@ const TclStubs tclStubs = {
     Tcl_SetUnicodeObj, /* 379 */
     Tcl_GetCharLength, /* 380 */
     Tcl_GetUniChar, /* 381 */
-    Tcl_GetUnicode, /* 382 */
+    0, /* 382 */
     Tcl_GetRange, /* 383 */
     Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
@@ -1373,6 +1340,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_MountBuffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

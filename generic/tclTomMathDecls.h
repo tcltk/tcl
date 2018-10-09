@@ -31,11 +31,11 @@
 /* Define custom memory allocation for libtommath */
 
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
-#define TclBNAlloc(s) ((void*)ckalloc((size_t)(s)))
+#define TclBNAlloc(s) ((void*)Tcl_Alloc((size_t)(s)))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
-#define TclBNRealloc(x,s) ((void*)ckrealloc((char*)(x),(size_t)(s)))
+#define TclBNRealloc(x,s) ((void*)Tcl_Realloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
-#define TclBNFree(x) (ckfree((char*)(x)))
+#define TclBNFree(x) (Tcl_Free((char*)(x)))
 /* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
 /* unused - no macro */
 
@@ -98,7 +98,6 @@
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
-#define mp_s_rmap TclBNMpSRmap
 #define mp_set TclBN_mp_set
 #define mp_set_int TclBN_mp_set_int
 #define mp_set_long TclBN_mp_set_long
@@ -316,6 +315,8 @@ EXTERN Tcl_WideUInt	TclBN_mp_get_long_long(const mp_int *a);
 EXTERN int		TclBN_mp_set_long(mp_int *a, unsigned long i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_long(const mp_int *a);
+/* 72 */
+EXTERN unsigned long	TclBN_mp_get_int(const mp_int *a);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -393,6 +394,7 @@ typedef struct TclTomMathStubs {
     Tcl_WideUInt (*tclBN_mp_get_long_long) (const mp_int *a); /* 69 */
     int (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
     unsigned long (*tclBN_mp_get_long) (const mp_int *a); /* 71 */
+    unsigned long (*tclBN_mp_get_int) (const mp_int *a); /* 72 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -548,6 +550,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
 #define TclBN_mp_get_long \
 	(tclTomMathStubsPtr->tclBN_mp_get_long) /* 71 */
+#define TclBN_mp_get_int \
+	(tclTomMathStubsPtr->tclBN_mp_get_int) /* 72 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

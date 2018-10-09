@@ -30,7 +30,7 @@ MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
 MODULE_SCOPE int	TclFSEnsureEpochOk(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **fsPtrPtr);
 MODULE_SCOPE void	TclFSSetPathDetails(Tcl_Obj *pathPtr,
-			    const Tcl_Filesystem *fsPtr, ClientData clientData);
+			    const Tcl_Filesystem *fsPtr, void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclFSNormalizeAbsolutePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
 MODULE_SCOPE size_t	TclFSEpoch(void);

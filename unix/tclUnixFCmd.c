@@ -256,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && defined(TCL_THREADS) && \
+#if defined(__APPLE__) && TCL_THREADS && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*
@@ -369,13 +369,13 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = opendir(dst);			/* INTL: Native. */
+	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
@@ -385,11 +385,11 @@ DoRenameFile(
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			closedir(dirPtr);
+			TclOSclosedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		closedir(dirPtr);
+		TclOSclosedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -554,7 +554,7 @@ TclUnixCopyFile(
     int dontCopyAtts)		/* If flag set, don't copy attributes. */
 {
     int srcFd, dstFd;
-    unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
+    size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
     size_t nread;
 
@@ -610,7 +610,7 @@ TclUnixCopyFile(
     if (blockSize <= 0) {
 	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
-    buffer = ckalloc(blockSize);
+    buffer = Tcl_Alloc(blockSize);
     while (1) {
 	nread = (size_t) read(srcFd, buffer, blockSize);
 	if ((nread == (size_t) -1) || (nread == 0)) {
@@ -622,7 +622,7 @@ TclUnixCopyFile(
 	}
     }
 
-    ckfree(buffer);
+    Tcl_Free(buffer);
     close(srcFd);
     if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
 	unlink(dst);					/* INTL: Native. */
@@ -960,12 +960,12 @@ TraverseUnixTree(
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;
-    int result, sourceLen;
-    int targetLen;
+    int result;
+    size_t targetLen, sourceLen;
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    TclDIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -990,7 +990,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = opendir(source);				/* INTL: Native. */
+    dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -1002,7 +1002,7 @@ TraverseUnixTree(
     result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	closedir(dirPtr);
+	TclOSclosedir(dirPtr);
 	return result;
     }
 
@@ -1052,11 +1052,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    rewinddir(dirPtr);
+	    TclOSrewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    closedir(dirPtr);
+    TclOSclosedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added
@@ -2054,7 +2054,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    int newNormLen;
+	    size_t newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
@@ -2088,7 +2088,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
+	    Tcl_ExternalToUtfDString(NULL, normPath, newNormLen, &ds);
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
@@ -2290,19 +2290,20 @@ static WCHAR *
 winPathFromObj(
     Tcl_Obj *fileName)
 {
-    int size;
+    size_t size;
     const char *native =  Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 
     size = cygwin_conv_path(1, native, NULL, 0);
-    winPath = ckalloc(size);
+    winPath = Tcl_Alloc(size);
     cygwin_conv_path(1, native, winPath, size);
 
     return winPath;
 }
 
 static const int attributeArray[] = {
-    0x20, 0, 2, 0, 0, 1, 4};
+    0x20, 0, 2, 0, 0, 1, 4
+};
 
 /*
  *----------------------------------------------------------------------
@@ -2332,15 +2333,15 @@ GetUnixFileAttributes(
     WCHAR *winPath = winPathFromObj(fileName);
 
     fileAttributes = GetFileAttributesW(winPath);
-    ckfree(winPath);
+    Tcl_Free(winPath);
 
     if (fileAttributes == -1) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj((fileAttributes&attributeArray[objIndex])!=0);
-
+    *attributePtrPtr = Tcl_NewIntObj(
+	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
 
@@ -2379,7 +2380,7 @@ SetUnixFileAttributes(
     fileAttributes = old = GetFileAttributesW(winPath);
 
     if (fileAttributes == -1) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -2392,12 +2393,12 @@ SetUnixFileAttributes(
 
     if ((fileAttributes != old)
 	    && !SetFileAttributesW(winPath, fileAttributes)) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
 
-	ckfree(winPath);
+    Tcl_Free(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -2439,8 +2440,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
-
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags & UF_IMMUTABLE);
     return TCL_OK;
 }
 

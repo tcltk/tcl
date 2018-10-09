@@ -463,7 +463,7 @@ TestplatformChmod(
 	    goto done;
 	}
 
-	secDesc = ckalloc(secDescLen);
+	secDesc = Tcl_Alloc(secDescLen);
 	if (!GetFileSecurityA(nativePath, infoBits,
 		(PSECURITY_DESCRIPTOR) secDesc, secDescLen, &secDescLen2)
 		|| (secDescLen < secDescLen2)) {
@@ -475,7 +475,7 @@ TestplatformChmod(
      * Get the World SID.
      */
 
-    userSid = ckalloc(GetSidLengthRequired((UCHAR) 1));
+    userSid = Tcl_Alloc(GetSidLengthRequired((UCHAR) 1));
     InitializeSid(userSid, &userSidAuthority, (BYTE) 1);
     *(GetSidSubAuthority(userSid, 0)) = SECURITY_WORLD_RID;
 
@@ -501,7 +501,7 @@ TestplatformChmod(
 
     newAclSize = ACLSize.AclBytesInUse + sizeof(ACCESS_DENIED_ACE)
 	    + GetLengthSid(userSid) - sizeof(DWORD);
-    newAcl = ckalloc(newAclSize);
+    newAcl = Tcl_Alloc(newAclSize);
 
     /*
      * Initialize the new ACL.
@@ -576,16 +576,16 @@ TestplatformChmod(
 
   done:
     if (secDesc) {
-	ckfree(secDesc);
+	Tcl_Free(secDesc);
     }
     if (newAcl) {
-	ckfree(newAcl);
+	Tcl_Free(newAcl);
     }
     if (userSid) {
-	ckfree(userSid);
+	Tcl_Free(userSid);
     }
     if (userDomain) {
-	ckfree(userDomain);
+	Tcl_Free(userDomain);
     }
 
     if (res != 0) {

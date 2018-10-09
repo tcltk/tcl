@@ -13,7 +13,7 @@
  */
 
 #include "tclInt.h"
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
 
 /*
  * If range checking is enabled, an additional byte will be allocated to store
@@ -211,7 +211,7 @@ GetCache(void)
 
     cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
-	cachePtr = TclpSysAlloc(sizeof(Cache), 0);
+	cachePtr = TclpSysAlloc(sizeof(Cache));
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
@@ -299,9 +299,9 @@ TclFreeAllocCache(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -314,7 +314,7 @@ TclpAlloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if (reqSize > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -337,7 +337,7 @@ TclpAlloc(
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
-	blockPtr = TclpSysAlloc(size, 0);
+	blockPtr = TclpSysAlloc(size);
 	if (blockPtr != NULL) {
 	    cachePtr->totalAssigned += reqSize;
 	}
@@ -378,7 +378,7 @@ TclpAlloc(
 
 void
 TclpFree(
-    char *ptr)
+    void *ptr)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -435,10 +435,10 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *ptr,
-    unsigned int reqSize)
+    void *ptr,
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -456,7 +456,7 @@ TclpRealloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if ((reqSize) > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -563,7 +563,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
+	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
@@ -1032,7 +1032,7 @@ GetBlocks(
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-	    blockPtr = TclpSysAlloc(size, 0);
+	    blockPtr = TclpSysAlloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }

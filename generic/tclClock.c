@@ -275,9 +275,9 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = ckalloc(sizeof(ClockClientData));
+    data = Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
-    data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
+    data->literals = Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
 	data->literals[i] = Tcl_NewStringObj(literals[i], -1);
 	Tcl_IncrRefCount(data->literals[i]);
@@ -2039,13 +2039,13 @@ TzsetIfNecessary(void)
 	    || strcmp(tzIsNow, tzWas) != 0)) {
 	tzset();
 	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
-	    ckfree(tzWas);
+	    Tcl_Free(tzWas);
 	}
-	tzWas = ckalloc(strlen(tzIsNow) + 1);
+	tzWas = Tcl_Alloc(strlen(tzIsNow) + 1);
 	strcpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != INT2PTR(-1)) Tcl_Free(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);
@@ -2076,8 +2076,8 @@ ClockDeleteCmdProc(
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}
-	ckfree(data->literals);
-	ckfree(data);
+	Tcl_Free(data->literals);
+	Tcl_Free(data);
     }
 }
 

@@ -1,6 +1,6 @@
 .\"
 .\" Copyright (c) 2008 by Kevin B. Kenny.
-.\" Copyright (c) 2018 by Nathan Coulter. 
+.\" Copyright (c) 2018 by Nathan Coulter.
 .\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -49,7 +49,7 @@ in the same way as the \fIproc\fR argument to \fBTcl_CreateObjCommand\fR(3)
 (\fIq.v.\fR).
 .AP Tcl_ObjCmdProc *nreProc in
 Called instead of \fIproc\fR when a trampoline is already in use.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value passed to \fIproc\fR, \fInreProc\fR, \fIdeleteProc\fR
 and \fIobjProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in/out
@@ -72,10 +72,10 @@ Pointer to an unshared Tcl_Obj where the result of the evaluation is stored if
 the return code is TCL_OK.
 .AP Tcl_NRPostProc *postProcPtr in
 A function to push.
-.AP ClientData data0 in
-.AP ClientData data1 in
-.AP ClientData data2 in
-.AP ClientData data3 in
+.AP void *data0 in
+.AP void *data1 in
+.AP void *data2 in
+.AP void *data3 in
 \fIdata0\fR through \fIdata3\fR are four one-word values that will be passed
 to the function designated by \fIpostProcPtr\fR when it is invoked.
 .BE
@@ -130,7 +130,7 @@ a message as the interpreter's result.
 .CS
 typedef int
 \fBTcl_NRPostProc\fR(
-        \fBClientData\fR \fIdata\fR[],
+        \fBvoid *\fR \fIdata\fR[],
         \fBTcl_Interp\fR *\fIinterp\fR,
         int \fIresult\fR);
 .CE
@@ -146,7 +146,7 @@ stack, to evalute a script:
 .CS
 int
 \fITheCmdOldObjProc\fR(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -177,7 +177,7 @@ call \fITheCmdNRObjProc\fR:
 .CS
 int
 \fITheCmdOldObjProc\fR(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -190,7 +190,7 @@ int
 .CS
 int
 \fITheCmdNRObjProc\fR
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -211,7 +211,7 @@ int
 .CS
 int
 \fITheCmdNRPostProc\fR(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
