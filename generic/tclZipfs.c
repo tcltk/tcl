@@ -2974,7 +2974,7 @@ ZipFSExistsObjCmd(
      * Prepend ZIPFS_VOLUME to filename, eliding the final /
      */
 
-    filename = Tcl_GetStringFromObj(objv[1], 0);
+    filename = Tcl_GetString(objv[1]);
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN - 1);
     Tcl_DStringAppend(&ds, filename, -1);
@@ -3021,7 +3021,7 @@ ZipFSInfoObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
 	return TCL_ERROR;
     }
-    filename = Tcl_GetStringFromObj(objv[1], 0);
+    filename = Tcl_GetString(objv[1]);
     ReadLock();
     z = ZipFSLookup(filename);
     if (z) {
@@ -3092,7 +3092,7 @@ ZipFSListObjCmd(
 	    return TCL_ERROR;
 	}
     } else if (objc == 2) {
-	pattern = Tcl_GetStringFromObj(objv[1], 0);
+	pattern = Tcl_GetString(objv[1]);
     }
     ReadLock();
     if (pattern) {
