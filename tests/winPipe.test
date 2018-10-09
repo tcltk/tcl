@@ -323,9 +323,8 @@ proc _testExecArgs {single args} {
 	lappend cmds [list $path(echoArgs.bat)]
     } else {
 	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
-	    file mkdir [file join [temporaryDirectory] test(Dir)Check]
 	    set path(echoArgs2.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
-		"test(Dir)Check/echo(Cmd)Test Args & Batch.bat"]
+		"[makeDirectory test(Dir)Check]/echo(Cmd)Test Args & Batch.bat"]
 	}
 	lappend cmds [list $path(echoArgs2.bat)]
     }
@@ -603,9 +602,9 @@ removeFile more
 removeFile stdout
 removeFile stderr
 removeFile nothing
-removeFile echoArgs.tcl
-removeFile echoArgs.bat
-file delete -force [file join [temporaryDirectory] test(Dir)Check]
+if {[info exists path(echoArgs.tcl)]} { removeFile echoArgs.tcl }
+if {[info exists path(echoArgs.bat)]} { removeFile echoArgs.bat }
+if {[info exists path(echoArgs2.bat)]} { removeDirectory test(Dir)Check }
 ::tcltest::cleanupTests
 return
 
