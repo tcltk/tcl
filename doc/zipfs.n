@@ -63,7 +63,7 @@ Note: querying the mount point gives the start of the zip data as the offset
 in (4), which can be used to truncate the zip information from an executable.
 .RE
 .TP
-\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? \fI?pattern?\fR
+\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
 .
 Return a list of all files in the mounted zipfs, or just those matching
 \fIpattern\fR (optionally controlled by the option parameters).  The order of
