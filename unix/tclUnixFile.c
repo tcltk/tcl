@@ -259,7 +259,7 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	DIR *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
 	size_t dirLength, nativeDirLen;
@@ -310,7 +310,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = opendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -388,7 +388,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	closedir(d);
+	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);
@@ -720,7 +720,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = ckalloc(strlen(buffer) + 1);
+	char *newCd = Tcl_Alloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -1116,8 +1116,8 @@ TclNativeCreateNativeRep(
 	return NULL;
     }
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
+    nativePathPtr = Tcl_Alloc(len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;
@@ -1157,7 +1157,7 @@ TclNativeDupInternalRep(
 
     len = (strlen((const char*) clientData) + 1) * sizeof(char);
 
-    copy = ckalloc(len);
+    copy = Tcl_Alloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }

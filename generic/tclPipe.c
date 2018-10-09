@@ -188,7 +188,7 @@ Tcl_DetachPids(
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
-	detPtr = ckalloc(sizeof(Detached));
+	detPtr = Tcl_Alloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -238,7 +238,7 @@ Tcl_ReapDetachedProcs(void)
 	} else {
 	    prevPtr->nextPtr = detPtr->nextPtr;
 	}
-	ckfree(detPtr);
+	Tcl_Free(detPtr);
 	detPtr = nextPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
@@ -336,7 +336,7 @@ TclCleanupChildren(
 	    Tcl_Seek(errorChan, (Tcl_WideInt)0, SEEK_SET);
 	    objPtr = Tcl_NewObj();
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
-	    if (count < 0) {
+	    if (count == -1) {
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
 		Tcl_ResetResult(interp);
@@ -824,7 +824,7 @@ TclCreatePipeline(
      */
 
     Tcl_ReapDetachedProcs();
-    pidPtr = ckalloc(cmdCount * sizeof(Tcl_Pid));
+    pidPtr = Tcl_Alloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;
 
@@ -978,7 +978,7 @@ TclCreatePipeline(
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }
 	}
-	ckfree(pidPtr);
+	Tcl_Free(pidPtr);
     }
     numPids = -1;
     goto cleanup;
@@ -1082,7 +1082,7 @@ Tcl_OpenCommandChannel(
   error:
     if (numPids > 0) {
 	Tcl_DetachPids(numPids, pidPtr);
-	ckfree(pidPtr);
+	Tcl_Free(pidPtr);
     }
     if (inPipe != NULL) {
 	TclpCloseFile(inPipe);

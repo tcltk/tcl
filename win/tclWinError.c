@@ -381,7 +381,7 @@ TclWinConvertError(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -391,7 +391,7 @@ tclWinDebugPanic(
 
     if (IsDebuggerPresent()) {
 	WCHAR msgString[TCL_MAX_WARN_LEN];
-	char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+	char buf[TCL_MAX_WARN_LEN * 3];
 
 	vsnprintf(buf, sizeof(buf), format, argList);
 	msgString[TCL_MAX_WARN_LEN-1] = L'\0';
@@ -406,16 +406,13 @@ tclWinDebugPanic(
 	}
 	OutputDebugStringW(msgString);
     } else {
+	if (!isatty(fileno(stderr))) {
+	    fprintf(stderr, "\xef\xbb\xbf");
+	}
 	vfprintf(stderr, format, argList);
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
-#   if defined(__GNUC__)
-    __builtin_trap();
-#   else
-    DebugBreak();
-#   endif
-    abort();
 }
 #endif
 /*

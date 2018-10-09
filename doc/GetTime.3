@@ -27,13 +27,13 @@ Pointer to handler function replacing \fBTcl_GetTime\fR's access to the OS.
 .AP Tcl_ScaleTimeProc scaleProc in
 Pointer to handler function for the conversion of time delays in the
 virtual domain to real-time.
-.AP ClientData clientData in
+.AP void *clientData in
 Value passed through to the two handler functions.
 .AP Tcl_GetTimeProc *getProcPtr out
 Pointer to place the currently registered get handler function into.
 .AP Tcl_ScaleTimeProc *scaleProcPtr out
 Pointer to place the currently registered scale handler function into.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Pointer to place the currently registered pass-through value into.
 .BE
 .SH DESCRIPTION
@@ -83,10 +83,10 @@ The signatures of the handler functions are as follows:
 .CS
 typedef void \fBTcl_GetTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 typedef void \fBTcl_ScaleTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fItimebuf\fR fields contain the time to manipulate, and the

@@ -403,9 +403,9 @@ TclCompileArraySetCmd(
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = ckalloc(sizeof(ForeachInfo));
+    infoPtr = Tcl_Alloc(sizeof(ForeachInfo));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) + sizeof(int));
+    infoPtr->varLists[0] = Tcl_Alloc(sizeof(ForeachVarList) + sizeof(int));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -701,8 +701,8 @@ TclCompileCatchCmd(
     /* Stack at this point on both branches: result returnCode */
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileCatchCmd: bad jump distance %" TCL_Z_MODIFIER "d",
+		(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
     /*
@@ -1096,7 +1096,8 @@ TclCompileDictIncrCmd(
 
     if (parsePtr->numWords == 4) {
 	const char *word;
-	int numBytes, code;
+	size_t numBytes;
+	int code;
 	Tcl_Token *incrTokenPtr;
 	Tcl_Obj *intObj;
 
@@ -1563,7 +1564,7 @@ CompileDictEachCmd(
     }
     Tcl_DStringFree(&buffer);
     if (numVars != 2) {
-	ckfree(argv);
+	Tcl_Free(argv);
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -1571,7 +1572,7 @@ CompileDictEachCmd(
     keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
     nameChars = strlen(argv[1]);
     valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
-    ckfree(argv);
+    Tcl_Free(argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -1779,7 +1780,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
+    duiPtr = Tcl_Alloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
     duiPtr->length = numVars;
     keyTokenPtrs = TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
@@ -1862,8 +1863,8 @@ TclCompileDictUpdateCmd(
     TclEmitInvoke(envPtr,INST_RETURN_STK);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %" TCL_Z_MODIFIER "d",
+		CurrentOffset(envPtr) - jumpFixup.codeOffset);
     }
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
@@ -1873,7 +1874,7 @@ TclCompileDictUpdateCmd(
      */
 
   failedUpdateInfoAssembly:
-    ckfree(duiPtr);
+    Tcl_Free(duiPtr);
     TclStackFree(interp, keyTokenPtrs);
   issueFallback:
     return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -2224,8 +2225,8 @@ TclCompileDictWithCmd(
      */
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %" TCL_Z_MODIFIER "d",
+		CurrentOffset(envPtr) - jumpFixup.codeOffset);
     }
     return TCL_OK;
 }
@@ -2262,7 +2263,7 @@ DupDictUpdateInfo(
 
     dui1Ptr = clientData;
     len = sizeof(DictUpdateInfo) + sizeof(int) * (dui1Ptr->length - 1);
-    dui2Ptr = ckalloc(len);
+    dui2Ptr = Tcl_Alloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
 }
@@ -2271,7 +2272,7 @@ static void
 FreeDictUpdateInfo(
     ClientData clientData)
 {
-    ckfree(clientData);
+    Tcl_Free(clientData);
 }
 
 static void
@@ -2282,7 +2283,7 @@ PrintDictUpdateInfo(
     unsigned int pcOffset)
 {
     DictUpdateInfo *duiPtr = clientData;
-    int i;
+    size_t i;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
@@ -2300,7 +2301,7 @@ DisassembleDictUpdateInfo(
     unsigned int pcOffset)
 {
     DictUpdateInfo *duiPtr = clientData;
-    int i;
+    size_t i;
     Tcl_Obj *variables = Tcl_NewObj();
 
     for (i=0 ; i<duiPtr->length ; i++) {
@@ -2715,7 +2716,7 @@ CompileEachloopCmd(
      */
 
     numLists = (numWords - 2)/2;
-    infoPtr = ckalloc(sizeof(ForeachInfo)
+    infoPtr = Tcl_Alloc(sizeof(ForeachInfo)
 	    + (numLists - 1) * sizeof(ForeachVarList *));
     infoPtr->numLists = 0;	/* Count this up as we go */
 
@@ -2749,7 +2750,7 @@ CompileEachloopCmd(
 	    goto done;
 	}
 
-	varListPtr = ckalloc(sizeof(ForeachVarList)
+	varListPtr = Tcl_Alloc(sizeof(ForeachVarList)
 		+ (numVars - 1) * sizeof(int));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
@@ -2758,11 +2759,11 @@ CompileEachloopCmd(
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
 	    const char *bytes;
-	    int numBytes, varIndex;
+	    int varIndex;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = TclGetStringFromObj(varNameObj, &numBytes);
-	    varIndex = LocalScalar(bytes, numBytes, envPtr);
+	    bytes = TclGetString(varNameObj);
+	    varIndex = LocalScalar(bytes, varNameObj->length, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
 		goto done;
@@ -2885,7 +2886,7 @@ DupForeachInfo(
     register ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
-    dupPtr = ckalloc(sizeof(ForeachInfo)
+    dupPtr = Tcl_Alloc(sizeof(ForeachInfo)
 	    + numLists * sizeof(ForeachVarList *));
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
@@ -2894,7 +2895,7 @@ DupForeachInfo(
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
-	dupListPtr = ckalloc(sizeof(ForeachVarList)
+	dupListPtr = Tcl_Alloc(sizeof(ForeachVarList)
 		+ numVars * sizeof(int));
 	dupListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
@@ -2936,9 +2937,9 @@ FreeForeachInfo(
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
-	ckfree(listPtr);
+	Tcl_Free(listPtr);
     }
-    ckfree(infoPtr);
+    Tcl_Free(infoPtr);
 }
 
 /*
@@ -3166,7 +3167,7 @@ TclCompileFormatCmd(
 	return TCL_ERROR;
     }
 
-    objv = ckalloc((parsePtr->numWords-2) * sizeof(Tcl_Obj *));
+    objv = Tcl_Alloc((parsePtr->numWords-2) * sizeof(Tcl_Obj *));
     for (i=0 ; i+2 < parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	objv[i] = Tcl_NewObj();
@@ -3186,7 +3187,7 @@ TclCompileFormatCmd(
     for (; --i>=0 ;) {
 	Tcl_DecrRefCount(objv[i]);
     }
-    ckfree(objv);
+    Tcl_Free(objv);
     Tcl_DecrRefCount(formatObj);
     if (tmpObj == NULL) {
 	TclCompileSyntaxError(interp, envPtr);
@@ -3216,7 +3217,7 @@ TclCompileFormatCmd(
     for (; i>=0 ; i--) {
 	Tcl_DecrRefCount(objv[i]);
     }
-    ckfree(objv);
+    Tcl_Free(objv);
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     tokenPtr = TokenAfter(tokenPtr);
     i = 0;
@@ -3358,7 +3359,7 @@ TclLocalScalarFromToken(
 int
 TclLocalScalar(
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     CompileEnv *envPtr)
 {
     Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
@@ -3409,9 +3410,10 @@ TclPushVarName(
 {
     register const char *p;
     const char *name, *elName;
-    register int i, n;
+    register size_t i, n;
     Tcl_Token *elemTokenPtr = NULL;
-    int nameChars, elNameChars, simpleVarName, localIndex;
+    size_t nameChars, elNameChars;
+    int simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 
     /*
@@ -3483,7 +3485,7 @@ TclPushVarName(
 	    }
 	}
 	if (simpleVarName) {
-	    int remainingChars;
+	    size_t remainingChars;
 
 	    /*
 	     * Check the last token: if it is just ')', do not count it.

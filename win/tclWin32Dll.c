@@ -255,8 +255,8 @@ TclWinEncodingsCleanup(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree(dlIter->volumeName);
-	ckfree(dlIter);
+	Tcl_Free(dlIter->volumeName);
+	Tcl_Free(dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -349,8 +349,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree(dlPtr2->volumeName);
-	    ckfree(dlPtr2);
+	    Tcl_Free(dlPtr2->volumeName);
+	    Tcl_Free(dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -385,7 +385,7 @@ TclWinDriveLetterForVolMountPoint(
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = ckalloc(sizeof(MountPointMap));
+		dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
@@ -411,7 +411,7 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = ckalloc(sizeof(MountPointMap));
+    dlPtr2 = Tcl_Alloc(sizeof(MountPointMap));
     dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
@@ -466,47 +466,36 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * strlen(). */
+    size_t len,			/* Source string length in bytes, or -1
+				 * for strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    TCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (TCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return wp;
+    if (!string) {
+	return NULL;
+    }
+    return Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
     const TCHAR *string,	/* Source string in Unicode. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * platform-specific string length. */
+    size_t len,			/* Source string length in bytes, or -1
+				 * for platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len == TCL_AUTO_LENGTH) {
+	len = wcslen(string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString(string, len, dsPtr);
 }
 
 /*
@@ -536,7 +525,7 @@ TclWinCPUID(
 
 #if defined(HAVE_INTRIN_H) && defined(_WIN64)
 
-    __cpuid(regsPtr, index);
+    __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
 #elif defined(__GNUC__)

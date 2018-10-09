@@ -29,7 +29,7 @@ a handler.
 .AP Tcl_FileProc *proc in
 Procedure to invoke whenever the file or device indicated
 by \fIfile\fR meets the conditions specified by \fImask\fR.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -51,7 +51,7 @@ type \fBTcl_FileProc\fR:
 .PP
 .CS
 typedef void \fBTcl_FileProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         int \fImask\fR);
 .CE
 .PP

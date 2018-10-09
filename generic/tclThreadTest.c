@@ -18,7 +18,7 @@
 #endif
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  * Each thread has an single instance of the following structure. There is one
  * instance of this structure per thread even if that thread contains multiple
@@ -174,7 +174,6 @@ TclThread_Init(
     Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -433,10 +432,10 @@ ThreadObjCmd(
 	Tcl_MutexLock(&threadMutex);
 	errorThreadId = Tcl_GetCurrentThread();
 	if (errorProcString) {
-	    ckfree(errorProcString);
+	    Tcl_Free(errorProcString);
 	}
 	proc = Tcl_GetString(objv[2]);
-	errorProcString = ckalloc(strlen(proc) + 1);
+	errorProcString = Tcl_Alloc(strlen(proc) + 1);
 	strcpy(errorProcString, proc);
 	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
@@ -596,7 +595,7 @@ NewTestThread(
      * eval'ing, for the case that we exit during evaluation
      */
 
-    threadEvalScript = ckalloc(strlen(ctrlPtr->script) + 1);
+    threadEvalScript = Tcl_Alloc(strlen(ctrlPtr->script) + 1);
     strcpy(threadEvalScript, ctrlPtr->script);
 
     Tcl_CreateThreadExitHandler(ThreadExitProc, threadEvalScript);
@@ -671,7 +670,7 @@ ThreadErrorProc(
 	argv[2] = errorInfo;
 	script = Tcl_Merge(3, argv);
 	ThreadSend(interp, errorThreadId, script, 0);
-	ckfree(script);
+	Tcl_Free(script);
     }
 }
 
@@ -841,13 +840,13 @@ ThreadSend(
      * Create the event for its event queue.
      */
 
-    threadEventPtr = ckalloc(sizeof(ThreadEvent));
-    threadEventPtr->script = ckalloc(strlen(script) + 1);
+    threadEventPtr = Tcl_Alloc(sizeof(ThreadEvent));
+    threadEventPtr->script = Tcl_Alloc(strlen(script) + 1);
     strcpy(threadEventPtr->script, script);
     if (!wait) {
 	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
-	resultPtr = ckalloc(sizeof(ThreadEventResult));
+	resultPtr = Tcl_Alloc(sizeof(ThreadEventResult));
 	threadEventPtr->resultPtr = resultPtr;
 
 	/*
@@ -919,19 +918,19 @@ ThreadSend(
     if (resultPtr->code != TCL_OK) {
 	if (resultPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, resultPtr->errorCode, NULL);
-	    ckfree(resultPtr->errorCode);
+	    Tcl_Free(resultPtr->errorCode);
 	}
 	if (resultPtr->errorInfo) {
 	    Tcl_AddErrorInfo(interp, resultPtr->errorInfo);
-	    ckfree(resultPtr->errorInfo);
+	    Tcl_Free(resultPtr->errorInfo);
 	}
     }
     Tcl_AppendResult(interp, resultPtr->result, NULL);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
-    ckfree(resultPtr->result);
-    ckfree(resultPtr);
+    Tcl_Free(resultPtr->result);
+    Tcl_Free(resultPtr);
 
     return code;
 }
@@ -1039,18 +1038,18 @@ ThreadEventProc(
 	}
 	result = Tcl_GetStringResult(interp);
     }
-    ckfree(threadEventPtr->script);
+    Tcl_Free(threadEventPtr->script);
     if (resultPtr) {
 	Tcl_MutexLock(&threadMutex);
 	resultPtr->code = code;
-	resultPtr->result = ckalloc(strlen(result) + 1);
+	resultPtr->result = Tcl_Alloc(strlen(result) + 1);
 	strcpy(resultPtr->result, result);
 	if (errorCode != NULL) {
-	    resultPtr->errorCode = ckalloc(strlen(errorCode) + 1);
+	    resultPtr->errorCode = Tcl_Alloc(strlen(errorCode) + 1);
 	    strcpy(resultPtr->errorCode, errorCode);
 	}
 	if (errorInfo != NULL) {
-	    resultPtr->errorInfo = ckalloc(strlen(errorInfo) + 1);
+	    resultPtr->errorInfo = Tcl_Alloc(strlen(errorInfo) + 1);
 	    strcpy(resultPtr->errorInfo, errorInfo);
 	}
 	Tcl_ConditionNotify(&resultPtr->done);
@@ -1085,7 +1084,7 @@ ThreadFreeProc(
     ClientData clientData)
 {
     if (clientData) {
-	ckfree(clientData);
+	Tcl_Free(clientData);
     }
 }
 
@@ -1113,7 +1112,7 @@ ThreadDeleteEvent(
     ClientData clientData)	/* dummy */
 {
     if (eventPtr->proc == ThreadEventProc) {
-	ckfree(((ThreadEvent *) eventPtr)->script);
+	Tcl_Free(((ThreadEvent *) eventPtr)->script);
 	return 1;
     }
 
@@ -1158,8 +1157,16 @@ ThreadExitProc(
 
     Tcl_MutexLock(&threadMutex);
 
+    if (self == errorThreadId) {
+	if (errorProcString) {	/* Extra safety */
+	    Tcl_Free(errorProcString);
+	    errorProcString = NULL;
+	}
+	errorThreadId = 0;
+    }
+
     if (threadEvalScript) {
-	ckfree(threadEvalScript);
+	Tcl_Free(threadEvalScript);
 	threadEvalScript = NULL;
     }
     Tcl_DeleteEvents((Tcl_EventDeleteProc *) ThreadDeleteEvent, NULL);
@@ -1182,7 +1189,7 @@ ThreadExitProc(
 	    }
 	    resultPtr->nextPtr = resultPtr->prevPtr = 0;
 	    resultPtr->eventPtr->resultPtr = NULL;
-	    ckfree(resultPtr);
+	    Tcl_Free(resultPtr);
 	} else if (resultPtr->dstThreadId == self) {
 	    /*
 	     * Dang. The target is going away. Unblock the caller. The result
@@ -1192,7 +1199,7 @@ ThreadExitProc(
 
 	    const char *msg = "target thread died";
 
-	    resultPtr->result = ckalloc(strlen(msg) + 1);
+	    resultPtr->result = Tcl_Alloc(strlen(msg) + 1);
 	    strcpy(resultPtr->result, msg);
 	    resultPtr->code = TCL_ERROR;
 	    Tcl_ConditionNotify(&resultPtr->done);

@@ -127,7 +127,7 @@ ClientData tclTimeClientData = NULL;
  *----------------------------------------------------------------------
  */
 
-unsigned long
+Tcl_WideUInt
 TclpGetSeconds(void)
 {
     Tcl_Time t;
@@ -155,7 +155,7 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+Tcl_WideUInt
 TclpGetClicks(void)
 {
     /*
@@ -168,7 +168,7 @@ TclpGetClicks(void)
 
     tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
 
-    retval = (now.sec * 1000000) + now.usec;
+    retval = ((Tcl_WideUInt) now.sec * 1000000) + now.usec;
     return retval;
 
 }

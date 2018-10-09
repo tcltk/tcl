@@ -57,11 +57,22 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
-typedef struct dirent64	Tcl_DirEntry;
+typedef struct dirent64		Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
 #else
-typedef struct dirent	Tcl_DirEntry;
+typedef struct dirent		Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#endif
+#ifdef HAVE_DIR64
+typedef DIR64			TclDIR;
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
+#else
+typedef DIR			TclDIR;
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -151,7 +162,7 @@ typedef off_t		Tcl_SeekOffset;
 #   include "../compat/unistd.h"
 #endif
 
-extern int TclUnixSetBlockingMode(int fd, int mode);
+MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #include <utime.h>
 
@@ -602,10 +613,8 @@ extern char **		environ;
 #	    undef HAVE_COPYFILE
 #	endif
 #	if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-#	    ifdef TCL_THREADS
-		/* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
-#		define NO_REALPATH 1
-#	    endif
+	    /* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
+#	    define NO_REALPATH 1
 #	    undef HAVE_LANGINFO
 #	endif
 #   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
@@ -666,9 +675,9 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpSysAlloc(size, isBin)	malloc((size_t)(size))
-#define TclpSysFree(ptr)		free((char *)(ptr))
-#define TclpSysRealloc(ptr, size)	realloc((char *)(ptr), (size_t)(size))
+#define TclpSysAlloc(size)	malloc(size)
+#define TclpSysFree(ptr)		free(ptr)
+#define TclpSysRealloc(ptr, size)	realloc(ptr, size)
 
 /*
  *---------------------------------------------------------------------------
@@ -678,7 +687,7 @@ typedef int socklen_t;
 
 #define TclpExit	exit
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
 #endif /* TCL_THREADS */
 
@@ -698,14 +707,14 @@ typedef int socklen_t;
 #include <pwd.h>
 #include <grp.h>
 
-extern struct passwd *	TclpGetPwNam(const char *name);
-extern struct group *	TclpGetGrNam(const char *name);
-extern struct passwd *	TclpGetPwUid(uid_t uid);
-extern struct group *	TclpGetGrGid(gid_t gid);
-extern struct hostent *	TclpGetHostByName(const char *name);
-extern struct hostent *	TclpGetHostByAddr(const char *addr,
+MODULE_SCOPE struct passwd *	TclpGetPwNam(const char *name);
+MODULE_SCOPE struct group *	TclpGetGrNam(const char *name);
+MODULE_SCOPE struct passwd *	TclpGetPwUid(uid_t uid);
+MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
+MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
+MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-extern void *TclpMakeTcpClientChannelMode(
+MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */
