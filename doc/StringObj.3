@@ -119,7 +119,7 @@ returned as a new value.
 Points to a value to manipulate.
 .AP Tcl_Obj *appendObjPtr in
 The value to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
-.AP int *lengthPtr out
+.AP size_t | int *lengthPtr out
 If non-NULL, the location where \fBTcl_GetStringFromObj\fR will store
 the length of a value's string representation.
 .AP "const char" *string in

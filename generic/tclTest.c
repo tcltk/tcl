@@ -1758,7 +1758,7 @@ TestdoubledigitsObjCmd(ClientData unused,
 	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
 	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
 			       TCL_EXACT, &type) != TCL_OK) {
-	fprintf(stderr, "bad value? %Lg\n", d);
+	fprintf(stderr, "bad value? %g\n", (double)d);
 	return TCL_ERROR;
     }
     type = types[type];

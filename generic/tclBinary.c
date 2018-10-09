@@ -268,9 +268,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    unsigned int used;		/* The number of bytes used in the byte
+    int used;			/* The number of bytes used in the byte
 				 * array. */
-    unsigned int allocated;	/* The amount of space actually allocated
+    int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
     unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
@@ -278,7 +278,7 @@ typedef struct ByteArray {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		(TclOffset(ByteArray, bytes) + (len))
+		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_BYTEARRAY(objPtr, baPtr) \
@@ -478,7 +478,11 @@ Tcl_GetByteArrayFromObj2(
     baPtr = GET_BYTEARRAY(objPtr);
 
     if (lengthPtr != NULL) {
+#if TCL_MAJOR_VERSION > 8
 	*lengthPtr = baPtr->used;
+#else
+	*lengthPtr = (unsigned)baPtr->used;
+#endif
     }
     return (unsigned char *) baPtr->bytes;
 }
@@ -521,7 +525,7 @@ Tcl_SetByteArrayLength(
     }
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
-    if ((size_t)length > byteArrayPtr->allocated) {
+    if (length > byteArrayPtr->allocated) {
 	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -739,7 +743,7 @@ TclAppendBytesToByteArray(
     int len)
 {
     ByteArray *byteArrayPtr;
-    size_t needed;
+    int needed;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -758,7 +762,7 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if ((size_t)len + byteArrayPtr->used > INT_MAX) {
+    if (len > INT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 

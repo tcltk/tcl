@@ -4049,6 +4049,8 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*dblPtr) == sizeof(double) ? tclStubsPtr->tcl_GetDoubleFromObj(interp, objPtr, (double *)dblPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, dblPtr, TCL_TYPE_D(*dblPtr)))
 #define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
 	(sizeof(*intPtr) == sizeof(int) ? tclStubsPtr->tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#define Tcl_GetUIntFromObj(interp, objPtr, intPtr) \
+	(tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_U(*intPtr)))
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetStringFromObj2(objPtr, (size_t *)sizePtr))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \

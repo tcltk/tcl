@@ -19,7 +19,7 @@ Tcl_Obj *
 \fBTcl_SetDoubleObj\fR(\fIobjPtr, doubleValue\fR)
 .sp
 int
-\fBTcl_GetDoubleFromObj\fR(\fIinterp, objPtr, doublePtr\fR)
+\fBTcl_GetDoubleFromObj\fR(\fIinterp, objPtr, ptr\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp doubleValue in/out
 .AP double doubleValue in
@@ -31,8 +31,8 @@ For \fBTcl_GetDoubleFromObj\fR, this refers to the value
 from which to retrieve a double value.
 .AP Tcl_Interp *interp in/out
 When non-NULL, an error message is left here when double value retrieval fails.
-.AP double *doublePtr out
-Points to place to store the double value obtained from \fIobjPtr\fR.
+.AP float|double *ptr out
+Points to place to store the float or double value obtained from \fIobjPtr\fR.
 .BE
 
 .SH DESCRIPTION

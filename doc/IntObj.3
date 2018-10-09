@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetUIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -32,7 +32,13 @@ int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
 .sp
 int
+\fBTcl_GetUIntFromObj\fR(\fIinterp, objPtr, uintPtr\fR)
+.sp
+int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
+.sp
+int
+\fBTcl_GetValue\fR(\fIinterp, objPtr, ptr, flags\fR)
 .sp
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
@@ -71,12 +77,16 @@ to retrieve an integral value.
 .AP Tcl_Interp *interp in/out
 When non-NULL, an error message is left here when integral value
 retrieval fails.
-.AP int *intPtr out
+.AP short|int|long|Tcl_WideInt *intPtr out
 Points to place to store the integer value retrieved from \fIobjPtr\fR.
+.AP unsigned short|int|long|Tcl_WideInt *uintPtr out
+Points to place to store the unsigned integer value retrieved from \fIobjPtr\fR.
 .AP long *longPtr out
 Points to place to store the long integer value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP short|int|long|Tcl_WideInt|float|double *ptr out
+Points to place to store the integer or float value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
 Points to a multi-precision integer structure declared by the LibTomMath
 library.
@@ -115,7 +125,7 @@ violates Tcl's copy-on-write policy.  Any existing string representation
 or internal representation in the unshared Tcl value will be freed
 as a consequence of setting the new value.
 .PP
-The \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
+The \fBTcl_GetIntFromObj\fR, \fBTcl_GetUIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
 \fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
 \fBTcl_TakeBignumFromObj\fR routines attempt to retrieve an integral
 value of the appropriate type from the Tcl value \fIobjPtr\fR.  If the

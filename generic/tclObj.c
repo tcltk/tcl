@@ -1757,7 +1757,7 @@ Tcl_GetStringFromObj2(
 	}
     }
     if (lengthPtr != NULL) {
-#if TK_MAJOR_VERSION > 8
+#if TCL_MAJOR_VERSION > 8
 	*lengthPtr = objPtr->length;
 #else
 	*lengthPtr = (unsigned)objPtr->length;
@@ -2587,18 +2587,46 @@ Tcl_GetValue(
     double value;
     int result;
     if (flags == TCL_TYPE_I(int)) {
-	return Tcl_GetIntFromObj(interp, objPtr, ptr);
+	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
+	if ((result == TCL_OK) && (objPtr->typePtr != &tclIntType)) {
+	    goto toolarge;
+	}
+	return result;
+    }
+    if (flags == TCL_TYPE_U(int)) {
+	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
+	if ((result == TCL_OK) && (objPtr->typePtr == &tclIntType)
+		&& (objPtr->internalRep.wideValue < 0)) {
+	    goto toolarge;
+	}
+	return result;
     }
     if (flags == TCL_TYPE_I(Tcl_WideInt)) {
-	return Tcl_GetWideIntFromObj(interp, objPtr, ptr);
+	return Tcl_GetIntFromObj(interp, objPtr, ptr);
+    }
+    if (flags == TCL_TYPE_U(Tcl_WideInt)) {
+	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
+	if ((result == TCL_OK) && (objPtr->internalRep.wideValue < 0)) {
+	toolarge:
+		if (interp != NULL) {
+		    const char *s = "integer value too large to represent";
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		}
+	    return TCL_ERROR;
+	}
+	return result;
     }
     result = Tcl_GetDoubleFromObj(interp, objPtr, &value);
     if (flags == TCL_TYPE_D(double)) {
 	*(double *)ptr = value;
     } else if (flags == TCL_TYPE_D(float)) {
 	*(float *)ptr = (float) value;
-    } else {
+    } else if (flags == TCL_TYPE_D(long double)) {
 	*(long double *)ptr = (long double) value;
+    } else {
+	Tcl_Panic("%s: invalid flags value: 0x%x", "Tcl_GetValue", flags);
+	return TCL_ERROR;
     }
     return result;
 }

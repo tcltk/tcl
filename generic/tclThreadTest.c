@@ -263,7 +263,7 @@ ThreadObjCmd(
 		arg++;
 	    }
 	}
-	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, objv[arg], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	arg++;
@@ -361,7 +361,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "id");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &id) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, objv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -402,7 +402,7 @@ ThreadObjCmd(
 	    wait = 1;
 	    arg = 2;
 	}
-	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, objv[arg], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	arg++;
