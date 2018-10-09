@@ -2843,12 +2843,12 @@ Tcl_GetLongFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			if (value <= 1 + (unsigned long)LONG_MAX) {    
+			if (value <= 1 + (unsigned long)LONG_MAX) {
 			    *longPtr = - (long) value;
 			    return TCL_OK;
 			}
 		    } else {
-			if (value <= (unsigned long)ULONG_MAX) {    
+			if (value <= (unsigned long)ULONG_MAX) {
 			    *longPtr = (long) value;
 			    return TCL_OK;
 			}
