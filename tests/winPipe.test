@@ -323,8 +323,9 @@ proc _testExecArgs {single args} {
 	lappend cmds [list $path(echoArgs.bat)]
     } else {
 	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
-	    set path(echoArgs2.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
-		"[makeDirectory test(Dir)Check]/echo(Cmd)Test Args & Batch.bat"]
+	    set path(echoArgs2.bat) [makeFile \
+		"@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		"echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
 	}
 	lappend cmds [list $path(echoArgs2.bat)]
     }
