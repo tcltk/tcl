@@ -565,6 +565,20 @@ test format-19.3 {Bug 2830354} {
     string length [format %340f 0]
 } 340
 
+test format-19.4.1 {Bug d498578df4: width overflow should cause limit exceeded} \
+-constraints {longIs32bit} -body {
+    # in case of overflow into negative, it produces width -2 (and limit exceeded),
+    # in case of width will be unsigned, it will be outside limit (2GB for 32bit)...
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
+test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} -body {
+    # limit should exceeds in any case,
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffffffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
 # cleanup
 catch {unset a}
 catch {unset b}

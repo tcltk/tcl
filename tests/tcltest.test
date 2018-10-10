@@ -311,7 +311,7 @@ test tcltest-5.5 {InitConstraints: list of built-in constraints} \
 	-result [lsort {
     95 98 asyncPipeClose eformat emptyTest exec hasIsoLocale interactive
     knownBug mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles
-    nonPortable notRoot nt pc pcCrash pcOnly root singleTestInterp socket
+    nonPortable notRoot nt pc pcCrash pcOnly root singleTestInterp slowTest socket
     stdio tempNotMac tempNotPc tempNotUnix tempNotWin unix unixCrash unixExecs
     unixOnly unixOrPc unixOrWin userInteraction win winCrash winOnly
 }]
