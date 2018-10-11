@@ -8830,3 +8830,21 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-12-19 (bug)[586e71] EvalObjv exception handling at level #0 (sebres,porter)
 
 --- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
+
+2018-02-11 (enhance) stop blocking conversion of object to/from class (coulter)
+
+2018-02-14 (bug)[9fd5c6] crash in object deletion, test oo-11.5 (coulter)
+
+2018-02-14 (bug)[3c32a3] crash deleting object with class mixed in (coulter)
+
+2018-02-15 (platform) stop using -lieee, removed from glibc-2.27 (porter)
+***POTENTIAL INCOMPATIBILITY for math programs that embed Tcl***
+
+2018-02-23 (bug)[8e6a9a] bad binary [string match], test string-11.55 (porter)
+
+2018-03-05 (bug)[1873ea] repair multi-thread std channel init (sebres)
+
+
+
+
+- Released 8.6.9, October 17, 2017 - http://core.tcl-lang.org/tcl/ for details -
