@@ -2349,7 +2349,7 @@ declare 635 {
 # TIP #481
 declare 636 {
     int Tcl_GetValue(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    void *intPtr, int flags)
+	    void *valuePtr, int flags)
 }
 declare 637 {
     char *Tcl_GetStringFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)

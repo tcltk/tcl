@@ -481,7 +481,7 @@ Tcl_GetByteArrayFromObj2(
 #if TCL_MAJOR_VERSION > 8
 	*lengthPtr = baPtr->used;
 #else
-	*lengthPtr = (unsigned)baPtr->used;
+	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
 #endif
     }
     return (unsigned char *) baPtr->bytes;
@@ -2508,8 +2508,8 @@ BinaryDecodeHex(
 	    }
 
 	    c = *data++;
-	    if (!isxdigit((int) c)) {
-		if (strict || !isspace(c)) {
+	    if (!isxdigit(UCHAR(c))) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badChar;
 		}
 		i--;
@@ -2856,7 +2856,7 @@ BinaryDecodeUu(
 	if (lineLen < 0) {
 	    c = *data++;
 	    if (c < 32 || c > 96) {
-		if (strict || !isspace(c)) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 		i--;
@@ -2874,7 +2874,7 @@ BinaryDecodeUu(
 		d[i] = c = *data++;
 		if (c < 32 || c > 96) {
 		    if (strict) {
-			if (!isspace(c)) {
+			if (!TclIsSpaceProc(c)) {
 			    goto badUu;
 			} else if (c == '\n') {
 			    goto shortUu;
@@ -2918,7 +2918,7 @@ BinaryDecodeUu(
 		} else if (c >= 32 && c <= 96) {
 		    data--;
 		    break;
-		} else if (strict || !isspace(c)) {
+		} else if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 	    } while (data < dataend);
@@ -3043,7 +3043,7 @@ BinaryDecode64(
 		if (c == '=' && i > 1) {
 		     value <<= 6;
 		     cut++;
-		} else if (!strict && isspace(c)) {
+		} else if (!strict && TclIsSpaceProc(c)) {
 		     i--;
 		} else {
 		    goto bad64;
@@ -3061,7 +3061,7 @@ BinaryDecode64(
 	    } else if (c == '=') {
 		value <<= 6;
 		cut++;
-	    } else if (strict || !isspace(c)) {
+	    } else if (strict || !TclIsSpaceProc(c)) {
 		goto bad64;
 	    } else {
 		i--;
@@ -3082,7 +3082,7 @@ BinaryDecode64(
 		goto bad64;
 	    }
 	    for (; data < dataend; data++) {
-		if (!isspace(*data)) {
+		if (!TclIsSpaceProc(*data)) {
 		    goto bad64;
 		}
 	    }

@@ -1760,7 +1760,7 @@ Tcl_GetStringFromObj2(
 #if TCL_MAJOR_VERSION > 8
 	*lengthPtr = objPtr->length;
 #else
-	*lengthPtr = (unsigned)objPtr->length;
+	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
 #endif
     }
     return objPtr->bytes;
@@ -2581,7 +2581,7 @@ int
 Tcl_GetValue(
     Tcl_Interp *interp,        /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,           /* The object from which to get a int. */
-    void *ptr,                 /* Place to store resulting int. */
+    void *ptr,                 /* Place to store resulting int/double. */
     int flags)
 {
     double value;
@@ -2945,12 +2945,12 @@ Tcl_GetLongFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			if (value <= 1 + (unsigned long)LONG_MAX) {    
+			if (value <= 1 + (unsigned long)LONG_MAX) {
 			    *longPtr = - (long) value;
 			    return TCL_OK;
 			}
 		    } else {
-			if (value <= (unsigned long)ULONG_MAX) {    
+			if (value <= (unsigned long)ULONG_MAX) {
 			    *longPtr = (long) value;
 			    return TCL_OK;
 			}

@@ -1877,7 +1877,7 @@ EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 				size_t datalen, int copy);
 /* 636 */
 EXTERN int		Tcl_GetValue(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				void *intPtr, int flags);
+				void *valuePtr, int flags);
 /* 637 */
 EXTERN char *		Tcl_GetStringFromObj2(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
@@ -2558,7 +2558,7 @@ typedef struct TclStubs {
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
-    int (*tcl_GetValue) (Tcl_Interp *interp, Tcl_Obj *objPtr, void *intPtr, int flags); /* 636 */
+    int (*tcl_GetValue) (Tcl_Interp *interp, Tcl_Obj *objPtr, void *valuePtr, int flags); /* 636 */
     char * (*tcl_GetStringFromObj2) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 637 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj2) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 638 */
     unsigned char * (*tcl_GetByteArrayFromObj2) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 639 */
@@ -4047,8 +4047,13 @@ extern const TclStubs *tclStubsPtr;
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetDoubleFromObj(interp, objPtr, dblPtr) \
 	(sizeof(*dblPtr) == sizeof(double) ? tclStubsPtr->tcl_GetDoubleFromObj(interp, objPtr, (double *)dblPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, dblPtr, TCL_TYPE_D(*dblPtr)))
+#if ((TCL_MAJOR_VERSION > 8) || defined(TCL_NO_DEPRECATED)) && !defined(BUILD_tcl)
+#define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
+	(tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#else
 #define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
 	(sizeof(*intPtr) == sizeof(int) ? tclStubsPtr->tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#endif
 #define Tcl_GetUIntFromObj(interp, objPtr, intPtr) \
 	(tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_U(*intPtr)))
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
@@ -4062,8 +4067,13 @@ extern const TclStubs *tclStubsPtr;
 #else
 #define Tcl_GetDoubleFromObj(interp, objPtr, dblPtr) \
 	(sizeof(*dblPtr) == sizeof(double) ? (Tcl_GetDoubleFromObj)(interp, objPtr, (double *)dblPtr) : Tcl_GetValue(interp, objPtr, dblPtr, TCL_TYPE_D(*dblPtr)))
+#if ((TCL_MAJOR_VERSION > 8) || defined(TCL_NO_DEPRECATED)) && !defined(BUILD_tcl)
+#define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
+	Tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr))
+#else
 #define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
 	(sizeof(*intPtr) == sizeof(int) ? (Tcl_GetIntFromObj)(interp, objPtr, (int *)intPtr) : Tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#endif
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)sizePtr) : Tcl_GetStringFromObj2(objPtr, (size_t *)sizePtr))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \

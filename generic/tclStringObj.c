@@ -679,7 +679,11 @@ Tcl_GetUnicodeFromObj2(
     }
 
     if (lengthPtr != NULL) {
+#if TCL_MAJOR_VERSION > 8
 	*lengthPtr = stringPtr->numChars;
+#else
+	*lengthPtr = ((size_t)(unsigned)(stringPtr->numChars + 1)) - 1;
+#endif
     }
     return stringPtr->unicode;
 }

@@ -17,7 +17,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBpackage require zipfs \fR?\fB1.0\fR?
 .sp
 \fBzipfs exists\fR \fIfilename\fR
-\fBzipfs find\fR \fIdir\fR
+\fBzipfs find\fR \fIdirectoryName\fR
 \fBzipfs info\fR \fIfilename\fR
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
 \fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
@@ -27,6 +27,12 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs root\fR
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
+'\" The following subcommands are *UNDOCUMENTED* (the list here is not documentation)
+'\" \fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
+'\" \fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
+'\" \fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
+'\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
+'\" \fBzipfs tcl_library\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -38,10 +44,10 @@ contents of a ZIP file as a virtual file system.
 .
 Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 .TP
-\fBzipfs find\fR \fIdir\fR
+\fBzipfs find\fR \fIdirectoryName\fR
 .
-Recursively lists files including and below the directory \fIdir\fR.  The
-result list consists of relative path names starting from the given
+Recursively lists files including and below the directory \fIdirectoryName\fR.
+The result list consists of relative path names starting from the given
 directory. This command is also used by the \fBzipfs mkzip\fR and \fBzipfs
 mkimg\fR commands.
 .TP
@@ -63,7 +69,7 @@ Note: querying the mount point gives the start of the zip data as the offset
 in (4), which can be used to truncate the zip information from an executable.
 .RE
 .TP
-\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? \fI?pattern?\fR
+\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
 .
 Return a list of all files in the mounted zipfs, or just those matching
 \fIpattern\fR (optionally controlled by the option parameters).  The order of
@@ -79,6 +85,13 @@ in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
 With no \fIzipfile\fR, returns the zipfile mounted at \fImountpoint\fR.  With
 no \fImountpoint\fR, return all zipfile/mount pairs.  If \fImountpoint\fR is
 specified as an empty string, mount on file path.
+.PP
+\fBNB:\fR because the current working directory is a concept maintained by the
+operating system, using \fBcd\fR into a mounted archive will only work in the
+current process, and then not entirely consistently (e.g., if a shared library
+uses direct access to the OS rather than through Tcl's filesystem API, it will
+not see the current directory as being inside the mount and will not be able
+to access the files inside the mount).
 .RE
 .TP
 \fBzipfs root\fR
@@ -100,21 +113,25 @@ archives as Tcl applications.
 \fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 .
 Creates an image (potentially a new executable file) similar to \fBzipfs
-mkzip\fR. If the \fIinfile\fR parameter is specified, this file is prepended
-in front of the ZIP archive, otherwise the file returned by
-\fBinfo nameofexecutable\fR (i.e., the executable file of the running process)
-is used. If the \fIpassword\fR parameter is not empty, an obfuscated version
-of that password is placed between the image and ZIP chunks of the output file
-and the contents of the ZIP chunk are protected with that password.
+mkzip\fR; see that subcommand for a description of most parameters to this
+subcommand, as they behave identically here.
 .RS
 .PP
-Caution: highly experimental, not usable on Android, only partially tested on
-Linux and Windows.
+If the \fIinfile\fR parameter is specified, this file is prepended in front of
+the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
+(i.e., the executable file of the running process) is used. If the
+\fIpassword\fR parameter is not empty, an obfuscated version of that password
+(see \fBzipfs mkkey\fR) is placed between the image and ZIP chunks of the
+output file and the contents of the ZIP chunk are protected with that
+password.
+.PP
+\fBCaution:\fR highly experimental, not usable on Android, only partially
+tested on Linux and Windows.
 .RE
 .TP
 \fBzipfs mkkey\fR \fIpassword\fR
 .
-For the clear text \fIpassword\fR argument, an obfuscated string version is
+Given the clear text \fIpassword\fR argument, an obfuscated string version is
 returned with the same format used in the \fBzipfs mkimg\fR command.
 .TP
 \fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
@@ -123,12 +140,43 @@ Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
 directory \fIindir\fR (contained regular files only) with optional ZIP
 password \fIpassword\fR. While processing the files below \fIindir\fR the
 optional file name prefix given in \fIstrip\fR is stripped off the beginning
-of the respective file name.
+of the respective file name.  When stripping, it is common to remove either
+the whole source directory name or the name of its parent directory.
 .RS
 .PP
-Caution: the choice of the \fIindir\fR parameter (less the optional stripped
-prefix) determines the later root name of the archive's content.
+\fBCaution:\fR the choice of the \fIindir\fR parameter (less the optional
+stripped prefix) determines the later root name of the archive's content.
 .RE
+.SH "EXAMPLES"
+.PP
+Mounting an ZIP archive as an application directory and running code out of it
+before unmounting it again:
+.PP
+.CS
+set zip myApp.zip
+set base [file join [\fbzipfs root\fR] myApp]
+
+\fBzipfs mount\fR $base $zip
+\fI# $base now has the contents of myApp.zip\fR
+
+source [file join $base app.tcl]
+\fI# use the contents, load libraries from it, etc...\fR
+
+\fBzipfs unmount\fR $zip
+.CE
+.PP
+Creating a ZIP archive, given that a directory exists containing the content
+to put in the archive. Note that the source directory is given twice, in order
+to strip the exterior directory name from each filename in the archive.
+.PP
+.CS
+set sourceDirectory [file normalize myApp]
+set targetZip myApp.zip
+
+\fBzipfs mkzip\fR $targetZip $sourceDirectory $sourceDirectory
+.CE
+'\" WANTED: How to use the passwords
+'\" WANTED: How to package an application
 .SH "SEE ALSO"
 tclsh(1), file(n), zlib(n)
 .SH "KEYWORDS"

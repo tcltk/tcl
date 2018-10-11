@@ -1636,7 +1636,7 @@ SetPermissionsAttribute(
     int result = TCL_ERROR;
     const char *native;
     const char *modeStringPtr = TclGetString(attributePtr);
-    size_t scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
+    int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
 
     /*
      * First supply support for octal number format
