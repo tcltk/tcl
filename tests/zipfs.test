@@ -247,7 +247,7 @@ test zipfs-3.1 {zipfs in child interpreters} -constraints zipfs -setup {
     }
 } -returnCodes error -cleanup {
     interp delete $interp
-} -result {unknown or ambiguous subcommand "?": must be canonical, exists, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
+} -result {unknown or ambiguous subcommand "?": must be canonical, exists, find, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
 test zipfs-3.2 {zipfs in child interpreters} -constraints zipfs -setup {
     set interp [interp create]
 } -body {
@@ -265,7 +265,7 @@ test zipfs-3.3 {zipfs in child interpreters} -constraints zipfs -setup {
     }
 } -returnCodes error -cleanup {
     interp delete $safe
-} -result {unknown or ambiguous subcommand "?": must be canonical, exists, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
+} -result {unknown or ambiguous subcommand "?": must be canonical, exists, find, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, tcl_library, or unmount}
 test zipfs-3.4 {zipfs in child interpreters} -constraints zipfs -setup {
     set safe [interp create -safe]
 } -body {
