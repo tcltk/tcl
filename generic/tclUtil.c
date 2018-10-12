@@ -3696,7 +3696,7 @@ GetWideForIndex(
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if (code == TCL_OK) {
-	if (numType == TCL_NUMBER_WIDE) {
+	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
 	    return TCL_OK;
@@ -3753,7 +3753,7 @@ GetWideForIndex(
 
 	    /* Save first integer as wide if possible */
 	    TclGetNumberFromObj(NULL, objPtr, &cd, &t1);
-	    if (t1 == TCL_NUMBER_WIDE) {
+	    if (t1 == TCL_NUMBER_INT) {
 		w1 = (*(Tcl_WideInt *)cd);
 	    }
 
@@ -3763,7 +3763,7 @@ GetWideForIndex(
 
 		/* Save second integer as wide if possible */
 		TclGetNumberFromObj(NULL, objPtr, &cd, &t2);
-		if (t2 == TCL_NUMBER_WIDE) {
+		if (t2 == TCL_NUMBER_INT) {
 		    w2 = (*(Tcl_WideInt *)cd);
 		}
 	    }
@@ -3773,7 +3773,7 @@ GetWideForIndex(
 
 	if (t1 && t2) {
 	    /* We have both integer values */
-	    if ((t1 == TCL_NUMBER_WIDE) && (t2 == TCL_NUMBER_WIDE)) {
+	    if ((t1 == TCL_NUMBER_INT) && (t2 == TCL_NUMBER_INT)) {
 		/* Both are wide, do wide-integer math */
 		if (*opPtr == '-') {
 		    if ((w2 == LLONG_MIN) && (interp != NULL)) {
@@ -3818,7 +3818,7 @@ GetWideForIndex(
 		Tcl_ExprObj(interp, objPtr, &sum);
 		TclGetNumberFromObj(NULL, sum, &cd, &numType);
 
-		if (numType == TCL_NUMBER_WIDE) {
+		if (numType == TCL_NUMBER_INT) {
 		    /* sum holds an integer in the signed wide range */
 		    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
 		} else {
@@ -4123,7 +4123,7 @@ TclIndexEncode(
     Tcl_WideInt wide;
     int idx, numType, code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
-    if ((code == TCL_OK) && (numType == TCL_NUMBER_WIDE)) {
+    if ((code == TCL_OK) && (numType == TCL_NUMBER_INT)) {
         /* We parsed a value in the range LLONG_MIN...LLONG_MAX */
 	wide = (*(Tcl_WideInt *)cd);
     integerEncode:
