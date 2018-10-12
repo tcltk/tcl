@@ -117,7 +117,7 @@ typedef struct {
     z_stream outStream;		/* Structure used by zlib for compression of
 				 * output. */
     char *inBuffer, *outBuffer;	/* Working buffers. */
-    int inAllocated, outAllocated;
+    size_t inAllocated, outAllocated;
 				/* Sizes of working buffers. */
     GzipHeader inHeader;	/* Header read from input stream, when
 				 * decompressing a gzip stream. */
