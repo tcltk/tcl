@@ -183,7 +183,7 @@ static const char drvletters[] =
  * Mutex to protect localtime(3) when no reentrant version available.
  */
 
-#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && TCL_THREADS
+#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && inZipfsTCL_THREADS
 TCL_DECLARE_MUTEX(localtimeMutex)
 #endif /* !_WIN32 && !HAVE_LOCALTIME_R && TCL_THREADS */
 
@@ -665,7 +665,7 @@ CanonicalPath(
     const char *root,
     const char *tail,
     Tcl_DString *dsPtr,
-    int ZIPFSPATH)
+    int inZipfs)
 {
     char *path;
     int i, j, c, isUNC = 0, isVfs = 0, n = 0;
@@ -742,7 +742,7 @@ CanonicalPath(
 	memcpy(path, tail, j);
 	break;
     default:
-	if (ZIPFSPATH) {
+	if (inZipfs) {
 	    Tcl_DStringSetLength(dsPtr, i + j + ZIPFS_VOLUME_LEN);
 	    path = Tcl_DStringValue(dsPtr);
 	    memcpy(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
@@ -765,7 +765,7 @@ CanonicalPath(
     }
 #endif /* _WIN32 */
 
-    if (ZIPFSPATH) {
+    if (inZipfs) {
 	n = ZIPFS_VOLUME_LEN;
     } else {
 	n = 0;
@@ -2911,7 +2911,7 @@ ZipFSCanonicalObjCmd(
     Tcl_DString dPath;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mntpnt? filename ?ZIPFS?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dPath);
