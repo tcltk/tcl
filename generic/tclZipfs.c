@@ -183,7 +183,7 @@ static const char drvletters[] =
  * Mutex to protect localtime(3) when no reentrant version available.
  */
 
-#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && inZipfsTCL_THREADS
+#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && TCL_THREADS
 TCL_DECLARE_MUTEX(localtimeMutex)
 #endif /* !_WIN32 && !HAVE_LOCALTIME_R && TCL_THREADS */
 
