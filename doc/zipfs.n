@@ -135,6 +135,13 @@ the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
 output file and the contents of the ZIP chunk are protected with that
 password.
 .PP
+If there is a file, \fBmain.tcl\fR, in the root directory of the resulting
+archive and the image file that the archive is attached to is a \fBtclsh\fR
+(or \fBwish\fR) instance (true by default, but depends on your configuration),
+then the resulting image is an executable that will \fBsource\fR the script in
+that \fBmain.tcl\fR after mounting the ZIP archive, and will \fBexit\fR once
+that script has been executed.
+.PP
 \fBCaution:\fR highly experimental, not usable on Android, only partially
 tested on Linux and Windows.
 .RE
@@ -167,10 +174,10 @@ set zip myApp.zip
 set base [file join [\fbzipfs root\fR] myApp]
 
 \fBzipfs mount\fR $base $zip
-\fI# $base now has the contents of myApp.zip\fR
+# $base now has the contents of myApp.zip
 
 source [file join $base app.tcl]
-\fI# use the contents, load libraries from it, etc...\fR
+# use the contents, load libraries from it, etc...
 
 \fBzipfs unmount\fR $zip
 .CE
@@ -201,10 +208,35 @@ set base [file join [\fbzipfs root\fR] myApp]
 # Mount with password
 \fBzipfs mount\fR $base $zip $password
 .CE
+.PP
+When creating an executable image with a password, the password is placed
+within the executable in a shrouded form so that the application can read
+files inside the embedded ZIP archive yet casual inspection cannot read it.
+.PP
+.CS
+set appDir [file normalize myApp]
+set img "myApp.bin"
+set password "hunter2"
+
+# Create some simple content to define a basic application
+file mkdir $appDir
+set f [open $appDir/main.tcl]
+puts $f {
+    puts "Hi. This is [info script]"
+}
+close $f
+
+# Create the executable
+\fBzipfs mkimg\fR $img $appDir $appDir $password
+
+# Launch the executable, printing its output to stdout
+exec $img >@stdout
+#    prints: \fI Hi. This is //zipfs:/app/main.tcl\fR
+.CE
 '\" WANTED: How to use the passwords
 '\" WANTED: How to package an application
 .SH "SEE ALSO"
-tclsh(1), file(n), zlib(n)
+tclsh(1), file(n), zipfs(3), zlib(n)
 .SH "KEYWORDS"
 compress, filesystem, zip
 '\" Local Variables:
