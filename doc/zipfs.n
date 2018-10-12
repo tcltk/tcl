@@ -16,6 +16,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 .nf
 \fBpackage require zipfs \fR?\fB1.0\fR?
 .sp
+\fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
 \fBzipfs exists\fR \fIfilename\fR
 \fBzipfs find\fR \fIdirectoryName\fR
 \fBzipfs info\fR \fIfilename\fR
@@ -28,7 +29,6 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
 '\" The following subcommands are *UNDOCUMENTED* (the list here is not documentation)
-'\" \fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
 '\" \fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
 '\" \fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
 '\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
@@ -38,7 +38,17 @@ zipfs \- Mount and work with ZIP files within Tcl
 .PP
 The \fBzipfs\fR command (the sole public command provided by the built-in
 package with the same name) provides Tcl with the ability to mount the
-contents of a ZIP file as a virtual file system.
+contents of a ZIP archive file as a virtual file system. ZIP archives support
+simple encryption, sufficient to prevent casual inspection of their contents
+but not able to prevent access by even a moderately determined attacker.
+.TP
+\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
+.
+This takes the name of a file, \fIfilename\fR, and produces where it would be
+mapped into a zipfs mount as its result. If specified, \fImountpoint\fR says
+within which mount the mapping will be done; if omitted, the main root of the
+zipfs system is used. The \fIinZipfs\fR argument is a an optional boolean
+which controls whether to fully canonicalise the name; it defaults to true.
 .TP
 \fBzipfs exists\fR \fIfilename\fR
 .
@@ -174,6 +184,22 @@ set sourceDirectory [file normalize myApp]
 set targetZip myApp.zip
 
 \fBzipfs mkzip\fR $targetZip $sourceDirectory $sourceDirectory
+.CE
+.PP
+Encryption can be applied to ZIP archives by providing a password when
+building the ZIP and when mounting it.
+.PP
+.CS
+set zip myApp.zip
+set sourceDir [file normalize myApp]
+set password "hunter2"
+set base [file join [\fbzipfs root\fR] myApp]
+
+# Create with password
+\fBzipfs mkzip\fR $targetZip $sourceDir $sourceDir $password
+
+# Mount with password
+\fBzipfs mount\fR $base $zip $password
 .CE
 '\" WANTED: How to use the passwords
 '\" WANTED: How to package an application
