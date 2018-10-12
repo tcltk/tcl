@@ -21,6 +21,8 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs find\fR \fIdirectoryName\fR
 \fBzipfs info\fR \fIfilename\fR
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
+\fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
+\fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
 \fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 \fBzipfs mkkey\fR \fIpassword\fR
 \fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
@@ -29,8 +31,6 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
 '\" The following subcommands are *UNDOCUMENTED* (the list here is not documentation)
-'\" \fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
-'\" \fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
 '\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
 '\" \fBzipfs tcl_library\fR
 .BE
@@ -120,11 +120,25 @@ Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
 This package also provides several commands to aid the creation of ZIP
 archives as Tcl applications.
 .TP
+\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+.
+Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
+directory \fIindir\fR (contained regular files only) with optional ZIP
+password \fIpassword\fR. While processing the files below \fIindir\fR the
+optional file name prefix given in \fIstrip\fR is stripped off the beginning
+of the respective file name.  When stripping, it is common to remove either
+the whole source directory name or the name of its parent directory.
+.RS
+.PP
+\fBCaution:\fR the choice of the \fIindir\fR parameter (less the optional
+stripped prefix) determines the later root name of the archive's content.
+.RE
+.TP
 \fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 .
 Creates an image (potentially a new executable file) similar to \fBzipfs
-mkzip\fR; see that subcommand for a description of most parameters to this
-subcommand, as they behave identically here.
+mkzip\fR; see that command for a description of most parameters to this
+command, as they behave identically here.
 .RS
 .PP
 If the \fIinfile\fR parameter is specified, this file is prepended in front of
@@ -151,19 +165,19 @@ tested on Linux and Windows.
 Given the clear text \fIpassword\fR argument, an obfuscated string version is
 returned with the same format used in the \fBzipfs mkimg\fR command.
 .TP
-\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+\fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
 .
-Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
-directory \fIindir\fR (contained regular files only) with optional ZIP
-password \fIpassword\fR. While processing the files below \fIindir\fR the
-optional file name prefix given in \fIstrip\fR is stripped off the beginning
-of the respective file name.  When stripping, it is common to remove either
-the whole source directory name or the name of its parent directory.
-.RS
-.PP
-\fBCaution:\fR the choice of the \fIindir\fR parameter (less the optional
-stripped prefix) determines the later root name of the archive's content.
-.RE
+This command is like \fBzipfs mkimg\fR, but instead of an input directory,
+\fIinlist\fR must be a Tcl list where the odd elements are the names of files
+to be copied into the archive in the image, and the even elements are their
+respective names within that archive.
+.TP
+\fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
+.
+This command is like \fBzipfs mkzip\fR, but instead of an input directory,
+\fIinlist\fR must be a Tcl list where the odd elements are the names of files
+to be copied into the archive, and the even elements are their respective
+names within that archive.
 .SH "EXAMPLES"
 .PP
 Mounting an ZIP archive as an application directory and running code out of it
