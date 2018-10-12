@@ -30,9 +30,8 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs root\fR
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
-'\" The following subcommands are *UNDOCUMENTED* (the list here is not documentation)
+'\" The following subcommand is *UNDOCUMENTED*
 '\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
-'\" \fBzipfs tcl_library\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -245,10 +244,8 @@ close $f
 
 # Launch the executable, printing its output to stdout
 exec $img >@stdout
-#    prints: \fI Hi. This is //zipfs:/app/main.tcl\fR
+#    prints: \fIHi. This is //zipfs:/app/main.tcl\fR
 .CE
-'\" WANTED: How to use the passwords
-'\" WANTED: How to package an application
 .SH "SEE ALSO"
 tclsh(1), file(n), zipfs(3), zlib(n)
 .SH "KEYWORDS"
