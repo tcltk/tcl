@@ -665,7 +665,7 @@ CanonicalPath(
     const char *root,
     const char *tail,
     Tcl_DString *dsPtr,
-    int ZIPFSPATH)
+    int inZipfs)
 {
     char *path;
     int i, j, c, isUNC = 0, isVfs = 0, n = 0;
@@ -742,7 +742,7 @@ CanonicalPath(
 	memcpy(path, tail, j);
 	break;
     default:
-	if (ZIPFSPATH) {
+	if (inZipfs) {
 	    Tcl_DStringSetLength(dsPtr, i + j + ZIPFS_VOLUME_LEN);
 	    path = Tcl_DStringValue(dsPtr);
 	    memcpy(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
@@ -765,7 +765,7 @@ CanonicalPath(
     }
 #endif /* _WIN32 */
 
-    if (ZIPFSPATH) {
+    if (inZipfs) {
 	n = ZIPFS_VOLUME_LEN;
     } else {
 	n = 0;
@@ -2911,7 +2911,7 @@ ZipFSCanonicalObjCmd(
     Tcl_DString dPath;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mntpnt? filename ?ZIPFS?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dPath);
@@ -4737,8 +4737,8 @@ TclZipfs_Init(
 	"    }\n"
 	"    return $result\n"
 	"}\n"
-	"proc ::tcl::zipfs::find dir {\n"
-	"    return [lsort [Find $dir]]\n"
+	"proc ::tcl::zipfs::find {directoryName} {\n"
+	"    return [lsort [Find $directoryName]]\n"
 	"}\n";
 
     /*
@@ -4753,11 +4753,22 @@ TclZipfs_Init(
     Unlock();
 
     if (interp) {
+	Tcl_Command ensemble;
+	Tcl_Obj *mapObj;
+
 	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
 	Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		TCL_LINK_INT);
-	TclMakeEnsemble(interp, "zipfs",
+	ensemble = TclMakeEnsemble(interp, "zipfs",
 		Tcl_IsSafe(interp) ? (initMap + 4) : initMap);
+
+	/*
+	 * Add the [zipfs find] subcommand.
+	 */
+
+	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
+	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj("find", -1),
+		Tcl_NewStringObj("::tcl::zipfs::find", -1));
 	Tcl_PkgProvide(interp, "zipfs", "2.0");
     }
     return TCL_OK;

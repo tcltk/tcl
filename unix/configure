@@ -10209,61 +10209,46 @@ $as_echo "$bfd_cv_build_exeext" >&6; }
     ZIP_PROG_OPTIONS=""
     ZIP_PROG_VFSSEARCH=""
     ZIP_INSTALL_OBJS=""
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
 $as_echo_n "checking for zip... " >&6; }
-    # If our native tclsh processes the "install" command line option
-    # we can use it to mint zip files
-    if $TCLSH_PROG install; then :
-
-      ZIP_PROG=${TCLSH_PROG}
-      ZIP_PROG_OPTIONS="install mkzip"
-      ZIP_PROG_VFSSEARCH="."
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: Can use Native Tclsh for Zip encoding" >&5
-$as_echo "Can use Native Tclsh for Zip encoding" >&6; }
-
-fi
-
-    if test "x$ZIP_PROG" = "x" ; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
-$as_echo_n "checking for zip... " >&6; }
-        if ${ac_cv_path_zip+:} false; then :
+    if ${ac_cv_path_zip+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-        search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-        for dir in $search_path ; do
-            for j in `ls -r $dir/zip 2> /dev/null` \
-                `ls -r $dir/zip 2> /dev/null` ; do
-            if test x"$ac_cv_path_zip" = x ; then
-                if test -f "$j" ; then
-                ac_cv_path_zip=$j
-                break
-                fi
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
             fi
-            done
+        fi
         done
+    done
 
 fi
 
-        if test -f "$ac_cv_path_zip" ; then
-            ZIP_PROG="$ac_cv_path_zip "
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+    if test -f "$ac_cv_path_zip" ; then
+        ZIP_PROG="$ac_cv_path_zip "
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 $as_echo "$ZIP_PROG" >&6; }
-            ZIP_PROG_OPTIONS="-rq"
-            ZIP_PROG_VFSSEARCH="."
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="."
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
 $as_echo "Found INFO Zip in environment" >&6; }
-            # Use standard arguments for zip
-        else
-            # It is not an error if an installed version of Zip can't be located.
-            # We can use the locally distributed minizip instead
-            ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
-            ZIP_PROG_OPTIONS="-o -r"
-            ZIP_PROG_VFSSEARCH="."
-            ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH building minizip" >&5
-$as_echo "No zip found on PATH building minizip" >&6; }
-        fi
+        # Use standard arguments for zip
+    else
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="."
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
+$as_echo "No zip found on PATH. Building minizip" >&6; }
     fi
 
 
