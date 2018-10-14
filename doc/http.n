@@ -783,7 +783,8 @@ would have no adverse effect.
 .SH "COOKIE JAR PROTOCOL"
 .PP
 Cookies are short key-value pairs used to implement sessions within the
-otherwise-stateless HTTP protocol. \fB(TODO: CITE RFC)\fR
+otherwise-stateless HTTP protocol. (See RFC 6265 for details; Tcl does not
+implement the Cookie2 protocol as that is rarely seen in the wild.)
 .PP
 Cookie storage managment commands \(em
 .QW "cookie jars"
