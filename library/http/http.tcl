@@ -20,6 +20,7 @@ namespace eval http {
     if {![info exists http]} {
 	array set http {
 	    -accept */*
+	    -cookiejar {}
 	    -pipeline 1
 	    -postfresh 0
 	    -proxyhost {}
@@ -28,7 +29,6 @@ namespace eval http {
 	    -repost 0
 	    -urlencoding utf-8
 	    -zip 1
-	    -cookiejar {}
 	}
 	# We need a useragent string of this style or various servers will
 	# refuse to send us compressed content even when we ask for it. This
@@ -129,7 +129,16 @@ namespace eval http {
     }
 
     # Regular expression used to parse cookies
-    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]*)(?:\s*;\s*([^\u0000]+))?}
+    variable CookieRE {(?x)                            # EXPANDED SYNTAX
+	\s*                                            # Ignore leading spaces
+	([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+) # Match the name
+	=                                              # LITERAL: Equal sign
+	([!\u0023-+\u002D-:<-\u005B\u005D-~]*)         # Match the value
+	(?:
+	 \s* ; \s*                                     # LITERAL: semicolon
+	 ([^\u0000]+)                                  # Match the options
+	)?
+    }
 
     namespace export geturl config reset wait formatQuery quoteString
     namespace export register unregister registerError
