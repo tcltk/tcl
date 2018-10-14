@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -45,7 +45,9 @@ int
 .AP Tcl_Condition *condPtr in
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
-A mutex lock.
+.VS TIP509
+A recursive mutex lock.
+.VE TIP509
 .AP "const Tcl_Time" *timePtr in
 A time limit on the condition wait.  NULL to wait forever.
 Note that a polling value of 0 seconds does not make much sense.
@@ -79,9 +81,10 @@ waited upon into it.
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
 allows you to incorporate Tcl into multithreaded applications without
-customizing the Tcl core.  To enable Tcl multithreading support,
-you must include the \fB\-\|\-enable-threads\fR option to \fBconfigure\fR
-when you configure and compile your Tcl core.
+customizing the Tcl core.  Starting with the 8.6 release, Tcl
+multithreading support is on by default. To disable Tcl multithreading
+support, you must include the \fB\-\|\-disable-threads\fR option to
+\fBconfigure\fR when you configure and compile your Tcl core.
 .PP
 An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that
@@ -126,7 +129,7 @@ will cause a memory leak.
 .PP
 The \fBTcl_GetThreadData\fR call returns a pointer to a block of
 thread-private data.  Its argument is a key that is shared by all threads
-and a size for the block of storage.  The storage is automatically 
+and a size for the block of storage.  The storage is automatically
 allocated and initialized to all zeros the first time each thread asks for it.
 The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
 .SS "SYNCHRONIZATION AND COMMUNICATION"
@@ -139,8 +142,12 @@ of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
 A mutex can be destroyed after its use by calling \fBTcl_MutexFinalize\fR.
-The result of locking a mutex twice from the same thread is undefined.
-On some platforms it will result in a deadlock.
+.VS TIP509
+Mutexes are reentrant: they can be locked several times from the same
+thread. However there must be exactly one call to
+\fBTcl_MutexUnlock\fR for each call to \fBTcl_MutexLock\fR in order
+for a thread to release a mutex completely.
+.VE TIP509
 The \fBTcl_MutexLock\fR, \fBTcl_MutexUnlock\fR and \fBTcl_MutexFinalize\fR
 procedures are defined as empty macros if not compiling with threads enabled.
 For declaration of mutexes the \fBTCL_DECLARE_MUTEX\fR macro should be used.

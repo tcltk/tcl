@@ -18,13 +18,6 @@
 #include <math.h>
 
 /*
- * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
- * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
- */
-
-#undef	KILL_OCTAL
-
-/*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
  * uniquely determined by radix and by the widths of significand and exponent.
@@ -396,6 +389,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
  *		not part of the [scan] command's vocabulary. Use only in
  *		combination with TCL_PARSE_INTEGER_ONLY.
+ *	- TCL_PARSE_BINARY_ONLY:	parse only in the binary format, whether
+ *		or not a prefix is present that would lead to binary parsing.
+ *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
  *	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
  *		or not a prefix is present that would lead to octal parsing.
  *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
@@ -486,7 +482,7 @@ TclParseNumber(
 {
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X,
-	ZERO_O, ZERO_B, BINARY,
+	ZERO_O, ZERO_B, ZERO_D, BINARY,
 	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL,
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
@@ -543,6 +539,20 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
+	if (interp == NULL && endPtrPtr == NULL) {
+	    if (objPtr->typePtr == &tclDictType) {
+		/* A dict can never be a (single) number */
+		return TCL_ERROR;
+	    }
+	    if (objPtr->typePtr == &tclListType) {
+		int length;
+		/* A list can only be a (single) number if its length == 1 */
+		TclListObjLength(NULL, objPtr, &length);
+		if (length != 1) {
+		    return TCL_ERROR;
+		}
+	    }
+	}
 	bytes = TclGetString(objPtr);
     }
 
@@ -627,6 +637,9 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		    goto endgame;
+		}
 		state = ZERO_X;
 		break;
 	    }
@@ -637,6 +650,9 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
+		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		    goto endgame;
+		}
 		state = ZERO_B;
 		break;
 	    }
@@ -648,7 +664,11 @@ TclParseNumber(
 		state = ZERO_O;
 		break;
 	    }
-#ifdef KILL_OCTAL
+	    if (c == 'd' || c == 'D') {
+		state = ZERO_D;
+		break;
+	    }
+#ifdef TCL_NO_DEPRECATED
 	    goto decimal;
 #endif
 	    /* FALLTHROUGH */
@@ -691,7 +711,7 @@ TclParseNumber(
 				|| (octalSignificandWide >
 					(~(Tcl_WideUInt)0 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    TclBNInitBignumFromWideUInt(&octalSignificandBig,
+			    TclInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -731,7 +751,7 @@ TclParseNumber(
 
 		goto endgame;
 	    }
-#ifndef KILL_OCTAL
+#ifndef TCL_NO_DEPRECATED
 
 	    /*
 	     * Scanned a number with a leading zero that contains an 8, 9,
@@ -808,7 +828,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
-			TclBNInitBignumFromWideUInt(&significandBig,
+			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -849,7 +869,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
-			TclBNInitBignumFromWideUInt(&significandBig,
+			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -864,13 +884,23 @@ TclParseNumber(
 	    state = BINARY;
 	    break;
 
+	case ZERO_D:
+	    if (c == '0') {
+		numTrailZeros++;
+	    } else if ( ! isdigit(UCHAR(c))) {
+		goto endgame;
+	    }
+	    state = DECIMAL;
+	    flags |= TCL_PARSE_INTEGER_ONLY;
+	    /* FALLTHROUGH */
+
 	case DECIMAL:
 	    /*
 	     * Scanned an optional + or - followed by a string of decimal
 	     * digits.
 	     */
 
-#ifdef KILL_OCTAL
+#ifdef TCL_NO_DEPRECATED
 	decimal:
 #endif
 	    acceptState = state;
@@ -1160,6 +1190,7 @@ TclParseNumber(
 	case ZERO_X:
 	case ZERO_O:
 	case ZERO_B:
+	case ZERO_D:
 	case LEADING_RADIX_POINT:
 	case EXPONENT_START:
 	case EXPONENT_SIGNUM:
@@ -1174,16 +1205,16 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
+#endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1204,7 +1235,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1225,7 +1256,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&octalSignificandBig,
+		TclInitBignumFromWideUInt(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
@@ -1237,32 +1268,18 @@ TclParseNumber(
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (octalSignificandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (octalSignificandWide <= (MOST_BITS + signum)) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) octalSignificandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) octalSignificandWide;
-			}
-			break;
-		    }
-#endif
-		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
+		if (octalSignificandWide > (MOST_BITS + signum)) {
+		    TclInitBignumFromWideUInt(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) octalSignificandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) octalSignificandWide;
 		    }
 		}
 	    }
@@ -1280,36 +1297,22 @@ TclParseNumber(
 		    &significandWide, &significandBig, significandOverflow);
 	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
-		if (significandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (significandWide <= MOST_BITS+signum) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) significandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) significandWide;
-			}
-			break;
-		    }
-#endif
-		    TclBNInitBignumFromWideUInt(&significandBig,
+		if (significandWide > MOST_BITS+signum) {
+		    TclInitBignumFromWideUInt(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) significandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) significandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) significandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) significandWide;
 		    }
 		}
 	    }
@@ -1454,7 +1457,7 @@ AccumulateDecimalDigit(
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    TclBNInitBignumFromWideUInt(bignumRepPtr, w);
+	    TclInitBignumFromWideUInt(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1548,7 +1551,7 @@ MakeLowPrecisionDouble(
      * Test for the easy cases.
      */
 
-    if (numSigDigs <= DBL_DIG) {
+    if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
 		/*
@@ -1561,7 +1564,7 @@ MakeLowPrecisionDouble(
 			((Tcl_WideInt)significand * pow10vals[exponent]);
 		goto returnValue;
 	    } else {
-		int diff = DBL_DIG - numSigDigs;
+		int diff = QUICK_MAX - numSigDigs;
 
 		if (exponent-diff <= mmaxpow) {
 		    /*
@@ -1597,7 +1600,7 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    TclBNInitBignumFromWideUInt(&significandBig, significand);
+    TclInitBignumFromWideUInt(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -1798,6 +1801,12 @@ RefineApproximation(
     double quot;		/* Correction term. */
     double minincr;		/* Lower bound on the absolute value of the
 				 * correction term. */
+    int roundToEven = 0;	/* Flag == TRUE if we need to invoke
+				 * "round to even" functionality */
+    double rteSignificand;	/* Significand of the round-to-even result */
+    int rteExponent;		/* Exponent of the round-to-even result */
+    Tcl_WideInt rteSigWide;	/* Wide integer version of the significand
+				 * for testing evenness */
     int i;
 
     /*
@@ -1893,15 +1902,33 @@ RefineApproximation(
 	mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
     }
 
-    /*
-     * If the result is less than unity, the error is less than 1/2 unit in
-     * the last place, so there's no correction to make.
-     */
-
-    if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
+    switch (mp_cmp_mag(&twoMd, &twoMv)) {
+    case MP_LT:
+	/*
+	 * If the result is less than unity, the error is less than 1/2 unit in
+	 * the last place, so there's no correction to make.
+	 */
 	mp_clear(&twoMd);
 	mp_clear(&twoMv);
 	return approxResult;
+    case MP_EQ:
+	/*
+	 * If the result is exactly unity, we need to round to even.
+	 */
+	roundToEven = 1;
+	break;
+    case MP_GT:
+	break;
+    }
+
+    if (roundToEven) {
+	rteSignificand = frexp(approxResult, &rteExponent);
+	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	if ((rteSigWide & 1) == 0) {
+	    mp_clear(&twoMd);
+	    mp_clear(&twoMv);
+	    return approxResult;
+	}
     }
 
     /*
@@ -1940,7 +1967,7 @@ RefineApproximation(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 MulPow5(
     mp_int *base, 		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
@@ -1985,7 +2012,7 @@ MulPow5(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 NormalizeRightward(
     Tcl_WideUInt *wPtr)		/* INOUT: Number to shift. */
 {
@@ -2076,7 +2103,7 @@ RequiredPrecision(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 DoubleToExpAndSig(
     double dv,			/* Number to convert. */
     Tcl_WideUInt *significand,	/* OUTPUT: Significand of the number. */
@@ -2124,7 +2151,7 @@ DoubleToExpAndSig(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 TakeAbsoluteValue(
     Double *d,			/* Number to replace with absolute value. */
     int *sign)			/* Place to put the signum. */
@@ -2155,7 +2182,7 @@ TakeAbsoluteValue(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatInfAndNaN(
     Double *d,			/* Exceptional number to format. */
     int *decpt,			/* Decimal point to set to a bogus value. */
@@ -2197,7 +2224,7 @@ FormatInfAndNaN(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
@@ -2227,7 +2254,7 @@ FormatZero(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ApproximateLog10(
     Tcl_WideUInt bw,		/* Integer significand of the number. */
     int be,			/* Power of two to scale bw. */
@@ -2275,7 +2302,7 @@ ApproximateLog10(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
@@ -2318,7 +2345,7 @@ BetterLog10(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 ComputeScale(
     int be,			/* Exponent part of number: d = bw * 2**be. */
     int k,			/* Characteristic of log10(number). */
@@ -2381,7 +2408,7 @@ ComputeScale(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 SetPrecisionLimits(
     int convType,		/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_STEELE0, TCL_DD_E_FMT,
@@ -2442,7 +2469,7 @@ SetPrecisionLimits(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 BumpUp(
     char *s,		    	/* Cursor pointing one past the end of the
 				 * string. */
@@ -2476,7 +2503,7 @@ BumpUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 AdjustRange(
     double *dPtr,		/* INOUT: Number to adjust. */
     int k)			/* IN: floor(log10(d)) */
@@ -2549,7 +2576,7 @@ AdjustRange(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2624,7 +2651,7 @@ ShorteningQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2698,7 +2725,7 @@ StrictQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 QuickConversion(
     double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
@@ -2803,7 +2830,7 @@ QuickConversion(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 CastOutPowersOf2(
     int *b2,			/* Power of 2 to multiply the significand. */
     int *m2,			/* Power of 2 to multiply 1/2 ulp. */
@@ -2847,7 +2874,7 @@ CastOutPowersOf2(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3016,7 +3043,7 @@ ShorteningInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3122,7 +3149,7 @@ StrictInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
     int sd,			/* Denominator is 2**(sd*DIGIT_BIT). */
@@ -3160,7 +3187,7 @@ ShouldBankerRoundUpPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
@@ -3223,7 +3250,7 @@ ShouldBankerRoundUpToNextPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3260,7 +3287,7 @@ ShorteningBignumConversionPowD(
      * mminus = 5**m5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_init_set_int(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
@@ -3416,7 +3443,7 @@ ShorteningBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3447,7 +3474,7 @@ StrictBignumConversionPowD(
      * b = bw * 2**b2 * 5**b5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3532,7 +3559,7 @@ StrictBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUp(
     mp_int *twor,		/* 2x the remainder from thd division that
 				 * produced the last digit. */
@@ -3567,7 +3594,7 @@ ShouldBankerRoundUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNext(
     mp_int *b,			/* Remainder from the division that produced
 				 * the last digit. */
@@ -3621,7 +3648,7 @@ ShouldBankerRoundUpToNext(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */
@@ -3655,7 +3682,7 @@ ShorteningBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3765,7 +3792,7 @@ ShorteningBignumConversion(
 	    --s5;
 
 	    /*
-	     * IDEA: It might possibly be a win to fall back to int64
+	     * IDEA: It might possibly be a win to fall back to int64_t
 	     *       arithmetic here if S < 2**64/10. But it's a win only for
 	     *       a fairly narrow range of magnitudes so perhaps not worth
 	     *       bothering.  We already know that we shorten the
@@ -3837,7 +3864,7 @@ ShorteningBignumConversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */
@@ -3868,7 +3895,7 @@ StrictBignumConversion(
      */
 
     mp_init_multi(&temp, &dig, NULL);
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3930,7 +3957,7 @@ StrictBignumConversion(
 	     * As with the shortening bignum conversion, it's possible at this
 	     * point that we will have reduced the denominator to less than
 	     * 2**64/10, at which point it would be possible to fall back to
-	     * to int64 arithmetic. But the potential payoff is tremendously
+	     * to int64_t arithmetic. But the potential payoff is tremendously
 	     * less - unless we're working in F format - because we know that
 	     * three groups of digits will always suffice for %#.17e, the
 	     * longest format that doesn't introduce empty precision.
@@ -4025,7 +4052,7 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it 
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -4516,7 +4543,7 @@ Tcl_InitBignumFromDouble(
 	return TCL_ERROR;
     }
 
-    fract = frexp(d,&expt);
+    fract = frexp(d, &expt);
     if (expt <= 0) {
 	mp_init(b);
 	mp_zero(b);
@@ -4524,7 +4551,7 @@ Tcl_InitBignumFromDouble(
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	TclBNInitBignumFromWideInt(b, w);
+	TclInitBignumFromWideInt(b, w);
 	if (shift < 0) {
 	    mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
@@ -4559,7 +4586,7 @@ TclBignumToDouble(
 
 
     /*
-     * We need a 'mantBits'-bit significand.  Determine what shift will 
+     * We need a 'mantBits'-bit significand.  Determine what shift will
      * give us that.
      */
 
@@ -4574,7 +4601,7 @@ TclBignumToDouble(
     }
     shift = mantBits - bits;
 
-    /* 
+    /*
      * If shift > 0, shift the significand left by the requisite number of
      * bits.  If shift == 0, the significand is already exactly 'mantBits'
      * in length.  If shift < 0, we will need to shift the significand right
@@ -4670,7 +4697,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4727,7 +4754,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
@@ -4856,7 +4883,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
-	retval = frexp(retval * pow10vals[exponent&0xf], &j);
+	retval = frexp(retval * pow10vals[exponent & 0xf], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {

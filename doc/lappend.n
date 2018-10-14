@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH lappend n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -22,6 +22,12 @@ and appends each of the \fIvalue\fR arguments to that list as a separate
 element, with spaces between elements.
 If \fIvarName\fR does not exist, it is created as a list with elements
 given by the \fIvalue\fR arguments.
+.VS TIP508
+If \fIvarName\fR indicate an element that does not exist of an array that has
+a default value set, list that is comprised of the default value with all the
+\fIvalue\fR arguments appended as elements will be stored in the array
+element.
+.VE TIP508
 \fBLappend\fR is similar to \fBappend\fR except that the \fIvalue\fRs
 are appended as list elements rather than raw text.
 This command provides a relatively efficient way to build up
@@ -47,3 +53,7 @@ list(n), lindex(n), linsert(n), llength(n), lset(n),
 lsort(n), lrange(n)
 .SH KEYWORDS
 append, element, list, variable
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

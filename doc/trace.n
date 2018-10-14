@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -20,7 +20,8 @@ trace \- Monitor variable accesses, command usages and command executions
 This command causes Tcl commands to be executed whenever certain operations are
 invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBtrace add \fItype name ops ?args?\fR
+\fBtrace add \fItype name ops\fR ?\fIargs\fR?
+.
 Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
 .RS
 .TP

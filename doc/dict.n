@@ -27,6 +27,11 @@ key maps to in the dictionary value contained in the given variable,
 writing the resulting dictionary value back to that variable.
 Non-existent keys are treated as if they map to an empty string. The
 updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the appending operation.
+.VE TIP508
 .TP
 \fBdict create \fR?\fIkey value ...\fR?
 .
@@ -124,6 +129,11 @@ resulting dictionary value back to that variable. Non-existent keys
 are treated as if they map to 0. It is an error to increment a value
 for an existing key if that value is not an integer. The updated
 dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the incrementing operation.
+.VE TIP508
 .TP
 \fBdict info \fIdictionaryValue\fR
 .
@@ -149,6 +159,11 @@ keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list. The
 updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the list-appending operation.
+.VE TIP508
 .TP
 \fBdict map \fR{\fIkeyVariable valueVariable\fR} \fIdictionaryValue body\fR
 .
@@ -206,6 +221,11 @@ value and places an updated dictionary value in that variable
 containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
 of nested dictionaries. The updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the value insert/update operation.
+.VE TIP508
 .TP
 \fBdict size \fIdictionaryValue\fR
 .
@@ -221,6 +241,11 @@ through nested dictionaries to the mapping to remove. At least one key
 must be specified, but the last key on the key-path need not exist.
 All other components on the path must exist. The updated dictionary
 value is returned.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the value remove operation.
+.VE TIP508
 .TP
 \fBdict update \fIdictionaryVariable key varName \fR?\fIkey varName ...\fR? \fIbody\fR
 .
@@ -236,6 +261,11 @@ are silently discarded), even if the result of \fIbody\fR is an error
 or some other kind of exceptional exit. The result of \fBdict
 update\fR is (unless some kind of error occurs) the result of the
 evaluation of \fIbody\fR.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the update operation.
+.VE TIP508
 .RS
 .PP
 Each \fIvarName\fR is mapped in the scope enclosing the \fBdict update\fR;
@@ -270,6 +300,11 @@ dictionary be discarded, and this also happens if the contents of
 dictionaries no longer exists. The result of \fBdict with\fR is
 (unless some kind of error occurs) the result of the evaluation of
 \fIbody\fR.
+.VS TIP508
+If \fIdictionaryVarable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the updating operation.
+.VE TIP508
 .RS
 .PP
 The variables are mapped in the scope enclosing the \fBdict with\fR;
@@ -437,7 +472,7 @@ puts $foo
 #    prints: \fIa b foo {a b} bar 2 baz 3\fR
 .CE
 .SH "SEE ALSO"
-append(n), array(n), foreach(n), mapeach(n), incr(n), list(n), lappend(n), set(n)
+append(n), array(n), foreach(n), incr(n), list(n), lappend(n), lmap(n), set(n)
 .SH KEYWORDS
 dictionary, create, update, lookup, iterate, filter, map
 '\" Local Variables:

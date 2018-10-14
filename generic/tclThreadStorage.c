@@ -13,7 +13,7 @@
 
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 #include <signal.h>
 
 /*
@@ -208,12 +208,12 @@ TclThreadStorageKeyGet(
  *
  *	This procedure set an association of value with the key passed. The
  *	associated value may be retrieved with TclThreadDataKeyGet().
- * 
+ *
  * Results:
  *	None.
  *
  * Side effects:
- *	The thread-specific table may be created or reallocated. 
+ *	The thread-specific table may be created or reallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -285,7 +285,7 @@ TclThreadStorageKeySet(
  *----------------------------------------------------------------------
  */
 
-void 
+void
 TclFinalizeThreadDataThread(void)
 {
     TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);

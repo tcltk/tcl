@@ -191,30 +191,30 @@ in braces or quotes.
 Backslash
 .PQ \e "" .
 .TP 7
-\e\fIooo\fR 
+\e\fIooo\fR
 .
-The digits \fIooo\fR (one, two, or three of them) give a eight-bit octal 
+The digits \fIooo\fR (one, two, or three of them) give a eight-bit octal
 value for the Unicode character that will be inserted, in the range
 \fI000\fR\(en\fI377\fR (i.e., the range U+000000\(enU+0000FF).
 The parser will stop just before this range overflows, or when
 the maximum of three digits is reached.  The upper bits of the Unicode
 character will be 0.
 .TP 7
-\e\fBx\fIhh\fR 
+\e\fBx\fIhh\fR
 .
 The hexadecimal digits \fIhh\fR (one or two of them) give an eight-bit
 hexadecimal value for the Unicode character that will be inserted.  The upper
 bits of the Unicode character will be 0 (i.e., the character will be in the
 range U+000000\(enU+0000FF).
 .TP 7
-\e\fBu\fIhhhh\fR 
+\e\fBu\fIhhhh\fR
 .
 The hexadecimal digits \fIhhhh\fR (one, two, three, or four of them) give a
 sixteen-bit hexadecimal value for the Unicode character that will be
 inserted.  The upper bits of the Unicode character will be 0 (i.e., the
 character will be in the range U+000000\(enU+00FFFF).
 .TP 7
-\e\fBU\fIhhhhhhhh\fR 
+\e\fBU\fIhhhhhhhh\fR
 .
 The hexadecimal digits \fIhhhhhhhh\fR (one up to eight of them) give a
 twenty-one-bit hexadecimal value for the Unicode character that will be

@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH cd n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -41,3 +41,7 @@ current one:
 filename(n), glob(n), pwd(n)
 .SH KEYWORDS
 working directory
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

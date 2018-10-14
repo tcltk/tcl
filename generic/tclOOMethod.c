@@ -70,10 +70,8 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
+static Tcl_NRPostProc	FinalizeForwardCall;
+static Tcl_NRPostProc	FinalizePMCall;
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
@@ -188,7 +186,11 @@ Tcl_NewInstanceMethod(
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    oPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
@@ -252,7 +254,11 @@ Tcl_NewMethod(
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    clsPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
 
     return (Tcl_Method) mPtr;
@@ -272,7 +278,7 @@ void
 TclOODelMethodRef(
     Method *mPtr)
 {
-    if ((mPtr != NULL) && (--mPtr->refCount <= 0)) {
+    if ((mPtr != NULL) && (mPtr->refCount-- <= 1)) {
 	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
@@ -720,7 +726,7 @@ InvokeProcedureMethod(
 
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
-	    if (--pmPtr->refCount < 1) {
+	    if (pmPtr->refCount-- <= 1) {
 		DeleteProcedureMethodRecord(pmPtr);
 	    }
 	    TclStackFree(interp, fdPtr);
@@ -771,7 +777,7 @@ FinalizePMCall(
      * sensitive when it comes to performance!
      */
 
-    if (--pmPtr->refCount < 1) {
+    if (pmPtr->refCount-- <= 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
     TclStackFree(interp, fdPtr);
@@ -875,11 +881,8 @@ PushMethodCallFrame(
      * This operation may fail.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
-    if (result != TCL_OK) {
-	goto failureReturn;
-    }
 
     fdPtr->framePtr->clientData = contextPtr;
     fdPtr->framePtr->objc = objc;
@@ -933,7 +936,7 @@ PushMethodCallFrame(
  *	variables used in methods. The compiled variable resolver is more
  *	important, but both are needed as it is possible to have a variable
  *	that is only referred to in ways that aren't compilable and we can't
- *	force LVT presence. [TIP #320]
+ *	force LVT presence. [TIP #320, #500]
  *
  * ----------------------------------------------------------------------
  */
@@ -961,7 +964,7 @@ ProcedureMethodVarResolver(
 {
     int result;
     Tcl_ResolvedVarInfo *rPtr = NULL;
-    
+
     result = ProcedureMethodCompiledVarResolver(interp, varName,
 	    strlen(varName), contextNs, &rPtr);
 
@@ -991,6 +994,7 @@ ProcedureMethodCompiledVarConnect(
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *variableObj;
+    PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
     int i, isNew, cacheIt, varLen, len;
     const char *match, *varName;
@@ -1024,6 +1028,15 @@ ProcedureMethodCompiledVarConnect(
     varName = TclGetStringFromObj(infoPtr->variableObj, &varLen);
     if (contextPtr->callPtr->chain[contextPtr->index]
 	    .mPtr->declaringClassPtr != NULL) {
+	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
+		.mPtr->declaringClassPtr->privateVariables) {
+	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		variableObj = privateVar->fullNameObj;
+		cacheIt = 0;
+		goto gotMatch;
+	    }
+	}
 	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->variables) {
 	    match = TclGetStringFromObj(variableObj, &len);
@@ -1033,6 +1046,14 @@ ProcedureMethodCompiledVarConnect(
 	    }
 	}
     } else {
+	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
+	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		variableObj = privateVar->fullNameObj;
+		cacheIt = 1;
+		goto gotMatch;
+	    }
+	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
 	    match = TclGetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
@@ -1171,7 +1192,7 @@ MethodErrorHandler(
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
-	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
+	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {
@@ -1278,7 +1299,7 @@ DeleteProcedureMethod(
 {
     register ProcedureMethod *pmPtr = clientData;
 
-    if (--pmPtr->refCount < 1) {
+    if (pmPtr->refCount-- <= 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
 }
@@ -1319,6 +1340,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    Tcl_GetString(bodyObj);
     TclFreeIntRep(bodyObj);
 
     /*
@@ -1351,7 +1373,7 @@ CloneProcedureMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewForwardMethod --
+ * TclOONewForwardInstanceMethod --
  *
  *	Create a forwarded method for an object.
  *
@@ -1369,7 +1391,6 @@ TclOONewForwardInstanceMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
-    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1383,7 +1404,6 @@ TclOONewForwardInstanceMethod(
 
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
-    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);
@@ -1410,7 +1430,6 @@ TclOONewForwardMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
-    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1424,7 +1443,6 @@ TclOONewForwardMethod(
 
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
-    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
@@ -1465,6 +1483,11 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    /*
+     * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use
+     * of the TCL_EVAL_NOERR flag results in an evaluation configuration
+     * very much like TCL_EVAL_INVOKE.
+     */
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
@@ -1477,7 +1500,7 @@ FinalizeForwardCall(
     int result)
 {
     Tcl_Obj **argObjs = data[0];
-    
+
     TclStackFree(interp, argObjs);
     return result;
 }
@@ -1601,12 +1624,9 @@ InitEnsembleRewrite(
     int *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
+    Tcl_Obj **argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
 
-    argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,
 	    sizeof(Tcl_Obj *) * (objc - toRewrite));
@@ -1620,22 +1640,9 @@ InitEnsembleRewrite(
      * (and unavoidably).
      */
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
-	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
-    } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
-
-	if (numIns < toRewrite) {
-	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs += rewriteLength - 1;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs +=
-		    rewriteLength - toRewrite;
-	}
+    if (TclInitRewriteEnsemble(interp, toRewrite, rewriteLength, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-
     *lengthPtr = len;
     return argObjs;
 }
@@ -1691,6 +1698,13 @@ Tcl_MethodIsPublic(
     Tcl_Method method)
 {
     return (((Method *)method)->flags & PUBLIC_METHOD) ? 1 : 0;
+}
+
+int
+Tcl_MethodIsPrivate(
+    Tcl_Method method)
+{
+    return (((Method *)method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
 }
 
 /*
