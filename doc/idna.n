@@ -22,8 +22,8 @@ package require tcl::idna 1.0
 .fi
 .SH DESCRIPTION
 This package provides an implementation of the punycode scheme used in
-Internationalised Domain Names, and some access commands.
-'\" TODO: Cite the punycode definition RFC
+Internationalised Domain Names, and some access commands. (See RFC 3492 for a
+description of punycode.)
 .TP
 \fBtcl::idna decode\fR \fIhostname\fR
 .
