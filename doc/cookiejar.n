@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "cookiejar" n 0.1 cookiejar "Tcl Bundled Packages"
+.TH "cookiejar" n 0.1 http "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
