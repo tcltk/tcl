@@ -96,9 +96,11 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are not invoked when processing an invocation of the \fBunknown\fR
-method because of a failure to locate a method implementation, or when
-invoking either constructors or destructors.
+Filters are invoked when processing an invokation of the \fBunknown\fR
+method because of a failure to locate a method implementation, but \fInot\fR
+when invoking either constructors or destructors. (Note however that the
+\fBdestroy\fR method is a conventional method, and filters are invoked as
+normal when it is called.)
 .SH EXAMPLES
 .PP
 This example demonstrates how to use the \fBnext\fR command to call the
@@ -110,6 +112,7 @@ oo::class create theSuperclass {
         puts "in the superclass, args = $args"
     }
 }
+
 oo::class create theSubclass {
     superclass theSuperclass
     method example {args} {
@@ -119,8 +122,9 @@ oo::class create theSubclass {
         puts "after chaining from subclass"
     }
 }
+
 theSubclass create obj
-oo::define obj method example args {
+oo::objdefine obj method example args {
     puts "per-object method, args = $args"
     \fBnext\fR x {*}$args y
     \fBnext\fR
@@ -136,7 +140,7 @@ before chaining from subclass, args = x 1 2 3 y
 in the superclass, args = a x 1 2 3 y b
 in the superclass, args = pureSynthesis
 after chaining from subclass
-before chaining from subclass, args = 
+before chaining from subclass, args =
 in the superclass, args = a b
 in the superclass, args = pureSynthesis
 after chaining from subclass
@@ -165,6 +169,7 @@ oo::class create cache {
         \fI# Compute value, insert into cache, and return it\fR
         return [set ValueCache($key) [\fBnext\fR {*}$args]]
     }
+
     method flushCache {} {
         my variable ValueCache
         unset ValueCache
@@ -174,12 +179,14 @@ oo::class create cache {
 }
 
 oo::object create demo
-oo::define demo {
+oo::objdefine demo {
     mixin cache
+
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a + $b * $c}]
     }
+
     method compute2 {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a * $b + $c}]

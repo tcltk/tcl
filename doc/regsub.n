@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH regsub n 8.3 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -68,6 +68,33 @@ and
 sequences are handled for each substitution using the information
 from the corresponding match.
 .TP
+\fB\-command\fR
+.VS 8.7
+Changes the handling of \fIsubSpec\fR so that it is not treated
+as a template for a substitution string and the substrings
+.QW &
+and
+.QW \e\fIn\fR
+no longer have special meaning. Instead \fIsubSpec\fR must be a
+command prefix, that is, a non-empty list.  The substring of \fIstring\fR
+that matches \fIexp\fR, and then each substring that matches each
+capturing sub-RE within \fIexp\fR are appended as additional elements
+to that list. (The items appended to the list are much like what
+\fBregexp\fR \fB-inline\fR would return).  The completed list is then
+evaluated as a Tcl command, and the result of that command is the
+substitution string.  Any error or exception from command evaluation
+becomes an error or exception from the \fBregsub\fR command.
+.RS
+.PP
+If \fB\-all\fR is not also given, the command callback will be invoked at most
+once (exactly when the regular expression matches). If \fB\-all\fR is given,
+the command callback will be invoked for each matched location, in sequence.
+The exact location indices that matched are not made available to the script.
+.PP
+See \fBEXAMPLES\fR below for illustrative cases.
+.RE
+.VE 8.7
+.TP
 \fB\-expanded\fR
 .
 Enables use of the expanded regular expression syntax where
@@ -123,7 +150,7 @@ by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
 \fB\-start\fR \fIindex\fR
 .
 Specifies a character index offset into the string to start
-matching the regular expression at.  
+matching the regular expression at.
 The \fIindex\fR value is interpreted in the same manner
 as the \fIindex\fR argument to \fBstring index\fR.
 When using this switch,
@@ -183,6 +210,53 @@ set substitution {[format \e\e\e\eu%04x [scan "\e\e&" %c]]}
 set quoted [subst [string map {\en {\e\eu000a}} \e
         [\fBregsub\fR -all $RE $string $substitution]]]
 .CE
+.PP
+.VS 8.7
+The above operation can be done using \fBregsub \-command\fR instead, which is
+often faster. (A full pre-computed \fBstring map\fR would be faster still, but
+the cost of computing the map for a transformation as complex as this can be
+quite large.)
+.PP
+.CS
+# This RE is just a character class for everything "bad"
+set RE {[][{};#\e\e\e$\es\eu0080-\euffff]}
+
+# This encodes what the RE described above matches
+proc encodeChar {ch} {
+    # newline is handled specially since backslash-newline is a
+    # special sequence.
+    if {$ch eq "\en"} {
+        return "\e\eu000a"
+    }
+    # No point in writing this as a one-liner
+    scan $ch %c charNumber
+    format "\e\eu%04x" $charNumber
+}
+
+set quoted [\fBregsub\fR -all -command $RE $string encodeChar]
+.CE
+.PP
+Decoding a URL-encoded string using \fBregsub \-command\fR, a lambda term and
+the \fBapply\fR command.
+.PP
+.CS
+# Match one of the sequences in a URL-encoded string that needs
+# fixing, converting + to space and %XX to the right character
+# (e.g., %7e becomes ~)
+set RE {(\e+)|%([0-9A-Fa-f]{2})}
+
+# Note that -command uses a command prefix, not a command name
+set decoded [\fBregsub\fR -all -command $RE $string {apply {{- p h} {
+    # + is a special case; handle directly
+    if {$p eq "+"} {
+        return " "
+    }
+    # convert hex to a char
+    scan $h %x charNumber
+    format %c $charNumber
+}}}]
+.CE
+.VE 8.7
 .SH "SEE ALSO"
 regexp(n), re_syntax(n), subst(n), string(n)
 .SH KEYWORDS

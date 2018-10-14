@@ -187,6 +187,7 @@ struct TransformChannelData {
     Tcl_Channel self;		/* Our own Channel handle. */
     int readIsFlushed;		/* Flag to note whether in.flushProc was
 				 * called or not. */
+    int eofPending;		/* Flag: EOF seen down, not raised up */
     int flags;			/* Currently CHANNEL_ASYNC or zero. */
     int watchMask;		/* Current watch/event/interest mask. */
     int mode;			/* Mode of parent channel, OR'ed combination
@@ -210,7 +211,7 @@ struct TransformChannelData {
 				 * a transformation of incoming data. Also
 				 * serves as buffer of all data not yet
 				 * consumed by the reader. */
-    int refCount;
+    size_t refCount;
 };
 
 static void
@@ -224,7 +225,7 @@ static void
 ReleaseData(
     TransformChannelData *dataPtr)
 {
-    if (--dataPtr->refCount) {
+    if (dataPtr->refCount-- > 1) {
 	return;
     }
     ResultClear(&dataPtr->result);
@@ -292,6 +293,7 @@ TclChannelTransform(
     Tcl_DStringInit(&ds);
     Tcl_GetChannelOption(interp, chan, "-blocking", &ds);
     dataPtr->readIsFlushed = 0;
+    dataPtr->eofPending = 0;
     dataPtr->flags = 0;
     if (ds.string[0] == '0') {
 	dataPtr->flags |= CHANNEL_ASYNC;
@@ -624,7 +626,7 @@ TransformInputProc(
 
     if (toRead == 0 || dataPtr->self == NULL) {
 	/*
-	 * Catch a no-op.
+	 * Catch a no-op. TODO: Is this a panic()?
 	 */
 	return 0;
     }
@@ -676,6 +678,17 @@ TransformInputProc(
 	if (toRead <= 0) {
 	    break;
 	}
+	if (dataPtr->eofPending) {
+	    /*
+	     * Already saw EOF from downChan; don't ask again.
+	     * NOTE: Could move this up to avoid the last maxRead
+	     * execution.  Believe this would still be correct behavior,
+	     * but the test suite tests the whole command callback
+	     * sequence, so leave it unchanged for now.
+	     */
+
+	    break;
+	}
 
 	/*
 	 * Get bytes from the underlying channel.
@@ -711,14 +724,7 @@ TransformInputProc(
 	     * on the down channel.
 	     */
 
-	    if (dataPtr->readIsFlushed) {
-		/*
-		 * Already flushed, nothing to do anymore.
-		 */
-
-		break;
-	    }
-
+	    dataPtr->eofPending = 1;
 	    dataPtr->readIsFlushed = 1;
 	    ExecuteCallback(dataPtr, NULL, A_FLUSH_READ, NULL, 0,
 		    TRANSMIT_IBUF, P_PRESERVE);
@@ -746,8 +752,11 @@ TransformInputProc(
 	    break;
 	}
     } /* while toRead > 0 */
-    ReleaseData(dataPtr);
 
+    if (gotBytes == 0) {
+	dataPtr->eofPending = 0;
+    }
+    ReleaseData(dataPtr);
     return gotBytes;
 }
 
@@ -858,6 +867,7 @@ TransformSeekProc(
 		P_NO_PRESERVE);
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
+	dataPtr->eofPending = 0;
     }
     ReleaseData(dataPtr);
 
@@ -900,7 +910,7 @@ TransformWideSeekProc(
 	    Tcl_ChannelWideSeekProc(parentType);
     ClientData parentData = Tcl_GetChannelInstanceData(parent);
 
-    if ((offset == Tcl_LongAsWide(0)) && (mode == SEEK_CUR)) {
+    if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
 	 * This is no seek but a request to tell the caller the current
 	 * location. Simply pass the request down.
@@ -910,8 +920,7 @@ TransformWideSeekProc(
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 	}
 
-	return Tcl_LongAsWide(parentSeekProc(parentData, 0, mode,
-		errorCodePtr));
+	return parentSeekProc(parentData, 0, mode, errorCodePtr);
     }
 
     /*
@@ -931,6 +940,7 @@ TransformWideSeekProc(
 		P_NO_PRESERVE);
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
+	dataPtr->eofPending = 0;
     }
     ReleaseData(dataPtr);
 
@@ -950,13 +960,13 @@ TransformWideSeekProc(
      * to go out of the representable range.
      */
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+    if (offset<LONG_MIN || offset>LONG_MAX) {
 	*errorCodePtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
-    return Tcl_LongAsWide(parentSeekProc(parentData, Tcl_WideAsLong(offset),
-	    mode, errorCodePtr));
+    return parentSeekProc(parentData, offset,
+	    mode, errorCodePtr);
 }
 
 /*

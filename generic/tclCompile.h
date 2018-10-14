@@ -48,6 +48,13 @@ MODULE_SCOPE int 	tclTraceCompile;
 
 MODULE_SCOPE int 	tclTraceExec;
 #endif
+
+/*
+ * The type of lambda expressions. Note that every lambda will *always* have a
+ * string representation.
+ */
+
+MODULE_SCOPE const Tcl_ObjType tclLambdaType;
 
 /*
  *------------------------------------------------------------------------
@@ -128,7 +135,7 @@ typedef struct ExceptionAux {
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+    unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -138,7 +145,7 @@ typedef struct ExceptionAux {
     int numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+    unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -238,6 +245,16 @@ typedef struct AuxDataType {
     AuxDataPrintProc *printProc;/* Callback function to invoke when printing
 				 * the aux data as part of debugging. NULL
 				 * means that the data can't be printed. */
+    AuxDataPrintProc *disassembleProc;
+				/* Callback function to invoke when doing a
+				 * disassembly of the aux data (like the
+				 * printProc, except that the output is
+				 * intended to be script-readable). The
+				 * appendObj argument should be filled in with
+				 * a descriptive dictionary; it will start out
+				 * with "name" mapped to the content of the
+				 * name field. NULL means that the printProc
+				 * should be used instead. */
 } AuxDataType;
 
 /*
@@ -400,7 +417,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    int compileEpoch;		/* Value of iPtr->compileEpoch when this
+    unsigned int compileEpoch;	/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -408,11 +425,11 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+    unsigned int nsEpoch;	/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
-    int refCount;		/* Reference count: set 1 when created plus 1
+    unsigned int refCount;	/* Reference count: set 1 when created plus 1
 				 * for each execution of the code currently
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
@@ -804,8 +821,10 @@ typedef struct ByteCode {
 #define INST_LAPPEND_LIST_ARRAY_STK	187
 #define INST_LAPPEND_LIST_STK		188
 
+#define INST_CLOCK_READ			189
+
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		189
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -832,6 +851,12 @@ typedef enum InstOperandType {
 				 * variable table. */
     OPERAND_AUX4,		/* Four byte unsigned index into the aux data
 				 * table. */
+    OPERAND_OFFSET1,		/* One byte signed jump offset. */
+    OPERAND_OFFSET4,		/* Four byte signed jump offset. */
+    OPERAND_LIT1,		/* One byte unsigned index into table of
+				 * literals. */
+    OPERAND_LIT4,		/* Four byte unsigned index into table of
+				 * literals. */
     OPERAND_SCLS1		/* Index into tclStringClassTable. */
 } InstOperandType;
 
@@ -905,7 +930,7 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
+    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
     int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
@@ -972,12 +997,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -1009,11 +1028,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1055,7 +1069,6 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
@@ -1084,7 +1097,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
-MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
+MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
 			    int length, unsigned int hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
@@ -1100,7 +1113,6 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
@@ -1108,9 +1120,11 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
-MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
-			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
+			    int before, int after, int *indexPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
@@ -1128,6 +1142,10 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
+MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
@@ -1143,8 +1161,10 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
+MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1165,12 +1185,15 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+			    const char *script, const char *command,
+			    int length, const unsigned char *pc,
+			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
-					    const unsigned char *pc, Tcl_Obj **tosPtr);
+			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+			    register Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int isLambda);
 
 
 /*
@@ -1191,29 +1214,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
-
-/*
- * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
- * cast away constness, and it is cleanest to do that here, all in one place.
- *
- * int TclRegisterNewLiteral(CompileEnv *envPtr, const char *bytes,
- *			     int length);
- */
-
-#define TclRegisterNewLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
-
-/*
- * Form of TclRegisterLiteral with flags == LITERAL_CMD_NAME. In that case, it
- * is safe to cast away constness, and it is cleanest to do that here, all in
- * one place.
- *
- * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
- *			       int length);
- */
-
-#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
+#define LITERAL_UNSHARED	0x04
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
@@ -1241,10 +1242,10 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int dd = (depth);						\
-	if (dd != (envPtr)->currStackDepth) {				\
+	int _dd = (depth);						\
+	if (_dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, dd);		\
+		    (envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
@@ -1260,12 +1261,12 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define TclUpdateStackReqs(op, i, envPtr) \
     do {							\
-	int delta = tclInstructionTable[(op)].stackEffect;	\
-	if (delta) {						\
-	    if (delta == INT_MIN) {				\
-		delta = 1 - (i);				\
+	int _delta = tclInstructionTable[(op)].stackEffect;	\
+	if (_delta) {						\
+	    if (_delta == INT_MIN) {				\
+		_delta = 1 - (i);				\
 	    }							\
-	    TclAdjustStackDepth(delta, envPtr);			\
+	    TclAdjustStackDepth(_delta, envPtr);			\
 	}							\
     } while (0)
 
@@ -1379,24 +1380,12 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int objIndexCopy = (objIndex);			 \
-	if (objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
+	register int _objIndexCopy = (objIndex);			 \
+	if (_objIndexCopy <= 255) {				 \
+	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
+	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr)); \
 	}							 \
-    } while (0)
-
-/*
- * If the expr compiler finished with TRY_CONVERT, macro to remove it when the
- * job is done by the following instruction.
- */
-
-#define TclClearNumConversion(envPtr) \
-    do {								\
-	if (*(envPtr->codeNext - 1) == INST_TRY_CVT_TO_NUMERIC) {	\
-	    envPtr->codeNext--;						\
-	}								\
     } while (0)
 
 /*
@@ -1484,7 +1473,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #endif
 
 #define TclGetInt4AtPtr(p) \
-    (((int) TclGetInt1AtPtr(p) << 24) |				\
+    (((int) (TclGetUInt1AtPtr(p) << 24)) |				\
 		     (*((p)+1) << 16) |				\
 		     (*((p)+2) <<  8) |				\
 		     (*((p)+3)))
@@ -1542,9 +1531,9 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  */
 
 #define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterNewLiteral((envPtr), (string), (length)), (envPtr))
+    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral((envPtr), (string), (int) (sizeof(string "") - 1))
+    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address
@@ -1642,7 +1631,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
     SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)					
+    TclPushVarName(i,v,e,f,l,sc)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether
@@ -1664,11 +1653,9 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
-    (!TclIsLocalScalar((chars), (len)) ? -1 : \
-	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+    TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
-    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
-	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
+    TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
  * Flags bits used by TclPushVarName.

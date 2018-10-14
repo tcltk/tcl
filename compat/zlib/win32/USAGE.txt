@@ -2,6 +2,9 @@
 Installing ZLIB1.DLL
 ====================
   Copy ZLIB1.DLL to the SYSTEM or the SYSTEM32 directory.
+  
+  If you want to install the 32-bit dll on a 64-bit
+  machine, use the SysWOW64 directory instead.
 
 
 Using ZLIB1.DLL with Microsoft Visual C++
@@ -20,12 +23,17 @@ Using ZLIB1.DLL with gcc/MinGW
    1. Install the supplied header files "zlib.h" and "zconf.h"
       into the INCLUDE directory.
 
-   2. Copy the supplied library file "zdll.lib" to "libzdll.a":
+   2. (32-bit): Copy the supplied library file "zdll.lib" to "libzdll.a":
         cp lib/zdll.lib lib/libzdll.a
 
       OR
 
-   2' Build the import library from the supplied "zlib.def":
+   2'. (64-bit): Copy the supplied library file "libz.dll.a" to "libzdll.a":
+        cp lib/libz.dll.a lib/libzdll.a
+
+      OR
+
+   2'' Build the import library from the supplied "zlib.def":
         dlltool -D zlib1.dll -d lib/zlib.def -l lib/libzdll.a
 
    3. Install "libzdll.a" into the LIB directory.

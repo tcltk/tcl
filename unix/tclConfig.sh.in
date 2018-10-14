@@ -39,6 +39,9 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
 
+# The name of a zip containing the /library and /encodings (may be either a .zip file or a shared library):
+TCL_ZIP_FILE='@TCL_ZIP_FILE@'
+
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@TCL_LIBS@'
 
@@ -66,7 +69,7 @@ TCL_SHLIB_LD='@SHLIB_LD@'
 TCL_STLIB_LD='@STLIB_LD@'
 
 # Either '$LIBS' (if dependent libraries should be included when linking
-# shared libraries) or an empty string.  See Tcl's configure.in for more
+# shared libraries) or an empty string.  See Tcl's configure.ac for more
 # explanation.
 TCL_SHLIB_LD_LIBS='@SHLIB_LD_LIBS@'
 
@@ -81,7 +84,7 @@ TCL_DL_LIBS='@DL_LIBS@'
 # an executable tclsh or tcltest binary.
 TCL_LD_FLAGS='@LDFLAGS@'
 
-# Flags to pass to ld, such as "-R /usr/local/tcl/lib", that tell the
+# Flags to pass to cc/ld, such as "-R /usr/local/tcl/lib", that tell the
 # run-time dynamic linker where to look for shared libraries such as
 # libtcl.so.  Used when linking applications.  Only works if there
 # is a variable "LIB_RUNTIME_DIR" defined in the Makefile.
@@ -164,6 +167,3 @@ TCL_BUILD_STUB_LIB_PATH='@TCL_BUILD_STUB_LIB_PATH@'
 
 # Path to the Tcl stub library in the install directory.
 TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
-
-# Flag, 1: we built Tcl with threads enabled, 0 we didn't
-TCL_THREADS=@TCL_THREADS@

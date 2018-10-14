@@ -66,7 +66,7 @@ test coroutine-1.3 {yield returns new arg} -setup {
 	    incr i
 	}
     }
-    coroutine foo ::apply [list {{start 2} {stop 10}} $body] 
+    coroutine foo ::apply [list {{start 2} {stop 10}} $body]
     set res {}
 } -body {
     for {set k 1} {$k < 4} {incr k} {
@@ -476,7 +476,7 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo {} {
@@ -517,7 +517,7 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo base {
@@ -588,7 +588,7 @@ test coroutine-7.2 {multi-argument yielding with yieldto} -body {
     coroutine a corobody
     coroutine b corobody
     list [a x] [a y z] [a \{p] [a \{q r] [a] [a] [rename a {}] \
-	[b ok] [rename b {}] 
+	[b ok] [rename b {}]
 } -cleanup {
     rename corobody {}
 } -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}
@@ -726,6 +726,61 @@ test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
 } -result {yieldto called in deleted namespace}
+test coroutine-7.12 {coro floor above street level #3008307} -body {
+    proc c {} {
+	yield
+    }
+    proc cc {} {
+	coroutine C c
+    }
+    proc boom {} {
+	cc ; # coro created at level 2
+	C  ; # and called at level 1
+    }
+    boom   ; # does not crash: the coro floor is a good insulator
+    list
+} -cleanup {
+    rename boom {}; rename cc {}; rename c {}
+} -result {}
+
+test coroutine-8.0.0 {coro inject executed} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    demo
+    set ::result none
+    tcl::unsupported::inject demo set ::result inject-executed
+    demo
+    set ::result
+} -result {inject-executed}
+test coroutine-8.0.1 {coro inject after error} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield; error test }}
+    demo
+    set ::result none
+    tcl::unsupported::inject demo set ::result inject-executed
+    lappend ::result [catch {demo} err] $err
+} -result {inject-executed 1 test}
+test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
+    interp create slave
+    slave eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	tcl::unsupported::inject demo set ::result inject-executed
+    }
+    interp delete slave
+} -result {}
+test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
+    interp create slave
+    slave eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	tcl::unsupported::inject demo set ::result inject-executed
+    }
+    slave eval demo
+    set result [slave eval {set ::result}]
+
+    interp delete slave
+    set result
+} -result {inject-executed}
+
 
 
 # cleanup

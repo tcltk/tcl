@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH rename n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -43,3 +43,7 @@ proc ::source args {
 namespace(n), proc(n)
 .SH KEYWORDS
 command, delete, namespace, rename
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

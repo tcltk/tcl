@@ -9,18 +9,18 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ClassSetConstructor, Tcl_ClassSetDestructor, Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsType, Tcl_MethodName, Tcl_NewInstanceMethod, Tcl_NewMethod, Tcl_ObjectContextInvokeNext, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
+Tcl_ClassSetConstructor, Tcl_ClassSetDestructor, Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsPrivate, Tcl_MethodIsType, Tcl_MethodName, Tcl_NewInstanceMethod, Tcl_NewMethod, Tcl_ObjectContextInvokeNext, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
 .SH SYNOPSIS
 .nf
 \fB#include <tclOO.h>\fR
 .sp
 Tcl_Method
-\fBTcl_NewMethod\fR(\fIinterp, class, nameObj, isPublic,
-              methodTypePtr, clientData\fR)
+\fBTcl_NewMethod\fR(\fIinterp, class, nameObj, flags, methodTypePtr,
+              clientData\fR)
 .sp
 Tcl_Method
-\fBTcl_NewInstanceMethod\fR(\fIinterp, object, nameObj, isPublic,
-                      methodTypePtr, clientData\fR)
+\fBTcl_NewInstanceMethod\fR(\fIinterp, object, nameObj, flags, methodTypePtr,
+                      clientData\fR)
 .sp
 \fBTcl_ClassSetConstructor\fR(\fIinterp, class, method\fR)
 .sp
@@ -35,8 +35,13 @@ Tcl_Object
 Tcl_Obj *
 \fBTcl_MethodName\fR(\fImethod\fR)
 .sp
+.VS TIP500
 int
 \fBTcl_MethodIsPublic\fR(\fImethod\fR)
+.VE TIP500
+.sp
+int
+\fBTcl_MethodIsPrivate\fR(\fImethod\fR)
 .sp
 int
 \fBTcl_MethodIsType\fR(\fImethod, methodTypePtr, clientDataPtr\fR)
@@ -66,8 +71,15 @@ The class to create the method in.
 .AP Tcl_Obj *nameObj in
 The name of the method to create. Should not be NULL unless creating
 constructors or destructors.
-.AP int isPublic in
-A boolean flag saying whether the method is to be exported.
+.AP int flags in
+A flag saying (currently) what the visibility of the method is. The supported
+public values of this flag are \fBTCL_OO_METHOD_PUBLIC\fR (which is fixed at 1
+for backward compatibility) for an exported method,
+\fBTCL_OO_METHOD_UNEXPORTED\fR (which is fixed at 0 for backward
+compatibility) for a non-exported method,
+.VS TIP500
+and \fBTCL_OO_METHOD_PRIVATE\fR for a private method.
+.VE TIP500
 .AP Tcl_MethodType *methodTypePtr in
 A description of the type of the method to create, or the type of method to
 compare against.
@@ -103,8 +115,12 @@ Given a method, the entity that declared it can be found using
 attached to (or NULL if the method is not attached to any class) and
 \fBTcl_MethodDeclarerObject\fR which returns the object that the method is
 attached to (or NULL if the method is not attached to an object). The name of
-the method can be retrieved with \fBTcl_MethodName\fR and whether the method
-is exported is retrieved with \fBTcl_MethodIsPublic\fR. The type of the method
+the method can be retrieved with \fBTcl_MethodName\fR, whether the method
+is exported is retrieved with \fBTcl_MethodIsPublic\fR,
+.VS TIP500
+and whether the method is private is retrieved with \fBTcl_MethodIsPrivate\fR.
+.VE TIP500
+The type of the method
 can also be introspected upon to a limited degree; the function
 \fBTcl_MethodIsType\fR returns whether a method is of a particular type,
 assigning the per-method \fIclientData\fR to the variable pointed to by
@@ -115,8 +131,12 @@ Methods are created by \fBTcl_NewMethod\fR and \fBTcl_NewInstanceMethod\fR,
 which
 create a method attached to a class or an object respectively. In both cases,
 the \fInameObj\fR argument gives the name of the method to create, the
-\fIisPublic\fR argument states whether the method should be exported
-initially, the \fImethodTypePtr\fR argument describes the implementation of
+\fIflags\fR argument states whether the method should be exported
+initially
+.VS TIP500
+or be marked as a private method,
+.VE TIP500
+the \fImethodTypePtr\fR argument describes the implementation of
 the method (see the \fBMETHOD TYPES\fR section below) and the \fIclientData\fR
 argument gives some implementation-specific data that is passed on to the
 implementation of the method when it is called.

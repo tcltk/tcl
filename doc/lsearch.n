@@ -1,4 +1,4 @@
-'\" 
+'\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
 '\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
@@ -6,7 +6,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH lsearch n 8.6 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -111,7 +111,7 @@ The list elements are to be compared as integers.
 \fB\-nocase\fR
 .
 Causes comparisons to be handled in a case-insensitive manner.  Has no
-effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or 
+effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or
 \fB\-real\fR options.
 .TP
 \fB\-real\fR
@@ -147,6 +147,19 @@ or \fB\-not\fR.
 .PP
 These options are used to search lists of lists.  They may be used
 with any other options.
+.TP
+\fB\-stride\0\fIstrideLength\fR
+.
+If this option is specified, the list is treated as consisting of
+groups of \fIstrideLength\fR elements and the groups are searched by
+either their first element or, if the \fB\-index\fR option is used,
+by the element within each group given by the first index passed to
+\fB\-index\fR (which is then ignored by \fB\-index\fR). The resulting
+index always points to the first element in a group.
+.PP
+The list length must be an integer multiple of \fIstrideLength\fR, which
+in turn must be at least 1. A \fIstrideLength\fR of 1 is the default and
+indicates no grouping.
 .TP
 \fB\-index\fR\0\fIindexList\fR
 .
@@ -208,8 +221,15 @@ It is also possible to search inside elements:
 \fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
       \fI\(-> {a abc} {b bcd}\fR
 .CE
+.PP
+The same thing for a flattened list:
+.PP
+.CS
+\fBlsearch\fR -stride 2 -index 1 -all -inline {a abc b bcd c cde} *bc*
+      \fI\(-> {a abc b bcd}\fR
+.CE
 .SH "SEE ALSO"
-foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n), 
+foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
 lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS

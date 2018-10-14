@@ -4,7 +4,7 @@
 .\"
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-.\" 
+.\"
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -12,12 +12,27 @@
 .SH NAME
 string \- Manipulate strings
 .SH SYNOPSIS
-\fBstring \fIoption arg \fR?\fIarg ...?\fR
+\fBstring \fIoption arg \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
+.TP
+\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
+.VS 8.6.2
+Concatenate the given \fIstring\fRs just like placing them directly
+next to each other and return the resulting compound string.  If no
+\fIstring\fRs are present, the result is an empty string.
+.RS
+.PP
+This primitive is occasionally handier than juxtaposition of strings
+when mixed quoting is wanted, or when the aim is to return the result
+of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
+and is more efficient than building a list of arguments and using
+\fBjoin\fR with an empty join string.
+.RE
+.VE
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
@@ -100,9 +115,7 @@ Any Unicode control character.
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
-Any of the valid forms for a double in Tcl, with optional surrounding
-whitespace.  In case of under/overflow in the value, 0 is returned and
-the \fIvarname\fR will contain \-1.
+Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
 .VS 8.6
 Any of the valid string formats for an integer value of arbitrary size
@@ -116,7 +129,7 @@ false.
 Any Unicode printing character, except space.
 .IP \fBinteger\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
-with optional surrounding whitespace.  In case of under/overflow in
+with optional surrounding whitespace.  In case of overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
@@ -141,7 +154,7 @@ true.
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
 Any of the valid forms for a wide integer in Tcl, with optional
-surrounding whitespace.  In case of under/overflow in the value, 0 is
+surrounding whitespace.  In case of overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
 .IP \fBwordchar\fR 12
 Any Unicode word character.  That is any alphanumeric character, and
@@ -428,7 +441,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB+\fIN\fR 10
-The char specified at the integral index that is the sum of 
+The char specified at the integral index that is the sum of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB1+1\fR
 would refer to the
@@ -436,7 +449,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB\-\fIN\fR 10
-The char specified at the integral index that is the difference of 
+The char specified at the integral index that is the difference of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB2\-1\fR
 would refer to the
