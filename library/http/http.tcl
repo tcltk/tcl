@@ -2721,6 +2721,11 @@ proc http::Event {sock token} {
 			    set state(connection) \
 				    [string trim [string tolower $value]]
 			}
+			set-cookie {
+			    if {$http(-cookiejar) ne ""} {
+				ParseCookie $token [string trim $value]
+			    }
+			}
 		    }
 		    lappend state(meta) $key [string trim $value]
 		}
@@ -2866,11 +2871,6 @@ proc http::Event {sock token} {
 			append state(body) $block
 			##Log non-chunk [string length $state(body)] -\
 				token $token
-		    }
-		    set-cookie {
-			if {$http(-cookiejar) ne ""} {
-			    ParseCookie $token [string trim $value]
-			}
 		    }
 		}
 		# This calculation uses n from the -handler, chunked, or
