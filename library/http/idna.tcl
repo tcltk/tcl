@@ -66,9 +66,7 @@ namespace eval ::tcl::idna {
     variable initial_bias 72
     variable initial_n 0x80
 
-    variable max_codepoint 0xFFFF ;# 0x10FFFF would be correct, except Tcl
-				   # can't handle non-BMP characters right now
-				   # anyway.
+    variable max_codepoint 0x10FFFF
 
     proc adapt {delta first numchars} {
 	variable base
@@ -263,7 +261,8 @@ namespace eval ::tcl::idna {
 		throw {PUNYCODE OVERFLOW} \
 		    "excessively large integer computed in character choice"
 	    } elseif {$n > $max_codepoint} {
-		if {$n < 0x10ffff} {
+		if {$n >= 0x00d800 && $n < 0x00e000} {
+		    # Bare surrogate?!
 		    throw {PUNYCODE NON_BMP} \
 			[format "unsupported character U+%06x" $n]
 		}
