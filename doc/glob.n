@@ -204,13 +204,7 @@ of the form
 it refers to the home
 directory of the user whose account information resides on the specified NT
 domain server. Otherwise, user account information is obtained from
-the local computer. On Windows 95 and 98, \fBglob\fR accepted patterns
-like
-.QW .../
-and
-.QW ..../
-for successively higher up parent directories, but later versions of
-Windows do not accept these forms.
+the local computer.
 .PP
 Since the backslash character has a special meaning to the glob
 command, glob patterns containing Windows style path separators need

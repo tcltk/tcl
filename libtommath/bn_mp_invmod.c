@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_INVMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,28 +12,32 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* hac 14.61, pp608 */
-int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
+int mp_invmod(const mp_int *a, const mp_int *b, mp_int *c)
 {
-  /* b cannot be negative */
-  if (b->sign == MP_NEG || mp_iszero(b) == 1) {
-    return MP_VAL;
-  }
+   /* b cannot be negative and has to be >1 */
+   if ((b->sign == MP_NEG) || (mp_cmp_d(b, 1uL) != MP_GT)) {
+      return MP_VAL;
+   }
 
 #ifdef BN_FAST_MP_INVMOD_C
-  /* if the modulus is odd we can use a faster routine instead */
-  if (mp_isodd (b) == 1) {
-    return fast_mp_invmod (a, b, c);
-  }
+   /* if the modulus is odd we can use a faster routine instead */
+   if ((mp_isodd(b) == MP_YES)) {
+      return fast_mp_invmod(a, b, c);
+   }
 #endif
 
 #ifdef BN_MP_INVMOD_SLOW_C
-  return mp_invmod_slow(a, b, c);
+   return mp_invmod_slow(a, b, c);
+#else
+   return MP_VAL;
 #endif
-
-  return MP_VAL;
 }
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

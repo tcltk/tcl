@@ -41,21 +41,6 @@ static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
 
 /*
- * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
- * specified. Here we undo that so the functions are defined in the stubs
- * table.
- */
-
-#ifndef TCL_THREADS
-#undef Tcl_MutexLock
-#undef Tcl_MutexUnlock
-#undef Tcl_MutexFinalize
-#undef Tcl_ConditionNotify
-#undef Tcl_ConditionWait
-#undef Tcl_ConditionFinalize
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_GetThreadData --
@@ -79,7 +64,7 @@ Tcl_GetThreadData(
     int size)			/* Size of storage block */
 {
     void *result;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Initialize the key for this thread.
      */
@@ -126,7 +111,7 @@ TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
 
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
 #else /* TCL_THREADS */
     return *keyPtr;
@@ -269,11 +254,12 @@ TclRememberMutex(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_MutexFinalize
 void
 Tcl_MutexFinalize(
     Tcl_Mutex *mutexPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
     TclpMasterLock();
@@ -322,11 +308,12 @@ TclRememberCondition(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ConditionFinalize
 void
 Tcl_ConditionFinalize(
     Tcl_Condition *condPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
     TclpMasterLock();
@@ -353,11 +340,16 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(void)
+TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    TclFinalizeThreadAllocThread();
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
+    if (!quick) {
+	/*
+	 * Quick exit principle makes it useless to terminate allocators
+	 */
+	TclFinalizeThreadAllocThread();
+    }
 #endif
 }
 
@@ -384,7 +376,7 @@ TclFinalizeSynchronization(void)
     int i;
     void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
 
@@ -408,7 +400,7 @@ TclFinalizeSynchronization(void)
     keyRecord.max = 0;
     keyRecord.num = 0;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Call thread storage master cleanup.
      */
@@ -468,12 +460,10 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
-#ifdef TCL_THREADS
     TclpThreadExit(status);
-#endif
 }
 
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 
 /*
  *----------------------------------------------------------------------

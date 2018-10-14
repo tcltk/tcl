@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH while n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -63,3 +63,7 @@ set lineCount 0
 break(n), continue(n), for(n), foreach(n)
 .SH KEYWORDS
 boolean, loop, test, while
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

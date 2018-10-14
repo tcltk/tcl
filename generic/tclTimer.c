@@ -91,7 +91,7 @@ typedef struct IdleHandler {
  * The structure defined below is used in this file only.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     TimerHandler *firstTimerHandlerPtr;	/* First event in queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
@@ -819,9 +819,6 @@ Tcl_AfterObjCmd(
      */
 
     if (objv[1]->typePtr == &tclIntType
-#ifndef TCL_WIDE_INT_IS_LONG
-	    || objv[1]->typePtr == &tclWideIntType
-#endif
 	    || objv[1]->typePtr == &tclBignumType
 	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 		    &index) != TCL_OK)) {
@@ -900,10 +897,10 @@ Tcl_AfterObjCmd(
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
-	command = Tcl_GetStringFromObj(commandPtr, &length);
+	command = TclGetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
 		    && !memcmp(command, tempCommand, (unsigned) length)) {
@@ -1045,31 +1042,27 @@ AfterDelay(
 	if (iPtr->limit.timeEvent == NULL
 		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    if (diff > LONG_MAX) {
-		diff = LONG_MAX;
-	    }
-#endif
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
-            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) diff = 1;
+	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+		diff = 1;
+	    }
 	    if (diff > 0) {
-		Tcl_Sleep((long) diff);
-                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) break;
-	    } else break;
+		Tcl_Sleep((int) diff);
+		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		    break;
+		}
+	    } else {
+		break;
+	    }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    if (diff > LONG_MAX) {
-		diff = LONG_MAX;
-	    }
-#endif
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
 	    if (diff > 0) {
-		Tcl_Sleep((long) diff);
+		Tcl_Sleep((int) diff);
 	    }
 	    if (Tcl_AsyncReady()) {
 		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
@@ -1083,7 +1076,7 @@ AfterDelay(
 		return TCL_ERROR;
 	    }
 	}
-        Tcl_GetTime(&now);
+	Tcl_GetTime(&now);
     } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }

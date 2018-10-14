@@ -25,6 +25,22 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+        return [lindex [split [memory info] \n] 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+        set end [getbytes]
+        for {set i 0} {$i < $iterations} {incr i} {
+            uplevel 1 $script
+            set tmp $end
+            set end [getbytes]
+        }
+        return [expr {$end - $tmp}]
+    }
+}
+
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -38,15 +54,17 @@ catch {unset arr}
 test var-1.1 {TclLookupVar, Array handling} -setup {
     catch {unset a}
 } -body {
-    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd 
+    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd
     set i 10
     set arr(foo) 37
     list [$x i] $i [$x arr(foo)] $arr(foo)
 } -result {11 11 38 38}
+set ::x "global value"
+namespace eval test_ns_var {
+    variable x "namespace value"
+}
 test var-1.2 {TclLookupVar, TCL_GLOBAL_ONLY implies global namespace var} {
-    set x "global value"
     namespace eval test_ns_var {
-        variable x "namespace value"
         proc p {} {
             global x  ;# specifies TCL_GLOBAL_ONLY to get global x
             return $x
@@ -166,7 +184,9 @@ test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array:
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
-test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} {
+test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} -setup {
+    unset -nocomplain test_ns_var::x
+} -body {
     namespace eval test_ns_var {
 	variable result {}
 	variable x
@@ -178,7 +198,7 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
         namespace delete [namespace current]
 	set result
     }
-} {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
+} -result {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
 test var-1.19 {TclLookupVar, right error message when parsing variable name} -body {
     [format set] thisvar(doesntexist)
 } -returnCodes error -result {can't read "thisvar(doesntexist)": no such variable}
@@ -215,7 +235,7 @@ test var-3.3 {MakeUpvar, my var has TCL_GLOBAL_ONLY specified} -setup {
     set a 123321
     proc p {} {
 	# create global xx linked to global a
-	testupvar 1 a {} xx global 
+	testupvar 1 a {} xx global
     }
     list [p] $xx [set xx 789] $a
 } -result {{} 123321 789 789}
@@ -227,7 +247,7 @@ test var-3.4 {MakeUpvar, my var has TCL_NAMESPACE_ONLY specified} -setup {
 	catch {unset ::test_ns_var::vv}
 	proc p {} {
 	    # create namespace var vv linked to global a
-	    testupvar 1 a {} vv namespace 
+	    testupvar 1 a {} vv namespace
 	}
 	p
     }
@@ -260,6 +280,7 @@ test var-3.7 {MakeUpvar, my var has ::s} -setup {
     }
 } -result {789789}
 test var-3.8 {MakeUpvar, my var already exists in global ns} -setup {
+    upvar #0 aaaaa xxxxx
     catch {unset aaaaa}
     catch {unset xxxxx}
 } -body {
@@ -273,6 +294,8 @@ test var-3.9 {MakeUpvar, my var has invalid ns name} -setup {
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa test_ns_fred::lnk
+} -cleanup {
+    unset ::aaaaa
 } -result {can't create "test_ns_fred::lnk": parent namespace doesn't exist}
 test var-3.10 {MakeUpvar, between namespaces} -body {
     namespace eval {} {
@@ -281,15 +304,13 @@ test var-3.10 {MakeUpvar, between namespaces} -body {
 	set foo::bar 1
 	list $bar $foo::bar
     }
-} -cleanup {
-    unset ::aaaaa
 } -result {1 1}
 test var-3.11 {MakeUpvar, my var looks like array elem} -setup {
     catch {unset aaaaa}
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa foo(bar)
-} -result {bad variable name "foo(bar)": upvar won't create a scalar variable that looks like an array element}
+} -result {bad variable name "foo(bar)": can't create a scalar variable that looks like an array element}
 
 test var-4.1 {Tcl_GetVariableName, global variable} testgetvarfullname {
     catch {unset a}
@@ -321,9 +342,11 @@ test var-5.2 {Tcl_GetVariableFullName, namespace variable} {
         namespace which -variable martha
     }
 } {::test_ns_var::martha}
-test var-5.3 {Tcl_GetVariableFullName, namespace variable} {
+test var-5.3 {Tcl_GetVariableFullName, namespace variable} -setup {
+    namespace eval test_ns_var {variable martha}
+} -body {
     namespace which -variable test_ns_var::martha
-} {::test_ns_var::martha}
+} -result {::test_ns_var::martha}
 
 test var-6.1 {Tcl_GlobalObjCmd, variable is qualified by a namespace name} {
     namespace eval test_ns_var {
@@ -347,6 +370,7 @@ test var-6.2 {Tcl_GlobalObjCmd, variable is qualified by a namespace name} {
     test_ns_var::p
 } {java}
 test var-6.3 {Tcl_GlobalObjCmd, variable named {} qualified by a namespace name} {
+    namespace eval ::test_ns_var::test_ns_nested {}
     set ::test_ns_var::test_ns_nested:: 24
     apply {{} {
         global ::test_ns_var::test_ns_nested::
@@ -388,20 +412,26 @@ test var-7.2 {Tcl_VariableObjCmd, if new and no value, leave undefined} {
     }
     list [info exists test_ns_var::two] [catch {set test_ns_var::two} msg] $msg
 } {0 1 {can't read "test_ns_var::two": no such variable}}
-test var-7.3 {Tcl_VariableObjCmd, "define" var already created above} {
+test var-7.3 {Tcl_VariableObjCmd, "define" var already created above} -setup {
+    catch {namespace delete test_ns_var}
+    namespace eval test_ns_var {variable one 1}
+} -body {
     namespace eval test_ns_var {
         variable two 2
     }
     list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {set two}]
-} [list [lsort {::test_ns_var::two ::test_ns_var::one}] 2]
-test var-7.4 {Tcl_VariableObjCmd, list of vars} {
+} -result [list [lsort {::test_ns_var::two ::test_ns_var::one}] 2]
+test var-7.4 {Tcl_VariableObjCmd, list of vars} -setup {
+    catch {namespace delete test_ns_var}
+    namespace eval test_ns_var {variable one 1; variable two 2}
+} -body {
     namespace eval test_ns_var {
         variable three 3 four 4
     }
     list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {expr $three+$four}]
-} [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
+} -result [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
 test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} -setup {
     catch {unset a}
     catch {unset five}
@@ -475,7 +505,9 @@ test var-7.9 {Tcl_VariableObjCmd, mark as namespace var so var persists until na
 	[lsort {::test_ns_var2::x ::test_ns_var2::z}] 0 0\
 	{1 {can't unset "test_ns_var2::z": no such variable}}\
 	{}]
-test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
+test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} -setup {
+    namespace eval test_ns_var { variable eight 8 }
+} -body {
     namespace eval test_ns_var {
         proc p {} {
             variable eight
@@ -483,14 +515,16 @@ test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link v
         }
         p
     }
-} {8 eight}
-test var-7.11 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
+} -result {8 eight}
+test var-7.11 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} -setup {
+    namespace eval test_ns_var { variable eight 8 }
+} -body {
     proc p {} {   ;# note this proc is at global :: scope
         variable test_ns_var::eight
         list [set eight] [info vars]
     }
     p
-} {8 eight}
+} -result {8 eight}
 test var-7.12 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
     namespace eval test_ns_var {
         variable {} {My name is empty}
@@ -515,11 +549,11 @@ test var-7.14 {Tcl_VariableObjCmd, array element parameter} -body {
     namespace eval test_ns_var { variable arrayvar(1) }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.15 {Tcl_VariableObjCmd, array element parameter} -body {
-    namespace eval test_ns_var { 
+    namespace eval test_ns_var {
 	variable arrayvar
 	set arrayvar(1) x
 	variable arrayvar(1) y
-    }   
+    }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.16 {Tcl_VariableObjCmd, no args (TIP 323)} {
     variable
@@ -559,6 +593,22 @@ test var-8.2 {TclDeleteNamespaceVars, "unset" traces on ns delete are called wit
     }
     list [namespace delete test_ns_var] $::info
 } -result {{} {::test_ns_var::v {} u}}
+
+test var-8.3 {TclDeleteNamespaceVars, mem leak} -constraints memory -setup {
+    proc ::t {a i o} {
+	set $a 321
+    }
+} -body {
+    leaktest {
+	namespace eval n {
+	    variable v 123
+	    trace variable v u ::t
+	}
+	namespace delete n
+    }
+} -cleanup {
+    rename ::t {}
+} -result 0
 
 test var-9.1 {behaviour of TclGet/SetVar simple get/set} -setup {
     catch {unset u}
@@ -727,6 +777,22 @@ test var-13.1 {Tcl_UnsetVar2, unset array with trace set on element} -setup {
     }
     set x "If you see this, it worked"
 } -result "If you see this, it worked"
+test var-13.2 {unset array with search, bug 46a2410650} -body {
+    apply {{} {
+	array set a {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
+	set s [array startsearch a]
+	unset a([array nextelement a $s])
+	array nextelement a $s
+    }}
+} -returnCodes error -result {couldn't find search "s-1-a"}
+test var-13.3 {unset array with search, SIGSEGV, bug 46a2410650} -body {
+    apply {{} {
+	array set a {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
+	set s [array startsearch a]
+        unset a(ff)
+	array nextelement a $s
+    }}
+} -returnCodes error -result {couldn't find search "s-1-a"}
 
 test var-14.1 {array names syntax} -body {
     array names foo bar baz snafu
@@ -741,7 +807,7 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
 	set var $name
     }
     #
-    # Note that the variable name has to be 
+    # Note that the variable name has to be
     # unused previously for the segfault to
     # be triggered.
     #
@@ -770,10 +836,22 @@ test var-17.1 {TclArraySet [Bug 1669489]} -setup {
 } -cleanup {
     unset -nocomplain ::a ::elements
 } -result {}
+test var-17.2 {TclArraySet Dict shortcut only on pure value} -setup {
+    unset -nocomplain a d
+    set d {p 1 p 2}
+    dict get $d p
+    set foo 0
+} -body {
+    trace add variable a write "[list incr [namespace which -variable foo]];#"
+    array set a $d
+    set foo
+} -cleanup {
+    unset -nocomplain a d foo
+} -result 2
 
 test var-18.1 {array unset and unset traces: Bug 2939073} -setup {
     set already 0
-    unset x
+    unset -nocomplain x
 } -body {
     array set x {e 1 i 1}
     trace add variable x unset {apply {args {
@@ -865,6 +943,44 @@ test var-20.8 {array set compilation correctness: Bug 3603163} -setup {
     }}
     array size x
 } -result 0
+test var-20.9 {[bc1a96407a] array set compiled w/ trace} -setup {
+    variable foo
+    variable lambda
+    unset -nocomplain lambda foo
+    array set foo {}
+    lappend lambda {}
+    lappend lambda [list array set [namespace which -variable foo] {a 1}]
+} -body {
+    after 0 [list apply $lambda]
+    vwait [namespace which -variable foo]
+} -cleanup {
+    unset -nocomplain lambda foo
+} -result {}
+test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
+    apply {{} {set name foo(bar); array set $name {a 1}}}
+} -returnCodes error -match glob -result *
+test var-20.11 {array set don't compile bad initializer} -setup {
+    unset -nocomplain foo
+    trace add variable foo array {set foo(bar) baz;#}
+} -body {
+    catch {array set foo bad}
+    set foo(bar)
+} -cleanup {
+    unset -nocomplain foo
+} -result baz
+test var-20.12 {array set don't compile bad initializer} -setup {
+    unset -nocomplain ::foo
+    trace add variable ::foo array {set ::foo(bar) baz;#}
+} -body {
+    catch {apply {{} {
+	set value bad
+	array set ::foo $value
+
+    }}}
+    set ::foo(bar)
+} -cleanup {
+    unset -nocomplain ::foo
+} -result baz
 
 test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     proc linenumber {} {dict get [info frame -1] line}
@@ -878,11 +994,475 @@ test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     rename linenumber {}
 } -result 1
 
+test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
+    proc doit k {
+	variable A
+	set A($k) {}
+	foreach n [array names A] {
+	    if {$n <= $k-1} {
+		unset A($n)
+	    }
+	}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	doit $i
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    array unset A
+    rename doit {}
+} -result 0
+test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
+    proc doit {} {
+	interp create slave
+	slave eval {
+	    proc doit script {
+		eval $script
+		set foo bar
+	    }
+	    doit {foreach foo baz {}}
+	}
+	interp delete slave
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	doit
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    array unset A
+    rename doit {}
+} -result 0
+test var-22.2 {leak in parsedVarName} -constraints memory -body {
+    set i 0
+    leaktest {lappend x($i)}
+} -cleanup {
+    unset -nocomplain i x
+} -result 0
+
+unset -nocomplain a k v
+test var-23.1 {array command, for loop, too many args} -returnCodes error -body {
+    array for {k v} c d e {}
+} -result {wrong # args: should be "array for {key value} arrayName script"}
+test var-23.2 {array command, for loop, not enough args} -returnCodes error -body {
+    array for {k v} {}
+} -result {wrong # args: should be "array for {key value} arrayName script"}
+test var-23.3 {array command, for loop, too many list args} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v w} a {}
+} -result {must have two variable names}
+test var-23.4 {array command, for loop, not enough list args} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k} a {}
+} -result {must have two variable names}
+test var-23.5 {array command, for loop, no array} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v} a {}
+} -result {"a" isn't an array}
+test var-23.6 {array command, for loop, array doesn't exist yet but has compiler-allocated procedure slot} -setup {
+    catch {rename p ""}
+} -returnCodes error -body {
+    apply {{x} {
+        if {$x==1} {
+            return [array for {k v} a {}]
+        }
+        set a(x) 123
+    }} 1
+} -result {"a" isn't an array}
+test var-23.7 {array enumeration} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	lappend reslist $k $v
+    }
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 b 2 c 3}
+test var-23.9 {array enumeration, nested} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k1 v1} a {
+	lappend reslist $k1 $v1
+	set r2 {}
+	array for {k2 v2} a {
+	    lappend r2 $k2 $v2
+	}
+	lappend reslist [lsort -stride 2 -index 0 $r2]
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 3 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 {a 1 b 2 c 3} b 2 {a 1 b 2 c 3} c 3 {a 1 b 2 c 3}}
+test var-23.10 {array enumeration, delete key} -match glob -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    set retval {}
+    try {
+      array set a {a 1 b 2 c 3 d 4}
+      array for {k v} a {
+  	lappend reslist $k $v
+          if { $k eq "a" } {
+            unset a(c)
+          }
+      }
+      lsort -stride 2 -index 0 $reslist
+    } on error {err res} {
+      set retval [dict get $res -errorinfo]
+    }
+    set retval
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+    unset -nocomplain retval
+} -result {array changed during iteration*}
+test var-23.11 {array enumeration, insert key} -match glob -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    set retval {}
+    try {
+      array set a {a 1 b 2 c 3 d 4}
+      array for {k v} a {
+  	lappend reslist $k $v
+          if { $k eq "a" } {
+            set a(e) 5
+          }
+      }
+      lsort -stride 2 -index 0 $reslist
+    } on error {err res} {
+      set retval [dict get $res -errorinfo]
+    }
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {array changed during iteration*}
+test var-23.12 {array enumeration, change value} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	lappend reslist $k $v
+        if { $k eq "a" } {
+          set a(c) 9
+        }
+    }
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 b 2 c 9}
+test var-23.13 {array enumeration, number of traces} -setup {
+    set ::countarrayfor 0
+    proc ::tracearrayfor { args } {
+      incr ::countarrayfor
+    }
+    unset -nocomplain ::a
+    set reslist [list]
+} -body {
+    array set ::a {a 1 b 2 c 3}
+    foreach {k} [array names a] {
+      trace add variable ::a($k) read ::tracearrayfor
+    }
+    array for {k v} ::a {
+	lappend reslist $k $v
+    }
+    set ::countarrayfor
+} -cleanup {
+    unset -nocomplain ::countarrayfor
+    unset -nocomplain ::a
+    unset -nocomplain reslist
+} -result 3
+test var-23.14 {array for, shared arguments} -setup {
+    set vn {k v}
+    unset -nocomplain $vn
+} -body {
+    array set $vn {a 1 b 2 c 3}
+    array for $vn $vn {}
+} -cleanup {
+    unset -nocomplain $vn vn
+} -result {}
+
+test var-24.1 {array default set and get: interpreted} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {a 3}
+    array default set ary 7
+    list $ary(a) $ary(b) [info exist ary(a)] [info exist ary(b)] \
+	[array default get ary]
+} -cleanup {
+    unset -nocomplain ary
+} -result {3 7 1 0 7}
+test var-24.2 {array default set and get: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	list $ary(a) $ary(b) [info exist ary(a)] [info exist ary(b)] \
+	    [array default get ary]
+    }}
+} {3 7 1 0 7}
+test var-24.3 {array default unset: interpreted} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {a 3}
+    array default set ary 7
+    list $ary(a) $ary(b) [array default unset ary] $ary(a) [catch {set ary(b)}]
+} -cleanup {
+    unset -nocomplain ary
+} -result {3 7 {} 3 1}
+test var-24.4 {array default unset: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	list $ary(a) $ary(b) [array default unset ary] $ary(a) \
+	    [catch {set ary(b)}]
+    }}
+} {3 7 {} 3 1}
+test var-24.5 {array default exists: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array set ary {a 3}
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default set ary 7
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default unset ary
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    unset ary
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+    array default set ary 11
+    lappend result [info exists ary],[array exists ary],[array default exists ary]
+} -cleanup {
+    unset -nocomplain ary result
+} -result {1,1,0 1,1,1 1,1,0 0,0,0 1,1,1}
+test var-24.6 {array default exists: compiled} {
+    apply {{} {
+	array set ary {a 3}
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default set ary 7
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default unset ary
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	unset ary
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+	array default set ary 11
+	lappend result [info exists ary],[array exists ary],[array default exists ary]
+    }}
+} {1,1,0 1,1,1 1,1,0 0,0,0 1,1,1}
+test var-24.7 {array default and append: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary grill
+    lappend result [array size ary] [info exist ary(x)]
+    append ary(x) abc
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    append ary(x) def
+    append ary(y) ghi
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 grillabc 2 grillabcdef ghi}
+test var-24.8 {array default and append: compiled} {
+    apply {{} {
+	array default set ary grill
+	lappend result [array size ary] [info exist ary(x)]
+	append ary(x) abc
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	append ary(x) def
+	append ary(y) ghi
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 grillabc 2 grillabcdef ghi}
+test var-24.9 {array default and lappend: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary grill
+    lappend result [array size ary] [info exist ary(x)]
+    lappend ary(x) abc
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    lappend ary(x) def
+    lappend ary(y) ghi
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 {grill abc} 2 {grill abc def} ghi}
+test var-24.10 {array default and lappend: compiled} {
+    apply {{} {
+	array default set ary grill
+	lappend result [array size ary] [info exist ary(x)]
+	lappend ary(x) abc
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	lappend ary(x) def
+	lappend ary(y) ghi
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 {grill abc} 2 {grill abc def} ghi}
+test var-24.11 {array default and incr: interpreted} -setup {
+    unset -nocomplain ary result
+    set result {}
+} -body {
+    array default set ary 7
+    lappend result [array size ary] [info exist ary(x)]
+    incr ary(x) 11
+    lappend result [array size ary] $ary(x)
+    array default unset ary
+    incr ary(x)
+    incr ary(y)
+    lappend result [array size ary] $ary(x) $ary(y)
+} -cleanup {
+    unset -nocomplain ary result
+} -result {0 0 1 18 2 19 1}
+test var-24.12 {array default and incr: compiled} {
+    apply {{} {
+	array default set ary 7
+	lappend result [array size ary] [info exist ary(x)]
+	incr ary(x) 11
+	lappend result [array size ary] $ary(x)
+	array default unset ary
+	incr ary(x)
+	incr ary(y)
+	lappend result [array size ary] $ary(x) $ary(y)
+    }}
+} {0 0 1 18 2 19 1}
+test var-24.13 {array default and dict: interpreted} -setup {
+    unset -nocomplain ary x y z
+} -body {
+    array default set ary {x y}
+    dict lappend ary(p) x z
+    dict update ary(q) x y {
+	set y z
+    }
+    dict with ary(r) {
+	set x 123
+    }
+    lsort -stride 2 -index 0 [array get ary]
+} -cleanup {
+    unset -nocomplain ary x y z
+} -result {p {x {y z}} q {x z} r {x 123}}
+test var-24.14 {array default and dict: compiled} {
+    lsort -stride 2 -index 0 [apply {{} {
+	array default set ary {x y}
+	dict lappend ary(p) x z
+	dict update ary(q) x y {
+	    set y z
+	}
+	dict with ary(r) {
+	    set x 123
+	}
+	array get ary
+    }}]
+} {p {x {y z}} q {x z} r {x 123}}
+test var-24.15 {array default set and get: two-level} {
+    apply {{} {
+	array set ary {a 3}
+	array default set ary 7
+	apply {{} {
+	    upvar 1 ary ary ary(c) c
+	    lappend result $ary(a) $ary(b) $c
+	    lappend result [info exist ary(a)] [info exist ary(b)] [info exist c]
+	    lappend result [array default get ary]
+	}}
+    }}
+} {3 7 7 1 0 0 7}
+test var-24.16 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default set ary 7
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {can't array default set "ary": variable isn't array}
+test var-24.17 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.18 {array default set: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default set ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.19 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default get ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.20 {array default get: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default get ary x y
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.21 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default exists ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.22 {array default exists: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default exists ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
+test var-24.23 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary not-an-array
+    array default unset ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {"ary" isn't an array}
+test var-24.24 {array default unset: errors} -setup {
+    unset -nocomplain ary
+} -body {
+    array default unset ary x
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result * -match glob
 
 catch {namespace delete ns}
 catch {unset arr}
 catch {unset v}
 
+catch {rename getbytes ""}
 catch {rename p ""}
 catch {namespace delete test_ns_var}
 catch {namespace delete test_ns_var2}

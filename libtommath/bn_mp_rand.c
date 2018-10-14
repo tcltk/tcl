@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_RAND_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,40 +12,72 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
+#if defined(MP_8BIT) || defined(MP_16BIT)
+#define MP_GEN_RANDOM_SHIFT  DIGIT_BIT
+#else
+#if MP_GEN_RANDOM_MAX == 0xffffffffu
+#define MP_GEN_RANDOM_SHIFT  32
+#elif MP_GEN_RANDOM_MAX == 32767
+/* SHRT_MAX */
+#define MP_GEN_RANDOM_SHIFT  15
+#elif MP_GEN_RANDOM_MAX == 2147483647
+/* INT_MAX */
+#define MP_GEN_RANDOM_SHIFT  31
+#elif !defined(MP_GEN_RANDOM_SHIFT)
+#error Thou shalt define their own valid MP_GEN_RANDOM_SHIFT
+#endif
+#endif
+
 /* makes a pseudo-random int of a given size */
-int
-mp_rand (mp_int * a, int digits)
+static mp_digit s_gen_random(void)
 {
-  int     res;
-  mp_digit d;
+   mp_digit d = 0, msk = 0;
+   do {
+      d <<= MP_GEN_RANDOM_SHIFT;
+      d |= ((mp_digit) MP_GEN_RANDOM());
+      msk <<= MP_GEN_RANDOM_SHIFT;
+      msk |= (MP_MASK & MP_GEN_RANDOM_MAX);
+   } while ((MP_MASK & msk) != MP_MASK);
+   d &= MP_MASK;
+   return d;
+}
 
-  mp_zero (a);
-  if (digits <= 0) {
-    return MP_OKAY;
-  }
+int mp_rand(mp_int *a, int digits)
+{
+   int     res;
+   mp_digit d;
 
-  /* first place a random non-zero digit */
-  do {
-    d = ((mp_digit) abs (rand ())) & MP_MASK;
-  } while (d == 0);
+   mp_zero(a);
+   if (digits <= 0) {
+      return MP_OKAY;
+   }
 
-  if ((res = mp_add_d (a, d, a)) != MP_OKAY) {
-    return res;
-  }
+   /* first place a random non-zero digit */
+   do {
+      d = s_gen_random();
+   } while (d == 0u);
 
-  while (--digits > 0) {
-    if ((res = mp_lshd (a, 1)) != MP_OKAY) {
+   if ((res = mp_add_d(a, d, a)) != MP_OKAY) {
       return res;
-    }
+   }
 
-    if ((res = mp_add_d (a, ((mp_digit) abs (rand ())), a)) != MP_OKAY) {
-      return res;
-    }
-  }
+   while (--digits > 0) {
+      if ((res = mp_lshd(a, 1)) != MP_OKAY) {
+         return res;
+      }
 
-  return MP_OKAY;
+      if ((res = mp_add_d(a, s_gen_random(), a)) != MP_OKAY) {
+         return res;
+      }
+   }
+
+   return MP_OKAY;
 }
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

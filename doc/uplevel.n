@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH uplevel n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -24,9 +24,9 @@ the result of that evaluation.
 If \fIlevel\fR is an integer then
 it gives a distance (up the procedure calling stack) to move before
 executing the command.  If \fIlevel\fR consists of \fB#\fR followed by
-a number then the number gives an absolute level number.  If \fIlevel\fR
+a integer then the level gives an absolute level.  If \fIlevel\fR
 is omitted then it defaults to \fB1\fR.  \fILevel\fR cannot be
-defaulted if the first \fIcommand\fR argument starts with a digit or \fB#\fR.
+defaulted if the first \fIcommand\fR argument is an integer or starts with \fB#\fR.
 .PP
 For example, suppose that procedure \fBa\fR was invoked
 from top-level, and that it called \fBb\fR, and that \fBb\fR called \fBc\fR.

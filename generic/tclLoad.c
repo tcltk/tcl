@@ -130,7 +130,7 @@ Tcl_LoadObjCmd(
     Tcl_PackageInitProc *initProc;
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     unsigned len;
     int index, flags = 0;
     Tcl_Obj *const *savedobjv = objv;
@@ -336,7 +336,7 @@ Tcl_LoadObjCmd(
 		}
 #endif /* __CYGWIN__ */
 		for (p = pkgGuess; *p != 0; p += offset) {
-		    offset = Tcl_UtfToUniChar(p, &ch);
+		    offset = TclUtfToUniChar(p, &ch);
 		    if ((ch > 0x100)
 			    || !(isalpha(UCHAR(ch)) /* INTL: ISO only */
 				    || (UCHAR(ch) == '_'))) {
@@ -470,6 +470,19 @@ Tcl_LoadObjCmd(
      */
 
     if (code != TCL_OK) {
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+	Interp *iPtr = (Interp *) target;
+	if (iPtr->result && *(iPtr->result) && !iPtr->freeProc) {
+	    /*
+	     * A call to Tcl_InitStubs() determined the caller extension and
+	     * this interp are incompatible in their stubs mechanisms, and
+	     * recorded the error in the oldest legacy place we have to do so.
+	     */
+	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->result, -1));
+	    iPtr->result =  &tclEmptyString;
+	    iPtr->freeProc = NULL;
+	}
+#endif /* defined(TCL_NO_DEPRECATED) */
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
@@ -998,7 +1011,7 @@ Tcl_StaticPackage(
 	}
 
 	/*
-	 * Package isn't loade in the current interp yet. Mark it as now being
+	 * Package isn't loaded in the current interp yet. Mark it as now being
 	 * loaded.
 	 */
 
@@ -1012,10 +1025,10 @@ Tcl_StaticPackage(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetLoadedPackages --
+ * TclGetLoadedPackages, TclGetLoadedPackagesEx --
  *
  *	This function returns information about all of the files that are
- *	loaded (either in a particular intepreter, or for all interpreters).
+ *	loaded (either in a particular interpreter, or for all interpreters).
  *
  * Results:
  *	The return value is a standard Tcl completion code. If successful, a
@@ -1039,16 +1052,27 @@ TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
+    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+}
+
+int
+TclGetLoadedPackagesEx(
+    Tcl_Interp *interp,		/* Interpreter in which to return information
+				 * or error message. */
+    const char *targetName,	/* Name of target interpreter or NULL. If
+				 * NULL, return info about all interps;
+				 * otherwise, just return info about this
+				 * interpreter. */
+    const char *packageName)	/* Package name or NULL. If NULL, return info
+				 * for all packages.
+				 */
+{
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
     Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
-	/*
-	 * Return information about all of the available packages.
-	 */
-
 	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
@@ -1063,16 +1087,38 @@ TclGetLoadedPackages(
 	return TCL_OK;
     }
 
-    /*
-     * Return information about only the packages that are loaded in a given
-     * interpreter.
-     */
-
     target = Tcl_GetSlave(interp, targetName);
     if (target == NULL) {
 	return TCL_ERROR;
     }
     ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+
+    /*
+     * Return information about all of the available packages.
+     */
+    if (packageName) {
+	resultObj = NULL;
+
+	for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
+	    pkgPtr = ipPtr->pkgPtr;
+
+	    if (!strcmp(packageName, pkgPtr->packageName)) {
+		resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
+		break;
+	    }
+	}
+
+	if (resultObj) {
+	    Tcl_SetObjResult(interp, resultObj);
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * Return information about only the packages that are loaded in a given
+     * interpreter.
+     */
+
     resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;

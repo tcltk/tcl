@@ -61,7 +61,7 @@
  * This structure describes per-instance state of a file based channel.
  */
 
-typedef struct FileState {
+typedef struct {
     Tcl_Channel channel;	/* Channel associated with this file. */
     int fd;			/* File handle. */
     int validMask;		/* OR'ed combination of TCL_READABLE,
@@ -76,7 +76,7 @@ typedef struct FileState {
  * a platform-independant manner.
  */
 
-typedef struct TtyAttrs {
+typedef struct {
     int baud;
     int parity;
     int data;
@@ -383,7 +383,7 @@ FileSeekProc(
      */
 
     oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
-    if (oldLoc == Tcl_LongAsWide(-1)) {
+    if (oldLoc == -1) {
 	/*
 	 * Bad things are happening. Error out...
 	 */
@@ -398,14 +398,14 @@ FileSeekProc(
      * Check for expressability in our return type, and roll-back otherwise.
      */
 
-    if (newLoc > Tcl_LongAsWide(INT_MAX)) {
+    if (newLoc > INT_MAX) {
 	*errorCodePtr = EOVERFLOW;
 	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
 	return -1;
     } else {
-	*errorCodePtr = (newLoc == Tcl_LongAsWide(-1)) ? errno : 0;
+	*errorCodePtr = (newLoc == -1) ? errno : 0;
     }
-    return (int) Tcl_WideAsLong(newLoc);
+    return (int) newLoc;
 }
 
 /*
@@ -605,7 +605,6 @@ TtySetOptionProc(
 	return TCL_OK;
     }
 
-
     /*
      * Option -handshake none|xonxoff|rtscts|dtrdsr
      */
@@ -706,6 +705,7 @@ TtySetOptionProc(
     /*
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
+
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
 	int i, control, flag;
@@ -792,7 +792,7 @@ TtySetOptionProc(
  *
  * Results:
  *	A standard Tcl result. Also sets the supplied DString to the string
- *	value of the option(s) returned.  Sets error message if needed 
+ *	value of the option(s) returned.  Sets error message if needed
  *	(by calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
@@ -882,6 +882,7 @@ TtyGetOptionProc(
      * Option is readonly and returned by [fconfigure chan -ttystatus] but not
      * returned by unnamed [fconfigure chan].
      */
+
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
 
@@ -894,12 +895,10 @@ TtyGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName, "mode"
-	    " queue ttystatus xchar"
-	    );
+    return Tcl_BadChannelOption(interp, optionName,
+		"mode queue ttystatus xchar");
 }
 
-
 static const struct {int baud; speed_t speed;} speeds[] = {
 #ifdef B0
     {0, B0},
@@ -988,9 +987,42 @@ static const struct {int baud; speed_t speed;} speeds[] = {
 #ifdef B460800
     {460800, B460800},
 #endif
+#ifdef B500000
+    {500000, B500000},
+#endif
+#ifdef B576000
+    {576000, B576000},
+#endif
+#ifdef B921600
+    {921600, B921600},
+#endif
+#ifdef B1000000
+    {1000000, B1000000},
+#endif
+#ifdef B1152000
+    {1152000, B1152000},
+#endif
+#ifdef B1500000
+    {1500000,B1500000},
+#endif
+#ifdef B2000000
+    {2000000, B2000000},
+#endif
+#ifdef B2500000
+    {2500000,B2500000},
+#endif
+#ifdef B3000000
+    {3000000,B3000000},
+#endif
+#ifdef B3500000
+    {3500000,B3500000},
+#endif
+#ifdef B4000000
+    {4000000,B4000000},
+#endif
     {-1, 0}
 };
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1201,7 +1233,7 @@ TtyParseMode(
     char parity;
     const char *bad = "bad value for -mode";
 
-    i = sscanf(mode, "%d,%c,%d,%d%n", 
+    i = sscanf(mode, "%d,%c,%d,%d%n",
 	    &ttyPtr->baud,
 	    &parity,
 	    &ttyPtr->data,
@@ -1282,7 +1314,8 @@ TtyParseMode(
 
 static void
 TtyInit(
-    int fd)	/* Open file descriptor for serial port to be initialized. */
+    int fd)			/* Open file descriptor for serial port to be
+				 * initialized. */
 {
     struct termios iostate;
     tcgetattr(fd, &iostate);
@@ -1292,8 +1325,7 @@ TtyInit(
 	    || iostate.c_lflag != 0
 	    || iostate.c_cflag & CREAD
 	    || iostate.c_cc[VMIN] != 1
-	    || iostate.c_cc[VTIME] != 0) 
-    {
+	    || iostate.c_cc[VTIME] != 0) {
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
 	iostate.c_lflag = 0;
@@ -1361,6 +1393,11 @@ TclpOpenFileChannel(
 
     native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
+	if (interp != (Tcl_Interp *) NULL) {
+	    Tcl_AppendResult(interp, "couldn't open \"",
+	    TclGetString(pathPtr), "\": filename is invalid on this platform",
+	    NULL);
+	}
 	return NULL;
     }
 
@@ -1687,166 +1724,6 @@ Tcl_GetOpenFile(
 	    NULL);
     return TCL_ERROR;
 }
-
-#ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
-				 * in tclMacOSXNotify.c */
-/*
- *----------------------------------------------------------------------
- *
- * TclUnixWaitForFile --
- *
- *	This function waits synchronously for a file to become readable or
- *	writable, with an optional timeout.
- *
- * Results:
- *	The return value is an OR'ed combination of TCL_READABLE,
- *	TCL_WRITABLE, and TCL_EXCEPTION, indicating the conditions that are
- *	present on file at the time of the return. This function will not
- *	return until either "timeout" milliseconds have elapsed or at least
- *	one of the conditions given by mask has occurred for file (a return
- *	value of 0 means that a timeout occurred). No normal events will be
- *	serviced during the execution of this function.
- *
- * Side effects:
- *	Time passes.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclUnixWaitForFile(
-    int fd,			/* Handle for file on which to wait. */
-    int mask,			/* What to wait for: OR'ed combination of
-				 * TCL_READABLE, TCL_WRITABLE, and
-				 * TCL_EXCEPTION. */
-    int timeout)		/* Maximum amount of time to wait for one of
-				 * the conditions in mask to occur, in
-				 * milliseconds. A value of 0 means don't wait
-				 * at all, and a value of -1 means wait
-				 * forever. */
-{
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
-    struct timeval blockTime, *timeoutPtr;
-    int numFound, result = 0;
-    fd_set readableMask;
-    fd_set writableMask;
-    fd_set exceptionMask;
-
-#ifndef _DARWIN_C_SOURCE
-    /*
-     * Sanity check fd.
-     */
-
-    if (fd >= FD_SETSIZE) {
-	Tcl_Panic("TclUnixWaitForFile can't handle file id %d", fd);
-	/* must never get here, or select masks overrun will occur below */
-    }
-#endif
-
-    /*
-     * If there is a non-zero finite timeout, compute the time when we give
-     * up.
-     */
-
-    if (timeout > 0) {
-	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
-	if (abortTime.usec >= 1000000) {
-	    abortTime.usec -= 1000000;
-	    abortTime.sec += 1;
-	}
-	timeoutPtr = &blockTime;
-    } else if (timeout == 0) {
-	timeoutPtr = &blockTime;
-	blockTime.tv_sec = 0;
-	blockTime.tv_usec = 0;
-    } else {
-	timeoutPtr = NULL;
-    }
-
-    /*
-     * Initialize the select masks.
-     */
-
-    FD_ZERO(&readableMask);
-    FD_ZERO(&writableMask);
-    FD_ZERO(&exceptionMask);
-
-    /*
-     * Loop in a mini-event loop of our own, waiting for either the file to
-     * become ready or a timeout to occur.
-     */
-
-    while (1) {
-	if (timeout > 0) {
-	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = abortTime.usec - now.usec;
-	    if (blockTime.tv_usec < 0) {
-		blockTime.tv_sec -= 1;
-		blockTime.tv_usec += 1000000;
-	    }
-	    if (blockTime.tv_sec < 0) {
-		blockTime.tv_sec = 0;
-		blockTime.tv_usec = 0;
-	    }
-	}
-
-	/*
-	 * Setup the select masks for the fd.
-	 */
-
-	if (mask & TCL_READABLE) {
-	    FD_SET(fd, &readableMask);
-	}
-	if (mask & TCL_WRITABLE) {
-	    FD_SET(fd, &writableMask);
-	}
-	if (mask & TCL_EXCEPTION) {
-	    FD_SET(fd, &exceptionMask);
-	}
-
-	/*
-	 * Wait for the event or a timeout.
-	 */
-
-	numFound = select(fd + 1, &readableMask, &writableMask,
-		&exceptionMask, timeoutPtr);
-	if (numFound == 1) {
-	    if (FD_ISSET(fd, &readableMask)) {
-		SET_BITS(result, TCL_READABLE);
-	    }
-	    if (FD_ISSET(fd, &writableMask)) {
-		SET_BITS(result, TCL_WRITABLE);
-	    }
-	    if (FD_ISSET(fd, &exceptionMask)) { 
-		SET_BITS(result, TCL_EXCEPTION);
-	    }
-	    result &= mask;
-	    if (result) {
-		break;
-	    }
-	}
-	if (timeout == 0) {
-	    break;
-	}
-	if (timeout < 0) {
-	    continue;
-	}
-
-	/*
-	 * The select returned early, so we need to recompute the timeout.
-	 */
-
-	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
-	    break;
-	}
-    }
-    return result;
-}
-#endif /* HAVE_COREFOUNDATION */
 
 /*
  *----------------------------------------------------------------------

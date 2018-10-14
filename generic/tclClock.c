@@ -91,8 +91,8 @@ static const char *const literals[] = {
  * Structure containing the client data for [clock]
  */
 
-typedef struct ClockClientData {
-    int refCount;		/* Number of live references. */
+typedef struct {
+    size_t refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals. */
 } ClockClientData;
 
@@ -208,11 +208,7 @@ struct ClockCommand {
 };
 
 static const struct ClockCommand clockCommands[] = {
-    { "clicks",			ClockClicksObjCmd },
     { "getenv",			ClockGetenvObjCmd },
-    { "microseconds",		ClockMicrosecondsObjCmd },
-    { "milliseconds",		ClockMillisecondsObjCmd },
-    { "seconds",		ClockSecondsObjCmd },
     { "Oldscan",		TclClockOldscanObjCmd },
     { "ConvertLocalToUTC",	ClockConvertlocaltoutcObjCmd },
     { "GetDateFields",		ClockGetdatefieldsObjCmd },
@@ -253,6 +249,19 @@ TclClockInit(
     ClockClientData *data;
     int i;
 
+    /* Structure of the 'clock' ensemble */
+
+    static const EnsembleImplMap clockImplMap[] = {
+	{"add",          NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
+	{"clicks",       ClockClicksObjCmd,       TclCompileClockClicksCmd,  NULL, NULL,       0},
+	{"format",       NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
+	{"microseconds", ClockMicrosecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(1), 0},
+	{"milliseconds", ClockMillisecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(2), 0},
+	{"scan",         NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL      , 0},
+	{"seconds",      ClockSecondsObjCmd,      TclCompileClockReadingCmd, NULL, INT2PTR(3), 0},
+	{NULL,           NULL,                    NULL,                      NULL, NULL,       0}
+    };
+
     /*
      * Safe interps get [::clock] as alias to a master, so do not need their
      * own copies of the support routines.
@@ -276,6 +285,7 @@ TclClockInit(
 
     /*
      * Install the commands.
+     * TODO - Let Tcl_MakeEnsemble do this?
      */
 
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
@@ -286,6 +296,10 @@ TclClockInit(
 	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
+
+    /* Make the clock ensemble */
+
+    TclMakeEnsemble(interp, "clock", clockImplMap);
 }
 
 /*
@@ -349,7 +363,7 @@ ClockConvertlocaltoutcObjCmd(
 		"found in dictionary", -1));
 	return TCL_ERROR;
     }
-    if ((Tcl_GetWideIntFromObj(interp, secondsObj,
+    if ((TclGetWideIntFromObj(interp, secondsObj,
 	    &fields.localSeconds) != TCL_OK)
 	|| (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)
 	|| ConvertLocalToUTC(interp, &fields, objv[2], changeover)) {
@@ -428,7 +442,7 @@ ClockGetdatefieldsObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "seconds tzdata changeover");
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &fields.seconds) != TCL_OK
+    if (TclGetWideIntFromObj(interp, objv[1], &fields.seconds) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -522,6 +536,46 @@ ClockGetdatefieldsObjCmd(
  */
 
 static int
+FetchEraField(
+    Tcl_Interp *interp,
+    Tcl_Obj *dict,
+    Tcl_Obj *key,
+    int *storePtr)
+{
+    Tcl_Obj *value = NULL;
+
+    if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (value == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"expected key(s) not found in dictionary", -1));
+	return TCL_ERROR;
+    }
+    return Tcl_GetIndexFromObj(interp, value, eras, "era", TCL_EXACT, storePtr);
+}
+
+static int
+FetchIntField(
+    Tcl_Interp *interp,
+    Tcl_Obj *dict,
+    Tcl_Obj *key,
+    int *storePtr)
+{
+    Tcl_Obj *value = NULL;
+
+    if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (value == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"expected key(s) not found in dictionary", -1));
+	return TCL_ERROR;
+    }
+    return TclGetIntFromObj(interp, value, storePtr);
+}
+
+static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -532,7 +586,6 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
     Tcl_Obj *const *literals = data->literals;
-    Tcl_Obj *fieldPtr;
     int changeover;
     int copied = 0;
     int status;
@@ -547,22 +600,14 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_YEAR], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.year) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_MONTH],	&fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.month) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFMONTH], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.dayOfMonth)!=TCL_OK
+    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_YEAR], &fields.year)
+		!= TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_MONTH], &fields.month)
+		!= TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_DAYOFMONTH],
+		&fields.dayOfMonth) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -625,7 +670,6 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
     Tcl_Obj *const *literals = data->literals;
-    Tcl_Obj *fieldPtr;
     int changeover;
     int copied = 0;
     int status;
@@ -640,22 +684,14 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Year)) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601WEEK], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Week)) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFWEEK], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.dayOfWeek)) != TCL_OK
+    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_ISO8601YEAR],
+		&fields.iso8601Year) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_ISO8601WEEK],
+		&fields.iso8601Week) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_DAYOFWEEK],
+		&fields.dayOfWeek) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -1112,7 +1148,7 @@ LookupLastTransition(
      */
 
     if (Tcl_ListObjIndex(interp, rowv[0], 0, &compObj) != TCL_OK
-	    || Tcl_GetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+	    || TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
 	return NULL;
     }
 
@@ -1135,7 +1171,7 @@ LookupLastTransition(
 	int m = (l + u + 1) / 2;
 
 	if (Tcl_ListObjIndex(interp, rowv[m], 0, &compObj) != TCL_OK ||
-		Tcl_GetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+		TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
 	    return NULL;
 	}
 	if (tick >= compVal) {
@@ -1477,7 +1513,19 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
+#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
+#else
+    /*
+     * Have to make sure quotient is truncated towards 0 when negative.
+     * See above bug for details. The casts are necessary.
+     */
+    if (ym1 >= 0)
+	ym1o4 = ym1 / 4;
+    else {
+	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+    }
+#endif
     if (ym1 % 4 < 0) {
 	ym1o4--;
     }
@@ -1530,12 +1578,10 @@ static int
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
-    int year;
+    int year = fields->year;
 
     if (fields->era == BCE) {
-	year = 1 - fields->year;
-    } else {
-	year = fields->year;
+	year = 1 - year;
     }
     if (year%4 != 0) {
 	return 0;
@@ -1646,7 +1692,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
+    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
@@ -1902,7 +1948,7 @@ ClockParseformatargsObjCmd(
      * Check options.
      */
 
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
 	return TCL_ERROR;
     }
     if ((saw & (1 << CLOCK_FORMAT_GMT))
@@ -1983,22 +2029,23 @@ ClockSecondsObjCmd(
 static void
 TzsetIfNecessary(void)
 {
-    static char *tzWas = NULL;	/* Previous value of TZ, protected by
+    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
 				 * clockMutex. */
     const char *tzIsNow;	/* Current value of TZ */
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");
-    if (tzIsNow != NULL && (tzWas == NULL || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
+	    || strcmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL) {
+	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
 	tzWas = ckalloc(strlen(tzIsNow) + 1);
 	strcpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	ckfree(tzWas);
+	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);
@@ -2025,8 +2072,7 @@ ClockDeleteCmdProc(
     ClockClientData *data = clientData;
     int i;
 
-    data->refCount--;
-    if (data->refCount == 0) {
+    if (data->refCount-- <= 1) {
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}

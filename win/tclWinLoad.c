@@ -63,9 +63,10 @@ TclpDlopen(
 				 * file. */
     int flags)
 {
-    HINSTANCE hInstance;
+    HINSTANCE hInstance = NULL;
     const TCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
+    DWORD firstError;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -74,7 +75,10 @@ TclpDlopen(
      */
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
-    hInstance = LoadLibraryEx(nativeName,NULL,LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (nativeName != NULL) {
+	hInstance = LoadLibraryEx(nativeName, NULL,
+		LOAD_WITH_ALTERED_SEARCH_PATH);
+    }
     if (hInstance == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -84,6 +88,13 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
+        /*
+         * Remember the first error on load attempt to be used if the
+         * second load attempt below also fails.
+        */
+        firstError = (nativeName == NULL) ?
+		ERROR_MOD_NOT_FOUND : GetLastError();
+
 	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -91,8 +102,21 @@ TclpDlopen(
     }
 
     if (hInstance == NULL) {
-	DWORD lastError = GetLastError();
-	Tcl_Obj *errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
+	DWORD lastError;
+        Tcl_Obj *errMsg;
+
+        /*
+         * We choose to only use the error from the second call if the first
+         * call failed due to the file not being found. Else stick to the
+         * first error for reporting purposes.
+         */
+        if (firstError == ERROR_MOD_NOT_FOUND ||
+            firstError == ERROR_DLL_NOT_FOUND)
+            lastError = GetLastError();
+        else
+            lastError = firstError;
+
+	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		Tcl_GetString(pathPtr));
 
 	/*
@@ -102,37 +126,43 @@ TclpDlopen(
 	 * better if there was a way to get what DLLs
 	 */
 
-	switch (lastError) {
-	case ERROR_MOD_NOT_FOUND:
-	    Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", NULL);
-	    goto notFoundMsg;
-	case ERROR_DLL_NOT_FOUND:
-	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
-	notFoundMsg:
-	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
-		    " could not be found in library path", -1);
-	    break;
-	case ERROR_PROC_NOT_FOUND:
-	    Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
-	    Tcl_AppendToObj(errMsg, "A function specified in the import"
-		    " table could not be resolved by the system. Windows"
-		    " is not telling which one, I'm sorry.", -1);
-	    break;
-	case ERROR_INVALID_DLL:
-	    Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
-	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
-		    " is damaged", -1);
-	    break;
-	case ERROR_DLL_INIT_FAILED:
-	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
-	    Tcl_AppendToObj(errMsg, "the library initialization"
-		    " routine failed", -1);
-	    break;
-	default:
-	    TclWinConvertError(lastError);
-	    Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
+	if (interp) {
+	    switch (lastError) {
+	    case ERROR_MOD_NOT_FOUND:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", NULL);
+		goto notFoundMsg;
+	    case ERROR_DLL_NOT_FOUND:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
+	    notFoundMsg:
+		Tcl_AppendToObj(errMsg, "this library or a dependent library"
+			" could not be found in library path", -1);
+		break;
+	    case ERROR_PROC_NOT_FOUND:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
+		Tcl_AppendToObj(errMsg, "A function specified in the import"
+			" table could not be resolved by the system. Windows"
+			" is not telling which one, I'm sorry.", -1);
+		break;
+	    case ERROR_INVALID_DLL:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
+		Tcl_AppendToObj(errMsg, "this library or a dependent library"
+			" is damaged", -1);
+		break;
+	    case ERROR_DLL_INIT_FAILED:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
+		Tcl_AppendToObj(errMsg, "the library initialization"
+			" routine failed", -1);
+		break;
+            case ERROR_BAD_EXE_FORMAT:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", NULL);
+		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
+                break;
+            default:
+		TclWinConvertError(lastError);
+		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
+	    }
+	    Tcl_SetObjResult(interp, errMsg);
 	}
-	Tcl_SetObjResult(interp, errMsg);
 	return TCL_ERROR;
     }
 

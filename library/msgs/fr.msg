@@ -18,31 +18,31 @@ namespace eval ::tcl::clock {
         "samedi"]
     ::msgcat::mcset fr MONTHS_ABBREV [list \
         "janv."\
-        "f\u00e9vr."\
+        "févr."\
         "mars"\
         "avr."\
         "mai"\
         "juin"\
         "juil."\
-        "ao\u00fbt"\
+        "août"\
         "sept."\
         "oct."\
         "nov."\
-        "d\u00e9c."\
+        "déc."\
         ""]
     ::msgcat::mcset fr MONTHS_FULL [list \
         "janvier"\
-        "f\u00e9vrier"\
+        "février"\
         "mars"\
         "avril"\
         "mai"\
         "juin"\
         "juillet"\
-        "ao\u00fbt"\
+        "août"\
         "septembre"\
         "octobre"\
         "novembre"\
-        "d\u00e9cembre"\
+        "décembre"\
         ""]
     ::msgcat::mcset fr BCE "av. J.-C."
     ::msgcat::mcset fr CE "ap. J.-C."

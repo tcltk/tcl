@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH source n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -43,6 +43,8 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
+A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, unicode).
+.PP
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
 is omitted, the system encoding is assumed.
@@ -67,3 +69,7 @@ foreach scriptFile {foo.tcl bar.tcl} {
 file(n), cd(n), encoding(n), info(n)
 .SH KEYWORDS
 file, script
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

@@ -1,4 +1,4 @@
-/* 
+/*
  * waitpid.c --
  *
  *	This procedure emulates the POSIX waitpid kernel call on BSD systems
@@ -100,7 +100,7 @@ waitpid(
 	} else {
 	    prevPtr->nextPtr = waitPtr->nextPtr;
 	}
-	ckfree((char *) waitPtr);
+	ckfree(waitPtr);
 	return result;
     }
 
