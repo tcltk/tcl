@@ -128,6 +128,33 @@ obtained from the \fB\-domainfile\fR configured at the package level.
 This method obtains the cookies for a particular HTTP request. \fIThis
 implements the http cookie jar protocol.\fR
 .TP
+\fIcookiejar\fR \fBpolicyAllow\fR \fIoperation domain path\fR
+.
+This method is called by the \fBstoreCookie\fR method to get a decision on
+whether to allow \fIoperation\fR to be performed for the \fIdomain\fR and
+\fIpath\fR. This is checked immediately before the database is updated but
+after the built-in security checks are done, and should return a boolean
+value; if the value is false, the operation is rejected and the database is
+not modified. The supported \fIoperation\fRs are:
+.RS
+.TP
+\fBdelete\fR
+.
+The \fIdomain\fR is seeking to delete a cookie.
+.TP
+\fBsession\fR
+.
+The \fIdomain\fR is seeking to create or update a session cookie.
+.TP
+\fBset\fR
+.
+The \fIdomain\fR is seeking to create or update a persistent cookie (with a
+defined lifetime).
+.PP
+The default implementation of this method just returns true, but subclasses of
+this class may impose their own rules.
+.RE
+.TP
 \fIcookiejar\fR \fBstoreCookie\fR \fIoptions\fR
 .
 This method stores a single cookie from a particular HTTP response. Cookies
@@ -142,7 +169,7 @@ stored is returned. If just \fIhost\fR (which may be a hostname or a domain
 name) is supplied, the list of cookie keys stored for that host is returned.
 If both \fIhost\fR and \fIkey\fR are supplied, the value for that key is
 returned; it is an error if no such host or key match exactly.
-.SH "EXAMPLE"
+.SH "EXAMPLES"
 .PP
 The simplest way of using a cookie jar is to just permanently configure it at
 the start of the application.
@@ -153,6 +180,29 @@ package require http
 
 set cookiedb ~/.tclcookies.db
 http::configure -cookiejar [\fBhttp::cookiejar new\fR $cookiedb]
+
+# No further explicit steps are required to use cookies
+set tok [http::geturl http://core.tcl.tk/]
+.CE
+.PP
+To only allow a particular domain to use cookies, perhaps because you only
+want to enable a particular host to create and manipulate sessions, create a
+subclass that imposes that policy.
+.PP
+.CS
+package require http
+\fBpackage require cookiejar\fR
+
+oo::class create MyCookieJar {
+    superclass \fBhttp::cookiejar\fR
+
+    method \fBpolicyAllow\fR {operation domain path} {
+        return [expr {$domain eq "my.example.com"}]
+    }
+}
+
+set cookiedb ~/.tclcookies.db
+http::configure -cookiejar [MyCookieJar new $cookiedb]
 
 # No further explicit steps are required to use cookies
 set tok [http::geturl http://core.tcl.tk/]
