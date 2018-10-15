@@ -589,6 +589,12 @@ package provide cookiejar \
 	return 0
     }
 
+    # A defined extension point to allow users to easily impose extra policies
+    # on whether to accept cookies from a particular domain and path.
+    method policyAllow {operation domain path} {
+	return true
+    }
+
     method storeCookie {options} {
 	db transaction {
 	    if {[my BadDomain $options]} {
@@ -598,6 +604,10 @@ package provide cookiejar \
 	    set persistent [dict exists $options expires]
 	    dict with options {}
 	    if {!$persistent} {
+		if {![my policyAllow session $domain $path]} {
+		    log warn "bad cookie: $domain prohibited by user policy"
+		    return
+		}
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
 			secure, domain, path, key, value, originonly, creation,
@@ -612,6 +622,10 @@ package provide cookiejar \
 		log debug "defined session cookie for %s" \
 			[locn $secure $domain $path $key]
 	    } elseif {$expires < $now} {
+		if {![my policyAllow delete $domain $path]} {
+		    log warn "bad cookie: $domain prohibited by user policy"
+		    return
+		}
 		db eval {
 		    DELETE FROM persistentCookies
 		    WHERE domain = $domain AND path = $path AND key = $key
@@ -627,6 +641,10 @@ package provide cookiejar \
 		log debug "deleted %d cookies for %s" \
 			$del [locn $secure $domain $path $key]
 	    } else {
+		if {![my policyAllow set $domain $path]} {
+		    log warn "bad cookie: $domain prohibited by user policy"
+		    return
+		}
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
 			secure, domain, path, key, value, originonly, expiry,
