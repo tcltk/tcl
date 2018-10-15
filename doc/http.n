@@ -818,9 +818,9 @@ with different names in any request.
 \fIcookieJar \fBstoreCookie \fIcookieDictionary\fR
 .
 This command asks the cookie jar to store a particular cookie that was
-returned by a request. The cookie (which will have been parsed by the http
-package) is described by a dictionary, \fIcookieDictionary\fR, that may have
-the following keys:
+returned by a request; the result of this command is ignored. The cookie
+(which will have been parsed by the http package) is described by a
+dictionary, \fIcookieDictionary\fR, that may have the following keys:
 .RS
 .TP
 \fBdomain\fR
