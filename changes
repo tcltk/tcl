@@ -8858,7 +8858,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2018-04-30 (bug)[27b682] race made [file delete] raise "no such file" (sebres)
 
-2018-05-04 tzdata updated to Olson's tzdata2017c (jima)
+2018-05-04 tzdata updated to Olson's tzdata2017e (jima)
 
 2018-06-04 (bug)[925643] 32/64 cleanup of filesystem DIR operations (sebres)
 
