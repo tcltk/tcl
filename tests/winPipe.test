@@ -30,6 +30,7 @@ testConstraint cat32        [file exists $cat32]
 testConstraint AllocConsole [catch {puts console1 ""}]
 testConstraint RealConsole  [expr {![testConstraint AllocConsole]}]
 testConstraint testexcept   [llength [info commands testexcept]]
+testConstraint slowTest     0
 
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
