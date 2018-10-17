@@ -686,10 +686,10 @@ SubstituteFile(
 BOOL FileExists(LPCTSTR szPath)
 {
 #ifndef INVALID_FILE_ATTRIBUTES
-    #define INVALID_FILE_ATTRIBUTES ((DWORD)-1) 
+    #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
     DWORD pathAttr = GetFileAttributes(szPath);
-    return (pathAttr != INVALID_FILE_ATTRIBUTES && 
+    return (pathAttr != INVALID_FILE_ATTRIBUTES &&
 	    !(pathAttr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
@@ -740,7 +740,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 #if 0 /* This function is not available in Visual C++ 6 */
     /*
      * Use numerics 0 -> FindExInfoStandard,
-     * 1 -> FindExSearchLimitToDirectories, 
+     * 1 -> FindExSearchLimitToDirectories,
      * as these are not defined in Visual C++ 6
      */
     hSearch = FindFirstFileEx(path, 0, &finfo, 1, NULL, 0);
@@ -755,7 +755,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
     do {
 	int sublen;
 	/*
-	 * We need to check it is a directory despite the 
+	 * We need to check it is a directory despite the
 	 * FindExSearchLimitToDirectories in the above call. See SDK docs
 	 */
 	if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
@@ -786,7 +786,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
  *          that is used to confirm it is the correct directory.
  *	The search path for the package directory is currently only
  *      the parent and grandparent of the current working directory.
- *      If found, the command prints 
+ *      If found, the command prints
  *         name_DIRPATH=<full path of located directory>
  *      and returns 0. If not found, does not print anything and returns 1.
  */
@@ -794,7 +794,7 @@ static int LocateDependency(const char *keypath)
 {
     int i, ret;
     static char *paths[] = {"..", "..\\..", "..\\..\\.."};
-    
+
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);
 	if (ret == 0)

@@ -224,7 +224,7 @@ extern "C" {
  * to be included in a shared library, then it should have the DLLEXPORT
  * storage class. If is being declared for use by a module that is going to
  * link against the shared library, then it should have the DLLIMPORT storage
- * class. If the symbol is beind declared for a static build or for use from a
+ * class. If the symbol is being declared for a static build or for use from a
  * stub library, then the storage class should be empty.
  *
  * The convention is that a macro called BUILD_xxxx, where xxxx is the name of
@@ -2334,6 +2334,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
+ * Constants for special int-typed values, see TIP #494
+ */
+
+#define TCL_IO_FAILURE	(-1)
+#define TCL_AUTO_LENGTH	(-1)
+
+/*
  *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
@@ -2396,12 +2403,15 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
+	    (((Tcl_SetPanicProc)(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+#ifndef _WIN32
+EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#endif
 
 /*
  *----------------------------------------------------------------------------

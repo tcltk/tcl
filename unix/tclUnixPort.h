@@ -57,16 +57,19 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
-typedef DIR64		TclDIR;
-typedef struct dirent64	Tcl_DirEntry;
+typedef struct dirent64		Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
+#else
+typedef struct dirent		Tcl_DirEntry;
+#   define TclOSreaddir		readdir
+#endif
+#ifdef HAVE_DIR64
+typedef DIR64			TclDIR;
 #   define TclOSopendir		opendir64
 #   define TclOSrewinddir	rewinddir64
 #   define TclOSclosedir	closedir64
 #else
-typedef DIR		TclDIR;
-typedef struct dirent	Tcl_DirEntry;
-#   define TclOSreaddir		readdir
+typedef DIR			TclDIR;
 #   define TclOSopendir		opendir
 #   define TclOSrewinddir	rewinddir
 #   define TclOSclosedir	closedir
@@ -159,7 +162,7 @@ typedef off_t		Tcl_SeekOffset;
 #   include "../compat/unistd.h"
 #endif
 
-extern int TclUnixSetBlockingMode(int fd, int mode);
+MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #include <utime.h>
 
@@ -704,14 +707,14 @@ typedef int socklen_t;
 #include <pwd.h>
 #include <grp.h>
 
-extern struct passwd *	TclpGetPwNam(const char *name);
-extern struct group *	TclpGetGrNam(const char *name);
-extern struct passwd *	TclpGetPwUid(uid_t uid);
-extern struct group *	TclpGetGrGid(gid_t gid);
-extern struct hostent *	TclpGetHostByName(const char *name);
-extern struct hostent *	TclpGetHostByAddr(const char *addr,
+MODULE_SCOPE struct passwd *	TclpGetPwNam(const char *name);
+MODULE_SCOPE struct group *	TclpGetGrNam(const char *name);
+MODULE_SCOPE struct passwd *	TclpGetPwUid(uid_t uid);
+MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
+MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
+MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-extern void *TclpMakeTcpClientChannelMode(
+MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */

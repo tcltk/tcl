@@ -138,6 +138,8 @@ static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		InfoCmdTypeCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
@@ -156,6 +158,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 1},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
@@ -170,7 +173,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
     {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
@@ -2132,6 +2135,60 @@ InfoTclVersionCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * InfoCmdTypeCmd --
+ *
+ *	Called to implement the "info cmdtype" command that returns the type
+ *	of a given command. Handles the following syntax:
+ *
+ *	    info cmdtype cmdName
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a type name. If there is an error, the result is an error
+ *	message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoCmdTypeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Command command;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "commandName");
+	return TCL_ERROR;
+    }
+    command = Tcl_FindCommand(interp, Tcl_GetString(objv[1]), NULL,
+	    TCL_LEAVE_ERR_MSG);
+    if (command == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * There's one special case: safe slave interpreters can't see aliases as
+     * aliases as they're part of the security mechanisms.
+     */
+
+    if (Tcl_IsSafe(interp)
+	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
+	Tcl_AppendResult(interp, "native", NULL);
+    } else {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_JoinObjCmd --
  *
  *	This procedure is invoked to process the "join" Tcl command. See the
@@ -2730,21 +2787,10 @@ Tcl_LreplaceObjCmd(
     if (first < 0) {
 	first = 0;
     }
-
-    /*
-     * Complain if the user asked for a start element that is greater than the
-     * list length. This won't ever trigger for the "end-*" case as that will
-     * be properly constrained by TclGetIntForIndex because we use listLen-1
-     * (to allow for replacing the last elem).
-     */
-
-    if ((first >= listLen) && (listLen > 0)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"list doesn't contain element %s", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
-		NULL);
-	return TCL_ERROR;
+    if (first > listLen) {
+	first = listLen;
     }
+
     if (last >= listLen) {
 	last = listLen - 1;
     }
@@ -3333,7 +3379,7 @@ Tcl_LsearchObjCmd(
 	 * sense in doing this when the match sense is inverted.
 	 */
 
-	/* 
+	/*
 	 * With -stride, lower, upper and i are kept as multiples of groupSize.
 	 */
 
@@ -4015,7 +4061,7 @@ Tcl_LsortObjCmd(
 		/*
 		 * Do not shrink the actual memory block used; that doesn't
 		 * work with TclStackAlloc-allocated memory. [Bug 2918962]
-		 * 
+		 *
 		 * TODO: Consider a pointer increment to replace this
 		 * array shift.
 		 */
