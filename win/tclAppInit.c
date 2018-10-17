@@ -126,6 +126,9 @@ _tmain(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
+#elif !defined(_WIN32) || defined(UNICODE)
+    /* This doesn't work on Windows without UNICODE */
+    TclZipfs_AppHook(&argc, &argv);
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);

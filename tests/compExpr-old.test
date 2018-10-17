@@ -331,16 +331,9 @@ test compExpr-old-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test compExpr-old-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test compExpr-old-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test compExpr-old-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-
-# The following test is different for 32-bit versus 64-bit
-# architectures because LONG_MIN is different
-
-test compExpr-old-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+test compExpr-old-9.5 {CompileRelationalExpr: large shift expr} {
     expr {int(1<<63)}
-} -9223372036854775808
-test compExpr-old-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
-    expr {int(1<<31)}
-} -2147483648
+} 9223372036854775808
 
 test compExpr-old-9.6 {CompileRelationalExpr: error in shift expr} -body {
     expr x>>3
