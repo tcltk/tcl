@@ -20,7 +20,7 @@ testConstraint testtranslatefilename [llength [info commands testtranslatefilena
 testConstraint linkDirectory 1
 testConstraint symbolicLinkFile 1
 if {[testConstraint win]} {
-    if {[string index $tcl_platform(osVersion) 0] < 5 \
+    if {$::tcl_platform(osVersion) < 5.0 \
 	    || [lindex [file system [temporaryDirectory]] 1] ne "NTFS"} {
 	testConstraint linkDirectory 0
     }

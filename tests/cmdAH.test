@@ -20,7 +20,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
-    ([string index $tcl_platform(osVersion) 0] >= 5
+    ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
 
