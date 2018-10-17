@@ -30,6 +30,7 @@ testConstraint cat32        [file exists $cat32]
 testConstraint AllocConsole [catch {puts console1 ""}]
 testConstraint RealConsole  [expr {![testConstraint AllocConsole]}]
 testConstraint testexcept   [llength [info commands testexcept]]
+testConstraint slowTest     0
 
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
@@ -323,16 +324,16 @@ proc _testExecArgs {single args} {
 	lappend cmds [list $path(echoArgs.bat)]
     } else {
 	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
-	    file mkdir [file join [temporaryDirectory] test(Dir)Check]
-	    set path(echoArgs2.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
-		"test(Dir)Check/echo(Cmd)Test Args & Batch.bat"]
+	    set path(echoArgs2.bat) [makeFile \
+		"@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		"echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
 	}
 	lappend cmds [list $path(echoArgs2.bat)]
     }
     set broken {}
     foreach args $args {
 	if {$single & 1} {
-	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated 
+	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated
 	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
 	    set args [list "1st" $args "3rd"]
 	}
@@ -569,7 +570,7 @@ set injectList {
 
 test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args} \
 -constraints {win exec} -body {
-    # test exe only, because currently there is no proper way to escape a new-line char resp. 
+    # test exe only, because currently there is no proper way to escape a new-line char resp.
     # to supply a new-line to the batch-files within arguments (command line is truncated).
     _testExecArgs 8 \
 	[list START     {*}$injectList END] \
@@ -603,9 +604,9 @@ removeFile more
 removeFile stdout
 removeFile stderr
 removeFile nothing
-removeFile echoArgs.tcl
-removeFile echoArgs.bat
-file delete -force [file join [temporaryDirectory] test(Dir)Check]
+if {[info exists path(echoArgs.tcl)]} { removeFile echoArgs.tcl }
+if {[info exists path(echoArgs.bat)]} { removeFile echoArgs.bat }
+if {[info exists path(echoArgs2.bat)]} { removeDirectory test(Dir)Check }
 ::tcltest::cleanupTests
 return
 

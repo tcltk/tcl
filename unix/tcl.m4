@@ -547,6 +547,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD, 1, [Is this a static build?])
     fi
+    AC_SUBST(SHARED_BUILD)
 ])
 
 #------------------------------------------------------------------------
@@ -2355,6 +2356,9 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     LIBS="$LIBS $THREADS_LIBS"
     AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
     LIBS=$ac_saved_libs
+
+    # TIP #509
+    AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
 ])
 
 #--------------------------------------------------------------------
@@ -2958,6 +2962,129 @@ if test "x$NEED_FAKE_RFC2553" = "x1"; then
    AC_CHECK_FUNC(strlcpy)
 fi
 ])
+
+#------------------------------------------------------------------------
+# SC_CC_FOR_BUILD
+#	For cross compiles, locate a C compiler that can generate native binaries.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		CC_FOR_BUILD
+#		EXEEXT_FOR_BUILD
+#------------------------------------------------------------------------
+
+dnl Get a default for CC_FOR_BUILD to put into Makefile.
+AC_DEFUN([AX_CC_FOR_BUILD],[# Put a plausible default for CC_FOR_BUILD in Makefile.
+    if test -z "$CC_FOR_BUILD"; then
+      if test "x$cross_compiling" = "xno"; then
+        CC_FOR_BUILD='$(CC)'
+      else
+        AC_MSG_CHECKING([for gcc])
+        AC_CACHE_VAL(ac_cv_path_cc, [
+            search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+            for dir in $search_path ; do
+                for j in `ls -r $dir/gcc 2> /dev/null` \
+                        `ls -r $dir/gcc 2> /dev/null` ; do
+                    if test x"$ac_cv_path_cc" = x ; then
+                        if test -f "$j" ; then
+                            ac_cv_path_cc=$j
+                            break
+                        fi
+                    fi
+                done
+            done
+        ])
+      fi
+    fi
+    AC_SUBST(CC_FOR_BUILD)
+    # Also set EXEEXT_FOR_BUILD.
+    if test "x$cross_compiling" = "xno"; then
+      EXEEXT_FOR_BUILD='$(EXEEXT)'
+      OBJEXT_FOR_BUILD='$(OBJEXT)'
+    else
+      OBJEXT_FOR_BUILD='.no'
+      AC_CACHE_CHECK([for build system executable suffix], bfd_cv_build_exeext,
+        [rm -f conftest*
+         echo 'int main () { return 0; }' > conftest.c
+         bfd_cv_build_exeext=
+         ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+         for file in conftest.*; do
+           case $file in
+           *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+           *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+           esac
+         done
+         rm -f conftest*
+         test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no])
+      EXEEXT_FOR_BUILD=""
+      test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+    fi
+    AC_SUBST(EXEEXT_FOR_BUILD)])dnl
+    AC_SUBST(OBJEXT_FOR_BUILD)])dnl
+])
+
+
+#------------------------------------------------------------------------
+# SC_ZIPFS_SUPPORT
+#	Locate a zip encoder installed on the system path, or none.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		ZIP_PROG
+#       ZIP_PROG_OPTIONS
+#       ZIP_PROG_VFSSEARCH
+#       ZIP_INSTALL_OBJS
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ZIPFS_SUPPORT], [
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+
+    AC_MSG_CHECKING([for zip])
+    AC_CACHE_VAL(ac_cv_path_zip, [
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
+            fi
+        fi
+        done
+    done
+    ])
+    if test -f "$ac_cv_path_zip" ; then
+        ZIP_PROG="$ac_cv_path_zip "
+        AC_MSG_RESULT([$ZIP_PROG])
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="."
+        AC_MSG_RESULT([Found INFO Zip in environment])
+        # Use standard arguments for zip
+    else
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="."
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        AC_MSG_RESULT([No zip found on PATH. Building minizip])
+    fi
+    AC_SUBST(ZIP_PROG)
+    AC_SUBST(ZIP_PROG_OPTIONS)
+    AC_SUBST(ZIP_PROG_VFSSEARCH)
+    AC_SUBST(ZIP_INSTALL_OBJS)
+])
+
 # Local Variables:
 # mode: autoconf
 # End:

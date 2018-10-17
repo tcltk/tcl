@@ -748,14 +748,11 @@ TclCompileStringIsCmd(
 	}
 
 	switch (t) {
-	case STR_IS_INT:
-	    PUSH(	"1");
-	    OP(		EQ);
-	    break;
 	case STR_IS_WIDE:
 	    PUSH(	"2");
 	    OP(		LE);
 	    break;
+	case STR_IS_INT:
 	case STR_IS_ENTIER:
 	    PUSH(	"3");
 	    OP(		LE);
@@ -1410,7 +1407,7 @@ static int
 UniCharIsHexDigit(
     int character)
 {
-    return (character >= 0) && (character < 0x80) && isxdigit(character);
+    return (character >= 0) && (character < 0x80) && isxdigit(UCHAR(character));
 }
 
 StringClassDesc const tclStringClassTable[] = {

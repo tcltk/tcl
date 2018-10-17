@@ -49,3 +49,7 @@ if {[catch {main} msg options]} {
 exec(n)
 .SH KEYWORDS
 abort, exit, process
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

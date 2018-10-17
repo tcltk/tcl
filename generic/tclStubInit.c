@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -225,17 +229,11 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
+    if (!string) {
+	return NULL;
+    }
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
@@ -244,21 +242,16 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -271,7 +264,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -287,7 +280,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -431,20 +424,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -1590,6 +1577,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_MountBuffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

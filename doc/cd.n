@@ -41,3 +41,7 @@ current one:
 filename(n), glob(n), pwd(n)
 .SH KEYWORDS
 working directory
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
