@@ -27,6 +27,11 @@ and also returned as result.
 Starting with the Tcl 8.5 release, the variable \fIvarName\fR passed
 to \fBincr\fR may be unset, and in that case, it will be set to
 the value \fIincrement\fR or to the default increment value of \fB1\fR.
+.VS TIP508
+If \fIvarName\fR indicate an element that does not exist of an array that has
+a default value set, the sum of the default value and the \fIincrement\fR (or
+1) will be stored in the array element.
+.VE TIP508
 .SH EXAMPLES
 .PP
 Add one to the contents of the variable \fIx\fR:
@@ -59,3 +64,7 @@ an error if it is not):
 expr(n), set(n)
 .SH KEYWORDS
 add, increment, variable, value
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

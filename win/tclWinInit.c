@@ -107,7 +107,6 @@ static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
-static int		ToUtf(const WCHAR *wSrc, char *dst);
 
 /*
  *---------------------------------------------------------------------------
@@ -257,7 +256,7 @@ AppendEnvironment(
 {
     int pathc;
     WCHAR wBuf[MAX_PATH];
-    char buf[MAX_PATH * TCL_UTF_MAX];
+    char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
     Tcl_DString ds;
     const char **pathv;
@@ -286,12 +285,8 @@ AppendEnvironment(
      * this is a unicode string.
      */
 
-    if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
-	buf[0] = '\0';
-	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
-    } else {
-	ToUtf(wBuf, buf);
-    }
+    GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
 	objPtr = Tcl_NewStringObj(buf, -1);
@@ -350,14 +345,11 @@ InitializeDefaultLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -401,14 +393,11 @@ InitializeSourceLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -424,38 +413,6 @@ InitializeSourceLibraryDir(
     *valuePtr = ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ToUtf --
- *
- *	Convert a char string to a UTF string.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-ToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start;
-
-    start = dst;
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
 }
 
 /*
@@ -646,7 +603,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensitive, on Windows this matches mioxed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name

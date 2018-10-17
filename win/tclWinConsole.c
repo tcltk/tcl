@@ -1360,11 +1360,7 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-#ifdef UNICODE
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-#else
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-#endif
     return infoPtr->channel;
 }
 
