@@ -53,10 +53,9 @@ proc cleanup {args} {
 }
 
 if {[testConstraint win]} {
-    set major [string index $tcl_platform(osVersion) 0]
-    if {$major > 5} {
+    if {$::tcl_platform(osVersion) >= 5.0} {
 	testConstraint winVista 1
-    } elseif {$major == 5} {
+    } elseif {$::tcl_platform(osVersion) >= 4.0} {
 	testConstraint winXP 1
     }
 }
