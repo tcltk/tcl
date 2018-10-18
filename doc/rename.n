@@ -43,3 +43,7 @@ proc ::source args {
 namespace(n), proc(n)
 .SH KEYWORDS
 command, delete, namespace, rename
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

@@ -498,13 +498,13 @@ ChanSeek(
 		offset, mode, errnoPtr);
     }
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+    if (offset<LONG_MIN || offset>LONG_MAX) {
 	*errnoPtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
-    return Tcl_LongAsWide(chanPtr->typePtr->seekProc(chanPtr->instanceData,
-	    Tcl_WideAsLong(offset), mode, errnoPtr));
+    return chanPtr->typePtr->seekProc(chanPtr->instanceData,
+	    offset, mode, errnoPtr);
 }
 
 static inline void
@@ -6965,7 +6965,7 @@ Tcl_Seek(
 				 * non-blocking mode after the seek. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6976,7 +6976,7 @@ Tcl_Seek(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6992,7 +6992,7 @@ Tcl_Seek(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7005,7 +7005,7 @@ Tcl_Seek(
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
 	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7048,7 +7048,7 @@ Tcl_Seek(
 	wasAsync = 1;
 	result = StackSetBlockMode(chanPtr, TCL_MODE_BLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
 	ResetFlag(statePtr, CHANNEL_NONBLOCKING);
 	if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
@@ -7073,7 +7073,7 @@ Tcl_Seek(
 	 */
 
 	curPos = ChanSeek(chanPtr, offset, mode, &result);
-	if (curPos == Tcl_LongAsWide(-1)) {
+	if (curPos == -1) {
 	    Tcl_SetErrno(result);
 	}
     }
@@ -7089,7 +7089,7 @@ Tcl_Seek(
 	SetFlag(statePtr, CHANNEL_NONBLOCKING);
 	result = StackSetBlockMode(chanPtr, TCL_MODE_NONBLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
     }
 
@@ -7129,7 +7129,7 @@ Tcl_Tell(
     Tcl_WideInt curPos;		/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7140,7 +7140,7 @@ Tcl_Tell(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7156,7 +7156,7 @@ Tcl_Tell(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7173,10 +7173,10 @@ Tcl_Tell(
      * wideSeekProc if that is available and non-NULL...
      */
 
-    curPos = ChanSeek(chanPtr, Tcl_LongAsWide(0), SEEK_CUR, &result);
-    if (curPos == Tcl_LongAsWide(-1)) {
+    curPos = ChanSeek(chanPtr, 0, SEEK_CUR, &result);
+    if (curPos == -1) {
 	Tcl_SetErrno(result);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     if (inputBuffered != 0) {

@@ -2016,7 +2016,6 @@ FormatNumber(
     Tcl_Obj *src,		/* Number to format. */
     unsigned char **cursorPtr)	/* Pointer to index into destination buffer. */
 {
-    long value;
     double dvalue;
     Tcl_WideInt wvalue;
     float fvalue;
@@ -2080,7 +2079,7 @@ FormatNumber(
     case 'w':
     case 'W':
     case 'm':
-	if (Tcl_GetWideIntFromObj(interp, src, &wvalue) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
@@ -2110,19 +2109,19 @@ FormatNumber(
     case 'i':
     case 'I':
     case 'n':
-	if (TclGetLongFromObj(interp, src, &value) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = UCHAR(value);
-	    *(*cursorPtr)++ = UCHAR(value >> 8);
-	    *(*cursorPtr)++ = UCHAR(value >> 16);
-	    *(*cursorPtr)++ = UCHAR(value >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
 	} else {
-	    *(*cursorPtr)++ = UCHAR(value >> 24);
-	    *(*cursorPtr)++ = UCHAR(value >> 16);
-	    *(*cursorPtr)++ = UCHAR(value >> 8);
-	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
 	}
 	return TCL_OK;
 
@@ -2132,15 +2131,15 @@ FormatNumber(
     case 's':
     case 'S':
     case 't':
-	if (TclGetLongFromObj(interp, src, &value) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = UCHAR(value);
-	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
 	} else {
-	    *(*cursorPtr)++ = UCHAR(value >> 8);
-	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
 	}
 	return TCL_OK;
 
@@ -2148,10 +2147,10 @@ FormatNumber(
 	 * 8-bit integer values.
 	 */
     case 'c':
-	if (TclGetLongFromObj(interp, src, &value) != TCL_OK) {
+	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*(*cursorPtr)++ = UCHAR(value);
+	*(*cursorPtr)++ = UCHAR(wvalue);
 	return TCL_OK;
 
     default:
@@ -2539,8 +2538,8 @@ BinaryDecodeHex(
 	    }
 
 	    c = *data++;
-	    if (!isxdigit((int) c)) {
-		if (strict || !isspace(c)) {
+	    if (!isxdigit(UCHAR(c))) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badChar;
 		}
 		i--;
@@ -2887,7 +2886,7 @@ BinaryDecodeUu(
 	if (lineLen < 0) {
 	    c = *data++;
 	    if (c < 32 || c > 96) {
-		if (strict || !isspace(c)) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 		i--;
@@ -2905,7 +2904,7 @@ BinaryDecodeUu(
 		d[i] = c = *data++;
 		if (c < 32 || c > 96) {
 		    if (strict) {
-			if (!isspace(c)) {
+			if (!TclIsSpaceProc(c)) {
 			    goto badUu;
 			} else if (c == '\n') {
 			    goto shortUu;
@@ -2949,7 +2948,7 @@ BinaryDecodeUu(
 		} else if (c >= 32 && c <= 96) {
 		    data--;
 		    break;
-		} else if (strict || !isspace(c)) {
+		} else if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 	    } while (data < dataend);
@@ -3074,7 +3073,7 @@ BinaryDecode64(
 		if (c == '=' && i > 1) {
 		     value <<= 6;
 		     cut++;
-		} else if (!strict && isspace(c)) {
+		} else if (!strict && TclIsSpaceProc(c)) {
 		     i--;
 		} else {
 		    goto bad64;
@@ -3092,7 +3091,7 @@ BinaryDecode64(
 	    } else if (c == '=') {
 		value <<= 6;
 		cut++;
-	    } else if (strict || !isspace(c)) {
+	    } else if (strict || !TclIsSpaceProc(c)) {
 		goto bad64;
 	    } else {
 		i--;
@@ -3113,7 +3112,7 @@ BinaryDecode64(
 		goto bad64;
 	    }
 	    for (; data < dataend; data++) {
-		if (!isspace(*data)) {
+		if (!TclIsSpaceProc(*data)) {
 		    goto bad64;
 		}
 	    }
