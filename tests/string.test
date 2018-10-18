@@ -280,7 +280,7 @@ test string-3.17.$noComp {string equal, unicode} {
 } 1
 test string-3.18.$noComp {string equal, unicode} {
     run {string equal \334 \u00fc}
-} 0 
+} 0
 test string-3.19.$noComp {string equal, unicode} {
     run {string equal \334\334\334\374\374 \334\334\334\334\334}
 } 0
@@ -307,7 +307,7 @@ test string-3.24.$noComp {string equal -nocase with length} {
 } 1
 test string-3.25.$noComp {string equal -nocase with length} {
     run {string equal -nocase -length 3 abcde Abxyz}
-} 0 
+} 0
 test string-3.26.$noComp {string equal -nocase with length <= 0} {
     run {string equal -nocase -length -1 abcde AbCdEf}
 } 0
@@ -674,9 +674,9 @@ test string-6.53.$noComp {string is integer, true with whitespace} {
 test string-6.54.$noComp {string is integer, false} {
     list [run {string is integer -fail var 123abc}] $var
 } {0 3}
-test string-6.55.$noComp {string is integer, false on overflow} {
-    list [run {string is integer -fail var +[largest_int]0}] $var
-} {0 -1}
+test string-6.55.$noComp {string is integer, no overflow possible} {
+    run {string is integer +[largest_int]0}
+} 1
 test string-6.56.$noComp {string is integer, false} {
     list [run {string is integer -fail var [expr double(1)]}] $var
 } {0 1}
@@ -807,22 +807,22 @@ test string-6.91.$noComp {string is double, bad doubles} {
     }
     return $result
 } {1 1 0 0 0 1 0 0}
-test string-6.92.$noComp {string is integer, 32-bit overflow} {
+test string-6.92.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
-    list [run {string is integer -failindex var $x}] $var
-} {0 -1}
-test string-6.93.$noComp {string is integer, 32-bit overflow} {
+    set x 0x10000000000000000
+    run {string is integer $x}
+} 1
+test string-6.93.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
+    set x 0x10000000000000000
     append x ""
-    list [run {string is integer -failindex var $x}] $var
-} {0 -1}
-test string-6.94.$noComp {string is integer, 32-bit overflow} {
+    run {string is integer $x}
+} 1
+test string-6.94.$noComp {string is integer, no 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
-    list [run {string is integer -failindex var [expr {$x}]}] $var
-} {0 -1}
+    set x 0x10000000000000000
+    run {string is integer [expr {$x}]}
+} 1
 test string-6.95.$noComp {string is wideinteger, true} {
     run {string is wideinteger +1234567890}
 } 1
@@ -2306,6 +2306,12 @@ test string-29.15.$noComp {string cat, efficiency} -setup {
     tcl::unsupported::representation [run {string cat $e $f $e $f [list x]}]
 } -match glob -result {*no string representation}
 }
+test string-30.1.1.$noComp {[Bug ba921a8d98]: string cat} {
+    run {string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]}
+} hellohello
+test string-30.1.2.$noComp {[Bug ba921a8d98]: inplace cat by subst (compiled to "strcat" instruction)} {
+    run {set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"}
+} hellohello
 
 }
 
