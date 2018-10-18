@@ -1804,6 +1804,83 @@ test oo-13.4 {OO: changing an object's class} -body {
     foo destroy
     bar destroy
 } -result {::foo ::foo ::foo ::bar}
+test oo-13.5 {OO: changing an object's class} -setup {
+    oo::object create fooObj
+} -body {
+    oo::objdefine fooObj {
+	class oo::class
+    }
+    oo::define fooObj {
+	method x {} {expr 1+2+3}
+    }
+    [fooObj new] x
+} -cleanup {
+    fooObj destroy
+} -result 6
+test oo-13.6 {OO: changing an object's class} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    foo create bar
+    oo::objdefine foo {
+	class oo::object
+    }
+    list [catch {bar x} msg] $msg
+} -cleanup {
+    catch {bar destroy}
+    foo destroy
+} -result {1 {}}
+test oo-13.7 {OO: changing an object's class} -setup {
+    oo::class create foo
+    oo::class create bar
+    unset -nocomplain result
+} -body {
+    oo::define bar method x {} {return ok}
+    oo::define foo {
+	method x {} {expr 1+2+3}
+	self mixin foo
+    }
+    lappend result [foo x]
+    oo::objdefine foo class bar
+    lappend result [foo x]
+} -cleanup {
+    foo destroy
+    bar destroy
+} -result {6 ok}
+test oo-13.7 {OO: changing an object's class to itself} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    oo::objdefine foo class foo
+} -cleanup {
+    foo destroy
+} -returnCodes error -result {may not change classes into an instance of themselves}
+test oo-13.9 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::object {
+	    class oo::class
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the root object class}
+test oo-13.10 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::class {
+	    class oo::object
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the class of classes}
 # todo: changing a class subtype (metaclass) to another class subtype
 
 test oo-14.1 {OO: mixins} {
