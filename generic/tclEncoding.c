@@ -2076,7 +2076,7 @@ LoadEscapeEncoding(
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
     memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),
-	    (size_t) Tcl_DStringLength(&escapeData));
+	    Tcl_DStringLength(&escapeData));
     Tcl_DStringFree(&escapeData);
 
     memset(dataPtr->prefixBytes, 0, sizeof(dataPtr->prefixBytes));
