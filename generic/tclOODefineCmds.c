@@ -1146,9 +1146,19 @@ TclOODefineClassObjCmd(
 	 */
 
 	if (wasClass && !willBeClass) {
-	    /* TODO: DELETE THE STRUCTURE */
+	    /*
+	     * This is the most global of all epochs. Bump it! No cache can be
+	     * trusted!
+	     */
+
+	    TclOORemoveFromMixins(oPtr->classPtr, oPtr);
+	    oPtr->fPtr->epoch++;
+	    oPtr->flags |= DONT_DELETE;
+	    TclOODeleteDescendants(interp, oPtr);
+	    oPtr->flags &= ~DONT_DELETE;
+	    TclOOReleaseClassContents(interp, oPtr);
 	} else if (!wasClass && willBeClass) {
-	    /* TODO: CREATE THE STRUCTURE */
+	    TclOOAllocClass(interp, oPtr);
 	}
 
 	if (oPtr->classPtr != NULL) {
