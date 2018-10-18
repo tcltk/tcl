@@ -143,6 +143,15 @@ incomplete commands.
 .SH "STANDARD CHANNELS"
 .PP
 See \fBTcl_StandardChannels\fR for more explanations.
+.SH ZIPVFS
+.PP
+When a zipfile is concatenated to the end of a \fBtclsh\fR, on
+startup the contents of the zip archive will be mounted as the
+virtual file system /zvfs. If a top level directory tcl8.6 is
+present in the zip archive, it will become the directory loaded
+as env(TCL_LIBRARY). If a file named \fBmain.tcl\fR is present
+in the top level directory of the zip archive, it will be sourced
+instead of the shell's normal command line handing.
 .SH "SEE ALSO"
 auto_path(n), encoding(n), env(n), fconfigure(n)
 .SH KEYWORDS

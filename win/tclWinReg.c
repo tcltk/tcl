@@ -22,13 +22,6 @@
 #endif
 #include <stdlib.h>
 
-#ifndef UNICODE
-#   undef Tcl_WinTCharToUtf
-#   define Tcl_WinTCharToUtf(a,b,c)	Tcl_ExternalToUtfDString(NULL,a,b,c)
-#   undef Tcl_WinUtfToTChar
-#   define Tcl_WinUtfToTChar(a,b,c)	Tcl_UtfToExternalDString(NULL,a,b,c)
-#endif /* !UNICODE */
-
 /*
  * Ensure that we can say which registry is being accessed.
  */
@@ -163,7 +156,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.2");
+    return Tcl_PkgProvide(interp, "registry", "1.3.3");
 }
 
 /*
@@ -414,12 +407,12 @@ DeleteKey(
      */
 
     keyName = Tcl_GetString(keyNameObj);
-    buffer = ckalloc(keyNameObj->length + 1);
+    buffer = Tcl_Alloc(keyNameObj->length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
 	    &keyName) != TCL_OK) {
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
 
@@ -427,7 +420,7 @@ DeleteKey(
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", NULL);
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
 
@@ -442,7 +435,7 @@ DeleteKey(
     mode |= KEY_ENUMERATE_SUB_KEYS | DELETE;
     result = OpenSubKey(hostName, rootKey, keyName, mode, 0, &subkey);
     if (result != ERROR_SUCCESS) {
-	ckfree(buffer);
+	Tcl_Free(buffer);
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
@@ -470,7 +463,7 @@ DeleteKey(
     }
 
     RegCloseKey(subkey);
-    ckfree(buffer);
+    Tcl_Free(buffer);
     return result;
 }
 
@@ -603,8 +596,7 @@ GetKeyNames(
 	    }
 	    break;
 	}
-	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
-	name = Tcl_DStringValue(&ds);
+	name = Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
 	if (pattern && !Tcl_StringMatch(name, pattern)) {
 	    Tcl_DStringFree(&ds);
 	    continue;
@@ -950,7 +942,7 @@ OpenKey(
 
     keyName = Tcl_GetString(keyNameObj);
     length = keyNameObj->length;
-    buffer = ckalloc(length + 1);
+    buffer = Tcl_Alloc(length + 1);
     strcpy(buffer, keyName);
 
     result = ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName);
@@ -966,7 +958,7 @@ OpenKey(
 	}
     }
 
-    ckfree(buffer);
+    Tcl_Free(buffer);
     return result;
 }
 
@@ -1019,7 +1011,9 @@ OpenSubKey(
      * this key must be closed by the caller.
      */
 
-    keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
+    if (keyName) {
+	keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
+    }
     if (flags & REG_CREATE) {
 	DWORD create;
 
@@ -1037,7 +1031,9 @@ OpenSubKey(
 	result = RegOpenKeyEx(rootKey, (TCHAR *)keyName, 0, mode,
 		keyPtr);
     }
-    Tcl_DStringFree(&buf);
+    if (keyName) {
+	Tcl_DStringFree(&buf);
+    }
 
     /*
      * Be sure to close the root key since we are done with it now.

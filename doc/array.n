@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH array n 8.3 Tcl "Tcl Built-In Commands"
+.TH array n 8.7 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -35,6 +35,53 @@ This option is particularly useful if an array has an element
 with an empty name, since the return value from
 \fBarray nextelement\fR will not indicate whether the search
 has been completed.
+.TP
+\fBarray default \fIsubcommand arrayName args...\fR
+.VS TIP508
+Manages the default value of the array. Arrays initially have no default
+value, but this command allows you to set one; the default value will be
+returned when reading from an element of the array \farrayName\fR if the read
+would otherwise result in an error. Note that this may cause the \fBappend\fR,
+\fBdict\fR, \fBincr\fR and \fBlappend\fR commands to change their behavior in
+relation to non-existing array elements.
+.RS
+.PP
+The \fIsubcommand\fR argument controls what exact operation will be performed
+on the default value of \fIarrayName\fR. Supported \fIsubcommand\fRs are:
+.VE TIP508
+.TP
+\fBarray default exists \fIarrayName\fR
+.VS TIP508
+This returns a boolean value indicating whether a default value has been set
+for the array \fIarrayName\fR. Returns a false value if \fIarrayName\fR does
+not exist. Raises an error if \fIarrayName\fR is an existing variable that is
+not an array.
+.VE TIP508
+.TP
+\fBarray default get \fIarrayName\fR
+.VS TIP508
+This returns the current default value for the array \fIarrayName\fR.  Raises
+an error if \fIarrayName\fR is an existing variable that is not an array, or
+if \fIarrayName\fR is an array without a default value.
+.VE TIP508
+.TP
+\fBarray default set \fIarrayName value\fR
+.VS TIP508
+This sets the default value for the array \fIarrayName\fR to \fIvalue\fR.
+Returns the empty string. Raises an error if \fIarrayName\fR is an existing
+variable that is not an array, or if \fIarrayName\fR is an illegal name for an
+array. If \fIarrayName\fR does not currently exist, it is created as an empty
+array as well as having its default value set.
+.VE TIP508
+.TP
+\fBarray default unset \fIarrayName\fR
+.VS TIP508
+This removes the default value for the array \fIarrayName\fR and returns the
+empty string. Does nothing if \fIarrayName\fR does not have a default
+value. Raises an error if \fIarrayName\fR is an existing variable that is not
+an array.
+.VE TIP508
+.RE
 .TP
 \fBarray donesearch \fIarrayName searchId\fR
 This command terminates an array search and destroys all the
@@ -194,3 +241,7 @@ foreach color [lsort [\fBarray names\fR colorcount]] {
 list(n), string(n), variable(n), trace(n), foreach(n)
 .SH KEYWORDS
 array, element names, search
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

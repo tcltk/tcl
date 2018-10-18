@@ -1759,7 +1759,7 @@ ConvertTreeToTokens(
 
 		/*
 		 * All the Tcl_Tokens allocated and filled belong to
-		 * this subexpresion. The first token is the leading
+		 * this subexpression. The first token is the leading
 		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
 		 * are its components.
 		 */
