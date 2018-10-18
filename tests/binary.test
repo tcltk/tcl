@@ -1647,22 +1647,6 @@ test binary-43.2 {Tcl_BinaryObjCmd: format wide int} {} {
     binary format W 7810179016327718216
 } lcTolleH
 
-test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
-    binary scan HelloTcl W x
-    set x
-} 5216694956358656876
-test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
-    binary scan lcTolleH w x
-    set x
-} 5216694956358656876
-test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
-    binary scan [binary format w [expr {wide(3) << 31}]] w x
-    set x
-} 6442450944
-test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
-    binary scan [binary format W [expr {wide(3) << 31}]] W x
-    set x
-} 6442450944
 test binary-43.5 {Tcl_BinaryObjCmd: scan wide int} {} {
     unset -nocomplain arg1
     list [binary scan \x80[string repeat \x00 7] W arg1] $arg1
@@ -1683,6 +1667,31 @@ test binary-43.9 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
     unset -nocomplain arg1 arg2
     list [binary scan [string repeat \x00 7]\x80[string repeat \x00 7]\x80 wuw arg1 arg2] $arg1 $arg2
 } {2 9223372036854775808 -9223372036854775808}
+
+test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan HelloTcl W x
+    set x
+} 5216694956358656876
+test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan lcTolleH w x
+    set x
+} 5216694956358656876
+test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format w [expr {wide(3) << 31}]] w x
+    set x
+} 6442450944
+test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format W [expr {wide(3) << 31}]] W x
+    set x
+} 6442450944
+test binary-44.5 {Tcl_BinaryObjCmd: scan wide int with bit 31 and 64 set} {} {
+    binary scan [binary format w [expr {(wide(3) << 31) + (wide(3) << 64)}]] w x
+    set x
+} 6442450944
+test binary-44.6 {Tcl_BinaryObjCmd: scan wide int with bit 31 and 64 set} {} {
+    binary scan [binary format W [expr {(wide(3) << 31) + (wide(3) << 64)}]] W x
+    set x
+} 6442450944
 
 test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
     binary scan [binary format sws 16450 -1 19521] c* x

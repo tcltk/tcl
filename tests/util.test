@@ -689,13 +689,13 @@ test util-9.31.1 {TclGetIntForIndex} -body {
 } -returnCodes error -match glob -result *
 test util-9.32 {TclGetIntForIndex} -body {
     string index a 0x1FFFFFFFF+0
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.33 {TclGetIntForIndex} -body {
     string index a 100000000000+0
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.33.1 {TclGetIntForIndex} -body {
     string index a 0d100000000000+0
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.34 {TclGetIntForIndex} -body {
     string index a 1.0
 } -returnCodes error -match glob -result *
@@ -728,7 +728,13 @@ test util-9.43 {TclGetIntForIndex} -body {
 } -returnCodes error -match glob -result *
 test util-9.44 {TclGetIntForIndex} -body {
     string index a 0+1000000000000
-} -returnCodes error -match glob -result *
+} -result {}
+test util-9.45 {TclGetIntForIndex} {
+    string index abcd end+2305843009213693950
+} {}
+test util-9.46 {TclGetIntForIndex} {
+    string index abcd end+4294967294
+} {}
 
 test util-10.1 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x0000000000000000

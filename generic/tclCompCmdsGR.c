@@ -1474,7 +1474,7 @@ TclCompileLreplaceCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int idx1, idx2, i, offset, offset2;
+    int idx1, idx2, i;
     int emptyPrefix=1, suffixStart = 0;
 
     if (parsePtr->numWords < 4) {
@@ -1495,23 +1495,6 @@ TclCompileLreplaceCmd(
     }
 
     /*
-     * idx1, idx2 are the conventional encoded forms of the tokens parsed
-     * as all forms of index values.  Values of idx1 that come before the
-     * list are treated the same as if they were the start of the list.
-     * Values of idx2 that come after the list are treated the same as if
-     * they were the end of the list.
-     */
-
-    if (idx1 == TCL_INDEX_AFTER) {
-	/*
-	 * [lreplace] treats idx1 value end+1 differently from end+2, etc.
-	 * The operand encoding cannot distinguish them, so we must bail
-	 * out to direct evaluation.
-	 */
-	return TCL_ERROR;
-    }
-
-    /*
      * General structure of the [lreplace] result is
      *		prefix replacement suffix
      * In a few cases we can predict various parts will be empty and
@@ -1522,7 +1505,9 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx1 == TCL_INDEX_AFTER) {
+	suffixStart = idx1;
+    } else if (idx2 == TCL_INDEX_BEFORE) {
 	suffixStart = idx1;
     } else if (idx2 == TCL_INDEX_END) {
 	suffixStart = TCL_INDEX_AFTER;
@@ -1552,42 +1537,6 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
 
 	emptyPrefix = 0;
-    }
-
-    /*
-     * [lreplace] raises an error when idx1 points after the list, but
-     * only when the list is not empty. This is maximum stupidity.
-     *
-     * TODO: TIP this nonsense away!
-     */
-    if (idx1 >= TCL_INDEX_START) {
-	if (emptyPrefix) {
-	    TclEmitOpcode(	INST_DUP,			envPtr);
-	} else {
-	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	}
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
-
-	/* List is not empty */
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewIntObj(idx1),
-							NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
-	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
-
-	/* Idx1 >= list length ===> raise an error */
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
-		"list doesn't contain element %d", idx1), NULL), envPtr);
-	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
-		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
-		envPtr->codeStart + offset + 1);
-	TclEmitOpcode(		INST_POP,			envPtr);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
-		envPtr->codeStart + offset2 + 1);
     }
 
     if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
