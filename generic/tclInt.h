@@ -3206,6 +3206,7 @@ MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclSetPanicProc(TCL_NORETURN1 Tcl_PanicProc *proc);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);

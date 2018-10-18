@@ -513,7 +513,7 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-declare 144 {
+declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_FindExecutable(const char *argv0)
 }
 declare 145 {
@@ -812,8 +812,8 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -1868,7 +1868,7 @@ declare 518 {
 }
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
-declare 519 {
+declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
