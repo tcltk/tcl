@@ -45,6 +45,7 @@
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
@@ -92,7 +93,6 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_CreateMathFunc 0
 #   define Tcl_GetMathFuncInfo 0
 #   define Tcl_ListMathFuncs 0
-#   define Tcl_SetPanicProc 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -397,6 +397,9 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   define Tcl_SetExitProc 0
+#   define Tcl_SetPanicProc 0
+#   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
@@ -418,6 +421,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define Tcl_SetPanicProc (const char *(*)(TCL_NORETURN1 Tcl_PanicProc *))TclSetPanicProc
 
 static int
 seekOld(

@@ -865,8 +865,7 @@ TclpFindExecutable(
      */
 
     if (argv0 == NULL) {
-#	undef Tcl_SetPanicProc
-	Tcl_SetPanicProc(tclWinDebugPanic);
+	TclSetPanicProc(tclWinDebugPanic);
     }
 
     GetModuleFileNameW(NULL, wName, MAX_PATH);

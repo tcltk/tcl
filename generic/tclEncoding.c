@@ -1444,7 +1444,7 @@ Tcl_UtfToExternal(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_InitSubsystems/Tcl_FindExecutable --
+ * Tcl_SetPanicProc/Tcl_FindExecutable --
  *
  *	This function initializes everything needed for the Tcl library
  *	to be able to operate.
@@ -1462,16 +1462,15 @@ MODULE_SCOPE const TclStubs tclStubs;
 
 static const struct {
     const TclStubs *stubs;
-    const char version[12];
+    const char version[16];
 } stubInfo = {
     &tclStubs, TCL_PATCH_LEVEL
 };
 
 const char *
-Tcl_InitSubsystems(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 {
-#   undef Tcl_SetPanicProc
-    Tcl_SetPanicProc(panicProc);
+    TclSetPanicProc(panicProc);
     TclInitSubsystems();
     return stubInfo.version;
 }

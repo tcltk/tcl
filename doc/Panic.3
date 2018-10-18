@@ -18,7 +18,7 @@ void
 void
 \fBTcl_PanicVA\fR(\fIformat\fR, \fIargList\fR)
 .sp
-void
+const char *
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
 .sp
 void
@@ -94,6 +94,8 @@ will be displayed.
 .PP
 \fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
 taking a variable number of arguments it takes an argument list.
+.PP
+The return value is the Tcl version.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

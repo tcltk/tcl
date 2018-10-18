@@ -2403,14 +2403,12 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (((Tcl_InitSubsystems)(Tcl_ConsolePanic), Tcl_CreateInterp)()))
+	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-/* Tcl_InitSubsystems, see TIP #414 */
-EXTERN const char *Tcl_InitSubsystems(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 #ifndef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif

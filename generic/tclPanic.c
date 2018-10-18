@@ -32,7 +32,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SetPanicProc --
+ * TclSetPanicProc --
  *
  *	Replace the default panic behavior with the specified function.
  *
@@ -45,9 +45,8 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_SetPanicProc
 void
-Tcl_SetPanicProc(
+TclSetPanicProc(
     TCL_NORETURN1 Tcl_PanicProc *proc)
 {
 #if defined(_WIN32)
