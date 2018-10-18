@@ -452,6 +452,19 @@ If this situation occurs, the first occurrence of the time is chosen.
 (For this reason, it is wise to have the input string contain the
 time zone when converting local times.  This caveat does not apply to
 UTC times.)
+.PP
+If the interpretation of the groups yields an impossible time because
+a field is out of range, enough of that field's unit will be added to
+or subtracted from the time to bring it in range. Thus, if attempting to
+scan or format day 0 of the month, one day will be subtracted from day
+1 of the month, yielding the last day of the previous month.
+.PP
+If the interpretation of the groups yields an impossible time because
+a Daylight Saving Time change skips over that time, or an ambiguous
+time because a Daylight Saving Time change skips back so that the clock
+observes the given time twice, and no time zone specifier (\fB%z\fR
+or \fB%Z\fR) is present in the format, the time is interpreted as
+if the clock had not changed.
 .SH "FORMAT GROUPS"
 .PP
 The following format groups are recognized by the \fBclock scan\fR and
@@ -873,40 +886,46 @@ The \fIinputString\fR argument consists of zero or more specifications of the
 following form:
 .TP
 \fItime\fR
-A time of day, which is of the form: \fBhh?:mm?:ss?? ?meridian? ?zone?\fR
-or \fBhhmm ?meridian? ?zone?\fR
-If no meridian is specified, \fBhh\fR is interpreted on
+.
+A time of day, which is of the form:
+.QW "\fIhh\fR?\fB:\fImm\fR?\fB:\fIss\fR?? ?\fImeridian\fR? ?\fIzone\fR?"
+or
+.QW "\fBhhmm \fR?\fBmeridian\fR? ?\fBzone\fR?" .
+If no \fImeridian\fR is specified, \fIhh\fR is interpreted on
 a 24-hour clock.
 .TP
 \fIdate\fR
+.
 A specific month and day with optional year.  The
 acceptable formats are
-.QW "\fBmm/dd\fR?\fB/yy\fR?" ,
-.QW "\fBmonthname dd\fR?\fB, yy\fR?" ,
-.QW "\fBday, dd monthname \fR?\fByy\fR?" ,
-.QW "\fBdd monthname yy\fR" ,
-.QW "?\fBCC\fR?\fByymmdd\fR" ,
+.QW "\fImm\fB/\fIdd\fR?\fB/\fIyy\fR?" ,
+.QW "\fImonthname dd\fR?\fB, \fIyy\fR?" ,
+.QW "\fIday\fB, \fIdd monthname \fR?\fIyy\fR?" ,
+.QW "\fIdd monthname yy\fR" ,
+.QW "?\fICC\fR?\fIyymmdd\fR" ,
 and
-.QW "\fBdd-monthname-\fR?\fBCC\fR?\fByy\fR" .
+.QW "\fIdd\fB-\fImonthname\fB-\fR?\fICC\fR?\fIyy\fR" .
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so
 an error may result if these years are used.
 .TP
 \fIISO 8601 point-in-time\fR
+.
 An ISO 8601 point-in-time specification, such as
 .QW \fICCyymmdd\fBT\fIhhmmss\fR,
 where \fBT\fR is the literal
 .QW T ,
 .QW "\fICCyymmdd hhmmss\fR" ,
 or
-.QW \fICCyymmdd\fBT\fIhh:mm:ss\fR .
+.QW \fICCyymmdd\fBT\fIhh\fB:\fImm\fB:\fIss\fR .
 Note that only these three formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
 specifications specified in ISO8601.  Other formats can be recognized by
 giving an explicit \fB\-format\fR option to the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR
+.
 A specification relative to the current time.  The format is \fBnumber
 unit\fR. Acceptable units are \fByear\fR, \fBfortnight\fR,
 \fBmonth\fR, \fBweek\fR, \fBday\fR,
