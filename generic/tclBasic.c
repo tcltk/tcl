@@ -363,7 +363,6 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"zipfs", "mkzip"},
     {"zipfs", "mount"},
     {"zipfs", "mount_data"},
-    {"zipfs", "tcl_library"},
     {"zipfs", "unmount"},
     {NULL, NULL}
 };

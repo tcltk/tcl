@@ -258,7 +258,7 @@ Tcl_RegexpObjCmd(
     stringLength = Tcl_GetCharLength(objPtr);
 
     if (startIndex) {
-	TclGetIntForIndexM(NULL, startIndex, stringLength, &offset);
+	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
 	if (offset < 0) {
 	    offset = 0;
@@ -583,7 +583,7 @@ Tcl_RegsubObjCmd(
     if (startIndex) {
 	int stringLength = Tcl_GetCharLength(objv[1]);
 
-	TclGetIntForIndexM(NULL, startIndex, stringLength, &offset);
+	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
 	if (offset < 0) {
 	    offset = 0;
@@ -1846,7 +1846,7 @@ static int
 UniCharIsHexDigit(
     int character)
 {
-    return (character >= 0) && (character < 0x80) && isxdigit(character);
+    return (character >= 0) && (character < 0x80) && isxdigit(UCHAR(character));
 }
 
 /*
