@@ -210,7 +210,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = TclGetString(pathPtr);
     *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -301,7 +301,7 @@ AppendEnvironment(
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	ckfree(pathv);
+	Tcl_Free(pathv);
     }
 }
 
@@ -347,7 +347,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -395,7 +395,7 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -592,7 +592,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
+ *	"name", or (size_t)-1 if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -602,16 +602,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    int *lengthPtr)		/* Used to return length of name (for
+    size_t *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, length, result = -1;
+    size_t i, length, result = (size_t)-1;
     register const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
@@ -621,8 +621,8 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = ckalloc(length + 1);
-    memcpy(nameUpper, name, (size_t) length+1);
+    nameUpper = Tcl_Alloc(length + 1);
+    memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
@@ -638,7 +638,7 @@ TclpFindVariable(
 	if (p1 == NULL) {
 	    continue;
 	}
-	length = (int) (p1 - envUpper);
+	length = p1 - envUpper;
 	Tcl_DStringSetLength(&envString, length+1);
 	Tcl_UtfToUpper(envUpper);
 
@@ -660,7 +660,7 @@ TclpFindVariable(
 
   done:
     Tcl_DStringFree(&envString);
-    ckfree(nameUpper);
+    Tcl_Free(nameUpper);
     return result;
 }
 

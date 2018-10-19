@@ -18,7 +18,7 @@
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 static struct {
-    int cacheSize;		/* Number of env strings in cache. */
+    size_t cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
@@ -26,7 +26,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    int ourEnvironSize;		/* Non-zero means that the environ array was
+    size_t ourEnvironSize;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -204,7 +204,7 @@ TclSetEnv(
 {
     Tcl_DString envString;
     unsigned nameLength, valueLength;
-    int index, length;
+    size_t index, length;
     char *p, *oldValue;
     const char *p2;
 
@@ -217,7 +217,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == -1) {
+    if (index == TCL_AUTO_LENGTH) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -226,11 +226,11 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = ckalloc((length + 5) * sizeof(char *));
+	    char **newEnviron = Tcl_Alloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
-		ckfree(env.ourEnviron);
+		Tcl_Free(env.ourEnviron);
 	    }
 	    environ = env.ourEnviron = newEnviron;
 	    env.ourEnvironSize = length + 5;
@@ -270,7 +270,7 @@ TclSetEnv(
      */
 
     valueLength = strlen(value);
-    p = ckalloc(nameLength + valueLength + 2);
+    p = Tcl_Alloc(nameLength + valueLength + 2);
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
@@ -280,7 +280,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
+    p = Tcl_Realloc(p, Tcl_DStringLength(&envString) + 1);
     memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
@@ -301,7 +301,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != -1) && (environ[index] == p)) {
+    if ((index != TCL_AUTO_LENGTH) && (environ[index] == p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {
@@ -309,7 +309,7 @@ TclSetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(p);
+	Tcl_Free(p);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 
@@ -401,8 +401,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    int length;
-    int index;
+    size_t length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -418,7 +417,7 @@ TclUnsetEnv(
      * needless work and to avoid recursion on the unset.
      */
 
-    if (index == -1) {
+    if (index == TCL_AUTO_LENGTH) {
 	Tcl_MutexUnlock(&envMutex);
 	return;
     }
@@ -441,18 +440,18 @@ TclUnsetEnv(
      */
 
 #if defined(_WIN32)
-    string = ckalloc(length + 2);
+    string = Tcl_Alloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = ckalloc(length + 1);
+    string = Tcl_Alloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
+    string = Tcl_Realloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
@@ -473,7 +472,7 @@ TclUnsetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(string);
+	Tcl_Free(string);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 #else /* !USE_PUTENV_FOR_UNSET */
@@ -517,13 +516,13 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    int length, index;
+    size_t length, index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
     result = NULL;
-    if (index != -1) {
+    if (index != TCL_AUTO_LENGTH) {
 	Tcl_DString envStr;
 
 	result = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envStr);
@@ -650,7 +649,7 @@ ReplaceString(
     const char *oldStr,		/* Old environment string. */
     char *newStr)		/* New environment string. */
 {
-    int i;
+    size_t i;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to
@@ -670,7 +669,7 @@ ReplaceString(
 	 */
 
 	if (env.cache[i]) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 
 	if (newStr) {
@@ -688,7 +687,7 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = ckrealloc(env.cache,
+	env.cache = Tcl_Realloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
 	(void) memset(env.cache+env.cacheSize+1, 0,
@@ -731,15 +730,15 @@ TclFinalizeEnvironment(void)
 #ifdef PURIFY
 	int i;
 	for (i = 0; i < env.cacheSize; i++) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 #endif
-	ckfree(env.cache);
+	Tcl_Free(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
 #ifndef USE_PUTENV
 	if ((env.ourEnviron != NULL)) {
-	    ckfree(env.ourEnviron);
+	    Tcl_Free(env.ourEnviron);
 	    env.ourEnviron = NULL;
 	}
 	env.ourEnvironSize = 0;

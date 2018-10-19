@@ -55,12 +55,12 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
-typedef int (Tcl_MethodCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-typedef void (Tcl_MethodDeleteProc)(ClientData clientData);
-typedef int (Tcl_CloneProc)(Tcl_Interp *interp, ClientData oldClientData,
-	ClientData *newClientData);
-typedef void (Tcl_ObjectMetadataDeleteProc)(ClientData clientData);
+typedef void (Tcl_MethodDeleteProc)(void *clientData);
+typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
+	void **newClientData);
+typedef void (Tcl_ObjectMetadataDeleteProc)(void *clientData);
 typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 	Tcl_Object object, Tcl_Class *startClsPtr, Tcl_Obj *methodNameObj);
 

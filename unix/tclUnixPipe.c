@@ -744,7 +744,7 @@ TclpCreateCommandChannel(
 {
     char channelName[16 + TCL_INTEGER_SPACE];
     int channelId;
-    PipeState *statePtr = ckalloc(sizeof(PipeState));
+    PipeState *statePtr = Tcl_Alloc(sizeof(PipeState));
     int mode;
 
     statePtr->inFile = readFile;
@@ -878,7 +878,7 @@ TclGetAndDetachPids(
     }
     Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
     }
 }
@@ -1009,9 +1009,9 @@ PipeClose2Proc(
     }
 
     if (pipePtr->numPids != 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
     }
-    ckfree(pipePtr);
+    Tcl_Free(pipePtr);
     if (errorCode == 0) {
 	return result;
     }

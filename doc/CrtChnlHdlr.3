@@ -32,7 +32,7 @@ a zero value to temporarily disable an existing handler.
 .AP Tcl_FileProc *proc in
 Procedure to invoke whenever the channel indicated by \fIchannel\fR meets
 the conditions specified by \fImask\fR.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -48,7 +48,7 @@ what it means for a channel to be readable or writable.
 .PP
 .CS
 typedef void \fBTcl_ChannelProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         int \fImask\fR);
 .CE
 .PP

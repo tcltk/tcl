@@ -31,11 +31,11 @@
 /* Define custom memory allocation for libtommath */
 
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
-#define TclBNAlloc(s) ((void*)ckalloc((size_t)(s)))
+#define TclBNAlloc(s) ((void*)Tcl_Alloc((size_t)(s)))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
-#define TclBNRealloc(x,s) ((void*)ckrealloc((char*)(x),(size_t)(s)))
+#define TclBNRealloc(x,s) ((void*)Tcl_Realloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
-#define TclBNFree(x) (ckfree((char*)(x)))
+#define TclBNFree(x) (Tcl_Free((char*)(x)))
 /* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
 /* unused - no macro */
 

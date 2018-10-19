@@ -50,7 +50,7 @@ ClientData tclTimeClientData = NULL;
  *----------------------------------------------------------------------
  */
 
-unsigned long
+Tcl_WideUInt
 TclpGetSeconds(void)
 {
     return time(NULL);
@@ -75,30 +75,30 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+Tcl_WideUInt
 TclpGetClicks(void)
 {
-    unsigned long now;
+	Tcl_WideUInt now;
 
 #ifdef NO_GETTOD
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = time.sec*1000000 + time.usec;
+	now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
 	 */
 	struct tms dummy;
 
-	now = (unsigned long) times(&dummy);
+	now = (Tcl_WideUInt) times(&dummy);
     }
 #else
     Tcl_Time time;
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
-    now = time.sec*1000000 + time.usec;
+    now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
 #endif
 
     return now;
@@ -111,9 +111,9 @@ TclpGetClicks(void)
  * TclpGetWideClicks --
  *
  *	This procedure returns a WideInt value that represents the highest
- *	resolution clock available on the system. There are no garantees on
+ *	resolution clock available on the system. There are no guarantees on
  *	what the resolution will be. In Tcl we will call this value a "click".
- *	The start time is also system dependant.
+ *	The start time is also system dependent.
  *
  * Results:
  *	Number of WideInt clicks from some start time.

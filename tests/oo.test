@@ -13,12 +13,10 @@ if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
 # this test suite, interp creation and interp deletion are often used in
 # leaktests in order to leverage this sensitivity.
-
 
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
@@ -340,10 +338,10 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
 	    lappend x [info object class ::oo::$initial]
 	}
 	return $x
-    }] {lsort $x}
+    }] {lsort [lmap y $x {if {[string match *::delegate $y]} continue; set y}]}
 } -cleanup {
     interp delete $fresh
-} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -1804,6 +1802,106 @@ test oo-13.4 {OO: changing an object's class} -body {
     foo destroy
     bar destroy
 } -result {::foo ::foo ::foo ::bar}
+test oo-13.5 {OO: changing an object's class: non-class to class} -setup {
+    oo::object create fooObj
+} -body {
+    oo::objdefine fooObj {
+	class oo::class
+    }
+    oo::define fooObj {
+	method x {} {expr 1+2+3}
+    }
+    [fooObj new] x
+} -cleanup {
+    fooObj destroy
+} -result 6
+test oo-13.6 {OO: changing an object's class: class to non-class} -setup {
+    oo::class create foo
+    unset -nocomplain ::result
+} -body {
+    set result dangling
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    oo::class create boo {
+	superclass foo
+	destructor {set ::result "ok"}
+    }
+    boo new
+    foo create bar
+    oo::objdefine foo {
+	class oo::object
+    }
+    list $result [catch {bar x} msg] $msg
+} -cleanup {
+    catch {bar destroy}
+    foo destroy
+} -result {ok 1 {invalid command name "bar"}}
+test oo-13.7 {OO: changing an object's class} -setup {
+    oo::class create foo
+    oo::class create bar
+    unset -nocomplain result
+} -body {
+    oo::define bar method x {} {return ok}
+    oo::define foo {
+	method x {} {expr 1+2+3}
+	self mixin foo
+    }
+    lappend result [foo x]
+    oo::objdefine foo class bar
+    lappend result [foo x]
+} -cleanup {
+    foo destroy
+    bar destroy
+} -result {6 ok}
+test oo-13.8 {OO: changing an object's class to itself} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    oo::objdefine foo class foo
+} -cleanup {
+    foo destroy
+} -returnCodes error -result {may not change classes into an instance of themselves}
+test oo-13.9 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::object {
+	    class oo::class
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the root object class}
+test oo-13.10 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::class {
+	    class oo::object
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the class of classes}
+test oo-13.11 {OO: changing an object's class in a tricky place} -setup {
+    oo::class create cls
+    unset -nocomplain result
+} -body {
+    set result gorp
+    list [catch {
+	oo::define cls {
+	    method x {} {return}
+	    self class oo::object
+	    ::set ::result ok
+	    method y {} {return}; # I'm sorry, Dave. I'm afraid I can't do that.
+	}
+    } msg] $msg $result
+} -cleanup {
+    cls destroy
+} -result {1 {attempt to misuse API} ok}
 # todo: changing a class subtype (metaclass) to another class subtype
 
 test oo-14.1 {OO: mixins} {
@@ -3838,6 +3936,11 @@ proc SampleSlotSetup script {
 		lappend ops [info level] Set $lst
 		return
 	    }
+	    method Resolve {lst} {
+		variable ops
+		lappend ops [info level] Resolve $lst
+		return $lst
+	    }
 	}
     }
     append script0 \n$script
@@ -3872,7 +3975,7 @@ test oo-32.3 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
+}] -result {0 {} {a b c g h i} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {a b c g h i}}}
 test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3880,7 +3983,7 @@ test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {d e f} {1 Set {d e f}}}
+}] -result {0 {} {d e f} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f}}}
 test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3888,7 +3991,23 @@ test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
+}] -result {0 {} {} {d e f g h i} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f} 1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {d e f g h i}}}
+test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+    SampleSlot create sampleSlot
+}] -body {
+    list [info level] [sampleSlot -prepend g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup [SampleSlotCleanup {
+    rename sampleSlot {}
+}] -result {0 {} {g h i a b c} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {g h i a b c}}}
+test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+    SampleSlot create sampleSlot
+}] -body {
+    list [info level] [sampleSlot -remove c a] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup [SampleSlotCleanup {
+    rename sampleSlot {}
+}] -result {0 {} b {1 Resolve c 1 Resolve a 1 Get 1 Set b}}
 
 test oo-33.1 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]
@@ -3911,7 +4030,7 @@ test oo-33.3 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     list [$s destroy; $s unknown] [$s contents] [$s ops]
 } -cleanup [SampleSlotCleanup {
     rename $s {}
-}] -result {{} unknown {1 Set destroy 1 Set unknown}}
+}] -result {{} unknown {1 Resolve destroy 1 Set destroy 1 Resolve unknown 1 Set unknown}}
 test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
     set s [SampleSlot new]
 }] -body {
@@ -3920,7 +4039,7 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
 } -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
 }] -result \
-    {unknown method "-grill": must be -append, -clear, -set, contents or ops}
+    {unknown method "-grill": must be -append, -clear, -prepend, -remove, -set, contents or ops}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -3950,25 +4069,68 @@ proc getMethods obj {
 }
 test oo-34.3 {TIP 380: slots - presence} {
     getMethods oo::define::filter
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.4 {TIP 380: slots - presence} {
     getMethods oo::define::mixin
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.5 {TIP 380: slots - presence} {
     getMethods oo::define::superclass
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.6 {TIP 380: slots - presence} {
     getMethods oo::define::variable
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.7 {TIP 380: slots - presence} {
     getMethods oo::objdefine::filter
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.8 {TIP 380: slots - presence} {
     getMethods oo::objdefine::mixin
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
+test oo-34.10 {TIP 516: slots - resolution} -setup {
+    oo::class create parent
+    set result {}
+    oo::class create 516a { superclass parent }
+    oo::class create 516b { superclass parent }
+    oo::class create 516c { superclass parent }
+    namespace eval 516test {
+	oo::class create 516a { superclass parent }
+	oo::class create 516b { superclass parent }
+	oo::class create 516c { superclass parent }
+    }
+} -body {
+    # Must find the right classes when making the mixin
+    namespace eval 516test {
+	oo::define 516a {
+	    mixin 516b 516c
+	}
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must not remove class with just simple name match
+    oo::define 516test::516a {
+	mixin -remove 516b
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must remove class with resolved name match
+    oo::define 516test::516a {
+	mixin -remove 516test::516c
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must remove class with resolved name match even after renaming, but only
+    # with the renamed name; it is a slot of classes, not strings!
+    rename 516test::516b 516test::516d
+    oo::define 516test::516a {
+	mixin -remove 516test::516b
+    }
+    lappend result [info class mixin 516test::516a]
+    oo::define 516test::516a {
+	mixin -remove 516test::516d
+    }
+    lappend result [info class mixin 516test::516a]
+} -cleanup {
+    parent destroy
+} -result {{::516test::516b ::516test::516c} {::516test::516b ::516test::516c} ::516test::516b ::516test::516d {}}
 
 test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     oo::class create fruit {
@@ -4845,6 +5007,75 @@ test oo-40.3 {TIP 500: private and unexport} -setup {
 } -cleanup {
     cls destroy
 } -result {{} {} foo {} foo {}}
+
+test oo-41.1 {TIP 478: myclass command, including class morphing} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method count {} {
+	    my variable c
+	    incr c
+	}
+	method act {} {
+	    myclass count
+	}
+    }
+    cls1 create x
+    lappend result [x act] [x act]
+    cls1 create y
+    lappend result [y act] [y act] [x act]
+    oo::class create cls2 {
+	superclass cls1
+	self method count {} {
+	    my variable d
+	    expr {1.0 * [incr d]}
+	}
+    }
+    oo::objdefine x {class cls2}
+    lappend result [x act] [y act] [x act] [y act]
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 5 1.0 6 2.0 7}
+test oo-41.2 {TIP 478: myclass command cleanup} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method hi {} {
+	    return "this is [self]"
+	}
+	method hi {} {
+	    return "this is [self]"
+	}
+    }
+    cls1 create x
+    rename [info object namespace x]::my foo
+    rename [info object namespace x]::myclass bar
+    lappend result [cls1 hi] [x hi] [foo hi] [bar hi]
+    x destroy
+    lappend result [catch {foo hi}] [catch {bar hi}]
+} -cleanup {
+    parent destroy
+} -result {{this is ::cls1} {this is ::x} {this is ::x} {this is ::cls1} 1 1}
+test oo-41.3 {TIP 478: myclass command calls unexported methods, via forward} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method Hi {} {
+	    return "this is [self]"
+	}
+	forward poke myclass Hi
+    }
+    cls1 create x
+    lappend result [catch {cls1 Hi}] [x poke]
+} -cleanup {
+    parent destroy
+} -result {1 {this is ::cls1}}
 
 cleanupTests
 return

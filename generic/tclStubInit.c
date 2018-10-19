@@ -13,6 +13,10 @@
 #include "tclOOInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 /*
  * The actual definition of the variable holding the TclOO stub table.
  */
@@ -71,6 +75,16 @@ static int TclPkgProvide(
 	return TCL_ERROR;
 }
 
+#ifdef TCL_MEM_DEBUG
+#   define Tcl_Alloc TclpAlloc
+#   define Tcl_Free TclpFree
+#   define Tcl_Realloc TclpRealloc
+#   undef Tcl_AttemptAlloc
+#   define Tcl_AttemptAlloc TclpAlloc
+#   undef Tcl_AttemptRealloc
+#   define Tcl_AttemptRealloc TclpRealloc
+#endif
+
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -83,7 +97,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 static int
 TclpIsAtty(int fd)
@@ -113,52 +127,41 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-int
+size_t
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (size_t) pid;
 }
 
 char *
 Tcl_WinUtfToTChar(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
+    if (!string) {
+	return NULL;
+    }
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len == TCL_AUTO_LENGTH) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -171,7 +174,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -187,7 +190,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -1348,6 +1351,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_MountBuffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

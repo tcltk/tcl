@@ -74,7 +74,7 @@ Tcl_SaveInterpState(
     int status)			/* status code for current operation */
 {
     Interp *iPtr = (Interp *) interp;
-    InterpState *statePtr = ckalloc(sizeof(InterpState));
+    InterpState *statePtr = Tcl_Alloc(sizeof(InterpState));
 
     statePtr->status = status;
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
@@ -204,7 +204,7 @@ Tcl_DiscardInterpState(
 	Tcl_DecrRefCount(statePtr->errorStack);
     }
     Tcl_DecrRefCount(statePtr->objResult);
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
 }
 
 /*
@@ -512,7 +512,7 @@ ResetObjResult(
     } else {
 	if (objResultPtr->bytes != &tclEmptyString) {
 	    if (objResultPtr->bytes) {
-		ckfree(objResultPtr->bytes);
+		Tcl_Free(objResultPtr->bytes);
 	    }
 	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;

@@ -654,7 +654,7 @@ SetOSTypeFromAny(
 	OSType osType;
 	char bytes[4] = {'\0','\0','\0','\0'};
 
-	memcpy(bytes, Tcl_DStringValue(&ds), (size_t)Tcl_DStringLength(&ds));
+	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
@@ -705,7 +705,7 @@ UpdateStringOfOSType(
     string[4] = '\0';
     Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
     len = (unsigned) Tcl_DStringLength(&ds) + 1;
-    objPtr->bytes = ckalloc(len);
+    objPtr->bytes = Tcl_Alloc(len);
     memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
     objPtr->length = Tcl_DStringLength(&ds);
     Tcl_DStringFree(&ds);

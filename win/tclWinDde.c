@@ -391,9 +391,9 @@ DdeSetServerName(
      * We have found a unique name. Now add it to the registry.
      */
 
-    riPtr = ckalloc(sizeof(RegisteredInterp));
+    riPtr = Tcl_Alloc(sizeof(RegisteredInterp));
     riPtr->interp = interp;
-    riPtr->name = ckalloc((_tcslen(actualName) + 1) * sizeof(TCHAR));
+    riPtr->name = Tcl_Alloc((_tcslen(actualName) + 1) * sizeof(TCHAR));
     riPtr->nextPtr = tsdPtr->interpListPtr;
     riPtr->handlerPtr = handlerPtr;
     if (riPtr->handlerPtr != NULL) {
@@ -494,7 +494,7 @@ DeleteProc(
 	    prevPtr->nextPtr = searchPtr->nextPtr;
 	}
     }
-    ckfree(riPtr->name);
+    Tcl_Free(riPtr->name);
     if (riPtr->handlerPtr) {
 	Tcl_DecrRefCount(riPtr->handlerPtr);
     }
@@ -672,7 +672,7 @@ DdeServerProc(
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
 	    if (_tcsicmp(riPtr->name, utilString) == 0) {
-		convPtr = ckalloc(sizeof(Conversation));
+		convPtr = Tcl_Alloc(sizeof(Conversation));
 		convPtr->nextPtr = tsdPtr->currentConversations;
 		convPtr->returnPackagePtr = NULL;
 		convPtr->hConv = hConv;
@@ -702,7 +702,7 @@ DdeServerProc(
 		if (convPtr->returnPackagePtr != NULL) {
 		    Tcl_DecrRefCount(convPtr->returnPackagePtr);
 		}
-		ckfree(convPtr);
+		Tcl_Free(convPtr);
 		break;
 	    }
 	}
@@ -1807,11 +1807,11 @@ DdeObjCmd(
 
 		resultPtr = Tcl_NewObj();
 		length = DdeGetData(ddeData, NULL, 0, 0);
-		ddeDataString = ckalloc(length);
+		ddeDataString = Tcl_Alloc(length);
 		DdeGetData(ddeData, (BYTE *) ddeDataString, (DWORD) length, 0);
 		length = (length >> 1) - 1;
 		resultPtr = Tcl_NewUnicodeObj(ddeDataString, length);
-		ckfree(ddeDataString);
+		Tcl_Free(ddeDataString);
 
 		if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr) != TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);

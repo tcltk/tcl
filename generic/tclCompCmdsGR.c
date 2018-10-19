@@ -181,7 +181,8 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
+	size_t numBytes;
+    int jumpFalseDist, numWords, wordIdx, j, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -433,7 +434,7 @@ TclCompileIfCmd(
 		jumpFalseDist += 3;
 		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
 	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", (int) opCode);
+		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%u\" updating ifFalse jump", opCode);
 	    }
 	}
     }
@@ -499,7 +500,7 @@ TclCompileIncrCmd(
 	incrTokenPtr = TokenAfter(varTokenPtr);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    const char *word = incrTokenPtr[1].start;
-	    int numBytes = incrTokenPtr[1].size;
+	    size_t numBytes = incrTokenPtr[1].size;
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 
@@ -1474,7 +1475,7 @@ TclCompileLreplaceCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int idx1, idx2, i, offset, offset2;
+    int idx1, idx2, i;
     int emptyPrefix=1, suffixStart = 0;
 
     if (parsePtr->numWords < 4) {
@@ -1495,23 +1496,6 @@ TclCompileLreplaceCmd(
     }
 
     /*
-     * idx1, idx2 are the conventional encoded forms of the tokens parsed
-     * as all forms of index values.  Values of idx1 that come before the
-     * list are treated the same as if they were the start of the list.
-     * Values of idx2 that come after the list are treated the same as if
-     * they were the end of the list.
-     */
-
-    if (idx1 == TCL_INDEX_AFTER) {
-	/*
-	 * [lreplace] treats idx1 value end+1 differently from end+2, etc.
-	 * The operand encoding cannot distinguish them, so we must bail
-	 * out to direct evaluation.
-	 */
-	return TCL_ERROR;
-    }
-
-    /*
      * General structure of the [lreplace] result is
      *		prefix replacement suffix
      * In a few cases we can predict various parts will be empty and
@@ -1522,7 +1506,9 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx1 == TCL_INDEX_AFTER) {
+	suffixStart = idx1;
+    } else if (idx2 == TCL_INDEX_BEFORE) {
 	suffixStart = idx1;
     } else if (idx2 == TCL_INDEX_END) {
 	suffixStart = TCL_INDEX_AFTER;
@@ -1552,42 +1538,6 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
 
 	emptyPrefix = 0;
-    }
-
-    /*
-     * [lreplace] raises an error when idx1 points after the list, but
-     * only when the list is not empty. This is maximum stupidity.
-     *
-     * TODO: TIP this nonsense away!
-     */
-    if (idx1 >= TCL_INDEX_START) {
-	if (emptyPrefix) {
-	    TclEmitOpcode(	INST_DUP,			envPtr);
-	} else {
-	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	}
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
-
-	/* List is not empty */
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewIntObj(idx1),
-							NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
-	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
-
-	/* Idx1 >= list length ===> raise an error */
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
-		"list doesn't contain element %d", idx1), NULL), envPtr);
-	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
-		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
-		envPtr->codeStart + offset + 1);
-	TclEmitOpcode(		INST_POP,			envPtr);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
-		envPtr->codeStart + offset2 + 1);
     }
 
     if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
@@ -2131,7 +2081,8 @@ TclCompileRegexpCmd(
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
-    int i, len, nocase, exact, sawLast, simple;
+    size_t len;
+    int i, nocase, exact, sawLast, simple;
     const char *str;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2684,8 +2635,8 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    int numBytes;
-    const char *bytes = TclGetStringFromObj(msg, &numBytes);
+    const char *bytes = TclGetString(msg);
+    size_t numBytes = msg->length;
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);

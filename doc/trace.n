@@ -20,7 +20,8 @@ trace \- Monitor variable accesses, command usages and command executions
 This command causes Tcl commands to be executed whenever certain operations are
 invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBtrace add \fItype name ops ?args?\fR
+\fBtrace add \fItype name ops\fR ?\fIargs\fR?
+.
 Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
 .RS
 .TP

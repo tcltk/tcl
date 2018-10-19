@@ -61,7 +61,7 @@ Tcl_Object
 int
 \fBTcl_ObjectContextSkippedArgs\fR(\fIcontext\fR)
 .SH ARGUMENTS
-.AS ClientData clientData in
+.AS void *clientData in
 .AP Tcl_Interp *interp in/out
 The interpreter holding the object or class to create or update a method in.
 .AP Tcl_Object object in
@@ -83,10 +83,10 @@ and \fBTCL_OO_METHOD_PRIVATE\fR for a private method.
 .AP Tcl_MethodType *methodTypePtr in
 A description of the type of the method to create, or the type of method to
 compare against.
-.AP ClientData clientData in
+.AP void *clientData in
 A piece of data that is passed to the implementation of the method without
 interpretation.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 A pointer to a variable in which to write the \fIclientData\fR value supplied
 when the method was created. If NULL, the \fIclientData\fR value will not be
 retrieved.
@@ -213,7 +213,7 @@ Functions matching this signature are called when the method is invoked.
 .PP
 .CS
 typedef int \fBTcl_MethodCallProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         Tcl_ObjectContext \fIobjectContext\fR,
         int \fIobjc\fR,
@@ -234,7 +234,7 @@ through a new method being created or because the object or class is deleted.
 .PP
 .CS
 typedef void \fBTcl_MethodDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument to a Tcl_MethodDeleteProc will be the same as
@@ -248,8 +248,8 @@ class is copied using \fBTcl_CopyObjectInstance\fR (or \fBoo::copy\fR).
 .CS
 typedef int \fBTcl_CloneProc\fR(
         Tcl_Interp *\fIinterp\fR,
-        ClientData \fIoldClientData\fR,
-        ClientData *\fInewClientDataPtr\fR);
+        void *\fIoldClientData\fR,
+        void **\fInewClientDataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the

@@ -47,7 +47,7 @@ static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
 			    int resolvedPid);
 static void		FreeProcessInfo(ProcessInfo *info);
 static int		RefreshProcessInfo(ProcessInfo *info, int options);
-static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, int resolvedPid,
+static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, size_t resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
@@ -130,7 +130,7 @@ FreeProcessInfo(
      * Free allocated structure.
      */
 
-    ckfree(info);
+    Tcl_Free(info);
 }
 
 /*
@@ -193,7 +193,7 @@ RefreshProcessInfo(
 TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
-    int resolvedPid,		/* Resolved process id. */
+    size_t resolvedPid,		/* Resolved process id. */
     int options,		/* Options passed to Tcl_WaitPid. */
     int *codePtr,		/* If non-NULL, will receive either:
 				 *  - 0 for normal exit.
@@ -799,7 +799,7 @@ void
 TclProcessCreated(
     Tcl_Pid pid)		/* Process id. */
 {
-    int resolvedPid;
+    size_t resolvedPid;
     Tcl_HashEntry *entry, *entry2;
     int isNew;
     ProcessInfo *info;
@@ -833,7 +833,7 @@ TclProcessCreated(
      * Allocate and initialize info structure.
      */
 
-    info = (ProcessInfo *) ckalloc(sizeof(ProcessInfo));
+    info = (ProcessInfo *) Tcl_Alloc(sizeof(ProcessInfo));
     InitProcessInfo(info, pid, resolvedPid);
 
     /*
