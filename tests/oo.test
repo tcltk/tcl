@@ -1888,6 +1888,22 @@ test oo-13.10 {OO: changing an object's class: roots are special} -setup {
 } -cleanup {
     interp delete $i
 } -returnCodes error -result {may not modify the class of the class of classes}
+test oo-13.11 {OO: changing an object's class in a tricky place} -setup {
+    oo::class create cls
+    unset -nocomplain result
+} -body {
+    set result gorp
+    list [catch {
+	oo::define cls {
+	    method x {} {return}
+	    self class oo::object
+	    ::set ::result ok
+	    method y {} {return}; # I'm sorry, Dave. I'm afraid I can't do that.
+	}
+    } msg] $msg $result
+} -cleanup {
+    cls destroy
+} -result {1 {attempt to misuse API} ok}
 # todo: changing a class subtype (metaclass) to another class subtype
 
 test oo-14.1 {OO: mixins} {
