@@ -1802,6 +1802,106 @@ test oo-13.4 {OO: changing an object's class} -body {
     foo destroy
     bar destroy
 } -result {::foo ::foo ::foo ::bar}
+test oo-13.5 {OO: changing an object's class: non-class to class} -setup {
+    oo::object create fooObj
+} -body {
+    oo::objdefine fooObj {
+	class oo::class
+    }
+    oo::define fooObj {
+	method x {} {expr 1+2+3}
+    }
+    [fooObj new] x
+} -cleanup {
+    fooObj destroy
+} -result 6
+test oo-13.6 {OO: changing an object's class: class to non-class} -setup {
+    oo::class create foo
+    unset -nocomplain ::result
+} -body {
+    set result dangling
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    oo::class create boo {
+	superclass foo
+	destructor {set ::result "ok"}
+    }
+    boo new
+    foo create bar
+    oo::objdefine foo {
+	class oo::object
+    }
+    list $result [catch {bar x} msg] $msg
+} -cleanup {
+    catch {bar destroy}
+    foo destroy
+} -result {ok 1 {invalid command name "bar"}}
+test oo-13.7 {OO: changing an object's class} -setup {
+    oo::class create foo
+    oo::class create bar
+    unset -nocomplain result
+} -body {
+    oo::define bar method x {} {return ok}
+    oo::define foo {
+	method x {} {expr 1+2+3}
+	self mixin foo
+    }
+    lappend result [foo x]
+    oo::objdefine foo class bar
+    lappend result [foo x]
+} -cleanup {
+    foo destroy
+    bar destroy
+} -result {6 ok}
+test oo-13.8 {OO: changing an object's class to itself} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo {
+	method x {} {expr 1+2+3}
+    }
+    oo::objdefine foo class foo
+} -cleanup {
+    foo destroy
+} -returnCodes error -result {may not change classes into an instance of themselves}
+test oo-13.9 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::object {
+	    class oo::class
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the root object class}
+test oo-13.10 {OO: changing an object's class: roots are special} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	oo::objdefine oo::class {
+	    class oo::object
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {may not modify the class of the class of classes}
+test oo-13.11 {OO: changing an object's class in a tricky place} -setup {
+    oo::class create cls
+    unset -nocomplain result
+} -body {
+    set result gorp
+    list [catch {
+	oo::define cls {
+	    method x {} {return}
+	    self class oo::object
+	    ::set ::result ok
+	    method y {} {return}; # I'm sorry, Dave. I'm afraid I can't do that.
+	}
+    } msg] $msg $result
+} -cleanup {
+    cls destroy
+} -result {1 {attempt to misuse API} ok}
 # todo: changing a class subtype (metaclass) to another class subtype
 
 test oo-14.1 {OO: mixins} {
