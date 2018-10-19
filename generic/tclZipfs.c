@@ -183,7 +183,7 @@ static const char drvletters[] =
  * Mutex to protect localtime(3) when no reentrant version available.
  */
 
-#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && defined(TCL_THREADS)
+#if !defined(_WIN32) && !defined(HAVE_LOCALTIME_R) && TCL_THREADS
 TCL_DECLARE_MUTEX(localtimeMutex)
 #endif /* !_WIN32 && !HAVE_LOCALTIME_R && TCL_THREADS */
 
@@ -477,7 +477,7 @@ static Tcl_ChannelType ZipChannelType = {
 
 TCL_DECLARE_MUTEX(ZipFSMutex)
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 static Tcl_Condition ZipFSCond;
 
@@ -568,7 +568,7 @@ ToDosTime(
 {
     struct tm *tmp, tm;
 
-#if !defined(TCL_THREADS) || defined(_WIN32)
+#if !TCL_THREADS || defined(_WIN32)
     /* Not threaded, or on Win32 which uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
@@ -592,7 +592,7 @@ ToDosDate(
 {
     struct tm *tmp, tm;
 
-#if !defined(TCL_THREADS) || defined(_WIN32)
+#if !TCL_THREADS || defined(_WIN32)
     /* Not threaded, or on Win32 which uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
@@ -665,7 +665,7 @@ CanonicalPath(
     const char *root,
     const char *tail,
     Tcl_DString *dsPtr,
-    int ZIPFSPATH)
+    int inZipfs)
 {
     char *path;
     int i, j, c, isUNC = 0, isVfs = 0, n = 0;
@@ -742,7 +742,7 @@ CanonicalPath(
 	memcpy(path, tail, j);
 	break;
     default:
-	if (ZIPFSPATH) {
+	if (inZipfs) {
 	    Tcl_DStringSetLength(dsPtr, i + j + ZIPFS_VOLUME_LEN);
 	    path = Tcl_DStringValue(dsPtr);
 	    memcpy(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
@@ -765,7 +765,7 @@ CanonicalPath(
     }
 #endif /* _WIN32 */
 
-    if (ZIPFSPATH) {
+    if (inZipfs) {
 	n = ZIPFS_VOLUME_LEN;
     } else {
 	n = 0;
@@ -1498,7 +1498,7 @@ ZipFSCatalogFilesystem(
 static void
 ZipfsSetup(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     static const Tcl_Time t = { 0, 0 };
 
     /*
@@ -2911,7 +2911,7 @@ ZipFSCanonicalObjCmd(
     Tcl_DString dPath;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mntpnt? filename ?ZIPFS?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dPath);
@@ -3257,8 +3257,10 @@ TclZipfs_TclLibrary(void)
  *
  * ZipFSTclLibraryObjCmd --
  *
- *	This procedure is invoked to process the [zipfs tcl_library] command.
- *	It returns the root that Tcl's library files are mounted under.
+ *	This procedure is invoked to process the
+ *	[::tcl::zipfs::tcl_library_init] command, usually called during the
+ *	execution of Tcl's interpreter startup. It returns the root that Tcl's
+ *	library files are mounted under.
  *
  * Results:
  *	A standard Tcl result.
@@ -3277,12 +3279,14 @@ ZipFSTclLibraryObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *pResult = TclZipfs_TclLibrary();
+    if (!Tcl_IsSafe(interp)) {
+	Tcl_Obj *pResult = TclZipfs_TclLibrary();
 
-    if (!pResult) {
-	pResult = Tcl_NewObj();
+	if (!pResult) {
+	    pResult = Tcl_NewObj();
+	}
+	Tcl_SetObjResult(interp, pResult);
     }
-    Tcl_SetObjResult(interp, pResult);
     return TCL_OK;
 }
 
@@ -4719,7 +4723,6 @@ TclZipfs_Init(
 	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
 	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 0},
 	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 0},
-	{"tcl_library",	ZipFSTclLibraryObjCmd,	NULL, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char findproc[] =
@@ -4737,8 +4740,8 @@ TclZipfs_Init(
 	"    }\n"
 	"    return $result\n"
 	"}\n"
-	"proc ::tcl::zipfs::find dir {\n"
-	"    return [lsort [Find $dir]]\n"
+	"proc ::tcl::zipfs::find {directoryName} {\n"
+	"    return [lsort [Find $directoryName]]\n"
 	"}\n";
 
     /*
@@ -4753,11 +4756,24 @@ TclZipfs_Init(
     Unlock();
 
     if (interp) {
+	Tcl_Command ensemble;
+	Tcl_Obj *mapObj;
+
 	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
 	Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		TCL_LINK_INT);
-	TclMakeEnsemble(interp, "zipfs",
+	ensemble = TclMakeEnsemble(interp, "zipfs",
 		Tcl_IsSafe(interp) ? (initMap + 4) : initMap);
+
+	/*
+	 * Add the [zipfs find] subcommand.
+	 */
+
+	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
+	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj("find", -1),
+		Tcl_NewStringObj("::tcl::zipfs::find", -1));
+	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
+		ZipFSTclLibraryObjCmd, NULL, NULL);
 	Tcl_PkgProvide(interp, "zipfs", "2.0");
     }
     return TCL_OK;

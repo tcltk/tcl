@@ -2645,10 +2645,6 @@ typedef struct ProcessGlobalValue {
  */
 
 #define TCL_NUMBER_INT		2
-#if (TCL_MAJOR_VERSION < 9) && !defined(TCL_NO_DEPRECATED)
-#   define TCL_NUMBER_LONG		1 /* deprecated, not used any more */
-#   define TCL_NUMBER_WIDE		TCL_NUMBER_INT /* deprecated */
-#endif
 #define TCL_NUMBER_BIG		3
 #define TCL_NUMBER_DOUBLE	4
 #define TCL_NUMBER_NAN		5

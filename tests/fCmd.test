@@ -65,8 +65,7 @@ if {[testConstraint unix]} {
 
 # Also used in winFCmd...
 if {[testConstraint win]} {
-    set major [string index $tcl_platform(osVersion) 0]
-    if {$major > 5} {
+    if {$::tcl_platform(osVersion) >= 5.0} {
 	testConstraint winVista 1
     } else {
 	testConstraint winXP 1
@@ -76,7 +75,7 @@ if {[testConstraint win]} {
 testConstraint darwin9 [expr {
     [testConstraint unix]
     && $tcl_platform(os) eq "Darwin"
-    && [package vsatisfies 1.$tcl_platform(osVersion) 1.9]
+    && [package vsatisfies 1.$::tcl_platform(osVersion) 1.9]
 }]
 testConstraint notDarwin9 [expr {![testConstraint darwin9]}]
 
@@ -2307,7 +2306,7 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} -setup {
 
 if {
     [testConstraint win] &&
-    ([string index $tcl_platform(osVersion) 0] < 5
+    ($::tcl_platform(osVersion) < 5.0
      || [lindex [file system [temporaryDirectory]] 1] ne "NTFS")
 } then {
     testConstraint linkDirectory 0

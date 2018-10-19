@@ -27,7 +27,7 @@
         #endif
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(IOAPI_NO_64)
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
 #define FTELLO_FUNC(stream) ftello(stream)
@@ -359,7 +359,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
     tinydir_dir dir;
     int i;
-    char *newname[512];
+    char newname[512];
 
     tinydir_open_sorted(&dir, filenameinzip);
 
