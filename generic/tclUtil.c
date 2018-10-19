@@ -3660,10 +3660,12 @@ TclFormatInt(
  * GetWideForIndex --
  *
  *	This function produces a wide integer value corresponding to the
- *	list index held in *objPtr. The parsing supports all values 
+ *	index value held in *objPtr. The parsing supports all values 
  *	recognized as any size of integer, and the syntaxes end[-+]$integer
  *	and $integer[-+]$integer. The argument endValue is used to give
- *	the meaning of the literal index value "end".
+ *	the meaning of the literal index value "end". Index arithmetic
+ *	on arguments outside the wide integer range are only accepted
+ *	when interp is a working interpreter, not NULL.
  *
  * Results:
  *	When parsing of *objPtr successfully recognizes an index value,
@@ -3994,6 +3996,8 @@ SetEndOffsetFromAny(
     bytes = TclGetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
+
+    badIndexFormat:
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad index \"%s\": must be end?[+-]integer?", bytes));
@@ -4013,35 +4017,33 @@ SetEndOffsetFromAny(
 	 * This is our limited string expression evaluator. Pass everything
 	 * after "end-" to TclParseNumber.
 	 */
+	ClientData cd;
+	int t;
 
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
 	if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
 		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto badIndexFormat;
 	}
-	if (objPtr->typePtr != &tclIntType) {
-		goto badIndexFormat;
-	}
-	offset = objPtr->internalRep.wideValue;
-	if (bytes[3] == '-') {
-
-	    /* TODO: Review overflow concerns here! */
-	    offset = -offset;
+	TclGetNumberFromObj(NULL, objPtr, &cd, &t);
+	if (t == TCL_NUMBER_BIG) {
+	    /* Truncate to the signed wide range. */
+	    if (mp_isneg((mp_int *)cd)) {
+		offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+	    } else {
+		offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+	    }
+	} else {
+	    /* assert (t == TCL_NUMBER_INT); */
+	    offset = (*(Tcl_WideInt *)cd);
+	    if (bytes[3] == '-') {
+		offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
+	    }
 	}
     } else {
-	/*
-	 * Conversion failed. Report the error.
-	 */
-
-    badIndexFormat:
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
-	return TCL_ERROR;
+	goto badIndexFormat;
     }
 
     /*
