@@ -8918,7 +8918,7 @@ GetSrcInfoForPc(
     int bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
-    assert (pcOffset < codePtr->numCodeBytes);
+    assert ((int)pcOffset < codePtr->numCodeBytes);
 
     /*
      * Decode the code and source offset and length for each command. The
