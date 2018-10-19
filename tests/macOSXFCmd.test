@@ -99,7 +99,7 @@ test macOSXFCmd-2.6 {MacOSXSetFileAttribute - hidden} {macosxFileAttr notRoot} {
 	    [catch {file attributes foo.test -hidden} msg] $msg \
 	    [file delete -force -- foo.test]
 } {0 {} 0 1 {}}
-test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoot} {
+test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoot nonPortable} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
     catch {
