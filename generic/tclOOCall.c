@@ -1704,7 +1704,6 @@ AddSimpleClassChainToCallContext(
     if (flags & CONSTRUCTOR) {
 	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
 		filterDecl, flags);
-
     } else if (flags & DESTRUCTOR) {
 	AddMethodToCallChain(classPtr->destructorPtr, cbPtr, doneFilters,
 		filterDecl, flags);
