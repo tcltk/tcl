@@ -129,11 +129,11 @@ test oo-1.1 {basic test of OO functionality: no classes} {
 } {::foo {} a b c 3 {} {}}
 test oo-1.2 {basic test of OO functionality: no classes} -body {
     oo::define oo::object method missingArgs
-} -returnCodes 1 -result "wrong # args: should be \"oo::define oo::object method name args body\""
+} -returnCodes 1 -result "wrong # args: should be \"oo::define oo::object method name ?option? args body\""
 test oo-1.3 {basic test of OO functionality: no classes} {
     catch {oo::define oo::object method missingArgs}
     set errorInfo
-} "wrong # args: should be \"oo::define oo::object method name args body\"
+} "wrong # args: should be \"oo::define oo::object method name ?option? args body\"
     while executing
 \"oo::define oo::object method missingArgs\""
 test oo-1.4 {basic test of OO functionality} -body {
@@ -778,6 +778,22 @@ test oo-4.6 {export creates proper method entries} -setup {
 } -cleanup {
     testClass destroy
 } -result ok
+test oo-4.7 {basic test of OO functionality: -export flag} {
+    set o [oo::object new]
+    set result {}
+    oo::objdefine $o method Foo {} {lappend ::result Foo; return}
+    lappend result [catch {$o Foo} msg] $msg
+    oo::objdefine $o method Bar -export {} {lappend ::result Bar; return}
+    lappend result [$o Bar] [$o destroy]
+} {1 {unknown method "Foo": must be destroy} Bar {} {}}
+test oo-4.8 {basic test of OO functionality: -unexport flag} {
+    set o [oo::object new]
+    set result {}
+    oo::objdefine $o method foo {} {lappend ::result foo; return}
+    lappend result [$o foo]
+    oo::objdefine $o method bar -unexport {} {lappend ::result bar; return}
+    lappend result [catch {$o bar} msg] $msg [$o destroy]
+} {foo {} 1 {unknown method "bar": must be destroy or foo} {}}
 
 test oo-5.1 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]

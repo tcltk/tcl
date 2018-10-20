@@ -1834,10 +1834,24 @@ TclOODefineMethodObjCmd(
     int isInstanceMethod = (clientData != NULL);
     Object *oPtr;
     int isPublic;
+    const char *exportMode = NULL;
+    size_t exportLen;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
+    if (objc < 4 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
 	return TCL_ERROR;
+    }
+    
+    if (objc == 5) {
+	exportMode = TclGetStringFromObj(objv[2], &exportLen);
+	if (exportLen == 0 ||
+		(strcmp(exportMode, "-export") &&
+		 strcmp(exportMode, "-unexport"))) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"invalid export flag", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "INVALID_EXPORT_FLAG", NULL);
+	    return TCL_ERROR;
+	}
     }
 
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -1850,8 +1864,9 @@ TclOODefineMethodObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
-    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
-	    ? PUBLIC_METHOD : 0;
+    isPublic = exportMode == NULL
+	? Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*") ? PUBLIC_METHOD : 0
+	: exportMode[1] == 'e' ? PUBLIC_METHOD : 0;
     if (IsPrivateDefine(interp)) {
 	isPublic = TRUE_PRIVATE_METHOD;
     }
@@ -1862,12 +1877,12 @@ TclOODefineMethodObjCmd(
 
     if (isInstanceMethod) {
 	if (TclOONewProcInstanceMethod(interp, oPtr, isPublic, objv[1],
-		objv[2], objv[3], NULL) == NULL) {
+		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
     } else {
 	if (TclOONewProcMethod(interp, oPtr->classPtr, isPublic, objv[1],
-		objv[2], objv[3], NULL) == NULL) {
+		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
     }
