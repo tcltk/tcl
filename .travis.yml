@@ -1,0 +1,63 @@
+dist: trusty
+language: c
+matrix:
+  include:
+    - os: linux
+      env:
+        - MATRIX_EVAL="BUILD_DIR=unix"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9 && BUILD_DIR=unix"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && BUILD_DIR=unix"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && BUILD_DIR=unix"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && BUILD_DIR=unix"
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="BUILD_DIR=unix"
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="BUILD_DIR=macosx"
+    - os: windows
+      env:
+        - MATRIX_EVAL="BUILD_DIR=win"
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - cd ${BUILD_DIR}
+install:
+  - ./configure
+script:
+  - make
+  - make test
