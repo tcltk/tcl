@@ -8,16 +8,16 @@ site](https://sourceforge.net/projects/tcl/files/Tcl/).
 [![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-5-branch)](https://travis-ci.org/tcltk/tcl)
 
 ## Contents
-    1. Introduction
-    2. Documentation
-    3. Compiling and installing Tcl
-    4. Development tools
-    5. Tcl newsgroup
-    6. The Tcler's Wiki
-    7. Mailing lists
-    8. Support and Training
-    9. Tracking Development
-    10. Thank You
+ 1. Introduction
+ 2. Documentation
+ 3. Compiling and installing Tcl
+ 4. Development tools
+ 5. Tcl newsgroup
+ 6. The Tcler's Wiki
+ 7. Mailing lists
+ 8. Support and Training
+ 9. Tracking Development
+ 10. Thank You
 
 ## <a id="intro">1.</a> Introduction
 Tcl provides a powerful platform for creating integration applications that
