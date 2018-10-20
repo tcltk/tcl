@@ -1,11 +1,11 @@
 # README:  Tcl
 
-This is the **Tcl 8.5.19** source distribution.
-	
+This is the **Tcl 8.6.8** source distribution.
+
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-[![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-5-branch)](https://travis-ci.org/tcltk/tcl)
+[![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-6-branch)](https://travis-ci.org/tcltk/tcl)
 
 ## Contents
  1. [Introduction](#intro)
@@ -43,7 +43,7 @@ and selling it either in whole or in part.  See the file
 ## <a id="doc">2.</a> Documentation
 Extensive documentation is available at our website.
 The home page for this release, including new features, is
-[here](https://www.tcl.tk/software/tcltk/8.5.html).
+[here](https://www.tcl.tk/software/tcltk/8.6.html).
 Detailed release notes can be found at the
 [file distributions page](https://sourceforge.net/projects/tcl/files/Tcl/)
 by clicking on the relevant version.
@@ -53,8 +53,8 @@ Xchange](https://www.tcl-lang.org/about/).
 There have been many Tcl books on the market.  Many are mentioned in
 [the Wiki](https://wiki.tcl-lang.org/_/ref?N=25206).
 
-The complete set of reference manual entries for Tcl 8.5 is [online,
-here](https://www.tcl-lang.org/man/tcl8.5/).
+The complete set of reference manual entries for Tcl 8.6 is [online,
+here](https://www.tcl-lang.org/man/tcl8.6/).
 
 ### <a id="doc.unix">2a.</a> Unix Documentation
 The `doc` subdirectory in this release contains a complete set of
