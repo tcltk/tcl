@@ -3796,14 +3796,6 @@ extern const TclStubs *tclStubsPtr;
 	    if (result == TCL_OK) *ptr = (long)intValue;
 	    return result;
 	}
-#	define Tcl_UniCharNcmp(ucs,uct,n) \
-		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcmp)(ucs,uct,(unsigned int)(n))
-#	define Tcl_UtfNcmp(s1,s2,n) \
-		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcmp)(s1,s2,(unsigned int)(n))
-#	define Tcl_UtfNcasecmp(s1,s2,n) \
-		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcasecmp)(s1,s2,(unsigned int)(n))
-#	define Tcl_UniCharNcasecmp(ucs,uct,n) \
-		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
 #   endif
 #endif
 

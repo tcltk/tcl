@@ -675,7 +675,7 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpSysAlloc(size)	malloc(size)
+#define TclpSysAlloc(size)		malloc(size)
 #define TclpSysFree(ptr)		free(ptr)
 #define TclpSysRealloc(ptr, size)	realloc(ptr, size)
 

@@ -985,7 +985,7 @@ RebuildTable(
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc(
+	tablePtr->buckets = TclpSysAlloc(
 		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     } else {
 	tablePtr->buckets =
