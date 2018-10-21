@@ -48,16 +48,18 @@ matrix:
     - os: osx
       osx_image: xcode8
       env:
-        - MATRIX_EVAL="BUILD_DIR=macosx"
-    - os: windows
-      env:
-        - MATRIX_EVAL="BUILD_DIR=win"
+        - MATRIX_EVAL="BUILD_DIR=macosx && NO_DIRECT_CONFIGURE=1"
+### C builds not currently supported on Windows instances
+#    - os: windows
+#      env:
+#        - MATRIX_EVAL="BUILD_DIR=win"
 
 before_install:
   - eval "${MATRIX_EVAL}"
+  - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
-  - ./configure
+  - test -z "$NO_DIRECT_CONFIGURE" || ./configure
 script:
   - make
   - make test
