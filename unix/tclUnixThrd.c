@@ -160,14 +160,6 @@ PCondTimedWait(
 }
 #endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
 
-#ifndef TCL_NO_DEPRECATED
-typedef struct {
-    char nabuf[16];
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-#endif /* TCL_NO_DEPRECATED */
-
 /*
  * masterLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
