@@ -152,14 +152,15 @@ exported if \fIname\fR starts with a lower-case letter, and non-exported
 otherwise; this behavior can be overridden via \fBexport\fR and
 \fBunexport\fR
 .VS  TIP519
-or by specifying \fB\-export\fR or \fB\-unexport\fR in the optional parameter
-\fIoption\fR.
+or by specifying \fB\-export\fR, \fB\-private\fR or \fB\-unexport\fR in the
+optional parameter \fIoption\fR.
 .VE TIP519
 .RS
 .PP
 .VS TIP500
 If in a private definition context (see the \fBprivate\fR definition command,
-below), this command creates private procedure-like methods.
+below) or if the \fB\-private\fR flag is given for \fIoption\fR, this command
+creates private procedure-like methods.
 .VE TIP500
 .RE
 .TP
@@ -335,15 +336,16 @@ current namespace of the method will be a namespace that is unique to the
 object. The method will be exported if \fIname\fR starts with a lower-case
 letter, and non-exported otherwise;
 .VS  TIP519
-this can be overridden by specifying \fB\-export\fR or \fB\-unexport\fR in the
-optional parameter \fIoption\fR, or via the \fBexport\fR and \fBunexport\fR
-definitions.
+this can be overridden by specifying \fB\-export\fR, \fB\-private\fR or
+\fB\-unexport\fR in the optional parameter \fIoption\fR, or via the
+\fBexport\fR and \fBunexport\fR definitions.
 .VE TIP519
 .RS
 .PP
 .VS TIP500
 If in a private definition context (see the \fBprivate\fR definition command,
-below), this command creates private procedure-like methods.
+below) or if the \fB\-private\fR flag is given for \fIoption\fR, this command
+creates private procedure-like methods.
 .VE TIP500
 .RE
 .TP

@@ -778,22 +778,76 @@ test oo-4.6 {export creates proper method entries} -setup {
 } -cleanup {
     testClass destroy
 } -result ok
-test oo-4.7 {basic test of OO functionality: -export flag} {
+test oo-4.7 {basic test of OO functionality: method -export flag} -setup {
     set o [oo::object new]
-    set result {}
-    oo::objdefine $o method Foo {} {lappend ::result Foo; return}
+    unset -nocomplain result
+} -body {
+    oo::objdefine $o {
+	method Foo {} {
+	    lappend ::result Foo
+	    return foo
+	}
+	method Bar -export {} {
+	    lappend ::result Bar
+	    return bar
+	}
+    }
     lappend result [catch {$o Foo} msg] $msg
-    oo::objdefine $o method Bar -export {} {lappend ::result Bar; return}
-    lappend result [$o Bar] [$o destroy]
-} {1 {unknown method "Foo": must be destroy} Bar {} {}}
-test oo-4.8 {basic test of OO functionality: -unexport flag} {
+    lappend result [$o Bar]
+} -cleanup {
+    $o destroy
+} -result {1 {unknown method "Foo": must be Bar or destroy} Bar bar}
+test oo-4.8 {basic test of OO functionality: method -unexport flag} -setup {
     set o [oo::object new]
-    set result {}
-    oo::objdefine $o method foo {} {lappend ::result foo; return}
+    unset -nocomplain result
+} -body {
+    oo::objdefine $o {
+	method foo {} {
+	    lappend ::result foo
+	    return Foo
+	}
+	method bar -unexport {} {
+	    lappend ::result bar
+	    return Bar
+	}
+    }
     lappend result [$o foo]
-    oo::objdefine $o method bar -unexport {} {lappend ::result bar; return}
-    lappend result [catch {$o bar} msg] $msg [$o destroy]
-} {foo {} 1 {unknown method "bar": must be destroy or foo} {}}
+    lappend result [catch {$o bar} msg] $msg
+} -cleanup {
+    $o destroy
+} -result {foo Foo 1 {unknown method "bar": must be destroy or foo}}
+test oo-4.9 {basic test of OO functionality: method -private flag} -setup {
+    set o [oo::object new]
+    unset -nocomplain result
+} -body {
+    oo::objdefine $o {
+	method foo {} {
+	    lappend ::result foo
+	    return Foo
+	}
+	method bar -private {} {
+	    lappend ::result bar
+	    return Bar
+	}
+	export eval
+	method gorp {} {
+	    my bar
+	}
+    }
+    lappend result [$o foo]
+    lappend result [catch {$o bar} msg] $msg
+    lappend result [catch {$o eval my bar} msg] $msg
+    lappend result [$o gorp]
+} -cleanup {
+    $o destroy
+} -result {foo Foo 1 {unknown method "bar": must be destroy, eval, foo or gorp} 1 {unknown method "bar": must be <cloned>, destroy, eval, foo, gorp, unknown, variable or varname} bar Bar}
+test oo-4.10 {basic test of OO functionality: method flag parsing} -setup {
+    set o [oo::object new]
+} -body {
+    oo::objdefine $o method foo -gorp xyz {return Foo}
+} -returnCodes error -cleanup {
+    $o destroy
+} -result {bad export flag "-gorp": must be -export, -private, or -unexport}
 
 test oo-5.1 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]

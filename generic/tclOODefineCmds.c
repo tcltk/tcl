@@ -1831,10 +1831,25 @@ TclOODefineMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    /*
+     * Table of export modes for methods and their corresponding enum.
+     */
+
+    static const char *const exportModes[] = {
+	"-export",
+	"-private",
+	"-unexport",
+	NULL
+    };
+    enum ExportMode {
+	MODE_EXPORT,
+	MODE_PRIVATE,
+	MODE_UNEXPORT
+    } exportMode;
+
     int isInstanceMethod = (clientData != NULL);
     Object *oPtr;
     int isPublic;
-    const char *exportMode = NULL;
     size_t exportLen;
 
     if (objc < 4 || objc > 5) {
@@ -1842,18 +1857,6 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
     
-    if (objc == 5) {
-	exportMode = TclGetStringFromObj(objv[2], &exportLen);
-	if (exportLen == 0 ||
-		(strcmp(exportMode, "-export") &&
-		 strcmp(exportMode, "-unexport"))) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"invalid export flag", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "INVALID_EXPORT_FLAG", NULL);
-	    return TCL_ERROR;
-	}
-    }
-
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -1864,11 +1867,29 @@ TclOODefineMethodObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
-    isPublic = exportMode == NULL
-	? Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*") ? PUBLIC_METHOD : 0
-	: exportMode[1] == 'e' ? PUBLIC_METHOD : 0;
-    if (IsPrivateDefine(interp)) {
-	isPublic = TRUE_PRIVATE_METHOD;
+    if (objc == 5) {
+	if (Tcl_GetIndexFromObj(interp, objv[2], exportModes, "export flag",
+		0, (int *) &exportMode) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (exportMode) {
+	case MODE_EXPORT:
+	    isPublic = PUBLIC_METHOD;
+	    break;
+	case MODE_PRIVATE:
+	    isPublic = TRUE_PRIVATE_METHOD;
+	    break;
+	case MODE_UNEXPORT:
+	    isPublic = 0;
+	    break;
+	}
+    } else {
+	if (IsPrivateDefine(interp)) {
+	    isPublic = TRUE_PRIVATE_METHOD;
+	} else {
+	    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
+		    ? PUBLIC_METHOD : 0;
+	}
     }
 
     /*
