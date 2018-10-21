@@ -1850,7 +1850,6 @@ TclOODefineMethodObjCmd(
     int isInstanceMethod = (clientData != NULL);
     Object *oPtr;
     int isPublic;
-    size_t exportLen;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
