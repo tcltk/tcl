@@ -1356,6 +1356,7 @@ TclLindexFlat(
  *
  *	Core of the 'lset' command when objc == 4. Objv[2] may be either a
  *	scalar index or a list of indices.
+ *      It also handles 'lpop' when given a NULL value.
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if there was an
@@ -1380,7 +1381,7 @@ TclLsetList(
     Tcl_Interp *interp,		/* Tcl interpreter. */
     Tcl_Obj *listPtr,		/* Pointer to the list being modified. */
     Tcl_Obj *indexArgPtr,	/* Index or index-list arg to 'lset'. */
-    Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
+    Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     int indexCount = 0;		/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
@@ -1431,6 +1432,7 @@ TclLsetList(
  * TclLsetFlat --
  *
  *	Core engine of the 'lset' command.
+ *      It also handles 'lpop' when given a NULL value.
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if an error
@@ -1475,7 +1477,7 @@ TclLsetFlat(
     int indexCount,		/* Number of index args. */
     Tcl_Obj *const indexArray[],
 				/* Index args. */
-    Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
+    Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     int index, result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
@@ -1483,9 +1485,19 @@ TclLsetFlat(
     /*
      * If there are no indices, simply return the new value.  (Without
      * indices, [lset] is a synonym for [set].
+     * This is an error for [lpop].
      */
 
     if (indexCount == 0) {
+	if (valuePtr == NULL) {
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("list index out of range", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LPOP",
+			"BADINDEX", NULL);
+	    }
+	    return NULL;
+	}
 	Tcl_IncrRefCount(valuePtr);
 	return valuePtr;
     }
@@ -1546,12 +1558,14 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index > elemCount) {
+	if (index < 0 || index > elemCount
+		|| (valuePtr == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION",
+			valuePtr == NULL ? "LPOP" : "LSET",
 			"BADINDEX", NULL);
 	    }
 	    result = TCL_ERROR;
@@ -1661,7 +1675,9 @@ TclLsetFlat(
 
     len = -1;
     TclListObjLength(NULL, subListPtr, &len);
-    if (index == len) {
+    if (valuePtr == NULL) {
+	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
+    } else if (index == len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
