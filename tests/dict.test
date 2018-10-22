@@ -175,11 +175,7 @@ test dict-4.12 {dict replace command: canonicality is forced} {
 } {a e c d}
 test dict-4.13 {dict replace command: type check is mandatory} -body {
     dict replace { a b c d e }
-} -returnCodes error -result {missing value to go with key}
-test dict-4.13a {dict replace command: type check is mandatory} {
-    catch {dict replace { a b c d e }} -> opt
-    dict get $opt -errorcode
-} {TCL VALUE DICTIONARY}
+} -errorCode {TCL VALUE DICTIONARY} -result {missing value to go with key}
 test dict-4.14 {dict replace command: type check is mandatory} -body {
     dict replace { a b {}c d }
 } -returnCodes error -result {dict element in braces followed by "c" instead of space}
@@ -203,11 +199,7 @@ test dict-4.16a {dict replace command: type check is mandatory} {
 } {TCL VALUE DICTIONARY QUOTE}
 test dict-4.17 {dict replace command: type check is mandatory} -body {
     dict replace " a b \{c d "
-} -returnCodes error -result {unmatched open brace in dict}
-test dict-4.17a {dict replace command: type check is mandatory} {
-    catch {dict replace " a b \{c d "} -> opt
-    dict get $opt -errorcode
-} {TCL VALUE DICTIONARY BRACE}
+} -errorCode {TCL VALUE DICTIONARY BRACE} -result {unmatched open brace in dict}
 test dict-4.18 {dict replace command: canonicality forcing doesn't leak} {
     set example { a b  c d }
     list $example [dict replace $example]
