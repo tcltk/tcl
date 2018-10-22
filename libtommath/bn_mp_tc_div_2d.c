@@ -1,5 +1,5 @@
 #include "tommath_private.h"
-#ifdef BN_MP_SUBMOD_C
+#ifdef BN_MP_TC_DIV_2D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
  * LibTomMath is a library that provides multiple-precision
@@ -13,24 +13,21 @@
  * guarantee it works.
  */
 
-/* d = a - b (mod c) */
-int mp_submod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d)
+/* two complement right shift */
+int mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
 {
-   int     res;
-   mp_int  t;
+   int res;
+   if (mp_isneg(a) == MP_NO) {
+      return mp_div_2d(a, b, c, NULL);
+   }
 
-
-   if ((res = mp_init(&t)) != MP_OKAY) {
+   res = mp_add_d(a, 1uL, c);
+   if (res != MP_OKAY) {
       return res;
    }
 
-   if ((res = mp_sub(a, b, &t)) != MP_OKAY) {
-      mp_clear(&t);
-      return res;
-   }
-   res = mp_mod(&t, c, d);
-   mp_clear(&t);
-   return res;
+   res = mp_div_2d(c, b, c, NULL);
+   return (res == MP_OKAY) ? mp_sub_d(c, 1uL, c) : res;
 }
 #endif
 
