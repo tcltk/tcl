@@ -1841,6 +1841,9 @@ proc tcltest::SubstArguments {argList} {
 #                       is optional; default is {}.
 #   returnCodes -       Expected return codes.  This attribute is
 #                       optional; default is {0 2}.
+#   errorCode -         Expected error code.  This attribute is
+#                       optional; default is {}. It is a glob pattern.
+#                       If given, returnCodes defaults to {1}.
 #   setup -             Code to run before $script (above).  This
 #                       attribute is optional; default is {}.
 #   cleanup -           Code to run after $script (above).  This
@@ -1882,7 +1885,7 @@ proc tcltest::test {name description args} {
     # Pre-define everything to null except output and errorOutput.  We
     # determine whether or not to trap output based on whether or not
     # these variables (output & errorOutput) are defined.
-    lassign {} constraints setup cleanup body result returnCodes match
+    lassign {} constraints setup cleanup body result returnCodes errorCode match
 
     # Set the default match mode
     set match exact
@@ -1901,7 +1904,7 @@ proc tcltest::test {name description args} {
 		set testAttributes($element) $value
 	    }
 	    foreach item {constraints match setup body cleanup \
-		    result returnCodes output errorOutput} {
+		    result returnCodes errorCode output errorOutput} {
 		if {[info exists testAttributes(-$item)]} {
 		    set testAttributes(-$item) [uplevel 1 \
 			    ::concat $testAttributes(-$item)]
@@ -1912,7 +1915,7 @@ proc tcltest::test {name description args} {
 	}
 
 	set validFlags {-setup -cleanup -body -result -returnCodes \
-		-match -output -errorOutput -constraints}
+		-errorCode -match -output -errorOutput -constraints}
 
 	foreach flag [array names testAttributes] {
 	    if {$flag ni $validFlags} {
@@ -1944,6 +1947,10 @@ proc tcltest::test {name description args} {
 	foreach {strcode numcode} {ok 0 normal 0 error 1 return 2 break 3 continue 4} {
 	    set returnCodes [string map -nocase [list $strcode $numcode] $returnCodes]
 	}
+        # errorCode without returnCode 1 is meaningless
+        if {$errorCode ne "" && 1 ni $returnCodes} {
+            set returnCodes 1
+        }
     } else {
 	# This is parsing for the old test command format; it is here
 	# for backward compatibility.
@@ -1976,7 +1983,7 @@ proc tcltest::test {name description args} {
     set code [catch {uplevel 1 $setup} setupMsg]
     if {$code == 1} {
 	set errorInfo(setup) $::errorInfo
-	set errorCode(setup) $::errorCode
+	set errorCodeRes(setup) $::errorCode
     }
     set setupFailure [expr {$code != 0}]
 
@@ -2003,7 +2010,7 @@ proc tcltest::test {name description args} {
 	lassign $testResult actualAnswer returnCode
 	if {$returnCode == 1} {
 	    set errorInfo(body) $::errorInfo
-	    set errorCode(body) $::errorCode
+	    set errorCodeRes(body) $::errorCode
 	}
     }
 
@@ -2011,6 +2018,13 @@ proc tcltest::test {name description args} {
     set codeFailure 0
     if {!$setupFailure && ($returnCode ni $returnCodes)} {
 	set codeFailure 1
+    }
+    set errCodeFailure 0
+    if {!$setupFailure && !$codeFailure && $returnCode == 1 && \
+                $errorCode ne "" && \
+                ![string match $errorCode $errorCodeRes(body)]} {
+        set codeFailure 1
+	set errCodeFailure 1
     }
 
     # If expected output/error strings exist, we have to compare
@@ -2055,7 +2069,7 @@ proc tcltest::test {name description args} {
     set code [catch {uplevel 1 $cleanup} cleanupMsg]
     if {$code == 1} {
 	set errorInfo(cleanup) $::errorInfo
-	set errorCode(cleanup) $::errorCode
+	set errorCodeRes(cleanup) $::errorCode
     }
     set cleanupFailure [expr {$code != 0}]
 
@@ -2159,7 +2173,7 @@ proc tcltest::test {name description args} {
 		failed:\n$setupMsg"
 	if {[info exists errorInfo(setup)]} {
 	    puts [outputChannel] "---- errorInfo(setup): $errorInfo(setup)"
-	    puts [outputChannel] "---- errorCode(setup): $errorCode(setup)"
+	    puts [outputChannel] "---- errorCode(setup): $errorCodeRes(setup)"
 	}
     }
     if {$scriptFailure} {
@@ -2171,7 +2185,11 @@ proc tcltest::test {name description args} {
 		    ($match matching):\n$result"
 	}
     }
-    if {$codeFailure} {
+    if {$errCodeFailure} {
+        # TODO
+	puts [outputChannel] "---- Error code was: '$errorCodeRes(body)'"
+	puts [outputChannel] "---- Error code should have been: '$errorCode'"
+    } elseif {$codeFailure} {
 	switch -- $returnCode {
 	    0 { set msg "Test completed normally" }
 	    1 { set msg "Test generated error" }
@@ -2186,7 +2204,7 @@ proc tcltest::test {name description args} {
 	if {[IsVerbose error]} {
 	    if {[info exists errorInfo(body)] && (1 ni $returnCodes)} {
 		puts [outputChannel] "---- errorInfo: $errorInfo(body)"
-		puts [outputChannel] "---- errorCode: $errorCode(body)"
+		puts [outputChannel] "---- errorCode: $errorCodeRes(body)"
 	    }
 	}
     }
@@ -2212,7 +2230,7 @@ proc tcltest::test {name description args} {
 	puts [outputChannel] "---- Test cleanup failed:\n$cleanupMsg"
 	if {[info exists errorInfo(cleanup)]} {
 	    puts [outputChannel] "---- errorInfo(cleanup): $errorInfo(cleanup)"
-	    puts [outputChannel] "---- errorCode(cleanup): $errorCode(cleanup)"
+	    puts [outputChannel] "---- errorCode(cleanup): $errorCodeRes(cleanup)"
 	}
     }
     if {$coreFailure} {
