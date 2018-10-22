@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.4.1
+    variable Version 2.5.0
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1842,7 +1842,7 @@ proc tcltest::SubstArguments {argList} {
 #   returnCodes -       Expected return codes.  This attribute is
 #                       optional; default is {0 2}.
 #   errorCode -         Expected error code.  This attribute is
-#                       optional; default is {}. It is a glob pattern.
+#                       optional; default is {*}. It is a glob pattern.
 #                       If given, returnCodes defaults to {1}.
 #   setup -             Code to run before $script (above).  This
 #                       attribute is optional; default is {}.
@@ -1894,6 +1894,9 @@ proc tcltest::test {name description args} {
     # expected return value if everything went well; 2 represents
     # 'return' being used in the test script).
     set returnCodes [list 0 2]
+
+    # Set the default error code pattern
+    set errorCode "*"
 
     # The old test format can't have a 3rd argument (constraints or
     # script) that starts with '-'.
@@ -1948,7 +1951,7 @@ proc tcltest::test {name description args} {
 	    set returnCodes [string map -nocase [list $strcode $numcode] $returnCodes]
 	}
         # errorCode without returnCode 1 is meaningless
-        if {$errorCode ne "" && 1 ni $returnCodes} {
+        if {$errorCode ne "*" && 1 ni $returnCodes} {
             set returnCodes 1
         }
     } else {
@@ -2021,7 +2024,6 @@ proc tcltest::test {name description args} {
     }
     set errCodeFailure 0
     if {!$setupFailure && !$codeFailure && $returnCode == 1 && \
-                $errorCode ne "" && \
                 ![string match $errorCode $errorCodeRes(body)]} {
         set codeFailure 1
 	set errCodeFailure 1
