@@ -9,8 +9,6 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://math.libtomcrypt.com
  */
 #ifndef BN_H_
 #define BN_H_
@@ -27,7 +25,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__)
+#if defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -39,7 +37,13 @@ extern "C" {
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
 #   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      define MP_64BIT
+#      if defined(__GNUC__)
+/* we support 128bit integers only via: __attribute__((mode(TI))) */
+#         define MP_64BIT
+#      else
+/* otherwise we fall back to MP_32BIT even on 64bit platforms */
+#         define MP_32BIT
+#      endif
 #   endif
 #endif
 
@@ -68,14 +72,7 @@ typedef uint32_t             mp_word;
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
 typedef uint64_t mp_digit;
-#   if defined(__GNUC__)
 typedef unsigned long        mp_word __attribute__((mode(TI)));
-#   else
-/* it seems you have a problem
- * but we assume you can somewhere define your own uint128_t */
-typedef uint128_t            mp_word;
-#   endif
-
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
@@ -100,18 +97,6 @@ typedef uint64_t             mp_word;
 typedef uint_least32_t mp_min_u32;
 #else
 typedef mp_digit mp_min_u32;
-#endif
-
-/* use arc4random on platforms that support it */
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-#   define MP_GEN_RANDOM()    arc4random()
-#   define MP_GEN_RANDOM_MAX  0xffffffffu
-#endif
-
-/* use rand() as fall-back if there's no better rand function */
-#ifndef MP_GEN_RANDOM
-#   define MP_GEN_RANDOM()    rand()
-#   define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -289,6 +274,14 @@ int mp_cnt_lsb(const mp_int *a);
 /* makes a pseudo-random int of a given size */
 int mp_rand(mp_int *a, int digits);
 
+#ifdef MP_PRNG_ENABLE_LTM_RNG
+/* as last resort we will fall back to libtomcrypt's rng_get_bytes()
+ * in case you don't use libtomcrypt or use it w/o rng_get_bytes()
+ * you have to implement it somewhere else, as it's required */
+extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
+extern void (*ltm_rng_callback)(void);
+#endif
+
 /* ---> binary operations <--- */
 /* c = a XOR b  */
 int mp_xor(const mp_int *a, const mp_int *b, mp_int *c);
@@ -299,7 +292,22 @@ int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 /* c = a AND b */
 int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 
+/* c = a XOR b (two complement) */
+int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* c = a OR b (two complement) */
+int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* c = a AND b (two complement) */
+int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* right shift (two complement) */
+int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+
 /* ---> Basic arithmetic <--- */
+
+/* b = ~a */
+int mp_complement(const mp_int *a, mp_int *b);
 
 /* b = -a */
 int mp_neg(const mp_int *a, mp_int *b);
