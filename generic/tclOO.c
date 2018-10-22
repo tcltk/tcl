@@ -56,7 +56,6 @@ static const struct {
  * Function declarations for things defined in this file.
  */
 
-static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    Namespace *nsPtr, const char *nsNameStr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
@@ -79,8 +78,6 @@ static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
-static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
-static void		DeleteDescendants(Tcl_Interp *interp,Object *oPtr);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicObjectCmd(ClientData clientData,
@@ -392,10 +389,10 @@ InitFoundation(
 
     /* Stand up a phony class for bootstrapping. */
     fPtr->objectCls = &fakeCls;
-    /* referenced in AllocClass to increment the refCount. */
+    /* referenced in TclOOAllocClass to increment the refCount. */
     fakeCls.thisPtr = &fakeObject;
 
-    fPtr->objectCls = AllocClass(interp,
+    fPtr->objectCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
     /* Corresponding TclOODecrRefCount in KillFoudation */
     AddRef(fPtr->objectCls->thisPtr);
@@ -411,7 +408,7 @@ InitFoundation(
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->flags |= ROOT_OBJECT;
 
-    fPtr->classCls = AllocClass(interp,
+    fPtr->classCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
     /* Corresponding TclOODecrRefCount in KillFoudation */
     AddRef(fPtr->classCls->thisPtr);
@@ -829,15 +826,15 @@ ObjectRenamedTrace(
 /*
  * ----------------------------------------------------------------------
  *
- * DeleteDescendants --
+ * TclOODeleteDescendants --
  *
  *	Delete all descendants of a particular class.
  *
  * ----------------------------------------------------------------------
  */
 
-static void
-DeleteDescendants(
+void
+TclOODeleteDescendants(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
@@ -854,7 +851,8 @@ DeleteDescendants(
 	    /* This condition also covers the case where mixinSubclassPtr ==
 	     * clsPtr
 	     */
-	    if (!Deleted(mixinSubclassPtr->thisPtr)) {
+	    if (!Deleted(mixinSubclassPtr->thisPtr)
+		    && !(mixinSubclassPtr->thisPtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp,
 			mixinSubclassPtr->thisPtr->command);
 	    }
@@ -872,8 +870,10 @@ DeleteDescendants(
     if (clsPtr->subclasses.num > 0) {
 	while (clsPtr->subclasses.num > 0) {
 	    subclassPtr = clsPtr->subclasses.list[clsPtr->subclasses.num-1];
-	    if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)) {
-		Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+	    if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)
+		    && !(subclassPtr->thisPtr->flags & DONT_DELETE)) {
+		Tcl_DeleteCommandFromToken(interp,
+			subclassPtr->thisPtr->command);
 	    }
 	    TclOORemoveFromSubclasses(subclassPtr, clsPtr);
 	}
@@ -892,7 +892,8 @@ DeleteDescendants(
 	while (clsPtr->instances.num > 0) {
 	    instancePtr = clsPtr->instances.list[clsPtr->instances.num-1];
 	    /* This condition also covers the case where instancePtr == oPtr */
-	    if (!Deleted(instancePtr) && !IsRoot(instancePtr)) {
+	    if (!Deleted(instancePtr) && !IsRoot(instancePtr) &&
+		    !(instancePtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
 	    }
 	    TclOORemoveFromInstances(instancePtr, clsPtr);
@@ -909,7 +910,7 @@ DeleteDescendants(
 /*
  * ----------------------------------------------------------------------
  *
- * ReleaseClassContents --
+ * TclOOReleaseClassContents --
  *
  *	Tear down the special class data structure, including deleting all
  *	dependent classes and objects.
@@ -917,8 +918,8 @@ DeleteDescendants(
  * ----------------------------------------------------------------------
  */
 
-static void
-ReleaseClassContents(
+void
+TclOOReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
@@ -940,9 +941,6 @@ ReleaseClassContents(
 	} else if (IsRootObject(oPtr)) {
 	    Tcl_Panic("deleting class structure for non-deleted %s",
 		    "::oo::object");
-	} else {
-	    Tcl_Panic("deleting class structure for non-deleted %s",
-		    "general object");
 	}
     }
 
@@ -1037,6 +1035,7 @@ ReleaseClassContents(
     if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
 	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
+    oPtr->classPtr = NULL;
 }
 
 /*
@@ -1082,7 +1081,7 @@ ObjectNamespaceDeleted(
 
     /* Let the dominoes fall */
     if (oPtr->classPtr) {
-	DeleteDescendants(interp, oPtr);
+	TclOODeleteDescendants(interp, oPtr);
     }
 
     /*
@@ -1194,27 +1193,25 @@ ObjectNamespaceDeleted(
     }
 
     /*
-     *  Because an object can be a class that is an instance of itself, the
-     *  A class object's class structure should only be cleaned after most of
-     *  the cleanup on the object is done. 
-     */
-
-
-    /*
+     * Because an object can be a class that is an instance of itself, the
+     * class object's class structure should only be cleaned after most of
+     * the cleanup on the object is done. 
+     *
      * The class of objects needs some special care; if it is deleted (and
      * we're not killing the whole interpreter) we force the delete of the
      * class of classes now as well. Due to the incestuous nature of those two
      * classes, if one goes the other must too and yet the tangle can
      * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
+
     if (IsRootObject(oPtr) && !Deleted(fPtr->classCls->thisPtr)
-	&& !Tcl_InterpDeleted(interp)) {
+	    && !Tcl_InterpDeleted(interp)) {
 
 	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
     }
 
     if (oPtr->classPtr != NULL) {
-	ReleaseClassContents(interp, oPtr);
+	TclOOReleaseClassContents(interp, oPtr);
     }
 
     /*
@@ -1328,6 +1325,37 @@ TclOOAddToInstances(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOORemoveFromMixins --
+ *
+ *	Utility function to remove a class from the list of mixins within an
+ *	object.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOORemoveFromMixins(
+    Class *mixinPtr,		/* The mixin to remove. */
+    Object *oPtr)		/* The object (possibly) containing the
+				 * reference to the mixin. */
+{
+    int i, res = 0;
+    Class *mixPtr;
+
+    FOREACH(mixPtr, oPtr->mixins) {
+	if (mixinPtr == mixPtr) {
+	    RemoveItem(Class, oPtr->mixins, i);
+	    TclOODecrRefCount(mixPtr->thisPtr);
+	    res++;
+	    break;
+	}
+    }
+    return res;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOORemoveFromSubclasses --
  *
  *	Utility function to remove a class from the list of subclasses within
@@ -1381,7 +1409,8 @@ TclOOAddToSubclasses(
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
 	    superPtr->subclasses.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list, sizeof(Class *) * superPtr->subclasses.size);
+	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list,
+		    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
     superPtr->subclasses.list[superPtr->subclasses.num++] = subPtr;
@@ -1456,16 +1485,16 @@ TclOOAddToMixinSubs(
 /*
  * ----------------------------------------------------------------------
  *
- * AllocClass --
+ * TclOOAllocClass --
  *
- *	Allocate a basic class. Does not add class to its
- *	class's instance list.
+ *	Allocate a basic class. Does not add class to its class's instance
+ *	list.
  *
  * ----------------------------------------------------------------------
  */
 
-static Class *
-AllocClass(
+Class *
+TclOOAllocClass(
     Tcl_Interp *interp,		/* Interpreter within which to allocate the
 				 * class. */
     Object *useThisObj)		/* Object that is to act as the class
@@ -1709,13 +1738,13 @@ TclNewObjectInstanceCommon(
 
     if (TclOOIsReachable(fPtr->classCls, classPtr)) {
 	/*
-	 * Is a class, so attach a class structure. Note that the AllocClass
-	 * function splices the structure into the object, so we don't have
-	 * to. Once that's done, we need to repatch the object to have the
-	 * right class since AllocClass interferes with that.
+	 * Is a class, so attach a class structure. Note that the
+	 * TclOOAllocClass function splices the structure into the object, so
+	 * we don't have to. Once that's done, we need to repatch the object
+	 * to have the right class since TclOOAllocClass interferes with that.
 	 */
 
-	AllocClass(interp, oPtr);
+	TclOOAllocClass(interp, oPtr);
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
     } else {
 	oPtr->classPtr = NULL;
