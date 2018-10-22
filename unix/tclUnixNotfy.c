@@ -18,7 +18,7 @@
  * Static routines defined in this file.
  */
 
-static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 #if !TCL_THREADS
 # undef NOTIFIER_EPOLL
 # undef NOTIFIER_KQUEUE
@@ -27,7 +27,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 # define NOTIFIER_SELECT
 static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 # if defined(HAVE_PTHREAD_ATFORK)
-static void	AtForkChild(void);
+static void		AtForkChild(void);
 # endif /* HAVE_PTHREAD_ATFORK */
 
 /*
@@ -120,7 +120,7 @@ Tcl_AlertNotifier(
 #   endif /* __CYGWIN__ */
 	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
-#else
+#else /* !NOTIFIER_SELECT */
 	ThreadSpecificData *tsdPtr = clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
 	uint64_t eventFdVal = 1;
@@ -128,12 +128,13 @@ Tcl_AlertNotifier(
 		sizeof(eventFdVal)) != sizeof(eventFdVal)) {
 	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
 		(void *)tsdPtr);
+	}
 #else
 	if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
 	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerPipe",
 		(void *)tsdPtr);
-#endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
 	}
+#endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
 #endif /* NOTIFIER_SELECT */
     }
 }
@@ -301,15 +302,15 @@ FileHandlerEventProc(
 
 static void
 AlertSingleThread(
-	ThreadSpecificData *tsdPtr)
+    ThreadSpecificData *tsdPtr)
 {
     tsdPtr->eventReady = 1;
     if (tsdPtr->onList) {
         /*
-         * Remove the ThreadSpecificData structure of this thread
-         * from the waiting list. This prevents us from
-         * continuously spinning on epoll_wait until the other
-         * threads runs and services the file event.
+         * Remove the ThreadSpecificData structure of this thread from the
+         * waiting list. This prevents us from continuously spinning on
+         * epoll_wait until the other threads runs and services the file
+         * event.
          */
 
         if (tsdPtr->prevPtr) {
@@ -326,7 +327,7 @@ AlertSingleThread(
     }
 #ifdef __CYGWIN__
     PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
-#else /* __CYGWIN__ */
+#else /* !__CYGWIN__ */
     pthread_cond_broadcast(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 }
@@ -359,9 +360,10 @@ AtForkChild(void)
     pthread_cond_init(&notifierCV, NULL);
 
     /*
-     * notifierThreadRunning == 1: thread is running, (there might be data in notifier lists)
+     * notifierThreadRunning == 1: thread is running, (there might be data in
+     *		notifier lists)
      * atForkInit == 0: InitNotifier was never called
-     * notifierCount != 0: unbalanced  InitNotifier() / FinalizeNotifier calls
+     * notifierCount != 0: unbalanced InitNotifier() / FinalizeNotifier calls
      * waitingListPtr != 0: there are threads currently waiting for events.
      */
 
@@ -382,8 +384,8 @@ AtForkChild(void)
 	    waitingListPtr = NULL;
 
 	    /*
-	     * The tsdPtr from before the fork is copied as well.  But since
-	     * we are paranoic, we don't trust its condvar and reset it.
+	     * The tsdPtr from before the fork is copied as well. But since we
+	     * are paranoic, we don't trust its condvar and reset it.
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
@@ -391,10 +393,10 @@ AtForkChild(void)
 		    className, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
 	    ResetEvent(tsdPtr->event);
-#else
+#else /* !__CYGWIN__ */
 	    pthread_cond_destroy(&tsdPtr->waitCV);
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
-#endif
+#endif /* __CYGWIN__ */
 
 	    /*
 	     * In case, we had multiple threads running before the fork,
@@ -465,8 +467,8 @@ TclUnixWaitForFile(
 
     if (timeout > 0) {
 	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
+	abortTime.sec = now.sec + timeout / 1000;
+	abortTime.usec = now.usec + (timeout % 1000) * 1000;
 	if (abortTime.usec >= 1000000) {
 	    abortTime.usec -= 1000000;
 	    abortTime.sec += 1;
@@ -501,7 +503,7 @@ TclUnixWaitForFile(
      * become ready or a timeout to occur.
      */
 
-    while (1) {
+    do {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
 	    blockTime.tv_usec = abortTime.usec - now.usec;
@@ -524,9 +526,9 @@ TclUnixWaitForFile(
 	} else if (!timeoutPtr->tv_sec && !timeoutPtr->tv_usec) {
 	    pollTimeout = 0;
 	} else {
-	    pollTimeout = (int)timeoutPtr->tv_sec * 1000;
+	    pollTimeout = (int) timeoutPtr->tv_sec * 1000;
 	    if (timeoutPtr->tv_usec) {
-		pollTimeout += ((int)timeoutPtr->tv_usec / 1000);
+		pollTimeout += (int) timeoutPtr->tv_usec / 1000;
 	    }
 	}
 	numFound = poll(pollFds, 1, pollTimeout);
@@ -557,13 +559,11 @@ TclUnixWaitForFile(
 	 */
 
 	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
-	    break;
-	}
-    }
+    } while ((abortTime.sec > now.sec)
+	    || (abortTime.sec == now.sec && abortTime.usec > now.usec));
     return result;
 }
+
 #endif /* !HAVE_COREFOUNDATION */
 
 /*
