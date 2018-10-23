@@ -3660,7 +3660,7 @@ TclFormatInt(
  * GetWideForIndex --
  *
  *	This function produces a wide integer value corresponding to the
- *	index value held in *objPtr. The parsing supports all values 
+ *	index value held in *objPtr. The parsing supports all values
  *	recognized as any size of integer, and the syntaxes end[-+]$integer
  *	and $integer[-+]$integer. The argument endValue is used to give
  *	the meaning of the literal index value "end". Index arithmetic

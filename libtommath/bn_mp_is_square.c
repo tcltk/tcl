@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_IS_SQUARE_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -11,8 +11,6 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* Check if remainders are possible squares - fast exclude non-squares */
@@ -75,31 +73,31 @@ int mp_is_square(const mp_int *arg, int *ret)
       return res;
    }
    if ((res = mp_mod(arg, &t, &t)) != MP_OKAY) {
-      goto ERR;
+      goto LBL_ERR;
    }
    r = mp_get_int(&t);
    /* Check for other prime modules, note it's not an ERROR but we must
-    * free "t" so the easiest way is to goto ERR.  We know that res
+    * free "t" so the easiest way is to goto LBL_ERR.  We know that res
     * is already equal to MP_OKAY from the mp_mod call
     */
-   if (((1uL<<(r%11uL)) & 0x5C4uL) != 0uL)         goto ERR;
-   if (((1uL<<(r%13uL)) & 0x9E4uL) != 0uL)         goto ERR;
-   if (((1uL<<(r%17uL)) & 0x5CE8uL) != 0uL)        goto ERR;
-   if (((1uL<<(r%19uL)) & 0x4F50CuL) != 0uL)       goto ERR;
-   if (((1uL<<(r%23uL)) & 0x7ACCA0uL) != 0uL)      goto ERR;
-   if (((1uL<<(r%29uL)) & 0xC2EDD0CuL) != 0uL)     goto ERR;
-   if (((1uL<<(r%31uL)) & 0x6DE2B848uL) != 0uL)    goto ERR;
+   if (((1uL<<(r%11uL)) & 0x5C4uL) != 0uL)         goto LBL_ERR;
+   if (((1uL<<(r%13uL)) & 0x9E4uL) != 0uL)         goto LBL_ERR;
+   if (((1uL<<(r%17uL)) & 0x5CE8uL) != 0uL)        goto LBL_ERR;
+   if (((1uL<<(r%19uL)) & 0x4F50CuL) != 0uL)       goto LBL_ERR;
+   if (((1uL<<(r%23uL)) & 0x7ACCA0uL) != 0uL)      goto LBL_ERR;
+   if (((1uL<<(r%29uL)) & 0xC2EDD0CuL) != 0uL)     goto LBL_ERR;
+   if (((1uL<<(r%31uL)) & 0x6DE2B848uL) != 0uL)    goto LBL_ERR;
 
    /* Final check - is sqr(sqrt(arg)) == arg ? */
    if ((res = mp_sqrt(arg, &t)) != MP_OKAY) {
-      goto ERR;
+      goto LBL_ERR;
    }
    if ((res = mp_sqr(&t, &t)) != MP_OKAY) {
-      goto ERR;
+      goto LBL_ERR;
    }
 
    *ret = (mp_cmp_mag(&t, arg) == MP_EQ) ? MP_YES : MP_NO;
-ERR:
+LBL_ERR:
    mp_clear(&t);
    return res;
 }
