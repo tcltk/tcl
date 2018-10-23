@@ -586,14 +586,14 @@ test util-9.2.1 {TclGetIntForIndex} -body {
 test util-9.2.2 {TclGetIntForIndex} -body {
     string index abcd {end }
 } -returnCodes error -match glob -result *
-test util-9.3 {TclGetIntForIndex} {
+test util-9.3 {TclGetIntForIndex} -body {
     # Deprecated
     string index abcd en
-} d
-test util-9.4 {TclGetIntForIndex} {
+} -returnCodes error -match glob -result *
+test util-9.4 {TclGetIntForIndex} -body {
     # Deprecated
     string index abcd e
-} d
+} -returnCodes error -match glob -result *
 test util-9.5.0 {TclGetIntForIndex} {
     string index abcd end-1
 } c
