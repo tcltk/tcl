@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <limits.h>
 
 #include <tommath_class.h>
@@ -56,30 +55,30 @@ extern "C" {
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
-typedef uint8_t              mp_digit;
-typedef uint16_t             mp_word;
+typedef unsigned char        mp_digit;
+typedef unsigned short       mp_word;
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
-typedef uint16_t             mp_digit;
-typedef uint32_t             mp_word;
+typedef unsigned short       mp_digit;
+typedef unsigned int         mp_word;
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-typedef uint64_t mp_digit;
+typedef unsigned long long   mp_digit;
 typedef unsigned long        mp_word __attribute__((mode(TI)));
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
-typedef uint32_t             mp_digit;
-typedef uint64_t             mp_word;
+typedef unsigned int         mp_digit;
+typedef unsigned long long   mp_word;
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */
@@ -94,7 +93,7 @@ typedef uint64_t             mp_word;
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef uint_least32_t mp_min_u32;
+typedef unsigned long mp_min_u32;
 #else
 typedef mp_digit mp_min_u32;
 #endif
