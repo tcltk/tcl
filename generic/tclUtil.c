@@ -113,7 +113,6 @@ static int		GetEndOffsetFromObj(Tcl_Obj *objPtr,
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
-static int		SetEndOffsetFromAny(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -3930,119 +3929,77 @@ GetEndOffsetFromObj(
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
 {
-    if (SetEndOffsetFromAny(objPtr) == TCL_OK) {
-        Tcl_WideInt offset = objPtr->internalRep.wideValue;
-
-        if ((endValue ^ offset) < 0) {
-            /* Different signs, sum cannot overflow */
-            *widePtr = endValue + offset;
-        } else if (endValue >= 0) {
-            if (endValue < LLONG_MAX - offset) {
-                *widePtr = endValue + offset;
-            } else {
-                *widePtr = LLONG_MAX;
-            }
-	} else {
-            if (endValue > LLONG_MIN - offset) {
-                *widePtr = endValue + offset;
-            } else {
-                *widePtr = LLONG_MIN;
-            }
-	}
-	return TCL_OK;
-    }
-    return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetEndOffsetFromAny --
- *
- *	Look for a string of the form "end[+-]offset" and convert it to an
- *	internal representation holding the offset.
- *
- * Results:
- *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetEndOffsetFromAny(
-    Tcl_Obj *objPtr)		/* Pointer to the object to parse */
-{
     Tcl_WideInt offset;		/* Offset in the "end-offset" expression */
-    register const char *bytes;	/* String rep of the object */
-    int length;			/* Length of the object's string rep */
 
-    /*
-     * If it's already the right type, we're fine.
-     */
+    if (objPtr->typePtr != &endOffsetType) {
+	int length;
+	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
-    if (objPtr->typePtr == &endOffsetType) {
-	return TCL_OK;
-    }
-
-    /*
-     * Check for a string rep of the right form.
-     */
-
-    bytes = TclGetStringFromObj(objPtr, &length);
-    if ((*bytes != 'e') || (strncmp(bytes, "end",
-	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Convert the string rep.
-     */
-
-    if (length <= 3) {
-	offset = 0;
-    } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
-	/*
-	 * This is our limited string expression evaluator. Pass everything
-	 * after "end-" to TclParseNumber.
-	 */
-	ClientData cd;
-	int t;
-
-	if (TclIsSpaceProc(bytes[4])) {
+	if ((*bytes != 'e') || (strncmp(bytes, "end",
+		(size_t)((length > 3) ? 3 : length)) != 0)) {
 	    return TCL_ERROR;
 	}
-	if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
-		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	TclGetNumberFromObj(NULL, objPtr, &cd, &t);
-	if (t == TCL_NUMBER_BIG) {
-	    /* Truncate to the signed wide range. */
-	    if (mp_isneg((mp_int *)cd)) {
-		offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+
+	if (length <= 3) {
+	    offset = 0;
+	} else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
+	    /*
+	     * This is our limited string expression evaluator. Pass everything
+	     * after "end-" to TclParseNumber.
+	     */
+	    ClientData cd;
+	    int t;
+
+	    if (TclIsSpaceProc(bytes[4])) {
+		return TCL_ERROR;
+	    }
+	    if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
+		    TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    TclGetNumberFromObj(NULL, objPtr, &cd, &t);
+	    if (t == TCL_NUMBER_BIG) {
+		/* Truncate to the signed wide range. */
+		if (mp_isneg((mp_int *)cd)) {
+		    offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+		} else {
+		    offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+		}
 	    } else {
-		offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+		/* assert (t == TCL_NUMBER_INT); */
+		offset = (*(Tcl_WideInt *)cd);
+		if (bytes[3] == '-') {
+		    offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
+		}
 	    }
 	} else {
-	    /* assert (t == TCL_NUMBER_INT); */
-	    offset = (*(Tcl_WideInt *)cd);
-	    if (bytes[3] == '-') {
-		offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
-	    }
+	    return TCL_ERROR;
 	}
-    } else {
-	return TCL_ERROR;
+
+	/* Success. Free the old internal rep and set the new one. */
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.wideValue = offset;
+	objPtr->typePtr = &endOffsetType;
     }
 
-    /*
-     * The conversion succeeded. Free the old internal rep and set the new
-     * one.
-     */
+    offset = objPtr->internalRep.wideValue;
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.wideValue = offset;
-    objPtr->typePtr = &endOffsetType;
-
+    if ((endValue ^ offset) < 0) {
+        /* Different signs, sum cannot overflow */
+        *widePtr = endValue + offset;
+    } else if (endValue >= 0) {
+        if (endValue < LLONG_MAX - offset) {
+            *widePtr = endValue + offset;
+        } else {
+            *widePtr = LLONG_MAX;
+        }
+    } else {
+        if (endValue > LLONG_MIN - offset) {
+            *widePtr = endValue + offset;
+        } else {
+            *widePtr = LLONG_MIN;
+        }
+    }
     return TCL_OK;
 }
 
