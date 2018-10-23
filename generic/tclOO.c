@@ -1237,7 +1237,7 @@ ObjectNamespaceDeleted(
     /*
      * Because an object can be a class that is an instance of itself, the
      * class object's class structure should only be cleaned after most of
-     * the cleanup on the object is done. 
+     * the cleanup on the object is done.
      *
      * The class of objects needs some special care; if it is deleted (and
      * we're not killing the whole interpreter) we force the delete of the

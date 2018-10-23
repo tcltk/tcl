@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_SQRT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -11,8 +11,6 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 #ifndef NO_FLOATING_POINT
@@ -23,7 +21,7 @@
 int mp_sqrt(const mp_int *arg, mp_int *ret)
 {
    int res;
-   mp_int t1,t2;
+   mp_int t1, t2;
    int i, j, k;
 #ifndef NO_FLOATING_POINT
    volatile double d;
@@ -108,30 +106,30 @@ int mp_sqrt(const mp_int *arg, mp_int *ret)
 #endif
 
    /* t1 > 0  */
-   if ((res = mp_div(arg,&t1,&t2,NULL)) != MP_OKAY) {
+   if ((res = mp_div(arg, &t1, &t2, NULL)) != MP_OKAY) {
       goto E1;
    }
-   if ((res = mp_add(&t1,&t2,&t1)) != MP_OKAY) {
+   if ((res = mp_add(&t1, &t2, &t1)) != MP_OKAY) {
       goto E1;
    }
-   if ((res = mp_div_2(&t1,&t1)) != MP_OKAY) {
+   if ((res = mp_div_2(&t1, &t1)) != MP_OKAY) {
       goto E1;
    }
    /* And now t1 > sqrt(arg) */
    do {
-      if ((res = mp_div(arg,&t1,&t2,NULL)) != MP_OKAY) {
+      if ((res = mp_div(arg, &t1, &t2, NULL)) != MP_OKAY) {
          goto E1;
       }
-      if ((res = mp_add(&t1,&t2,&t1)) != MP_OKAY) {
+      if ((res = mp_add(&t1, &t2, &t1)) != MP_OKAY) {
          goto E1;
       }
-      if ((res = mp_div_2(&t1,&t1)) != MP_OKAY) {
+      if ((res = mp_div_2(&t1, &t1)) != MP_OKAY) {
          goto E1;
       }
       /* t1 >= sqrt(arg) >= t2 at this point */
-   } while (mp_cmp_mag(&t1,&t2) == MP_GT);
+   } while (mp_cmp_mag(&t1, &t2) == MP_GT);
 
-   mp_exch(&t1,ret);
+   mp_exch(&t1, ret);
 
 E1:
    mp_clear(&t2);
