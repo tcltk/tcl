@@ -113,8 +113,7 @@ static int		GetEndOffsetFromObj(Tcl_Obj *objPtr,
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
-static int		SetEndOffsetFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
+static int		SetEndOffsetFromAny(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -127,7 +126,8 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
  * around. This type is only created from a pre-existing string, so an
- * updateStringProc will never be called and need not exist.
+ * updateStringProc will never be called and need not exist. The type
+ * is unregistered, so has no need of a setFromAnyProc either.
  */
 
 static const Tcl_ObjType endOffsetType = {
@@ -135,7 +135,7 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetEndOffsetFromAny
+    NULL				/* setFromAnyProc */
 };
 
 /*
@@ -3930,7 +3930,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
 {
-    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
+    if (SetEndOffsetFromAny(objPtr) == TCL_OK) {
         Tcl_WideInt offset = objPtr->internalRep.wideValue;
 
         if ((endValue ^ offset) < 0) {
@@ -3965,19 +3965,14 @@ GetEndOffsetFromObj(
  * Results:
  *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
  *
- * Side effects:
- *	If interp is not NULL, stores an error message in the interpreter
- *	result.
- *
  *----------------------------------------------------------------------
  */
 
 static int
 SetEndOffsetFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter or NULL */
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
-    Tcl_WideInt offset;			/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset;		/* Offset in the "end-offset" expression */
     register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
@@ -3996,13 +3991,6 @@ SetEndOffsetFromAny(
     bytes = TclGetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-
-    badIndexFormat:
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
 	return TCL_ERROR;
     }
 
@@ -4021,11 +4009,11 @@ SetEndOffsetFromAny(
 	int t;
 
 	if (TclIsSpaceProc(bytes[4])) {
-	    goto badIndexFormat;
+	    return TCL_ERROR;
 	}
 	if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
 		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
-	    goto badIndexFormat;
+	    return TCL_ERROR;
 	}
 	TclGetNumberFromObj(NULL, objPtr, &cd, &t);
 	if (t == TCL_NUMBER_BIG) {
@@ -4043,7 +4031,7 @@ SetEndOffsetFromAny(
 	    }
 	}
     } else {
-	goto badIndexFormat;
+	return TCL_ERROR;
     }
 
     /*
