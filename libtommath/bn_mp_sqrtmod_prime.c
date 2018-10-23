@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_SQRTMOD_PRIME_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
