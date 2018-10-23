@@ -1,0 +1,91 @@
+dist: trusty
+sudo: false
+language: c
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=unix
+    - os: linux
+      compiler: clang
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=unix CFGOPT=--disable-shared
+    - os: linux
+      compiler: gcc
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=unix
+    - os: linux
+      compiler: gcc
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=unix CFGOPT=--disable-shared
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9" BUILD_DIR=unix
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5" BUILD_DIR=unix
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6" BUILD_DIR=unix
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7" BUILD_DIR=unix
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=unix
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+    - os: osx
+      osx_image: xcode9
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+    - os: osx
+      osx_image: xcode10
+      env:
+        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+### C builds not currently supported on Windows instances
+#    - os: windows
+#      env:
+#        - MATRIX_EVAL="" BUILD_DIR=win
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - export ERROR_ON_FAILURES=1
+  - cd ${BUILD_DIR}
+install:
+  - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
+script:
+  - make
+  - make test
