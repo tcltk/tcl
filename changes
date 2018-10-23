@@ -8858,8 +8858,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2018-04-30 (bug)[27b682] race made [file delete] raise "no such file" (sebres)
 
-2018-05-04 tzdata updated to Olson's tzdata2017e (jima)
-
 2018-06-04 (bug)[925643] 32/64 cleanup of filesystem DIR operations (sebres)
 
 2018-06-18 (bug) leaks in TclSetEnv and env cache (coulter)
@@ -8883,4 +8881,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2018-10-04 (bug) Prevent crash from NULL keyName (nijtmans)
 => registry 1.3.3
 
-- Released 8.6.9, October 17, 2018 - http://core.tcl-lang.org/tcl/ for details -
+2018-10-18 tzdata updated to Olson's tzdata2017f (jima)
+
+- Released 8.6.9, October 31, 2018 - http://core.tcl-lang.org/tcl/ for details -
