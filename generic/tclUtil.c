@@ -3936,42 +3936,52 @@ GetEndOffsetFromObj(
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
 	if ((length < 3) || (length == 4)) {
+	    /* Too short to be "end" or to be "end-$integer" */
 	    return TCL_ERROR;
 	}
 	if ((*bytes != 'e') || (strncmp(bytes, "end", 3) != 0)) {
+	    /* Value doesn't start with "end" */
 	    return TCL_ERROR;
 	}
 
 	if (length > 4) {
-	    if ((bytes[3] == '-') || (bytes[3] == '+')) {
-		ClientData cd;
-		int t;
+	    ClientData cd;
+	    int t;
 
-		/* Pass everything after "end-" to TclParseNumber. */
-		if (TclIsSpaceProc(bytes[4])) {
-		    return TCL_ERROR;
-		}
-		if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
+	    /* Parse for the "end-..." or "end+..." formats */
+
+	    if ((bytes[3] != '-') && (bytes[3] != '+')) {
+		/* No operator where we need one */
+		return TCL_ERROR;
+	    }
+	    if (TclIsSpaceProc(bytes[4])) {
+		/* Space after + or - not permitted. */
+		return TCL_ERROR;
+	    }
+
+	    /* Parse the integer offset */
+	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
 			bytes+4, length-4, NULL, TCL_PARSE_INTEGER_ONLY)) {
-		    return TCL_ERROR;
-		}
-		TclGetNumberFromObj(NULL, objPtr, &cd, &t);
-		if (t == TCL_NUMBER_BIG) {
-		    /* Truncate to the signed wide range. */
-		    if (mp_isneg((mp_int *)cd)) {
-			offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
-		    } else {
-			offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
-		    }
+		/* Not a recognized integer format */
+		return TCL_ERROR;
+	    }
+
+	    /* Got an integer offset; pull it from where parser left it. */
+	    TclGetNumberFromObj(NULL, objPtr, &cd, &t);
+
+	    if (t == TCL_NUMBER_BIG) {
+		/* Truncate to the signed wide range. */
+		if (mp_isneg((mp_int *)cd)) {
+		    offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
 		} else {
-		    /* assert (t == TCL_NUMBER_INT); */
-		    offset = (*(Tcl_WideInt *)cd);
-		    if (bytes[3] == '-') {
-			offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
-		    }
+		    offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
 		}
 	    } else {
-		return TCL_ERROR;
+		/* assert (t == TCL_NUMBER_INT); */
+		offset = (*(Tcl_WideInt *)cd);
+		if (bytes[3] == '-') {
+		    offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
+		}
 	    }
 	}
 
