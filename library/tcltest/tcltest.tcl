@@ -2022,11 +2022,10 @@ proc tcltest::test {name description args} {
     if {!$setupFailure && ($returnCode ni $returnCodes)} {
 	set codeFailure 1
     }
-    set errCodeFailure 0
+    set errorCodeFailure 0
     if {!$setupFailure && !$codeFailure && $returnCode == 1 && \
                 ![string match $errorCode $errorCodeRes(body)]} {
-        set codeFailure 1
-	set errCodeFailure 1
+	set errorCodeFailure 1
     }
 
     # If expected output/error strings exist, we have to compare
@@ -2122,7 +2121,7 @@ proc tcltest::test {name description args} {
     variable numTests
     if {!($setupFailure || $cleanupFailure || $coreFailure
 	    || $outputFailure || $errorFailure || $codeFailure
-	    || $scriptFailure)} {
+	    || $errorCodeFailure || $scriptFailure)} {
 	if {$testLevel == 1} {
 	    incr numTests(Passed)
 	    if {[IsVerbose pass]} {
@@ -2187,11 +2186,11 @@ proc tcltest::test {name description args} {
 		    ($match matching):\n$result"
 	}
     }
-    if {$errCodeFailure} {
-        # TODO
+    if {$errorCodeFailure} {
 	puts [outputChannel] "---- Error code was: '$errorCodeRes(body)'"
 	puts [outputChannel] "---- Error code should have been: '$errorCode'"
-    } elseif {$codeFailure} {
+    }
+    if {$codeFailure} {
 	switch -- $returnCode {
 	    0 { set msg "Test completed normally" }
 	    1 { set msg "Test generated error" }
