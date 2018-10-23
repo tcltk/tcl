@@ -3935,12 +3935,14 @@ GetEndOffsetFromObj(
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
-	if ((*bytes != 'e') || (strncmp(bytes, "end",
-		(size_t)((length > 3) ? 3 : length)) != 0)) {
+	if ((length < 3) || (length == 4)) {
+	    return TCL_ERROR;
+	}
+	if ((*bytes != 'e') || (strncmp(bytes, "end", 3) != 0)) {
 	    return TCL_ERROR;
 	}
 
-	if (length <= 3) {
+	if (length == 3) {
 	    offset = 0;
 	} else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	    /*
