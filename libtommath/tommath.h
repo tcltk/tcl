@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <limits.h>
 
 #include <tommath_class.h>
@@ -36,7 +35,7 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT) || defined(_MSC_VER))
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
 #      if defined(__GNUC__)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
@@ -58,30 +57,30 @@ typedef unsigned long long Tcl_WideUInt;
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
-typedef uint8_t              mp_digit;
-typedef uint16_t             mp_word;
+typedef unsigned char        mp_digit;
+typedef unsigned short       mp_word;
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
-typedef uint16_t             mp_digit;
-typedef uint32_t             mp_word;
+typedef unsigned short       mp_digit;
+typedef unsigned int         mp_word;
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-typedef uint64_t mp_digit;
+typedef unsigned long long   mp_digit;
 typedef unsigned long        mp_word __attribute__((mode(TI)));
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
-typedef uint32_t             mp_digit;
-typedef uint64_t             mp_word;
+typedef unsigned int         mp_digit;
+typedef unsigned long long   mp_word;
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */
@@ -96,7 +95,7 @@ typedef uint64_t             mp_word;
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef uint_least32_t mp_min_u32;
+typedef unsigned long mp_min_u32;
 #else
 typedef mp_digit mp_min_u32;
 #endif
@@ -210,7 +209,7 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
-int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
+int mp_set_long_long(mp_int *a, unsigned long long b);
 
 /* get a 32-bit value */
 unsigned long mp_get_int(const mp_int *a);
@@ -219,7 +218,7 @@ unsigned long mp_get_int(const mp_int *a);
 unsigned long mp_get_long(const mp_int *a);
 
 /* get a platform dependent unsigned long long value */
-Tcl_WideUInt mp_get_long_long(const mp_int *a);
+unsigned long long mp_get_long_long(const mp_int *a);
 
 /* initialize and set a digit */
 int mp_init_set(mp_int *a, mp_digit b);
