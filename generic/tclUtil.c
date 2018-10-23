@@ -3929,7 +3929,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
 {
-    Tcl_WideInt offset;		/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
     if (objPtr->typePtr != &endOffsetType) {
 	int length;
@@ -3942,40 +3942,37 @@ GetEndOffsetFromObj(
 	    return TCL_ERROR;
 	}
 
-	if (length == 3) {
-	    offset = 0;
-	} else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
-	    /*
-	     * This is our limited string expression evaluator. Pass everything
-	     * after "end-" to TclParseNumber.
-	     */
-	    ClientData cd;
-	    int t;
+	if (length > 4) {
+	    if ((bytes[3] == '-') || (bytes[3] == '+')) {
+		ClientData cd;
+		int t;
 
-	    if (TclIsSpaceProc(bytes[4])) {
-		return TCL_ERROR;
-	    }
-	    if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
-		    TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    TclGetNumberFromObj(NULL, objPtr, &cd, &t);
-	    if (t == TCL_NUMBER_BIG) {
-		/* Truncate to the signed wide range. */
-		if (mp_isneg((mp_int *)cd)) {
-		    offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+		/* Pass everything after "end-" to TclParseNumber. */
+		if (TclIsSpaceProc(bytes[4])) {
+		    return TCL_ERROR;
+		}
+		if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
+			bytes+4, length-4, NULL, TCL_PARSE_INTEGER_ONLY)) {
+		    return TCL_ERROR;
+		}
+		TclGetNumberFromObj(NULL, objPtr, &cd, &t);
+		if (t == TCL_NUMBER_BIG) {
+		    /* Truncate to the signed wide range. */
+		    if (mp_isneg((mp_int *)cd)) {
+			offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+		    } else {
+			offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+		    }
 		} else {
-		    offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+		    /* assert (t == TCL_NUMBER_INT); */
+		    offset = (*(Tcl_WideInt *)cd);
+		    if (bytes[3] == '-') {
+			offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
+		    }
 		}
 	    } else {
-		/* assert (t == TCL_NUMBER_INT); */
-		offset = (*(Tcl_WideInt *)cd);
-		if (bytes[3] == '-') {
-		    offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
-		}
+		return TCL_ERROR;
 	    }
-	} else {
-	    return TCL_ERROR;
 	}
 
 	/* Success. Free the old internal rep and set the new one. */
