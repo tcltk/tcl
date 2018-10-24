@@ -41,11 +41,15 @@ test lpop-1.6 {error conditions} -returnCodes error -body {
 test lpop-1.7 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no {}
-} -result {list index out of range}
+} -match glob -result {bad index *}
 test lpop-1.8 {error conditions} -returnCodes error -body {
     set no "x y"
-    lpop no {0 0 0 0 1}
+    lpop no 0 0 0 0 1
 } -result {list index out of range}
+test lpop-1.9 {error conditions} -returnCodes error -body {
+    set no "x y"
+    lpop no {1 0}
+} -match glob -result {bad index *}
 
 test lpop-2.1 {basic functionality} -body {
     set l "x y z"
@@ -68,15 +72,15 @@ test lpop-2.4 {basic functionality} -body {
 test lpop-3.1 {nested} -body {
     set l "x y"
     set l2 $l
-    list [lpop l {0 0 0 0}] $l $l2
+    list [lpop l 0 0 0 0] $l $l2
 } -result {x {{{{}}} y} {x y}}
 test lpop-3.2 {nested} -body {
     set l "{x y} {a b}"
-    list [lpop l {0 1}] $l
+    list [lpop l 0 1] $l
 } -result {y {x {a b}}}
 test lpop-3.3 {nested} -body {
     set l "{x y} {a b}"
-    list [lpop l {1 0}] $l
+    list [lpop l 1 0] $l
 } -result {a {{x y} b}}
 
 
