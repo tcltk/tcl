@@ -1622,7 +1622,7 @@ Tcl_DisassembleObjCmd(
 		"BYTECODE", NULL);
 	return TCL_ERROR;
     }
-    if (PTR2INT(clientData)) {
+    if (clientData) {
 	Tcl_SetObjResult(interp,
 		DisassembleByteCodeAsDicts(interp, codeObjPtr));
     } else {

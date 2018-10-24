@@ -2,8 +2,8 @@
  * tclEpollNotfy.c --
  *
  *	This file contains the implementation of the epoll()-based
- *	Linux-specific notifier, which is the lowest-level part of the
- *	Tcl event loop. This file works together with generic/tclNotify.c.
+ *	Linux-specific notifier, which is the lowest-level part of the Tcl
+ *	event loop. This file works together with generic/tclNotify.c.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
@@ -13,11 +13,10 @@
  */
 
 #include "tclInt.h"
-#if defined(NOTIFIER_EPOLL) && TCL_THREADS
-
-#define _GNU_SOURCE		/* For pipe2(2) */
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
+#if defined(NOTIFIER_EPOLL) && TCL_THREADS
+#define _GNU_SOURCE		/* For pipe2(2) */
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/epoll.h>
@@ -54,9 +53,9 @@ typedef struct FileHandler {
 } FileHandler;
 
 /*
- * The following structure associates a FileHandler and the thread that owns it
- * with the file descriptors of interest and their event masks passed to epoll_ctl(2)
- * and their corresponding event(s) returned by epoll_wait(2).
+ * The following structure associates a FileHandler and the thread that owns
+ * it with the file descriptors of interest and their event masks passed to
+ * epoll_ctl(2) and their corresponding event(s) returned by epoll_wait(2).
  */
 
 struct ThreadSpecificData;
@@ -105,7 +104,8 @@ typedef struct ThreadSpecificData {
     int triggerPipe[2];		/* pipe(2) used by other threads to wake
 				 * up this thread for inter-thread IPC. */
 #endif /* HAVE_EVENTFD */
-    int eventsFd;		/* epoll(7) file descriptor used to wait for fds */
+    int eventsFd;		/* epoll(7) file descriptor used to wait for
+				 * fds */
     struct epoll_event *readyEvents;
 				/* Pointer to at most maxReadyEvents events
 				 * returned by epoll_wait(2). */
@@ -113,13 +113,23 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
-
-static void PlatformEventsControl(FileHandler *filePtr, ThreadSpecificData *tsdPtr, int op, int isNew);
-static void PlatformEventsFinalize(void);
-static void PlatformEventsInit(void);
-static int PlatformEventsTranslate(struct epoll_event *event);
-static int PlatformEventsWait(struct epoll_event *events, size_t numEvents, struct timeval *timePtr);
-
+
+/*
+ * Forward declarations.
+ */
+
+static void		PlatformEventsControl(FileHandler *filePtr,
+			    ThreadSpecificData *tsdPtr, int op, int isNew);
+static void		PlatformEventsFinalize(void);
+static void		PlatformEventsInit(void);
+static int		PlatformEventsTranslate(struct epoll_event *event);
+static int		PlatformEventsWait(struct epoll_event *events,
+			    size_t numEvents, struct timeval *timePtr);
+
+/*
+ * Incorporate the base notifier API.
+ */
+
 #include "tclUnixNotfy.c"
 
 /*
@@ -190,31 +200,32 @@ Tcl_FinalizeNotifier(
  *	This function registers interest for the file descriptor and the mask
  *	of TCL_* bits associated with filePtr on the epoll file descriptor
  *	associated with tsdPtr.
- *	Future calls to epoll_wait will return filePtr and tsdPtr alongside with
- *	the event registered here via the PlatformEventData struct.
+ *
+ *	Future calls to epoll_wait will return filePtr and tsdPtr alongside
+ *	with the event registered here via the PlatformEventData struct.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	If adding a new file descriptor, a PlatformEventData struct will be
- *	allocated and associated with filePtr.
- *	fstat is called on the file descriptor; if it is associated with
- *	a regular file (S_IFREG,) filePtr is considered to be ready for I/O
- *	and added to or deleted from the corresponding list in tsdPtr.
- *	If it is not associated with a regular file, the file descriptor is
- *	added, modified concerning its mask of events of interest, or deleted
- *	from the epoll file descriptor of the calling thread.
+ *	- If adding a new file descriptor, a PlatformEventData struct will be
+ *	  allocated and associated with filePtr.
+ *	- fstat is called on the file descriptor; if it is associated with a
+ *	  regular file (S_IFREG,) filePtr is considered to be ready for I/O
+ *	  and added to or deleted from the corresponding list in tsdPtr.
+ *	- If it is not associated with a regular file, the file descriptor is
+ *	  added, modified concerning its mask of events of interest, or
+ *	  deleted from the epoll file descriptor of the calling thread.
  *
  *----------------------------------------------------------------------
  */
 
 void
 PlatformEventsControl(
-	FileHandler *filePtr,
-	ThreadSpecificData *tsdPtr,
-	int op,
-	int isNew)
+    FileHandler *filePtr,
+    ThreadSpecificData *tsdPtr,
+    int op,
+    int isNew)
 {
     struct epoll_event newEvent;
     struct PlatformEventData *newPedPtr;
@@ -236,10 +247,10 @@ PlatformEventsControl(
     newEvent.data.ptr = filePtr->pedPtr;
 
     /*
-     * N.B.	As discussed in Tcl_WaitForEvent(), epoll(7) does not sup-
-     *		port regular files (S_IFREG.) Therefore, filePtr is in these
-     *		cases simply added or deleted from the list of FileHandlers
-     *		associated with regular files belonging to tsdPtr.
+     * N.B. As discussed in Tcl_WaitForEvent(), epoll(7) does not support
+     * regular files (S_IFREG.) Therefore, filePtr is in these cases simply
+     * added or deleted from the list of FileHandlers associated with regular
+     * files belonging to tsdPtr.
      */
 
     if (fstat(filePtr->fd, &fdStat) == -1) {
@@ -248,7 +259,8 @@ PlatformEventsControl(
 	switch (op) {
 	case EPOLL_CTL_ADD:
 	    if (isNew) {
-		LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr, readyNode);
+		LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+			readyNode);
 	    }
 	    break;
 	case EPOLL_CTL_DEL:
@@ -267,18 +279,18 @@ PlatformEventsControl(
  * PlatformEventsFinalize --
  *
  *	This function closes the eventfd and the epoll file descriptor and
- *	frees the epoll_event structs owned by the thread of the caller.
- *	The above operations are protected by tsdPtr->notifierMutex, which
- *	is destroyed thereafter.
+ *	frees the epoll_event structs owned by the thread of the caller.  The
+ *	above operations are protected by tsdPtr->notifierMutex, which is
+ *	destroyed thereafter.
  *
  * Results:
  *	None.
  *
  * Side effects:
  * 	While tsdPtr->notifierMutex is held:
- *	The per-thread eventfd(2) is closed, if non-zero, and set to -1.
- *	The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
- *	The per-thread epoll_event structs are freed, if any, and set to 0.
+ *	- The per-thread eventfd(2) is closed, if non-zero, and set to -1.
+ *	- The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
+ *	- The per-thread epoll_event structs are freed, if any, and set to 0.
  *
  *	tsdPtr->notifierMutex is destroyed.
  *
@@ -297,7 +309,7 @@ PlatformEventsFinalize(
 	close(tsdPtr->triggerEventFd);
 	tsdPtr->triggerEventFd = -1;
     }
-#else
+#else /* !HAVE_EVENTFD */
     if (tsdPtr->triggerPipe[0]) {
 	close(tsdPtr->triggerPipe[0]);
 	tsdPtr->triggerPipe[0] = -1;
@@ -337,20 +349,20 @@ PlatformEventsFinalize(
  *
  * Side effects:
  *	The following per-thread entities are initialised:
- *	notifierMutex is initialised.
- *	The eventfd(2) is created w/ EFD_CLOEXEC and EFD_NONBLOCK.
- *	The epoll(7) fd is created w/ EPOLL_CLOEXEC.
- *	A FileHandler struct is allocated and initialised for the event-
- *	fd(2), registering interest for TCL_READABLE on it via Platform-
- *	EventsControl().
- *	readyEvents and maxReadyEvents are initialised with 512 epoll_events.
+ *	- notifierMutex is initialised.
+ *	- The eventfd(2) is created w/ EFD_CLOEXEC and EFD_NONBLOCK.
+ *	- The epoll(7) fd is created w/ EPOLL_CLOEXEC.
+ *	- A FileHandler struct is allocated and initialised for the
+ *	  eventfd(2), registering interest for TCL_READABLE on it via
+ *	  PlatformEventsControl().
+ *	- readyEvents and maxReadyEvents are initialised with 512
+ *	  epoll_events.
  *
  *----------------------------------------------------------------------
  */
 
 void
-PlatformEventsInit(
-	void)
+PlatformEventsInit(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr;
@@ -361,16 +373,17 @@ PlatformEventsInit(
     }
     filePtr = ckalloc(sizeof(*filePtr));
 #ifdef HAVE_EVENTFD
-    if ((tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) <= 0) {
+    tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (tsdPtr->triggerEventFd <= 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger eventfd");
     }
     filePtr->fd = tsdPtr->triggerEventFd;
-#else
+#else /* !HAVE_EVENTFD */
     if (pipe2(tsdPtr->triggerPipe, O_CLOEXEC | O_NONBLOCK) != 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger pipe");
     }
     filePtr->fd = tsdPtr->triggerPipe[0];
-#endif
+#endif /* HAVE_EVENTFD */
     tsdPtr->triggerFilePtr = filePtr;
     if ((tsdPtr->eventsFd = epoll_create1(EPOLL_CLOEXEC)) == -1) {
 	Tcl_Panic("epoll_create1: %s", strerror(errno));
@@ -379,8 +392,8 @@ PlatformEventsInit(
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = ckalloc(tsdPtr->maxReadyEvents
-	    * sizeof(tsdPtr->readyEvents[0]));
+	tsdPtr->readyEvents = ckalloc(
+		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
 }
@@ -390,8 +403,8 @@ PlatformEventsInit(
  *
  * PlatformEventsTranslate --
  *
- *	This function translates the platform-specific mask of returned
- *	events in eventPtr to a mask of TCL_* bits.
+ *	This function translates the platform-specific mask of returned events
+ *	in eventPtr to a mask of TCL_* bits.
  *
  * Results:
  *	Returns the translated mask.
@@ -404,7 +417,7 @@ PlatformEventsInit(
 
 int
 PlatformEventsTranslate(
-	struct epoll_event *eventPtr)
+    struct epoll_event *eventPtr)
 {
     int mask;
 
@@ -429,16 +442,16 @@ PlatformEventsTranslate(
  *	This function abstracts waiting for I/O events via epoll_wait.
  *
  * Results:
- *	Returns -1 if epoll_wait failed. Returns 0 if polling and if no
- *	events became available whilst polling. Returns a pointer to and
- *	the count of all returned events in all other cases.
+ *	Returns -1 if epoll_wait failed. Returns 0 if polling and if no events
+ *	became available whilst polling. Returns a pointer to and the count of
+ *	all returned events in all other cases.
  *
  * Side effects:
- *	gettimeofday(2), epoll_wait(2), and gettimeofday(2) are called,
- *	in the specified order.
- *	If timePtr specifies a positive value, it is updated to reflect
- *	the amount of time that has passed; if its value would {under,
- *	over}flow, it is set to zero.
+ *	gettimeofday(2), epoll_wait(2), and gettimeofday(2) are called, in the
+ *	specified order.
+ *	If timePtr specifies a positive value, it is updated to reflect the
+ *	amount of time that has passed; if its value would {under, over}flow,
+ *	it is set to zero.
  *
  *----------------------------------------------------------------------
  */
@@ -457,8 +470,8 @@ PlatformEventsWait(
 
     /*
      * If timePtr is NULL, epoll_wait(2) will wait indefinitely. If it
-     * specifies a timeout of {0,0}, epoll_wait(2) will poll. Otherwise,
-     * the timeout will simply be converted to milliseconds.
+     * specifies a timeout of {0,0}, epoll_wait(2) will poll. Otherwise, the
+     * timeout will simply be converted to milliseconds.
      */
 
     if (!timePtr) {
@@ -473,9 +486,9 @@ PlatformEventsWait(
     }
 
     /*
-     * Call (and possibly block on) epoll_wait(2) and substract the delta
-     * of gettimeofday(2) before and after the call from timePtr if the
-     * latter is not NULL. Return the number of events returned by epoll_wait(2).
+     * Call (and possibly block on) epoll_wait(2) and substract the delta of
+     * gettimeofday(2) before and after the call from timePtr if the latter is
+     * not NULL. Return the number of events returned by epoll_wait(2).
      */
 
     gettimeofday(&tv0, NULL);
@@ -484,10 +497,10 @@ PlatformEventsWait(
     if (timePtr && (timePtr->tv_sec && timePtr->tv_usec)) {
 	timersub(&tv1, &tv0, &tv_delta);
 	if (!timercmp(&tv_delta, timePtr, >)) {
-		timersub(timePtr, &tv_delta, timePtr);
+	    timersub(timePtr, &tv_delta, timePtr);
 	} else {
-		timePtr->tv_sec = 0;
-		timePtr->tv_usec = 0;
+	    timePtr->tv_sec = 0;
+	    timePtr->tv_usec = 0;
 	}
     }
     return numFound;
@@ -498,8 +511,8 @@ PlatformEventsWait(
  *
  * Tcl_CreateFileHandler --
  *
- *	This function registers a file handler with the epoll notifier
- *	of the thread of the caller.
+ *	This function registers a file handler with the epoll notifier of the
+ *	thread of the caller.
  *
  * Results:
  *	None.
@@ -551,8 +564,8 @@ Tcl_CreateFileHandler(
 	filePtr->clientData = clientData;
 	filePtr->mask = mask;
 
-	PlatformEventsControl(filePtr, tsdPtr, isNew ?
-	    EPOLL_CTL_ADD : EPOLL_CTL_MOD, isNew);
+	PlatformEventsControl(filePtr, tsdPtr,
+		isNew ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, isNew);
     }
 }
 
@@ -561,8 +574,8 @@ Tcl_CreateFileHandler(
  *
  * Tcl_DeleteFileHandler --
  *
- *	Cancel a previously-arranged callback arrangement for a file on
- *	the epoll file descriptor of the thread of the caller.
+ *	Cancel a previously-arranged callback arrangement for a file on the
+ *	epoll file descriptor of the thread of the caller.
  *
  * Results:
  *	None.
@@ -632,6 +645,7 @@ Tcl_DeleteFileHandler(
  *	This function is called by Tcl_DoOneEvent to wait for new events on
  *	the message queue. If the block time is 0, then Tcl_WaitForEvent just
  *	polls without blocking.
+ *
  *	The waiting logic is implemented in PlatformEventsWait.
  *
  * Results:
@@ -646,7 +660,7 @@ Tcl_DeleteFileHandler(
 
 int
 Tcl_WaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);
@@ -696,10 +710,11 @@ Tcl_WaitForEvent(
 	 * Walk the list of FileHandlers associated with regular files
 	 * (S_IFREG) belonging to tsdPtr, queue Tcl events for them, and
 	 * update their mask of events of interest.
+	 *
 	 * As epoll(7) does not support regular files, the behaviour of
 	 * {select,poll}(2) is simply simulated here: fds associated with
-	 * regular files are added to this list by PlatformEventsControl()
-	 * and processed here before calling (and possibly blocking) on
+	 * regular files are added to this list by PlatformEventsControl() and
+	 * processed here before calling (and possibly blocking) on
 	 * PlatformEventsWait().
 	 */
 
@@ -720,7 +735,7 @@ Tcl_WaitForEvent(
 
 	    if (filePtr->readyMask == 0) {
 		FileHandlerEvent *fileEvPtr =
-		    ckalloc(sizeof(FileHandlerEvent));
+			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
 		fileEvPtr->fd = filePtr->fd;
@@ -731,9 +746,9 @@ Tcl_WaitForEvent(
 	}
 
 	/*
-	 * If any events were queued in the above loop, force PlatformEvents-
-	 * Wait() to poll as there already are events that need to be processed
-	 * at this point.
+	 * If any events were queued in the above loop, force
+	 * PlatformEventsWait() to poll as there already are events that need
+	 * to be processed at this point.
 	 */
 
 	if (numQueued) {
@@ -751,10 +766,12 @@ Tcl_WaitForEvent(
 	 * to facilitate inter-thread IPC. If another thread intends to wake
 	 * up this thread whilst it's blocking on PlatformEventsWait(), it
 	 * write(2)s to the eventfd(2)/trigger pipe (see Tcl_AlertNotifier(),)
-	 * which in turn will cause PlatformEventsWait() to return immediately.
+	 * which in turn will cause PlatformEventsWait() to return
+	 * immediately.
 	 */
 
-	numFound = PlatformEventsWait(tsdPtr->readyEvents, tsdPtr->maxReadyEvents, timeoutPtr);
+	numFound = PlatformEventsWait(tsdPtr->readyEvents,
+		tsdPtr->maxReadyEvents, timeoutPtr);
 	for (numEvent = 0; numEvent < numFound; numEvent++) {
 	    pedPtr = tsdPtr->readyEvents[numEvent].data.ptr;
 	    filePtr = pedPtr->filePtr;
@@ -762,21 +779,28 @@ Tcl_WaitForEvent(
 #ifdef HAVE_EVENTFD
 	    if (filePtr->fd == tsdPtr->triggerEventFd) {
 		uint64_t eventFdVal;
-		i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
+		i = read(tsdPtr->triggerEventFd, &eventFdVal,
+			sizeof(eventFdVal));
 		if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
-#else
+		    Tcl_Panic(
+			    "Tcl_WaitForEvent: read from %p->triggerEventFd: %s",
+			    (void *) tsdPtr, strerror(errno));
+		}
+		continue;
+	    }
+#else /* !HAVE_EVENTFD */
 	    if (filePtr->fd == tsdPtr->triggerPipe[0]) {
 		char triggerPipeVal;
-		i = read(tsdPtr->triggerPipe[0], &triggerPipeVal, sizeof(triggerPipeVal));
+		i = read(tsdPtr->triggerPipe[0], &triggerPipeVal,
+			sizeof(triggerPipeVal));
 		if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
-#endif
-			Tcl_Panic("Tcl_WaitForEvent: "
-				"read from %p->triggerEventFd: %s",
-				(void *)tsdPtr, strerror(errno));
-		} else {
-		    continue;
+		    Tcl_Panic(
+			    "Tcl_WaitForEvent: read from %p->triggerPipe[0]: %s",
+			    (void *) tsdPtr, strerror(errno));
 		}
+		continue;
 	    }
+#endif /* HAVE_EVENTFD */
 	    if (!mask) {
 		continue;
 	    }
@@ -800,9 +824,8 @@ Tcl_WaitForEvent(
     }
 }
 
+#endif /* NOTIFIER_EPOLL && TCL_THREADS */
 #endif /* !HAVE_COREFOUNDATION */
-
-#endif /* NOTIFIER_EPOLL */
 
 /*
  * Local Variables:
