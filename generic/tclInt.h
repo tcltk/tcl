@@ -23,7 +23,7 @@
  * Some numerics configuration options.
  */
 
-#undef ACCEPT_NAN
+#define ACCEPT_NAN
 
 /*
  * In Tcl 8.7, stop supporting special hacks for legacy Itcl 3.
