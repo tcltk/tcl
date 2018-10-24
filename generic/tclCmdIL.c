@@ -2614,18 +2614,14 @@ Tcl_LpopObjCmd(
 
     /*
      * First, extract the element to be returned.
-     * TclLindex* adds a ref count which is handled.
+     * TclLindexFlat adds a ref count which is handled.
      */
     
     if (objc == 2) {
 	elemPtr = elemPtrs[listLen - 1];
 	Tcl_IncrRefCount(elemPtr);
     } else {
-	if (objc == 3) {
-	    elemPtr = TclLindexList(interp, listPtr, objv[2]);
-	} else {
-	    elemPtr = TclLindexFlat(interp, listPtr, objc-2, objv+2);
-	}
+	elemPtr = TclLindexFlat(interp, listPtr, objc-2, objv+2);
 
 	if (elemPtr == NULL) {
 	    return TCL_ERROR;
@@ -2647,11 +2643,8 @@ Tcl_LpopObjCmd(
 	    return result;
 	}
     } else {
-	if (objc == 3) {
-	    listPtr = TclLsetList(interp, listPtr, objv[2], NULL);
-	} else {
-	    listPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
-	}
+	listPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
+
 	if (listPtr == NULL) {
 	    return TCL_ERROR;
 	}

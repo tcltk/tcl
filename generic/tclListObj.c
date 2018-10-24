@@ -1485,20 +1485,13 @@ TclLsetFlat(
     /*
      * If there are no indices, simply return the new value.  (Without
      * indices, [lset] is a synonym for [set].
-     * This is an error for [lpop].
+     * [lpop] does not use this but protect for NULL valuePtr just in case.
      */
 
     if (indexCount == 0) {
-	if (valuePtr == NULL) {
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("list index out of range", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LPOP",
-			"BADINDEX", NULL);
-	    }
-	    return NULL;
+	if (valuePtr != NULL) {
+	    Tcl_IncrRefCount(valuePtr);
 	}
-	Tcl_IncrRefCount(valuePtr);
 	return valuePtr;
     }
 
