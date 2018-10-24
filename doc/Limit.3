@@ -83,7 +83,7 @@ the handler returns.  Many handlers may be attached to the same
 interpreter limit; their order of execution is not defined, and they
 must be identified by \fIhandlerProc\fR and \fIclientData\fR when they
 are deleted.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary pointer-sized word used to pass some context to the
 \fIhandlerProc\fR function.
 .AP Tcl_LimitHandlerDeleteProc *deleteProc in
@@ -162,7 +162,7 @@ following prototype:
 .PP
 .CS
 typedef void \fBTcl_LimitHandlerProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
@@ -179,7 +179,7 @@ following prototype:
 .PP
 .CS
 typedef void \fBTcl_LimitHandlerDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 A limit handler may be deleted using \fBTcl_LimitRemoveHandler\fR; the

@@ -30,7 +30,7 @@ int
 .AS Tcl_AsyncHandler clientData
 .AP Tcl_AsyncProc *proc in
 Procedure to invoke to handle an asynchronous event.
-.AP ClientData clientData in
+.AP void *clientData in
 One-word value to pass to \fIproc\fR.
 .AP Tcl_AsyncHandler async in
 Token for asynchronous event handler.
@@ -84,7 +84,7 @@ type \fBTcl_AsyncProc\fR:
 .PP
 .CS
 typedef int \fBTcl_AsyncProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIcode\fR);
 .CE

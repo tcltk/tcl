@@ -299,7 +299,7 @@ Tcl_SourceRCFile(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_MainEx(
     int argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
@@ -532,7 +532,7 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    TclGetStringFromObj(is.commandPtr, &length);
+	    (void)TclGetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
@@ -549,7 +549,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		TclGetStringFromObj(resultPtr, &length);
+		(void)TclGetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -793,7 +793,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    TclGetStringFromObj(commandPtr, &length);
+    (void)TclGetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -824,7 +824,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	TclGetStringFromObj(resultPtr, &length);
+	(void)TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);

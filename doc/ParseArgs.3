@@ -31,7 +31,7 @@ The array of arguments to be parsed.
 Pointer to a variable that will hold the array of unprocessed arguments.
 Should be NULL if no return of unprocessed arguments is required. If
 \fIobjcPtr\fR is updated to a non-zero value, the array returned through this
-must be deallocated using \fBckfree\fR.
+must be deallocated using \fBTcl_Free\fR.
 .BE
 .SH DESCRIPTION
 .PP
@@ -84,7 +84,7 @@ typedef struct {
     void *\fIsrcPtr\fR;
     void *\fIdstPtr\fR;
     const char *\fIhelpStr\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
 } \fBTcl_ArgvInfo\fR;
 .CE
 .PP
@@ -127,7 +127,7 @@ have the following signature:
 .PP
 .CS
 typedef int (\fBTcl_ArgvFuncProc\fR)(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Obj *\fIobjPtr\fR,
         void *\fIdstPtr\fR);
 .CE
@@ -149,7 +149,7 @@ function will have the following signature:
 .PP
 .CS
 typedef int (\fBTcl_ArgvGenFuncProc\fR)(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
         Tcl_Obj *const *\fIobjv\fR,

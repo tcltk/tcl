@@ -101,7 +101,7 @@ TclpDlopen(
     }
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
-    newHandle = ckalloc(sizeof(Tcl_LoadHandle));
+    newHandle = Tcl_Alloc(sizeof(Tcl_LoadHandle));
     newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -175,7 +175,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*

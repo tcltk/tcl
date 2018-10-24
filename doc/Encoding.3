@@ -83,7 +83,7 @@ specified encoding that are to be converted to UTF-8.  For the
 UTF-8 characters to be converted to the specified encoding.
 .AP "const TCHAR" *tsrc in
 An array of Windows TCHAR characters to convert to UTF-8.
-.AP int srcLen in
+.AP size_t srcLen in
 Length of \fIsrc\fR or \fItsrc\fR in bytes.  If the length is negative, the
 encoding-specific length of the string is used.
 .AP Tcl_DString *dstPtr out
@@ -308,7 +308,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *\fItoUtfProc\fR;
     Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
     Tcl_EncodingFreeProc *\fIfreeProc\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
     int \fInullSize\fR;
 } \fBTcl_EncodingType\fR;
 .CE
@@ -339,7 +339,7 @@ type \fBTcl_EncodingConvertProc\fR:
 .PP
 .CS
 typedef int \fBTcl_EncodingConvertProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         const char *\fIsrc\fR,
         int \fIsrcLen\fR,
         int \fIflags\fR,
@@ -371,7 +371,7 @@ The callback procedure \fIfreeProc\fR, if non-NULL, should match the type
 .PP
 .CS
 typedef void \fBTcl_EncodingFreeProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 This \fIfreeProc\fR function is called when the encoding is deleted.  The

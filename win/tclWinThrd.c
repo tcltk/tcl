@@ -178,7 +178,7 @@ TclWinThreadStart(
     lpOrigStartAddress = winThreadPtr->lpStartAddress;
     lpOrigParameter = winThreadPtr->lpParameter;
 
-    ckfree(winThreadPtr);
+    Tcl_Free(winThreadPtr);
     return lpOrigStartAddress(lpOrigParameter);
 }
 
@@ -204,14 +204,14 @@ TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
     ClientData clientData,	/* The one argument to Main(). */
-    int stackSize,		/* Size of stack for the new thread. */
+    size_t stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
     WinThread *winThreadPtr;		/* Per-thread startup info */
     HANDLE tHandle;
 
-    winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
+    winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
     winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
     winThreadPtr->lpParameter = clientData;
     winThreadPtr->fpControl = _controlfp(0, 0);
@@ -241,7 +241,7 @@ TclpThreadCreate(
 
 	/*
 	 * The only purpose of this is to decrement the reference count so the
-	 * OS resources will be reaquired when the thread closes.
+	 * OS resources will be reacquired when the thread closes.
 	 */
 
 	CloseHandle(tHandle);
@@ -399,7 +399,7 @@ TclpInitUnlock(void)
  *	mutexes, condition variables, and thread local storage keys.
  *
  *	This lock must be different than the initLock because the initLock is
- *	held during creation of syncronization objects.
+ *	held during creation of synchronization objects.
  *
  * Results:
  *	None.
@@ -549,7 +549,7 @@ static void		FinalizeConditionEvent(ClientData data);
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *
  *----------------------------------------------------------------------
  */
@@ -568,7 +568,7 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = ckalloc(sizeof(CRITICAL_SECTION));
+	    csPtr = Tcl_Alloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
@@ -629,7 +629,7 @@ TclpFinalizeMutex(
 
     if (csPtr != NULL) {
 	DeleteCriticalSection(csPtr);
-	ckfree(csPtr);
+	Tcl_Free(csPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -649,7 +649,7 @@ TclpFinalizeMutex(
  *	None.
  *
  * Side effects:
- *	May block the current thread. The mutex is aquired when this returns.
+ *	May block the current thread. The mutex is acquired when this returns.
  *	Will allocate memory for a HANDLE and initialize this the first time
  *	this Tcl_Condition is used.
  *
@@ -711,7 +711,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    winCondPtr = ckalloc(sizeof(WinCondition));
+	    winCondPtr = Tcl_Alloc(sizeof(WinCondition));
 	    InitializeCriticalSection(&winCondPtr->condLock);
 	    winCondPtr->firstPtr = NULL;
 	    winCondPtr->lastPtr = NULL;
@@ -922,7 +922,7 @@ TclpFinalizeCondition(
 
     if (winCondPtr != NULL) {
 	DeleteCriticalSection(&winCondPtr->condLock);
-	ckfree(winCondPtr);
+	Tcl_Free(winCondPtr);
 	*condPtr = NULL;
     }
 }
@@ -1037,7 +1037,7 @@ TclpThreadCreateKey(void)
 {
     DWORD *key;
 
-    key = TclpSysAlloc(sizeof *key, 0);
+    key = TclpSysAlloc(sizeof *key);
     if (key == NULL) {
 	Tcl_Panic("unable to allocate thread key!");
     }

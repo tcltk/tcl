@@ -55,7 +55,7 @@
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 
@@ -123,7 +123,6 @@ TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
-CAT32		= $(OUT_DIR)\cat32.exe
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -236,6 +235,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
+	$(TMP_DIR)\tclZipfs.obj \
 	$(TMP_DIR)\tclZlib.obj
 
 ZLIBOBJS = \
@@ -383,20 +383,20 @@ release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
-tcltest:    setup $(TCLTEST) dlls $(CAT32)
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
 setup:      default-setup
 
 test: test-core test-pkgs
-test-core: setup $(TCLTEST) dlls $(CAT32)
+test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		package ifneeded dde 1.4.0 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.2 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded registry 1.3.3 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
-runtest: setup $(TCLTEST) dlls $(CAT32)
+runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
 
@@ -418,10 +418,10 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+
 $(TCLIMPLIB): $(TCLLIB)
 
 !endif # $(STATIC_BUILD)
-
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
@@ -483,11 +483,6 @@ clean-pkgs:
 	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
 	    popd \
 	  )
-
-$(CAT32): $(WINDIR)\cat.c
-	$(cc32) $(cflags) $(crt) -D_CRT_NONSTDC_NO_DEPRECATE -DCONSOLE -Fo$(TMP_DIR)\ $?
-	$(CONEXECMD) -stack:16384 $(TMP_DIR)\cat.obj
-	$(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
@@ -686,6 +681,9 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
+$(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
+	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
+
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
@@ -701,6 +699,8 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	-DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
 	-DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
 	-DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
+	-DCFG_RUNTIME_DLLFILE="\"$(CFG_RUNTIME_DLLFILE:\=\\)\""     \
+	-DCFG_RUNTIME_ZIPFILE="\"$(CFG_RUNTIME_ZIPFILE:\=\\)\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c

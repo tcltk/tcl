@@ -102,9 +102,9 @@ BuildCharSet(
 	end += TclUtfToUniChar(end, &ch);
     }
 
-    cset->chars = ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = Tcl_Alloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = ckalloc(sizeof(struct Range) * nranges);
+	cset->ranges = Tcl_Alloc(sizeof(struct Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -224,9 +224,9 @@ static void
 ReleaseCharSet(
     CharSet *cset)
 {
-    ckfree(cset->chars);
+    Tcl_Free(cset->chars);
     if (cset->ranges) {
-	ckfree(cset->ranges);
+	Tcl_Free(cset->ranges);
     }
 }
 
@@ -605,7 +605,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = ckalloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -926,14 +926,13 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = LLONG_MAX;
+		    wideValue = WIDE_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue = LLONG_MIN;
+			wideValue = WIDE_MIN;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
@@ -952,7 +951,7 @@ Tcl_ScanObjCmd(
 
 		    if (code == TCL_ERROR) {
 			if (objs != NULL) {
-			    ckfree(objs);
+			    Tcl_Free(objs);
 			}
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1075,7 +1074,7 @@ Tcl_ScanObjCmd(
 	}
     }
     if (objs != NULL) {
-	ckfree(objs);
+	Tcl_Free(objs);
     }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {

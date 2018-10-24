@@ -89,8 +89,8 @@ typedef struct DateInfo {
     int dateDigitCount;
 } DateInfo;
 
-#define YYMALLOC	ckalloc
-#define YYFREE(x)	(ckfree((void*) (x)))
+#define YYMALLOC	Tcl_Alloc
+#define YYFREE(x)	(Tcl_Free((void*) (x)))
 
 #define yyDSTmode	(info->dateDSTmode)
 #define yyDayOrdinal	(info->dateDayOrdinal)
@@ -897,7 +897,7 @@ TclDatelex(
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
-	while (isspace(UCHAR(*yyInput))) {
+	while (TclIsSpaceProc(UCHAR(*yyInput))) {
 	    yyInput++;
 	}
 

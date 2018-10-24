@@ -744,7 +744,7 @@ TclpCreateCommandChannel(
 {
     char channelName[16 + TCL_INTEGER_SPACE];
     int channelId;
-    PipeState *statePtr = ckalloc(sizeof(PipeState));
+    PipeState *statePtr = Tcl_Alloc(sizeof(PipeState));
     int mode;
 
     statePtr->inFile = readFile;
@@ -872,13 +872,13 @@ TclGetAndDetachPids(
     pipePtr = Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewLongObj(
 		PTR2INT(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
     Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
     }
 }
@@ -1009,9 +1009,9 @@ PipeClose2Proc(
     }
 
     if (pipePtr->numPids != 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
     }
-    ckfree(pipePtr);
+    Tcl_Free(pipePtr);
     if (errorCode == 0) {
 	return result;
     }
@@ -1290,7 +1290,7 @@ Tcl_PidObjCmd(
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewLongObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
