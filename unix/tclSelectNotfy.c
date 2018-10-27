@@ -1,9 +1,9 @@
 /*
  * tclSelectNotfy.c --
  *
- *	This file contains the implementation of the select()-based
- *	generic Unix notifier, which is the lowest-level part of the
- *	Tcl event loop. This file works together with generic/tclNotify.c.
+ *	This file contains the implementation of the select()-based generic
+ *	Unix notifier, which is the lowest-level part of the Tcl event loop.
+ *	This file works together with generic/tclNotify.c.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
@@ -12,10 +12,10 @@
  */
 
 #include "tclInt.h"
-#if (!defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)) || !TCL_THREADS
-
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
+#if (!defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)) || !TCL_THREADS
+
 #include <signal.h>
 
 /*
@@ -94,16 +94,17 @@ typedef struct ThreadSpecificData {
 				 * notifierMutex lock before accessing these
 				 * fields. */
 #ifdef __CYGWIN__
-    void *event;     /* Any other thread alerts a notifier
-	 * that an event is ready to be processed
-	 * by sending this event. */
+    void *event;		/* Any other thread alerts a notifier that an
+				 * event is ready to be processed by sending
+				 * this event. */
     void *hwnd;			/* Messaging window. */
 #else /* !__CYGWIN__ */
     pthread_cond_t waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
 #endif /* __CYGWIN__ */
-    int waitCVinitialized;	/* Variable to flag initialization of the structure */
+    int waitCVinitialized;	/* Variable to flag initialization of the
+				 * structure. */
     int eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
@@ -171,12 +172,14 @@ static int notifierThreadRunning = 0;
 static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
 
 /*
- * The pollState bits
- *	POLL_WANT is set by each thread before it waits on its condition
- *		variable. It is checked by the notifier before it does select.
- *	POLL_DONE is set by the notifier if it goes into select after seeing
- *		POLL_WANT. The idea is to ensure it tries a select with the
- *		same bits the initial thread had set.
+ * The pollState bits:
+ *
+ * POLL_WANT is set by each thread before it waits on its condition variable.
+ *	It is checked by the notifier before it does select.
+ *
+ * POLL_DONE is set by the notifier if it goes into select after seeing
+ *	POLL_WANT. The idea is to ensure it tries a select with the same bits
+ *	the initial thread had set.
  */
 
 #define POLL_WANT	0x1
@@ -196,24 +199,24 @@ static Tcl_ThreadId notifierThread;
 #if TCL_THREADS
 static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
-static int	atForkInit = 0;
-static void	AtForkChild(void);
+static int atForkInit = 0;
+static void		AtForkChild(void);
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
-static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
- * Import of Windows API when building threaded with Cygwin.
+ * Import of critical bits of Windows API when building threaded with Cygwin.
  */
 
 #if defined(__CYGWIN__)
 typedef struct {
-    void *hwnd;
-    unsigned int *message;
-    int wParam;
-    int lParam;
-    int time;
-    int x;
+    void *hwnd;			/* Messaging window. */
+    unsigned int *message;	/* Message payload. */
+    int wParam;			/* Event-specific "word" parameter. */
+    int lParam;			/* Event-specific "long" parameter. */
+    int time;			/* Event timestamp. */
+    int x;			/* Event location (where meaningful). */
     int y;
 } MSG;
 
@@ -233,8 +236,9 @@ typedef struct {
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void * __stdcall	CreateWindowExW(void *, const void *, const void *,
-			    DWORD, int, int, int, int, void *, void *, void *, void *);
+extern void *__stdcall	CreateWindowExW(void *, const void *, const void *,
+			    DWORD, int, int, int, int, void *, void *, void *,
+			    void *);
 extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);
@@ -336,7 +340,6 @@ Tcl_InitNotifier(void)
 #endif /* HAVE_PTHREAD_ATFORK */
 
 	notifierCount++;
-
 	pthread_mutex_unlock(&notifierInitMutex);
 
 #endif /* TCL_THREADS */
@@ -381,28 +384,25 @@ Tcl_FinalizeNotifier(
 	 * pipe and wait for the background thread to terminate.
 	 */
 
-	if (notifierCount == 0) {
+	if (notifierCount == 0 && triggerPipe != -1) {
+	    if (write(triggerPipe, "q", 1) != 1) {
+		Tcl_Panic("Tcl_FinalizeNotifier: %s",
+			"unable to write 'q' to triggerPipe");
+	    }
+	    close(triggerPipe);
+	    pthread_mutex_lock(&notifierMutex);
+	    while(triggerPipe != -1) {
+		pthread_cond_wait(&notifierCV, &notifierMutex);
+	    }
+	    pthread_mutex_unlock(&notifierMutex);
+	    if (notifierThreadRunning) {
+		int result = pthread_join((pthread_t) notifierThread, NULL);
 
-	    if (triggerPipe != -1) {
-		if (write(triggerPipe, "q", 1) != 1) {
+		if (result) {
 		    Tcl_Panic("Tcl_FinalizeNotifier: %s",
-			    "unable to write q to triggerPipe");
+			    "unable to join notifier thread");
 		}
-		close(triggerPipe);
-		pthread_mutex_lock(&notifierMutex);
-		while(triggerPipe != -1) {
-		    pthread_cond_wait(&notifierCV, &notifierMutex);
-		}
-		pthread_mutex_unlock(&notifierMutex);
-		if (notifierThreadRunning) {
-		    int result = pthread_join((pthread_t) notifierThread, NULL);
-
-		    if (result) {
-			Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
-				"thread");
-		    }
-		    notifierThreadRunning = 0;
-		}
+		notifierThreadRunning = 0;
 	    }
 	}
 
@@ -645,7 +645,7 @@ Tcl_WaitForEvent(
 #   ifdef __CYGWIN__
 	MSG msg;
 #   endif /* __CYGWIN__ */
-#else
+#else /* !TCL_THREADS */
 	/*
 	 * Impl. notes: timeout & timeoutPtr are used if, and only if threads
 	 * are not enabled. They are the arguments for the regular select()
@@ -771,18 +771,19 @@ Tcl_WaitForEvent(
 		MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
 		pthread_mutex_lock(&notifierMutex);
 	    }
-#else
+#else /* !__CYGWIN__ */
 	    if (timePtr != NULL) {
-	       Tcl_Time now;
-	       struct timespec ptime;
+		Tcl_Time now;
+		struct timespec ptime;
 
-	       Tcl_GetTime(&now);
-	       ptime.tv_sec = timePtr->sec + now.sec + (timePtr->usec + now.usec) / 1000000;
-	       ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+		Tcl_GetTime(&now);
+		ptime.tv_sec = timePtr->sec + now.sec +
+			(timePtr->usec + now.usec) / 1000000;
+		ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
 
-	       pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
+		pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	    } else {
-	       pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
+		pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
 	    }
 #endif /* __CYGWIN__ */
 	}
@@ -830,8 +831,7 @@ Tcl_WaitForEvent(
 			"unable to write to triggerPipe");
 	    }
 	}
-
-#else
+#else /* !TCL_THREADS */
 	tsdPtr->readyMasks = tsdPtr->checkMasks;
 	numFound = select(tsdPtr->numFdBits, &tsdPtr->readyMasks.readable,
 		&tsdPtr->readyMasks.writable, &tsdPtr->readyMasks.exception,
@@ -892,8 +892,6 @@ Tcl_WaitForEvent(
     }
 }
 
-#if TCL_THREADS
-
 /*
  *----------------------------------------------------------------------
  *
@@ -918,6 +916,7 @@ Tcl_WaitForEvent(
  *----------------------------------------------------------------------
  */
 
+#if TCL_THREADS
 static TCL_NORETURN void
 NotifierThreadProc(
     ClientData clientData)	/* Not used. */
@@ -1101,12 +1100,10 @@ NotifierThreadProc(
 
     TclpThreadExit(0);
 }
-
 #endif /* TCL_THREADS */
-
+
+#endif /* (!NOTIFIER_EPOLL && !NOTIFIER_KQUEUE) || !TCL_THREADS */
 #endif /* !HAVE_COREFOUNDATION */
-
-#endif /* !NOTIFIER_EPOLL && !NOTIFIER_KQUEUE */
 
 /*
  * Local Variables:
