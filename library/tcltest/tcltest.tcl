@@ -2700,7 +2700,7 @@ proc tcltest::GetMatchingDirectories {rootdir} {
 #	shell being tested
 #
 # Results:
-#	Whether there were any failures.
+#	None.
 #
 # Side effects:
 #	None.
@@ -2846,7 +2846,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [info exists testFileFailures]
+    return
 }
 
 #####################################################################
