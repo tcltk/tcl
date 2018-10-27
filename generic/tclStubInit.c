@@ -1581,6 +1581,9 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
+    Tcl_IncrRefCount, /* 636 */
+    Tcl_DecrRefCount, /* 637 */
+    Tcl_IsShared, /* 638 */
 };
 
 /* !END!: Do not edit above this line. */

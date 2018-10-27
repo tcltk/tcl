@@ -798,17 +798,6 @@ typedef struct Tcl_Obj {
     } internalRep;
 } Tcl_Obj;
 
-/*
- * Macros to increment and decrement a Tcl_Obj's reference count, and to test
- * whether an object is shared (i.e. has reference count > 1). Note: clients
- * should use Tcl_DecrRefCount() when they are finished using an object, and
- * should never call TclFreeObj() directly. TclFreeObj() is only defined and
- * made public in tcl.h to support Tcl_DecrRefCount's macro definition.
- */
-
-void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
-void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
-int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
@@ -2482,28 +2471,15 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif /* !TCL_MEM_DEBUG */
 
 #ifdef TCL_MEM_DEBUG
+#   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
 	Tcl_DbIncrRefCount(objPtr, __FILE__, __LINE__)
+#   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
 	Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
+#   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
-#else
-#   define Tcl_IncrRefCount(objPtr) \
-	++(objPtr)->refCount
-    /*
-     * Use do/while0 idiom for optimum correctness without compiler warnings.
-     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
-     */
-#   define Tcl_DecrRefCount(objPtr) \
-	do { \
-	    Tcl_Obj *_objPtr = (objPtr); \
-	    if ((_objPtr)->refCount-- <= 1) { \
-		TclFreeObj(_objPtr); \
-	    } \
-	} while(0)
-#   define Tcl_IsShared(objPtr) \
-	((objPtr)->refCount > 1)
 #endif
 
 /*
