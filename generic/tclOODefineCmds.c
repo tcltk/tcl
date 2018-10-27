@@ -1053,7 +1053,7 @@ TclOODefineObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Foundation *fPtr = TclOOGetFoundation(interp);
+    Tcl_Namespace *nsPtr;
     Object *oPtr;
     int result;
 
@@ -1068,7 +1068,7 @@ TclOODefineObjCmd(
     }
     if (oPtr->classPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s does not refer to a class",TclGetString(objv[1])));
+		"%s does not refer to a class", TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1079,7 +1079,11 @@ TclOODefineObjCmd(
      * command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->defineNs, oPtr, objc,objv) != TCL_OK){
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 1);
+    if (nsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1095,7 +1099,7 @@ TclOODefineObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	result = MagicDefinitionInvoke(interp, fPtr->defineNs, 2, objc, objv);
+	result = MagicDefinitionInvoke(interp, nsPtr, 2, objc, objv);
     }
     TclOODecrRefCount(oPtr);
 
@@ -1128,7 +1132,7 @@ TclOOObjDefObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Foundation *fPtr = TclOOGetFoundation(interp);
+    Tcl_Namespace *nsPtr;
     Object *oPtr;
     int result;
 
@@ -1147,7 +1151,11 @@ TclOOObjDefObjCmd(
      * command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->objdefNs, oPtr, objc,objv) != TCL_OK){
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    if (nsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1163,7 +1171,7 @@ TclOOObjDefObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 2, objc, objv);
+	result = MagicDefinitionInvoke(interp, nsPtr, 2, objc, objv);
     }
     TclOODecrRefCount(oPtr);
 
@@ -1196,7 +1204,7 @@ TclOODefineSelfObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Foundation *fPtr = TclOOGetFoundation(interp);
+    Tcl_Namespace *nsPtr;
     Object *oPtr;
     int result, private;
 
@@ -1217,7 +1225,11 @@ TclOODefineSelfObjCmd(
      * command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->objdefNs, oPtr, objc,objv) != TCL_OK){
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    if (nsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (private) {
@@ -1236,7 +1248,7 @@ TclOODefineSelfObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 1, objc, objv);
+	result = MagicDefinitionInvoke(interp, nsPtr, 1, objc, objv);
     }
     TclOODecrRefCount(oPtr);
 
