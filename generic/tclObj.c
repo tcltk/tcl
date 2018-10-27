@@ -3658,6 +3658,68 @@ TclGetNumberFromObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_IncrRefCount --
+ *
+ *	Increments the reference count of the object.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_IncrRefCount(
+    Tcl_Obj *objPtr)	/* The object we are registering a reference to. */
+{
+    ++(objPtr)->refCount;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DecrRefCount --
+ *
+ *	Decrements the reference count of the object.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_DecrRefCount(
+    Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
+{
+    if (objPtr->refCount-- <= 1) {
+	TclFreeObj(objPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsShared --
+ *
+ *	Tests if the object has a ref count greater than one.
+ *
+ * Results:
+ *	Boolean value that is the result of the test.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsShared(
+    Tcl_Obj *objPtr)	/* The object to test for being shared. */
+{
+    return ((objPtr)->refCount > 1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DbIncrRefCount --
  *
  *	This function is normally called when debugging: i.e., when
