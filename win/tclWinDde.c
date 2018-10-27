@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
+#include <tchar.h>
 
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
