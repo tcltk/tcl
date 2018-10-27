@@ -456,16 +456,24 @@ InitClassSystemRoots(
     /* Corresponding TclOODecrRefCount in KillFoudation */
     AddRef(fPtr->objectCls->thisPtr);
 
-    /* This is why it is unnecessary in this routine to replace the
+    /*
+     * This is why it is unnecessary in this routine to replace the
      * incremented reference count of fPtr->objectCls that was swallowed by
-     * fakeObject. */
+     * fakeObject.
+     */
+
     fPtr->objectCls->superclasses.num = 0;
     ckfree(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
 
-    /* special initialization for the primordial objects */
+    /*
+     * Special initialization for the primordial objects.
+     */
+
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->flags |= ROOT_OBJECT;
+    TclNewLiteralStringObj(fPtr->objectCls->objDefinitionNs, "::oo::objdefine");
+    Tcl_IncrRefCount(fPtr->objectCls->objDefinitionNs);
 
     fPtr->classCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
@@ -480,7 +488,10 @@ InitClassSystemRoots(
      * KillFoundation.
      */
 
-    /* Rewire bootstrapped objects. */
+    /*
+     * Rewire bootstrapped objects.
+     */
+
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     AddRef(fPtr->classCls->thisPtr);
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
@@ -491,6 +502,8 @@ InitClassSystemRoots(
 
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     fPtr->classCls->flags |= ROOT_CLASS;
+    TclNewLiteralStringObj(fPtr->objectCls->clsDefinitionNs, "::oo::define");
+    Tcl_IncrRefCount(fPtr->objectCls->clsDefinitionNs);
 
     /* Standard initialization for new Objects */
     TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
@@ -956,6 +969,19 @@ TclOOReleaseClassContents(
 	    Tcl_Panic("deleting class structure for non-deleted %s",
 		    "::oo::object");
 	}
+    }
+
+    /*
+     * Stop using the class for definition information.
+     */
+
+    if (clsPtr->clsDefinitionNs) {
+	Tcl_DecrRefCount(clsPtr->clsDefinitionNs);
+	clsPtr->clsDefinitionNs = NULL;
+    }
+    if (clsPtr->objDefinitionNs) {
+	Tcl_DecrRefCount(clsPtr->objDefinitionNs);
+	clsPtr->objDefinitionNs = NULL;
     }
 
     /*
