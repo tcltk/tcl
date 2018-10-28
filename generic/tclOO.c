@@ -446,6 +446,7 @@ InitClassSystemRoots(
 {
     Class fakeCls;
     Object fakeObject;
+    Tcl_Obj *defNsName;
 
     /* Stand up a phony class for bootstrapping. */
     fPtr->objectCls = &fakeCls;
@@ -473,8 +474,9 @@ InitClassSystemRoots(
 
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->flags |= ROOT_OBJECT;
-    TclNewLiteralStringObj(fPtr->objectCls->objDefinitionNs, "::oo::objdefine");
-    Tcl_IncrRefCount(fPtr->objectCls->objDefinitionNs);
+    TclNewLiteralStringObj(defNsName, "::oo::objdefine");
+    fPtr->objectCls->objDefinitionNs = defNsName;
+    Tcl_IncrRefCount(defNsName);
 
     fPtr->classCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
@@ -503,8 +505,9 @@ InitClassSystemRoots(
 
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     fPtr->classCls->flags |= ROOT_CLASS;
-    TclNewLiteralStringObj(fPtr->objectCls->clsDefinitionNs, "::oo::define");
-    Tcl_IncrRefCount(fPtr->objectCls->clsDefinitionNs);
+    TclNewLiteralStringObj(defNsName, "::oo::define");
+    fPtr->classCls->clsDefinitionNs = defNsName;
+    Tcl_IncrRefCount(defNsName);
 
     /* Standard initialization for new Objects */
     TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
