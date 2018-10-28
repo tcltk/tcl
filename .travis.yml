@@ -3,82 +3,34 @@ sudo: false
 language: c
 matrix:
   include:
+# Test with mingw 32 bit
     - os: linux
-      compiler: clang
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=unix
-    - os: linux
-      compiler: clang
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=unix CFGOPT=--disable-shared
-    - os: linux
-      compiler: gcc
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=unix
-    - os: linux
-      compiler: gcc
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=unix CFGOPT=--disable-shared
-    - os: linux
-      compiler: gcc
+      compiler: x86_64-w64-mingw32-gcc
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - g++-4.9
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64      
+            - gcc-multilib
+            - wine
       env:
-        - MATRIX_EVAL="CC=gcc-4.9" BUILD_DIR=unix
+        - BUILD_DIR=win
+
+# Test with mingw 64 bit
     - os: linux
-      compiler: gcc
+      compiler: x86_64-w64-mingw32-g+cc
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - g++-5
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
       env:
-        - MATRIX_EVAL="CC=gcc-5" BUILD_DIR=unix
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      env:
-        - MATRIX_EVAL="CC=gcc-6" BUILD_DIR=unix
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-        - MATRIX_EVAL="CC=gcc-7" BUILD_DIR=unix
-    - os: osx
-      osx_image: xcode8
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=unix
-    - os: osx
-      osx_image: xcode8
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
-    - os: osx
-      osx_image: xcode9
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
-    - os: osx
-      osx_image: xcode10
-      env:
-        - MATRIX_EVAL="" BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
-### C builds not currently supported on Windows instances
-#    - os: windows
-#      env:
-#        - MATRIX_EVAL="" BUILD_DIR=win
+        - BUILD_DIR=win
 
 before_install:
   - eval "${MATRIX_EVAL}"
@@ -88,4 +40,4 @@ install:
   - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
 script:
   - make
-  - make test
+  - make test-tcl
