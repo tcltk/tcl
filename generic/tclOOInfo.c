@@ -33,6 +33,7 @@ static Tcl_ObjCmdProc InfoObjectVariablesCmd;
 static Tcl_ObjCmdProc InfoClassCallCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
 static Tcl_ObjCmdProc InfoClassDefnCmd;
+static Tcl_ObjCmdProc InfoClassDefnNsCmd;
 static Tcl_ObjCmdProc InfoClassDestrCmd;
 static Tcl_ObjCmdProc InfoClassFiltersCmd;
 static Tcl_ObjCmdProc InfoClassForwardCmd;
@@ -73,6 +74,7 @@ static const EnsembleImplMap infoClassCmds[] = {
     {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"definitionnamespace", InfoClassDefnNsCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
@@ -1027,6 +1029,56 @@ InfoClassDefnCmd(
     }
     resultObjs[1] = TclOOGetMethodBody(Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassDefnNsCmd --
+ *
+ *	Implements [info class definitionnamespace $clsName ?$kind?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoClassDefnNsCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    static const char *kindList[] = {
+	"-class",
+	"-instance",
+	NULL
+    };
+    int kind = 0;
+    Tcl_Obj *nsNamePtr;
+    Class *clsPtr;
+
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?kind?");
+	return TCL_ERROR;
+    }
+    clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (objc == 3 && Tcl_GetIndexFromObj(interp, objv[2], kindList, "kind", 0,
+	    &kind) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (kind) {
+	nsNamePtr = clsPtr->clsDefinitionNs;
+    } else {
+	nsNamePtr = clsPtr->objDefinitionNs;
+    }
+    if (nsNamePtr) {
+	Tcl_SetObjResult(interp, nsNamePtr);
+    }
     return TCL_OK;
 }
 

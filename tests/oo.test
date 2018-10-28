@@ -2519,7 +2519,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {

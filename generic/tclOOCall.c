@@ -1870,6 +1870,10 @@ TclOORenderCallChain(
  *	Then it walks the chain to find the first namespace name that actually
  *	resolves to an existing namespace.
  *
+ * Returns:
+ *	Name of namespace, or NULL if none can be found. Note that this
+ *	function does *not* set an error message in the interpreter on failure.
+ *
  * ----------------------------------------------------------------------
  */
 
@@ -1917,10 +1921,6 @@ TclOOGetDefineContextNamespace(
     }
     if (define.list != staticSpace) {
 	ckfree(define.list);
-    }
-    if (!nsPtr) {
-	Tcl_AppendResult(interp, "no definition namespace available", NULL);
-	return NULL;
     }
     return nsPtr;
 }
