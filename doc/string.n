@@ -12,7 +12,7 @@
 .SH NAME
 string \- Manipulate strings
 .SH SYNOPSIS
-\fBstring \fIoption arg \fR?\fIarg ...?\fR
+\fBstring \fIoption arg \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -115,9 +115,7 @@ Any Unicode control character.
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
-Any of the valid forms for a double in Tcl, with optional surrounding
-whitespace.  In case of under/overflow in the value, 0 is returned and
-the \fIvarname\fR will contain \-1.
+Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
 .VS 8.6
 Any of the valid string formats for an integer value of arbitrary size
@@ -131,7 +129,7 @@ false.
 Any Unicode printing character, except space.
 .IP \fBinteger\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
-with optional surrounding whitespace.  In case of under/overflow in
+with optional surrounding whitespace.  In case of overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
@@ -156,7 +154,7 @@ true.
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
 Any of the valid forms for a wide integer in Tcl, with optional
-surrounding whitespace.  In case of under/overflow in the value, 0 is
+surrounding whitespace.  In case of overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
 .IP \fBwordchar\fR 12
 Any Unicode word character.  That is any alphanumeric character, and

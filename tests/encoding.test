@@ -34,8 +34,11 @@ proc runtests {} {
 
 # Some tests require the testencoding command
 testConstraint testencoding [llength [info commands testencoding]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint teststringbytes [llength [info commands teststringbytes]]
+testConstraint tip389 [expr {[string length \U010000] == 2}]
 testConstraint exec [llength [info commands exec]]
-testConstraint testgetdefenc [llength [info commands testgetdefenc]]
+testConstraint testgetencpath [llength [info commands testgetencpath]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -74,11 +77,11 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
     encoding system shiftjis		;# incr ref count
     encoding dirs [list [pwd]]
     set x [encoding convertto shiftjis \u4e4e]	;# old one found
-    encoding system identity
+    encoding system iso8859-1
     llength shiftjis		;# Shimmer away any cache of Tcl_Encoding
     lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
 } -cleanup {
-    encoding system identity
+    encoding system iso8859-1
     encoding dirs $path
     encoding system $system
 } -result "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
@@ -135,7 +138,7 @@ test encoding-5.1 {Tcl_SetSystemEncoding} -setup {
     encoding system jis0208
     encoding convertto \u4e4e
 } -cleanup {
-    encoding system identity
+    encoding system iso8859-1
     encoding system $old
 } -result {8C}
 test encoding-5.2 {Tcl_SetSystemEncoding: test ref count} {
@@ -258,7 +261,7 @@ test encoding-11.5.1 {LoadEncodingFile: escape file} {
 test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} -setup {
     set system [encoding system]
     set path [encoding dirs]
-    encoding system identity
+    encoding system iso8859-1
 } -body {
     cd [temporaryDirectory]
     encoding dirs [file join tmp encoding]
@@ -307,34 +310,31 @@ test encoding-13.1 {LoadEscapeTable} {
     viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]
 } [viewable "ab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
 
-test encoding-14.1 {BinaryProc} {
-    encoding convertto identity \x12\x34\x56\xff\x69
-} "\x12\x34\x56\xc3\xbf\x69"
-
 test encoding-15.1 {UtfToUtfProc} {
     encoding convertto utf-8 \xa3
 } "\xc2\xa3"
-test encoding-15.2 {UtfToUtfProc null character output} {
-    set x \u0000
-    set y [encoding convertto utf-8 \u0000]
-    set y [encoding convertfrom identity $y]
-    binary scan $y H* z
-    list [string bytelength $x] [string bytelength $y] $z
-} {2 1 00}
-test encoding-15.3 {UtfToUtfProc null character input} {
-    set x [encoding convertfrom identity \x00]
-    set y [encoding convertfrom utf-8 $x]
-    binary scan [encoding convertto identity $y] H* z
-    list [string bytelength $x] [string bytelength $y] $z
-} {1 2 c080}
+test encoding-15.2 {UtfToUtfProc null character output} testbytestring {
+    binary scan [testbytestring [encoding convertto utf-8 \u0000]] H* z
+    set z
+} 00
+test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
+    set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
+    binary scan [teststringbytes $y] H* z
+    set z
+} c080
 
-test encoding-16.1 {UnicodeToUtfProc} {
+test encoding-16.1 {UnicodeToUtfProc} -constraints tip389 -body {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
-} "\u4e4e 4e4e"
+} -result "\u4e4e 4e4e"
+test encoding-16.2 {UnicodeToUtfProc} -constraints tip389 -body {
+    set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
+    list $val [format %x [scan $val %c]]
+} -result "\U460dc 460dc"
 
-test encoding-17.1 {UtfToUnicodeProc} {
-} {}
+test encoding-17.1 {UtfToUnicodeProc} -constraints tip389 -body {
+    encoding convertto unicode "\U460dc"
+} -result "\xd8\xd8\xdc\xdc"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
@@ -447,6 +447,31 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     removeFile iso2022.tcl
     list $count [viewable $line]
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+
+test encoding-24.4 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x80"]
+} 1
+test encoding-24.5 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x81"]
+} 2
+test encoding-24.6 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc1\xbf"]
+} 2
+test encoding-24.7 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc2\x80"]
+} 1
+test encoding-24.8 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x80\x80"]
+} 3
+test encoding-24.9 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x9f\xbf"]
+} 3
+test encoding-24.10 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\xa0\x80"]
+} 1
+test encoding-24.11 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xef\xbf\xbf"]
+} 1
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
@@ -570,15 +595,15 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetDefaultEncodingDir} -constraints {
-    testgetdefenc
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
+    testgetencpath
 } -setup {
-    set origDir [testgetdefenc]
-    testsetdefenc slappy
+    set origPath [testgetencpath]
+    testsetencpath slappy
 } -body {
-    testgetdefenc
+    testgetencpath
 } -cleanup {
-    testsetdefenc $origDir
+    testsetencpath $origPath
 } -result slappy
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]

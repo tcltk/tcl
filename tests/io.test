@@ -15,13 +15,7 @@
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
-    namespace import -force ::tcltest::*
 }
-
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -35,15 +29,16 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    loadTestedCommands
+    catch [list package require -exact Tcltest [info patchlevel]]
+    package require tcltests
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
-testConstraint exec             [llength [info commands exec]]
 testConstraint openpipe         1
-testConstraint fileevent        [llength [info commands fileevent]]
-testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testobj		[llength [info commands testobj]]
 
 # You need a *very* special environment to do some tests.  In
@@ -5638,7 +5633,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "0o%o" [expr $stats(mode)&0o777]]
+    set x [format "%#o" [expr $stats(mode)&0o777]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
@@ -5652,8 +5647,8 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     set f [open $path(test3) {WRONLY CREAT}]
     close $f
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0o777]
-} [format %04o [expr {0o666 & ~ $umaskValue}]]
+    format "%#o" [expr $stats(mode)&0o777]
+} [format %#5o [expr {0o666 & ~ $umaskValue}]]
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
     set f [open $path(test3) w]
@@ -6163,6 +6158,8 @@ test io-47.6 {file events on shared files, deleting file events} {testfevent fil
     close $f
     set x
 } {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -6265,6 +6262,9 @@ test io-48.3 {testing readability conditions} {stdio unix nonBlockFiles openpipe
     close $f
     list $x $l
 } {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar
+
 test io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {fileevent} {
     file delete $path(test1)
     set f [open $path(test1) w]

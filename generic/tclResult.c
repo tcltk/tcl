@@ -651,23 +651,6 @@ Tcl_AppendResultVA(
     }
     Tcl_AppendStringsToObjVA(objPtr, argList);
     Tcl_SetObjResult(interp, objPtr);
-
-    /*
-     * Strictly we should call Tcl_GetStringResult(interp) here to make sure
-     * that interp->result is correct according to the old contract, but that
-     * makes the performance of much code (e.g. in Tk) absolutely awful. So we
-     * leave it out; code that really wants interp->result can just insert the
-     * calls to Tcl_GetStringResult() itself. [Patch 1041072 discussion]
-     */
-
-#ifdef USE_INTERP_RESULT
-    /*
-     * Ensure that the interp->result is legal so old Tcl 7.* code still
-     * works. There's still embarrasingly much of it about...
-     */
-
-    (void) Tcl_GetStringResult(interp);
-#endif /* USE_INTERP_RESULT */
 }
 
 /*

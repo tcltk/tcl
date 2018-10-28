@@ -93,8 +93,11 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d ${prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tcl8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tclConfig.sh" ; then
 			ac_cv_c_tclconfig="`(cd $i; pwd)`"
@@ -223,8 +226,11 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 			`ls -d ${prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tk8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tk8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tkConfig.sh" ; then
 			ac_cv_c_tkconfig="`(cd $i; pwd)`"
@@ -541,6 +547,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD, 1, [Is this a static build?])
     fi
+    AC_SUBST(SHARED_BUILD)
 ])
 
 #------------------------------------------------------------------------
@@ -592,114 +599,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_THREADS --
-#
-#	Specify if thread support should be enabled
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-threads
-#
-#	Sets the following vars:
-#		THREADS_LIBS	Thread library(s)
-#
-#	Defines the following vars:
-#		TCL_THREADS
-#		_REENTRANT
-#		_THREAD_SAFE
-#
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_ENABLE_THREADS], [
-    AC_ARG_ENABLE(threads,
-	AC_HELP_STRING([--enable-threads],
-	    [build with threads (default: on)]),
-	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "${TCL_THREADS}" = 1; then
-	tcl_threaded_core=1;
-    fi
-
-    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
-	TCL_THREADS=1
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	AC_DEFINE(USE_THREAD_ALLOC, 1,
-	    [Do we want to use the threaded memory allocator?])
-	AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
-	if test "`uname -s`" = "SunOS" ; then
-	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS, 1,
-		    [Do we really want to follow the standard? Yes we do!])
-	fi
-	AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
-	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
-	if test "$tcl_ok" = "no"; then
-	    # Check a little harder for __pthread_mutex_init in the same
-	    # library, as some systems hide it there until pthread.h is
-	    # defined.  We could alternatively do an AC_TRY_COMPILE with
-	    # pthread.h, but that will work with libpthread really doesn't
-	    # exist, like AIX 4.2.  [Bug: 4359]
-	    AC_CHECK_LIB(pthread, __pthread_mutex_init,
-		tcl_ok=yes, tcl_ok=no)
-	fi
-
-	if test "$tcl_ok" = "yes"; then
-	    # The space is needed
-	    THREADS_LIBS=" -lpthread"
-	else
-	    AC_CHECK_LIB(pthreads, pthread_mutex_init,
-		tcl_ok=yes, tcl_ok=no)
-	    if test "$tcl_ok" = "yes"; then
-		# The space is needed
-		THREADS_LIBS=" -lpthreads"
-	    else
-		AC_CHECK_LIB(c, pthread_mutex_init,
-		    tcl_ok=yes, tcl_ok=no)
-		if test "$tcl_ok" = "no"; then
-		    AC_CHECK_LIB(c_r, pthread_mutex_init,
-			tcl_ok=yes, tcl_ok=no)
-		    if test "$tcl_ok" = "yes"; then
-			# The space is needed
-			THREADS_LIBS=" -pthread"
-		    else
-			TCL_THREADS=0
-			AC_MSG_WARN([Don't know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...])
-		    fi
-		fi
-	    fi
-	fi
-
-	# Does the pthread-implementation provide
-	# 'pthread_attr_setstacksize' ?
-
-	ac_saved_libs=$LIBS
-	LIBS="$LIBS $THREADS_LIBS"
-	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
-	LIBS=$ac_saved_libs
-    else
-	TCL_THREADS=0
-    fi
-    # Do checking message here to not mess up interleaved configure output
-    AC_MSG_CHECKING([for building with threads])
-    if test "${TCL_THREADS}" = 1; then
-	AC_DEFINE(TCL_THREADS, 1, [Are we building with threads enabled?])
-	if test "${tcl_threaded_core}" = 1; then
-	    AC_MSG_RESULT([yes (threaded core)])
-	else
-	    AC_MSG_RESULT([yes])
-	fi
-    else
-	AC_MSG_RESULT([no])
-    fi
-
-    AC_SUBST(TCL_THREADS)
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_SYMBOLS --
 #
 #	Specify if debugging symbols should be used.
@@ -727,7 +626,6 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
 #		DBGX		Formerly used as debug library extension;
 #				always blank now.
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
@@ -892,8 +790,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 #
 #	Determine what the system is (some things cannot be easily checked
 #	on a feature-driven basis, alas). This can usually be done via the
-#	"uname" command, but there are a few systems, like Next, where
-#	this doesn't work.
+#	"uname" command.
 #
 # Arguments:
 #	none
@@ -902,25 +799,18 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 #	Defines the following var:
 #
 #	system -	System/platform/version identification code.
-#
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_CONFIG_SYSTEM], [
     AC_CACHE_CHECK([system version], tcl_cv_sys_version, [
-	if test -f /usr/lib/NextStep/software_version; then
-	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	if test "${TEA_PLATFORM}" = "windows" ; then
+	    tcl_cv_sys_version=windows
 	else
 	    tcl_cv_sys_version=`uname -s`-`uname -r`
 	    if test "$?" -ne 0 ; then
 		AC_MSG_WARN([can't find uname command])
 		tcl_cv_sys_version=unknown
 	    else
-		# Special check for weird MP-RAS system (uname returns weird
-		# results, and the version is kept in special file).
-
-		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print $[3]}' /etc/.relid`
-		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi
@@ -977,11 +867,11 @@ AC_DEFUN([SC_CONFIG_SYSTEM], [
 #       SHLIB_LD_LIBS - Dependent libraries for the linker to scan when
 #                       creating shared libraries.  This symbol typically
 #                       goes at the end of the "ld" commands that build
-#                       shared libraries. The value of the symbol is
+#                       shared libraries. The value of the symbol defaults to
 #                       "${LIBS}" if all of the dependent libraries should
 #                       be specified when creating a shared library.  If
-#                       dependent libraries should not be specified (as on
-#                       SunOS 4.x, where they cause the link to fail, or in
+#                       dependent libraries should not be specified (as on some
+#                       SunOS systems, where they cause the link to fail, or in
 #                       general if Tcl and Tk aren't themselves shared
 #                       libraries), then this symbol has an empty string
 #                       as its value.
@@ -1096,7 +986,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
     ], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""
@@ -1107,10 +997,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
+    AS_IF([test "x${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
     case $system in
 	AIX-*)
-	    AS_IF([test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"], [
+	    AS_IF([test "$GCC" != "yes"], [
 		# AIX requires the _r compiler when gcc isn't being used
 		case "${CC}" in
 		    *_r|*_r\ *)
@@ -1205,7 +1095,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*|MINGW32*)
+	CYGWIN_*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1231,14 +1121,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "$ac_cv_cygwin" = "no"; then
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
 	    fi
-	    if test "x${TCL_THREADS}" = "x0"; then
-		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
-	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
 		# The eval makes quoting arguments work.
-		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1259,7 +1146,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-lroot"
 	    AC_CHECK_LIB(network, inet_ntoa, [LIBS="$LIBS -lnetwork"])
@@ -1403,7 +1290,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -1443,74 +1330,30 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    ;;
-	MP-RAS-02*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	MP-RAS-*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,-Bexport"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
-	    vax)
-		# Equivalent using configure option --disable-load
-		# Step 4 will set the necessary variables
-		DL_OBJS=""
-		SHLIB_LD_LIBS=""
-		LDFLAGS=""
+	    alpha|sparc64)
+		SHLIB_CFLAGS="-fPIC"
 		;;
 	    *)
-		case "$arch" in
-		alpha|sparc|sparc64)
-		    SHLIB_CFLAGS="-fPIC"
-		    ;;
-		*)
-		    SHLIB_CFLAGS="-fpic"
-		    ;;
-		esac
-		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		AS_IF([test $doRpath = yes], [
-		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
+		SHLIB_CFLAGS="-fpic"
 		;;
 	    esac
-	    case "$arch" in
-	    vax)
-		CFLAGS_OPTIMIZE="-O1"
-		;;
-	    sh)
-		CFLAGS_OPTIMIZE="-O0"
-		;;
-	    *)
-		CFLAGS_OPTIMIZE="-O2"
-		;;
-	    esac
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# On OpenBSD:	Compile with -pthread
-		#		Don't link with -lpthread
-		LIBS=`echo $LIBS | sed s/-lpthread//`
-		CFLAGS="$CFLAGS -pthread"
-	    ])
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    AS_IF([test $doRpath = yes], [
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    LDFLAGS="-Wl,-export-dynamic"
+	    CFLAGS_OPTIMIZE="-O2"
+	    # On OpenBSD:	Compile with -pthread
+	    #		Don't link with -lpthread
+	    LIBS=`echo $LIBS | sed s/-lpthread//`
+	    CFLAGS="$CFLAGS -pthread"
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
@@ -1518,7 +1361,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1526,12 +1369,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# The -pthread needs to go in the CFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
-	    ])
+	    # The -pthread needs to go in the CFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS -pthread"
+	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
@@ -1545,11 +1386,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# The -pthread needs to go in the LDFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
+	    # The -pthread needs to go in the LDFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
@@ -1698,46 +1538,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		])
 	    ])
 	    ;;
-	NEXTSTEP-*)
-	    SHLIB_CFLAGS=""
-	    SHLIB_LD='${CC} -nostdlib -r'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadNext.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
 	OS/390-*)
 	    SHLIB_LD_LIBS=""
 	    CFLAGS_OPTIMIZE=""		# Optimizer is buggy
 	    AC_DEFINE(_OE_SOCKETS, 1,	# needed in sys/socket.h
 		[Should OS/390 do the right thing with sockets?])
-	    ;;
-	OSF1-1.0|OSF1-1.1|OSF1-1.2)
-	    # OSF/1 1.[012] from OSF, and derivatives, including Paragon OSF/1
-	    SHLIB_CFLAGS=""
-	    # Hack: make package name same as library name
-	    SHLIB_LD='ld -R -export $@:'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadOSF.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	OSF1-1.*)
-	    # OSF/1 1.3 from OSF using ELF, and derivatives, including AD2
-	    SHLIB_CFLAGS="-fPIC"
-	    AS_IF([test "$SHARED_BUILD" = 1], [SHLIB_LD="ld -shared"], [
-	        SHLIB_LD="ld -non_shared"
-	    ])
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-V*)
 	    # Digital OSF/1
@@ -1756,16 +1561,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$GCC" = yes], [CFLAGS="$CFLAGS -mieee"], [
 		CFLAGS="$CFLAGS -DHAVE_TZSET -std1 -ieee"])
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
-	    AS_IF([test "${TCL_THREADS}" = 1], [
-		CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
-		CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
-		LIBS=`echo $LIBS | sed s/-lpthreads//`
-		AS_IF([test "$GCC" = yes], [
-		    LIBS="$LIBS -lpthread -lmach -lexc"
-		], [
-		    CFLAGS="$CFLAGS -pthread"
-		    LDFLAGS="$LDFLAGS -pthread"
-		])
+	    CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
+	    CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
+	    LIBS=`echo $LIBS | sed s/-lpthreads//`
+	    AS_IF([test "$GCC" = yes], [
+		LIBS="$LIBS -lpthread -lmach -lexc"
+	    ], [
+		CFLAGS="$CFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 	    ])
 	    ;;
 	QNX-6*)
@@ -1799,35 +1602,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_LIBS=""
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    ;;
-	SINIX*5.4*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	SunOS-4*)
-	    SHLIB_CFLAGS="-PIC"
-	    SHLIB_LD="ld"
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-
-	    # SunOS can't handle version numbers with dots in them in library
-	    # specs, like -ltcl7.5, so use -ltcl75 instead.  Also, it
-	    # requires an extra version number at the end of .so file names.
-	    # So, the library has to have a name like libtcl75.so.1.0
-
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	SunOS-5.[[0-6]])
 	    # Careful to not let 5.10+ fall into this case
@@ -2027,7 +1801,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*|MINGW32_*) ;;
+	    CYGWIN_*) ;;
 	    IRIX*) ;;
 	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
@@ -2155,7 +1929,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #
 #	Defines some of the following vars:
 #		NO_DIRENT_H
-#		NO_VALUES_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
@@ -2193,8 +1966,6 @@ closedir(d);
 	AC_DEFINE(NO_DIRENT_H, 1, [Do we have <dirent.h>?])
     fi
 
-    AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H, 1, [Do we have <float.h>?])])
-    AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H, 1, [Do we have <values.h>?])])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
@@ -2337,10 +2108,6 @@ AC_DEFUN([SC_BLOCKING_STYLE], [
 	    AC_DEFINE(USE_FIONBIO, 1, [Should we use FIONBIO?])
 	    AC_MSG_RESULT([FIONBIO])
 	    ;;
-	SunOS-4*)
-	    AC_DEFINE(USE_FIONBIO, 1, [Should we use FIONBIO?])
-	    AC_MSG_RESULT([FIONBIO])
-	    ;;
 	*)
 	    AC_MSG_RESULT([O_NONBLOCK])
 	    ;;
@@ -2472,12 +2239,19 @@ AC_DEFUN([SC_BUGGY_STRTOD], [
 #
 #	Search for the libraries needed to link the Tcl shell.
 #	Things like the math library (-lm) and socket stuff (-lsocket vs.
-#	-lnsl) are dealt with here.
+#	-lnsl) or thread library (-lpthread) are dealt with here.
 #
 # Arguments:
 #	None.
 #
 # Results:
+#
+#	Sets the following vars:
+#		THREADS_LIBS	Thread library(s)
+#
+#	Defines the following vars:
+#		_REENTRANT
+#		_THREAD_SAFE
 #
 #	Might append to the following vars:
 #		LIBS
@@ -2492,12 +2266,9 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
-    AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
 
     #--------------------------------------------------------------------
     # Interactive UNIX requires -linet instead of -lsocket, plus it
@@ -2539,6 +2310,55 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     fi
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
+
+    AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
+    AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
+    AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+    if test "$tcl_ok" = "no"; then
+	# Check a little harder for __pthread_mutex_init in the same
+	# library, as some systems hide it there until pthread.h is
+	# defined.  We could alternatively do an AC_TRY_COMPILE with
+	# pthread.h, but that will work with libpthread really doesn't
+	# exist, like AIX 4.2.  [Bug: 4359]
+	AC_CHECK_LIB(pthread, __pthread_mutex_init,
+		tcl_ok=yes, tcl_ok=no)
+    fi
+
+    if test "$tcl_ok" = "yes"; then
+	# The space is needed
+	THREADS_LIBS=" -lpthread"
+    else
+	AC_CHECK_LIB(pthreads, pthread_mutex_init,
+	_ok=yes, tcl_ok=no)
+	if test "$tcl_ok" = "yes"; then
+	    # The space is needed
+	    THREADS_LIBS=" -lpthreads"
+	else
+	    AC_CHECK_LIB(c, pthread_mutex_init,
+		    tcl_ok=yes, tcl_ok=no)
+	    if test "$tcl_ok" = "no"; then
+		AC_CHECK_LIB(c_r, pthread_mutex_init,
+			tcl_ok=yes, tcl_ok=no)
+		if test "$tcl_ok" = "yes"; then
+		    # The space is needed
+		    THREADS_LIBS=" -pthread"
+		else
+		    AC_MSG_WARN([Don't know how to find pthread lib on your system - you must edit the LIBS in the Makefile...])
+		fi
+	    fi
+	fi
+    fi
+
+    # Does the pthread-implementation provide
+    # 'pthread_attr_setstacksize' ?
+
+    ac_saved_libs=$LIBS
+    LIBS="$LIBS $THREADS_LIBS"
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+    LIBS=$ac_saved_libs
+
+    # TIP #509
+    AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
 ])
 
 #--------------------------------------------------------------------
@@ -2601,7 +2421,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #	Might define the following vars:
 #		TCL_WIDE_INT_IS_LONG
 #		TCL_WIDE_INT_TYPE
-#		HAVE_STRUCT_DIRENT64
+#		HAVE_STRUCT_DIRENT64, HAVE_DIR64
 #		HAVE_STRUCT_STAT64
 #		HAVE_TYPE_OFF64_T
 #
@@ -2614,15 +2434,15 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	# See if the compiler knows natively about __int64
 	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
 	    tcl_type_64bit=__int64, tcl_type_64bit="long long")
-	# See if we should use long anyway  Note that we substitute in the
+	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         AC_TRY_COMPILE(,[switch (0) {
             case 1: case (sizeof(]${tcl_type_64bit}[)==sizeof(long)): ;
         }],tcl_cv_type_64bit=${tcl_type_64bit})])
     if test "${tcl_cv_type_64bit}" = none ; then
-	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Are wide integers to be implemented with C 'long's?])
-	AC_MSG_RESULT([using long])
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
+	AC_MSG_RESULT([yes])
     else
 	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit},
 	    [What type should be used to define wide integers?])
@@ -2635,6 +2455,15 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
 	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
+	fi
+
+	AC_CACHE_CHECK([for DIR64], tcl_cv_DIR64,[
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <dirent.h>],[struct dirent64 *p; DIR64 d = opendir64(".");
+            p = readdir64(d); rewinddir64(d); closedir64(d);],
+		tcl_cv_DIR64=yes,tcl_cv_DIR64=no)])
+	if test "x${tcl_cv_DIR64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
 	fi
 
 	AC_CACHE_CHECK([for struct stat64], tcl_cv_struct_stat64,[
@@ -3133,6 +2962,129 @@ if test "x$NEED_FAKE_RFC2553" = "x1"; then
    AC_CHECK_FUNC(strlcpy)
 fi
 ])
+
+#------------------------------------------------------------------------
+# SC_CC_FOR_BUILD
+#	For cross compiles, locate a C compiler that can generate native binaries.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		CC_FOR_BUILD
+#		EXEEXT_FOR_BUILD
+#------------------------------------------------------------------------
+
+dnl Get a default for CC_FOR_BUILD to put into Makefile.
+AC_DEFUN([AX_CC_FOR_BUILD],[# Put a plausible default for CC_FOR_BUILD in Makefile.
+    if test -z "$CC_FOR_BUILD"; then
+      if test "x$cross_compiling" = "xno"; then
+        CC_FOR_BUILD='$(CC)'
+      else
+        AC_MSG_CHECKING([for gcc])
+        AC_CACHE_VAL(ac_cv_path_cc, [
+            search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+            for dir in $search_path ; do
+                for j in `ls -r $dir/gcc 2> /dev/null` \
+                        `ls -r $dir/gcc 2> /dev/null` ; do
+                    if test x"$ac_cv_path_cc" = x ; then
+                        if test -f "$j" ; then
+                            ac_cv_path_cc=$j
+                            break
+                        fi
+                    fi
+                done
+            done
+        ])
+      fi
+    fi
+    AC_SUBST(CC_FOR_BUILD)
+    # Also set EXEEXT_FOR_BUILD.
+    if test "x$cross_compiling" = "xno"; then
+      EXEEXT_FOR_BUILD='$(EXEEXT)'
+      OBJEXT_FOR_BUILD='$(OBJEXT)'
+    else
+      OBJEXT_FOR_BUILD='.no'
+      AC_CACHE_CHECK([for build system executable suffix], bfd_cv_build_exeext,
+        [rm -f conftest*
+         echo 'int main () { return 0; }' > conftest.c
+         bfd_cv_build_exeext=
+         ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+         for file in conftest.*; do
+           case $file in
+           *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+           *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+           esac
+         done
+         rm -f conftest*
+         test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no])
+      EXEEXT_FOR_BUILD=""
+      test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+    fi
+    AC_SUBST(EXEEXT_FOR_BUILD)])dnl
+    AC_SUBST(OBJEXT_FOR_BUILD)])dnl
+])
+
+
+#------------------------------------------------------------------------
+# SC_ZIPFS_SUPPORT
+#	Locate a zip encoder installed on the system path, or none.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		ZIP_PROG
+#       ZIP_PROG_OPTIONS
+#       ZIP_PROG_VFSSEARCH
+#       ZIP_INSTALL_OBJS
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ZIPFS_SUPPORT], [
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+
+    AC_MSG_CHECKING([for zip])
+    AC_CACHE_VAL(ac_cv_path_zip, [
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
+            fi
+        fi
+        done
+    done
+    ])
+    if test -f "$ac_cv_path_zip" ; then
+        ZIP_PROG="$ac_cv_path_zip "
+        AC_MSG_RESULT([$ZIP_PROG])
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="."
+        AC_MSG_RESULT([Found INFO Zip in environment])
+        # Use standard arguments for zip
+    else
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="."
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        AC_MSG_RESULT([No zip found on PATH. Building minizip])
+    fi
+    AC_SUBST(ZIP_PROG)
+    AC_SUBST(ZIP_PROG_OPTIONS)
+    AC_SUBST(ZIP_PROG_VFSSEARCH)
+    AC_SUBST(ZIP_INSTALL_OBJS)
+])
+
 # Local Variables:
 # mode: autoconf
 # End:

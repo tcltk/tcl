@@ -23,8 +23,8 @@
  * procedure.
  */
 
-#if defined(__CYGWIN__)
-static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
+#if defined(__CYGWIN__) || (defined(_WIN32) && (defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8))
+static TCL_NORETURN1 Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
 static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 #endif
@@ -45,6 +45,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetPanicProc
 void
 Tcl_SetPanicProc(
     TCL_NORETURN1 Tcl_PanicProc *proc)
@@ -111,7 +112,7 @@ Tcl_PanicVA(
 	__builtin_trap();
 #   elif defined(_WIN64)
 	__debugbreak();
-#   elif defined(_MSC_VER)
+#   elif defined(_MSC_VER) && defined (_M_IX86)
 	_asm {int 3}
 #   else
 	DebugBreak();

@@ -27,9 +27,8 @@ static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
-static void		GetLocationInformation(Tcl_Interp *interp,
-			    Proc *procPtr, Tcl_Obj **fileObjPtr,
-			    int *linePtr);
+static void		GetLocationInformation(Proc *procPtr,
+			    Tcl_Obj **fileObjPtr, int *linePtr);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
 static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
@@ -73,8 +72,6 @@ static const Tcl_ObjType tclInstNameType = {
 
 static void
 GetLocationInformation(
-    Tcl_Interp *interp,		/* Where to look up the location
-				 * information. */
     Proc *procPtr,		/* What to look up the information for. */
     Tcl_Obj **fileObjPtr,	/* Where to write the information about what
 				 * file the code came from. Will be written
@@ -88,20 +85,21 @@ GetLocationInformation(
 				 * either with the line number or with -1 if
 				 * the information is not available. */
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hePtr;
-    CmdFrame *cfPtr;
+    CmdFrame *cfPtr = TclGetCmdFrameForProcedure(procPtr);
 
     *fileObjPtr = NULL;
     *linePtr = -1;
-    if (iPtr != NULL && procPtr != NULL) {
-	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
-	if (hePtr != NULL && (cfPtr = Tcl_GetHashValue(hePtr)) != NULL) {
-	    *linePtr = cfPtr->line[0];
-	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		*fileObjPtr = cfPtr->data.eval.path;
-	    }
-	}
+    if (cfPtr == NULL) {
+	return;
+    }
+
+    /*
+     * Get the source location data out of the CmdFrame.
+     */
+
+    *linePtr = cfPtr->line[0];
+    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	*fileObjPtr = cfPtr->data.eval.path;
     }
 }
 
@@ -256,7 +254,7 @@ DisassembleByteCodeObj(
     Tcl_Obj *bufferObj, *fileObj;
 
     TclNewObj(bufferObj);
-    if (codePtr->refCount <= 0) {
+    if (!codePtr->refCount) {
 	return bufferObj;	/* Already freed. */
     }
 
@@ -275,7 +273,7 @@ DisassembleByteCodeObj(
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
-    GetLocationInformation(interp, codePtr->procPtr, &fileObj, &line);
+    GetLocationInformation(codePtr->procPtr, &fileObj, &line);
     if (line > -1 && fileObj != NULL) {
 	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
 		Tcl_GetString(fileObj), line);
@@ -314,7 +312,7 @@ DisassembleByteCodeObj(
 	int numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %d, args %d, compiled locals %d\n",
+		"  Proc %p, refCt %u, args %d, compiled locals %d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -799,7 +797,7 @@ TclNewInstNameObj(
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     objPtr->typePtr = &tclInstNameType;
-    objPtr->internalRep.longValue = (long) inst;
+    objPtr->internalRep.wideValue = (long) inst;
     objPtr->bytes = NULL;
 
     return objPtr;
@@ -819,17 +817,17 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = objPtr->internalRep.longValue;
-    char *s, buf[20];
-    int len;
+    size_t len, inst = (size_t)objPtr->internalRep.wideValue;
+    char *s, buf[TCL_INTEGER_SPACE + 5];
 
-    if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-        sprintf(buf, "inst_%d", inst);
+    if (inst > LAST_INST_OPCODE) {
+        sprintf(buf, "inst_%" TCL_Z_MODIFIER "d", inst);
         s = buf;
     } else {
-        s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;
+        s = (char *) tclInstructionTable[inst].name;
     }
     len = strlen(s);
+    /* assert (len < UINT_MAX) */
     objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;
@@ -896,7 +894,7 @@ PrintSourceToObj(
 		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
 		i += 10;
 	    } else
-#elif TCL_UTF_MAX > 3
+#else
 	    /* If len == 0, this means we have a char > 0xffff, resulting in
 	     * TclUtfToUniChar producing a surrogate pair. We want to output
 	     * this pair as a single Unicode character.
@@ -1217,7 +1215,7 @@ DisassembleByteCodeAsDicts(
      * system if it is available.
      */
 
-    GetLocationInformation(interp, codePtr->procPtr, &file, &line);
+    GetLocationInformation(codePtr->procPtr, &file, &line);
 
     /*
      * Build the overall result.
@@ -1612,7 +1610,7 @@ Tcl_DisassembleObjCmd(
 		"BYTECODE", NULL);
 	return TCL_ERROR;
     }
-    if (PTR2INT(clientData)) {
+    if (clientData) {
 	Tcl_SetObjResult(interp,
 		DisassembleByteCodeAsDicts(interp, codeObjPtr));
     } else {

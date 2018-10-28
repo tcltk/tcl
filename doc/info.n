@@ -35,15 +35,50 @@ Returns the body of procedure \fIprocname\fR.  \fIProcname\fR must be
 the name of a Tcl command procedure.
 .TP
 \fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
-.VS 8.6
+.
 Returns information about the class, \fIclass\fR. The \fIsubcommand\fRs are
 described in \fBCLASS INTROSPECTION\fR below.
-.VE 8.6
 .TP
 \fBinfo cmdcount\fR
 .
 Returns a count of the total number of commands that have been invoked
 in this interpreter.
+.TP
+\fBinfo cmdtype \fIcommandName\fR
+.VS TIP426
+Returns a description of the kind of command named by \fIcommandName\fR.  The
+supported types are:
+.RS
+.IP \fBalias\fR
+Indicates that \fIcommandName\fR was created by \fBinterp alias\fR. Note that
+safe interpreters can only see a subset of aliases (specifically those between
+two commands within themselves).
+.IP \fBcoroutine\fR
+Indicates that \fIcommandName\fR was created by \fBcoroutine\fR.
+.IP \fBensemble\fR
+Indicates that \fIcommandName\fR was created by \fBnamespace ensemble\fR.
+.IP \fBimport\fR
+Indicates that \fIcommandName\fR was created by \fBnamespace import\fR.
+.IP \fBnative\fR
+Indicates that \fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
+interface directly without further registration of the type of command.
+.IP \fBobject\fR
+Indicates that \fIcommandName\fR is the public command that represents an
+instance of \fBoo::object\fR or one of its subclasses.
+.IP \fBprivateObject\fR
+Indicates that \fIcommandName\fR is the private command (\fBmy\fR by default)
+that represents an instance of \fBoo::object\fR or one of its subclasses.
+.IP \fBproc\fR
+Indicates that \fIcommandName\fR was created by \fBproc\fR.
+.IP \fBslave\fR
+Indicates that \fIcommandName\fR was created by \fBinterp create\fR.
+.IP \fBzlibStream\fR
+Indicates that \fIcommandName\fR was created by \fBzlib stream\fR.
+.PP
+There may be other registered types as well; this is a set that is extensible
+at the implementation level with \fBTcl_RegisterCommandTypeName\fR.
+.RE
+.VE TIP426
 .TP
 \fBinfo commands \fR?\fIpattern\fR?
 .
@@ -78,11 +113,10 @@ command is not complete, the script can delay evaluating it until additional
 lines have been typed to complete the command.
 .TP
 \fBinfo coroutine\fR
-.VS 8.6
+.
 Returns the name of the currently executing \fBcoroutine\fR, or the empty
 string if either no coroutine is currently executing, or the current coroutine
 has been deleted (but has not yet returned or yielded since deletion).
-.VE 8.6
 .TP
 \fBinfo default \fIprocname arg varname\fR
 .
@@ -93,7 +127,7 @@ Otherwise it returns \fB1\fR and places the default value of \fIarg\fR
 into variable \fIvarname\fR.
 .TP
 \fBinfo errorstack \fR?\fIinterp\fR?
-.VS 8.6
+.
 Returns, in a form that is programmatically easy to parse, the function names
 and arguments at each level from the call stack of the last error in the given
 \fIinterp\fR, or in the current one if not specified.
@@ -118,7 +152,6 @@ options dictionary returned by 3-argument \fBcatch\fR; \fBinfo errorstack\fR
 is a convenient way of retrieving it for uncaught errors at top-level in an
 interactive \fBtclsh\fR.
 .RE
-.VE 8.6
 .TP
 \fBinfo exists \fIvarName\fR
 .
@@ -329,10 +362,9 @@ was invoked.  If Tcl was unable to identify the file, then an empty
 string is returned.
 .TP
 \fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
-.VS 8.6
+.
 Returns information about the object, \fIobject\fR. The \fIsubcommand\fRs are
 described in \fBOBJECT INTROSPECTION\fR below.
-.VE 8.6
 .TP
 \fBinfo patchlevel\fR
 .
@@ -399,20 +431,22 @@ Note that a currently-visible variable may not yet
 if it has not
 been set (e.g. a variable declared but not set by \fBvariable\fR).
 .SS "CLASS INTROSPECTION"
-.VS 8.6
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
-.VE 8.6
 .TP
 \fBinfo class call\fI class method\fR
-.VS
+.
 Returns a description of the method implementations that are used to provide a
 stereotypical instance of \fIclass\fR's implementation of \fImethod\fR
 (stereotypical instances being objects instantiated by a class without having
 any object-specific definitions added). This consists of a list of lists of
 four elements, where each sublist consists of a word that describes the
 general type of method implementation (being one of \fBmethod\fR for an
-ordinary method, \fBfilter\fR for an applied filter, and \fBunknown\fR for a
+ordinary method, \fBfilter\fR for an applied filter,
+.VS TIP500
+\fBprivate\fR for a private method,
+.VE TIP500
+and \fBunknown\fR for a
 method that is invoked as part of unknown method handling), a word giving the
 name of the particular method invoked (which is always the same as
 \fImethod\fR for the \fBmethod\fR type, and
@@ -423,122 +457,149 @@ implementation (see \fBinfo class methodtype\fR).
 .RS
 .PP
 Note that there is no inspection of whether the method implementations
-actually use \fBnext\fR to transfer control along the call chain.
+actually use \fBnext\fR to transfer control along the call chain,
+.VS TIP500
+and the call chains that this command files do not actually contain private
+methods.
+.VE TIP500
 .RE
-.VE 8.6
 .TP
 \fBinfo class constructor\fI class\fR
-.VS 8.6
+.
 This subcommand returns a description of the definition of the constructor of
 class \fIclass\fR. The definition is described as a two element list; the first
 element is the list of arguments to the constructor in a form suitable for
 passing to another call to \fBproc\fR or a method definition, and the second
 element is the body of the constructor. If no constructor is present, this
 returns the empty list.
-.VE 8.6
 .TP
 \fBinfo class definition\fI class method\fR
-.VS 8.6
+.
 This subcommand returns a description of the definition of the method named
 \fImethod\fR of class \fIclass\fR. The definition is described as a two element
 list; the first element is the list of arguments to the method in a form
 suitable for passing to another call to \fBproc\fR or a method definition, and
 the second element is the body of the method.
-.VE 8.6
 .TP
 \fBinfo class destructor\fI class\fR
-.VS 8.6
+.
 This subcommand returns the body of the destructor of class \fIclass\fR. If no
 destructor is present, this returns the empty string.
-.VE 8.6
 .TP
 \fBinfo class filters\fI class\fR
-.VS 8.6
+.
 This subcommand returns the list of filter methods set on the class.
-.VE 8.6
 .TP
 \fBinfo class forward\fI class method\fR
-.VS 8.6
+.
 This subcommand returns the argument list for the method forwarding called
 \fImethod\fR that is set on the class called \fIclass\fR.
-.VE 8.6
 .TP
 \fBinfo class instances\fI class\fR ?\fIpattern\fR?
-.VS 8.6
+.
 This subcommand returns a list of instances of class \fIclass\fR. If the
 optional \fIpattern\fR argument is present, it constrains the list of returned
 instances to those that match it according to the rules of \fBstring match\fR.
-.VE 8.6
 .TP
 \fBinfo class methods\fI class\fR ?\fIoptions...\fR?
-.VS 8.6
+.
 This subcommand returns a list of all public (i.e. exported) methods of the
 class called \fIclass\fR. Any of the following \fIoption\fRs may be
 specified, controlling exactly which method names are returned:
 .RS
-.VE 8.6
 .TP
 \fB\-all\fR
-.VS 8.6
-If the \fB\-all\fR flag is given, the list of methods will include those
+.
+If the \fB\-all\fR flag is given,
+.VS TIP500
+and the \fB\-scope\fR flag is not given,
+.VE TIP500
+the list of methods will include those
 methods defined not just by the class, but also by the class's superclasses
 and mixins.
-.VE 8.6
 .TP
 \fB\-private\fR
-.VS 8.6
-If the \fB\-private\fR flag is given, the list of methods will also include
-the private (i.e. non-exported) methods of the class (and superclasses and
+.
+If the \fB\-private\fR flag is given,
+.VS TIP500
+and the \fB\-scope\fR flag is not given,
+.VE TIP500
+the list of methods will also include
+the non-exported methods of the class (and superclasses and
 mixins, if \fB\-all\fR is also given).
+.VS TIP500
+Note that this naming is an unfortunate clash with true private methods; this
+option name is retained for backward compatibility.
+.VE TIP500
+.TP
+\fB\-scope\fI scope\fR
+.VS TIP500
+Returns a list of all methods on \fIclass\fR that have the given visibility
+\fIscope\fR.  When this option is supplied, both the \fB\-all\fR and
+\fB\-private\fR options are ignored. The valid values for \fIscope\fR are:
+.RS
+.IP \fBpublic\fR 3
+Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any instance
+of this class) are to be returned.
+.IP \fBunexported\fR 3
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
+be returned.
+.IP \fBprivate\fR 3
+Only methods with \fIprivate\fR scope (i.e., only callable from within this class's
+methods) are to be returned.
 .RE
-.VE 8.6
+.VE TIP500
+.RE
 .TP
 \fBinfo class methodtype\fI class method\fR
-.VS 8.6
+.
 This subcommand returns a description of the type of implementation used for
 the method named \fImethod\fR of class \fIclass\fR. When the result is
 \fBmethod\fR, further information can be discovered with \fBinfo class
 definition\fR, and when the result is \fBforward\fR, further information can
 be discovered with \fBinfo class forward\fR.
-.VE 8.6
 .TP
 \fBinfo class mixins\fI class\fR
-.VS 8.6
+.
 This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
-.VE 8.6
 .TP
 \fBinfo class subclasses\fI class\fR ?\fIpattern\fR?
-.VS 8.6
+.
 This subcommand returns a list of direct subclasses of class \fIclass\fR. If
 the optional \fIpattern\fR argument is present, it constrains the list of
 returned classes to those that match it according to the rules of
 \fBstring match\fR.
-.VE 8.6
 .TP
 \fBinfo class superclasses\fI class\fR
-.VS 8.6
+.
 This subcommand returns a list of direct superclasses of class \fIclass\fR in
 inheritance precedence order.
-.VE 8.6
 .TP
-\fBinfo class variables\fI class\fR
-.VS 8.6
+\fBinfo class variables\fI class\fR ?\fB\-private\fR?
+.
 This subcommand returns a list of all variables that have been declared for
 the class named \fIclass\fR (i.e. that are automatically present in the
 class's methods, constructor and destructor).
+.VS TIP500
+If the \fB\-private\fR option is specified, this lists the private variables
+declared instead.
+.VE TIP500
 .SS "OBJECT INTROSPECTION"
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo object\fR:
-.VE 8.6
 .TP
 \fBinfo object call\fI object method\fR
-.VS 8.6
+.
 Returns a description of the method implementations that are used to provide
 \fIobject\fR's implementation of \fImethod\fR.  This consists of a list of
 lists of four elements, where each sublist consists of a word that describes
 the general type of method implementation (being one of \fBmethod\fR for an
-ordinary method, \fBfilter\fR for an applied filter, and \fBunknown\fR for a
+ordinary method, \fBfilter\fR for an applied filter,
+.VS TIP500
+\fBprivate\fR for a private method,
+.VE TIP500
+and \fBunknown\fR for a
 method that is invoked as part of unknown method handling), a word giving the
 name of the particular method invoked (which is always the same as
 \fImethod\fR for the \fBmethod\fR type, and
@@ -550,128 +611,160 @@ implementation (see \fBinfo object methodtype\fR).
 .RS
 .PP
 Note that there is no inspection of whether the method implementations
-actually use \fBnext\fR to transfer control along the call chain.
+actually use \fBnext\fR to transfer control along the call chain,
+.VS TIP500
+and the call chains that this command files do not actually contain private
+methods.
+.VE TIP500
 .RE
-.VE 8.6
 .TP
 \fBinfo object class\fI object\fR ?\fIclassName\fR?
-.VS 8.6
+.
 If \fIclassName\fR is unspecified, this subcommand returns class of the
 \fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a
 boolean value indicating whether the \fIobject\fR is of that class.
-.VE 8.6
+.TP
+\fBinfo object creationid\fI object\fR
+.VS TIP500
+Returns the unique creation identifier for the \fIobject\fR object. This
+creation identifier is unique to the object (within a Tcl interpreter) and
+cannot be controlled at object creation time or altered afterwards.
+.RS
+.PP
+\fIImplementation note:\fR the creation identifier is used to generate unique
+identifiers associated with the object, especially for private variables.
+.RE
+.VE TIP500
 .TP
 \fBinfo object definition\fI object method\fR
-.VS 8.6
+.
 This subcommand returns a description of the definition of the method named
 \fImethod\fR of object \fIobject\fR. The definition is described as a two
 element list; the first element is the list of arguments to the method in a
 form suitable for passing to another call to \fBproc\fR or a method definition,
 and the second element is the body of the method.
-.VE 8.6
 .TP
 \fBinfo object filters\fI object\fR
-.VS 8.6
+.
 This subcommand returns the list of filter methods set on the object.
-.VE 8.6
 .TP
 \fBinfo object forward\fI object method\fR
-.VS 8.6
+.
 This subcommand returns the argument list for the method forwarding called
 \fImethod\fR that is set on the object called \fIobject\fR.
-.VE 8.6
 .TP
 \fBinfo object isa\fI category object\fR ?\fIarg\fR?
-.VS 8.6
+.
 This subcommand tests whether an object belongs to a particular category,
 returning a boolean value that indicates whether the \fIobject\fR argument
 meets the criteria for the category. The supported categories are:
-.VE 8.6
 .RS
 .TP
 \fBinfo object isa class\fI object\fR
-.VS 8.6
+.
 This returns whether \fIobject\fR is a class (i.e. an instance of
 \fBoo::class\fR or one of its subclasses).
-.VE 8.6
 .TP
 \fBinfo object isa metaclass\fI object\fR
-.VS 8.6
+.
 This returns whether \fIobject\fR is a class that can manufacture classes
 (i.e. is \fBoo::class\fR or a subclass of it).
-.VE 8.6
 .TP
 \fBinfo object isa mixin\fI object class\fR
-.VS 8.6
+.
 This returns whether \fIclass\fR is directly mixed into \fIobject\fR.
-.VE 8.6
 .TP
 \fBinfo object isa object\fI object\fR
-.VS 8.6
+.
 This returns whether \fIobject\fR really is an object.
-.VE 8.6
 .TP
 \fBinfo object isa typeof\fI object class\fR
-.VS 8.6
+.
 This returns whether \fIclass\fR is the type of \fIobject\fR (i.e. whether
 \fIobject\fR is an instance of \fIclass\fR or one of its subclasses, whether
 direct or indirect).
 .RE
-.VE 8.6
 .TP
 \fBinfo object methods\fI object\fR ?\fIoption...\fR?
-.VS 8.6
+.
 This subcommand returns a list of all public (i.e. exported) methods of the
 object called \fIobject\fR. Any of the following \fIoption\fRs may be
 specified, controlling exactly which method names are returned:
 .RS
-.VE 8.6
 .TP
 \fB\-all\fR
-.VS 8.6
-If the \fB\-all\fR flag is given, the list of methods will include those
+.
+If the \fB\-all\fR flag is given,
+.VS TIP500
+and the \fB\-scope\fR flag is not given,
+.VE TIP500
+the list of methods will include those
 methods defined not just by the object, but also by the object's class and
 mixins, plus the superclasses of those classes.
-.VE 8.6
 .TP
 \fB\-private\fR
-.VS 8.6
-If the \fB\-private\fR flag is given, the list of methods will also include
-the private (i.e. non-exported) methods of the object (and classes, if
+.
+If the \fB\-private\fR flag is given,
+.VS TIP500
+and the \fB\-scope\fR flag is not given,
+.VE TIP500
+the list of methods will also include
+the non-exported methods of the object (and classes, if
 \fB\-all\fR is also given).
+.VS TIP500
+Note that this naming is an unfortunate clash with true private methods; this
+option name is retained for backward compatibility.
+.VE TIP500
+.TP
+\fB\-scope\fI scope\fR
+.VS TIP500
+Returns a list of all methods on \fIobject\fR that have the given visibility
+\fIscope\fR.  When this option is supplied, both the \fB\-all\fR and
+\fB\-private\fR options are ignored. The valid values for \fIscope\fR are:
+.RS
+.IP \fBpublic\fR 3
+Only methods with \fIpublic\fR scope (i.e., callable from anywhere) are to be
+returned.
+.IP \fBunexported\fR 3
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
+be returned.
+.IP \fBprivate\fR 3
+Only methods with \fIprivate\fR scope (i.e., only callable from within this object's
+instance methods) are to be returned.
 .RE
-.VE 8.6
+.VE TIP500
+.RE
 .TP
 \fBinfo object methodtype\fI object method\fR
-.VS 8.6
+.
 This subcommand returns a description of the type of implementation used for
 the method named \fImethod\fR of object \fIobject\fR. When the result is
 \fBmethod\fR, further information can be discovered with \fBinfo object
 definition\fR, and when the result is \fBforward\fR, further information can
 be discovered with \fBinfo object forward\fR.
-.VE 8.6
 .TP
 \fBinfo object mixins\fI object\fR
-.VS 8.6
+.
 This subcommand returns a list of all classes that have been mixed into the
 object named \fIobject\fR.
-.VE 8.6
 .TP
 \fBinfo object namespace\fI object\fR
-.VS 8.6
+.
 This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
-.VE 8.6
 .TP
-\fBinfo object variables\fI object\fR
-.VS 8.6
+\fBinfo object variables\fI object\fRR ?\fB\-private\fR?
+.
 This subcommand returns a list of all variables that have been declared for
 the object named \fIobject\fR (i.e. that are automatically present in the
 object's methods).
-.VE 8.6
+.VS TIP500
+If the \fB\-private\fR option is specified, this lists the private variables
+declared instead.
+.VE TIP500
 .TP
 \fBinfo object vars\fI object\fR ?\fIpattern\fR?
-.VS 8.6
+.
 This subcommand returns a list of all variables in the private namespace of
 the object named \fIobject\fR. If the optional \fIpattern\fR argument is
 given, it is a filter (in the syntax of a \fBstring match\fR glob pattern)
@@ -680,7 +773,6 @@ from the list returned by \fBinfo object variables\fR; that can include
 variables that are currently unset, whereas this can include variables that
 are not automatically included by any of \fIobject\fR's methods (or those of
 its class, superclasses or mixins).
-.VE 8.6
 .SH EXAMPLES
 .PP
 This command prints out a procedure suitable for saving in a Tcl
@@ -703,7 +795,6 @@ proc printProc {procName} {
 }
 .CE
 .SS "EXAMPLES WITH OBJECTS"
-.VS 8.6
 .PP
 Every object necessarily knows what its class is; this information is
 trivially extractable through introspection:
@@ -724,8 +815,10 @@ method and get how it is defined. This procedure illustrates how:
 proc getDef {obj method} {
     foreach inf [\fBinfo object call\fR $obj $method] {
         lassign $inf calltype name locus methodtype
+
         # Assume no forwards or filters, and hence no $calltype
         # or $methodtype checks...
+
         if {$locus eq "object"} {
             return [\fBinfo object definition\fR $obj $name]
         } else {
@@ -748,7 +841,9 @@ proc getDef {obj method} {
         # Assume no forwards
         return [\fBinfo object definition\fR $obj $method]
     }
+
     set cls [\fBinfo object class\fR $obj]
+
     while {$method ni [\fBinfo class methods\fR $cls]} {
         # Assume the simple case
         set cls [lindex [\fBinfo class superclass\fR $cls] 0]
@@ -756,22 +851,17 @@ proc getDef {obj method} {
             error "no definition for $method"
         }
     }
+
     # Assume no forwards
     return [\fBinfo class definition\fR $cls $method]
 }
 .CE
-.VE 8.6
 .SH "SEE ALSO"
-.VS 8.6
 global(n), oo::class(n), oo::define(n), oo::object(n), proc(n), self(n),
-.VE 8.6
 tcl_library(n), tcl_patchLevel(n), tcl_version(n)
 .SH KEYWORDS
 command, information, interpreter, introspection, level, namespace,
-.VS 8.6
-object,
-.VE 8.6
-procedure, variable
+object, procedure, variable
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

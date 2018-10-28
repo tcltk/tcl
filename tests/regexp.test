@@ -19,6 +19,20 @@ if {"::tcltest" ni [namespace children]} {
 unset -nocomplain foo
 
 testConstraint exec [llength [info commands exec]]
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc memtest script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
+    }
+}
 
 test regexp-1.1 {basic regexp operation} {
     regexp ab*c abbbc
@@ -453,7 +467,7 @@ test regexp-11.4 {regsub errors} {
 } {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     list [catch {regsub -gorp a b c} msg] $msg
-} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
+} {1 {bad option "-gorp": must be -all, -command, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
 test regexp-11.6 {regsub errors} {
     list [catch {regsub -nocase a( b c d} msg] $msg
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
@@ -1123,6 +1137,57 @@ test regexp-26.12 {regexp with -line option} {
 test regexp-26.13 {regexp without -line option} {
     regexp -all -inline -- {a*} "b\n"
 } {{} {}}
+
+test regexp-27.1 {regsub -command} {
+    regsub -command {.x.} {abcxdef} {string length}
+} ab3ef
+test regexp-27.2 {regsub -command} {
+    regsub -command {.x.} {abcxdefxghi} {string length}
+} ab3efxghi
+test regexp-27.3 {regsub -command} {
+    set x 0
+    regsub -all -command {(?=.)} abcde {apply {args {incr ::x}}}
+} 1a2b3c4d5e
+test regexp-27.4 {regsub -command} -body {
+    regsub -command {.x.} {abcxdef} error
+} -returnCodes error -result cxd
+test regexp-27.5 {regsub -command} {
+    regsub -command {(.)(.)} {abcdef} {list ,}
+} {, ab a bcdef}
+test regexp-27.6 {regsub -command} {
+    regsub -command -all {(.)(.)} {abcdef} {list ,}
+} {, ab a b, cd c d, ef e f}
+test regexp-27.7 {regsub -command representation smash} {
+    set ::s {123=456 789}
+    regsub -command -all {\d+} $::s {apply {n {
+	expr {[llength $::s] + $n}
+    }}}
+} {125=458 791}
+test regexp-27.8 {regsub -command representation smash} {
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + $n}
+    }}}
+    regsub -command -all {\d+} "123=456 789" $::t
+} {131=464 797}
+test regexp-27.9 {regsub -command memory leak testing} memory {
+    set ::s "123=456 789"
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + [llength $::s] + $n}
+    }}}
+    memtest {
+	regsub -command -all {\d+} $::s $::t
+    }
+} 0
+test regexp-27.10 {regsub -command error cases} -returnCodes error -body {
+    regsub -command . abc "def \{ghi"
+} -result {unmatched open brace in list}
+test regexp-27.11 {regsub -command error cases} -returnCodes error -body {
+    regsub -command . abc {}
+} -result {command prefix must be a list of at least one element}
+test regexp-27.12 {regsub -command representation smash} {
+    set s {list (.+)}
+    regsub -command $s {list list} $s
+} {(.+) {list list} list}
 
 # cleanup
 ::tcltest::cleanupTests
