@@ -459,6 +459,9 @@ MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineDefnNsObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineDeleteMethodObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
