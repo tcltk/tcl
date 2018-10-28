@@ -70,7 +70,6 @@
  */
 
 #define	NOTREACHED	0
-#define	xxx		1
 
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
 #define	DUPINF	(DUPMAX+1)

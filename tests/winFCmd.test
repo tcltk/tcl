@@ -56,10 +56,9 @@ proc cleanup {args} {
 }
 
 if {[testConstraint win]} {
-    set major [string index $tcl_platform(osVersion) 0]
-    if {$major > 5} {
+    if {$::tcl_platform(osVersion) >= 5.0} {
 	testConstraint winVista 1
-    } elseif {$major == 5} {
+    } else {
 	testConstraint winXP 1
     }
 }
@@ -1056,6 +1055,15 @@ test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
 } -cleanup {
     file delete -force -- c:/td1
 } -result {c:/td1}
+test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
+    catch {file delete -force -- $::env(TEMP)/td1}
+} -constraints {win} -body {
+    createfile $::env(TEMP)/td1 {}
+    string equal [string tolower [file attributes $::env(TEMP)/td1 -longname]] \
+	    [string tolower [file normalize $::env(TEMP)]/td1]
+} -cleanup {
+    file delete -force -- $::env(TEMP)/td1
+} -result 1
 test winFCmd-12.7 {ConvertFileNameFormat} -body {
     string tolower [file attributes //bisque/tcl/ws -longname]
 } -constraints {nonPortable win} -result {//bisque/tcl/ws}

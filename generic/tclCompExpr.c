@@ -1759,7 +1759,7 @@ ConvertTreeToTokens(
 
 		/*
 		 * All the Tcl_Tokens allocated and filled belong to
-		 * this subexpresion. The first token is the leading
+		 * this subexpression. The first token is the leading
 		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
 		 * are its components.
 		 */
@@ -1885,7 +1885,7 @@ ParseLexeme(
 {
     const char *end;
     int scanned;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
 
@@ -2064,13 +2064,13 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = Tcl_UtfToUniChar(start, &ch);
+	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, start, (size_t) numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
+	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);

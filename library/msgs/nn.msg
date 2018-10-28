@@ -2,7 +2,7 @@
 namespace eval ::tcl::clock {
     ::msgcat::mcset nn DAYS_OF_WEEK_ABBREV [list \
         "su"\
-        "m\u00e5"\
+        "må"\
         "ty"\
         "on"\
         "to"\
@@ -10,7 +10,7 @@ namespace eval ::tcl::clock {
         "lau"]
     ::msgcat::mcset nn DAYS_OF_WEEK_FULL [list \
         "sundag"\
-        "m\u00e5ndag"\
+        "måndag"\
         "tysdag"\
         "onsdag"\
         "torsdag"\

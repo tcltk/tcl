@@ -117,7 +117,7 @@ typedef struct {
     z_stream outStream;		/* Structure used by zlib for compression of
 				 * output. */
     char *inBuffer, *outBuffer;	/* Working buffers. */
-    int inAllocated, outAllocated;
+    size_t inAllocated, outAllocated;
 				/* Sizes of working buffers. */
     GzipHeader inHeader;	/* Header read from input stream, when
 				 * decompressing a gzip stream. */
@@ -373,7 +373,7 @@ ConvertErrorToList(
 
     default:
 	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewLongObj(objv[3], code);
+	TclNewIntObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
 }
@@ -1515,7 +1515,7 @@ Tcl_ZlibStreamGet(
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
 	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    if (itemLen-zshPtr->outPos >= count-dataPos) {
-		unsigned len = count - dataPos;
+		size_t len = count - dataPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);
 		zshPtr->outPos += len;
@@ -1524,7 +1524,7 @@ Tcl_ZlibStreamGet(
 		    zshPtr->outPos = 0;
 		}
 	    } else {
-		unsigned len = itemLen - zshPtr->outPos;
+		size_t len = itemLen - zshPtr->outPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);
 		dataPos += len;
@@ -2931,7 +2931,7 @@ ZlibTransformClose(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) < 0) {
+	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) == TCL_IO_FAILURE) {
 		/* TODO: is this the right way to do errors on close?
 		 * Note: when close is called from FinalizeIOSubsystem then
 		 * interp may be NULL */
@@ -3113,30 +3113,28 @@ ZlibTransformOutput(
 		errorCodePtr);
     }
 
+    /*
+     * No zero-length writes. Flushes must be explicit.
+     */
+
+    if (toWrite == 0) {
+	return 0;
+    }
+
     cd->outStream.next_in = (Bytef *) buf;
     cd->outStream.avail_in = toWrite;
-    do {
+    while (cd->outStream.avail_in > 0) {
 	e = Deflate(&cd->outStream, cd->outBuffer, cd->outAllocated,
 		Z_NO_FLUSH, &produced);
-
-	if ((e == Z_OK && produced > 0) || e == Z_BUF_ERROR) {
-	    /*
-	     * deflate() indicates that it is out of space by returning
-	     * Z_BUF_ERROR *or* by simply returning Z_OK with no remaining
-	     * space; in either case, we must write the whole buffer out and
-	     * retry to compress what is left.
-	     */
-
-	    if (e == Z_BUF_ERROR) {
-		produced = cd->outAllocated;
-		e = Z_OK;
-	    }
-	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
-		*errorCodePtr = Tcl_GetErrno();
-		return -1;
-	    }
+	if (e != Z_OK || produced == 0) {
+	    break;
 	}
-    } while (e == Z_OK && produced > 0 && cd->outStream.avail_in > 0);
+
+	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) == TCL_IO_FAILURE) {
+	    *errorCodePtr = Tcl_GetErrno();
+	    return -1;
+	}
+    }
 
     if (e == Z_OK) {
 	return toWrite - cd->outStream.avail_in;
@@ -3188,7 +3186,7 @@ ZlibTransformFlush(
 	 * Write the bytes we've received to the next layer.
 	 */
 
-	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) < 0) {
+	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) == TCL_IO_FAILURE) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "problem flushing channel: %s",
 		    Tcl_PosixError(interp)));
@@ -3909,6 +3907,12 @@ TclZlibInit(
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
     Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
+
+    /*
+     * Allow command type introspection to do something sensible with streams.
+     */
+
+    TclRegisterCommandTypeName(ZlibStreamCmd, "zlibStream");
 
     /*
      * Formally provide the package as a Tcl built-in.

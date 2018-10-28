@@ -19,6 +19,7 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
+#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
 #define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
@@ -52,6 +53,8 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
     TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
@@ -91,6 +94,15 @@ struct TcpState {
 					 * flag indicates that reentry is
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+
+/*
+ * These bits may be ORed together into the "testFlags" field of a TcpState
+ * structure.
+ */
+
+#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+					 * automatically continue connection
+					 * process. */
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -205,7 +217,7 @@ printaddrinfo(
 static void
 InitializeHostName(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -378,7 +390,7 @@ TcpBlockModeProc(
     } else {
 	SET_BITS(statePtr->flags, TCP_NONBLOCKING);
     }
-    if (statePtr->flags & TCP_ASYNC_CONNECT) {
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
         statePtr->cachedBlocking = mode;
         return 0;
     }
@@ -431,7 +443,7 @@ WaitForConnect(
      * demanded, return the error ENOTCONN
      */
 
-    if (errorCodePtr != NULL && (statePtr->flags & TCP_ASYNC_FAILED)) {
+    if (errorCodePtr != NULL && GOT_BITS(statePtr->flags, TCP_ASYNC_FAILED)) {
 	*errorCodePtr = ENOTCONN;
 	return -1;
     }
@@ -440,11 +452,25 @@ WaitForConnect(
      * Check if an async connect is running. If not return ok
      */
 
-    if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
+    if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 	return 0;
     }
 
-    if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
+    /*
+     * In socket test mode do not continue with the connect.
+     * Exceptions are:
+     * - Call by recv/send and blocking socket
+     *   (errorCodePtr != NULL && !GOT_BITS(flags, TCP_NONBLOCKING))
+     */
+
+    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+            && !(errorCodePtr != NULL
+                    && !GOT_BITS(statePtr->flags, TCP_NONBLOCKING))) {
+	*errorCodePtr = EWOULDBLOCK;
+	return -1;
+    }
+
+    if (errorCodePtr == NULL || GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
         timeout = 0;
     } else {
         timeout = -1;
@@ -459,10 +485,10 @@ WaitForConnect(
          * Do this only once in the nonblocking case and repeat it until the
          * socket is final when blocking.
          */
-    } while (timeout == -1 && statePtr->flags & TCP_ASYNC_CONNECT);
+    } while (timeout == -1 && GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT));
 
     if (errorCodePtr != NULL) {
-        if (statePtr->flags & TCP_ASYNC_PENDING) {
+        if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
             *errorCodePtr = EAGAIN;
             return -1;
         } else if (statePtr->connectError != 0) {
@@ -620,7 +646,7 @@ TcpCloseProc(
     while (fds != NULL) {
 	TcpFdList *next = fds->next;
 
-        ckfree(fds);
+	ckfree(fds);
 	fds = next;
     }
     if (statePtr->addrlist != NULL) {
@@ -702,6 +728,37 @@ TcpClose2Proc(
  *
  *----------------------------------------------------------------------
  */
+
+#ifndef NEED_FAKE_RFC2553
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+static inline int
+IPv6AddressNeedsNumericRendering(
+    struct in6_addr addr)
+{
+    if (IN6_ARE_ADDR_EQUAL(&addr, &in6addr_any)) {
+        return 1;
+    }
+
+    /*
+     * The IN6_IS_ADDR_V4MAPPED macro has a problem with aliasing warnings on
+     * at least some versions of OSX.
+     */
+
+    if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
+        return 0;
+    }
+
+    return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
+            && addr.s6_addr[14] == 0 && addr.s6_addr[15] == 0);
+}
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic pop
+#endif
+#endif /* NEED_FAKE_RFC2553 */
+
 static void
 TcpHostPortList(
     Tcl_Interp *interp,
@@ -728,12 +785,7 @@ TcpHostPortList(
         }
 #ifndef NEED_FAKE_RFC2553
     } else if (addr.sa.sa_family == AF_INET6) {
-        if ((IN6_ARE_ADDR_EQUAL(&addr.sa6.sin6_addr, &in6addr_any))
-            || (IN6_IS_ADDR_V4MAPPED(&addr.sa6.sin6_addr) &&
-                addr.sa6.sin6_addr.s6_addr[12] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[13] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[14] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[15] == 0)) {
+        if (IPv6AddressNeedsNumericRendering(addr.sa6.sin6_addr)) {
             flags |= NI_NUMERICHOST;
         }
 #endif /* NEED_FAKE_RFC2553 */
@@ -808,7 +860,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-error", len) == 0)) {
 	socklen_t optlen = sizeof(int);
 
-        if (statePtr->flags & TCP_ASYNC_CONNECT) {
+        if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
             /*
              * Suppress errors as long as we are not done.
              */
@@ -832,9 +884,8 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
-
         Tcl_DStringAppend(dsPtr,
-                (statePtr->flags & TCP_ASYNC_CONNECT) ? "1" : "0", -1);
+                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", -1);
         return TCL_OK;
     }
 
@@ -843,7 +894,7 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
-	if (statePtr->flags & TCP_ASYNC_CONNECT) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -898,7 +949,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	if (statePtr->flags & TCP_ASYNC_CONNECT) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -1000,7 +1051,7 @@ TcpWatchProc(
     	return;
     }
 
-    if (statePtr->flags & TCP_ASYNC_PENDING) {
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
         /*
          * Async sockets use a FileHandler internally while connecting, so we
          * need to cache this request until the connection has succeeded.
@@ -1073,7 +1124,7 @@ TcpGetHandleProc(
  * TcpAsyncCallback --
  *
  *	Called by the event handler that TcpConnect sets up internally for
- *	[socket -async] to get notified when the asyncronous connection
+ *	[socket -async] to get notified when the asynchronous connection
  *	attempt has succeeded or failed.
  *
  * ----------------------------------------------------------------------
@@ -1106,7 +1157,7 @@ TcpAsyncCallback(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1114,7 +1165,7 @@ TcpAsyncCallback(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  * ----------------------------------------------------------------------
  */
@@ -1125,9 +1176,9 @@ TcpConnect(
     TcpState *statePtr)
 {
     socklen_t optlen;
-    int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
+    int async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING);
     int ret = -1, error = EHOSTUNREACH;
-    int async = statePtr->flags & TCP_ASYNC_CONNECT;
+    int async = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 
     if (async_callback) {
         goto reenter;
@@ -1135,7 +1186,6 @@ TcpConnect(
 
     for (statePtr->addr = statePtr->addrlist; statePtr->addr != NULL;
             statePtr->addr = statePtr->addr->ai_next) {
-
         for (statePtr->myaddr = statePtr->myaddrlist;
                 statePtr->myaddr != NULL;
                 statePtr->myaddr = statePtr->myaddr->ai_next) {
@@ -1557,13 +1607,13 @@ Tcl_OpenTcpServerEx(
 	 * Set up to reuse server addresses and/or ports if requested.
 	 */
 
-	if (flags & TCL_TCPSERVER_REUSEADDR) {
+	if (GOT_BITS(flags, TCL_TCPSERVER_REUSEADDR)) {
 	    optvalue = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		    (char *) &optvalue, sizeof(optvalue));
 	}
 
-	if (flags & TCL_TCPSERVER_REUSEPORT) {
+	if (GOT_BITS(flags, TCL_TCPSERVER_REUSEPORT)) {
 #ifndef SO_REUSEPORT
 	    /*
 	     * If the platform doesn't support the SO_REUSEPORT flag we can't

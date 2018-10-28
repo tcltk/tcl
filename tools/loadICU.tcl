@@ -27,6 +27,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
 
+puts stdout "TODO: output in UTF-8 in stead of using \\uhhhh sequences"
+exit; # Remove those two lines after modifying this tool.
+
 # Calculate the Chinese numerals from zero to ninety-nine.
 
 set zhDigits [list {} \u4e00 \u4e8c \u4e09 \u56db \
