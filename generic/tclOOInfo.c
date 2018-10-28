@@ -1072,9 +1072,9 @@ InfoClassDefnNsCmd(
     }
 
     if (kind) {
-	nsNamePtr = clsPtr->clsDefinitionNs;
-    } else {
 	nsNamePtr = clsPtr->objDefinitionNs;
+    } else {
+	nsNamePtr = clsPtr->clsDefinitionNs;
     }
     if (nsNamePtr) {
 	Tcl_SetObjResult(interp, nsNamePtr);
