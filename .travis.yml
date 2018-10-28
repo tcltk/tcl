@@ -20,7 +20,7 @@ matrix:
 
 # Test with mingw 64 bit
     - os: linux
-      compiler: x86_64-w64-mingw32-g+cc
+      compiler: x86_64-w64-mingw32-gcc
       addons:
         apt:
           packages:
