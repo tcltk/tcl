@@ -19,9 +19,9 @@ if {{::tcltest} ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+testConstraint zlib [llength [info commands zlib]]
 
 # Set up namespaces needed to test operation of "info args", "info body",
 # "info default", and "info procs" with imported procedures.
@@ -33,7 +33,7 @@ namespace eval test_ns_info1 {
     proc p {x} {return "x=$x"}
     proc q {{y 27} {z {}}} {return "y=$y"}
 }
-
+
 test info-1.1 {info args option} {
     proc t1 {a bbb c} {return foo}
     info args t1
@@ -110,7 +110,7 @@ test info-2.6 {info body option, returning list bodies} {
 proc testinfocmdcount {} {
     set x [info cmdcount]
     set y 12345
-    set z [info cm]
+    set z [info cmdc]
     expr {$z-$x}
 }
 test info-3.1 {info cmdcount compiled} {
@@ -119,7 +119,7 @@ test info-3.1 {info cmdcount compiled} {
 test info-3.2 {info cmdcount evaled} -body {
     set x [info cmdcount]
     set y 12345
-    set z [info cm]
+    set z [info cmdc]
     expr {$z-$x}
 } -cleanup {unset x y z} -result 4
 test info-3.3 {info cmdcount evaled} -body [info body testinfocmdcount] -cleanup {unset x y z} -result 4
@@ -678,16 +678,16 @@ test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
 } -result {wrong # args: should be "info subcommand ?arg ...?"}
 test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
     info gorp
-} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, cmdtype, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.3 {miscellaneous error conditions} -returnCodes error -body {
     info c
-} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, cmdtype, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.4 {miscellaneous error conditions} -returnCodes error -body {
     info l
-} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, cmdtype, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
     info s
-} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, cmdtype, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 
 ##
 # ### ### ### ######### ######### #########
@@ -2395,6 +2395,174 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
     namespace delete foo
 } -result {type source line 2389 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
+# -------------------------------------------------------------------------
+namespace eval ::testinfocmdtype {
+    apply {cmds {
+	foreach c $cmds {rename $c {}}
+    } ::testinfocmdtype} [info commands ::testinfocmdtype::*]
+}
+test info-40.1 {info cmdtype: syntax} -body {
+    info cmdtype
+} -returnCodes error -result {wrong # args: should be "info cmdtype commandName"}
+test info-40.2 {info cmdtype: syntax} -body {
+    info cmdtype foo bar
+} -returnCodes error -result {wrong # args: should be "info cmdtype commandName"}
+test info-40.3 {info cmdtype: no such command} -body {
+    info cmdtype ::testinfocmdtype::foo
+} -returnCodes error -result {unknown command "::testinfocmdtype::foo"}
+test info-40.4 {info cmdtype: native commands} -body {
+    info cmdtype ::if
+} -result native
+test info-40.5 {info cmdtype: native commands} -body {
+    info cmdtype ::puts
+} -result native
+test info-40.6 {info cmdtype: native commands} -body {
+    info cmdtype ::yield
+} -result native
+test info-40.7 {info cmdtype: procedures} -setup {
+    proc ::testinfocmdtype::someproc {} {}
+} -body {
+    info cmdtype ::testinfocmdtype::someproc
+} -cleanup {
+    rename ::testinfocmdtype::someproc {}
+} -result proc
+test info-40.8 {info cmdtype: aliases} -setup {
+    interp alias {} ::testinfocmdtype::somealias {} ::puts
+} -body {
+    info cmdtype ::testinfocmdtype::somealias
+} -cleanup {
+    rename ::testinfocmdtype::somealias {}
+} -result alias
+test info-40.9 {info cmdtype: imports} -setup {
+    namespace eval ::testinfocmdtype {
+	namespace eval foo {
+	    proc bar {} {}
+	    namespace export bar
+	}
+	namespace import foo::bar
+    }
+} -body {
+    info cmdtype ::testinfocmdtype::bar
+} -cleanup {
+    rename ::testinfocmdtype::bar {}
+    namespace delete ::testinfocmdtype::foo
+} -result import
+test info-40.10 {info cmdtype: slaves} -setup {
+    apply {i {
+	rename $i ::testinfocmdtype::slave
+	variable ::testinfocmdtype::slave $i
+    }} [interp create]
+} -body {
+    info cmdtype ::testinfocmdtype::slave
+} -cleanup {
+    interp delete $::testinfocmdtype::slave
+} -result slave
+test info-40.11 {info cmdtype: objects} -setup {
+    apply {{} {
+	oo::object create obj
+    } ::testinfocmdtype}
+} -body {
+    info cmdtype ::testinfocmdtype::obj
+} -cleanup {
+    ::testinfocmdtype::obj destroy
+} -result object
+test info-40.12 {info cmdtype: objects} -setup {
+    apply {{} {
+	oo::object create obj
+    } ::testinfocmdtype}
+} -body {
+    info cmdtype [info object namespace ::testinfocmdtype::obj]::my
+} -cleanup {
+    ::testinfocmdtype::obj destroy
+} -result privateObject
+test info-40.13 {info cmdtype: ensembles} -setup {
+    namespace eval ::testinfocmdtype {
+	namespace eval ensmbl {
+	    proc bar {} {}
+	    namespace export *
+	    namespace ensemble create
+	}
+    }
+} -body {
+    info cmdtype ::testinfocmdtype::ensmbl
+} -cleanup {
+    namespace delete ::testinfocmdtype::ensmbl
+} -result ensemble
+test info-40.14 {info cmdtype: zlib streams} -constraints zlib -setup {
+    namespace eval ::testinfocmdtype {
+	rename [zlib stream gzip] zstream
+    }
+} -body {
+    info cmdtype ::testinfocmdtype::zstream
+} -cleanup {
+    ::testinfocmdtype::zstream close
+} -result zlibStream
+test info-40.15 {info cmdtype: coroutines} -setup {
+    coroutine ::testinfocmdtype::coro eval yield
+} -body {
+    info cmdtype ::testinfocmdtype::coro
+} -cleanup {
+    ::testinfocmdtype::coro
+} -result coroutine
+test info-40.16 {info cmdtype: dynamic behavior} -setup {
+    proc ::testinfocmdtype::foo {} {}
+} -body {
+    namespace eval ::testinfocmdtype {
+	list [catch {info cmdtype foo}] [catch {info cmdtype bar}] \
+	    [namespace which foo] [rename foo bar] [namespace which bar] \
+	    [catch {info cmdtype foo}] [catch {info cmdtype bar}]
+    }
+} -cleanup {
+    namespace eval ::testinfocmdtype {
+	catch {rename foo {}}
+	catch {rename bar {}}
+    }
+} -result {0 1 ::testinfocmdtype::foo {} ::testinfocmdtype::bar 1 0}
+test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
+    set i [interp create]
+} -body {
+    $i alias foo gorp
+    $i eval {
+	info cmdtype foo
+    }
+} -cleanup {
+    interp delete $i
+} -result alias
+test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    $safe alias foo gorp
+    $safe eval {
+	info cmdtype foo
+    }
+} -returnCodes error -cleanup {
+    interp delete $safe
+} -result {not allowed to invoke subcommand cmdtype of info}
+test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    set inner [interp create [list $safe bar]]
+    interp alias $inner foo $safe gorp
+    $safe eval {
+	bar eval {
+	    info cmdtype foo
+	}
+    }
+} -returnCodes error -cleanup {
+    interp delete $safe
+} -result {not allowed to invoke subcommand cmdtype of info}
+test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
+    set safe [interp create -safe]
+} -body {
+    $safe eval {
+	interp alias {} foo {} gorp
+	info cmdtype foo
+    }
+} -returnCodes error -cleanup {
+    interp delete $safe
+} -result {not allowed to invoke subcommand cmdtype of info}
+namespace delete ::testinfocmdtype
+
 # -------------------------------------------------------------------------
 unset -nocomplain res
 

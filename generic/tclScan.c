@@ -926,14 +926,13 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = LLONG_MAX;
+		    wideValue = WIDE_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue = LLONG_MIN;
+			wideValue = WIDE_MIN;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
 		    TclSetIntObj(objPtr, wideValue);

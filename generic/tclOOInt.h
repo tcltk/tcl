@@ -209,6 +209,8 @@ typedef struct Object {
     PrivateVariableList privateVariables;
 				/* Configurations for the variable resolver
 				 * used inside methods. */
+    Tcl_Command myclassCommand;	/* Reference to this object's class dispatcher
+				 * command. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -240,6 +242,10 @@ typedef struct Object {
 				/* Object/class has (or had) private methods,
 				 * and so shouldn't be cached so
 				 * aggressively. */
+#define DONT_DELETE 0x40000	/* Inhibit deletion of this object. Used
+				 * during fundamental object type mutation to
+				 * make sure that the object actually survives
+				 * to the end of the operation. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -524,6 +530,8 @@ MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
+			    Object *useThisObj);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, int objc,
@@ -538,6 +546,8 @@ MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
+MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
+			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
@@ -565,7 +575,10 @@ MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
+MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,
+			    Object *oPtr);
 MODULE_SCOPE int	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
+MODULE_SCOPE int	TclOORemoveFromMixins(Class *mixinPtr, Object *oPtr);
 MODULE_SCOPE int	TclOORemoveFromMixinSubs(Class *subPtr,
 			    Class *mixinPtr);
 MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
@@ -597,7 +610,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define FOREACH(var,ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
-    } else if (var = (ary).list[i], 1) 
+    } else if (var = (ary).list[i], 1)
 
 /*
  * A variation where the array is an array of structs. There's no issue with
