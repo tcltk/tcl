@@ -432,10 +432,10 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.5"
 	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.5"
 	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.5"
-	@echo Installing tcltest2.3
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\tcltest2.3"
-	-@copy "$(ROOT)\library\tcltest\tcltest.tcl"   "$(SCRIPT_INSTALL_DIR)\tcltest2.3"
-	-@copy "$(ROOT)\library\tcltest\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\tcltest2.3"
+	@echo Installing tcltest2.5
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\tcltest2.5"
+	-@copy "$(ROOT)\library\tcltest\tcltest.tcl"   "$(SCRIPT_INSTALL_DIR)\tcltest2.5"
+	-@copy "$(ROOT)\library\tcltest\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\tcltest2.5"
 	@echo Installing platform1.0
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\platform1.0"
 	-@copy "$(ROOT)\library\platform\platform.tcl" "$(SCRIPT_INSTALL_DIR)\platform1.0"
