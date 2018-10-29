@@ -8881,6 +8881,9 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2018-10-04 (bug) Prevent crash from NULL keyName (nijtmans)
 => registry 1.3.3
 
-2018-10-18 tzdata updated to Olson's tzdata2017f (jima)
+2018-10-26 (enhance) advance dde version (nijtmans)
+=> dde 1.4.1
 
-- Released 8.6.9, October 31, 2018 - http://core.tcl-lang.org/tcl/ for details -
+2018-10-27 tzdata updated to Olson's tzdata2017g (jima)
+
+- Released 8.6.9, November 9, 2018 - http://core.tcl-lang.org/tcl/ for details -
