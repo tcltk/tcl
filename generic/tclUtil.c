@@ -3706,9 +3706,9 @@ GetWideForIndex(
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
 	    if (mp_isneg((mp_int *)cd)) {
-		*widePtr = LLONG_MIN;
+		*widePtr = WIDE_MIN;
 	    } else {
-		*widePtr = LLONG_MAX;
+		*widePtr = WIDE_MAX;
 	    }
 	    return TCL_OK;
 	}
@@ -3777,7 +3777,7 @@ GetWideForIndex(
 	    if ((t1 == TCL_NUMBER_INT) && (t2 == TCL_NUMBER_INT)) {
 		/* Both are wide, do wide-integer math */
 		if (*opPtr == '-') {
-		    if ((w2 == LLONG_MIN) && (interp != NULL)) {
+		    if ((w2 == WIDE_MIN) && (interp != NULL)) {
 			goto extreme;
 		    }
 		    w2 = -w2;
@@ -3787,16 +3787,16 @@ GetWideForIndex(
 		    /* Different signs, sum cannot overflow */
 		    *widePtr = w1 + w2;
 		} else if (w1 >= 0) {
-		    if (w1 < LLONG_MAX - w2) {
+		    if (w1 < WIDE_MAX - w2) {
 			*widePtr = w1 + w2;
 		    } else {
-			*widePtr = LLONG_MAX;
+			*widePtr = WIDE_MAX;
 		    }
 		} else {
-		    if (w1 > LLONG_MIN - w2) {
+		    if (w1 > WIDE_MIN - w2) {
 			*widePtr = w1 + w2;
 		    } else {
-			*widePtr = LLONG_MIN;
+			*widePtr = WIDE_MIN;
 		    }
 		}
 	    } else if (interp == NULL) {
@@ -3826,9 +3826,9 @@ GetWideForIndex(
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
 		    if (mp_isneg((mp_int *)cd)) {
-			*widePtr = LLONG_MIN;
+			*widePtr = WIDE_MIN;
 		    } else {
-			*widePtr = LLONG_MAX;
+			*widePtr = WIDE_MAX;
 		    }
 		}
 		Tcl_DecrRefCount(sum);
@@ -3972,15 +3972,15 @@ GetEndOffsetFromObj(
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */
 		if (mp_isneg((mp_int *)cd)) {
-		    offset = (bytes[3] == '-') ? LLONG_MAX : LLONG_MIN;
+		    offset = (bytes[3] == '-') ? WIDE_MAX : WIDE_MIN;
 		} else {
-		    offset = (bytes[3] == '-') ? LLONG_MIN : LLONG_MAX;
+		    offset = (bytes[3] == '-') ? WIDE_MIN : WIDE_MAX;
 		}
 	    } else {
 		/* assert (t == TCL_NUMBER_INT); */
 		offset = (*(Tcl_WideInt *)cd);
 		if (bytes[3] == '-') {
-		    offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
+		    offset = (offset == WIDE_MIN) ? WIDE_MAX : -offset;
 		}
 	    }
 	}
@@ -3997,16 +3997,16 @@ GetEndOffsetFromObj(
         /* Different signs, sum cannot overflow */
         *widePtr = endValue + offset;
     } else if (endValue >= 0) {
-        if (endValue < LLONG_MAX - offset) {
+        if (endValue < WIDE_MAX - offset) {
             *widePtr = endValue + offset;
         } else {
-            *widePtr = LLONG_MAX;
+            *widePtr = WIDE_MAX;
         }
     } else {
-        if (endValue > LLONG_MIN - offset) {
+        if (endValue > WIDE_MIN - offset) {
             *widePtr = endValue + offset;
         } else {
-            *widePtr = LLONG_MIN;
+            *widePtr = WIDE_MIN;
         }
     }
     return TCL_OK;
@@ -4080,7 +4080,7 @@ TclIndexEncode(
     int idx, numType, code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if ((code == TCL_OK) && (numType == TCL_NUMBER_INT)) {
-        /* We parsed a value in the range LLONG_MIN...LLONG_MAX */
+        /* We parsed a value in the range WIDE_MIN...WIDE_MAX */
 	wide = (*(Tcl_WideInt *)cd);
     integerEncode:
         if (wide < TCL_INDEX_START) {
@@ -4096,7 +4096,7 @@ TclIndexEncode(
     } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &wide)) {
         /*
          * We parsed an end+offset index value.
-         * wide holds the offset value in the range LLONG_MIN...LLONG_MAX.
+         * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
          */
         if (wide > 0) {
             /*

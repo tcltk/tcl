@@ -5,7 +5,7 @@ matrix:
   include:
 # Test with mingw 32 bit
     - os: linux
-      compiler: x86_64-w64-mingw32-gcc
+      compiler: i686-w64-mingw32-gcc
       addons:
         apt:
           packages:
@@ -17,6 +17,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
+        - CFGOPT=--host=i686-w64-mingw32
 
 # Test with mingw 64 bit
     - os: linux
@@ -31,6 +32,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
+        - CFGOPT=--host=x86_64-w64-mingw32 --enable-64bit
 
 before_install:
   - eval "${MATRIX_EVAL}"
