@@ -240,7 +240,6 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
-    struct Var *arrayPtr;
 } TclVarHashTable;
 
 /*
@@ -873,11 +872,6 @@ typedef struct VarInHash {
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \
 	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
-	: NULL)
-
-#define TclGetVarArrayPtr(varPtr) \
-    (TclIsVarInHash(varPtr) \
-	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->arrayPtr \
 	: NULL)
 
 #define VarHashRefCount(varPtr) \
