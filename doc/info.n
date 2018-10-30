@@ -331,9 +331,21 @@ This is actually the value of the \fBtcl_library\fR
 variable and may be changed by setting \fBtcl_library\fR.
 .TP
 \fBinfo linkedname \fIvarname\fR
-.
-\fIVarname\fR must be a link variable.
-Returns the name of the variable it is linked to.
+.VS TIP471
+Returns the name of the variable that link variable \fIvarname\fR is
+ultimately linked to. This will be a fully qualified name if the variable
+ultimately linked to is in a namespace (including the global namespace). Array
+elements will be indicated by having
+.QW \fB(\fR ,
+the name of the element, and
+.QW \fB)\fR
+appended.
+.RS
+.PP
+Link variables are (usually) local variables created by \fBupvar\fR,
+\fBglobal\fR, \fBnamespace upvar\fR, and \fBvariable\fR.
+.RE
+.VE TIP471
 .TP
 \fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
 .

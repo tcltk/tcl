@@ -235,6 +235,8 @@ typedef struct NamespacePathEntry NamespacePathEntry;
  * field added at the end: in this way variables can find their namespace
  * without having to copy a pointer in their struct: they can access it via
  * their hPtr->tablePtr.
+ *
+ * Note that arrays further extend this. See ArrayVarHashTable in tclVar.c
  */
 
 typedef struct TclVarHashTable {

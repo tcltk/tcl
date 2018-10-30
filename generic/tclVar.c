@@ -1168,17 +1168,23 @@ TclGetVarName(
 	    return TCL_ERROR;
 	}
 
+	objNamePtr = VarHashGetKey(varPtr);
 	arrayPtr = TclGetVarArrayPtr(varPtr);
 	if (arrayPtr) {
 	    result = TclGetVarName(interp, arrayPtr, objPtr);
 	    Tcl_AppendToObj(objPtr, "(", 1);
-	}
-
-	objNamePtr = VarHashGetKey(varPtr);
-	Tcl_AppendObjToObj(objPtr, objNamePtr);
-
-	if (arrayPtr) {
+	    Tcl_AppendObjToObj(objPtr, objNamePtr);
 	    Tcl_AppendToObj(objPtr, ")", 1);
+	} else {
+	    Tcl_Namespace *nsPtr = (Tcl_Namespace*) TclGetVarNsPtr(varPtr);
+
+	    if (nsPtr) {
+		Tcl_AppendToObj(objPtr, nsPtr->fullName, -1);
+		if (nsPtr != Tcl_GetGlobalNamespace(interp)) {
+		    Tcl_AppendToObj(objPtr, "::", 2);
+		}
+	    }
+	    Tcl_AppendObjToObj(objPtr, objNamePtr);
 	}
 	return result;
     }

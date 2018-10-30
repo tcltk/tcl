@@ -2595,7 +2595,7 @@ test info-41.1 {info linkedname - valid} -setup {
     }} i
 } -cleanup {
     unset -nocomplain i
-} -result {i}
+} -result ::i
 test info-41.2 {info linkedname - valid} -body {
     proc getname {var} {
 	upvar 1 $var up
@@ -2619,7 +2619,7 @@ test info-41.3 {info linkedname - valid} -setup {
     }} a 1
 } -cleanup {
     unset -nocomplain a
-} -result {a(1)}
+} -result {::a(1)}
 test info-41.4 {info linkedname - no such variable} -body {
     info linkedname foo
 } -returnCodes error -result {can't access "foo": no such variable}
@@ -2651,8 +2651,8 @@ test info-41.7 {info linkedname - valid} -setup {
     }}
 } -cleanup {
     unset -nocomplain ok
-} -result {ok 1 {can't access "other": variable isn't a link}}
-test info-41.7 {info linkedname - chain of links} -setup {
+} -result {::ok 1 {can't access "other": variable isn't a link}}
+test info-41.8 {info linkedname - chain of links} -setup {
     unset -nocomplain ok
 } -body {
     apply {v {
