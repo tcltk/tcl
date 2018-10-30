@@ -1127,7 +1127,10 @@ TclLookupArrayElement(
  */
 
 int
-TclGetVarName(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *objPtr)
+TclGetVarName(
+    Tcl_Interp *interp,
+    Var *varPtr,
+    Tcl_Obj *objPtr)
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr;
@@ -1142,6 +1145,7 @@ TclGetVarName(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *objPtr)
 	isElement = TclIsVarArrayElement(varPtr);
 	if (isElement) {
 	    Var *arrayPtr = TclGetVarArrayPtr(varPtr);
+
 	    if (arrayPtr) {
 		TclGetVarName(interp, arrayPtr, objPtr);
 	    }
@@ -1154,15 +1158,16 @@ TclGetVarName(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *objPtr)
 	if (isElement) {
 	    Tcl_AppendToObj(objPtr, ")", 1);
 	}
-
 	return 1;
     }
 
-    /* Find varPtr in compiled locals from current or upper call frames. */
+    /*
+     * Find varPtr in compiled locals from current or upper call frames.
+     */
+
     for (varFramePtr = iPtr->varFramePtr;
 	    varFramePtr != NULL ;
 	    varFramePtr = varFramePtr->callerVarPtr) {
-
 	int index = varPtr - varFramePtr->compiledLocals;
 
 	if (index >= 0 && index < varFramePtr->numCompiledLocals) {
@@ -6375,7 +6380,7 @@ TclInfoLinkedNameCmd(
 
     varName = objv[1];
     varPtr = TclLookupSimpleVar(interp, varName, TCL_AVOID_RESOLVERS,
-	/* create */ 0, &errMsg, &index);
+	    /* create */ 0, &errMsg, &index);
 
     if (varPtr && !TclIsVarLink(varPtr)) {
 	errMsg = needVarLink;
@@ -6385,14 +6390,15 @@ TclInfoLinkedNameCmd(
     if (varPtr == NULL) {
 	TclObjVarErrMsg(interp, varName, NULL, "access", errMsg, -1);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARLINK",
-	    TclGetString(varName), NULL);
+		TclGetString(varName), NULL);
 	return TCL_ERROR;
     }
 
     objNamePtr = Tcl_NewObj();
     if (TclGetVarName(interp, varPtr->value.linkPtr, objNamePtr) != 1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unable to find linked name for \"%s\"", TclGetString(varName)));
+		"unable to find linked name for \"%s\"",
+		Tcl_GetString(varName)));
 	TclDecrRefCount(objNamePtr);
 	return TCL_ERROR;
     }
@@ -6636,21 +6642,6 @@ TclInitVarHashTable(
 	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
     tablePtr->nsPtr = nsPtr;
     tablePtr->arrayPtr = NULL;
-}
-
-void
-TclInitArrayHashTable(
-    Var *arrayPtr)
-{
-    TclVarHashTable *tablePtr;
-
-    tablePtr = ckalloc(sizeof(TclVarHashTable));
-
-    Tcl_InitCustomHashTable(&tablePtr->table,
-	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
-    tablePtr->nsPtr = TclGetVarNsPtr(arrayPtr);
-    tablePtr->arrayPtr = arrayPtr;
-    arrayPtr->value.tablePtr = tablePtr;
 }
 
 static Tcl_HashEntry *
@@ -6906,6 +6897,7 @@ TclInitArrayVar(
 
     arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
     TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
+    arrayPtr->value.tablePtr->arrayPtr = arrayPtr;
 
     /*
      * Default value initialization.
