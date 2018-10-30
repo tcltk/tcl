@@ -166,22 +166,38 @@ typedef struct ArraySearch {
 } ArraySearch;
 
 /*
- * TIP #508: [array default]
+ * TIP #471: [info linkedname] and TIP #508: [array default]
  *
  * The following structure extends the regular TclVarHashTable used by array
- * variables to store their optional default value.
+ * variables to store a reference to the array and their optional default
+ * value.
  */
 
 typedef struct ArrayVarHashTable {
-    TclVarHashTable table;
-    Var *arrayPtr;
-    Tcl_Obj *defaultObj;
+    TclVarHashTable table;	/* The base type, which itself extends
+				 * Tcl_HashTable. */
+    Var *arrayPtr;		/* Reference to the array for which this the
+				 * contents of. */
+    Tcl_Obj *defaultObj;	/* The default value of the array, or NULL if
+				 * there is no default value. */
 } ArrayVarHashTable;
+
+/*
+ * Array access macros.
+ *
+ * ArrayToArrayTable goes from the *array* to its ArrayVarHashTable, whereas
+ * TclGeVarArrayTablePtr goes from an *element* of the array to the array's
+ * ArrayVarHashTable.
+ */
+
+#define ArrayToArrayTable(arrayPtr) \
+    ((ArrayVarHashTable *) (arrayPtr)->value.tablePtr)
 
 #define TclGetVarArrayTablePtr(varPtr) \
     ((ArrayVarHashTable *) (((VarInHash *) (varPtr))->entry.tablePtr))
+
 #define TclGetVarArrayPtr(varPtr) \
-    (TclIsVarArrayElement(varPtr) \
+    (TclIsVarArrayElement(varPtr)		   \
 	? TclGetVarArrayTablePtr(varPtr)->arrayPtr \
 	: NULL)
 
@@ -6920,8 +6936,7 @@ static void
 DeleteArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = ArrayToArrayTable(arrayPtr);
 
     /*
      * Default value cleanup.
@@ -6945,8 +6960,7 @@ Tcl_Obj *
 TclGetArrayDefault(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = ArrayToArrayTable(arrayPtr);
 
     return tablePtr->defaultObj;
 }
@@ -6960,8 +6974,7 @@ SetArrayDefault(
     Var *arrayPtr,
     Tcl_Obj *defaultObj)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = ArrayToArrayTable(arrayPtr);
 
     /*
      * Increment/decrement refcount twice to ensure that the object is shared,

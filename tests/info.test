@@ -2585,28 +2585,91 @@ test info-39.2 {Bug 4b61afd660} -setup {
 
 # -------------------------------------------------------------------------
 # info linkedname
-test info-41.0 {info linkedname - valid} -body {
-    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
+test info-41.1 {info linkedname - valid} -setup {
+    unset -nocomplain i
+} -body {
     set i 1
-    getname i
-} -result {i}
-test info-41.1 {info linkedname - valid} -body {
-    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
-    proc p {i} { return [getname i] }
-    p 2
+    apply {var {
+	upvar 1 $var up
+	return [info linkedname up]
+    }} i
+} -cleanup {
+    unset -nocomplain i
 } -result {i}
 test info-41.2 {info linkedname - valid} -body {
-    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
+    proc getname {var} {
+	upvar 1 $var up
+	return [info linkedname up]
+    }
+    proc p {i} {
+	return [getname i]
+    }
+    p 2
+} -cleanup {
+    catch {rename getname ""}
+    catch {rename p ""}
+} -result {i}
+test info-41.3 {info linkedname - valid} -setup {
+    unset -nocomplain a
+} -body {
     array set a {1 one 2 two}
-    getname a(1)
+    apply {{var idx} {
+	upvar 1 ${var}($idx) up
+	return [info linkedname up]
+    }} a 1
+} -cleanup {
+    unset -nocomplain a
 } -result {a(1)}
-test info-41.3 {info linkedname - no such variable} -body {
+test info-41.4 {info linkedname - no such variable} -body {
     info linkedname foo
 } -returnCodes error -result {can't access "foo": no such variable}
-test info-41.4 {info linkedname - not a varlink object} -body {
+test info-41.5 {info linkedname - not a varlink object} -setup {
+    unset -nocomplain i
+} -body {
     set i 5
     info linkedname i
+} -cleanup {
+    unset -nocomplain i
 } -returnCodes error -result {can't access "i": variable isn't a link}
+test info-41.6 {info linkedname - valid} -body {
+    apply {{} {
+	set ok 123
+	upvar 0 ok gorp
+	return [info linkedname gorp]
+    }}
+} -cleanup {
+    unset -nocomplain a
+} -result {ok}
+test info-41.7 {info linkedname - valid} -setup {
+    unset -nocomplain ok
+} -body {
+    set ok 123
+    apply {{} {
+	variable ok
+	set other 123
+	return [list [info linkedname ok] [catch {info linkedname other} msg] $msg]
+    }}
+} -cleanup {
+    unset -nocomplain ok
+} -result {ok 1 {can't access "other": variable isn't a link}}
+test info-41.7 {info linkedname - chain of links} -setup {
+    unset -nocomplain ok
+} -body {
+    apply {v {
+	apply {v {
+	    upvar ok foo
+	    apply {v {
+		upvar foo(yes) bar
+		apply {v {
+		    upvar 1 $v gorp
+		    list [info exist gorp] [info linkedname gorp]
+		}} $v
+	    }} $v
+	}} $v
+    }} bar
+} -cleanup {
+    unset -nocomplain ok
+} -result {0 ok(yes)}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

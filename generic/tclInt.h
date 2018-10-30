@@ -232,9 +232,9 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
  * Special hashtable for variables: this is just a Tcl_HashTable with an nsPtr
- * field and a Var field added at the end: in this way variables can find their
- * namespace or related array variable (for array elements) without having to
- * copy a pointer in their struct: they can access it via their hPtr->tablePtr.
+ * field added at the end: in this way variables can find their namespace
+ * without having to copy a pointer in their struct: they can access it via
+ * their hPtr->tablePtr.
  */
 
 typedef struct TclVarHashTable {
