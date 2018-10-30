@@ -32,7 +32,7 @@
  */
 
 typedef struct {
-    size_t numNsCreated;	/* Count of the number of namespaces created
+    unsigned long numNsCreated;	/* Count of the number of namespaces created
 				 * within the thread. This value is used as a
 				 * unique id for each namespace. Cannot be
 				 * per-interp because the nsId is used to
@@ -89,8 +89,6 @@ static char *		EstablishErrorInfoTraces(ClientData clientData,
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
-static int		InvokeImportedCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		InvokeImportedNRCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
@@ -402,7 +400,7 @@ Tcl_PopCallFrame(
     }
     if (framePtr->numCompiledLocals > 0) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
-	if (--framePtr->localCachePtr->refCount == 0) {
+	if (framePtr->localCachePtr->refCount-- <= 1) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);
 	}
 	framePtr->localCachePtr = NULL;
@@ -916,6 +914,11 @@ Tcl_DeleteNamespace(
     Command *cmdPtr;
 
     /*
+     * Ensure that this namespace doesn't get deallocated in the meantime.
+     */
+    nsPtr->refCount++;
+
+    /*
      * Give anyone interested - notably TclOO - a chance to use this namespace
      * normally despite the fact that the namespace is going to go. Allows the
      * calling of destructors. Will only be called once (unless re-established
@@ -1047,16 +1050,7 @@ Tcl_DeleteNamespace(
 #endif
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
 
-	    /*
-	     * If the reference count is 0, then discard the namespace.
-	     * Otherwise, mark it as "dead" so that it can't be used.
-	     */
-
-	    if (nsPtr->refCount == 0) {
-		NamespaceFree(nsPtr);
-	    } else {
-		nsPtr->flags |= NS_DEAD;
-	    }
+	    nsPtr ->flags |= NS_DEAD;
 	} else {
 	    /*
 	     * Restore the ::errorInfo and ::errorCode traces.
@@ -1073,6 +1067,7 @@ Tcl_DeleteNamespace(
 	    nsPtr->flags &= ~(NS_DYING|NS_KILLED);
 	}
     }
+    TclNsDecrRefCount(nsPtr);
 }
 
 /*
@@ -1769,7 +1764,7 @@ DoImport(
 
 	dataPtr = ckalloc(sizeof(ImportedCmdData));
 	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
+		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
@@ -1990,7 +1985,7 @@ TclGetOriginalCommand(
 /*
  *----------------------------------------------------------------------
  *
- * InvokeImportedCmd --
+ * TclInvokeImportedCmd --
  *
  *	Invoked by Tcl whenever the user calls an imported command that was
  *	created by Tcl_Import. Finds the "real" command (in another
@@ -2021,8 +2016,8 @@ InvokeImportedNRCmd(
     return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, realCmdPtr);
 }
 
-static int
-InvokeImportedCmd(
+int
+TclInvokeImportedCmd(
     ClientData clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -2424,6 +2419,35 @@ TclGetNamespaceForQualName(
 /*
  *----------------------------------------------------------------------
  *
+ * TclEnsureNamespace --
+ *
+ *	Provide a namespace that is not deleted.
+ *
+ * Value
+ *
+ *	namespacePtr, if it is not scheduled for deletion, or a pointer to a
+ *	new namespace with the same name otherwise.
+ *
+ * Effect
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Namespace *
+TclEnsureNamespace(
+    Tcl_Interp *interp,
+    Tcl_Namespace *namespacePtr)
+{
+    Namespace *nsPtr = (Namespace *) namespacePtr;
+    if (!(nsPtr->flags & NS_DYING)) {
+	    return namespacePtr;
+    }
+    return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_FindNamespace --
  *
  *	Searches for a namespace.
@@ -2638,7 +2662,7 @@ Tcl_FindCommand(
 	Namespace *nsPtr[2];
 	register int search;
 
-	TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+	TclGetNamespaceForQualName(interp, name, cxtNsPtr,
 		flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
 
 	/*

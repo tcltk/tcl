@@ -139,7 +139,6 @@ Tcl_FSRenameFileProc		TclpObjRenameFile;
 Tcl_FSCreateDirectoryProc	TclpObjCreateDirectory;
 Tcl_FSCopyDirectoryProc		TclpObjCopyDirectory;
 Tcl_FSRemoveDirectoryProc	TclpObjRemoveDirectory;
-Tcl_FSUnloadFileProc		TclpUnloadFile;
 Tcl_FSLinkProc			TclpObjLink;
 Tcl_FSListVolumesProc		TclpObjListVolumes;
 
@@ -245,7 +244,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
@@ -276,8 +275,8 @@ Tcl_Stat(
 	Tcl_WideInt tmp1, tmp2, tmp3 = 0;
 
 # define OUT_OF_RANGE(x) \
-	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
-	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
+	(((Tcl_WideInt)(x)) < LONG_MIN || \
+	 ((Tcl_WideInt)(x)) > LONG_MAX)
 # define OUT_OF_URANGE(x) \
 	(((Tcl_WideUInt)(x)) > ((Tcl_WideUInt)ULONG_MAX))
 
@@ -412,7 +411,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
@@ -831,15 +829,6 @@ TclResetFilesystem(void)
     if (++theFilesystemEpoch == 0) {
 	++theFilesystemEpoch;
     }
-
-#ifdef _WIN32
-    /*
-     * Cleans up the win32 API filesystem proc lookup table. This must happen
-     * very late in finalization so that deleting of copied dlls can occur.
-     */
-
-    TclWinResetInterfaces();
-#endif
 }
 
 /*
@@ -1401,31 +1390,62 @@ TclFSNormalizeToUniquePath(
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
-    /*
-     * Call each of the "normalise path" functions in succession. This is a
-     * special case, in which if we have a native filesystem handler, we call
-     * it first. This is because the root of Tcl's filesystem is always a
-     * native filesystem (i.e., '/' on unix is native).
-     */
+    int i;
+    int isVfsPath = 0;
+    char *path;
 
+    /*
+     * Paths starting with a UNC prefix whose final character is a colon
+     * are reserved for VFS use.  These names can not conflict with real
+     * UNC paths per https://msdn.microsoft.com/en-us/library/gg465305.aspx
+     * and rfc3986's definition of reg-name.
+     *
+     * We check these first to avoid useless calls to the native filesystem's
+     * normalizePathProc.
+     */
+    path = Tcl_GetStringFromObj(pathPtr, &i);
+
+    if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
+		    || (path[0] == '\\' && path[1] == '\\') ) ) {
+	for ( i = 2; ; i++) {
+	    if (path[i] == '\0') break;
+	    if (path[i] == path[0]) break;
+	}
+	--i;
+	if (path[i] == ':') isVfsPath = 1;
+    }
+
+    /*
+     * Call each of the "normalise path" functions in succession.
+     */
     firstFsRecPtr = FsGetFirstFilesystem();
 
     Claim();
-    for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
-	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
-	    continue;
-	}
+
+    if (!isVfsPath) {
 
 	/*
-	 * TODO: Assume that we always find the native file system; it should
-	 * always be there...
+	 * If we have a native filesystem handler, we call it first.  This is
+	 * because the root of Tcl's filesystem is always a native filesystem
+	 * (i.e., '/' on unix is native).
 	 */
 
-	if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
-	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-		    startAt);
+	for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
+	    if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
+		continue;
+	    }
+
+	    /*
+	     * TODO: Assume that we always find the native file system; it should
+	     * always be there...
+	     */
+
+	    if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
+		startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
+			startAt);
+	    }
+	    break;
 	}
-	break;
     }
 
     for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
@@ -1764,7 +1784,7 @@ Tcl_FSEvalFileEx(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
@@ -1787,7 +1807,7 @@ Tcl_FSEvalFileEx(
      * be handled especially.
      */
 
-    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1802,7 +1822,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
+	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1899,7 +1919,7 @@ TclNREvalFile(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
@@ -1922,7 +1942,7 @@ TclNREvalFile(
      * be handled especially.
      */
 
-    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1938,7 +1958,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
+	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -3164,8 +3184,8 @@ Tcl_FSLoadFile(
  * present and set to true (any integer > 0) then the unlink is skipped.
  */
 
-int
-TclSkipUnlink(
+static int
+skipUnlink(
     Tcl_Obj *shlibFile)
 {
     /*
@@ -3207,8 +3227,8 @@ TclSkipUnlink(
 #ifndef AUFS_SUPER_MAGIC
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(Tcl_GetString (shlibFile), &fs) == 0) &&
-	    (fs.f_type == AUFS_SUPER_MAGIC)) {
+	if ((statfs(Tcl_GetString(shlibFile), &fs) == 0)
+		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
 	    return 1;
 	}
     }
@@ -3423,7 +3443,7 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (!TclSkipUnlink(copyToPtr) &&
+    if (!skipUnlink(copyToPtr) &&
 	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
@@ -3692,30 +3712,10 @@ Tcl_FSUnloadFile(
 	}
 	return TCL_ERROR;
     }
-    TclpUnloadFile(handle);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpUnloadFile --
- *
- *	Unloads a library given its handle
- *
- * This function was once filesystem-specific, but has been made portable by
- * having TclpDlopen return a structure that includes procedure pointers.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpUnloadFile(
-    Tcl_LoadHandle handle)
-{
     if (handle->unloadFileProcPtr != NULL) {
 	handle->unloadFileProcPtr(handle);
     }
+    return TCL_OK;
 }
 
 /*

@@ -34,7 +34,7 @@ testConstraint testobj [expr {
     && [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
 # Tests for the omnibus TclExecuteByteCode function:
@@ -724,7 +724,7 @@ test execute-6.14 {Tcl_ExprObj: exprcode context validation} -setup {
     }
     set result {}
     lappend result [expr $e]
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}
@@ -733,11 +733,11 @@ test execute-6.15 {Tcl_ExprObj: exprcode name resolution epoch validation} -setu
 } -body {
     set e { [llength {}]+1 }
     set result {}
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
     namespace eval foo {
 	proc llength {args} {return 1}
     }
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}
@@ -805,9 +805,9 @@ test execute-7.7 {Wide int handling in INST_EQ and [incr]} {
     set y [expr {$x+1}]
     expr {double($x) == double($y)}
 } 1
-test execute-7.8 {Wide int conversions can change sign} longIs32bit {
-    set x 0x80000000
-    expr {int($x) < wide($x)}
+test execute-7.8 {Wide int conversions can change sign} {
+    set x 0x8000000000000000
+    expr {wide($x) < 0}
 } 1
 test execute-7.9 {Wide int handling in INST_MOD} {
     expr {(wide(1)<<60) % ((wide(47)<<45)-1)}
@@ -887,12 +887,12 @@ test execute-7.31 {Wide int handling in abs()} {
     set y 0x123456871234568
     concat [expr {abs($x)}] [expr {abs($y)}]
 } {730503879441204585 81985533099853160}
-test execute-7.32 {Wide int handling} longIs32bit {
+test execute-7.32 {Wide int handling} {
     expr {int(1024 * 1024 * 1024 * 1024)}
-} 0
-test execute-7.33 {Wide int handling} longIs32bit {
+} 1099511627776
+test execute-7.33 {Wide int handling} {
     expr {int(0x1 * 1024 * 1024 * 1024 * 1024)}
-} 0
+} 1099511627776
 test execute-7.34 {Wide int handling} {
     expr {wide(0x1) * 1024 * 1024 * 1024 * 1024}
 } 1099511627776

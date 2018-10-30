@@ -74,7 +74,7 @@ test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -s
     lsort [a aliases]
 } -cleanup {
     interp delete a
-} -result {::tcl::mathfunc::max ::tcl::mathfunc::min clock}
+} -result {clock}
 
 test safe-3.1 {calling safe::interpInit is safe} -setup {
     catch {safe::interpDelete a}
@@ -92,7 +92,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} -setup {
     lsort [a aliases]
 } -cleanup {
     safe::interpDelete a
-} -result {::tcl::file::atime ::tcl::file::attributes ::tcl::file::copy ::tcl::file::delete ::tcl::file::dirname ::tcl::file::executable ::tcl::file::exists ::tcl::file::extension ::tcl::file::isdirectory ::tcl::file::isfile ::tcl::file::link ::tcl::file::lstat ::tcl::file::mkdir ::tcl::file::mtime ::tcl::file::nativename ::tcl::file::normalize ::tcl::file::owned ::tcl::file::readable ::tcl::file::readlink ::tcl::file::rename ::tcl::file::rootname ::tcl::file::size ::tcl::file::stat ::tcl::file::tail ::tcl::file::tempfile ::tcl::file::type ::tcl::file::volumes ::tcl::file::writable ::tcl::info::nameofexecutable clock encoding exit glob load source}
+} -result {::tcl::encoding::system ::tcl::file::dirname ::tcl::file::extension ::tcl::file::rootname ::tcl::file::tail ::tcl::info::nameofexecutable clock encoding exit file glob load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} -setup {
     catch {safe::interpDelete a}
 } -body {
@@ -180,17 +180,17 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 # leaking infos, but they still do...
 
 # high level general test
-test safe-7.1 {tests that everything works at high level} {
+test safe-7.1 {tests that everything works at high level} -body {
     set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
     #  package require in a slave works like in the master)
-    set v [interp eval $i {package require http 1}]
+    set v [interp eval $i {package require http 2}]
     # no error shall occur:
-    interp eval $i {http_config}
+    interp eval $i {http::config}
     safe::interpDelete $i
     set v
-} 1.0
+} -match glob -result 2.*
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
@@ -308,14 +308,10 @@ test safe-8.7 {safe source control on file} -setup {
     unset log
     safe::interpDelete $i
 } -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
-test safe-8.8 {safe source forbids -rsrc} -setup {
-    catch {safe::interpDelete $i}
-    safe::interpCreate $i
-} -body {
-    $i eval {source -rsrc Init}
-} -returnCodes error -cleanup {
-    safe::interpDelete $i
-} -result {wrong # args: should be "source ?-encoding E? fileName"}
+test safe-8.8 {safe source forbids -rsrc} emptyTest {
+    # Disabled this test.  It was only useful for long unsupported
+    # Mac OS 9 systems. [Bug 860a9f1945]
+} {}
 test safe-8.9 {safe source and return} -setup {
     set returnScript [makeFile {return "ok"} return.tcl]
     catch {safe::interpDelete $i}
@@ -468,14 +464,14 @@ test safe-11.1 {testing safe encoding} -setup {
     interp eval $i encoding
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {wrong # args: should be "encoding option ?arg ...?"}
+} -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test safe-11.1a {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {
     interp eval $i encoding foobar
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -match glob -result {bad option "foobar": must be *}
+} -match glob -result {unknown or ambiguous subcommand "foobar": must be *}
 test safe-11.2 {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -530,8 +526,6 @@ test safe-11.7.1 {testing safe encoding} -setup {
     while executing
 "encoding convertfrom"
     invoked from within
-"::interp invokehidden interp* encoding convertfrom"
-    invoked from within
 "encoding convertfrom"
     invoked from within
 "interp eval $i encoding convertfrom"}
@@ -553,8 +547,6 @@ test safe-11.8.1 {testing safe encoding} -setup {
 } -result {wrong # args: should be "encoding convertto ?encoding? data"
     while executing
 "encoding convertto"
-    invoked from within
-"::interp invokehidden interp* encoding convertto"
     invoked from within
 "encoding convertto"
     invoked from within
@@ -769,7 +761,7 @@ test safe-15.1 {safe file ensemble does not surprise code} -setup {
     unset -nocomplain msg
     interp delete $i
 } -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
-test safe-15.1.1 {safe file ensemble does not surprise code} -setup {
+test safe-15.2 {safe file ensemble does not surprise code} -setup {
     set i [interp create -safe]
 } -body {
     set result [expr {"file" in [interp hidden $i]}]

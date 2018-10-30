@@ -74,6 +74,57 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
             lappend dirs $env($enVarName)
         }
 
+	catch {
+      set found 0
+	    set root [zipfs root]
+	    set mountpoint [file join $root lib [string tolower $basename]]
+      lappend dirs [file join $root app ${basename}_library]
+      lappend dirs [file join $root lib $mountpoint ${basename}_library]
+      lappend dirs [file join $root lib $mountpoint]
+	    if {![zipfs exists [file join $root app ${basename}_library]] \
+	      && ![zipfs exists $mountpoint]} {
+	      set found 0
+	      foreach pkgdat [info loaded] {
+	        lassign $pkgdat dllfile dllpkg
+	        if {[string tolower $dllpkg] ne [string tolower $basename]} continue
+	        if {$dllfile eq {}} {
+	          # Loaded statically
+	          break
+	        }
+          set found 1
+	        zipfs mount $mountpoint $dllfile
+	        break
+	      }
+	      if {!$found} {
+  	      set paths {}
+  	      lappend paths [file join $root app]
+    	    lappend paths [::${basename}::pkgconfig get libdir,runtime]
+	        lappend paths [::${basename}::pkgconfig get bindir,runtime]
+	        if {[catch {::${basename}::pkgconfig get zipfile,runtime} zipfile]} {
+  	        set zipfile [string tolower \
+  	          "lib${basename}_[join [list {*}[split $version .] {*}$patch] _].zip"]
+  	      }
+  	      lappend paths [file dirname [file join [pwd] [info nameofexecutable]]]
+          foreach path $paths {
+            set archive [file join $path $zipfile]
+            if {![file exists $archive]} continue
+            zipfs mount $mountpoint $archive
+            if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
+              lappend dirs [file join $mountpoint ${basename}_library]
+              set found 1
+              break
+            } elseif {[zipfs exists [file join $mountpoint $initScript]]} {
+              lappend dirs [file join $mountpoint $initScript]
+              set found 1
+              break
+            } else {
+              catch {zipfs unmount $archive}
+            }
+          }
+        }
+      }
+   }
+
 	# 2. In the package script directory registered within the
 	#    configuration of the package itself.
 
@@ -203,7 +254,7 @@ proc auto_mkindex {dir args} {
     }
 
     auto_mkindex_parser::init
-    foreach file [glob -- {*}$args] {
+    foreach file [lsort [glob -- {*}$args]] {
 	try {
 	    append index [auto_mkindex_parser::mkindex $file]
 	} on error {msg opts} {
@@ -236,7 +287,7 @@ proc auto_mkindex_old {dir args} {
     if {![llength $args]} {
 	set args *.tcl
     }
-    foreach file [glob -- {*}$args] {
+    foreach file [lsort [glob -- {*}$args]] {
 	set f ""
 	set error [catch {
 	    set f [open $file]
