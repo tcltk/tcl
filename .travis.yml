@@ -14,7 +14,7 @@ matrix:
             - gcc-mingw-w64-i686
             - gcc-mingw-w64      
             - gcc-multilib
-            - wine
+            - wine-devel
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
@@ -29,7 +29,7 @@ matrix:
             - binutils-mingw-w64-x86-64
             - gcc-mingw-w64-x86-64
             - gcc-mingw-w64
-            - wine
+            - wine-devel
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=x86_64-w64-mingw32 --enable-64bit
