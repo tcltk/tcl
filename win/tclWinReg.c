@@ -124,6 +124,25 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
+static unsigned char *
+getByteArrayFromObj(
+	Tcl_Obj *objPtr,
+	size_t *lengthPtr
+) {
+    int length;
+
+    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &length);
+#if TCL_MAJOR_VERSION > 8
+    if (sizeof(TCL_HASH_TYPE) > sizeof(int)) {
+	/* 64-bit and TIP #494 situation: */
+	 *lengthPtr = *(TCL_HASH_TYPE *) objPtr->internalRep.twoPtrValue.ptr1;
+    } else
+#endif
+	/* 32-bit or without TIP #494 */
+    *lengthPtr = (size_t) (unsigned) length;
+    return result;
+}
+
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
 
@@ -1324,13 +1343,13 @@ SetValue(
 	Tcl_DStringFree(&buf);
     } else {
 	BYTE *data;
-	int bytelength;
+	size_t bytelength;
 
 	/*
 	 * Store binary data in the registry.
 	 */
 
-	data = (BYTE *) Tcl_GetByteArrayFromObj(dataObj, &bytelength);
+	data = (BYTE *) getByteArrayFromObj(dataObj, &bytelength);
 	result = RegSetValueEx(key, (TCHAR *) valueName, 0,
 		(DWORD) type, data, (DWORD) bytelength);
     }
