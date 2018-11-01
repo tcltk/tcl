@@ -1632,9 +1632,6 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 # relocatable.
 #--------------------------------------------------------------------------
 
-fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
-
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
@@ -1649,9 +1646,6 @@ strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
-
-strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c

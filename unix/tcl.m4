@@ -2398,59 +2398,6 @@ AC_DEFUN([SC_TIME_HANDLER], [
 ])
 
 #--------------------------------------------------------------------
-# SC_BUGGY_STRTOD
-#
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" (provided by Tcl) that corrects the error.
-#	Also, on Compaq's Tru64 Unix 5.0,
-#	strtod(" ") returns 0.0 instead of a failure to convert.
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Might defines some of the following vars:
-#		strtod (=fixstrtod)
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN([SC_BUGGY_STRTOD], [
-    AC_CHECK_FUNC(strtod, tcl_strtod=1, tcl_strtod=0)
-    if test "$tcl_strtod" = 1; then
-	AC_CACHE_CHECK([for Solaris2.4/Tru64 strtod bugs], tcl_cv_strtod_buggy,[
-	    AC_TRY_RUN([
-		extern double strtod();
-		int main() {
-		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		    char *term;
-		    double value;
-		    value = strtod(infString, &term);
-		    if ((term != infString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(nanString, &term);
-		    if ((term != nanString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(spaceString, &term);
-		    if (term == (spaceString+1)) {
-			exit(1);
-		    }
-		    exit(0);
-		}], tcl_cv_strtod_buggy=ok, tcl_cv_strtod_buggy=buggy,
-		    tcl_cv_strtod_buggy=buggy)])
-	if test "$tcl_cv_strtod_buggy" = buggy; then
-	    AC_LIBOBJ([fixstrtod])
-	    USE_COMPAT=1
-	    AC_DEFINE(strtod, fixstrtod, [Do we want to use the strtod() in compat?])
-	fi
-    fi
-])
-
-#--------------------------------------------------------------------
 # SC_TCL_LINK_LIBS
 #
 #	Search for the libraries needed to link the Tcl shell.
