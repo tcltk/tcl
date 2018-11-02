@@ -1057,7 +1057,6 @@ TclOOReleaseClassContents(
     if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
 	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
-    oPtr->classPtr = NULL;
 }
 
 /*
@@ -1183,7 +1182,9 @@ ObjectNamespaceDeleted(
 	    TclOORemoveFromInstances(oPtr, mixinPtr);
 	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
-	ckfree(oPtr->mixins.list);
+	if (oPtr->mixins.list != NULL) {
+	    ckfree(oPtr->mixins.list);
+	}
     }
 
     FOREACH(filterObj, oPtr->filters) {
@@ -1383,6 +1384,10 @@ TclOORemoveFromMixins(
 	    res++;
 	    break;
 	}
+    }
+    if (oPtr->mixins.num == 0) {
+	ckfree(oPtr->mixins.list);
+	oPtr->mixins.list = NULL;
     }
     return res;
 }
