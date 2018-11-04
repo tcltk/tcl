@@ -4768,10 +4768,10 @@ TclPragmaTypeCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     enum PragmaTypes {
-	DICT_TYPE, DOUBLE_TYPE, INT_TYPE, LIST_TYPE
+	BOOL_TYPE, DICT_TYPE, DOUBLE_TYPE, INT_TYPE, LIST_TYPE
     };
     static const char *types[] = {
-	"dict", "double", "int64", "list",
+	"boolean", "dict", "double", "int64", "list",
 	NULL
     };
     int idx, i;
@@ -4792,10 +4792,15 @@ TclPragmaTypeCmd(
     for (i=2 ; i<objc ; i++) {
 	Tcl_Obj *valuePtr = objv[i];
 	double dval;
-	int len;
+	int bval, len;
 	Tcl_WideInt ival;
 
 	switch ((enum PragmaTypes) idx) {
+	case BOOL_TYPE:
+	    if (Tcl_GetBooleanFromObj(interp, valuePtr, &bval) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
 	case DICT_TYPE:
 	    if (Tcl_DictObjSize(interp, valuePtr, &len) != TCL_OK) {
 		return TCL_ERROR;
