@@ -6851,7 +6851,7 @@ SetArrayDefault(
 /*
  *----------------------------------------------------------------------
  *
- * PragmaNoAliasCmd --
+ * TclPragmaNoAliasCmd --
  *
  *	This function implements the 'tcl::pragma noalias' Tcl command.
  *	Refer to the user documentation for details on what it does.
@@ -6866,8 +6866,8 @@ SetArrayDefault(
  */
 
 	/* ARGSUSED */
-static int
-PragmaNoAliasCmd(
+int
+TclPragmaNoAliasCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -6897,7 +6897,7 @@ PragmaNoAliasCmd(
 	Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
 	for (j=0 ; j<varc ; j++) {
 	    key = TclObjLookupVarEx(interp, varv[j], NULL, TCL_LEAVE_ERR_MSG,
-		    "foo", 0, 0, &ignored);
+		    "resolve", 0, 0, &ignored);
 	    if (key == NULL) {
 		Tcl_DeleteHashTable(&table);
 		return TCL_ERROR;
@@ -6914,14 +6914,14 @@ PragmaNoAliasCmd(
 			"\"%s\" aliases to the same variable as \"%s\"",
 			Tcl_GetString(varv[j]), Tcl_GetString(otherName)));
 		Tcl_SetErrorCode(interp, "TCL", "VAR_ALIAS", NULL);
-		Tcl_DeleteHashTable(&tablePtr);
+		Tcl_DeleteHashTable(&table);
 		return TCL_ERROR;
 	    }
 	    Tcl_SetHashValue(hPtr, varv[j]);
 	}
-	Tcl_DeleteHashTable(&tablePtr);
+	Tcl_DeleteHashTable(&table);
     }
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*

@@ -4709,6 +4709,119 @@ TclListLines(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclInitPragmaCmd --
+ *
+ *	This function creates the 'tcl::pragma' Tcl command.
+ *	Refer to the user documentation for details on what it does.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclInitPragmaCmd(
+    Tcl_Interp *interp)
+{
+    static const EnsembleImplMap pragmaImplMap[] = {
+	{"noalias", TclPragmaNoAliasCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+	{"type",    TclPragmaTypeCmd,	 TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+    Tcl_Command prefixCmd;
+
+    prefixCmd = TclMakeEnsemble(interp, "::tcl::pragma", pragmaImplMap);
+    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+	    "prefix", 0);
+    return prefixCmd;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPragmaTypeCmd --
+ *
+ *	This function implements the 'tcl::pragma type' Tcl command.
+ *	Refer to the user documentation for details on what it does.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+TclPragmaTypeCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    enum PragmaTypes {
+	DICT_TYPE, DOUBLE_TYPE, INT_TYPE, LIST_TYPE
+    };
+    static const char *types[] = {
+	"dict", "double", "int64", "list",
+	NULL
+    };
+    int idx, i;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "typeName ?value...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Check that the type constraint actually holds for all remaining values.
+     */
+
+    for (i=2 ; i<objc ; i++) {
+	Tcl_Obj *valuePtr = objv[i];
+	double dval;
+	int len;
+	Tcl_WideInt ival;
+
+	switch ((enum PragmaTypes) idx) {
+	case DICT_TYPE:
+	    if (Tcl_DictObjSize(interp, valuePtr, &len) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case DOUBLE_TYPE:
+	    if (Tcl_GetDoubleFromObj(interp, valuePtr, &dval) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case INT_TYPE:
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &ival) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case LIST_TYPE:
+	    if (Tcl_ListObjLength(interp, valuePtr, &len) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

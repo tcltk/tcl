@@ -930,6 +930,7 @@ Tcl_CreateInterp(void)
     TclInitInfoCmd(interp);
     TclInitNamespaceCmd(interp);
     TclInitStringCmd(interp);
+    TclInitPragmaCmd(interp);
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
 
