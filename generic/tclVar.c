@@ -6849,6 +6849,82 @@ SetArrayDefault(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * PragmaNoAliasCmd --
+ *
+ *	This function implements the 'tcl::pragma noalias' Tcl command.
+ *	Refer to the user documentation for details on what it does.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+PragmaNoAliasCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int i, j, varc, isNew;
+    Var *key, *ignored;
+    Tcl_HashTable table;
+    Tcl_HashEntry *hPtr;
+    Tcl_Obj **varv;
+
+    /*
+     * For each set of variables...
+     */
+
+    for (i=1 ; i<objc ; i++) {
+	if (Tcl_ListObjGetElements(interp, objv[i], &varc, &varv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * ... build a map from real variable location (because
+	 * TclObjLookupVarEx will follow links for us) to the name that led us
+	 * there.
+	 */
+
+	Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
+	for (j=0 ; j<varc ; j++) {
+	    key = TclObjLookupVarEx(interp, varv[j], NULL, TCL_LEAVE_ERR_MSG,
+		    "foo", 0, 0, &ignored);
+	    if (key == NULL) {
+		Tcl_DeleteHashTable(&table);
+		return TCL_ERROR;
+	    }
+	    hPtr = Tcl_CreateHashEntry(&table, key, &isNew);
+	    if (!isNew) {
+		/*
+		 * There was a duplicate value! Generate an error message.
+		 */
+
+		Tcl_Obj *otherName = Tcl_GetHashValue(hPtr);
+
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"\"%s\" aliases to the same variable as \"%s\"",
+			Tcl_GetString(varv[j]), Tcl_GetString(otherName)));
+		Tcl_SetErrorCode(interp, "TCL", "VAR_ALIAS", NULL);
+		Tcl_DeleteHashTable(&tablePtr);
+		return TCL_ERROR;
+	    }
+	    Tcl_SetHashValue(hPtr, varv[j]);
+	}
+	Tcl_DeleteHashTable(&tablePtr);
+    }
+    return TCL_ERROR;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
