@@ -4768,10 +4768,11 @@ TclPragmaTypeCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     enum PragmaTypes {
-	BOOL_TYPE, DICT_TYPE, DOUBLE_TYPE, INT_TYPE, LIST_TYPE
+	BOOL_TYPE, DICT_TYPE, DOUBLE_TYPE, INT_TYPE, INTEGER_TYPE, LIST_TYPE,
+	NUMBER_TYPE
     };
     static const char *types[] = {
-	"boolean", "dict", "double", "int64", "list",
+	"boolean", "dict", "double", "int64", "integer", "list", "number",
 	NULL
     };
     int idx, i;
@@ -4794,6 +4795,7 @@ TclPragmaTypeCmd(
 	double dval;
 	int bval, len;
 	Tcl_WideInt ival;
+	ClientData cdval;
 
 	switch ((enum PragmaTypes) idx) {
 	case BOOL_TYPE:
@@ -4803,6 +4805,9 @@ TclPragmaTypeCmd(
 	    break;
 	case DICT_TYPE:
 	    if (Tcl_DictObjSize(interp, valuePtr, &len) != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected dict value but got \"%s\"",
+			Tcl_GetString(valuePtr)));
 		return TCL_ERROR;
 	    }
 	    break;
@@ -4818,6 +4823,19 @@ TclPragmaTypeCmd(
 	    break;
 	case LIST_TYPE:
 	    if (Tcl_ListObjLength(interp, valuePtr, &len) != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected list value but got \"%s\"",
+			Tcl_GetString(valuePtr)));
+		return TCL_ERROR;
+	    }
+	    break;
+	case INTEGER_TYPE:
+	    if (TclGetWideBitsFromObj(interp, valuePtr, &ival) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case NUMBER_TYPE:
+	    if (TclGetNumberFromObj(interp, valuePtr, &cdval, &bval) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;
