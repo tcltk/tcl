@@ -143,7 +143,8 @@ EXTERN Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, int length,
 /* 29 */
 EXTERN Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
 /* 30 */
-EXTERN void		TclFreeObj(Tcl_Obj *objPtr);
+TCL_DEPRECATED("Kept only for deployed refcounting macros")
+void			TclFreeObj(Tcl_Obj *objPtr);
 /* 31 */
 EXTERN int		Tcl_GetBoolean(Tcl_Interp *interp, const char *src,
 				int *boolPtr);
@@ -1889,6 +1890,12 @@ EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjIntRep *irPtr);
 /* 640 */
 EXTERN int		Tcl_HasStringRep(Tcl_Obj *objPtr);
+/* 641 */
+EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
+/* 642 */
+EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
+/* 643 */
+EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1946,7 +1953,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
-    void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
+    TCL_DEPRECATED_API("Kept only for deployed refcounting macros") void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
@@ -2565,6 +2572,9 @@ typedef struct TclStubs {
     Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
     void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 639 */
     int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
+    void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
+    void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
+    int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3877,6 +3887,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_StoreIntRep) /* 639 */
 #define Tcl_HasStringRep \
 	(tclStubsPtr->tcl_HasStringRep) /* 640 */
+#define Tcl_IncrRefCount \
+	(tclStubsPtr->tcl_IncrRefCount) /* 641 */
+#define Tcl_DecrRefCount \
+	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
+#define Tcl_IsShared \
+	(tclStubsPtr->tcl_IsShared) /* 643 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
