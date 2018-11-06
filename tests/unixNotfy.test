@@ -18,27 +18,22 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # When run in a Tk shell, these tests hang.
 testConstraint noTk [expr {0 != [catch {package present Tk}]}]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
-# Darwin always uses a threaded notifier
-testConstraint unthreaded [expr {
-    ![::tcl::pkgconfig get threaded]
-    && $tcl_platform(os) ne "Darwin"
-}]
 
 # The next two tests will hang if threads are enabled because the notifier
 # will not necessarily wait for ever in this case, so it does not generate
 # an error.
-test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints {noTk unix unthreaded} -body {
+test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
     catch {vwait x}
     set f [open [makeFile "" foo] w]
     fileevent $f writable {set x 1}
     vwait x
     close $f
     list [catch {vwait x} msg] $msg
-} -result {1 {can't wait for variable "x": would wait forever}} -cleanup { 
+} -result {1 {can't wait for variable "x": would wait forever}} -cleanup {
     catch { close $f }
     catch { removeFile foo }
 }
-test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints {noTk unix unthreaded} -body {
+test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
     catch {vwait x}
     set f1 [open [makeFile "" foo] w]
     set f2 [open [makeFile "" foo2] w]
@@ -90,7 +85,7 @@ test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
 	set x
     } \
     -result {ok} \
-    -cleanup { 
+    -cleanup {
 	catch { close $f1 }
 	catch { close $f2 }
 	catch { removeFile foo }

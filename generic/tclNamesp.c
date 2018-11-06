@@ -25,14 +25,15 @@
 
 #include "tclInt.h"
 #include "tclCompile.h" /* for TclLogCommandInfo visibility */
+#include <assert.h>
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
  * limited to a single interpreter.
  */
 
-typedef struct ThreadSpecificData {
-    long numNsCreated;		/* Count of the number of namespaces created
+typedef struct {
+    unsigned long numNsCreated;	/* Count of the number of namespaces created
 				 * within the thread. This value is used as a
 				 * unique id for each namespace. Cannot be
 				 * per-interp because the nsId is used to
@@ -59,7 +60,7 @@ typedef struct ResolvedNsName {
 				 * the name was resolved. NULL if the name is
 				 * fully qualified and thus the resolution
 				 * does not depend on the context. */
-    int refCount;		/* Reference count: 1 for each nsName object
+    size_t refCount;		/* Reference count: 1 for each nsName object
 				 * that has a pointer to this ResolvedNsName
 				 * structure as its internal rep. This
 				 * structure can be freed when refCount
@@ -89,8 +90,6 @@ static char *		EstablishErrorInfoTraces(ClientData clientData,
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
-static int		InvokeImportedCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		InvokeImportedNRCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
@@ -153,6 +152,22 @@ static const Tcl_ObjType nsNameType = {
     NULL,			/* updateStringProc */
     SetNsNameFromAny		/* setFromAnyProc */
 };
+
+#define NsNameSetIntRep(objPtr, nnPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	(nnPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (nnPtr);					\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &nsNameType, &ir);			\
+    } while (0)
+
+#define NsNameGetIntRep(objPtr, nnPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &nsNameType);			\
+	(nnPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
 
 /*
  * Array of values describing how to implement each standard subcommand of the
@@ -402,7 +417,7 @@ Tcl_PopCallFrame(
     }
     if (framePtr->numCompiledLocals > 0) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
-	if (--framePtr->localCachePtr->refCount == 0) {
+	if (framePtr->localCachePtr->refCount-- <= 1) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);
 	}
 	framePtr->localCachePtr = NULL;
@@ -1323,8 +1338,7 @@ void
 TclNsDecrRefCount(
     Namespace *nsPtr)
 {
-    nsPtr->refCount--;
-    if ((nsPtr->refCount == 0) && (nsPtr->flags & NS_DEAD)) {
+    if ((nsPtr->refCount-- <= 1) && (nsPtr->flags & NS_DEAD)) {
 	NamespaceFree(nsPtr);
     }
 }
@@ -1767,7 +1781,7 @@ DoImport(
 
 	dataPtr = ckalloc(sizeof(ImportedCmdData));
 	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
+		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
@@ -1988,7 +2002,7 @@ TclGetOriginalCommand(
 /*
  *----------------------------------------------------------------------
  *
- * InvokeImportedCmd --
+ * TclInvokeImportedCmd --
  *
  *	Invoked by Tcl whenever the user calls an imported command that was
  *	created by Tcl_Import. Finds the "real" command (in another
@@ -2019,8 +2033,8 @@ InvokeImportedNRCmd(
     return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, realCmdPtr);
 }
 
-static int
-InvokeImportedCmd(
+int
+TclInvokeImportedCmd(
     ClientData clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -2422,6 +2436,35 @@ TclGetNamespaceForQualName(
 /*
  *----------------------------------------------------------------------
  *
+ * TclEnsureNamespace --
+ *
+ *	Provide a namespace that is not deleted.
+ *
+ * Value
+ *
+ *	namespacePtr, if it is not scheduled for deletion, or a pointer to a
+ *	new namespace with the same name otherwise.
+ *
+ * Effect
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Namespace *
+TclEnsureNamespace(
+    Tcl_Interp *interp,
+    Tcl_Namespace *namespacePtr)
+{
+    Namespace *nsPtr = (Namespace *) namespacePtr;
+    if (!(nsPtr->flags & NS_DYING)) {
+	    return namespacePtr;
+    }
+    return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_FindNamespace --
  *
  *	Searches for a namespace.
@@ -2636,7 +2679,7 @@ Tcl_FindCommand(
 	Namespace *nsPtr[2];
 	register int search;
 
-	TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+	TclGetNamespaceForQualName(interp, name, cxtNsPtr,
 		flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
 
 	/*
@@ -2872,26 +2915,29 @@ GetNamespaceFromObj(
     Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
 {
     ResolvedNsName *resNamePtr;
-    Namespace *nsPtr, *refNsPtr;
 
-    if (objPtr->typePtr == &nsNameType) {
+    NsNameGetIntRep(objPtr, resNamePtr);
+    if (resNamePtr) {
+	Namespace *nsPtr, *refNsPtr;
+
 	/*
 	 * Check that the ResolvedNsName is still valid; avoid letting the ref
 	 * cross interps.
 	 */
 
-	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
-	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
-		(!refNsPtr || ((interp == refNsPtr->interp) &&
-		(refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))){
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp)
+		&& (!refNsPtr || (refNsPtr ==
+		(Namespace *) TclGetCurrentNamespace(interp)))) {
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
+	Tcl_StoreIntRep(objPtr, &nsNameType, NULL);
     }
     if (SetNsNameFromAny(interp, objPtr) == TCL_OK) {
-	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	NsNameGetIntRep(objPtr, resNamePtr);
+	assert(resNamePtr != NULL);
 	*nsPtrPtr = (Tcl_Namespace *) resNamePtr->nsPtr;
 	return TCL_OK;
     }
@@ -4661,15 +4707,17 @@ FreeNsNameInternalRep(
     register Tcl_Obj *objPtr)	/* nsName object with internal representation
 				 * to free. */
 {
-    ResolvedNsName *resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedNsName *resNamePtr;
 
+    NsNameGetIntRep(objPtr, resNamePtr);
+    assert(resNamePtr != NULL);
+	
     /*
      * Decrement the reference count of the namespace. If there are no more
      * references, free it up.
      */
 
-    resNamePtr->refCount--;
-    if (resNamePtr->refCount == 0) {
+    if (resNamePtr->refCount-- <= 1) {
 	/*
 	 * Decrement the reference count for the cached namespace. If the
 	 * namespace is dead, and there are no more references to it, free
@@ -4679,7 +4727,6 @@ FreeNsNameInternalRep(
 	TclNsDecrRefCount(resNamePtr->nsPtr);
 	ckfree(resNamePtr);
     }
-    objPtr->typePtr = NULL;
 }
 
 /*
@@ -4706,11 +4753,11 @@ DupNsNameInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
 {
-    ResolvedNsName *resNamePtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedNsName *resNamePtr;
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
-    resNamePtr->refCount++;
-    copyPtr->typePtr = &nsNameType;
+    NsNameGetIntRep(srcPtr, resNamePtr);
+    assert(resNamePtr != NULL);
+    NsNameSetIntRep(copyPtr, resNamePtr);
 }
 
 /*
@@ -4755,23 +4802,14 @@ SetNsNameFromAny(
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
 	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
+    if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
+	return TCL_ERROR;
+    }
+
     /*
      * If we found a namespace, then create a new ResolvedNsName structure
      * that holds a reference to it.
      */
-
-    if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
-	/*
-	 * Our failed lookup proves any previously cached nsName intrep is no
-	 * longer valid. Get rid of it so we no longer waste memory storing
-	 * it, nor time determining its invalidity again and again.
-	 */
-
-	if (objPtr->typePtr == &nsNameType) {
-	    TclFreeIntRep(objPtr);
-	}
-	return TCL_ERROR;
-    }
 
     nsPtr->refCount++;
     resNamePtr = ckalloc(sizeof(ResolvedNsName));
@@ -4779,12 +4817,10 @@ SetNsNameFromAny(
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
     } else {
-	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
-    resNamePtr->refCount = 1;
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
-    objPtr->typePtr = &nsNameType;
+    resNamePtr->refCount = 0;
+    NsNameSetIntRep(objPtr, resNamePtr);
     return TCL_OK;
 }
 

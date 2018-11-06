@@ -27,7 +27,7 @@
  * created for each thread that is using the notifier.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     CRITICAL_SECTION crit;	/* Monitor for this notifier. */
     DWORD thread;		/* Identifier for thread associated with this
 				 * notifier. */
@@ -36,7 +36,6 @@ typedef struct ThreadSpecificData {
     int pending;		/* Alert message pending, this field is locked
 				 * by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
-    int timeout;		/* Current timeout value. */
     int timerActive;		/* 1 if interval timer is running. */
 } ThreadSpecificData;
 
@@ -50,8 +49,9 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
-static const TCHAR classname[] = TEXT("TclNotifier");
-TCL_DECLARE_MUTEX(notifierMutex)
+static const TCHAR className[] = TEXT("TclNotifier");
+static int initialized = 0;
+static CRITICAL_SECTION notifierMutex;
 
 /*
  * Static routines defined in this file.
@@ -85,12 +85,19 @@ Tcl_InitNotifier(void)
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	WNDCLASS class;
 
+	TclpMasterLock();
+	if (!initialized) {
+	    initialized = 1;
+	    InitializeCriticalSection(&notifierMutex);
+	}
+	TclpMasterUnlock();
+
 	/*
 	 * Register Notifier window class if this is the first thread to use
 	 * this module.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
+	EnterCriticalSection(&notifierMutex);
 	if (notifierCount == 0) {
 	    class.style = 0;
 	    class.cbClsExtra = 0;
@@ -98,7 +105,7 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = classname;
+	    class.lpszClassName = className;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
@@ -108,7 +115,7 @@ Tcl_InitNotifier(void)
 	    }
 	}
 	notifierCount++;
-	Tcl_MutexUnlock(&notifierMutex);
+	LeaveCriticalSection(&notifierMutex);
 
 	tsdPtr->pending = 0;
 	tsdPtr->timerActive = 0;
@@ -183,12 +190,14 @@ Tcl_FinalizeNotifier(
 	 * notifier window class.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
-	notifierCount--;
-	if (notifierCount == 0) {
-	    UnregisterClass(classname, TclWinGetTclInstance());
+	EnterCriticalSection(&notifierMutex);
+	if (notifierCount) {
+	    notifierCount--;
+	    if (notifierCount == 0) {
+		UnregisterClass(className, TclWinGetTclInstance());
+	    }
 	}
-	Tcl_MutexUnlock(&notifierMutex);
+	LeaveCriticalSection(&notifierMutex);
     }
 }
 
@@ -299,11 +308,10 @@ Tcl_SetTimer(
 		timeout = 1;
 	    }
 	}
-	tsdPtr->timeout = timeout;
 	if (timeout != 0) {
 	    tsdPtr->timerActive = 1;
 	    SetTimer(tsdPtr->hwnd, INTERVAL_TIMER,
-		    (unsigned long) tsdPtr->timeout, NULL);
+		    timeout, NULL);
 	} else {
 	    tsdPtr->timerActive = 0;
 	    KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
@@ -350,7 +358,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindow(classname, classname,
+	    tsdPtr->hwnd = CreateWindow(className, className,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 

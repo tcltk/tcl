@@ -39,6 +39,9 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
 
+# The name of a zip containing the /library and /encodings (may be either a .zip file or a shared library):
+TCL_ZIP_FILE='@TCL_ZIP_FILE@'
+
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@TCL_LIBS@'
 
@@ -66,7 +69,7 @@ TCL_SHLIB_LD='@SHLIB_LD@'
 TCL_STLIB_LD='@STLIB_LD@'
 
 # Either '$LIBS' (if dependent libraries should be included when linking
-# shared libraries) or an empty string.  See Tcl's configure.in for more
+# shared libraries) or an empty string.  See Tcl's configure.ac for more
 # explanation.
 TCL_SHLIB_LD_LIBS='@SHLIB_LD_LIBS@'
 
@@ -164,6 +167,3 @@ TCL_BUILD_STUB_LIB_PATH='@TCL_BUILD_STUB_LIB_PATH@'
 
 # Path to the Tcl stub library in the install directory.
 TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
-
-# Flag, 1: we built Tcl with threads enabled, 0 we didn't
-TCL_THREADS=@TCL_THREADS@

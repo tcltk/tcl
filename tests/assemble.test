@@ -12,7 +12,7 @@
 # Commands covered: assemble
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 namespace eval tcl::unsupported {namespace export assemble}
@@ -301,12 +301,12 @@ test assemble-7.1 {add, wrong # args} {
     -result {wrong # args*}
 }
 test assemble-7.2 {add} {
-    -body { 
+    -body {
 	assemble {
 	    push 2
 	    push 2
 	    add
-	} 
+	}
     }
     -result {4}
 }
@@ -349,7 +349,7 @@ test assemble-7.5 {bitwise ops} {
 }
 test assemble-7.6 {div} {
     -body {
-	assemble {push 999999; push 7; div} 
+	assemble {push 999999; push 7; div}
     }
     -result 142857
 }
@@ -360,7 +360,7 @@ test assemble-7.7 {dup} {
 	}
     }
     -result 9
-}	
+}
 test assemble-7.8 {eq} {
     -body {
 	list \
@@ -638,7 +638,7 @@ test assemble-7.24 {lsetList} {
 test assemble-7.25 {lshift} {
     -body {
 	assemble {push 16; push 4; lshift}
-    } 
+    }
     -result 256
 }
 test assemble-7.26 {mod} {
@@ -678,7 +678,7 @@ test assemble-7.30 {pop} {
 test assemble-7.31 {rshift} {
     -body {
 	assemble {push 257; push 4; rshift}
-    } 
+    }
     -result 16
 }
 test assemble-7.32 {storeArrayStk} {
@@ -852,10 +852,11 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
+	    assemble {load x}
 	}
     }
-    -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
+    -result {cannot use this instruction to create a variable in a non-proc context}
+    -errorCode {TCL ASSEM LVT}
     -cleanup {namespace delete assem}
 }
 test assemble-8.6 {load1} {
@@ -1110,10 +1111,10 @@ test assemble-9.6 {concat} {
 }
 test assemble-9.7 {concat} {
     -body {
-	list [catch {assemble {concat 0}} result] $result $::errorCode
+	assemble {concat 0}
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
-    -cleanup {unset result}
+    -result {operand must be positive}
+    -errorCode {TCL ASSEM POSITIVE}
 }
 
 # assemble-10 -- eval and expr
@@ -1201,7 +1202,7 @@ test assemble-10.7 {expr - noncompilable} {
 
 # assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend,
 #			    nsupvar, variable, upvar)
-		
+
 test assemble-11.1 {exist - wrong # args} {
     -body {
 	assemble {exist}
@@ -1310,7 +1311,7 @@ test assemble-11.10 {variable} {
 }
 
 # assemble-12 - ASSEM_LVT1 (incr and incrArray)
-		
+
 test assemble-12.1 {incr - wrong # args} {
     -body {
 	assemble {incr}
@@ -1584,6 +1585,12 @@ test assemble-15.7 {listIndexImm} {
     }
     -result c
 }
+test assemble-15.8 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm end+2}
+} {}
+test assemble-15.9 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm -1-1}
+} {}
 
 # assemble-16 - invokeStk
 
@@ -1743,16 +1750,16 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 	    set result {}
 	    assemble {
 		jump common
-		
+
 		label zero
-		pop		
+		pop
 		incrImm case 1
 		pop
 		push a
 		append result
 		pop
 		jump common
-		
+
 		label one
 		pop
 		incrImm case 1
@@ -1761,7 +1768,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		append result
 		pop
 		jump common
-		
+
 		label common
 		load case
 		dup
@@ -1780,7 +1787,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		push 3
 		eq
 		jumpTrue three
-		
+
 		label two
 		pop
 		incrImm case 1
@@ -1789,7 +1796,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		append result
 		pop
 		jump common
-		
+
 		label three
 		pop
 		incrImm case 1
@@ -1887,7 +1894,7 @@ test assemble-17.15 {multiple passes of code resizing} {
 	append body {label b15; push b; concat 2; nop; nop; jump c} \n
 	append body {label d}
 	proc x {} [list assemble $body]
-    }	
+    }
     -body {
 	x
     }
@@ -2080,7 +2087,7 @@ test assemble-20.5 {lsetFlat - negative operand count} {
 test assemble-20.6 {lsetFlat} {
     -body {
 	assemble {push b; push a; lsetFlat 2}
-    } 
+    }
     -result b
 }
 test assemble-20.7 {lsetFlat} {
@@ -3066,12 +3073,12 @@ test assemble-40.1 {unbalanced stack} {
 	    [catch {
 		assemble {
 		    push 3
-		    dup 
-		    mult 
+		    dup
+		    mult
 		    push 4
-		    dup 
-		    mult 
-		    pop 
+		    dup
+		    mult
+		    pop
 		    expon
 		}
 	    } result] $result $::errorInfo
@@ -3170,7 +3177,7 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 		load n;		# max
 		dup;		# max n
 		jump start;     # max n
-	    
+
 		label loop;	# max n
 		over 1;         # max n max
 		over 1;		# max in max n
@@ -3180,29 +3187,29 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 		reverse 2;      # n max
 		pop;            # n
 		dup;            # n n
-	    
+
 		label skip;	# max n
 		dup;            # max n n
 		push 2;         # max n n 2
 		mod;            # max n n%2
 		jumpTrue odd;   # max n
-	    
+
 		push 2;         # max n 2
 		div;            # max n/2 -> max n
 		jump start;     # max n
-	     
+
 		label odd;	# max n
 		push 3;         # max n 3
 		mult;           # max 3*n
 		push 1;         # max 3*n 1
 		add;            # max 3*n+1
-	    
+
 		label start;	# max n
 		dup;		# max n n
 		push 1;		# max n n 1
 		neq;		# max n n>1
 		jumpTrue loop;	# max n
-	    
+
 		pop;		# max
 	    }
 	}
@@ -3232,7 +3239,7 @@ test assemble-51.3 {memory leak testing} memory {
 		load n;		# max
 		dup;		# max n
 		jump start;     # max n
-	    
+
 		label loop;	# max n
 		over 1;         # max n max
 		over 1;		# max in max n
@@ -3242,29 +3249,29 @@ test assemble-51.3 {memory leak testing} memory {
 		reverse 2;      # n max
 		pop;            # n
 		dup;            # n n
-	    
+
 		label skip;	# max n
 		dup;            # max n n
 		push 2;         # max n n 2
 		mod;            # max n n%2
 		jumpTrue odd;   # max n
-	    
+
 		push 2;         # max n 2
 		div;            # max n/2 -> max n
 		jump start;     # max n
-	     
+
 		label odd;	# max n
 		push 3;         # max n 3
 		mult;           # max 3*n
 		push 1;         # max 3*n 1
 		add;            # max 3*n+1
-	    
+
 		label start;	# max n
 		dup;		# max n n
 		push 1;		# max n n 1
 		neq;		# max n n>1
 		jumpTrue loop;	# max n
-	    
+
 		pop;		# max
 	    }
 	}} 1
@@ -3297,7 +3304,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    label @okLabel
 	    endCatch
 	    pop
-	    
+
 	    beginCatch @badLabel2
 	    push error
 	    push testing
@@ -3310,7 +3317,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    label @okLabel2
 	    endCatch
 	    pop
-	    
+
 	    beginCatch @badLabel3
 	    push error
 	    push testing
@@ -3323,7 +3330,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    label @okLabel3
 	    endCatch
 	    pop
-	    
+
 	    beginCatch @badLabel4
 	    push error
 	    push testing
@@ -3336,7 +3343,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    label @okLabel4
 	    endCatch
 	    pop
-	    
+
 	    beginCatch @badLabel5
 	    push error
 	    push testing
@@ -3349,7 +3356,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    label @okLabel5
 	    endCatch
 	    pop
-	    
+
 	    beginCatch @badLabel6
 	    push error
 	    push testing

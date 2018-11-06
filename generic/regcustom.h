@@ -36,10 +36,9 @@
  * Overrides for regguts.h definitions, if any.
  */
 
-#define	FUNCPTR(name, args)	(*name)args
-#define	MALLOC(n)		VS(attemptckalloc(n))
-#define	FREE(p)			ckfree(VS(p))
-#define	REALLOC(p,n)		VS(attemptckrealloc(VS(p),n))
+#define	MALLOC(n)		(void*)(attemptckalloc(n))
+#define	FREE(p)			ckfree((void*)(p))
+#define	REALLOC(p,n)		(void*)(attemptckrealloc((void*)(p),n))
 
 /*
  * Do not insert extras between the "begin" and "end" lines - this chunk is
@@ -92,7 +91,7 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #if TCL_UTF_MAX > 4
 #define	CHRBITS	32		/* Bits in a chr; must not use sizeof */
 #define	CHR_MIN	0x00000000	/* Smallest and largest chr; the value */
-#define	CHR_MAX	0xffffffff	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
+#define	CHR_MAX	0x10ffff	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
 #else
 #define	CHRBITS	16		/* Bits in a chr; must not use sizeof */
 #define	CHR_MIN	0x0000		/* Smallest and largest chr; the value */

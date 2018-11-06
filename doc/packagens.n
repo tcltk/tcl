@@ -1,7 +1,7 @@
 '\"
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
-'\" 
+'\"
 .TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -48,3 +48,7 @@ At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
 package(n)
 .SH KEYWORDS
 auto-load, index, package, version
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH interp n 8.6 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -236,7 +236,7 @@ attempts are silently ignored. This is needed to maintain the
 consistency of the underlying interpreter's state.
 .RE
 .TP
-\fBinterp\fR \fBdelete \fR?\fIpath ...?\fR
+\fBinterp\fR \fBdelete \fR?\fIpath ...\fR?
 .
 Deletes zero or more interpreters given by the optional \fIpath\fR
 arguments, and for each interpreter, it also deletes its slaves. The

@@ -14,17 +14,17 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
+package require tcltests
+
 # Custom constraints used in this file
-testConstraint fcopy		[llength [info commands fcopy]]
 testConstraint testchannel	[llength [info commands testchannel]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 #----------------------------------------------------------------------
 
@@ -154,10 +154,10 @@ test iocmd-4.11 {read command} {
 test iocmd-4.12 {read command} -setup {
     set f [open $path(test1)]
 } -body {
-    list [catch {read $f 12z} msg] $msg $::errorCode
+    read $f 12z
 } -cleanup {
     close $f
-} -result {1 {expected non-negative integer but got "12z"} {TCL VALUE NUMBER}}
+} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
@@ -395,7 +395,7 @@ test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.4 {I/O to command pipelines} unixOrPc {
+test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrPc} {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
 } {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 
@@ -2057,6 +2057,8 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
     lappend res [catch {interp eval $idb [list close $chan]}      msg] $msg
     set res
 
+} -cleanup {
+    interp delete $idb
 } -constraints {testchannel} \
     -result {1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 
@@ -2099,6 +2101,8 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	set res
     }]
     set res
+} -cleanup {
+    interp delete $idb
 } -constraints {testchannel} -result {Owner lost}
 
 test iocmd-32.2 {delete interp of reflected chan} {
@@ -3777,7 +3781,6 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 # Use constraints to skip this test while valgrinding so this expected leak
 # doesn't prevent a finding of "leak-free".
 #
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
 test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -match glob -body {
 
     #puts <<$tcltest::mainThread>>main
@@ -3830,6 +3833,16 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
 
 rename track {}
 # cleanup
+
+
+# Eliminate valgrind "still reachable" reports on outstanding "Detached"
+# structures in the detached list which stem from PipeClose2Proc not waiting
+# around for background processes to complete, meaning that previous calls to
+# Tcl_ReapDetachedProcs might not have had a chance to reap all processes.
+after 10
+exec [info nameofexecutable] << {}
+
+
 foreach file [list test1 test2 test3 test4] {
     removeFile $file
 }

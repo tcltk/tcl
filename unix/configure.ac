@@ -3,8 +3,8 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
-AC_INIT([tcl],[8.6])
-AC_PREREQ(2.59)
+AC_INIT([tcl],[8.7])
+AC_PREREQ(2.69)
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -22,10 +22,10 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     #endif /* _TCLCONFIG */])
 ])
 
-TCL_VERSION=8.6
+TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".8"
+TCL_MINOR_VERSION=7
+TCL_PATCH_LEVEL="a2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -86,6 +86,7 @@ fi
 AC_PROG_CC
 AC_C_INLINE
 
+
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
@@ -118,12 +119,6 @@ if test -z "$no_pipe" && test -n "$GCC"; then
 	CFLAGS="$CFLAGS -pipe"
     fi
 fi
-
-#------------------------------------------------------------------------
-# Threads support
-#------------------------------------------------------------------------
-
-SC_ENABLE_THREADS
 
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
@@ -182,7 +177,6 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS(bccdebug)
 
-AC_DEFINE(TCL_TOMMATH, 1, [Build libtommath?])
 AC_DEFINE(MP_PREC, 4, [Default libtommath precision.])
 
 #--------------------------------------------------------------------
@@ -216,7 +210,7 @@ AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
 
-if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
+if test "`uname -s`" = "Darwin" && \
 	test "`uname -r | awk -F. '{print [$]1}'`" -lt 7; then
     # prior to Darwin 7, realpath is not threadsafe, so don't
     # use it when threads are enabled, c.f. bug # 711232
@@ -230,35 +224,33 @@ SC_TCL_IPV6
 #	Look for thread-safe variants of some library functions.
 #--------------------------------------------------------------------
 
-if test "${TCL_THREADS}" = 1; then
-    SC_TCL_GETPWUID_R
-    SC_TCL_GETPWNAM_R
-    SC_TCL_GETGRGID_R
-    SC_TCL_GETGRNAM_R
-    if test "`uname -s`" = "Darwin" && \
-	    test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
-	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
-	# are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+SC_TCL_GETPWUID_R
+SC_TCL_GETPWNAM_R
+SC_TCL_GETGRGID_R
+SC_TCL_GETGRNAM_R
+if test "`uname -s`" = "Darwin" && \
+	test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
+    # Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    elif test "`uname -s`" = "HP-UX" && \
-	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
-        # Starting with HPUX 11.00 (we believe), gethostbyX
-        # are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+elif test "`uname -s`" = "HP-UX" && \
+	test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+    # Starting with HPUX 11.00 (we believe), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    else
-	SC_TCL_GETHOSTBYNAME_R
-	SC_TCL_GETHOSTBYADDR_R
-    fi
+else
+    SC_TCL_GETHOSTBYNAME_R
+    SC_TCL_GETHOSTBYADDR_R
 fi
 
 #---------------------------------------------------------------------------
@@ -300,6 +292,36 @@ fi
 if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
+
+#------------------------------------------------------------------------
+#	Options for the notifier. Checks for epoll(7) on Linux, and
+#	kqueue(2) on {DragonFly,Free,Net,Open}BSD
+#------------------------------------------------------------------------
+
+AC_MSG_CHECKING([for advanced notifier support])
+case x`uname -s` in
+  xLinux)
+	AC_MSG_RESULT([epoll(7)])
+	AC_CHECK_HEADERS([sys/epoll.h],
+	    [AC_DEFINE(NOTIFIER_EPOLL, [1], [Is epoll(7) supported?])])
+	AC_CHECK_HEADERS([sys/eventfd.h],
+	    [AC_DEFINE(HAVE_EVENTFD, [1], [Is eventfd(2) supported?])]);;
+  xDragonFlyBSD|xFreeBSD|xNetBSD|xOpenBSD)
+	AC_MSG_RESULT([kqueue(2)])
+	# Messy because we want to check if *all* the headers are present, and not
+	# just *any*
+	tcl_kqueue_headers=x
+	AC_CHECK_HEADERS([sys/types.h sys/event.h sys/time.h],
+	    [tcl_kqueue_headers=${tcl_kqueue_headers}y])
+	AS_IF([test $tcl_kqueue_headers = xyyy], [
+	    AC_DEFINE(NOTIFIER_KQUEUE, [1], [Is kqueue(2) supported?])]);;
+  xDarwin)
+	# Assume that we've got CoreFoundation present (checked elsewhere because
+	# of wider impact).
+	AC_MSG_RESULT([OSX]);;
+  *)
+	AC_MSG_RESULT([none]);;
+esac
 
 #------------------------------------------------------------------------------
 #       Find out all about time handling differences.
@@ -357,26 +379,6 @@ SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 ])
-
-#--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strtod, [
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-])
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-SC_BUGGY_STRTOD
 
 #--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
@@ -761,6 +763,52 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(zipfs,
+    AC_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test "$tcl_ok" = "yes" ; then
+    #
+    # Find a native compiler
+    #
+    AX_CC_FOR_BUILD
+    #
+    # Find a native zip implementation
+    #
+    SC_ZIPFS_SUPPORT
+	ZIPFS_BUILD=1
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
+	ZIPFS_BUILD=0
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+AC_MSG_CHECKING([for building with zipfs])
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       AC_MSG_RESULT([yes])
+     else
+       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       AC_MSG_RESULT([yes])
+    fi
+else
+AC_MSG_RESULT([no])
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+AC_SUBST(ZIPFS_BUILD)
+AC_SUBST(TCL_ZIP_FILE)
+AC_SUBST(INSTALL_LIBRARIES)
+AC_SUBST(INSTALL_MSGS)
+
+
+#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -930,6 +978,7 @@ AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_YEAR)
 AC_SUBST(PKG_CFG_ARGS)
 
+AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_LIB_SPEC)

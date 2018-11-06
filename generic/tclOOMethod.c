@@ -186,7 +186,11 @@ Tcl_NewInstanceMethod(
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    oPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
@@ -250,7 +254,11 @@ Tcl_NewMethod(
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    clsPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
 
     return (Tcl_Method) mPtr;
@@ -791,6 +799,7 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
+    ByteCode *codePtr;
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -856,10 +865,8 @@ PushMethodCallFrame(
      * alternative is *so* slow...
      */
 
-    if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
-		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
-
+    ByteCodeGetIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr) {
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
@@ -928,7 +935,7 @@ PushMethodCallFrame(
  *	variables used in methods. The compiled variable resolver is more
  *	important, but both are needed as it is possible to have a variable
  *	that is only referred to in ways that aren't compilable and we can't
- *	force LVT presence. [TIP #320]
+ *	force LVT presence. [TIP #320, #500]
  *
  * ----------------------------------------------------------------------
  */
@@ -986,6 +993,7 @@ ProcedureMethodCompiledVarConnect(
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *variableObj;
+    PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
     int i, isNew, cacheIt, varLen, len;
     const char *match, *varName;
@@ -1019,6 +1027,15 @@ ProcedureMethodCompiledVarConnect(
     varName = TclGetStringFromObj(infoPtr->variableObj, &varLen);
     if (contextPtr->callPtr->chain[contextPtr->index]
 	    .mPtr->declaringClassPtr != NULL) {
+	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
+		.mPtr->declaringClassPtr->privateVariables) {
+	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		variableObj = privateVar->fullNameObj;
+		cacheIt = 0;
+		goto gotMatch;
+	    }
+	}
 	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->variables) {
 	    match = TclGetStringFromObj(variableObj, &len);
@@ -1028,6 +1045,14 @@ ProcedureMethodCompiledVarConnect(
 	    }
 	}
     } else {
+	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
+	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		variableObj = privateVar->fullNameObj;
+		cacheIt = 1;
+		goto gotMatch;
+	    }
+	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
 	    match = TclGetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
@@ -1166,7 +1191,7 @@ MethodErrorHandler(
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
-	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
+	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {
@@ -1315,7 +1340,7 @@ CloneProcedureMethod(
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
     Tcl_GetString(bodyObj);
-    TclFreeIntRep(bodyObj);
+    Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*
      * Create the actual copy of the method record, manufacturing a new proc
@@ -1544,9 +1569,7 @@ TclOOGetMethodBody(
     if (mPtr->typePtr == &procMethodType) {
 	ProcedureMethod *pmPtr = mPtr->clientData;
 
-	if (pmPtr->procPtr->bodyPtr->bytes == NULL) {
-	    (void) Tcl_GetString(pmPtr->procPtr->bodyPtr);
-	}
+	(void) TclGetString(pmPtr->procPtr->bodyPtr);
 	return pmPtr->procPtr->bodyPtr;
     }
     return NULL;
@@ -1672,6 +1695,13 @@ Tcl_MethodIsPublic(
     Tcl_Method method)
 {
     return (((Method *)method)->flags & PUBLIC_METHOD) ? 1 : 0;
+}
+
+int
+Tcl_MethodIsPrivate(
+    Tcl_Method method)
+{
+    return (((Method *)method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
 }
 
 /*

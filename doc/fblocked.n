@@ -1,4 +1,4 @@
-'\" 
+'\"
 '\" Copyright (c) 1996 Sun Microsystems, Inc.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
@@ -65,3 +65,7 @@ vwait forever
 gets(n), open(n), read(n), socket(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, nonblocking
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

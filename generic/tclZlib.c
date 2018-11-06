@@ -117,7 +117,7 @@ typedef struct {
     z_stream outStream;		/* Structure used by zlib for compression of
 				 * output. */
     char *inBuffer, *outBuffer;	/* Working buffers. */
-    int inAllocated, outAllocated;
+    size_t inAllocated, outAllocated;
 				/* Sizes of working buffers. */
     GzipHeader inHeader;	/* Header read from input stream, when
 				 * decompressing a gzip stream. */
@@ -440,7 +440,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
@@ -461,7 +461,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
@@ -1515,7 +1515,7 @@ Tcl_ZlibStreamGet(
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
 	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    if (itemLen-zshPtr->outPos >= count-dataPos) {
-		unsigned len = count - dataPos;
+		size_t len = count - dataPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);
 		zshPtr->outPos += len;
@@ -1524,7 +1524,7 @@ Tcl_ZlibStreamGet(
 		    zshPtr->outPos = 0;
 		}
 	    } else {
-		unsigned len = itemLen - zshPtr->outPos;
+		size_t len = itemLen - zshPtr->outPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);
 		dataPos += len;
@@ -2931,7 +2931,7 @@ ZlibTransformClose(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) < 0) {
+	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) == TCL_IO_FAILURE) {
 		/* TODO: is this the right way to do errors on close?
 		 * Note: when close is called from FinalizeIOSubsystem then
 		 * interp may be NULL */
@@ -3130,7 +3130,7 @@ ZlibTransformOutput(
 	    break;
 	}
 
-	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
+	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) == TCL_IO_FAILURE) {
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
 	}
@@ -3186,7 +3186,7 @@ ZlibTransformFlush(
 	 * Write the bytes we've received to the next layer.
 	 */
 
-	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) < 0) {
+	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) == TCL_IO_FAILURE) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "problem flushing channel: %s",
 		    Tcl_PosixError(interp)));
@@ -3387,7 +3387,7 @@ ZlibTransformGetOption(
 	} else {
 	    if (cd->compDictObj) {
 		int len;
-		const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
+		const char *str = TclGetStringFromObj(cd->compDictObj, &len);
 
 		Tcl_DStringAppend(dsPtr, str, len);
 	    }
@@ -3907,6 +3907,12 @@ TclZlibInit(
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
     Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
+
+    /*
+     * Allow command type introspection to do something sensible with streams.
+     */
+
+    TclRegisterCommandTypeName(ZlibStreamCmd, "zlibStream");
 
     /*
      * Formally provide the package as a Tcl built-in.

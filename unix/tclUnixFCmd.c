@@ -256,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && defined(TCL_THREADS) && \
+#if defined(__APPLE__) && TCL_THREADS && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*
@@ -369,13 +369,13 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = opendir(dst);			/* INTL: Native. */
+	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
@@ -385,11 +385,11 @@ DoRenameFile(
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			closedir(dirPtr);
+			TclOSclosedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		closedir(dirPtr);
+		TclOSclosedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -965,7 +965,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    TclDIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -990,7 +990,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = opendir(source);				/* INTL: Native. */
+    dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -1002,7 +1002,7 @@ TraverseUnixTree(
     result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	closedir(dirPtr);
+	TclOSclosedir(dirPtr);
 	return result;
     }
 
@@ -1052,11 +1052,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    rewinddir(dirPtr);
+	    TclOSrewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    closedir(dirPtr);
+    TclOSclosedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added
@@ -1507,11 +1507,10 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetString(attributePtr);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1574,11 +1573,10 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetString(attributePtr);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1946,9 +1944,9 @@ TclpObjNormalizePath(
     int nextCheckpoint)
 {
     const char *currentPathEndPosition;
-    int pathLen;
     char cur;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetString(pathPtr);
+    size_t pathLen = pathPtr->length;
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2177,15 +2175,15 @@ TclUnixOpenTemporaryFile(
 {
     Tcl_DString template, tmp;
     const char *string;
-    int len, fd;
+    int fd;
 
     /*
      * We should also check against making more then TMP_MAX of these.
      */
 
     if (dirObj) {
-	string = Tcl_GetStringFromObj(dirObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &template);
+	string = TclGetString(dirObj);
+	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &template);
     } else {
 	Tcl_DStringInit(&template);
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
@@ -2194,8 +2192,8 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
-	string = Tcl_GetStringFromObj(basenameObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	string = TclGetString(basenameObj);
+	Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
@@ -2206,8 +2204,8 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = Tcl_GetStringFromObj(extensionObj, &len);
-	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	string = TclGetString(extensionObj);
+	Tcl_UtfToExternalDString(NULL, string, extensionObj->length, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2304,7 +2302,8 @@ winPathFromObj(
 }
 
 static const int attributeArray[] = {
-    0x20, 0, 2, 0, 0, 1, 4};
+    0x20, 0, 2, 0, 0, 1, 4
+};
 
 /*
  *----------------------------------------------------------------------
@@ -2341,8 +2340,8 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj((fileAttributes&attributeArray[objIndex])!=0);
-
+    *attributePtrPtr = Tcl_NewIntObj(
+	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
 
@@ -2399,7 +2398,7 @@ SetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-	ckfree(winPath);
+    ckfree(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -2441,8 +2440,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
-
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags & UF_IMMUTABLE);
     return TCL_OK;
 }
 
