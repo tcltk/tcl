@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->hProcess == (HANDLE) pid) {
+	if (infoPtr->dwProcessId == (DWORD) (size_t) pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -941,7 +941,7 @@ TclpCreateProcess(
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
-    char execPath[MAX_PATH * TCL_UTF_MAX];
+    char execPath[MAX_PATH * 3];
     WinFile *filePtr;
 
     PipeInit();
@@ -1095,40 +1095,23 @@ TclpCreateProcess(
      * detached processes. The GUI window will still pop up to the foreground.
      */
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	if (HasConsole()) {
+    if (HasConsole()) {
 	    createFlags = 0;
-	} else if (applType == APPL_DOS) {
-	    /*
-	     * Under NT, 16-bit DOS applications will not run unless they can
-	     * be attached to a console. If we are running without a console,
-	     * run the 16-bit program as an normal process inside of a hidden
-	     * console application, and then run that hidden console as a
-	     * detached process.
-	     */
+    } else if (applType == APPL_DOS) {
+	/*
+	 * Under NT, 16-bit DOS applications will not run unless they can
+	 * be attached to a console. If we are running without a console,
+	 * run the 16-bit program as an normal process inside of a hidden
+	 * console application, and then run that hidden console as a
+	 * detached process.
+	 */
 
-	    startInfo.wShowWindow = SW_HIDE;
-	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
-	    createFlags = CREATE_NEW_CONSOLE;
-	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
+	startInfo.wShowWindow = SW_HIDE;
+	startInfo.dwFlags |= STARTF_USESHOWWINDOW;
+	createFlags = CREATE_NEW_CONSOLE;
+	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
     } else {
-	if (HasConsole()) {
-	    createFlags = 0;
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
-
-	if (applType == APPL_DOS) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "DOS application process not supported on this platform",
-		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
-		    NULL);
-	    goto end;
-	}
+	createFlags = DETACHED_PROCESS;
     }
 
     /*
@@ -1180,7 +1163,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) procInfo.hProcess;
+    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1289,7 +1272,7 @@ ApplicationType(
 
     /*
      * Look for the program as an external program. First try the name as it
-     * is, then try adding .com, .exe, and .bat, in that order, to the name,
+     * is, then try adding .com, .exe, .bat and .cmd, in that order, to the name,
      * looking for an executable.
      *
      * Using the raw SearchPath() function doesn't do quite what is necessary.
@@ -1408,7 +1391,7 @@ ApplicationType(
 	return APPL_NONE;
     }
 
-    if ((applType == APPL_DOS) || (applType == APPL_WIN3X)) {
+    if (applType == APPL_WIN3X) {
 	/*
 	 * Replace long path name of executable with short path name for
 	 * 16-bit applications. Otherwise the application may not be able to
@@ -1442,6 +1425,86 @@ ApplicationType(
  *----------------------------------------------------------------------
  */
 
+static const char *
+BuildCmdLineBypassBS(
+    const char *current,
+    const char **bspos
+) {
+    /* mark first backslash possition */
+    if (!*bspos) {
+	*bspos = current;
+    }
+    do {
+	current++;
+    } while (*current == '\\');
+    return current;
+}
+
+static void
+QuoteCmdLineBackslash(
+    Tcl_DString *dsPtr,
+    const char *start,
+    const char *current,
+    const char *bspos
+) {
+    if (!bspos) {
+	if (current > start) { /* part before current (special) */
+	    Tcl_DStringAppend(dsPtr, start, (int) (current - start));
+	}
+    } else {
+    	if (bspos > start) { /* part before first backslash */
+	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
+	}
+	while (bspos++ < current) { /* each backslash twice */
+	    TclDStringAppendLiteral(dsPtr, "\\\\");
+	}
+    }
+}
+
+static const char *
+QuoteCmdLinePart(
+    Tcl_DString *dsPtr,
+    const char *start,
+    const char *special,
+    const char *specMetaChars,
+    const char **bspos
+) {
+    if (!*bspos) {
+	/* rest before special (before quote) */
+	QuoteCmdLineBackslash(dsPtr, start, special, NULL);
+	start = special;
+    } else {
+	/* rest before first backslash and backslashes into new quoted block */
+	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
+	start = *bspos;
+    }
+    /*
+     * escape all special chars enclosed in quotes like `"..."`, note that here we
+     * don't must escape `\` (with `\`), because it's outside of the main quotes,
+     * so `\` remains `\`, but important - not at end of part, because results as
+     * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
+     */
+    TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
+    do {
+    	*bspos = NULL;
+	special++;
+	if (*special == '\\') {
+	    /* bypass backslashes (and mark first backslash possition)*/
+	    special = BuildCmdLineBypassBS(special, bspos);
+	    if (*special == '\0') break;
+	}
+    } while (*special && strchr(specMetaChars, *special));
+    if (!*bspos) {
+	/* unescaped rest before quote */
+	QuoteCmdLineBackslash(dsPtr, start, special, NULL);
+    } else {
+	/* unescaped rest before first backslash (rather belongs to the main block) */
+	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
+    }
+    TclDStringAppendLiteral(dsPtr, "\""); /* closing escape quote-char */
+    return special;
+}
+
 static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
@@ -1451,9 +1514,21 @@ BuildCommandLine(
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (TCHAR). */
 {
-    const char *arg, *start, *special;
-    int quote, i;
+    const char *arg, *start, *special, *bspos;
+    int quote = 0, i;
     Tcl_DString ds;
+
+    /* characters to enclose in quotes if unpaired quote flag set */
+    const static char *specMetaChars = "&|^<>!()%";
+    /* characters to enclose in quotes in any case (regardless unpaired-flag) */
+    const static char *specMetaChars2 = "%";
+
+    /* Quote flags:
+     *   CL_ESCAPE   - escape argument;
+     *   CL_QUOTE    - enclose in quotes;
+     *   CL_UNPAIRED - previous arguments chain contains unpaired quote-char;
+     */
+    enum {CL_ESCAPE = 1, CL_QUOTE = 2, CL_UNPAIRED = 4};
 
     Tcl_DStringInit(&ds);
 
@@ -1474,61 +1549,98 @@ BuildCommandLine(
 	    TclDStringAppendLiteral(&ds, " ");
 	}
 
-	quote = 0;
+	quote &= ~(CL_ESCAPE|CL_QUOTE); /* reset escape flags */
+	bspos = NULL;
 	if (arg[0] == '\0') {
-	    quote = 1;
+	    quote = CL_QUOTE;
 	} else {
 	    int count;
-	    Tcl_UniChar ch = 0;
-
-	    for (start = arg; *start != '\0'; start += count) {
-		count = TclUtfToUniChar(start, &ch);
-		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
-		    quote = 1;
+	    Tcl_UniChar ch;
+	    for (start = arg;
+		*start != '\0' &&
+		    (quote & (CL_ESCAPE|CL_QUOTE)) != (CL_ESCAPE|CL_QUOTE);
+		start += count
+	    ) {
+		count = Tcl_UtfToUniChar(start, &ch);
+		if (count > 1) continue;
+		if (Tcl_UniCharIsSpace(ch)) {
+		    quote |= CL_QUOTE; /* quote only */
+		    if (bspos) { /* if backslash found - escape & quote */
+			quote |= CL_ESCAPE;
+			break;
+		    }
+		    continue;
+		}
+		if (strchr(specMetaChars, *start)) {
+		    quote |= (CL_ESCAPE|CL_QUOTE); /*escape & quote */
 		    break;
 		}
+		if (*start == '"') {
+		    quote |= CL_ESCAPE; /* escape only */
+		    continue;
+		}
+		if (*start == '\\') {
+		    bspos = start;
+		    if (quote & CL_QUOTE) { /* if quote - escape & quote */
+			quote |= CL_ESCAPE;
+			break;
+		    }
+		    continue;
+		}
 	    }
+	    bspos = NULL;
 	}
-	if (quote) {
+	if (quote & CL_QUOTE) {
+	    /* start of argument (main opening quote-char) */
 	    TclDStringAppendLiteral(&ds, "\"");
 	}
-	start = arg;
-	for (special = arg; ; ) {
-	    if ((*special == '\\') && (special[1] == '\\' ||
-		    special[1] == '"' || (quote && special[1] == '\0'))) {
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		start = special;
-		while (1) {
-		    special++;
-		    if (*special == '"' || (quote && *special == '\0')) {
-			/*
-			 * N backslashes followed a quote -> insert N * 2 + 1
-			 * backslashes then a quote.
-			 */
-
-			Tcl_DStringAppend(&ds, start,
-				(int) (special - start));
-			break;
-		    }
-		    if (*special != '\\') {
-			break;
-		    }
+	if (!(quote & CL_ESCAPE)) {
+	    /* nothing to escape */
+	    Tcl_DStringAppend(&ds, arg, -1);
+	} else {
+	    start = arg;
+	    for (special = arg; *special != '\0'; ) {
+		/* position of `\` is important before quote or at end (equal `\"` because quoted) */
+		if (*special == '\\') {
+		    /* bypass backslashes (and mark first backslash possition)*/
+		    special = BuildCmdLineBypassBS(special, &bspos);
+		    if (*special == '\0') break;
 		}
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		start = special;
+		/* ["] */
+		if (*special == '"') {
+		    quote ^= CL_UNPAIRED; /* invert unpaired flag - observe unpaired quotes */
+		    /* add part before (and escape backslashes before quote) */
+		    QuoteCmdLineBackslash(&ds, start, special, bspos);
+		    bspos = NULL;
+		    /* escape using backslash */
+		    TclDStringAppendLiteral(&ds, "\\\"");
+		    start = ++special;
+		    continue;
+		}
+		/* unpaired (escaped) quote causes special handling on meta-chars */
+		if ((quote & CL_UNPAIRED) && strchr(specMetaChars, *special)) {
+		    special = QuoteCmdLinePart(&ds, start, special, specMetaChars, &bspos);
+		    /* start to current or first backslash */
+		    start = !bspos ? special : bspos;
+		    continue;
+		}
+		/* special case for % - should be enclosed always (paired also) */
+		if (strchr(specMetaChars2, *special)) {
+		    special = QuoteCmdLinePart(&ds, start, special, specMetaChars2, &bspos);
+		    /* start to current or first backslash */
+		    start = !bspos ? special : bspos;
+		    continue;
+		}
+		/* other not special (and not meta) character */
+		bspos = NULL; /* reset last backslash possition (not interesting) */
+		special++;
 	    }
-	    if (*special == '"') {
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		TclDStringAppendLiteral(&ds, "\\\"");
-		start = special + 1;
-	    }
-	    if (*special == '\0') {
-		break;
-	    }
-	    special++;
+	    /* rest of argument (and escape backslashes before closing main quote) */
+	    QuoteCmdLineBackslash(&ds, start, special,
+	    	(quote & CL_QUOTE) ? bspos : NULL);
 	}
-	Tcl_DStringAppend(&ds, start, (int) (special - start));
-	if (quote) {
+	if (quote & CL_QUOTE) {
+	    /* end of argument (main closing quote-char) */
 	    TclDStringAppendLiteral(&ds, "\"");
 	}
     }
@@ -1623,7 +1735,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -2364,7 +2476,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->hProcess == (HANDLE) pid) {
+	 if (infoPtr->dwProcessId == (DWORD) (size_t) pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -3392,11 +3504,11 @@ TclPipeThreadStop(
 	    SetEvent(pipeTI->evWakeUp);
 	}
 	CloseHandle(pipeTI->evControl);
-    #ifndef _PTI_USE_CKALLOC
+#   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
-    #else
+#   else
 	ckfree(pipeTI);
-    #endif
+#   endif
     }
 }
 
@@ -3440,13 +3552,13 @@ TclPipeThreadExit(
 	if (pipeTI->evWakeUp) {
 	    SetEvent(pipeTI->evWakeUp);
 	}
-    #ifndef _PTI_USE_CKALLOC
+#   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
-    #else
+#   else
 	ckfree(pipeTI);
 	/* be sure all subsystems used are finalized */
 	Tcl_FinalizeThread();
-    #endif
+#   endif
     }
 }
 

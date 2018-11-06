@@ -477,7 +477,7 @@ test upvar-NS-1.4 {nsupvar links to correct variable} -body {
 } -returnCodes error -cleanup {
     namespace delete test_ns_1
 } -result {namespace "test_ns_0" not found in "::test_ns_1"}
-    
+
 test upvar-NS-1.5 {nsupvar links to correct variable} -body {
     namespace eval test_ns_1 {
 	namespace eval test_ns_0 {}

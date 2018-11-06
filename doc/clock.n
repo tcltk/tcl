@@ -89,10 +89,9 @@ have 59 or 61 seconds.
 .TP
 \fIunit\fR
 One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
-\fBdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR, or
-any unique prefix of such a word. Used in conjunction with \fIcount\fR
-to identify an interval of time, for example, \fI3 seconds\fR or
-\fI1 year\fR.
+\fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR.
+Used in conjunction with \fIcount\fR to identify an interval of time,
+for example, \fI3 seconds\fR or \fI1 year\fR.
 .SS "OPTIONS"
 .TP
 \fB\-base\fR time
@@ -175,8 +174,7 @@ given as its first argument.  The remaining arguments (other than the
 possible \fB\-timezone\fR, \fB\-locale\fR and \fB\-gmt\fR options)
 are integers and keywords in alternation, where the keywords are chosen
 from \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
-\fBdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR, or
-any unique prefix of such a word.
+\fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR.
 .PP
 Addition of seconds, minutes and hours is fairly straightforward;
 the given time increment (times sixty for minutes, or 3600 for hours)
@@ -213,7 +211,8 @@ the given time to a calendar day and time of day in the appropriate
 time zone and locale.  The requisite number of days (weeks are converted
 to days by multiplying by seven) is added to the calendar day, and
 the date and time are then converted back to a count of seconds from
-the epoch time.
+the epoch time.  The \fBweekdays\fR keyword is similar to \fBdays\fR,
+with the only difference that weekends - Saturdays and Sundays - are skipped.
 .PP
 Adding and subtracting a given number of days across the point that
 the time changes at the start or end of summer time (Daylight Saving Time)
@@ -453,6 +452,19 @@ If this situation occurs, the first occurrence of the time is chosen.
 (For this reason, it is wise to have the input string contain the
 time zone when converting local times.  This caveat does not apply to
 UTC times.)
+.PP
+If the interpretation of the groups yields an impossible time because
+a field is out of range, enough of that field's unit will be added to
+or subtracted from the time to bring it in range. Thus, if attempting to
+scan or format day 0 of the month, one day will be subtracted from day
+1 of the month, yielding the last day of the previous month.
+.PP
+If the interpretation of the groups yields an impossible time because
+a Daylight Saving Time change skips over that time, or an ambiguous
+time because a Daylight Saving Time change skips back so that the clock
+observes the given time twice, and no time zone specifier (\fB%z\fR
+or \fB%Z\fR) is present in the format, the time is interpreted as
+if the clock had not changed.
 .SH "FORMAT GROUPS"
 .PP
 The following format groups are recognized by the \fBclock scan\fR and
@@ -874,40 +886,46 @@ The \fIinputString\fR argument consists of zero or more specifications of the
 following form:
 .TP
 \fItime\fR
-A time of day, which is of the form: \fBhh?:mm?:ss?? ?meridian? ?zone?\fR
-or \fBhhmm ?meridian? ?zone?\fR
-If no meridian is specified, \fBhh\fR is interpreted on
+.
+A time of day, which is of the form:
+.QW "\fIhh\fR?\fB:\fImm\fR?\fB:\fIss\fR?? ?\fImeridian\fR? ?\fIzone\fR?"
+or
+.QW "\fBhhmm \fR?\fBmeridian\fR? ?\fBzone\fR?" .
+If no \fImeridian\fR is specified, \fIhh\fR is interpreted on
 a 24-hour clock.
 .TP
 \fIdate\fR
+.
 A specific month and day with optional year.  The
 acceptable formats are
-.QW "\fBmm/dd\fR?\fB/yy\fR?" ,
-.QW "\fBmonthname dd\fR?\fB, yy\fR?" ,
-.QW "\fBday, dd monthname \fR?\fByy\fR?" ,
-.QW "\fBdd monthname yy\fR" ,
-.QW "?\fBCC\fR?\fByymmdd\fR" ,
+.QW "\fImm\fB/\fIdd\fR?\fB/\fIyy\fR?" ,
+.QW "\fImonthname dd\fR?\fB, \fIyy\fR?" ,
+.QW "\fIday\fB, \fIdd monthname \fR?\fIyy\fR?" ,
+.QW "\fIdd monthname yy\fR" ,
+.QW "?\fICC\fR?\fIyymmdd\fR" ,
 and
-.QW "\fBdd-monthname-\fR?\fBCC\fR?\fByy\fR" .
+.QW "\fIdd\fB-\fImonthname\fB-\fR?\fICC\fR?\fIyy\fR" .
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so
 an error may result if these years are used.
 .TP
 \fIISO 8601 point-in-time\fR
+.
 An ISO 8601 point-in-time specification, such as
 .QW \fICCyymmdd\fBT\fIhhmmss\fR,
 where \fBT\fR is the literal
 .QW T ,
 .QW "\fICCyymmdd hhmmss\fR" ,
 or
-.QW \fICCyymmdd\fBT\fIhh:mm:ss\fR .
+.QW \fICCyymmdd\fBT\fIhh\fB:\fImm\fB:\fIss\fR .
 Note that only these three formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
 specifications specified in ISO8601.  Other formats can be recognized by
 giving an explicit \fB\-format\fR option to the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR
+.
 A specification relative to the current time.  The format is \fBnumber
 unit\fR. Acceptable units are \fByear\fR, \fBfortnight\fR,
 \fBmonth\fR, \fBweek\fR, \fBday\fR,

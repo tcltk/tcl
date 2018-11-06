@@ -259,17 +259,18 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	DIR *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
-	int dirLength, nativeDirLen;
+	size_t dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetString(fileNamePtr);
+	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -309,7 +310,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = opendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -387,7 +388,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	closedir(d);
+	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);
@@ -937,7 +938,6 @@ TclpObjLink(
 	 */
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    int targetLen;
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
 
@@ -951,8 +951,8 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = Tcl_GetStringFromObj(transPtr, &targetLen);
-	    target = Tcl_UtfToExternalDString(NULL, target, targetLen, &ds);
+	    target = TclGetString(transPtr);
+	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -1080,7 +1080,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -1105,7 +1105,8 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = TclGetString(validPathPtr);
+    len = validPathPtr->length;
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {

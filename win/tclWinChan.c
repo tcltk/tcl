@@ -25,7 +25,8 @@
 #define FILE_TYPE_CONSOLE (FILE_TYPE_PIPE+2)
 
 /*
- * The following structure contains per-instance data for a file based channel.
+ * The following structure contains per-instance data for a file based
+ * channel.
  */
 
 typedef struct FileInfo {
@@ -43,7 +44,7 @@ typedef struct FileInfo {
 				 * pending on the channel. */
 } FileInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * List of all file channels currently open.
      */
@@ -58,7 +59,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct FileEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     FileInfo *infoPtr;		/* Pointer to file info structure. Note that
@@ -96,6 +97,7 @@ static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const TCHAR *nativeName);
+
 /*
  * This structure describes the channel type structure for file based IO.
  */
@@ -119,6 +121,14 @@ static const Tcl_ChannelType fileChannelType = {
     FileThreadActionProc,	/* Thread action proc. */
     FileTruncateProc		/* Truncate proc. */
 };
+
+/*
+ * General useful clarification macros.
+ */
+
+#define SET_FLAG(var, flag)	((var) |= (flag))
+#define CLEAR_FLAG(var, flag)	((var) &= ~(flag))
+#define TEST_FLAG(value, flag)	(((value) & (flag)) != 0)
 
 /*
  *----------------------------------------------------------------------
@@ -140,7 +150,7 @@ static ThreadSpecificData *
 FileInit(void)
 {
     ThreadSpecificData *tsdPtr =
-	    (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+	    (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -201,7 +211,7 @@ FileSetupProc(
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
     }
 
@@ -244,7 +254,7 @@ FileCheckProc(
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
     }
 
@@ -255,8 +265,8 @@ FileCheckProc(
 
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->watchMask && !(infoPtr->flags & FILE_PENDING)) {
-	    infoPtr->flags |= FILE_PENDING;
+	if (infoPtr->watchMask && !TEST_FLAG(infoPtr->flags, FILE_PENDING)) {
+	    SET_FLAG(infoPtr->flags, FILE_PENDING);
 	    evPtr = ckalloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
@@ -296,7 +306,7 @@ FileEventProc(
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return 0;
     }
 
@@ -310,7 +320,7 @@ FileEventProc(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (fileEvPtr->infoPtr == infoPtr) {
-	    infoPtr->flags &= ~(FILE_PENDING);
+	    CLEAR_FLAG(infoPtr->flags, FILE_PENDING);
 	    Tcl_NotifyChannel(infoPtr->channel, infoPtr->watchMask);
 	    break;
 	}
@@ -350,9 +360,9 @@ FileBlockProc(
      */
 
     if (mode == TCL_MODE_NONBLOCKING) {
-	infoPtr->flags |= FILE_ASYNC;
+	SET_FLAG(infoPtr->flags, FILE_ASYNC);
     } else {
-	infoPtr->flags &= ~(FILE_ASYNC);
+	CLEAR_FLAG(infoPtr->flags, FILE_ASYNC);
     }
     return 0;
 }
@@ -472,7 +482,7 @@ FileSeekProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -484,7 +494,7 @@ FileSeekProc(
 
     newPosHigh = (offset < 0 ? -1 : 0);
     newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
-    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -544,10 +554,10 @@ FileWideSeekProc(
 	moveMethod = FILE_END;
     }
 
-    newPosHigh = Tcl_WideAsLong(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
+    newPosHigh = (LONG)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)offset,
 	    &newPosHigh, moveMethod);
-    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -556,7 +566,8 @@ FileWideSeekProc(
 	    return -1;
 	}
     }
-    return (((Tcl_WideInt)((unsigned)newPos)) | (Tcl_LongAsWide(newPosHigh) << 32));
+    return (((Tcl_WideInt)((unsigned)newPos))
+	    | ((Tcl_WideInt)newPosHigh << 32));
 }
 
 /*
@@ -589,8 +600,9 @@ FileTruncateProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
+
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
 	    return errno;
@@ -601,11 +613,12 @@ FileTruncateProc(
      * Move to where we want to truncate
      */
 
-    newPosHigh = Tcl_WideAsLong(length >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
+    newPosHigh = (LONG)(length >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)length,
 	    &newPosHigh, FILE_BEGIN);
-    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
+
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
 	    return errno;
@@ -662,9 +675,9 @@ FileInputProc(
     *errorCode = 0;
 
     /*
-     * TODO: This comment appears to be out of date.  We *do* have a
-     * console driver, over in tclWinConsole.c.  After some Windows
-     * developer confirms, this comment should be revised.
+     * TODO: This comment appears to be out of date. We *do* have a console
+     * driver, over in tclWinConsole.c. After some Windows developer confirms,
+     * this comment should be revised.
      *
      * Note that we will block on reads from a console buffer until a full
      * line has been entered. The only way I know of to get around this is to
@@ -721,7 +734,7 @@ FileOutputProc(
      * seek to the end of the file before writing the current buffer.
      */
 
-    if (infoPtr->flags & FILE_APPEND) {
+    if (TEST_FLAG(infoPtr->flags, FILE_APPEND)) {
 	SetFilePointer(infoPtr->handle, 0, NULL, FILE_END);
     }
 
@@ -798,12 +811,12 @@ FileGetHandleProc(
 {
     FileInfo *infoPtr = instanceData;
 
-    if (direction & infoPtr->validMask) {
-	*handlePtr = (ClientData) infoPtr->handle;
-	return TCL_OK;
-    } else {
+    if (!TEST_FLAG(direction, infoPtr->validMask)) {
 	return TCL_ERROR;
     }
+
+    *handlePtr = (ClientData) infoPtr->handle;
+    return TCL_OK;
 }
 
 /*
@@ -843,10 +856,10 @@ TclpOpenFileChannel(
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
-	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"",
-	    TclGetString(pathPtr), "\": filename is invalid on this platform",
-	    NULL);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't open \"%s\": filename is invalid on this platform",
+		    TclGetString(pathPtr)));
 	}
 	return NULL;
     }
@@ -894,39 +907,40 @@ TclpOpenFileChannel(
     }
 
     /*
-     * [2413550] Avoid double-open of serial ports on Windows
-     * Special handling for Windows serial ports by a "name-hint"
-     * to directly open it with the OVERLAPPED flag set.
+     * [2413550] Avoid double-open of serial ports on Windows.  Special
+     * handling for Windows serial ports by a "name-hint" to directly open it
+     * with the OVERLAPPED flag set.
      */
 
-    if( NativeIsComPort(nativeName) ) {
-
+    if (NativeIsComPort(nativeName)) {
 	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
-	    if (interp != (Tcl_Interp *) NULL) {
-		Tcl_AppendResult(interp, "couldn't open serial \"",
-			TclGetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), NULL);
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't open serial \"%s\": %s",
+			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
 	    return NULL;
 	}
 
 	/*
-	* For natively named Windows serial ports we are done.
-	*/
+	 * For natively named Windows serial ports we are done.
+	 */
+
 	channel = TclWinOpenSerialChannel(handle, channelName,
 		channelPermissions);
 
 	return channel;
     }
+
     /*
      * If the file is being created, get the file attributes from the
      * permissions argument, else use the existing file attributes.
      */
 
-    if (mode & O_CREAT) {
-	if (permissions & S_IWRITE) {
+    if (TEST_FLAG(mode, O_CREAT)) {
+	if (TEST_FLAG(permissions, S_IWRITE)) {
 	    flags = FILE_ATTRIBUTE_NORMAL;
 	} else {
 	    flags = FILE_ATTRIBUTE_READONLY;
@@ -955,10 +969,11 @@ TclpOpenFileChannel(
 	DWORD err = GetLastError();
 
 	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
-	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
+	    err = TEST_FLAG(mode, O_CREAT) ? ERROR_FILE_EXISTS
+		    : ERROR_FILE_NOT_FOUND;
 	}
 	TclWinConvertError(err);
-	if (interp != (Tcl_Interp *) NULL) {
+	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": %s",
 		    TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -971,9 +986,9 @@ TclpOpenFileChannel(
     switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	/*
-	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are
-	 * already done with the code above.
-	 * Here we handle all other serial port names.
+	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are already
+	 * done with the code above.  Here we handle all other serial port
+	 * names.
 	 *
 	 * Reopen channel for OVERLAPPED operation. Normally this shouldn't
 	 * fail, because the channel exists.
@@ -982,7 +997,7 @@ TclpOpenFileChannel(
 	handle = TclWinSerialOpen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
-	    if (interp != (Tcl_Interp *) NULL) {
+	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't reopen serial \"%s\": %s",
 			TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -997,10 +1012,10 @@ TclpOpenFileChannel(
 		channelPermissions);
 	break;
     case FILE_TYPE_PIPE:
-	if (channelPermissions & TCL_READABLE) {
+	if (TEST_FLAG(channelPermissions, TCL_READABLE)) {
 	    readFile = TclWinMakeFile(handle);
 	}
-	if (channelPermissions & TCL_WRITABLE) {
+	if (TEST_FLAG(channelPermissions, TCL_WRITABLE)) {
 	    writeFile = TclWinMakeFile(handle);
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
@@ -1009,7 +1024,8 @@ TclpOpenFileChannel(
     case FILE_TYPE_DISK:
     case FILE_TYPE_UNKNOWN:
 	channel = TclWinOpenFileChannel(handle, channelName,
-		channelPermissions, (mode & O_APPEND) ? FILE_APPEND : 0);
+		channelPermissions,
+		TEST_FLAG(mode, O_APPEND) ? FILE_APPEND : 0);
 	break;
 
     default:
@@ -1074,10 +1090,10 @@ Tcl_MakeFileChannel(
 	channel = TclWinOpenConsoleChannel(handle, channelName, mode);
 	break;
     case FILE_TYPE_PIPE:
-	if (mode & TCL_READABLE) {
+	if (TEST_FLAG(mode, TCL_READABLE)) {
 	    readFile = TclWinMakeFile(handle);
 	}
-	if (mode & TCL_WRITABLE) {
+	if (TEST_FLAG(mode, TCL_WRITABLE)) {
 	    writeFile = TclWinMakeFile(handle);
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
@@ -1363,7 +1379,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
@@ -1524,10 +1540,11 @@ FileGetType(
  *
  * NativeIsComPort --
  *
- *	Determines if a path refers to a Windows serial port.
- *	A simple and efficient solution is to use a "name hint" to detect
- *      COM ports by their filename instead of resorting to a syscall
- *	to detect serialness after the fact.
+ *	Determines if a path refers to a Windows serial port.  A simple and
+ *	efficient solution is to use a "name hint" to detect COM ports by
+ *	their filename instead of resorting to a syscall to detect serialness
+ *	after the fact.
+ *
  *	The following patterns cover common serial port names:
  *	    COM[1-9]
  *	    \\.\COM[0-9]+
@@ -1549,12 +1566,12 @@ NativeIsComPort(
      * 1. Look for com[1-9]:?
      */
 
-    if ( (len == 4) && (_wcsnicmp(p, L"com", 3) == 0) ) {
+    if ((len == 4) && (_wcsnicmp(p, L"com", 3) == 0)) {
 	/*
-	* The 4th character must be a digit 1..9
-	*/
+	 * The 4th character must be a digit 1..9
+	 */
 
-	if ( (p[3] < L'1') || (p[3] > L'9') ) {
+	if ((p[3] < L'1') || (p[3] > L'9')) {
 	    return 0;
 	}
 	return 1;
@@ -1566,11 +1583,11 @@ NativeIsComPort(
 
     if ((len >= 8) && (_wcsnicmp(p, L"\\\\.\\com", 7) == 0)) {
 	/*
-	* Charaters 8..end must be a digits 0..9
-	*/
+	 * Charaters 8..end must be a digits 0..9
+	 */
 
-	for ( i=7; i<len; i++ ) {
-	    if ( (p[i] < '0') || (p[i] > '9') ) {
+	for (i=7; i<len; i++) {
+	    if ((p[i] < '0') || (p[i] > '9')) {
 		return 0;
 	    }
 	}

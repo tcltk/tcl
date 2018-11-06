@@ -46,7 +46,7 @@
  * tcl.h, but do not do that unless you are sure what you're doing!
  */
 
-typedef struct String {
+typedef struct {
     int numChars;		/* The number of chars in the string. -1 means
 				 * this value has not been calculated. >= 0
 				 * means that there is a valid Unicode rep, or
@@ -72,20 +72,21 @@ typedef struct String {
     do {								\
 	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
 	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      STRING_MAXCHARS);					\
+		      (int)STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \
-    (String *) attemptckalloc((unsigned) STRING_SIZE(numChars))
+    (String *) attemptckalloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \
-    (String *) ckalloc((unsigned) STRING_SIZE(numChars))
+    (String *) ckalloc(STRING_SIZE(numChars))
 #define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars))
+    (String *) ckrealloc((ptr), STRING_SIZE(numChars))
 #define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars))
+    (String *) attemptckrealloc((ptr), STRING_SIZE(numChars))
 #define GET_STRING(objPtr) \
     ((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
+    ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*

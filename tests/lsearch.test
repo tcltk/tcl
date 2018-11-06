@@ -59,7 +59,7 @@ test lsearch-2.9 {search modes} {
 } 1
 test lsearch-2.10 {search modes} -returnCodes error -body {
     lsearch -glib {b.x bx xy bcx} b.x
-} -result {bad option "-glib": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "-glib": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, -stride, or -subindices}
 test lsearch-2.11 {search modes with -nocase} {
     lsearch -exact -nocase {a b c A B C} A
 } 0
@@ -87,10 +87,10 @@ test lsearch-3.2 {lsearch errors} -returnCodes error -body {
 } -result {wrong # args: should be "lsearch ?-option value ...? list pattern"}
 test lsearch-3.3 {lsearch errors} -returnCodes error -body {
     lsearch a b c
-} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, -stride, or -subindices}
 test lsearch-3.4 {lsearch errors} -returnCodes error -body {
     lsearch a b c d
-} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, -stride, or -subindices}
 test lsearch-3.5 {lsearch errors} -returnCodes error -body {
     lsearch "\{" b
 } -result {unmatched open brace in list}
@@ -404,20 +404,48 @@ test lsearch-17.2 {lsearch -index option, basic functionality} {
     lsearch -index 1 -exact {{a c} {a b} {a a}} a
 } 2
 test lsearch-17.3 {lsearch -index option, basic functionality} {
-    lsearch -index 1 -glob {{ab cb} {ab bb} {ab ab}} b* 
+    lsearch -index 1 -glob {{ab cb} {ab bb} {ab ab}} b*
 } 1
 test lsearch-17.4 {lsearch -index option, basic functionality} {
     lsearch -index 1 -regexp {{ab cb} {ab bb} {ab ab}} {[cb]b}
-} 0 
+} 0
 test lsearch-17.5 {lsearch -index option, basic functionality} {
     lsearch -all -index 0 -exact {{a c} {a b} {d a}} a
 } {0 1}
 test lsearch-17.6 {lsearch -index option, basic functionality} {
-    lsearch -all -index 1 -glob {{ab cb} {ab bb} {db bx}} b* 
+    lsearch -all -index 1 -glob {{ab cb} {ab bb} {db bx}} b*
 } {1 2}
 test lsearch-17.7 {lsearch -index option, basic functionality} {
     lsearch -all -index 1 -regexp {{ab cb} {ab bb} {ab ab}} {[cb]b}
 } {0 1}
+test lsearch-17.8 {lsearch -index option, empty argument} {
+    lsearch -index {} a a
+} 0
+test lsearch-17.9 {lsearch -index option, empty argument} {
+    lsearch -index {} a a
+} [lsearch a a]
+test lsearch-17.10 {lsearch -index option, empty argument} {
+    lsearch -index {} [list \{] \{
+} 0
+test lsearch-17.11 {lsearch -index option, empty argument} {
+    lsearch -index {} [list \{] \{
+} [lsearch [list \{] \{]
+test lsearch-17.12 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index -2 a a
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test lsearch-17.13 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index -1-1 a a
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+test lsearch-17.14 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end--1 a a
+} -returnCodes error -result {index "end--1" cannot select an element from any list}
+test lsearch-17.15 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end+1 a a
+} -returnCodes error -result {index "end+1" cannot select an element from any list}
+test lsearch-17.16 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end+2 a a
+} -returnCodes error -result {index "end+2" cannot select an element from any list}
+
 
 test lsearch-18.1 {lsearch -index option, list as index basic functionality} {
     lsearch -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
@@ -426,30 +454,39 @@ test lsearch-18.2 {lsearch -index option, list as index basic functionality} {
     lsearch -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
 } 0
 test lsearch-18.3 {lsearch -index option, list as index basic functionality} {
-    lsearch -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b* 
+    lsearch -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b*
 } 0
 test lsearch-18.4 {lsearch -index option, list as index basic functionality} {
     lsearch -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
-} 0 
+} 0
 test lsearch-18.5 {lsearch -index option, list as index basic functionality} {
     lsearch -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
 } {0 1}
 
-test lsearch-19.1 {lsearch -sunindices option} {
+test lsearch-19.1 {lsearch -subindices option} {
     lsearch -subindices -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
 } {1 0 0}
-test lsearch-19.2 {lsearch -sunindices option} {
+test lsearch-19.2 {lsearch -subindices option} {
     lsearch -subindices -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
 } {0 2 0}
-test lsearch-19.3 {lsearch -sunindices option} {
-    lsearch -subindices -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b* 
+test lsearch-19.3 {lsearch -subindices option} {
+    lsearch -subindices -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b*
 } {0 1 1}
-test lsearch-19.4 {lsearch -sunindices option} {
+test lsearch-19.4 {lsearch -subindices option} {
     lsearch -subindices -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
-} {0 0 1} 
-test lsearch-19.5 {lsearch -sunindices option} {
+} {0 0 1}
+test lsearch-19.5 {lsearch -subindices option} {
     lsearch -subindices -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
 } {{0 0 0} {1 0 0}}
+test lsearch-19.6 {lsearch -subindices option} {
+    lsearch -subindices -all -index {1 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
+} {{0 1 0} {1 1 0}}
+test lsearch-19.7 {lsearch -subindices option} {
+    lsearch -subindices -index end {{1 a}} a
+} {0 1}
+test lsearch-19.8 {lsearch -subindices option} {
+    lsearch -subindices -all -index end {{1 a}} a
+} {{0 1}}
 
 test lsearch-20.1 {lsearch -index option, index larger than sublists} -body {
     lsearch -index 2 {{a c} {a b} {a a}} a
@@ -509,6 +546,149 @@ test lsearch-22.5 {lsearch -bisect, all equal} {
 test lsearch-22.6 {lsearch -sorted, all equal} {
     lsearch -sorted -integer {5 5 5 5} 5
 } {0}
+
+test lsearch-23.1 {lsearch -stride option, errors} -body {
+    lsearch -stride {a b} a
+} -returnCodes error -result {"-stride" option must be followed by stride length}
+test lsearch-23.2 {lsearch -stride option, errors} -body {
+    lsearch -stride 0 {a b} a
+} -returnCodes error -result {stride length must be at least 1}
+test lsearch-23.3 {lsearch -stride option, errors} -body {
+    lsearch -stride 2 {a b c} a
+} -returnCodes error -result {list size must be a multiple of the stride length}
+test lsearch-23.4 {lsearch -stride option, errors} -body {
+    lsearch -stride 5 {a b c} a
+} -returnCodes error -result {list size must be a multiple of the stride length}
+test lsearch-23.5 {lsearch -stride option, errors} -body {
+    # Stride equal to length is ok
+    lsearch -stride 3 {a b c} a
+} -result 0
+
+test lsearch-24.1 {lsearch -stride option} -body {
+    lsearch -stride 2 {a b c d e f g h} d
+} -result -1
+test lsearch-24.2 {lsearch -stride option} -body {
+    lsearch -stride 2 {a b c d e f g h} e
+} -result 4
+test lsearch-24.3 {lsearch -stride option} -body {
+    lsearch -stride 3 {a b c d e f g h i} e
+} -result -1
+test lsearch-24.4 {lsearch -stride option} -body {
+    # Result points first in group
+    lsearch -stride 3 -index 1 {a b c d e f g h i} e
+} -result 3
+test lsearch-24.5 {lsearch -stride option} -body {
+    lsearch -inline -stride 2 {a b c d e f g h} d
+} -result {}
+test lsearch-24.6 {lsearch -stride option} -body {
+    # Inline result is a "single element" strided list
+    lsearch -inline -stride 2 {a b c d e f g h} e
+} -result "e f"
+test lsearch-24.7 {lsearch -stride option} -body {
+    lsearch -inline -stride 3 {a b c d e f g h i} e
+} -result {}
+test lsearch-24.8 {lsearch -stride option} -body {
+    lsearch -inline -stride 3 -index 1 {a b c d e f g h i} e
+} -result "d e f"
+test lsearch-24.9 {lsearch -stride option} -body {
+    lsearch -all -inline -stride 3 -index 1 {a b c d e f g e i} e
+} -result "d e f g e i"
+test lsearch-24.10 {lsearch -stride option} -body {
+    lsearch -all -inline -stride 3 -index 0 {a b c d e f a e i} a
+} -result "a b c a e i"
+test lsearch-24.11 {lsearch -stride option} -body {
+    # Stride 1 is same as no stride
+    lsearch -stride 1 {a b c d e f g h} d
+} -result 3
+
+# 25* mimics 19* but with -inline added to -subindices
+test lsearch-25.1 {lsearch -subindices option} {
+    lsearch -inline -subindices -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} {a}
+test lsearch-25.2 {lsearch -subindices option} {
+    lsearch -inline -subindices -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} {a}
+test lsearch-25.3 {lsearch -subindices option} {
+    lsearch -inline -subindices -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b*
+} {bb}
+test lsearch-25.4 {lsearch -subindices option} {
+    lsearch -inline -subindices -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
+} {cb}
+test lsearch-25.5 {lsearch -subindices option} {
+    lsearch -inline -subindices -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
+} {a a}
+test lsearch-25.6 {lsearch -subindices option} {
+    lsearch -inline -subindices -all -index {1 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
+} {a a}
+
+# 26* mimics 19* but with -stride added
+test lsearch-26.1 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -index {0 0} {{x x} {x b} {a d} {a c} {a b} {a a}} a
+} {3 0}
+test lsearch-26.2 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -index {2 0} -exact {{x x} {x b} {a d} {a c} {a b} {a a}} a
+} {2 0}
+test lsearch-26.3 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -index {1 1} -glob {{ab cb} {ab bb} {ab ab} {ab cb} {ab bb} {ab ab}} b*
+} {1 1}
+test lsearch-26.4 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -index {0 1} -regexp {{ab cb} {ab bb} {ab ab} {ab cb} {ab bb} {ab ab}} {[cb]b}
+} {0 1}
+test lsearch-26.5 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -all -index {0 0} -exact {{a c} {a b} {d a} {a c} {a b} {d a}} a
+} {{0 0} {3 0}}
+test lsearch-26.6 {lsearch -stride + -subindices option} {
+    lsearch -stride 3 -subindices -all -index {1 0} -exact {{a c} {a b} {d a} {x c} {a b} {d a}} a
+} {{1 0} {4 0}}
+
+# 27* mimics 25* but with -stride added
+test lsearch-27.1 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -index {0 0} {{x x} {x b} {a d} {a c} {a b} {a a}} a
+} {a}
+test lsearch-27.2 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -index {2 0} -exact {{x x} {x b} {a d} {a c} {a b} {a a}} a
+} {a}
+test lsearch-27.3 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -index {1 1} -glob {{ab cb} {ab bb} {ab ab} {ab cb} {ab bb} {ab ab}} b*
+} {bb}
+test lsearch-27.4 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -index {0 1} -regexp {{ab cb} {ab bb} {ab ab} {ab cb} {ab bb} {ab ab}} {[cb]b}
+} {cb}
+test lsearch-27.5 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -all -index {0 0} -exact {{a c} {a b} {d a} {a c} {a b} {d a}} a
+} {a a}
+test lsearch-27.6 {lsearch -stride + -subindices option} {
+    lsearch -inline -stride 3 -subindices -all -index {1 0} -exact {{a c} {a b} {d a} {x c} {a b} {d a}} a
+} {a a}
+
+test lsearch-28.1 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 5
+} -result 0
+test lsearch-28.2 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 3
+} -result -1
+test lsearch-28.3 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 7
+} -result 2
+test lsearch-28.4 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 8
+} -result -1
+test lsearch-28.5 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 9
+} -result 4
+test lsearch-28.6 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 {5 3 7 8 9 2} 2
+} -result -1
+test lsearch-28.7 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 -index 0 -subindices {5 3 7 8 9 2} 9
+} -result 4
+test lsearch-28.8 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 -index 1 -subindices {3 5 8 7 2 9} 9
+} -result 5
+test lsearch-28.9 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 2 -index 1 -subindices -inline {3 5 8 7 2 9} 9
+} -result 9
+
 
 # cleanup
 catch {unset res}

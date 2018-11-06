@@ -23,7 +23,7 @@ cd [temporaryDirectory]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testchmod [llength [info commands testchmod]]
 testConstraint winVista 0
-testConstraint win2000orXP 0
+testConstraint winXP 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint reg 0
@@ -65,20 +65,17 @@ if {[testConstraint unix]} {
 
 # Also used in winFCmd...
 if {[testConstraint win]} {
-    set major [string index $tcl_platform(osVersion) 0]
-    if {[testConstraint nt] && $major > 4} {
-        if {$major > 5} {
-            testConstraint winVista 1
-        } elseif {$major == 5} {
-            testConstraint win2000orXP 1
-        }
+    if {$::tcl_platform(osVersion) >= 5.0} {
+	testConstraint winVista 1
+    } else {
+	testConstraint winXP 1
     }
 }
 
 testConstraint darwin9 [expr {
     [testConstraint unix]
     && $tcl_platform(os) eq "Darwin"
-    && [package vsatisfies 1.$tcl_platform(osVersion) 1.9]
+    && [package vsatisfies 1.$::tcl_platform(osVersion) 1.9]
 }]
 testConstraint notDarwin9 [expr {![testConstraint darwin9]}]
 
@@ -792,7 +789,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
 } -result {{tf3 tf4} 1 0}
 test fCmd-9.4.a {file rename: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {win win2000orXP testchmod} -body {
+} -constraints {win testchmod} -body {
     file mkdir td1 td2
     testchmod 0o555 td2
     file rename td1 td3
@@ -824,7 +821,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
 } -result {tf1 tf2 1 0}
 test fCmd-9.6.a {file rename: comprehensive: dir to self} -setup {
     cleanup
-} -constraints {win win2000orXP testchmod} -body {
+} -constraints {win winXP testchmod} -body {
     file mkdir td1
     file mkdir td2
     testchmod 0o555 td2
@@ -2309,7 +2306,7 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} -setup {
 
 if {
     [testConstraint win] &&
-    ([string index $tcl_platform(osVersion) 0] < 5
+    ($::tcl_platform(osVersion) < 5.0
      || [lindex [file system [temporaryDirectory]] 1] ne "NTFS")
 } then {
     testConstraint linkDirectory 0

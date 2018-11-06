@@ -115,7 +115,7 @@ typedef struct SerialInfo {
 				 * [fconfigure -queue] */
 } SerialInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of serials that
      * are being watched for file events.
@@ -131,7 +131,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct SerialEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     SerialInfo *infoPtr;	/* Pointer to serial info structure. Note that
@@ -1442,7 +1442,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
@@ -1738,7 +1738,7 @@ SerialSetOptionProc(
 	dcb.XonChar = argv[0][0];
 	dcb.XoffChar = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
-	    Tcl_UniChar character;
+	    Tcl_UniChar character = 0;
 	    int charLen;
 
 	    charLen = Tcl_UtfToUniChar(argv[0], &character);

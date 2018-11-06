@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH history n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -100,3 +100,7 @@ the \fBevent\fR operation to retrieve some event,
 and the \fBadd\fR operation to add it to history and execute it.
 .SH KEYWORDS
 event, history, record
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

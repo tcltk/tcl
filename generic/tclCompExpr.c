@@ -1759,7 +1759,7 @@ ConvertTreeToTokens(
 
 		/*
 		 * All the Tcl_Tokens allocated and filled belong to
-		 * this subexpresion. The first token is the leading
+		 * this subexpression. The first token is the leading
 		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
 		 * are its components.
 		 */
@@ -2181,7 +2181,6 @@ ExecConstantExprTree(
     CompileEnv *envPtr;
     ByteCode *byteCodePtr;
     int code;
-    Tcl_Obj *byteCodeObj = Tcl_NewObj();
     NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
@@ -2195,14 +2194,12 @@ ExecConstantExprTree(
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     TclEmitOpcode(INST_DONE, envPtr);
-    Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, envPtr);
+    byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = byteCodeObj->internalRep.twoPtrValue.ptr1;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
-    Tcl_DecrRefCount(byteCodeObj);
+    TclReleaseByteCode(byteCodePtr);
     return code;
 }
 
@@ -2270,9 +2267,9 @@ CompileExprTree(
 		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);
-		TclEmitPush(TclRegisterNewCmdLiteral(envPtr,
+		TclEmitPush(TclRegisterLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
-			Tcl_DStringLength(&cmdName)), envPtr);
+			Tcl_DStringLength(&cmdName), LITERAL_CMD_NAME), envPtr);
 		Tcl_DStringFree(&cmdName);
 
 		/*
@@ -2379,8 +2376,8 @@ CompileExprTree(
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
 			: INST_JUMP_TRUE1, 0, envPtr);
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
+		TclEmitPush(TclRegisterLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
 		pc2 = CurrentOffset(envPtr);
 		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
@@ -2389,8 +2386,8 @@ CompileExprTree(
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    pc2 += 3;
 		}
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		TclEmitPush(TclRegisterLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "0" : "1", 1, 0), envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
@@ -2424,7 +2421,7 @@ CompileExprTree(
 	    if (optimize) {
 		int length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
-		int index = TclRegisterNewLiteral(envPtr, bytes, length);
+		int index = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
 
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
@@ -2479,11 +2476,13 @@ CompileExprTree(
 		     * already, then use it to share via the literal table.
 		     */
 
-		    if (objPtr->bytes) {
+		    if (TclHasStringRep(objPtr)) {
 			Tcl_Obj *tableValue;
+			int numBytes;
+			const char *bytes
+				= Tcl_GetStringFromObj(objPtr, &numBytes);
 
-			index = TclRegisterNewLiteral(envPtr, objPtr->bytes,
-				objPtr->length);
+			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, index);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
