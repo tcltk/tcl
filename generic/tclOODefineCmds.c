@@ -1833,15 +1833,31 @@ TclOODefineMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    /*
+     * Table of export modes for methods and their corresponding enum.
+     */
+
+    static const char *const exportModes[] = {
+	"-export",
+	"-private",
+	"-unexport",
+	NULL
+    };
+    enum ExportMode {
+	MODE_EXPORT,
+	MODE_PRIVATE,
+	MODE_UNEXPORT
+    } exportMode;
+
     int isInstanceMethod = (clientData != NULL);
     Object *oPtr;
     int isPublic;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
+    if (objc < 4 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
 	return TCL_ERROR;
     }
-
+    
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -1852,10 +1868,29 @@ TclOODefineMethodObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
-    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
-	    ? PUBLIC_METHOD : 0;
-    if (IsPrivateDefine(interp)) {
-	isPublic = TRUE_PRIVATE_METHOD;
+    if (objc == 5) {
+	if (Tcl_GetIndexFromObj(interp, objv[2], exportModes, "export flag",
+		0, (int *) &exportMode) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (exportMode) {
+	case MODE_EXPORT:
+	    isPublic = PUBLIC_METHOD;
+	    break;
+	case MODE_PRIVATE:
+	    isPublic = TRUE_PRIVATE_METHOD;
+	    break;
+	case MODE_UNEXPORT:
+	    isPublic = 0;
+	    break;
+	}
+    } else {
+	if (IsPrivateDefine(interp)) {
+	    isPublic = TRUE_PRIVATE_METHOD;
+	} else {
+	    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
+		    ? PUBLIC_METHOD : 0;
+	}
     }
 
     /*
@@ -1864,12 +1899,12 @@ TclOODefineMethodObjCmd(
 
     if (isInstanceMethod) {
 	if (TclOONewProcInstanceMethod(interp, oPtr, isPublic, objv[1],
-		objv[2], objv[3], NULL) == NULL) {
+		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
     } else {
 	if (TclOONewProcMethod(interp, oPtr->classPtr, isPublic, objv[1],
-		objv[2], objv[3], NULL) == NULL) {
+		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
     }
