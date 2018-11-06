@@ -20,7 +20,7 @@ Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
 \fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
-.VS 8.6.2
+.
 Concatenate the given \fIstring\fRs just like placing them directly
 next to each other and return the resulting compound string.  If no
 \fIstring\fRs are present, the result is an empty string.
@@ -32,7 +32,6 @@ of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
 and is more efficient than building a list of arguments and using
 \fBjoin\fR with an empty join string.
 .RE
-.VE
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
@@ -111,17 +110,24 @@ Any character with a value less than \eu0080 (those that are in the
 Any of the forms allowed to \fBTcl_GetBoolean\fR.
 .IP \fBcontrol\fR 12
 Any Unicode control character.
+.IP \fBdict\fR 12
+.VS TIP501
+Any proper dict structure, with optional surrounding whitespace. In
+case of improper dict structure, 0 is returned and the \fIvarname\fR
+will contain the index of the
+.QW element
+where the dict parsing fails, or \-1 if this cannot be determined.
+.VE TIP501
 .IP \fBdigit\fR 12
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
 Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
-.VS 8.6
+.
 Any of the valid string formats for an integer value of arbitrary size
 in Tcl, with optional surrounding whitespace. The formats accepted are
 exactly those accepted by the C routine \fBTcl_GetBignumFromObj\fR.
-.VE
 .IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
