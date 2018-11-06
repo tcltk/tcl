@@ -725,13 +725,14 @@ static const Tcl_ObjType substCodeType = {
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+#define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
 
 /*
  * Helper macros.
  */
 
 #define TclIncrUInt4AtPtr(ptr, delta) \
-    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr));
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr))
 
 /*
  *----------------------------------------------------------------------
@@ -974,7 +975,10 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
+
+    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
 }
@@ -1304,21 +1308,23 @@ CompileSubstObj(
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr = NULL;
 
-    if (objPtr->typePtr == &substCodeType) {
+    ByteCodeGetIntRep(objPtr, &substCodeType, codePtr);
+
+    if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
-	if (flags != PTR2INT(objPtr->internalRep.twoPtrValue.ptr2)
+	if (flags != PTR2INT(SubstFlags(objPtr))
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
-	    TclFreeIntRep(objPtr);
+	    Tcl_StoreIntRep(objPtr, &substCodeType, NULL);
+	    codePtr = NULL;
 	}
     }
-    if (objPtr->typePtr != &substCodeType) {
+    if (codePtr == NULL) {
 	CompileEnv compEnv;
 	int numBytes;
 	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
@@ -1332,8 +1338,7 @@ CompileSubstObj(
 	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
+	SubstFlags(objPtr) = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1372,7 +1377,10 @@ static void
 FreeSubstCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    register ByteCode *codePtr;
+
+    ByteCodeGetIntRep(objPtr, &substCodeType, codePtr);
+    assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
 }
@@ -2912,9 +2920,7 @@ TclInitByteCodeObj(
      * by making its internal rep point to the just compiled ByteCode.
      */
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-    objPtr->typePtr = typePtr;
+    ByteCodeSetIntRep(objPtr, typePtr, codePtr);
     return codePtr;
 }
 

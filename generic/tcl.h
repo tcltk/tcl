@@ -751,6 +751,29 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 /*
+ * The following structure stores an internal representation (intrep) for
+ * a Tcl value. An intrep is associated with an Tcl_ObjType when both
+ * are stored in the same Tcl_Obj.  The routines of the Tcl_ObjType govern
+ * the handling of the intrep.
+ */
+
+typedef union Tcl_ObjIntRep {	/* The internal representation: */
+    long longValue;		/*   - an long integer value. */
+    double doubleValue;		/*   - a double-precision floating value. */
+    void *otherValuePtr;	/*   - another, type-specific value, */
+				/*     not used internally any more. */
+    Tcl_WideInt wideValue;	/*   - an integer value >= 64bits */
+    struct {			/*   - internal rep as two pointers. */
+	void *ptr1;		
+	void *ptr2;
+    } twoPtrValue;
+    struct {			/*   - internal rep as a pointer and a long, */
+	void *ptr;		/*     not used internally any more. */
+	unsigned long value;
+    } ptrAndLongRep;
+} Tcl_ObjIntRep;
+
+/*
  * One of the following structures exists for each object in the Tcl system.
  * An object stores a value as either a string, some internal representation,
  * or both.
@@ -775,27 +798,7 @@ typedef struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    union {			/* The internal representation: */
-	long longValue;		/*   - an long integer value. */
-	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value, not used
-				 *     internally any more. */
-	Tcl_WideInt wideValue;	/*   - a long long value. */
-	struct {		/*   - internal rep as two pointers.
-				 *     Many uses in Tcl, including a bignum's
-				 *     tightly packed fields, where the alloc,
-				 *     used and signum flags are packed into
-				 *     ptr2 with everything else hung off
-				 *     ptr1. */
-	    void *ptr1;
-	    void *ptr2;
-	} twoPtrValue;
-	struct {		/*   - internal rep as a pointer and a long,
-				 *     not used internally any more. */
-	    void *ptr;
-	    unsigned long value;
-	} ptrAndLongRep;
-    } internalRep;
+    Tcl_ObjIntRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
 /*
