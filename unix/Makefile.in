@@ -858,8 +858,7 @@ install: $(INSTALL_TARGETS)
 
 install-strip:
 	$(MAKE) $(INSTALL_TARGETS) \
-		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
-		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
+		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}"
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
@@ -933,9 +932,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)"/tcl8/8.7/msgcat-1.7.0.tm
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl8/8.5/tcltest-2.4.1.tm
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.5/tcltest-2.5.0.tm
 	@echo "Installing package platform 1.0.14 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)"/tcl8/8.4/platform-1.0.14.tm
@@ -1745,9 +1744,6 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 # relocatable.
 #--------------------------------------------------------------------------
 
-fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
-
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
@@ -1762,9 +1758,6 @@ strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
-
-strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c

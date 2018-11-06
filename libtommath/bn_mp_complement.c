@@ -1,5 +1,5 @@
 #include "tommath_private.h"
-#ifdef BN_MP_SUBMOD_C
+#ifdef BN_MP_COMPLEMENT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
  * LibTomMath is a library that provides multiple-precision
@@ -13,24 +13,11 @@
  * guarantee it works.
  */
 
-/* d = a - b (mod c) */
-int mp_submod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d)
+/* b = ~a */
+int mp_complement(const mp_int *a, mp_int *b)
 {
-   int     res;
-   mp_int  t;
-
-
-   if ((res = mp_init(&t)) != MP_OKAY) {
-      return res;
-   }
-
-   if ((res = mp_sub(a, b, &t)) != MP_OKAY) {
-      mp_clear(&t);
-      return res;
-   }
-   res = mp_mod(&t, c, d);
-   mp_clear(&t);
-   return res;
+   int res = mp_neg(a, b);
+   return (res == MP_OKAY) ? mp_sub_d(b, 1uL, b) : res;
 }
 #endif
 
