@@ -461,7 +461,7 @@ TclCompileStringIsCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
-	"boolean",	"digit",	"double",	"entier",
+	"boolean",	"dict", "digit",	"double",	"entier",
 	"false",	"graph",	"integer",	"list",
 	"lower",	"print",	"punct",	"space",
 	"true",		"upper",	"wideinteger",	"wordchar",
@@ -469,7 +469,7 @@ TclCompileStringIsCmd(
     };
     enum isClasses {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
-	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
+	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
 	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
 	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
 	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
@@ -703,7 +703,19 @@ TclCompileStringIsCmd(
 	}
 	FIXJUMP1(	end);
 	return TCL_OK;
-
+    case STR_IS_DICT:
+	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	OP4(		BEGIN_CATCH4, range);
+	ExceptionRangeStarts(envPtr, range);
+	OP(		DUP);
+	OP(		DICT_VERIFY);
+	ExceptionRangeEnds(envPtr, range);
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	OP(		POP);
+	OP(		PUSH_RETURN_CODE);
+	OP(		END_CATCH);
+	OP(		LNOT);
+	return TCL_OK;
     case STR_IS_LIST:
 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	OP4(		BEGIN_CATCH4, range);
