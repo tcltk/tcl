@@ -1877,10 +1877,24 @@ EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 				const char *mountPoint, unsigned char *data,
 				size_t datalen, int copy);
 /* 636 */
-EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
+EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
 /* 637 */
-EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
+EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+				unsigned int numBytes);
 /* 638 */
+EXTERN Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
+				const Tcl_ObjType *typePtr);
+/* 639 */
+EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
+				const Tcl_ObjType *typePtr,
+				const Tcl_ObjIntRep *irPtr);
+/* 640 */
+EXTERN int		Tcl_HasStringRep(Tcl_Obj *objPtr);
+/* 641 */
+EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
+/* 642 */
+EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
+/* 643 */
 EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 typedef struct {
@@ -2553,9 +2567,14 @@ typedef struct TclStubs {
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
-    void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 636 */
-    void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 637 */
-    int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 638 */
+    void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 636 */
+    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 637 */
+    Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
+    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 639 */
+    int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
+    void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
+    void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
+    int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3858,12 +3877,22 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclZipfs_TclLibrary) /* 634 */
 #define TclZipfs_MountBuffer \
 	(tclStubsPtr->tclZipfs_MountBuffer) /* 635 */
+#define Tcl_FreeIntRep \
+	(tclStubsPtr->tcl_FreeIntRep) /* 636 */
+#define Tcl_InitStringRep \
+	(tclStubsPtr->tcl_InitStringRep) /* 637 */
+#define Tcl_FetchIntRep \
+	(tclStubsPtr->tcl_FetchIntRep) /* 638 */
+#define Tcl_StoreIntRep \
+	(tclStubsPtr->tcl_StoreIntRep) /* 639 */
+#define Tcl_HasStringRep \
+	(tclStubsPtr->tcl_HasStringRep) /* 640 */
 #define Tcl_IncrRefCount \
-	(tclStubsPtr->tcl_IncrRefCount) /* 636 */
+	(tclStubsPtr->tcl_IncrRefCount) /* 641 */
 #define Tcl_DecrRefCount \
-	(tclStubsPtr->tcl_DecrRefCount) /* 637 */
+	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
-	(tclStubsPtr->tcl_IsShared) /* 638 */
+	(tclStubsPtr->tcl_IsShared) /* 643 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
