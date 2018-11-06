@@ -1390,9 +1390,9 @@ TclConvertElement(
      */
 
     if ((src == NULL) || (length == 0) || (*src == '\0' && length == -1)) {
-	src = &tclEmptyString;
-	length = 0;
-	conversion = CONVERT_BRACE;
+	p[0] = '{';
+	p[1] = '}';
+	return 2;
     }
 
     /*
@@ -2089,7 +2089,7 @@ Tcl_ConcatObj(
 	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
-	    if (objPtr->bytes && objPtr->length == 0) {
+	    if (!TclListObjIsCanonical(objPtr)) {
 		continue;
 	    }
 	    if (resPtr) {
@@ -3903,20 +3903,19 @@ TclGetIntForIndex(
     }
     return TCL_OK;
 }
-
 /*
  *----------------------------------------------------------------------
  *
  * GetEndOffsetFromObj --
  *
- *      Look for a string of the form "end[+-]offset" and convert it to an
- *      internal representation holding the offset.
+ *	Look for a string of the form "end[+-]offset" and convert it to an
+ *	internal representation holding the offset.
  *
  * Results:
- *      Tcl return code.
+ *	Tcl return code.
  *
  * Side effects:
- *      May store a Tcl_ObjType.
+ *	May store a Tcl_ObjType.
  *
  *----------------------------------------------------------------------
  */
@@ -3929,9 +3928,11 @@ GetEndOffsetFromObj(
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
 {
+    Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
-    if (objPtr->typePtr != &endOffsetType) {
+    while ((irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType)) == NULL) {
+	Tcl_ObjIntRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
@@ -3985,13 +3986,12 @@ GetEndOffsetFromObj(
 	    }
 	}
 
-	/* Success. Free the old internal rep and set the new one. */
-	TclFreeIntRep(objPtr);
-	objPtr->internalRep.wideValue = offset;
-	objPtr->typePtr = &endOffsetType;
+	/* Success. Store the new internal rep. */
+	ir.wideValue = offset;
+	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
     }
 
-    offset = objPtr->internalRep.wideValue;
+    offset = irPtr->wideValue;
 
     if ((endValue ^ offset) < 0) {
         /* Different signs, sum cannot overflow */
