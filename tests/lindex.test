@@ -79,6 +79,15 @@ test lindex-3.7 {indexes don't shimmer wide ints} {
     set x [expr {(wide(1)<<31) - 2}]
     list $x [lindex {1 2 3} $x] [incr x] [incr x]
 } {2147483646 {} 2147483647 2147483648}
+test lindex-3.8 {compiled with static indices out of range, negative} {
+    list [lindex {a b c} -1] [lindex {a b c} -2] [lindex {a b c} -3]
+} [lrepeat 3 {}]
+test lindex-3.9 {compiled with calculated indices out of range, negative constant} {
+    list [lindex {a b c} -1-1] [lindex {a b c} -2+0] [lindex {a b c} -2+1]
+} [lrepeat 3 {}]
+test lindex-3.10 {compiled with calculated indices out of range, after end} {
+    list [lindex {a b c} end+1] [lindex {a b c} end+2] [lindex {a b c} end+3]
+} [lrepeat 3 {}]
 
 # Indices relative to end
 
@@ -432,7 +441,7 @@ test lindex-16.7 {data reuse} {
 test lindex-17.0 {Bug 1718580} {*}{
     -body {
         lindex {} end foo
-    } 
+    }
     -match glob
     -result {bad index "foo"*}
     -returnCodes 1
@@ -441,7 +450,7 @@ test lindex-17.0 {Bug 1718580} {*}{
 test lindex-17.1 {Bug 1718580} {*}{
     -body {
         lindex a end foo
-    } 
+    }
     -match glob
     -result {bad index "foo"*}
     -returnCodes 1

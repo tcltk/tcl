@@ -42,16 +42,8 @@
  * Declare external functions used in Windows tests.
  */
 
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tcltest_Init(Tcl_Interp *interp);
-EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -74,6 +66,18 @@ typedef struct TestAsyncHandler {
     struct TestAsyncHandler *nextPtr;
 				/* Next is list of handlers. */
 } TestAsyncHandler;
+
+/*
+ * Start of the socket driver state structure to acces field testFlags
+ */
+
+typedef struct TcpState TcpState;
+
+struct TcpState {
+    Tcl_Channel channel;	/* Channel associated with this socket. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
+};
 
 TCL_DECLARE_MUTEX(asyncTestMutex)
 
@@ -98,7 +102,7 @@ static Tcl_Trace cmdTrace;
  * TestdelCmd:
  */
 
-typedef struct DelCmd {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter in which command exists. */
     char *deleteCmd;		/* Script to execute when command is deleted.
 				 * Malloc'ed. */
@@ -109,7 +113,7 @@ typedef struct DelCmd {
  * command.
  */
 
-typedef struct TclEncoding {
+typedef struct {
     Tcl_Interp *interp;
     char *toUtfCmd;
     char *fromUtfCmd;
@@ -132,7 +136,7 @@ static int exitMainLoop = 0;
  * Event structure used in testing the event queue management procedures.
  */
 
-typedef struct TestEvent {
+typedef struct {
     Tcl_Event header;		/* Header common to all events */
     Tcl_Interp *interp;		/* Interpreter that will handle the event */
     Tcl_Obj *command;		/* Command to evaluate when the event occurs */
@@ -157,7 +161,7 @@ static TestChannel *firstDetached;
 
 static int		AsyncHandlerProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static Tcl_ThreadCreateType AsyncThreadProc(ClientData);
 #endif
 static void		CleanupTestSetassocdataTests(
@@ -223,6 +227,9 @@ static int		TestasyncCmd(ClientData dummy,
 static int		TestbytestringObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TeststringbytesObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestcmdinfoCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestcmdtokenCmd(ClientData dummy,
@@ -286,6 +293,8 @@ static int		TestgetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetintCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestlongsizeCmd(ClientData dummy,
+			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetplatformCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetvarfullnameCmd(
@@ -298,12 +307,6 @@ static int		TestlinkCmd(ClientData dummy,
 static int		TestlocaleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestMathFunc(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
-static int		TestMathFunc2(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
 static int		TestmainthreadCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetmainloopCmd(ClientData dummy,
@@ -321,6 +324,12 @@ static int		TestparsevarObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestparsevarnameObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestpreferstableObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestprintObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestregexpObjCmd(ClientData dummy,
@@ -363,6 +372,8 @@ static int		TestGetIndexFromObjStructObjCmd(
 static int		TestChannelCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestChannelEventCmd(ClientData clientData,
+			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestSocketCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestFilesystemObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
@@ -538,8 +549,6 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_ValueType t3ArgTypes[2];
-
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
@@ -548,10 +557,10 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
@@ -559,7 +568,7 @@ Tcltest_Init(
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -571,6 +580,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -637,6 +647,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetint", TestgetintCmd,
 	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testlongsize", TestlongsizeCmd,
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgetvarfullname",
@@ -653,6 +665,10 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testprint", TestprintObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
@@ -680,13 +696,13 @@ Tcltest_Init(
 	    TestFindLastCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
-    Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
-    Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -697,11 +713,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
-    t3ArgTypes[0] = TCL_EITHER;
-    t3ArgTypes[1] = TCL_EITHER;
-    Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
-	    NULL);
-
     Tcl_CreateObjCommand(interp, "testnreunwind", TestNREUnwind,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
@@ -715,7 +726,7 @@ Tcltest_Init(
     if (Procbodytest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
-#ifdef TCL_THREADS
+#if TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -784,7 +795,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
@@ -821,7 +832,7 @@ TestasyncCmd(
 
     if (argc < 2) {
 	wrongNumArgs:
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
@@ -895,7 +906,7 @@ TestasyncCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
 	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -911,7 +922,7 @@ TestasyncCmd(
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
 			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
-		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    Tcl_AppendResult(interp, "can't create thread", NULL);
 		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
@@ -992,7 +1003,7 @@ AsyncHandlerProc(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
     ClientData clientData)	/* Parameter is the id of a
@@ -1058,7 +1069,7 @@ TestcmdinfoCmd(
 	Tcl_DStringResult(interp, &delString);
     } else if (strcmp(argv[1], "get") == 0) {
 	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
-	    Tcl_SetResult(interp, "??", TCL_STATIC);
+	    Tcl_AppendResult(interp, "??", NULL);
 	    return TCL_OK;
 	}
 	if (info.proc == CmdProc1) {
@@ -1185,7 +1196,7 @@ TestcmdtokenCmd(
 	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
 		(ClientData) "original", NULL);
 	sprintf(buf, "%p", (void *)token);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "name") == 0) {
 	Tcl_Obj *objPtr;
 
@@ -1288,10 +1299,10 @@ TestcmdtraceCmd(
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		(ClientData) &deleteCalled, ObjTraceDeleteProc);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
-	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
+	    Tcl_AppendResult(interp, "Delete wasn't called", NULL);
 	    return TCL_ERROR;
 	} else {
 	    return result;
@@ -1302,7 +1313,7 @@ TestcmdtraceCmd(
 	Tcl_DStringInit(&buffer);
 	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
 	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1591,7 +1602,7 @@ TestdelCmd(
     Tcl_Interp *slave;
 
     if (argc != 4) {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
 
@@ -1631,7 +1642,7 @@ DelDeleteProc(
 {
     DelCmd *dPtr = clientData;
 
-    Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
+    Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
     ckfree(dPtr);
@@ -1796,7 +1807,7 @@ TestdstringCmd(
 
     if (argc < 2) {
 	wrongNumArgs:
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "append") == 0) {
@@ -1832,9 +1843,9 @@ TestdstringCmd(
 	    goto wrongNumArgs;
 	}
 	if (strcmp(argv[2], "staticsmall") == 0) {
-	    Tcl_SetResult(interp, "short", TCL_STATIC);
+	    Tcl_AppendResult(interp, "short", NULL);
 	} else if (strcmp(argv[2], "staticlarge") == 0) {
-	    Tcl_SetResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
+	    Tcl_AppendResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", NULL);
 	} else if (strcmp(argv[2], "free") == 0) {
 	    char *s = ckalloc(100);
 	    strcpy(s, "This is a malloc-ed string");
@@ -1969,9 +1980,12 @@ TestencodingObjCmd(
 	if (objc != 3) {
 	    return TCL_ERROR;
 	}
-	encoding = Tcl_GetEncoding(NULL, Tcl_GetString(objv[2]));
-	Tcl_FreeEncoding(encoding);
-	Tcl_FreeEncoding(encoding);
+	if (TCL_OK != Tcl_GetEncodingFromObj(interp, objv[2], &encoding)) {
+	    return TCL_ERROR;
+	}
+	Tcl_FreeEncoding(encoding);	/* Free returned reference */
+	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
+	TclFreeIntRep(objv[2]);		/* Free the cached ref */
 	break;
     }
     return TCL_OK;
@@ -1994,7 +2008,7 @@ EncodingToUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_EvalEx(encodingPtr->interp,encodingPtr->toUtfCmd,-1,TCL_EVAL_GLOBAL);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->toUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -2026,7 +2040,7 @@ EncodingFromUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_EvalEx(encodingPtr->interp, encodingPtr->fromUtfCmd,-1,TCL_EVAL_GLOBAL);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->fromUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -2380,7 +2394,7 @@ ExitProcOdd(
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
 
-    sprintf(buf, "odd %d\n", PTR2INT(clientData));
+    sprintf(buf, "odd %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
@@ -2394,7 +2408,7 @@ ExitProcEven(
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
 
-    sprintf(buf, "even %d\n", PTR2INT(clientData));
+    sprintf(buf, "even %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
@@ -2434,7 +2448,7 @@ TestexprlongCmd(
 		" expression\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_AppendResult(interp, "This is a result", NULL);
     result = Tcl_ExprLong(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2476,7 +2490,7 @@ TestexprlongobjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "expression");
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_AppendResult(interp, "This is a result", NULL);
     result = Tcl_ExprLongObj(interp, objv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2519,7 +2533,7 @@ TestexprdoubleCmd(
 		" expression\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_AppendResult(interp, "This is a result", NULL);
     result = Tcl_ExprDouble(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2562,7 +2576,7 @@ TestexprdoubleobjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "expression");
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_AppendResult(interp, "This is a result", NULL);
     result = Tcl_ExprDoubleObj(interp, objv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2818,7 +2832,7 @@ TestlinkCmd(
     static int intVar = 43;
     static int boolVar = 4;
     static double realVar = 1.23;
-    static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
+    static Tcl_WideInt wideVar = 79;
     static char *stringVar = NULL;
     static char charVar = '@';
     static unsigned char ucharVar = 130;
@@ -2828,7 +2842,7 @@ TestlinkCmd(
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
-    static Tcl_WideUInt uwideVar = (Tcl_WideUInt) Tcl_LongAsWide(123);
+    static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
@@ -3324,144 +3338,6 @@ TestlocaleCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestMathFunc --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	with no arguments.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestMathFunc(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Not used. */
-    Tcl_Value *args,		/* Not used. */
-    Tcl_Value *resultPtr)	/* Where to store result. */
-{
-    resultPtr->type = TCL_INT;
-    resultPtr->intValue = PTR2INT(clientData);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestMathFunc2 --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	that do have arguments, in this case 2.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestMathFunc2(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Used to report errors. */
-    Tcl_Value *args,		/* Points to an array of two Tcl_Value structs
-				 * for the two arguments. */
-    Tcl_Value *resultPtr)	/* Where to store the result. */
-{
-    int result = TCL_OK;
-
-    /*
-     * Return the maximum of the two arguments with the correct type.
-     */
-
-    if (args[0].type == TCL_INT) {
-	int i0 = args[0].intValue;
-
-	if (args[1].type == TCL_INT) {
-	    int i1 = args[1].intValue;
-
-	    resultPtr->type = TCL_INT;
-	    resultPtr->intValue = ((i0 > i1)? i0 : i1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = i0;
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w0 = Tcl_LongAsWide(i0);
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_DOUBLE) {
-	double d0 = args[0].doubleValue;
-
-	if (args[1].type == TCL_INT) {
-	    double d1 = args[1].intValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    double d1 = Tcl_WideAsDouble(args[1].wideValue);
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_WIDE_INT) {
-	Tcl_WideInt w0 = args[0].wideValue;
-
-	if (args[1].type == TCL_INT) {
-	    Tcl_WideInt w1 = Tcl_LongAsWide(args[1].intValue);
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = Tcl_WideAsDouble(w0);
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else {
-	Tcl_SetResult(interp, "T3: wrong type for arg 1", TCL_STATIC);
-	result = TCL_ERROR;
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CleanupTestSetassocdataTests --
  *
  *	This function is called when an interpreter is deleted to clean
@@ -3793,6 +3669,75 @@ TestparsevarnameObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestpreferstableObjCmd --
+ *
+ *	This procedure implements the "testpreferstable" command.  It is
+ *	used for being able to test the "package" command even when the
+ *  environment variable TCL_PKG_PREFER_LATEST is set in your environment.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpreferstableObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Interp *iPtr = (Interp *) interp;
+    iPtr->packagePrefer = PKG_PREFER_STABLE;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestprintObjCmd --
+ *
+ *	This procedure implements the "testprint" command.  It is
+ *	used for being able to test the Tcl_ObjPrintf() function.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestprintObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_WideInt argv1 = 0;
+    size_t argv2;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
+    }
+
+    if (objc > 1) {
+	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
+    }
+    argv2 = (size_t)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestregexpObjCmd --
  *
  *	This procedure implements the "testregexp" command. It is used to give
@@ -3936,7 +3881,7 @@ TestregexpObjCmd(
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
 	    sprintf(resinfo, "%d %d", start, end-1);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -3950,7 +3895,7 @@ TestregexpObjCmd(
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
 	    sprintf(resinfo, "%ld", info.extendStart);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -4293,7 +4238,7 @@ StaticInitProc(
     Tcl_Interp *interp)		/* Interpreter in which package is supposedly
 				 * being loaded. */
 {
-    Tcl_SetVar(interp, "x", "loaded", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "x", NULL, "loaded", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -4377,7 +4322,7 @@ TestupvarCmd(
 	} else if (strcmp(argv[4], "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar(interp, argv[1], argv[2], argv[3], flags);
+	return Tcl_UpVar2(interp, argv[1], argv[2], NULL, argv[3], flags);
     } else {
 	if (strcmp(argv[5], "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -4417,7 +4362,7 @@ TestseterrorcodeCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc > 6) {
-	Tcl_SetResult(interp, "too many args", TCL_STATIC);
+	Tcl_AppendResult(interp, "too many args", NULL);
 	return TCL_ERROR;
     }
     switch (argc) {
@@ -4871,10 +4816,10 @@ GetTimesObjCmd(
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
-    fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
+	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4888,7 +4833,7 @@ GetTimesObjCmd(
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
+	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4959,6 +4904,40 @@ NoopObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TeststringbytesObjCmd --
+ *	Returns bytearray value of the bytes in argument string rep
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TeststringbytesObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int n;
+    const unsigned char *p;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    p = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(p, n));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestbytestringObjCmd --
  *
  *	This object-based procedure constructs a string which can
@@ -5021,7 +5000,7 @@ TestsetCmd(
     const char *value;
 
     if (argc == 2) {
-	Tcl_SetResult(interp, "before get", TCL_STATIC);
+	Tcl_AppendResult(interp, "before get", NULL);
 	value = Tcl_GetVar2(interp, argv[1], NULL, flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5029,7 +5008,7 @@ TestsetCmd(
 	Tcl_AppendElement(interp, value);
 	return TCL_OK;
     } else if (argc == 3) {
-	Tcl_SetResult(interp, "before set", TCL_STATIC);
+	Tcl_AppendResult(interp, "before set", NULL);
 	value = Tcl_SetVar2(interp, argv[1], NULL, argv[2], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5053,7 +5032,7 @@ Testset2Cmd(
     const char *value;
 
     if (argc == 3) {
-	Tcl_SetResult(interp, "before get", TCL_STATIC);
+	Tcl_AppendResult(interp, "before get", NULL);
 	value = Tcl_GetVar2(interp, argv[1], argv[2], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5061,7 +5040,7 @@ Testset2Cmd(
 	Tcl_AppendElement(interp, value);
 	return TCL_OK;
     } else if (argc == 4) {
-	Tcl_SetResult(interp, "before set", TCL_STATIC);
+	Tcl_AppendResult(interp, "before set", NULL);
 	value = Tcl_SetVar2(interp, argv[1], argv[2], argv[3], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5127,10 +5106,11 @@ TestsaveresultCmd(
 	return TCL_ERROR;
     }
 
+    freeCount = 0;
     objPtr = NULL;		/* Lint. */
     switch ((enum options) index) {
     case RESULT_SMALL:
-	Tcl_SetResult(interp, "small result", TCL_VOLATILE);
+	Tcl_AppendResult(interp, "small result", NULL);
 	break;
     case RESULT_APPEND:
 	Tcl_AppendResult(interp, "append result", NULL);
@@ -5151,13 +5131,12 @@ TestsaveresultCmd(
 	break;
     }
 
-    freeCount = 0;
     Tcl_SaveResult(interp, &state);
 
     if (((enum options) index) == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
-	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
     if (discard) {
@@ -5169,11 +5148,9 @@ TestsaveresultCmd(
 
     switch ((enum options) index) {
     case RESULT_DYNAMIC: {
-	int present = iPtr->freeProc == TestsaveresultFree;
-	int called = freeCount;
+	int presentOrFreed = (iPtr->freeProc == TestsaveresultFree) ^ freeCount;
 
-	Tcl_AppendElement(interp, called ? "called" : "notCalled");
-	Tcl_AppendElement(interp, present ? "present" : "missing");
+	Tcl_AppendElement(interp, presentOrFreed ? "presentOrFreed" : "missingOrLeak");
 	break;
     }
     case RESULT_OBJECT:
@@ -5234,12 +5211,12 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
     } else {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
 }
@@ -5631,8 +5608,8 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
-	Tcl_AppendResult(interp, buf, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 
@@ -6012,6 +5989,75 @@ TestChannelEventCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestSocketCmd --
+ *
+ *	Implements the Tcl "testsocket" debugging command and its
+ *	subcommands. This is part of the testing environment.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestSocketCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Interpreter for result. */
+    int argc,			/* Count of additional args. */
+    const char **argv)		/* Additional arg strings. */
+{
+    const char *cmdName;	/* Sub command. */
+    size_t len;			/* Length of subcommand string. */
+
+    if (argc < 2) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		" subcommand ?additional args..?\"", NULL);
+	return TCL_ERROR;
+    }
+    cmdName = argv[1];
+    len = strlen(cmdName);
+
+    if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
+        Tcl_Channel hChannel;
+        int modePtr;
+        TcpState *statePtr;
+        /* Set test value in the socket driver
+         */
+        /* Check for argument "channel name"
+         */
+        if (argc < 4) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " testflags channel flags\"", NULL);
+            return TCL_ERROR;
+        }
+        hChannel = Tcl_GetChannel(interp, argv[2], &modePtr);
+        if ( NULL == hChannel ) {
+            Tcl_AppendResult(interp, "unknown channel:", argv[2], NULL);
+            return TCL_ERROR;
+        }
+        statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
+        if ( NULL == statePtr) {
+            Tcl_AppendResult(interp, "No channel instance data:", argv[2],
+                    NULL);
+            return TCL_ERROR;
+        }
+        statePtr->testFlags = atoi(argv[3]);
+        return TCL_OK;
+    }
+
+    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
+	    "testflags", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestWrongNumArgsObjCmd --
  *
  *	Test the Tcl_WrongNumArgs function.
@@ -6040,7 +6086,7 @@ TestWrongNumArgsObjCmd(
 	 * Don't use Tcl_WrongNumArgs here, as that is the function
 	 * we want to test!
 	 */
-	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	Tcl_AppendResult(interp, "insufficient arguments", NULL);
 	return TCL_ERROR;
     }
 
@@ -6057,7 +6103,7 @@ TestWrongNumArgsObjCmd(
 	/*
 	 * Asked for more arguments than were given.
 	 */
-	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	Tcl_AppendResult(interp, "insufficient arguments", NULL);
 	return TCL_ERROR;
     }
 
@@ -6259,7 +6305,7 @@ TestReport(
 	savedResult = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(savedResult);
 	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_Eval(interp, Tcl_DStringValue(&ds));
+	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
 	Tcl_DStringFree(&ds);
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, savedResult);
@@ -6766,7 +6812,7 @@ TestcpuidCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int status, index, i;
-    unsigned int regs[4];
+    int regs[4];
     Tcl_Obj *regsObjs[4];
 
     if (objc != 2) {
@@ -6776,14 +6822,14 @@ TestcpuidCmd(
     if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    status = TclWinCPUID((unsigned) index, regs);
+    status = TclWinCPUID(index, regs);
     if (status != TCL_OK) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("operation not available", -1));
 	return status;
     }
     for (i=0 ; i<4 ; ++i) {
-	regsObjs[i] = Tcl_NewIntObj((int) regs[i]);
+	regsObjs[i] = Tcl_NewIntObj(regs[i]);
     }
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
     return TCL_OK;
@@ -6878,7 +6924,7 @@ TestgetintCmd(
     const char **argv)
 {
     if (argc < 2) {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     } else {
 	int val, i, total=0;
@@ -6892,6 +6938,24 @@ TestgetintCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	return TCL_OK;
     }
+}
+
+/*
+ * Used for determining sizeof(long) at script level.
+ */
+static int
+TestlongsizeCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int argc,
+    const char **argv)
+{
+    if (argc != 1) {
+	Tcl_AppendResult(interp, "wrong # args", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)sizeof(long)));
+    return TCL_OK;
 }
 
 static int
@@ -7018,17 +7082,11 @@ TestconcatobjCmd(
 
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
-    if (list1Ptr->bytes != NULL) {
-	ckfree(list1Ptr->bytes);
-	list1Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list1Ptr);
 
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
-    if (list2Ptr->bytes != NULL) {
-	ckfree(list2Ptr->bytes);
-	list2Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list2Ptr);
 
     /*
      * Verify that concat'ing a list obj with one or more empty strings does
@@ -7402,7 +7460,7 @@ InterpCmdResolver(
              */
 
             CallFrame *parentFramePtr = varFramePtr->callerPtr;
-            char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
+            const char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
 
             if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);

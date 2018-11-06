@@ -340,7 +340,7 @@ test set-old-8.6 {array command} {
     catch {unset a}
     set a(22) 3
     list [catch {array gorp a} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, statistics, or unset}}
+} {1 {unknown or ambiguous subcommand "gorp": must be anymore, default, donesearch, exists, for, get, names, nextelement, set, size, startsearch, statistics, or unset}}
 test set-old-8.7 {array command, anymore option} {
     catch {unset a}
     list [catch {array anymore a x} msg] $msg
@@ -700,7 +700,7 @@ test set-old-9.1 {ids for array enumeration} {
     catch {unset a}
     set a(a) 1
     list [array star a] [array star a] [array done a s-1-a; array star a] \
-	    [array done a s-2-a; array d a s-3-a; array start a]
+	    [array done a s-2-a; array do a s-3-a; array start a]
 } {s-1-a s-2-a s-3-a s-1-a}
 test set-old-9.2 {array enumeration} {
     catch {unset a}
@@ -940,7 +940,7 @@ catch {rename foo {}}
 
 # cleanup
 ::tcltest::cleanupTests
-return 
+return
 
 # Local Variables:
 # mode: tcl

@@ -211,7 +211,7 @@ struct TransformChannelData {
 				 * a transformation of incoming data. Also
 				 * serves as buffer of all data not yet
 				 * consumed by the reader. */
-    int refCount;
+    size_t refCount;
 };
 
 static void
@@ -225,7 +225,7 @@ static void
 ReleaseData(
     TransformChannelData *dataPtr)
 {
-    if (--dataPtr->refCount) {
+    if (dataPtr->refCount-- > 1) {
 	return;
     }
     ResultClear(&dataPtr->result);
@@ -910,7 +910,7 @@ TransformWideSeekProc(
 	    Tcl_ChannelWideSeekProc(parentType);
     ClientData parentData = Tcl_GetChannelInstanceData(parent);
 
-    if ((offset == Tcl_LongAsWide(0)) && (mode == SEEK_CUR)) {
+    if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
 	 * This is no seek but a request to tell the caller the current
 	 * location. Simply pass the request down.
@@ -920,8 +920,7 @@ TransformWideSeekProc(
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 	}
 
-	return Tcl_LongAsWide(parentSeekProc(parentData, 0, mode,
-		errorCodePtr));
+	return parentSeekProc(parentData, 0, mode, errorCodePtr);
     }
 
     /*
@@ -961,13 +960,13 @@ TransformWideSeekProc(
      * to go out of the representable range.
      */
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+    if (offset<LONG_MIN || offset>LONG_MAX) {
 	*errorCodePtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
-    return Tcl_LongAsWide(parentSeekProc(parentData, Tcl_WideAsLong(offset),
-	    mode, errorCodePtr));
+    return parentSeekProc(parentData, offset,
+	    mode, errorCodePtr);
 }
 
 /*

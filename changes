@@ -8830,3 +8830,57 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-12-19 (bug)[586e71] EvalObjv exception handling at level #0 (sebres,porter)
 
 --- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
+
+Changes to 8.7a1 include all changes to the 8.6 line through 8.6.7,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-01 Hack accommodations for legacy Itcl 3 disabled (porter)
+
+2016-07-12 Make TCL_HASH_TYPE build-time configurable (nijtmans)
+
+2016-07-19 (bug)[0363f0] Partial array search ID reform (porter)
+
+2016-07-19 (feature removed) Tcl_ObjType "array search" unregistered (porter)
+	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("array search") ***
+
+2016-10-04 Server socket on port 0 chooses port supporting IPv4 * IPv6 (max)
+
+2016-11-25 [array named -regexp] supports backrefs (goth)
+
+2017-01-04 (TIP 456) New routine Tcl_OpenTcpServerEx() (limeboy)
+
+2017-01-04 (TIP 459) New subcommand [package files] (nijtmans)
+
+2017-01-16 threaded allocator initialization repair (vasiljevic,nijtmans)
+
+2017-01-30 Add to Win shell builtins: assoc ftype move (ashok)
+
+2017-03-31 TCL_MEM_DEBUG facilities better support 64-bit memory (nijtmans)
+
+2017-04-13 \u escaped content in msg files converted to true utf-8 (nijtmans)
+
+2017-05-18 (TIP 458) New epoll or kqueue notifiers are default (alborboz)
+
+2017-05-31 Purge build support for SunOS-4.* (stu)
+
+2017-06-22 (TIP 463) New option [regsub ... -command ...] (fellows)
+
+2017-06-22 (TIP 470) Tcl_GetDefineContextObject();[oo::define [self]] (fellows)
+=> TclOO 1.2.0
+
+2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
+
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+--- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
+
+2018-03-12 (TIP 490) add oo support for msgcat => msgcat 1.7.0 (oehlmann)
+
+2018-03-12 (TIP 499) custom locale preference list (oehlmann)
+=> msgcat 1.7.0

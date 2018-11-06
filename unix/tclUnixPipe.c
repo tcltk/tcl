@@ -30,7 +30,7 @@
  * This structure describes per-instance state of a pipe based channel.
  */
 
-typedef struct PipeState {
+typedef struct {
     Tcl_Channel channel;	/* Channel associated with this file. */
     TclFile inFile;		/* Output from pipe. */
     TclFile outFile;		/* Input to pipe. */

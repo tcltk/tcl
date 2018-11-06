@@ -622,23 +622,9 @@ TestindexobjCmd(
     }
     argv[objc-4] = NULL;
 
-    /*
-     * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
-     * that its address is different for each index object. If we accidently
-     * allocate a table at the same address as that cached in the index
-     * object, clear out the object's cached state.
-     */
-
-    if (objv[3]->typePtr != NULL
-	    && !strcmp("index", objv[3]->typePtr->name)) {
-	indexRep = objv[3]->internalRep.twoPtrValue.ptr1;
-	if (indexRep->tablePtr == (void *) argv) {
-	    TclFreeIntRep(objv[3]);
-	}
-    }
-
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", (allowAbbrev? 0 : TCL_EXACT), &index);
+	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
+	    &index);
     ckfree(argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
@@ -1102,6 +1088,9 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	} else {
 	    typeName = objv[2]->typePtr->name;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (!strcmp(typeName, "wideInt")) typeName = "int";
+#endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
     } else if (strcmp(subCmd, "refcount") == 0) {
@@ -1115,7 +1104,7 @@ TestobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "type") == 0) {
 	if (objc != 3) {
 	    goto wrongNumArgs;
@@ -1129,6 +1118,11 @@ TestobjCmd(
 	}
 	if (varPtr[varIndex]->typePtr == NULL) { /* a string! */
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), "string", -1);
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (!strcmp(varPtr[varIndex]->typePtr->name, "wideInt")) {
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		    "int", -1);
+#endif
 	} else {
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		    varPtr[varIndex]->typePtr->name, -1);

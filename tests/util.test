@@ -20,6 +20,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
+testConstraint testprint [llength [info commands testprint]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -552,6 +553,12 @@ test util-9.0.6 {TclGetIntForIndex} {
 test util-9.0.7 {TclGetIntForIndex} {
     string index abcd { 01 }
 } b
+test util-9.0.8 {TclGetIntForIndex} {
+    string index abcd { 0d0 }
+} a
+test util-9.0.9 {TclGetIntForIndex} {
+    string index abcd { -0d0 }
+} a
 test util-9.1.0 {TclGetIntForIndex} {
     string index abcd 3
 } d
@@ -564,6 +571,12 @@ test util-9.1.2 {TclGetIntForIndex} {
 test util-9.1.3 {TclGetIntForIndex} {
     string index abcdefghijk { 0xa }
 } k
+test util-9.1.4 {TclGetIntForIndex} {
+    string index abcdefghijk 0d10
+} k
+test util-9.1.5 {TclGetIntForIndex} {
+    string index abcdefghijk { 0d10 }
+} k
 test util-9.2.0 {TclGetIntForIndex} {
     string index abcd end
 } d
@@ -573,14 +586,14 @@ test util-9.2.1 {TclGetIntForIndex} -body {
 test util-9.2.2 {TclGetIntForIndex} -body {
     string index abcd {end }
 } -returnCodes error -match glob -result *
-test util-9.3 {TclGetIntForIndex} {
+test util-9.3 {TclGetIntForIndex} -body {
     # Deprecated
     string index abcd en
-} d
-test util-9.4 {TclGetIntForIndex} {
+} -returnCodes error -match glob -result *
+test util-9.4 {TclGetIntForIndex} -body {
     # Deprecated
     string index abcd e
-} d
+} -returnCodes error -match glob -result *
 test util-9.5.0 {TclGetIntForIndex} {
     string index abcd end-1
 } c
@@ -671,12 +684,18 @@ test util-9.30 {TclGetIntForIndex} -body {
 test util-9.31 {TclGetIntForIndex} -body {
     string index a 0x
 } -returnCodes error -match glob -result *
+test util-9.31.1 {TclGetIntForIndex} -body {
+    string index a 0d
+} -returnCodes error -match glob -result *
 test util-9.32 {TclGetIntForIndex} -body {
     string index a 0x1FFFFFFFF+0
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.33 {TclGetIntForIndex} -body {
     string index a 100000000000+0
-} -returnCodes error -match glob -result *
+} -result {}
+test util-9.33.1 {TclGetIntForIndex} -body {
+    string index a 0d100000000000+0
+} -result {}
 test util-9.34 {TclGetIntForIndex} -body {
     string index a 1.0
 } -returnCodes error -match glob -result *
@@ -709,7 +728,50 @@ test util-9.43 {TclGetIntForIndex} -body {
 } -returnCodes error -match glob -result *
 test util-9.44 {TclGetIntForIndex} -body {
     string index a 0+1000000000000
+} -result {}
+test util-9.45 {TclGetIntForIndex} {
+    string index abcd end+2305843009213693950
+} {}
+test util-9.46 {TclGetIntForIndex} {
+    string index abcd end+4294967294
+} {}
+# TIP 502
+test util-9.47 {TclGetIntForIndex} {
+    string index abcd 0x10000000000000000
+} {}
+test util-9.48 {TclGetIntForIndex} {
+    string index abcd -0x10000000000000000
+} {}
+test util-9.49 {TclGetIntForIndex} -body {
+    string index abcd end*1
 } -returnCodes error -match glob -result *
+test util-9.50 {TclGetIntForIndex} -body {
+    string index abcd {end- 1}
+} -returnCodes error -match glob -result *
+test util-9.51 {TclGetIntForIndex} -body {
+    string index abcd end-end
+} -returnCodes error -match glob -result *
+test util-9.52 {TclGetIntForIndex} -body {
+    string index abcd end-x
+} -returnCodes error -match glob -result *
+test util-9.53 {TclGetIntForIndex} -body {
+    string index abcd end-0.1
+} -returnCodes error -match glob -result *
+test util-9.54 {TclGetIntForIndex} {
+    string index abcd end-0x10000000000000000
+} {}
+test util-9.55 {TclGetIntForIndex} {
+    string index abcd end+0x10000000000000000
+} {}
+test util-9.56 {TclGetIntForIndex} {
+    string index abcd end--0x10000000000000000
+} {}
+test util-9.57 {TclGetIntForIndex} {
+    string index abcd end+-0x10000000000000000
+} {}
+test util-9.58 {TclGetIntForIndex} {
+    string index abcd end--0x8000000000000000
+} {}
 
 test util-10.1 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x0000000000000000
@@ -4016,6 +4078,54 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     0x43ffffffffffffff 0xc3ffffffffffffff
     0x4400000000000000 0xc400000000000000
 }]
+
+test util-18.1 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.2 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.3 {Tcl_ObjPrintf} {testprint} {
+    testprint %qd [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.4 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.5 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.6 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.7 {Tcl_ObjPrintf} {testprint} {
+    testprint %qd [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.8 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.9 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %I32d" [expr -2**63+2]
+} {-9223372036854775806 2}
+
+test util-18.10 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %p" 65535
+} {65535 0xffff}
+
+test util-18.11 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %td" 65536
+} {65536 65536}
+
+test util-18.12 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %Id" 65537
+} {65537 65537}
 
 set ::tcl_precision $saved_precision
 

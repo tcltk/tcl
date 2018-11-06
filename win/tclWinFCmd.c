@@ -337,7 +337,7 @@ DoRenameFile(
 	     * character is either end-of-string or a directory separator
 	     */
 
-	    if ((strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString))==0)
+	    if ((strncmp(src, dst, Tcl_DStringLength(&srcString))==0)
 		    && (dst[Tcl_DStringLength(&srcString)] == '\\'
 		    || dst[Tcl_DStringLength(&srcString)] == '/'
 		    || dst[Tcl_DStringLength(&srcString)] == '\0')) {
@@ -1026,7 +1026,8 @@ DoRemoveJustDirectory(
 
     if (nativePath == NULL || nativePath[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
-	goto end;
+	Tcl_DStringInit(errorPtr);
+	return TCL_ERROR;
     }
 
     attr = GetFileAttributes(nativePath);
@@ -1108,9 +1109,7 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
-	char *p;
-	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
-	p = Tcl_DStringValue(errorPtr);
+	char *p = Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
 	for (; *p; ++p) {
 	    if (*p == '\\') *p = '/';
 	}
@@ -1525,8 +1524,8 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	int len;
-	const char *str = Tcl_GetStringFromObj(fileName,&len);
+	const char *str = TclGetString(fileName);
+	size_t len = fileName->length;
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1611,12 +1610,11 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	int pathLen;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = Tcl_GetStringFromObj(elt, &pathLen);
-	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
+	pathv = TclGetString(elt);
+	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
@@ -1639,7 +1637,6 @@ ConvertFileNameFormat(
 	    Tcl_DString dsTemp;
 	    const TCHAR *nativeName;
 	    const char *tempString;
-	    int tempLen;
 	    WIN32_FIND_DATA data;
 	    HANDLE handle;
 	    DWORD attr;
@@ -1652,9 +1649,8 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    Tcl_DStringInit(&ds);
-	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    tempString = TclGetString(tempPath);
+	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {

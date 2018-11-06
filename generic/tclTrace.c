@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    int refCount;		/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -143,7 +143,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
-typedef struct StringTraceData {
+typedef struct {
     ClientData clientData;	/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
@@ -191,8 +191,10 @@ Tcl_TraceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int optionIndex;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
     const char *name;
     const char *flagOps, *p;
+#endif
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
 	"add", "info", "remove",
@@ -278,7 +280,7 @@ Tcl_TraceObjCmd(
 
 	opsList = Tcl_NewObj();
 	Tcl_IncrRefCount(opsList);
-	flagOps = Tcl_GetStringFromObj(objv[3], &numFlags);
+	flagOps = TclGetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
 	    Tcl_DecrRefCount(opsList);
 	    goto badVarOps;
@@ -365,12 +367,14 @@ Tcl_TraceObjCmd(
     }
     return TCL_OK;
 
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
   badVarOps:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad operations \"%s\": should be one or more of rwua",
 	    flagOps));
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", NULL);
     return TCL_ERROR;
+#endif
 }
 
 /*
@@ -462,7 +466,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
@@ -701,7 +705,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
@@ -904,7 +908,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = ckalloc(
@@ -912,9 +916,11 @@ TraceVariableObjCmd(
 		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
 	    if (objv[0] == NULL) {
 		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
 	    }
+#endif
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
@@ -939,7 +945,11 @@ TraceVariableObjCmd(
 		TraceVarInfo *tvarPtr = clientData;
 
 		if ((tvarPtr->length == length)
-			&& ((tvarPtr->flags & ~TCL_TRACE_OLD_STYLE)==flags)
+			&& ((tvarPtr->flags
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+& ~TCL_TRACE_OLD_STYLE
+#endif
+						)==flags)
 			&& (strncmp(command, tvarPtr->command,
 				(size_t) length) == 0)) {
 		    Tcl_UntraceVar2(interp, name, NULL,
@@ -2468,6 +2478,47 @@ TclVarTraceExists(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCheckArrayTraces --
+ *
+ *	This function is invoked to when we operate on an array variable,
+ *	to allow any array traces to fire.
+ *
+ * Results:
+ *	Returns TCL_OK to indicate normal operation. Returns TCL_ERROR if
+ *	invocation of a trace function indicated an error. When TCL_ERROR is
+ *	returned, then error information is left in interp.
+ *
+ * Side effects:
+ *	Almost anything can happen, depending on trace; this function itself
+ *	doesn't have any side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCheckArrayTraces(
+    Tcl_Interp *interp,
+    Var *varPtr,
+    Var *arrayPtr,
+    Tcl_Obj *name,
+    int index)
+{
+    int code = TCL_OK;
+
+    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+	&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	Interp *iPtr = (Interp *)interp;
+
+	code = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, name, NULL,
+		(TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY| TCL_TRACE_ARRAY),
+		/* leaveErrMsg */ 1, index);
+    }
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCallVarTraces --
  *
  *	This function is invoked to find and invoke relevant trace functions
@@ -2819,6 +2870,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
@@ -2834,6 +2886,7 @@ Tcl_UntraceVar(
 {
     Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2988,6 +3041,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
@@ -3005,6 +3059,7 @@ Tcl_VarTraceInfo(
     return Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc,
 	    prevClientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -3097,6 +3152,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_TraceVar
 int
 Tcl_TraceVar(
@@ -3114,6 +3170,7 @@ Tcl_TraceVar(
 {
     return Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

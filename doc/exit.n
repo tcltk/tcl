@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH exit n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -49,3 +49,7 @@ if {[catch {main} msg options]} {
 exec(n)
 .SH KEYWORDS
 abort, exit, process
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

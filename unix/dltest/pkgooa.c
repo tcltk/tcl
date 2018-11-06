@@ -96,7 +96,7 @@ Pkgooa_Init(
      * This worked in Tcl 8.6.0, and is expected
      * to keep working in all future Tcl 8.x releases.
      */
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     if (tclStubsPtr == NULL) {
