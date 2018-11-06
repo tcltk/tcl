@@ -1586,6 +1586,9 @@ const TclStubs tclStubs = {
     Tcl_FetchIntRep, /* 638 */
     Tcl_StoreIntRep, /* 639 */
     Tcl_HasStringRep, /* 640 */
+    Tcl_IncrRefCount, /* 641 */
+    Tcl_DecrRefCount, /* 642 */
+    Tcl_IsShared, /* 643 */
 };
 
 /* !END!: Do not edit above this line. */
