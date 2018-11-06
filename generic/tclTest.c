@@ -7082,17 +7082,11 @@ TestconcatobjCmd(
 
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
-    if (list1Ptr->bytes != NULL) {
-	ckfree(list1Ptr->bytes);
-	list1Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list1Ptr);
 
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
-    if (list2Ptr->bytes != NULL) {
-	ckfree(list2Ptr->bytes);
-	list2Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list2Ptr);
 
     /*
      * Verify that concat'ing a list obj with one or more empty strings does

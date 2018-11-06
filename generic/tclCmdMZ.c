@@ -1593,9 +1593,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if ((objPtr->typePtr == &tclDoubleType) ||
-		(objPtr->typePtr == &tclIntType) ||
-		(objPtr->typePtr == &tclBignumType)) {
+	if (Tcl_FetchIntRep(objPtr, &tclDoubleType) ||
+		Tcl_FetchIntRep(objPtr, &tclIntType) ||
+		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1624,8 +1624,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if ((objPtr->typePtr == &tclIntType) ||
-		(objPtr->typePtr == &tclBignumType)) {
+	if (Tcl_FetchIntRep(objPtr, &tclIntType) ||
+		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1903,7 +1903,8 @@ StringMapCmd(
      * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
-    if (objv[objc-2]->typePtr == &tclDictType && objv[objc-2]->bytes == NULL){
+    if (!TclHasStringRep(objv[objc-2]) 
+	    && Tcl_FetchIntRep(objv[objc-2], &tclDictType)){
 	int i, done;
 	Tcl_DictSearch search;
 
