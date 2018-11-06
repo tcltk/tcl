@@ -153,9 +153,9 @@
 	    if {![info object isa class $d]} {
 		continue
 	    }
-	    define $delegate superclass -append $d
+	    define $delegate ::oo::define::superclass -append $d
 	}
-	objdefine $class mixin -append $delegate
+	objdefine $class ::oo::objdefine::mixin -append $delegate
     }
 
     # ----------------------------------------------------------------------
@@ -176,7 +176,7 @@
 	    && ![info object isa class $targetDelegate]
 	} then {
 	    copy $originDelegate $targetDelegate
-	    objdefine $targetObject mixin -set \
+	    objdefine $targetObject ::oo::objdefine::mixin -set \
 		{*}[lmap c [info object mixin $targetObject] {
 		    if {$c eq $originDelegate} {set targetDelegate} {set c}
 		}]
