@@ -2364,6 +2364,13 @@ typedef struct Interp {
 #define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
 
 /*
+ * A common panic alert when memory allocation fails.
+ */
+
+#define TclOOM(ptr, size) \
+	((size) && ((ptr)||(Tcl_Panic("unable to alloc %u bytes", (size)),1)))
+
+/*
  * The following enum values are used to specify the runtime platform setting
  * of the tclPlatform variable.
  */
@@ -2436,12 +2443,6 @@ typedef struct List {
 
 #define ListRepPtr(listPtr) \
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
-
-#define ListSetIntRep(objPtr, listRepPtr) \
-    (objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(listRepPtr), \
-    (objPtr)->internalRep.twoPtrValue.ptr2 = NULL, \
-    (listRepPtr)->refCount++, \
-    (objPtr)->typePtr = &tclListType
 
 #define ListObjGetElements(listPtr, objc, objv) \
     ((objv) = &(ListRepPtr(listPtr)->elements), \
@@ -2750,7 +2751,6 @@ MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
-MODULE_SCOPE const Tcl_ObjType tclEndOffsetType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
@@ -3030,6 +3030,8 @@ MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 MODULE_SCOPE CmdFrame *	TclGetCmdFrameForProcedure(Proc *procPtr);
 MODULE_SCOPE int	TclGetCompletionCodeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *value, int *code);
+MODULE_SCOPE Proc *	TclGetLambdaFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Obj **nsObjPtrPtr);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
 			    int *typePtr);
@@ -3450,6 +3452,9 @@ MODULE_SCOPE int	Tcl_LmapObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LoadObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LpopObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LrangeObjCmd(ClientData clientData,
@@ -4421,7 +4426,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->length = 0; \
     } else { \
 	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
+	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (unsigned) (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4480,6 +4485,18 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	} \
 	(objPtr)->bytes = NULL; \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to test whether an object has a
+ * string representation (or is a 'pure' internal value).
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclHasStringRep(Tcl_Obj *objPtr);
+ *----------------------------------------------------------------
+ */
+
+#define TclHasStringRep(objPtr) ((objPtr)->bytes != NULL)
 
 /*
  *----------------------------------------------------------------
@@ -4700,18 +4717,18 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclSetIntObj(objPtr, i) \
     do {						\
+	Tcl_ObjIntRep ir;				\
+	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	TclFreeIntRep(objPtr);				\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
-	(objPtr)->typePtr = &tclIntType;		\
+	Tcl_StoreIntRep(objPtr, &tclIntType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
-    do {							\
-	TclInvalidateStringRep(objPtr);				\
-	TclFreeIntRep(objPtr);					\
-	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType;			\
+    do {						\
+	Tcl_ObjIntRep ir;				\
+	ir.doubleValue = (double) d;			\
+	TclInvalidateStringRep(objPtr);			\
+	Tcl_StoreIntRep(objPtr, &tclDoubleType, &ir);	\
     } while (0)
 
 /*

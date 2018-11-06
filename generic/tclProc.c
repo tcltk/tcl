@@ -15,6 +15,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include <assert.h>
 
 /*
  * Variables that are part of the [apply] command implementation and which
@@ -67,6 +68,22 @@ const Tcl_ObjType tclProcBodyType = {
 				 * should panic instead. */
 };
 
+#define ProcSetIntRep(objPtr, procPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	(procPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (procPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &tclProcBodyType, &ir);		\
+    } while (0)
+
+#define ProcGetIntRep(objPtr, procPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &tclProcBodyType);		\
+	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 /*
  * The [upvar]/[uplevel] level reference type. Uses the longValue field
  * to remember the integer value of a parsed #<integer> format.
@@ -89,13 +106,31 @@ static const Tcl_ObjType levelReferenceType = {
  * will execute within. IF YOU CHANGE THIS, CHECK IN tclDisassemble.c TOO.
  */
 
-const Tcl_ObjType tclLambdaType = {
+static const Tcl_ObjType lambdaType = {
     "lambdaExpr",		/* name */
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetLambdaFromAny		/* setFromAnyProc */
 };
+
+#define LambdaSetIntRep(objPtr, procPtr, nsObjPtr)			\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (procPtr);				\
+	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
+	Tcl_IncrRefCount((nsObjPtr));					\
+	Tcl_StoreIntRep((objPtr), &lambdaType, &ir);			\
+    } while (0)
+
+#define LambdaGetIntRep(objPtr, procPtr, nsObjPtr)			\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &lambdaType);			\
+	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(nsObjPtr) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
+    } while (0)
+
 
 /*
  *----------------------------------------------------------------------
@@ -294,7 +329,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (objv[3]->typePtr == &tclProcBodyType) {
+    if (Tcl_FetchIntRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 
@@ -370,7 +405,7 @@ TclCreateProc(
 {
     Interp *iPtr = (Interp *) interp;
 
-    register Proc *procPtr;
+    register Proc *procPtr = NULL;
     int i, result, numArgs, plen;
     const char *bytes, *argname, *argnamei;
     char argnamelast;
@@ -378,7 +413,8 @@ TclCreateProc(
     Tcl_Obj *defPtr, *errorObj, **argArray;
     int precompiled = 0;
 
-    if (bodyPtr->typePtr == &tclProcBodyType) {
+    ProcGetIntRep(bodyPtr, procPtr);
+    if (procPtr != NULL) {
 	/*
 	 * Because the body is a TclProProcBody, the actual body is already
 	 * compiled, and it is not shared with anyone else, so it's OK not to
@@ -391,7 +427,6 @@ TclCreateProc(
 	 * will be holding a reference to it.
 	 */
 
-	procPtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
 	precompiled = 1;
@@ -733,6 +768,7 @@ TclObjGetFrame(
 {
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
+    const Tcl_ObjIntRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
 
@@ -758,8 +794,8 @@ TclObjGetFrame(
 	    level = curLevel - level;
 	    result = 1;
 	}
-    } else if (objPtr->typePtr == &levelReferenceType) {
-	level = (int) objPtr->internalRep.wideValue;
+    } else if ((irPtr = Tcl_FetchIntRep(objPtr, &levelReferenceType))) {
+	level = irPtr->wideValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -768,9 +804,10 @@ TclObjGetFrame(
 		if (level < 0 || (level > 0 && name[1] == '-')) {
 		    result = -1;
 		} else {
-		    TclFreeIntRep(objPtr);
-		    objPtr->typePtr = &levelReferenceType;
-		    objPtr->internalRep.wideValue = level;
+		    Tcl_ObjIntRep ir;
+
+		    ir.wideValue = level;
+		    Tcl_StoreIntRep(objPtr, &levelReferenceType, &ir);
 		    result = 1;
 		}
 	    } else {
@@ -1094,10 +1131,10 @@ TclInitCompiledLocals(
     ByteCode *codePtr;
 
     bodyPtr = framePtr->procPtr->bodyPtr;
-    if (bodyPtr->typePtr != &tclByteCodeType) {
+    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr == NULL) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
-    codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     if (framePtr->numCompiledLocals) {
 	if (!codePtr->localCachePtr) {
@@ -1260,7 +1297,7 @@ InitLocalCache(
     Proc *procPtr)
 {
     Interp *iPtr = procPtr->iPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
 
@@ -1269,6 +1306,8 @@ InitLocalCache(
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
     int new;
+
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Cache the names and initial values of local variables; store the
@@ -1337,10 +1376,12 @@ InitArgsAndLocals(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
+
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Make sure that the local cache of variable names and initial values has
@@ -1516,7 +1557,8 @@ TclPushProcCallFrame(
      * local variables are found while compiling.
      */
 
-    if (procPtr->bodyPtr->typePtr == &tclByteCodeType) {
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
 	/*
@@ -1528,7 +1570,6 @@ TclPushProcCallFrame(
 	 * commands and/or resolver changes are considered).
 	 */
 
-	codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1726,7 +1767,7 @@ TclNRInterpProcCore(
      */
 
     procPtr->refCount++;
-    codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1860,7 +1901,9 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
+
+    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1876,7 +1919,7 @@ TclProcCompileProc(
      * are not recompiled, even if things have changed.
      */
 
-    if (bodyPtr->typePtr == &tclByteCodeType) {
+    if (codePtr != NULL) {
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
@@ -1895,11 +1938,12 @@ TclProcCompileProc(
 	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
-	    TclFreeIntRep(bodyPtr);
+	    Tcl_StoreIntRep(bodyPtr, &tclByteCodeType, NULL);
+	    codePtr = NULL;
 	}
     }
 
-    if (bodyPtr->typePtr != &tclByteCodeType) {
+    if (codePtr == NULL) {
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -2248,10 +2292,7 @@ TclNewProcBodyObj(
 
     TclNewObj(objPtr);
     if (objPtr) {
-	objPtr->typePtr = &tclProcBodyType;
-	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-
-	procPtr->refCount++;
+	ProcSetIntRep(objPtr, procPtr);
     }
 
     return objPtr;
@@ -2279,11 +2320,10 @@ ProcBodyDup(
     Tcl_Obj *srcPtr,		/* Object to copy. */
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
-    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    Proc *procPtr;
+    ProcGetIntRep(srcPtr, procPtr);
 
-    dupPtr->typePtr = &tclProcBodyType;
-    dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-    procPtr->refCount++;
+    ProcSetIntRep(dupPtr, procPtr);
 }
 
 /*
@@ -2309,7 +2349,9 @@ static void
 ProcBodyFree(
     Tcl_Obj *objPtr)		/* The object to clean up. */
 {
-    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Proc *procPtr;
+
+    ProcGetIntRep(objPtr, procPtr);
 
     if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
@@ -2335,15 +2377,15 @@ DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
 {
-    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    Tcl_Obj *nsObjPtr = srcPtr->internalRep.twoPtrValue.ptr2;
+    Proc *procPtr;
+    Tcl_Obj *nsObjPtr;
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;
+    LambdaGetIntRep(srcPtr, procPtr, nsObjPtr);
+    assert(procPtr != NULL);
 
     procPtr->refCount++;
-    Tcl_IncrRefCount(nsObjPtr);
-    copyPtr->typePtr = &tclLambdaType;
+
+    LambdaSetIntRep(copyPtr, procPtr, nsObjPtr);
 }
 
 static void
@@ -2351,14 +2393,16 @@ FreeLambdaInternalRep(
     register Tcl_Obj *objPtr)	/* CmdName object with internal representation
 				 * to free. */
 {
-    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    Tcl_Obj *nsObjPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    Proc *procPtr;
+    Tcl_Obj *nsObjPtr;
+
+    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    assert(procPtr != NULL);
 
     if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
-    objPtr->typePtr = NULL;
 }
 
 static int
@@ -2379,7 +2423,7 @@ SetLambdaFromAny(
 
     /*
      * Convert objPtr to list type first; if it cannot be converted, or if its
-     * length is not 2, then it cannot be converted to tclLambdaType.
+     * length is not 2, then it cannot be converted to lambdaType.
      */
 
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
@@ -2520,20 +2564,41 @@ SetLambdaFromAny(
 	}
     }
 
-    Tcl_IncrRefCount(nsObjPtr);
-
     /*
      * Free the list internalrep of objPtr - this will free argsPtr, but
      * bodyPtr retains a reference from the Proc structure. Then finish the
-     * conversion to tclLambdaType.
+     * conversion to lambdaType.
      */
 
-    TclFreeIntRep(objPtr);
-
-    objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;
-    objPtr->typePtr = &tclLambdaType;
+    LambdaSetIntRep(objPtr, procPtr, nsObjPtr);
     return TCL_OK;
+}
+
+Proc *
+TclGetLambdaFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Obj **nsObjPtrPtr)
+{
+    Proc *procPtr;
+    Tcl_Obj *nsObjPtr;
+
+    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+
+    if (procPtr == NULL) {
+	if (SetLambdaFromAny(interp, objPtr) != TCL_OK) {
+	    return NULL;
+	}
+	LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    }
+
+    assert(procPtr != NULL);
+    if (procPtr->iPtr != (Interp *)interp) {
+	return NULL;
+    }
+
+    *nsObjPtrPtr = nsObjPtr;
+    return procPtr;
 }
 
 /*
@@ -2570,7 +2635,6 @@ TclNRApplyObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;
     int result;
@@ -2588,24 +2652,17 @@ TclNRApplyObjCmd(
      */
 
     lambdaPtr = objv[1];
-    if (lambdaPtr->typePtr == &tclLambdaType) {
-	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
-    }
+    procPtr = TclGetLambdaFromObj(interp, lambdaPtr, &nsObjPtr);
 
-    if ((procPtr == NULL) || (procPtr->iPtr != iPtr)) {
-	result = SetLambdaFromAny(interp, lambdaPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
+    if (procPtr == NULL) {
+	return TCL_ERROR;
     }
 
     /*
-     * Find the namespace where this lambda should run, and push a call frame
-     * for that namespace. Note that TclObjInterpProc() will pop it.
+     * Push a call frame for the lambda namespace.
+     * Note that TclObjInterpProc() will pop it.
      */
 
-    nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
     result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
     if (result != TCL_OK) {
 	return TCL_ERROR;
