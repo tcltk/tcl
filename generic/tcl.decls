@@ -132,7 +132,7 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-declare 30 {
+declare 30 {deprecated {Kept only for deployed refcounting macros}} {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
@@ -2364,6 +2364,20 @@ declare 639 {
 declare 640 {
     int Tcl_HasStringRep(Tcl_Obj *objPtr)
 }
+
+# TIP #506
+declare 641 {
+    void Tcl_IncrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 642 {
+    void Tcl_DecrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 643 {
+    int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
