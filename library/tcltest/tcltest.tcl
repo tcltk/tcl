@@ -2752,6 +2752,7 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
+    set failFilesAccum {}
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2841,6 +2842,7 @@ proc tcltest::runAllTests { {shell ""} } {
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
+			    lappend failFilesAccum $testFile
 			}
 		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
@@ -2887,7 +2889,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [info exists testFileFailures]
+    return [expr {[info exists testFileFailures] || [llength $failFilesAccum]}]
 }
 
 #####################################################################
