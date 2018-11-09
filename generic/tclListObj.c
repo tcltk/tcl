@@ -1990,7 +1990,21 @@ UpdateStringOfList(
      * Pass 2: copy into string rep buffer.
      */
 
+    /*
+     * We used to set the string length here, relying on a presumed
+     * guarantee that the number of bytes TclScanElement() calls reported
+     * to be needed was a precise count and not an over-estimate, so long
+     * as the same flag values were passed to TclConvertElement().
+     *
+     * Then we saw [35a8f1c04a], where a bug in TclScanElement() caused
+     * that guarantee to fail. Rather than trust there are no more bugs,
+     * we set the length after the loop based on what was actually written,
+     * an not on what was predicted.
+     *
     listPtr->length = bytesNeeded - 1;
+     *
+     */
+
     listPtr->bytes = ckalloc(bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
@@ -1999,7 +2013,10 @@ UpdateStringOfList(
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
     }
-    listPtr->bytes[listPtr->length] = '\0';
+    dst[-1] = '\0';
+
+    /* Here is the safe setting of the string length. */
+    listPtr->length = dst - 1 - listPtr->bytes;
 
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
