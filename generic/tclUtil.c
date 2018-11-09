@@ -944,6 +944,10 @@ TclScanElement(
     int preferEscape = 0;	/* Use preferences to track whether to use */
     int preferBrace = 0;	/* CONVERT_MASK mode. */
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
+
+    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	preferBrace = 1;
+    }
 #endif
 
     if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
