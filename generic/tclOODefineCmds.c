@@ -1965,7 +1965,7 @@ TclOODefineMethodObjCmd(
 
     int isInstanceMethod = (clientData != NULL);
     Object *oPtr;
-    int isPublic;
+    int isPublic = 0;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
