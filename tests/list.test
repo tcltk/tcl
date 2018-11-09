@@ -123,6 +123,9 @@ test list-4.2 {Bug 35a8f1c04a, check correct str-rep} {
     }
     set result [join $result \n]
 } {}
+test list-4.3 {Bug 35a8f1c04a, check correct string length} {
+    string length [list #""]
+} 5
 
 # cleanup
 ::tcltest::cleanupTests
