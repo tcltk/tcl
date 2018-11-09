@@ -944,10 +944,6 @@ TclScanElement(
     int preferEscape = 0;	/* Use preferences to track whether to use */
     int preferBrace = 0;	/* CONVERT_MASK mode. */
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
-
-    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
-	preferBrace = 1;
-    }
 #endif
 
     if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
@@ -955,6 +951,23 @@ TclScanElement(
 	*flagPtr = CONVERT_BRACE;
 	return 2;
     }
+
+#if COMPAT
+    /*
+     * We have an established history in TclConvertElement() when quoting
+     * because of a leading hash character to force what would be the
+     * CONVERT_MASK mode into the CONVERT_BRACE mode. That is, we format
+     * the element #{a"b} like this:
+     *			{#{a"b}}
+     * and not like this:
+     *			\#{a\"b}
+     * This is inconsistent with [list x{a"b}], but we will not change that now.
+     * Set that preference here so that we compute a tight size requirement.
+     */
+    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	preferBrace = 1;
+    }
+#endif
 
     if ((*p == '{') || (*p == '"')) {
 	/*
