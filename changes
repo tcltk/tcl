@@ -8889,4 +8889,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2018-10-29 Update tcltest package for Travis support (fellows)
 => tcltest 2.5.0
 
-- Released 8.6.9, November 9, 2018 - http://core.tcl-lang.org/tcl/ for details -
+2018-11-09 (bug)[35a8f1] overlong string length of some lists (owens)
+
+- Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
