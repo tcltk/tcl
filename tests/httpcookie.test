@@ -194,14 +194,14 @@ test http-cookiejar-4.2 {cookie storage: instance} -setup {
     cookiejar ?
 } -returnCodes error -cleanup {
     ::cookiejar destroy
-} -result {unknown method "?": must be destroy, forceLoadDomainData, getCookies, lookup or storeCookie}
+} -result {unknown method "?": must be destroy, forceLoadDomainData, getCookies, lookup, policyAllow or storeCookie}
 test http-cookiejar-4.3 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     lsort [info object methods cookiejar -all]
 } -cleanup {
     ::cookiejar destroy
-} -result {destroy forceLoadDomainData getCookies lookup storeCookie}
+} -result {destroy forceLoadDomainData getCookies lookup policyAllow storeCookie}
 test http-cookiejar-4.4 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
