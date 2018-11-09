@@ -952,6 +952,23 @@ TclScanElement(
 	return 2;
     }
 
+#if COMPAT
+    /*
+     * We have an established history in TclConvertElement() when quoting
+     * because of a leading hash character to force what would be the
+     * CONVERT_MASK mode into the CONVERT_BRACE mode. That is, we format
+     * the element #{a"b} like this:
+     *			{#{a"b}}
+     * and not like this:
+     *			\#{a\"b}
+     * This is inconsistent with [list x{a"b}], but we will not change that now.
+     * Set that preference here so that we compute a tight size requirement.
+     */
+    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	preferBrace = 1;
+    }
+#endif
+
     if ((*p == '{') || (*p == '"')) {
 	/*
 	 * Must escape or protect so leading character of value is not

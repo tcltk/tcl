@@ -108,6 +108,24 @@ test list-3.1 {SetListFromAny and lrange/concat results} {
 test list-4.1 {Bug 3173086} {
     string is list "{[list \\\\\}]}"
 } 1
+test list-4.2 {Bug 35a8f1c04a, check correct str-rep} {
+    set result {}
+    foreach i {
+	{#"} {#"""} {#"""""""""""""""}
+	"#\"{" "#\"\"\"{" "#\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\{"
+	"#\"}" "#\"\"\"}" "#\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\}"
+    } {
+	set list [list $i]
+	set list [string trim " $list "]
+	if {[llength $list] > 1 || $i ne [lindex $list 0]} {
+	    lappend result "wrong string-representation of list by '$i', length: [llength $list], list: '$list'"
+	}
+    }
+    set result [join $result \n]
+} {}
+test list-4.3 {Bug 35a8f1c04a, check correct string length} {
+    string length [list #""]
+} 5
 
 # cleanup
 ::tcltest::cleanupTests
