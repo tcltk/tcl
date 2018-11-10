@@ -7,22 +7,22 @@ matrix:
       dist: trusty
       compiler: clang
       env:
-        - CFGOPT=--enable-shared BUILD_DIR=unix MATRIX_EVAL=""
+        - CFGOPT=--enable-shared BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: clang
       env:
-        - CFGOPT=--disable-shared BUILD_DIR=unix MATRIX_EVAL=""
+        - CFGOPT=--disable-shared BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
       env:
-        - CFGOPT=--enable-shared BUILD_DIR=unix MATRIX_EVAL=""
+        - CFGOPT=--enable-shared BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
       env:
-        - CFGOPT=--disable-shared BUILD_DIR=unix MATRIX_EVAL=""
+        - CFGOPT=--disable-shared BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
@@ -47,7 +47,7 @@ matrix:
         - CC=gcc-5 BUILD_DIR=unix MATRIX_EVAL="CC=gcc-5"
     - os: linux
       dist: trusty
-      compiler: gcc
+      compiler: gcc-6
       addons:
         apt:
           sources:
@@ -55,7 +55,7 @@ matrix:
           packages:
             - g++-6
       env:
-        - CC=gcc-6 BUILD_DIR=unix MATRIX_EVAL="CC=gcc-6"
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
@@ -70,23 +70,23 @@ matrix:
     - os: osx
       osx_image: xcode8
       env:
-        - BUILD_DIR=unix MATRIX_EVAL=""
+        - BUILD_DIR=unix
     - os: osx
       osx_image: xcode8
       env:
-        - BUILD_DIR=macosx MATRIX_EVAL="" NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode9
       env:
-        - BUILD_DIR=macosx MATRIX_EVAL="" NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode10
       env:
-        - BUILD_DIR=macosx MATRIX_EVAL="" NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
 ### C builds not currently supported on Windows instances
 #    - os: windows
 #      env:
-#        - BUILD_DIR=win MATRIX_EVAL=""
+#        - BUILD_DIR=win
 ### ... so proxy with a Mingw cross-compile
 # Test with mingw-w64 (32 bit)
     - os: linux
@@ -102,7 +102,7 @@ matrix:
             - gcc-multilib
             - wine
       env:
-        - BUILD_DIR=win MATRIX_EVAL="" CFGOPT=--host=i686-w64-mingw32 NO_DIRECT_TEST=1
+        - BUILD_DIR=win CFGOPT=--host=i686-w64-mingw32 NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
       dist: trusty
@@ -116,7 +116,7 @@ matrix:
             - gcc-mingw-w64
             - wine
       env:
-        - BUILD_DIR=win MATRIX_EVAL="" CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit" NO_DIRECT_TEST=1
+        - BUILD_DIR=win CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit" NO_DIRECT_TEST=1
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm get stable; fi
@@ -127,5 +127,5 @@ install:
   - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
 script:
   - make
-  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-notfile socket.test'
-  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-file socket.test -verbose pt'
+  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-notfile socket.test' styles=develop
+  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-file socket.test -verbose pt' styles=develop
