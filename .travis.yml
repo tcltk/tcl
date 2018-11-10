@@ -127,4 +127,5 @@ install:
   - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
 script:
   - make
-  - test -n "$NO_DIRECT_TEST" || make test
+  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-notfile socket.test'
+  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-file socket.test -verbose pt'
