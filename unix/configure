@@ -4840,8 +4840,6 @@ _ACEOF
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     echo "$as_me:$LINENO: checking for sin" >&5
@@ -4938,68 +4936,6 @@ if test $ac_cv_func_sin = yes; then
   MATH_LIBS=""
 else
   MATH_LIBS="-lm"
-fi
-
-    echo "$as_me:$LINENO: checking for main in -lieee" >&5
-echo $ECHO_N "checking for main in -lieee... $ECHO_C" >&6
-if test "${ac_cv_lib_ieee_main+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lieee  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-main ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_ieee_main=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_lib_ieee_main=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_ieee_main" >&5
-echo "${ECHO_T}$ac_cv_lib_ieee_main" >&6
-if test $ac_cv_lib_ieee_main = yes; then
-  MATH_LIBS="-lieee $MATH_LIBS"
 fi
 
 
@@ -7575,7 +7511,7 @@ fi
 fi
 
 	    ;;
-	FreeBSD-*)
+	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
@@ -8783,7 +8719,7 @@ fi
 	    BSD/OS*) ;;
 	    CYGWIN_*|MINGW32_*) ;;
 	    IRIX*) ;;
-	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -9577,6 +9513,70 @@ echo "${ECHO_T}$tcl_cv_struct_dirent64" >&6
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_STRUCT_DIRENT64 1
+_ACEOF
+
+	fi
+
+	echo "$as_me:$LINENO: checking for DIR64" >&5
+echo $ECHO_N "checking for DIR64... $ECHO_C" >&6
+if test "${tcl_cv_DIR64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <dirent.h>
+int
+main ()
+{
+struct dirent64 *p; DIR64 d = opendir64(".");
+            p = readdir64(d); rewinddir64(d); closedir64(d);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_DIR64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_DIR64=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_DIR64" >&5
+echo "${ECHO_T}$tcl_cv_DIR64" >&6
+	if test "x${tcl_cv_DIR64}" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DIR64 1
 _ACEOF
 
 	fi
@@ -14979,358 +14979,6 @@ echo "${ECHO_T}$tcl_cv_strtoul_unbroken" >&6
 esac
 
 	USE_COMPAT=1
-    fi
-
-
-#--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-
-    echo "$as_me:$LINENO: checking for strtod" >&5
-echo $ECHO_N "checking for strtod... $ECHO_C" >&6
-if test "${ac_cv_func_strtod+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define strtod to an innocuous variant, in case <limits.h> declares strtod.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define strtod innocuous_strtod
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char strtod (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef strtod
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char strtod ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_strtod) || defined (__stub___strtod)
-choke me
-#else
-char (*f) () = strtod;
-#endif
-#ifdef __cplusplus
-}
-#endif
-
-int
-main ()
-{
-return f != strtod;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_func_strtod=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_func_strtod=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_func_strtod" >&5
-echo "${ECHO_T}$ac_cv_func_strtod" >&6
-if test $ac_cv_func_strtod = yes; then
-  tcl_ok=1
-else
-  tcl_ok=0
-fi
-
-    if test "$tcl_ok" = 1; then
-	echo "$as_me:$LINENO: checking proper strtod implementation" >&5
-echo $ECHO_N "checking proper strtod implementation... $ECHO_C" >&6
-if test "${tcl_cv_strtod_unbroken+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "$cross_compiling" = yes; then
-  tcl_cv_strtod_unbroken=unknown
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-int main() {
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_cv_strtod_unbroken=ok
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-tcl_cv_strtod_unbroken=broken
-fi
-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_strtod_unbroken" >&5
-echo "${ECHO_T}$tcl_cv_strtod_unbroken" >&6
-	if test "$tcl_cv_strtod_unbroken" = "ok"; then
-	    tcl_ok=1
-	else
-	    tcl_ok=0
-	fi
-    fi
-    if test "$tcl_ok" = 0; then
-	case $LIBOBJS in
-    "strtod.$ac_objext"   | \
-  *" strtod.$ac_objext"   | \
-    "strtod.$ac_objext "* | \
-  *" strtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS strtod.$ac_objext" ;;
-esac
-
-	USE_COMPAT=1
-    fi
-
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-
-    echo "$as_me:$LINENO: checking for strtod" >&5
-echo $ECHO_N "checking for strtod... $ECHO_C" >&6
-if test "${ac_cv_func_strtod+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define strtod to an innocuous variant, in case <limits.h> declares strtod.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define strtod innocuous_strtod
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char strtod (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef strtod
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char strtod ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_strtod) || defined (__stub___strtod)
-choke me
-#else
-char (*f) () = strtod;
-#endif
-#ifdef __cplusplus
-}
-#endif
-
-int
-main ()
-{
-return f != strtod;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_func_strtod=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_func_strtod=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_func_strtod" >&5
-echo "${ECHO_T}$ac_cv_func_strtod" >&6
-if test $ac_cv_func_strtod = yes; then
-  tcl_strtod=1
-else
-  tcl_strtod=0
-fi
-
-    if test "$tcl_strtod" = 1; then
-	echo "$as_me:$LINENO: checking for Solaris2.4/Tru64 strtod bugs" >&5
-echo $ECHO_N "checking for Solaris2.4/Tru64 strtod bugs... $ECHO_C" >&6
-if test "${tcl_cv_strtod_buggy+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-	    if test "$cross_compiling" = yes; then
-  tcl_cv_strtod_buggy=buggy
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-		extern double strtod();
-		int main() {
-		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		    char *term;
-		    double value;
-		    value = strtod(infString, &term);
-		    if ((term != infString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(nanString, &term);
-		    if ((term != nanString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(spaceString, &term);
-		    if (term == (spaceString+1)) {
-			exit(1);
-		    }
-		    exit(0);
-		}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_cv_strtod_buggy=ok
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-tcl_cv_strtod_buggy=buggy
-fi
-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_strtod_buggy" >&5
-echo "${ECHO_T}$tcl_cv_strtod_buggy" >&6
-	if test "$tcl_cv_strtod_buggy" = buggy; then
-	    case $LIBOBJS in
-    "fixstrtod.$ac_objext"   | \
-  *" fixstrtod.$ac_objext"   | \
-    "fixstrtod.$ac_objext "* | \
-  *" fixstrtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS fixstrtod.$ac_objext" ;;
-esac
-
-	    USE_COMPAT=1
-
-cat >>confdefs.h <<\_ACEOF
-#define strtod fixstrtod
-_ACEOF
-
-	fi
     fi
 
 
