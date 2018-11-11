@@ -1,32 +1,33 @@
-dist: trusty
 sudo: false
 language: c
+
 matrix:
   include:
     - os: linux
+      dist: trusty
       compiler: clang
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=unix
     - os: linux
+      dist: trusty
       compiler: clang
       env:
-        - MATRIX_EVAL=""
-        - BUILD_DIR=unix
         - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
     - os: linux
+      dist: trusty
       compiler: gcc
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=unix
     - os: linux
+      dist: trusty
       compiler: gcc
       env:
-        - MATRIX_EVAL=""
-        - BUILD_DIR=unix
         - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
     - os: linux
-      compiler: gcc
+      dist: trusty
+      compiler: gcc-4.9
       addons:
         apt:
           sources:
@@ -34,10 +35,10 @@ matrix:
           packages:
             - g++-4.9
       env:
-        - MATRIX_EVAL="CC=gcc-4.9"
         - BUILD_DIR=unix
     - os: linux
-      compiler: gcc
+      dist: trusty
+      compiler: gcc-5
       addons:
         apt:
           sources:
@@ -45,10 +46,10 @@ matrix:
           packages:
             - g++-5
       env:
-        - MATRIX_EVAL="CC=gcc-5"
         - BUILD_DIR=unix
     - os: linux
-      compiler: gcc
+      dist: trusty
+      compiler: gcc-6
       addons:
         apt:
           sources:
@@ -56,10 +57,10 @@ matrix:
           packages:
             - g++-6
       env:
-        - MATRIX_EVAL="CC=gcc-6"
         - BUILD_DIR=unix
     - os: linux
-      compiler: gcc
+      dist: trusty
+      compiler: gcc-7
       addons:
         apt:
           sources:
@@ -67,33 +68,34 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CC=gcc-7"
         - BUILD_DIR=unix
     - os: osx
       osx_image: xcode8
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=unix
     - os: osx
       osx_image: xcode8
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=macosx
         - NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode9
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=macosx
         - NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode10
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=macosx
         - NO_DIRECT_CONFIGURE=1
+### C builds not currently directly supported on Windows instances
+#    - os: windows
+#      env:
+#        - BUILD_DIR=win
+### ... so proxy with a Mingw cross-compile
 # Test with mingw-w64 (32 bit)
     - os: linux
+      dist: trusty
       compiler: i686-w64-mingw32-gcc
       addons:
         apt:
@@ -105,13 +107,12 @@ matrix:
             - gcc-multilib
             - wine
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
         - NO_DIRECT_TEST=1
-
 # Test with mingw-w64 (64 bit)
     - os: linux
+      dist: trusty
       compiler: x86_64-w64-mingw32-gcc
       addons:
         apt:
@@ -122,24 +123,17 @@ matrix:
             - gcc-mingw-w64
             - wine
       env:
-        - MATRIX_EVAL=""
         - BUILD_DIR=win
-        - CFGOPT=--host=x86_64-w64-mingw32 --enable-64bit
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
         - NO_DIRECT_TEST=1
-
-### C builds not currently supported on Windows instances
-#    - os: windows
-#      env:
-#        - MATRIX_EVAL=""
-#        - BUILD_DIR=win
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm get stable; fi
-  - eval "${MATRIX_EVAL}"
   - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
   - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
 script:
   - make
-  - test -n "$NO_DIRECT_TEST" || make test
+  # The styles=develop avoids some weird problems on OSX
+  - test -n "$NO_DIRECT_TEST" || make test styles=develop
