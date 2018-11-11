@@ -7,7 +7,7 @@ matrix:
       dist: trusty
       compiler: clang
       env:
-        - CFGOPT=--enable-shared BUILD_DIR=unix
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: clang
@@ -17,7 +17,7 @@ matrix:
       dist: trusty
       compiler: gcc
       env:
-        - CFGOPT=--enable-shared BUILD_DIR=unix
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
@@ -25,7 +25,7 @@ matrix:
         - CFGOPT=--disable-shared BUILD_DIR=unix
     - os: linux
       dist: trusty
-      compiler: gcc
+      compiler: gcc-4.9
       addons:
         apt:
           sources:
@@ -33,10 +33,10 @@ matrix:
           packages:
             - g++-4.9
       env:
-        - CC=gcc-4.9 BUILD_DIR=unix MATRIX_EVAL="CC=gcc-4.9"
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
-      compiler: gcc
+      compiler: gcc-5
       addons:
         apt:
           sources:
@@ -44,7 +44,7 @@ matrix:
           packages:
             - g++-5
       env:
-        - CC=gcc-5 BUILD_DIR=unix MATRIX_EVAL="CC=gcc-5"
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc-6
@@ -58,7 +58,7 @@ matrix:
         - BUILD_DIR=unix
     - os: linux
       dist: trusty
-      compiler: gcc
+      compiler: gcc-7
       addons:
         apt:
           sources:
@@ -66,7 +66,7 @@ matrix:
           packages:
             - g++-7
       env:
-        - CC=gcc-7 BUILD_DIR=unix MATRIX_EVAL="CC=gcc-7"
+        - BUILD_DIR=unix
     - os: osx
       osx_image: xcode8
       env:
@@ -120,12 +120,11 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm get stable; fi
-  - eval "${MATRIX_EVAL}"
   - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
   - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
 script:
   - make
-  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-notfile socket.test' styles=develop
-  - test -n "$NO_DIRECT_TEST" || make test TESTFLAGS='-file socket.test -verbose pt' styles=develop
+  # The styles=develop avoids some weird problems on OSX
+  - test -n "$NO_DIRECT_TEST" || make test styles=develop
