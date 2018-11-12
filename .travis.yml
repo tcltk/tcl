@@ -12,7 +12,8 @@ matrix:
       dist: trusty
       compiler: clang
       env:
-        - CFGOPT=--disable-shared BUILD_DIR=unix
+        - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc
@@ -22,7 +23,8 @@ matrix:
       dist: trusty
       compiler: gcc
       env:
-        - CFGOPT=--disable-shared BUILD_DIR=unix
+        - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
     - os: linux
       dist: trusty
       compiler: gcc-4.9
@@ -74,15 +76,18 @@ matrix:
     - os: osx
       osx_image: xcode8
       env:
-        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx
+        - NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode9
       env:
-        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx
+        - NO_DIRECT_CONFIGURE=1
     - os: osx
       osx_image: xcode10
       env:
-        - BUILD_DIR=macosx NO_DIRECT_CONFIGURE=1
+        - BUILD_DIR=macosx
+        - NO_DIRECT_CONFIGURE=1
 ### C builds not currently supported on Windows instances
 #    - os: windows
 #      env:
@@ -102,7 +107,9 @@ matrix:
             - gcc-multilib
             - wine
       env:
-        - BUILD_DIR=win CFGOPT=--host=i686-w64-mingw32 NO_DIRECT_TEST=1
+        - BUILD_DIR=win
+        - CFGOPT=--host=i686-w64-mingw32
+        - NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
       dist: trusty
@@ -116,7 +123,9 @@ matrix:
             - gcc-mingw-w64
             - wine
       env:
-        - BUILD_DIR=win CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit" NO_DIRECT_TEST=1
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+        - NO_DIRECT_TEST=1
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm get stable; fi
