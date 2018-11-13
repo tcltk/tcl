@@ -1449,6 +1449,8 @@ TclOODefineClassObjCmd(
 	    TclOODeleteDescendants(interp, oPtr);
 	    oPtr->flags &= ~DONT_DELETE;
 	    TclOOReleaseClassContents(interp, oPtr);
+	    Tcl_Free(oPtr->classPtr);
+	    oPtr->classPtr = NULL;
 	} else if (!wasClass && willBeClass) {
 	    TclOOAllocClass(interp, oPtr);
 	}
