@@ -341,8 +341,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     return $enc
 } -cleanup {
     unset -nocomplain env(LANG)
-} -match regexp -result [expr {
-	($tcl_platform(os) eq "Darwin") ? "^utf-8$" : "^iso8859-15?$"}]
+} -match regexp -result {^(iso8859-15?|utf-8)$}
 test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
 } -constraints {unix stdio} -body {
