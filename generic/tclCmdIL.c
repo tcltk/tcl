@@ -2572,6 +2572,96 @@ Tcl_LlengthObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_LpopObjCmd --
+ *
+ *	This procedure is invoked to process the "lpop" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LpopObjCmd(
+    ClientData notUsed,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    register Tcl_Obj *const objv[])
+				/* Argument objects. */
+{
+    int listLen, result;
+    Tcl_Obj *elemPtr;
+    Tcl_Obj *listPtr, **elemPtrs;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "listvar ?index?");
+	return TCL_ERROR;
+    }
+
+    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    result = TclListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    /*
+     * First, extract the element to be returned.
+     * TclLindexFlat adds a ref count which is handled.
+     */
+    
+    if (objc == 2) {
+	elemPtr = elemPtrs[listLen - 1];
+	Tcl_IncrRefCount(elemPtr);
+    } else {
+	elemPtr = TclLindexFlat(interp, listPtr, objc-2, objv+2);
+
+	if (elemPtr == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_SetObjResult(interp, elemPtr);
+    Tcl_DecrRefCount(elemPtr);
+
+    /*
+     * Second, remove the element.
+     */
+
+    if (objc == 2) {
+	if (Tcl_IsShared(listPtr)) {
+	    listPtr = TclListObjCopy(NULL, listPtr);
+	}
+	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
+	if (result != TCL_OK) {
+	    return result;
+	}
+    } else {
+	listPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
+
+	if (listPtr == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+    
+    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_LrangeObjCmd --
  *
  *	This procedure is invoked to process the "lrange" Tcl command. See the
