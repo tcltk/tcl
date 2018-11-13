@@ -253,9 +253,6 @@ InitializeHostName(
 	    native = u.nodename;
         }
     }
-    if (native == NULL) {
-	native = &tclEmptyString;
-    }
 #else /* !NO_UNAME */
     /*
      * Uname doesn't exist; try gethostname instead.
@@ -284,9 +281,15 @@ InitializeHostName(
 #endif /* NO_UNAME */
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    *lengthPtr = strlen(native);
-    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, native, *lengthPtr + 1);
+    if (native) {
+	*lengthPtr = strlen(native);
+	*valuePtr = ckalloc(*lengthPtr + 1);
+	memcpy(*valuePtr, native, *lengthPtr + 1);
+    } else {
+	*lengthPtr = 0;
+	*valuePtr = ckalloc(1);
+	*valuePtr[0] = '\0';
+    }
 }
 
 /*
