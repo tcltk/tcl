@@ -3376,6 +3376,9 @@ MODULE_SCOPE int	Tcl_LmapObjCmd(void *clientData,
 MODULE_SCOPE int	Tcl_LoadObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LpopObjCmd(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LrangeObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
