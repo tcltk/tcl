@@ -4122,7 +4122,7 @@ UpdateStringOfString(
     stringPtr->allocated = 0;
 
     if (stringPtr->numChars == 0) {
-	TclInitStringRep(objPtr, &tclEmptyString, 0);
+	TclInitStringRep(objPtr, NULL, 0);
     } else {
 	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
 		stringPtr->numChars);

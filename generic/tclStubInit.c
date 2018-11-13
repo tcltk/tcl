@@ -1327,11 +1327,11 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
-    0, /* 636 */
-    0, /* 637 */
-    0, /* 638 */
-    0, /* 639 */
-    0, /* 640 */
+    Tcl_FreeIntRep, /* 636 */
+    Tcl_InitStringRep, /* 637 */
+    Tcl_FetchIntRep, /* 638 */
+    Tcl_StoreIntRep, /* 639 */
+    Tcl_HasStringRep, /* 640 */
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
