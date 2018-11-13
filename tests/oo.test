@@ -329,16 +329,17 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
     set fresh [interp create]
 } -body {
     lmap x [$fresh eval {
+	set initials {::oo::object ::oo::class ::oo::Slot}
 	foreach cmd {instances subclasses mixins superclass} {
-	    foreach initial {object class Slot} {
-		lappend x [info class $cmd ::oo::$initial]
+	    foreach initial $initials {
+		lappend x [info class $cmd $initial]
 	    }
 	}
-	foreach initial {object class Slot} {
-	    lappend x [info object class ::oo::$initial]
+	foreach initial $initials {
+	    lappend x [info object class $initial]
 	}
 	return $x
-    }] {lsort [lmap y $x {if {[string match *::delegate $y]} continue; set y}]}
+    }] {lsort [lsearch -all -not -inline $x *::delegate]}
 } -cleanup {
     interp delete $fresh
 } -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
@@ -2589,7 +2590,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -5146,6 +5147,254 @@ test oo-41.3 {TIP 478: myclass command calls unexported methods, via forward} -s
 } -cleanup {
     parent destroy
 } -result {1 {this is ::cls1}}
+
+test oo-42.1 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::object
+} {}
+test oo-42.2 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::object -class
+} {}
+test oo-42.3 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::object -instance
+} ::oo::objdefine
+test oo-42.4 {TIP 524: definition namespace control: introspection} -body {
+    info class definitionnamespace oo::object -gorp
+} -returnCodes error -result {bad kind "-gorp": must be -class or -instance}
+test oo-42.5 {TIP 524: definition namespace control: introspection} -body {
+    info class definitionnamespace oo::object -class x
+} -returnCodes error -result {wrong # args: should be "info class definitionnamespace className ?kind?"}
+test oo-42.6 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::class
+} ::oo::define
+test oo-42.7 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::class -class
+} ::oo::define
+test oo-42.8 {TIP 524: definition namespace control: introspection} {
+    info class definitionnamespace oo::class -instance
+} {}
+
+test oo-43.1 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace foodef
+    }
+    oo::class create foo {
+	superclass parent
+	self class foocls
+    }
+    oo::define foo {
+	sparkle
+    }
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result ok
+test oo-43.2 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+    unset -nocomplain ::result
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::define
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace foodef
+    }
+    foocls create foo {
+	superclass parent
+	lappend ::result [sparkle]
+    }
+    return $result
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result ok
+test oo-43.3 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+    unset -nocomplain ::result
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::define
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace -class foodef
+    }
+    foocls create foo {
+	superclass parent
+	lappend ::result [sparkle]
+    }
+    return $result
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result ok
+test oo-43.4 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::objdefine
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace -instance foodef
+    }
+    foocls create foo {
+	sparkle
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result {invalid command name "sparkle"}
+test oo-43.5 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::objdefine
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace foodef
+    }
+    namespace delete foodef
+    foocls create foo {
+	sparkle
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+    catch {namespace delete foodef}
+} -result {invalid command name "sparkle"}
+test oo-43.6 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+    unset -nocomplain result
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::objdefine
+	proc sparkle {} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace foodef
+    }
+    foocls create foo
+    lappend result [catch {oo::define foo sparkle} msg] $msg
+    namespace delete foodef
+    lappend result [catch {oo::define foo sparkle} msg] $msg
+    namespace eval foodef {
+	namespace path ::oo::objdefine
+	proc sparkle {} {return ok}
+    }
+    lappend result [catch {oo::define foo sparkle} msg] $msg
+} -cleanup {
+    parent destroy
+    catch {namespace delete foodef}
+} -result {0 ok 1 {invalid command name "sparkle"} 0 ok}
+test oo-43.7 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::define
+	proc sparkle {x} {return ok}
+    }
+    oo::class create foocls {
+	superclass oo::class parent
+	definitionnamespace foodef
+    }
+    foocls create foo {
+	superclass parent
+    }
+    oo::define foo spar gorp
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result ok
+test oo-43.8 {TIP 524: definition namespace control: semantics} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {
+	namespace path ::oo::objdefine
+	proc sparkle {} {return ok}
+    }
+    oo::class create foo {
+	superclass parent
+	definitionnamespace -instance foodef
+    }
+    oo::objdefine [foo new] {
+	method x y z
+	sparkle
+    }
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result ok
+test oo-43.9 {TIP 524: definition namespace control: syntax} -body {
+    oo::class create foo {
+	definitionnamespace -gorp foodef
+    }
+} -returnCodes error -result {bad kind "-gorp": must be -class or -instance}
+test oo-43.10 {TIP 524: definition namespace control: syntax} -body {
+    oo::class create foo {
+	definitionnamespace -class foodef x
+    }
+} -returnCodes error -result {wrong # args: should be "definitionnamespace ?kind? namespace"}
+test oo-43.11 {TIP 524: definition namespace control: syntax} -setup {
+    catch {namespace delete ::no_such_ns}
+} -body {
+    oo::class create foo {
+	definitionnamespace -class ::no_such_ns
+    }
+} -returnCodes error -result {namespace "::no_such_ns" not found}
+test oo-43.12 {TIP 524: definition namespace control: user-level introspection} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {}
+    oo::class create foo {
+	superclass oo::class parent
+    }
+    list [info class definitionnamespace foo] \
+	[oo::define foo definitionnamespace foodef] \
+	[info class definitionnamespace foo] \
+	[oo::define foo definitionnamespace {}] \
+	[info class definitionnamespace foo]
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result {{} {} ::foodef {} {}}
+test oo-43.13 {TIP 524: definition namespace control: user-level introspection} -setup {
+    oo::class create parent
+    namespace eval foodef {}
+} -body {
+    namespace eval foodef {}
+    oo::class create foo {
+	superclass parent
+    }
+    list [info class definitionnamespace foo -instance] \
+	[oo::define foo definitionnamespace -instance foodef] \
+	[info class definitionnamespace foo -instance] \
+	[oo::define foo definitionnamespace -instance {}] \
+	[info class definitionnamespace foo -instance]
+} -cleanup {
+    parent destroy
+    namespace delete foodef
+} -result {{} {} ::foodef {} {}}
 
 cleanupTests
 return
