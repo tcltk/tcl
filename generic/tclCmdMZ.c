@@ -1493,19 +1493,19 @@ StringIsCmd(
 
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
-	"boolean",	"digit",	"double",	"entier",
-	"false",	"graph",	"integer",	"list",
-	"lower",	"print",	"punct",	"space",
-	"true",		"upper",	"wideinteger",	"wordchar",
-	"xdigit",	NULL
+	"boolean",	"dict",		"digit",	"double",
+	"entier",	"false",	"graph",	"integer",
+	"list",		"lower",	"print",	"punct",
+	"space",	"true",		"upper",	"wideinteger",
+	"wordchar",	"xdigit",	NULL
     };
     enum isClasses {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
-	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
-	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
-	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
-	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
-	STR_IS_XDIGIT
+	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
+	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,
+	STR_IS_WORD,	STR_IS_XDIGIT
     };
     static const char *const isOptions[] = {
 	"-strict", "-failindex", NULL
@@ -1590,6 +1590,55 @@ StringIsCmd(
     case STR_IS_CONTROL:
 	chcomp = Tcl_UniCharIsControl;
 	break;
+    case STR_IS_DICT: {
+	int dresult, dsize;
+
+	dresult = Tcl_DictObjSize(interp, objPtr, &dsize);
+	Tcl_ResetResult(interp);
+	result = (dresult == TCL_OK) ? 1 : 0;
+	if (dresult != TCL_OK && failVarObj != NULL) {
+	    /*
+	     * Need to figure out where the list parsing failed, which is
+	     * fairly expensive. This is adapted from the core of
+	     * SetDictFromAny().
+	     */
+
+	    const char *elemStart, *nextElem;
+	    int lenRemain;
+	    size_t elemSize;
+	    register const char *p;
+
+	    string1 = TclGetStringFromObj(objPtr, &length1);
+	    end = string1 + length1;
+	    failat = -1;
+	    for (p=string1, lenRemain=length1; lenRemain > 0;
+		    p=nextElem, lenRemain=end-nextElem) {
+		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
+			&elemStart, &nextElem, &elemSize, NULL)) {
+		    Tcl_Obj *tmpStr;
+
+		    /*
+		     * This is the simplest way of getting the number of
+		     * characters parsed. Note that this is not the same as
+		     * the number of bytes when parsing strings with non-ASCII
+		     * characters in them.
+		     *
+		     * Skip leading spaces first. This is only really an issue
+		     * if it is the first "element" that has the failure.
+		     */
+
+		    while (TclIsSpaceProc(*p)) {
+			p++;
+		    }
+		    TclNewStringObj(tmpStr, string1, p-string1);
+		    failat = Tcl_GetCharLength(tmpStr);
+		    TclDecrRefCount(tmpStr);
+		    break;
+		}
+	    }
+	}
+	break;
+    }
     case STR_IS_DIGIT:
 	chcomp = Tcl_UniCharIsDigit;
 	break;
