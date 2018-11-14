@@ -35,7 +35,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  * TclGetIndexFromToken --
  *
  *	Parse a token to determine if an index value is known at
- *	compile time. 
+ *	compile time.
  *
  * Returns:
  *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
@@ -1545,7 +1545,7 @@ TclCompileLreplaceCmd(
 
 	emptyPrefix = 0;
     }
-     
+
     /*
      * [lreplace] raises an error when idx1 points after the list, but
      * only when the list is not empty. This is maximum stupidity.

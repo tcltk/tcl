@@ -4525,7 +4525,7 @@ if test "$tcl_ok" = "yes"; then :
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  if test "$do64bit" = "yes"; then :
+  if test "$do64bit" != "no"; then :
 
     if test "$GCC" == "yes"; then :
 

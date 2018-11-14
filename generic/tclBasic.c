@@ -5439,40 +5439,6 @@ TclArgumentGet(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Eval --
- *
- *	Execute a Tcl command in a string. This function executes the script
- *	directly, rather than compiling it to bytecodes. Before the arrival of
- *	the bytecode compiler in Tcl 8.0 Tcl_Eval was the main function used
- *	for executing Tcl commands, but nowadays it isn't used much.
- *
- * Results:
- *	The return value is one of the return codes defined in tcl.h (such as
- *	TCL_OK), and interp's result contains a value to supplement the return
- *	code. The value of the result will persist only until the next call to
- *	Tcl_Eval or Tcl_EvalObj: you must copy it or lose it!
- *
- * Side effects:
- *	Can be almost arbitrary, depending on the commands in the script.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_Eval
-int
-Tcl_Eval(
-    Tcl_Interp *interp,		/* Token for command interpreter (returned by
-				 * previous call to Tcl_CreateInterp). */
-    const char *script)		/* Pointer to TCL command to execute. */
-{
-    return Tcl_EvalEx(interp, script, -1, 0);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalObjEx, TclEvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are
@@ -6241,7 +6207,6 @@ Tcl_ExprString(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_AddObjErrorInfo
 void
 Tcl_AppendObjToErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6249,74 +6214,9 @@ Tcl_AppendObjToErrorInfo(
     Tcl_Obj *objPtr)		/* Message to record. */
 {
     const char *message = TclGetString(objPtr);
+    register Interp *iPtr = (Interp *) interp;
 
     Tcl_IncrRefCount(objPtr);
-    Tcl_AddObjErrorInfo(interp, message, objPtr->length);
-    Tcl_DecrRefCount(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AddErrorInfo --
- *
- *	Add information to the errorInfo field that describes the current
- *	error.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The contents of message are appended to the errorInfo field. If we are
- *	just starting to log an error, errorInfo is initialized from the error
- *	message in the interpreter's result.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_AddErrorInfo
-void
-Tcl_AddErrorInfo(
-    Tcl_Interp *interp,		/* Interpreter to which error information
-				 * pertains. */
-    const char *message)	/* Message to record. */
-{
-    Tcl_AddObjErrorInfo(interp, message, -1);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AddObjErrorInfo --
- *
- *	Add information to the errorInfo field that describes the current
- *	error. This routine differs from Tcl_AddErrorInfo by taking a byte
- *	pointer and length.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	"length" bytes from "message" are appended to the errorInfo field. If
- *	"length" is negative, use bytes up to the first NULL byte. If we are
- *	just starting to log an error, errorInfo is initialized from the error
- *	message in the interpreter's result.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_AddObjErrorInfo(
-    Tcl_Interp *interp,		/* Interpreter to which error information
-				 * pertains. */
-    const char *message,	/* Points to the first byte of an array of
-				 * bytes of the message. */
-    int length)			/* The number of bytes in the message. If < 0,
-				 * then append all bytes up to a NULL byte. */
-{
-    register Interp *iPtr = (Interp *) interp;
 
     /*
      * If we are just starting to log an error, errorInfo is initialized from
@@ -6336,14 +6236,15 @@ Tcl_AddObjErrorInfo(
      * Now append "message" to the end of errorInfo.
      */
 
-    if (length != 0) {
+    if (objPtr->length != 0) {
 	if (Tcl_IsShared(iPtr->errorInfo)) {
 	    Tcl_DecrRefCount(iPtr->errorInfo);
 	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
 	    Tcl_IncrRefCount(iPtr->errorInfo);
 	}
-	Tcl_AppendToObj(iPtr->errorInfo, message, length);
+	Tcl_AppendToObj(iPtr->errorInfo, message, objPtr->length);
     }
+    Tcl_DecrRefCount(objPtr);
 }
 
 /*
@@ -6394,45 +6295,6 @@ Tcl_VarEval(
     Tcl_DStringFree(&buf);
     return result;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GlobalEval --
- *
- *	Evaluate a command at global level in an interpreter.
- *
- * Results:
- *	A standard Tcl result is returned, and the interp's result is modified
- *	accordingly.
- *
- * Side effects:
- *	The command string is executed in interp, and the execution is carried
- *	out in the variable context of global level (no functions active),
- *	just as if an "uplevel #0" command were being executed.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_GlobalEval
-int
-Tcl_GlobalEval(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate
-				 * command. */
-    const char *command)	/* Command to evaluate. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_EvalEx(interp, command, -1, 0);
-    iPtr->varFramePtr = savedVarFramePtr;
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -7032,7 +6894,7 @@ ExprEntierFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((const double *) ptr);
-	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
+	if ((d >= (double)LLONG_MAX) || (d <= (double)LLONG_MIN)) {
 	    mp_int big;
 
 	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
@@ -7042,9 +6904,9 @@ ExprEntierFunc(
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
 	} else {
-	    long result = (long) d;
+	    Tcl_WideInt result = (Tcl_WideInt) d;
 
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
 	    return TCL_OK;
 	}
     }
@@ -7074,27 +6936,14 @@ ExprIntFunc(
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    long iResult;
+    Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (TclGetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in long range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &iResult);
-	Tcl_DecrRefCount(objPtr);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
+    TclGetWideBitsFromObj(NULL, objPtr, &wResult);
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)wResult));
     return TCL_OK;
 }
 
@@ -7107,26 +6956,11 @@ ExprWideFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Tcl_WideInt wResult;
-    Tcl_Obj *objPtr;
 
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    objPtr = Tcl_GetObjResult(interp);
-    if (TclGetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in wide int range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetWideIntFromObj(NULL, objPtr, &wResult);
-	Tcl_DecrRefCount(objPtr);
-    }
+    TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
 }
@@ -7229,7 +7063,7 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7fffffff;
+	iPtr->randSeed &= 0x7fffffff;
 	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	    iPtr->randSeed ^= 123459876;
 	}
@@ -7373,7 +7207,7 @@ ExprSrandFunc(
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
-    long i = 0;			/* Initialized to avoid compiler warning. */
+    Tcl_WideInt w = 0;			/* Initialized to avoid compiler warning. */
 
     /*
      * Convert argument and use it to reset the seed.
@@ -7384,20 +7218,8 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
-	Tcl_Obj *objPtr;
-	mp_int big;
-
-	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
-	    /* TODO: more ::errorInfo here? or in caller? */
-	    return TCL_ERROR;
-	}
-
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &i);
-	Tcl_DecrRefCount(objPtr);
+    if (TclGetWideBitsFromObj(NULL, objv[1], &w) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     /*
@@ -7406,8 +7228,7 @@ ExprSrandFunc(
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
+    iPtr->randSeed = (long) w & 0x7fffffff;
     if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
 	iPtr->randSeed ^= 123459876;
     }
@@ -7894,18 +7715,12 @@ TclNRTailcallObjCmd(
     if (objc > 1) {
         Tcl_Obj *listPtr, *nsObjPtr;
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-        Tcl_Namespace *ns1Ptr;
 
         /* The tailcall data is in a Tcl list: the first element is the
          * namespace, the rest the command to be tailcalled. */
 
-        listPtr = Tcl_NewListObj(objc, objv);
-
         nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-        if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
-                || (nsPtr != ns1Ptr)) {
-            Tcl_Panic("Tailcall failed to find the proper namespace");
-        }
+        listPtr = Tcl_NewListObj(objc, objv);
  	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
         iPtr->varFramePtr->tailcallPtr = listPtr;

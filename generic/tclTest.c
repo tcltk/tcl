@@ -293,6 +293,8 @@ static int		TestgetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetintCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestlongsizeCmd(ClientData dummy,
+			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetplatformCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetvarfullnameCmd(
@@ -647,6 +649,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetint", TestgetintCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testlongsize", TestlongsizeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
 	    NULL, NULL);
@@ -6979,6 +6983,24 @@ TestgetintCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	return TCL_OK;
     }
+}
+
+/*
+ * Used for determining sizeof(long) at script level.
+ */
+static int
+TestlongsizeCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int argc,
+    const char **argv)
+{
+    if (argc != 1) {
+	Tcl_AppendResult(interp, "wrong # args", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)sizeof(long)));
+    return TCL_OK;
 }
 
 static int

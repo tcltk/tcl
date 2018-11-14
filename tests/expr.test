@@ -21,10 +21,9 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
+testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -7156,6 +7155,15 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
 test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
+
+test expr-52.1 {
+	comparison with empty string does not generate string representation
+} {
+	set a [list one two three]
+	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
+		string match {*no string representation*} [
+		::tcl::unsupported::representation $a]]
+} {0 0 1 1}
 
 
 
