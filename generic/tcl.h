@@ -2176,6 +2176,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
+ * Constants for special int-typed values, see TIP #494
+ */
+
+#define TCL_IO_FAILURE	(-1)
+#define TCL_AUTO_LENGTH	(-1)
+
+/*
  *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
@@ -2244,6 +2251,9 @@ EXTERN TCL_NORETURN void		Tcl_MainEx(int argc, char **argv,
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+#ifndef _WIN32
+EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#endif
 
 /*
  *----------------------------------------------------------------------------

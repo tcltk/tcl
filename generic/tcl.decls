@@ -2376,9 +2376,23 @@ declare 631 {
 	    ClientData callbackData)
 }
 
+# TIP #430
+declare 632 {
+    int TclZipfs_Mount(Tcl_Interp *interp, const char *mountPoint,
+	    const char *zipname, const char *passwd)
+}
+declare 633 {
+    int TclZipfs_Unmount(Tcl_Interp *interp, const char *mountPoint)
+}
+declare 634 {
+    Tcl_Obj *TclZipfs_TclLibrary(void)
+}
+declare 635 {
+    int TclZipfs_MountBuffer(Tcl_Interp *interp, const char *mountPoint,
+	    unsigned char *data, size_t datalen, int copy)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
-
-
 
 ##############################################################################
 

@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -100,17 +104,11 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
+    if (!string) {
+	return NULL;
+    }
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 }
 
 char *
@@ -119,21 +117,16 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -1337,6 +1330,10 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_MountBuffer, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

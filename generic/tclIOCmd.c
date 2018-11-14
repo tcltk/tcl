@@ -532,7 +532,7 @@ Tcl_SeekObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_Seek(chan, offset, mode);
-    if (result == Tcl_LongAsWide(-1)) {
+    if (result == -1) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -964,7 +964,7 @@ Tcl_ExecObjCmd(
 
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
-	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
+	if (Tcl_ReadChars(chan, resultPtr, -1, 0) == TCL_IO_FAILURE) {
 	    /*
 	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area
@@ -1886,7 +1886,7 @@ ChanTruncateObjCmd(
 	 */
 
 	length = Tcl_Tell(chan);
-	if (length == Tcl_WideAsLong(-1)) {
+	if (length == -1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not determine current location in \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp)));

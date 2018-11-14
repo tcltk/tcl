@@ -2931,7 +2931,7 @@ ZlibTransformClose(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) < 0) {
+	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) == TCL_IO_FAILURE) {
 		/* TODO: is this the right way to do errors on close?
 		 * Note: when close is called from FinalizeIOSubsystem then
 		 * interp may be NULL */
@@ -3130,7 +3130,7 @@ ZlibTransformOutput(
 	    break;
 	}
 
-	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
+	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) == TCL_IO_FAILURE) {
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
 	}
@@ -3186,7 +3186,7 @@ ZlibTransformFlush(
 	 * Write the bytes we've received to the next layer.
 	 */
 
-	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) < 0) {
+	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) == TCL_IO_FAILURE) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "problem flushing channel: %s",
 		    Tcl_PosixError(interp)));
@@ -3907,6 +3907,12 @@ TclZlibInit(
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
     Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
+
+    /*
+     * Allow command type introspection to do something sensible with streams.
+     */
+
+    TclRegisterCommandTypeName(ZlibStreamCmd, "zlibStream");
 
     /*
      * Formally provide the package as a Tcl built-in.

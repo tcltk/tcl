@@ -137,6 +137,11 @@ DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
 REGVER			= @TCL_REG_MAJOR_VERSION@@TCL_REG_MINOR_VERSION@
 REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
@@ -152,6 +157,7 @@ SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
+WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -195,6 +201,45 @@ MKDIR		= mkdir -p
 SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
+
+###
+# Tip 430 - ZipFS Modifications
+###
+
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+HOST_CC		        = @CC_FOR_BUILD@
+HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
+HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
+ZIPFS_BUILD	        = @ZIPFS_BUILD@
+NATIVE_ZIP		= @ZIP_PROG@
+ZIP_PROG_OPTIONS		= @ZIP_PROG_OPTIONS@
+ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
+SHARED_BUILD		= @SHARED_BUILD@
+INSTALL_MSGS            = @INSTALL_MSGS@
+INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+
+# Minizip
+MINIZIP_OBJS = \
+        adler32.$(HOST_OBJEXT) \
+        compress.$(HOST_OBJEXT) \
+        crc32.$(HOST_OBJEXT) \
+        deflate.$(HOST_OBJEXT) \
+        infback.$(HOST_OBJEXT) \
+        inffast.$(HOST_OBJEXT) \
+        inflate.$(HOST_OBJEXT) \
+        inftrees.$(HOST_OBJEXT) \
+        ioapi.$(HOST_OBJEXT) \
+        iowin32.$(HOST_OBJEXT)  \
+        trees.$(HOST_OBJEXT) \
+        uncompr.$(HOST_OBJEXT) \
+        zip.$(HOST_OBJEXT) \
+        zutil.$(HOST_OBJEXT) \
+        minizip.$(HOST_OBJEXT)
+
+ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
 -I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" \
@@ -303,6 +348,7 @@ GENERIC_OBJS = \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT) \
+	tclZipfs.$(OBJEXT) \
 	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
@@ -427,7 +473,7 @@ all: binaries libraries doc packages
 
 tcltest: $(TCLSH) $(TEST_DLL_FILE)
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH)
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
 winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE}
 
@@ -435,9 +481,19 @@ libraries:
 
 doc:
 
+tclzipfile: ${TCL_ZIP_FILE}
+
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
+	rm -rf ${TCL_VFS_ROOT}
+	mkdir -p ${TCL_VFS_PATH}
+	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
+	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
+	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
+	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
+
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
 cat32.$(OBJEXT): cat.c
@@ -454,10 +510,13 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@MAKE_STUB_LIB@ ${STUB_OBJS}
 	@POST_MAKE_LIB@
 
-${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@
+${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
+ifeq (${ZIPFS_BUILD},1)
+	cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}
+endif
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
@@ -503,6 +562,17 @@ testMain.${OBJEXT}: tclAppInit.c
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
 
+# TIP #430, ZipFS Support
+tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
+	-DCFG_RUNTIME_PATH=\"$(bindir_native)\" \
+	-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
+	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
+	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip  @DEPARG@ $(CC_OBJNAME)
+
+
 # TIP #59, embedding of configuration information into the binary library.
 #
 # Part of Tcl's configuration information are the paths where it was installed
@@ -524,6 +594,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY_NATIVE)\" \
 		-DCFG_RUNTIME_INCDIR=\"$(includedir_native)\" \
 		-DCFG_RUNTIME_DOCDIR=\"$(mandir_native)\" \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
@@ -550,6 +622,59 @@ tclWinPanic.${OBJEXT}: tclWinPanic.c
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
 
+
+
+#--------------------------------------------------------------------------
+# Minizip implementation
+#--------------------------------------------------------------------------
+adler32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/adler32.c
+
+compress.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/compress.c
+
+crc32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/crc32.c
+
+deflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
+
+ioapi.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+
+iowin32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
+
+infback.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c
+
+inffast.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inffast.c
+
+inflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inflate.c
+
+inftrees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inftrees.c
+
+trees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/trees.c
+
+uncompr.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/uncompr.c
+
+zip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/zip.c
+
+zutil.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
+
+minizip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR)  -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+
+minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
+	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
+
 # The following target generates the file generic/tclDate.c from the yacc
 # grammar found in generic/tclGetDate.y. This is only run by hand as yacc is
 # not available in all environments. The name of the .c file is different than
@@ -570,7 +695,15 @@ gentommath_h:
 		"$(TOMMATH_DIR_NATIVE)/tommath.h" \
 		> "$(GENERIC_DIR_NATIVE)/tclTomMath.h"
 
-install: all install-binaries install-libraries install-doc install-packages
+INSTALL_BASE_TARGETS = install-binaries $(INSTALL_LIBRARIES) $(INSTALL_MSGS) $(INSTALL_TZDATA)
+INSTALL_DOC_TARGETS = install-doc
+INSTALL_PACKAGE_TARGETS = install-packages
+INSTALL_DEV_TARGETS = install-headers
+INSTALL_EXTRA_TARGETS =
+INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DOC_TARGETS) $(INSTALL_DEV_TARGETS) \
+		  $(INSTALL_PACKAGE_TARGETS) $(INSTALL_EXTRA_TARGETS)
+
+install: $(INSTALL_TARGETS)
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
@@ -625,6 +758,11 @@ install-binaries: binaries
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
 
+install-libraries-zipfs-shared: libraries
+
+install-libraries-zipfs-static: install-libraries-zipfs-shared
+	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
 		$(SCRIPT_INSTALL_DIR); \
@@ -643,22 +781,13 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@echo "Installing header files";
-	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
-		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
-		"$(GENERIC_DIR)/tclPlatDecls.h" \
-		"$(GENERIC_DIR)/tclTomMath.h" \
-		"$(GENERIC_DIR)/tclTomMathDecls.h"; \
-	    do \
-	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
-	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)";
 	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; \
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@echo "Installing package http 2.8.13 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.13.tm;
+	@echo "Installing package http 2.9.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.9.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
@@ -689,6 +818,25 @@ install-msgs:
 
 install-doc: doc
 
+install-headers:
+	@for i in "$(INCLUDE_INSTALL_DIR)"; \
+	    do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
+	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
+		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
+		$(GENERIC_DIR)/tclPlatDecls.h \
+		$(GENERIC_DIR)/tclTomMath.h \
+		$(GENERIC_DIR)/tclTomMathDecls.h ; \
+	    do \
+	    $(COPY) $$i "$(INCLUDE_INSTALL_DIR)"; \
+	    done;
+
 # Optional target to install private headers
 install-private-headers: libraries
 	@for i in $(PRIVATE_INCLUDE_INSTALL_DIR); \
@@ -716,15 +864,17 @@ test: test-tcl test-packages
 
 test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
+	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
+	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | $(WINE) ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
@@ -732,7 +882,7 @@ runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 # `make shell SCRIPT=foo.tcl`
 shell: binaries
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLSH) $(SCRIPT)
+	$(WINE) ./$(TCLSH) $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: binaries
@@ -752,10 +902,13 @@ clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32)
 	$(RM) *.pch *.ilk *.pdb
+	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
+	$(RM) *.zip
+	$(RMDIR) *.vfs
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno
+		tcl.hpj config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets
@@ -884,5 +1037,6 @@ html-tk: $(TCLSH)
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
 .PHONY: html-tcl html-tk
+.PHONY: iinstall-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

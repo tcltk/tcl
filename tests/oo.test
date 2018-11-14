@@ -13,12 +13,10 @@ if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
 # this test suite, interp creation and interp deletion are often used in
 # leaktests in order to leverage this sensitivity.
-
 
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
@@ -3838,6 +3836,11 @@ proc SampleSlotSetup script {
 		lappend ops [info level] Set $lst
 		return
 	    }
+	    method Resolve {lst} {
+		variable ops
+		lappend ops [info level] Resolve $lst
+		return $lst
+	    }
 	}
     }
     append script0 \n$script
@@ -3872,7 +3875,7 @@ test oo-32.3 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
+}] -result {0 {} {a b c g h i} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {a b c g h i}}}
 test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3880,7 +3883,7 @@ test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {d e f} {1 Set {d e f}}}
+}] -result {0 {} {d e f} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f}}}
 test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
@@ -3888,7 +3891,23 @@ test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
 	[sampleSlot contents] [sampleSlot ops]
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-}] -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
+}] -result {0 {} {} {d e f g h i} {1 Resolve d 1 Resolve e 1 Resolve f 1 Set {d e f} 1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {d e f g h i}}}
+test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+    SampleSlot create sampleSlot
+}] -body {
+    list [info level] [sampleSlot -prepend g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup [SampleSlotCleanup {
+    rename sampleSlot {}
+}] -result {0 {} {g h i a b c} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {g h i a b c}}}
+test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+    SampleSlot create sampleSlot
+}] -body {
+    list [info level] [sampleSlot -remove c a] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup [SampleSlotCleanup {
+    rename sampleSlot {}
+}] -result {0 {} b {1 Resolve c 1 Resolve a 1 Get 1 Set b}}
 
 test oo-33.1 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]
@@ -3911,7 +3930,7 @@ test oo-33.3 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     list [$s destroy; $s unknown] [$s contents] [$s ops]
 } -cleanup [SampleSlotCleanup {
     rename $s {}
-}] -result {{} unknown {1 Set destroy 1 Set unknown}}
+}] -result {{} unknown {1 Resolve destroy 1 Set destroy 1 Resolve unknown 1 Set unknown}}
 test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
     set s [SampleSlot new]
 }] -body {
@@ -3920,7 +3939,7 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
 } -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
 }] -result \
-    {unknown method "-grill": must be -append, -clear, -set, contents or ops}
+    {unknown method "-grill": must be -append, -clear, -prepend, -remove, -set, contents or ops}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -3950,25 +3969,68 @@ proc getMethods obj {
 }
 test oo-34.3 {TIP 380: slots - presence} {
     getMethods oo::define::filter
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.4 {TIP 380: slots - presence} {
     getMethods oo::define::mixin
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.5 {TIP 380: slots - presence} {
     getMethods oo::define::superclass
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.6 {TIP 380: slots - presence} {
     getMethods oo::define::variable
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.7 {TIP 380: slots - presence} {
     getMethods oo::objdefine::filter
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
 test oo-34.8 {TIP 380: slots - presence} {
     getMethods oo::objdefine::mixin
-} {{-append -clear -set} {--default-operation Get Set}}
+} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
-} {{-append -clear -set} {Get Set}}
+} {{-append -clear -prepend -remove -set} {Get Set}}
+test oo-34.10 {TIP 516: slots - resolution} -setup {
+    oo::class create parent
+    set result {}
+    oo::class create 516a { superclass parent }
+    oo::class create 516b { superclass parent }
+    oo::class create 516c { superclass parent }
+    namespace eval 516test {
+	oo::class create 516a { superclass parent }
+	oo::class create 516b { superclass parent }
+	oo::class create 516c { superclass parent }
+    }
+} -body {
+    # Must find the right classes when making the mixin
+    namespace eval 516test {
+	oo::define 516a {
+	    mixin 516b 516c
+	}
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must not remove class with just simple name match
+    oo::define 516test::516a {
+	mixin -remove 516b
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must remove class with resolved name match
+    oo::define 516test::516a {
+	mixin -remove 516test::516c
+    }
+    lappend result [info class mixin 516test::516a]
+    # Must remove class with resolved name match even after renaming, but only
+    # with the renamed name; it is a slot of classes, not strings!
+    rename 516test::516b 516test::516d
+    oo::define 516test::516a {
+	mixin -remove 516test::516b
+    }
+    lappend result [info class mixin 516test::516a]
+    oo::define 516test::516a {
+	mixin -remove 516test::516d
+    }
+    lappend result [info class mixin 516test::516a]
+} -cleanup {
+    parent destroy
+} -result {{::516test::516b ::516test::516c} {::516test::516b ::516test::516c} ::516test::516b ::516test::516d {}}
 
 test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     oo::class create fruit {

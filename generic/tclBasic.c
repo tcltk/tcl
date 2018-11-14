@@ -59,7 +59,18 @@ typedef struct {
 } CancelInfo;
 static Tcl_HashTable cancelTable;
 static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
+TCL_DECLARE_MUTEX(cancelLock);
+
+/*
+ * Table used to map command implementation functions to a human-readable type
+ * name, for [info type]. The keys in the table are function addresses, and
+ * the values in the table are static char* containing strings in Tcl's
+ * internal encoding (almost UTF-8).
+ */
+
+static Tcl_HashTable commandTypeTable;
+static int commandTypeInit = 0;
+TCL_DECLARE_MUTEX(commandTypeLock);
 
 /*
  * Declarations for managing contexts for non-recursive coroutines. Contexts
@@ -82,6 +93,7 @@ TCL_DECLARE_MUTEX(cancelLock)
  * Static functions in this file:
  */
 
+static Tcl_ObjCmdProc   BadEnsembleSubcommand;
 static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 			    const char *oldName, const char *newName,
 			    int flags);
@@ -180,6 +192,24 @@ typedef struct {
  * it for it. Defined in tclInt.h. */
 
 /*
+ * The following struct states that the command it talks about (a subcommand
+ * of one of Tcl's built-in ensembles) is unsafe and must be hidden when an
+ * interpreter is made safe. (TclHideUnsafeCommands accesses an array of these
+ * structs.) Alas, we can't sensibly just store the information directly in
+ * the commands.
+ */
+
+typedef struct {
+    const char *ensembleNsName; /* The ensemble's name within ::tcl. NULL for
+                                 * the end of the list of commands to hide. */
+    const char *commandName;    /* The name of the command within the
+                                 * ensemble. If this is NULL, we want to also
+                                 * make the overall command be hidden, an ugly
+                                 * hack because it is expected by security
+                                 * policies in the wild. */
+} UnsafeEnsembleInfo;
+
+/*
  * The built-in commands, and the functions that implement them:
  */
 
@@ -274,6 +304,69 @@ static const CmdInfo builtInCmds[] = {
     {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {NULL,		NULL,			NULL,			NULL,	0}
+};
+
+/*
+ * Information about which pieces of ensembles to hide when making an
+ * interpreter safe:
+ */
+
+static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
+    /* [encoding] has two unsafe commands. Assumed by older security policies
+     * to be overall unsafe; it isn't but... */
+    {"encoding", NULL},
+    {"encoding", "dirs"},
+    {"encoding", "system"},
+    /* [file] has MANY unsafe commands! Assumed by older security policies to
+     * be overall unsafe; it isn't but... */
+    {"file", NULL},
+    {"file", "atime"},
+    {"file", "attributes"},
+    {"file", "copy"},
+    {"file", "delete"},
+    {"file", "dirname"},
+    {"file", "executable"},
+    {"file", "exists"},
+    {"file", "extension"},
+    {"file", "isdirectory"},
+    {"file", "isfile"},
+    {"file", "link"},
+    {"file", "lstat"},
+    {"file", "mtime"},
+    {"file", "mkdir"},
+    {"file", "nativename"},
+    {"file", "normalize"},
+    {"file", "owned"},
+    {"file", "readable"},
+    {"file", "readlink"},
+    {"file", "rename"},
+    {"file", "rootname"},
+    {"file", "size"},
+    {"file", "stat"},
+    {"file", "tail"},
+    {"file", "tempfile"},
+    {"file", "type"},
+    {"file", "volumes"},
+    {"file", "writable"},
+    /* [info] has two unsafe commands */
+    {"info", "cmdtype"},
+    {"info", "nameofexecutable"},
+    /* [tcl::process] has ONLY unsafe commands! */
+    {"process", "list"},
+    {"process", "status"},
+    {"process", "purge"},
+    {"process", "autopurge"},
+    /* [zipfs] has MANY unsafe commands! */
+    {"zipfs", "lmkimg"},
+    {"zipfs", "lmkzip"},
+    {"zipfs", "mkimg"},
+    {"zipfs", "mkkey"},
+    {"zipfs", "mkzip"},
+    {"zipfs", "mount"},
+    {"zipfs", "mount_data"},
+    {"zipfs", "tcl_library"},
+    {"zipfs", "unmount"},
+    {NULL, NULL}
 };
 
 /*
@@ -412,6 +505,13 @@ TclFinalizeEvaluation(void)
 	cancelTableInitialized = 0;
     }
     Tcl_MutexUnlock(&cancelLock);
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_DeleteHashTable(&commandTypeTable);
+        commandTypeInit = 0;
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
 }
 
 /*
@@ -485,7 +585,21 @@ Tcl_CreateInterp(void)
 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
 	    cancelTableInitialized = 1;
 	}
+
 	Tcl_MutexUnlock(&cancelLock);
+    }
+
+    if (commandTypeInit == 0) {
+        TclRegisterCommandTypeName(TclObjInterpProc, "proc");
+        TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
+        TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
+        TclRegisterCommandTypeName(TclSlaveObjCmd, "slave");
+        TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
+        TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
+        TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
+        TclRegisterCommandTypeName(TclOOMyClassObjCmd, "privateClass");
+        TclRegisterCommandTypeName(TclNRInterpCoroutine, "coroutine");
     }
 
     /*
@@ -959,6 +1073,9 @@ Tcl_CreateInterp(void)
     if (TclZlibInit(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
+    if (TclZipfs_Init(interp) != TCL_OK) {
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
 #endif
 
     TOP_CB(iPtr) = NULL;
@@ -972,6 +1089,71 @@ DeleteOpCmdClientData(
     TclOpCmdClientData *occdPtr = clientData;
 
     ckfree(occdPtr);
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclRegisterCommandTypeName, TclGetCommandTypeName --
+ *
+ *      Command type registration and lookup mechanism. Everything is keyed by
+ *      the Tcl_ObjCmdProc for the command, and that is used as the *key* into
+ *      the hash table that maps to constant strings that are names. (It is
+ *      recommended that those names be ASCII.)
+ *
+ * ---------------------------------------------------------------------
+ */
+
+void
+TclRegisterCommandTypeName(
+    Tcl_ObjCmdProc *implementationProc,
+    const char *nameStr)
+{
+    Tcl_HashEntry *hPtr;
+
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit == 0) {
+        Tcl_InitHashTable(&commandTypeTable, TCL_ONE_WORD_KEYS);
+        commandTypeInit = 1;
+    }
+    if (nameStr != NULL) {
+        int isNew;
+
+        hPtr = Tcl_CreateHashEntry(&commandTypeTable,
+                (void *) implementationProc, &isNew);
+        Tcl_SetHashValue(hPtr, (void *) nameStr);
+    } else {
+        hPtr = Tcl_FindHashEntry(&commandTypeTable,
+                (void *) implementationProc);
+        if (hPtr != NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+}
+
+const char *
+TclGetCommandTypeName(
+    Tcl_Command command)
+{
+    Command *cmdPtr = (Command *) command;
+    void *procPtr = cmdPtr->objProc;
+    const char *name = "native";
+
+    if (procPtr == NULL) {
+        procPtr = cmdPtr->nreProc;
+    }
+    Tcl_MutexLock(&commandTypeLock);
+    if (commandTypeInit) {
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&commandTypeTable, procPtr);
+
+        if (hPtr && Tcl_GetHashValue(hPtr)) {
+            name = (const char *) Tcl_GetHashValue(hPtr);
+        }
+    }
+    Tcl_MutexUnlock(&commandTypeLock);
+
+    return name;
 }
 
 /*
@@ -995,6 +1177,7 @@ TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     register const CmdInfo *cmdInfoPtr;
+    register const UnsafeEnsembleInfo *unsafePtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -1004,9 +1187,80 @@ TclHideUnsafeCommands(
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
-    TclMakeEncodingCommandSafe(interp); /* Ugh! */
-    TclMakeFileCommandSafe(interp);     /* Ugh! */
+
+    for (unsafePtr = unsafeEnsembleCommands;
+            unsafePtr->ensembleNsName; unsafePtr++) {
+        if (unsafePtr->commandName) {
+            /*
+             * Hide an ensemble subcommand.
+             */
+
+            Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s",
+                    unsafePtr->ensembleNsName, unsafePtr->commandName);
+            Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
+                    unsafePtr->ensembleNsName, unsafePtr->commandName);
+
+            if (TclRenameCommand(interp, TclGetString(cmdName),
+                        "___tmp") != TCL_OK
+                    || Tcl_HideCommand(interp, "___tmp",
+                            TclGetString(hideName)) != TCL_OK) {
+                Tcl_Panic("problem making '%s %s' safe: %s",
+                        unsafePtr->ensembleNsName, unsafePtr->commandName,
+                        Tcl_GetString(Tcl_GetObjResult(interp)));
+            }
+            Tcl_CreateObjCommand(interp, TclGetString(cmdName),
+                    BadEnsembleSubcommand, (ClientData) unsafePtr, NULL);
+            TclDecrRefCount(cmdName);
+            TclDecrRefCount(hideName);
+        } else {
+            /*
+             * Hide an ensemble main command (for compatibility).
+             */
+
+            if (Tcl_HideCommand(interp, unsafePtr->ensembleNsName,
+                    unsafePtr->ensembleNsName) != TCL_OK) {
+                Tcl_Panic("problem making '%s' safe: %s",
+                        unsafePtr->ensembleNsName,
+                        Tcl_GetString(Tcl_GetObjResult(interp)));
+            }
+        }
+    }
+
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEnsembleSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	ensembles are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is description of what was hidden.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadEnsembleSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const UnsafeEnsembleInfo *infoPtr = clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+            "not allowed to invoke subcommand %s of %s",
+            infoPtr->commandName, infoPtr->ensembleNsName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -6769,7 +7023,7 @@ ExprAbsFunc(
 		}
 	    }
 	    goto unChanged;
-	} else if (l == LLONG_MIN) {
+	} else if (l == WIDE_MIN) {
 	    TclInitBignumFromWideInt(&big, l);
 	    goto tooLarge;
 	}
@@ -6894,7 +7148,7 @@ ExprEntierFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((const double *) ptr);
-	if ((d >= (double)LLONG_MAX) || (d <= (double)LLONG_MIN)) {
+	if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 	    mp_int big;
 
 	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {

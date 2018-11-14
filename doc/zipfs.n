@@ -1,0 +1,138 @@
+'\"
+'\" Copyright (c) 2015 Jan Nijtmans <jan.nijtmans@gmail.com>
+'\" Copyright (c) 2015 Christian Werner <chw@ch-werner.de>
+'\" Copyright (c) 2015 Sean Woods <yoda@etoyoc.com>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH zipfs n 1.0 Zipfs "zipfs Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+zipfs \- Mount and work with ZIP files within Tcl
+.SH SYNOPSIS
+.nf
+\fBpackage require zipfs \fR?\fB1.0\fR?
+.sp
+\fBzipfs exists\fR \fIfilename\fR
+\fBzipfs find\fR \fIdir\fR
+\fBzipfs info\fR \fIfilename\fR
+\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
+\fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
+\fBzipfs mkkey\fR \fIpassword\fR
+\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+\fBzipfs mount\fR ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+\fBzipfs root\fR
+\fBzipfs unmount\fR \fImountpoint\fR
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBzipfs\fR command (the sole public command provided by the built-in
+package with the same name) provides Tcl with the ability to mount the
+contents of a ZIP file as a virtual file system.
+.TP
+\fBzipfs exists\fR \fIfilename\fR
+.
+Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
+.TP
+\fBzipfs find\fR \fIdir\fR
+.
+Recursively lists files including and below the directory \fIdir\fR.  The
+result list consists of relative path names starting from the given
+directory. This command is also used by the \fBzipfs mkzip\fR and \fBzipfs
+mkimg\fR commands.
+.TP
+\fBzipfs info\fR \fIfile\fR
+.
+Return information about the given \fIfile\fR in the mounted zipfs.  The
+information consists of:
+.RS
+.IP (1)
+the name of the ZIP archive file that contains the file,
+.IP (2)
+the size of the file after decompressions,
+.IP (3)
+the compressed size of the file, and
+.IP (4)
+the offset of the compressed data in the ZIP archive file.
+.PP
+Note: querying the mount point gives the start of the zip data as the offset
+in (4), which can be used to truncate the zip information from an executable.
+.RE
+.TP
+\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? \fI?pattern?\fR
+.
+Return a list of all files in the mounted zipfs, or just those matching
+\fIpattern\fR (optionally controlled by the option parameters).  The order of
+the names in the list is arbitrary.
+.TP
+\fBzipfs mount ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+.
+The \fBzipfs mount\fR command mounts a ZIP archive file as a Tcl virtual
+filesystem at \fImountpoint\fR.  After this command executes, files contained
+in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
+.RS
+.PP
+With no \fIzipfile\fR, returns the zipfile mounted at \fImountpoint\fR.  With
+no \fImountpoint\fR, return all zipfile/mount pairs.  If \fImountpoint\fR is
+specified as an empty string, mount on file path.
+.RE
+.TP
+\fBzipfs root\fR
+.
+Returns a constant string which indicates the mount point for zipfs volumes
+for the current platform. On Windows, this value is
+.QW \fBzipfs:/\fR .
+On Unix, this value is
+.QW \fB//zipfs:/\fR .
+.RE
+.TP
+\fBzipfs unmount \fImountpoint\fR
+.
+Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
+.SS "ZIP CREATION COMMANDS"
+This package also provides several commands to aid the creation of ZIP
+archives as Tcl applications.
+.TP
+\fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
+.
+Creates an image (potentially a new executable file) similar to \fBzipfs
+mkzip\fR. If the \fIinfile\fR parameter is specified, this file is prepended
+in front of the ZIP archive, otherwise the file returned by
+\fBinfo nameofexecutable\fR (i.e., the executable file of the running process)
+is used. If the \fIpassword\fR parameter is not empty, an obfuscated version
+of that password is placed between the image and ZIP chunks of the output file
+and the contents of the ZIP chunk are protected with that password.
+.RS
+.PP
+Caution: highly experimental, not usable on Android, only partially tested on
+Linux and Windows.
+.RE
+.TP
+\fBzipfs mkkey\fR \fIpassword\fR
+.
+For the clear text \fIpassword\fR argument, an obfuscated string version is
+returned with the same format used in the \fBzipfs mkimg\fR command.
+.TP
+\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+.
+Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
+directory \fIindir\fR (contained regular files only) with optional ZIP
+password \fIpassword\fR. While processing the files below \fIindir\fR the
+optional file name prefix given in \fIstrip\fR is stripped off the beginning
+of the respective file name.
+.RS
+.PP
+Caution: the choice of the \fIindir\fR parameter (less the optional stripped
+prefix) determines the later root name of the archive's content.
+.RE
+.SH "SEE ALSO"
+tclsh(1), file(n), zlib(n)
+.SH "KEYWORDS"
+compress, filesystem, zip
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

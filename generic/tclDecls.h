@@ -1737,6 +1737,19 @@ EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				unsigned int flags,
 				Tcl_TcpAcceptProc *acceptProc,
 				ClientData callbackData);
+/* 632 */
+EXTERN int		TclZipfs_Mount(Tcl_Interp *interp,
+				const char *mountPoint, const char *zipname,
+				const char *passwd);
+/* 633 */
+EXTERN int		TclZipfs_Unmount(Tcl_Interp *interp,
+				const char *mountPoint);
+/* 634 */
+EXTERN Tcl_Obj *	TclZipfs_TclLibrary(void);
+/* 635 */
+EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
+				const char *mountPoint, unsigned char *data,
+				size_t datalen, int copy);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2404,6 +2417,10 @@ typedef struct TclStubs {
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
+    int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *mountPoint, const char *zipname, const char *passwd); /* 632 */
+    int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
+    Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
+    int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3652,6 +3669,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 #define Tcl_OpenTcpServerEx \
 	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
+#define TclZipfs_Mount \
+	(tclStubsPtr->tclZipfs_Mount) /* 632 */
+#define TclZipfs_Unmount \
+	(tclStubsPtr->tclZipfs_Unmount) /* 633 */
+#define TclZipfs_TclLibrary \
+	(tclStubsPtr->tclZipfs_TclLibrary) /* 634 */
+#define TclZipfs_MountBuffer \
+	(tclStubsPtr->tclZipfs_MountBuffer) /* 635 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3678,6 +3703,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_MainEx Tcl_MainExW
     EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+    EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #endif
 
 #undef TCL_STORAGE_CLASS

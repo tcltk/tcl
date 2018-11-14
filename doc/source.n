@@ -69,3 +69,7 @@ foreach scriptFile {foo.tcl bar.tcl} {
 file(n), cd(n), encoding(n), info(n)
 .SH KEYWORDS
 file, script
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

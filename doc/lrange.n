@@ -76,3 +76,7 @@ lset(n), lreplace(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, range, sublist
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

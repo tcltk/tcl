@@ -86,6 +86,7 @@ fi
 AC_PROG_CC
 AC_C_INLINE
 
+
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
@@ -782,6 +783,52 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(zipfs,
+    AC_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test "$tcl_ok" = "yes" ; then
+    #
+    # Find a native compiler
+    #
+    AX_CC_FOR_BUILD
+    #
+    # Find a native zip implementation
+    #
+    SC_ZIPFS_SUPPORT
+	ZIPFS_BUILD=1
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
+	ZIPFS_BUILD=0
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+AC_MSG_CHECKING([for building with zipfs])
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       AC_MSG_RESULT([yes])
+     else
+       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       AC_MSG_RESULT([yes])
+    fi
+else
+AC_MSG_RESULT([no])
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+AC_SUBST(ZIPFS_BUILD)
+AC_SUBST(TCL_ZIP_FILE)
+AC_SUBST(INSTALL_LIBRARIES)
+AC_SUBST(INSTALL_MSGS)
+
+
+#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -951,6 +998,7 @@ AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_YEAR)
 AC_SUBST(PKG_CFG_ARGS)
 
+AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_LIB_SPEC)
