@@ -2744,7 +2744,7 @@ TclDatelex(
 
 int
 TclClockOldscanObjCmd(
-    ClientData clientData,	/* Unused */
+    void *clientData,	/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
     Tcl_Obj *const *objv)	/* Parameters */

@@ -50,6 +50,8 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef TclStaticPackage
+#define TclStaticPackage Tcl_StaticPackage
 
 #ifdef TCL_MEM_DEBUG
 #   define Tcl_Alloc TclpAlloc
@@ -550,6 +552,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    TclStaticPackage, /* 257 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
