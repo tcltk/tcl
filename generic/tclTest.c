@@ -159,227 +159,227 @@ static TestChannel *firstDetached;
  * Forward declarations for procedures defined later in this file:
  */
 
-static int		AsyncHandlerProc(ClientData clientData,
+static int		AsyncHandlerProc(void *clientData,
 			    Tcl_Interp *interp, int code);
 #if TCL_THREADS
-static Tcl_ThreadCreateType AsyncThreadProc(ClientData);
+static Tcl_ThreadCreateType AsyncThreadProc(void *);
 #endif
 static void		CleanupTestSetassocdataTests(
-			    ClientData clientData, Tcl_Interp *interp);
-static void		CmdDelProc1(ClientData clientData);
-static void		CmdDelProc2(ClientData clientData);
-static int		CmdProc1(ClientData clientData,
+			    void *clientData, Tcl_Interp *interp);
+static void		CmdDelProc1(void *clientData);
+static void		CmdDelProc2(void *clientData);
+static int		CmdProc1(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		CmdProc2(ClientData clientData,
+static int		CmdProc2(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static void		CmdTraceDeleteProc(
-			    ClientData clientData, Tcl_Interp *interp,
+			    void *clientData, Tcl_Interp *interp,
 			    int level, char *command, Tcl_CmdProc *cmdProc,
-			    ClientData cmdClientData, int argc,
+			    void *cmdClientData, int argc,
 			    const char *argv[]);
-static void		CmdTraceProc(ClientData clientData,
+static void		CmdTraceProc(void *clientData,
 			    Tcl_Interp *interp, int level, char *command,
-			    Tcl_CmdProc *cmdProc, ClientData cmdClientData,
+			    Tcl_CmdProc *cmdProc, void *cmdClientData,
 			    int argc, const char *argv[]);
 static int		CreatedCommandProc(
-			    ClientData clientData, Tcl_Interp *interp,
+			    void *clientData, Tcl_Interp *interp,
 			    int argc, const char **argv);
 static int		CreatedCommandProc2(
-			    ClientData clientData, Tcl_Interp *interp,
+			    void *clientData, Tcl_Interp *interp,
 			    int argc, const char **argv);
-static void		DelCallbackProc(ClientData clientData,
+static void		DelCallbackProc(void *clientData,
 			    Tcl_Interp *interp);
-static int		DelCmdProc(ClientData clientData,
+static int		DelCmdProc(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static void		DelDeleteProc(ClientData clientData);
-static void		EncodingFreeProc(ClientData clientData);
-static int		EncodingToUtfProc(ClientData clientData,
+static void		DelDeleteProc(void *clientData);
+static void		EncodingFreeProc(void *clientData);
+static int		EncodingToUtfProc(void *clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst,
 			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
-static int		EncodingFromUtfProc(ClientData clientData,
+static int		EncodingFromUtfProc(void *clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst,
 			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
-static void		ExitProcEven(ClientData clientData);
-static void		ExitProcOdd(ClientData clientData);
-static int		GetTimesObjCmd(ClientData clientData,
+static void		ExitProcEven(void *clientData);
+static void		ExitProcOdd(void *clientData);
+static int		GetTimesObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		MainLoop(void);
-static int		NoopCmd(ClientData clientData,
+static int		NoopCmd(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		NoopObjCmd(ClientData clientData,
+static int		NoopObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		ObjTraceProc(ClientData clientData,
+static int		ObjTraceProc(void *clientData,
 			    Tcl_Interp *interp, int level, const char *command,
 			    Tcl_Command commandToken, int objc,
 			    Tcl_Obj *const objv[]);
-static void		ObjTraceDeleteProc(ClientData clientData);
+static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
-static int		TestasyncCmd(ClientData dummy,
+static int		TestasyncCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestbytestringObjCmd(ClientData clientData,
+static int		TestbytestringObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TeststringbytesObjCmd(ClientData clientData,
+static int		TeststringbytesObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestcmdinfoCmd(ClientData dummy,
+static int		TestcmdinfoCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestcmdtokenCmd(ClientData dummy,
+static int		TestcmdtokenCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestcmdtraceCmd(ClientData dummy,
+static int		TestcmdtraceCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestconcatobjCmd(ClientData dummy,
+static int		TestconcatobjCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestcreatecommandCmd(ClientData dummy,
+static int		TestcreatecommandCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestdcallCmd(ClientData dummy,
+static int		TestdcallCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestdelCmd(ClientData dummy,
+static int		TestdelCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestdelassocdataCmd(ClientData dummy,
+static int		TestdelassocdataCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestdoubledigitsObjCmd(ClientData dummy,
+static int		TestdoubledigitsObjCmd(void *dummy,
 					       Tcl_Interp* interp,
 					       int objc, Tcl_Obj* const objv[]);
-static int		TestdstringCmd(ClientData dummy,
+static int		TestdstringCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestencodingObjCmd(ClientData dummy,
+static int		TestencodingObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestevalexObjCmd(ClientData dummy,
+static int		TestevalexObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestevalobjvObjCmd(ClientData dummy,
+static int		TestevalobjvObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TesteventObjCmd(ClientData unused,
+static int		TesteventObjCmd(void *unused,
 			    Tcl_Interp *interp, int argc,
 			    Tcl_Obj *const objv[]);
 static int		TesteventProc(Tcl_Event *event, int flags);
 static int		TesteventDeleteProc(Tcl_Event *event,
-			    ClientData clientData);
-static int		TestexithandlerCmd(ClientData dummy,
+			    void *clientData);
+static int		TestexithandlerCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestexprlongCmd(ClientData dummy,
+static int		TestexprlongCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestexprlongobjCmd(ClientData dummy,
+static int		TestexprlongobjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestexprdoubleCmd(ClientData dummy,
+static int		TestexprdoubleCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestexprdoubleobjCmd(ClientData dummy,
+static int		TestexprdoubleobjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestexprparserObjCmd(ClientData dummy,
+static int		TestexprparserObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestexprstringCmd(ClientData dummy,
+static int		TestexprstringCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestfileCmd(ClientData dummy,
+static int		TestfileCmd(void *dummy,
 			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int		TestfilelinkCmd(ClientData dummy,
+static int		TestfilelinkCmd(void *dummy,
 			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int		TestfeventCmd(ClientData dummy,
+static int		TestfeventCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestgetassocdataCmd(ClientData dummy,
+static int		TestgetassocdataCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestgetintCmd(ClientData dummy,
+static int		TestgetintCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestlongsizeCmd(ClientData dummy,
+static int		TestlongsizeCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestgetplatformCmd(ClientData dummy,
+static int		TestgetplatformCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgetvarfullnameCmd(
-			    ClientData dummy, Tcl_Interp *interp,
+			    void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		TestinterpdeleteCmd(ClientData dummy,
+static int		TestinterpdeleteCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestlinkCmd(ClientData dummy,
+static int		TestlinkCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestlocaleCmd(ClientData dummy,
+static int		TestlocaleCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestmainthreadCmd(ClientData dummy,
+static int		TestmainthreadCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestsetmainloopCmd(ClientData dummy,
+static int		TestsetmainloopCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestexitmainloopCmd(ClientData dummy,
+static int		TestexitmainloopCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestpanicCmd(ClientData dummy,
+static int		TestpanicCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
+static int		TestparseargsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		TestparserObjCmd(ClientData dummy,
+static int		TestparserObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestparsevarObjCmd(ClientData dummy,
+static int		TestparsevarObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestparsevarnameObjCmd(ClientData dummy,
+static int		TestparsevarnameObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestpreferstableObjCmd(ClientData dummy,
+static int		TestpreferstableObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestprintObjCmd(ClientData dummy,
+static int		TestprintObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestregexpObjCmd(ClientData dummy,
+static int		TestregexpObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestreturnObjCmd(ClientData dummy,
+static int		TestreturnObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
-static int		TestsaveresultCmd(ClientData dummy,
+static int		TestsaveresultCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		TestsaveresultFree(char *blockPtr);
-static int		TestsetassocdataCmd(ClientData dummy,
+static int		TestsetassocdataCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestsetCmd(ClientData dummy,
+static int		TestsetCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		Testset2Cmd(ClientData dummy,
+static int		Testset2Cmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestseterrorcodeCmd(ClientData dummy,
+static int		TestseterrorcodeCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetobjerrorcodeCmd(
-			    ClientData dummy, Tcl_Interp *interp,
+			    void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		TestsetplatformCmd(ClientData dummy,
+static int		TestsetplatformCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TeststaticpkgCmd(ClientData dummy,
+static int		TeststaticpkgCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TesttranslatefilenameCmd(ClientData dummy,
+static int		TesttranslatefilenameCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestupvarCmd(ClientData dummy,
+static int		TestupvarCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestWrongNumArgsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
+			    void *clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TestGetIndexFromObjStructObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
+			    void *clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		TestChannelCmd(ClientData clientData,
+static int		TestChannelCmd(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestChannelEventCmd(ClientData clientData,
+static int		TestChannelEventCmd(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestSocketCmd(ClientData clientData,
+static int		TestSocketCmd(void *clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestFilesystemObjCmd(ClientData dummy,
+static int		TestFilesystemObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestSimpleFilesystemObjCmd(
-			    ClientData dummy, Tcl_Interp *interp, int objc,
+			    void *dummy, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
@@ -415,37 +415,33 @@ static Tcl_FSListVolumesProc SimpleListVolumes;
 static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
-static int		TestNumUtfCharsCmd(ClientData clientData,
+static int		TestNumUtfCharsCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestFindFirstCmd(ClientData clientData,
+static int		TestFindFirstCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestFindLastCmd(ClientData clientData,
+static int		TestFindLastCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestHashSystemHashCmd(ClientData clientData,
+static int		TestHashSystemHashCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
 static Tcl_NRPostProc	NREUnwind_callback;
-static int		TestNREUnwind(ClientData clientData,
+static int		TestNREUnwind(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestNRELevels(ClientData clientData,
+static int		TestNRELevels(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestInterpResolverCmd(ClientData clientData,
+static int		TestInterpResolverCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 #if defined(HAVE_CPUID) || defined(_WIN32)
-static int		TestcpuidCmd(ClientData dummy,
+static int		TestcpuidCmd(void *dummy,
 			    Tcl_Interp* interp, int objc,
 			    Tcl_Obj *const objv[]);
-#endif
-
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
@@ -685,9 +681,9 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testseterr", TestsetCmd,
-	    (ClientData) TCL_LEAVE_ERR_MSG, NULL);
+	    INT2PTR(TCL_LEAVE_ERR_MSG), NULL);
     Tcl_CreateCommand(interp, "testset2", Testset2Cmd,
-	    (ClientData) TCL_LEAVE_ERR_MSG, NULL);
+	    INT2PTR(TCL_LEAVE_ERR_MSG), NULL);
     Tcl_CreateCommand(interp, "testseterrorcode", TestseterrorcodeCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
@@ -715,7 +711,7 @@ Tcltest_Init(
 	    NULL, NULL);
 #if defined(HAVE_CPUID) || defined(_WIN32)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
 #endif
     Tcl_CreateObjCommand(interp, "testnreunwind", TestNREUnwind,
 	    NULL, NULL);
@@ -825,7 +821,7 @@ Tcltest_SafeInit(
 	/* ARGSUSED */
 static int
 TestasyncCmd(
-    ClientData dummy,			/* Not used. */
+    void *dummy,			/* Not used. */
     Tcl_Interp *interp,			/* Current interpreter. */
     int argc,				/* Number of arguments. */
     const char **argv)			/* Argument strings. */
@@ -950,7 +946,7 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* If of TestAsyncHandler structure.
+    void *clientData,	/* If of TestAsyncHandler structure.
                                  * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
@@ -1010,7 +1006,7 @@ AsyncHandlerProc(
 #if TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
-    ClientData clientData)	/* Parameter is the id of a
+    void *clientData)	/* Parameter is the id of a
 				 * TestAsyncHandler, defined above. */
 {
     TestAsyncHandler *asyncPtr;
@@ -1052,7 +1048,7 @@ AsyncThreadProc(
 	/* ARGSUSED */
 static int
 TestcmdinfoCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1065,7 +1061,7 @@ TestcmdinfoCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	Tcl_CreateCommand(interp, argv[2], CmdProc1, (ClientData) "original",
+	Tcl_CreateCommand(interp, argv[2], CmdProc1, (void *) "original",
 		CmdDelProc1);
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_DStringInit(&delString);
@@ -1102,11 +1098,11 @@ TestcmdinfoCmd(
 	}
     } else if (strcmp(argv[1], "modify") == 0) {
 	info.proc = CmdProc2;
-	info.clientData = (ClientData) "new_command_data";
+	info.clientData = (void *) "new_command_data";
 	info.objProc = NULL;
 	info.objClientData = NULL;
 	info.deleteProc = CmdDelProc2;
-	info.deleteData = (ClientData) "new_delete_data";
+	info.deleteData = (void *) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	} else {
@@ -1123,7 +1119,7 @@ TestcmdinfoCmd(
 	/*ARGSUSED*/
 static int
 CmdProc1(
-    ClientData clientData,	/* String to return. */
+    void *clientData,	/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1135,7 +1131,7 @@ CmdProc1(
 	/*ARGSUSED*/
 static int
 CmdProc2(
-    ClientData clientData,	/* String to return. */
+    void *clientData,	/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1146,7 +1142,7 @@ CmdProc2(
 
 static void
 CmdDelProc1(
-    ClientData clientData)	/* String to save. */
+    void *clientData)	/* String to save. */
 {
     Tcl_DStringInit(&delString);
     Tcl_DStringAppend(&delString, "CmdDelProc1 ", -1);
@@ -1155,7 +1151,7 @@ CmdDelProc1(
 
 static void
 CmdDelProc2(
-    ClientData clientData)	/* String to save. */
+    void *clientData)	/* String to save. */
 {
     Tcl_DStringInit(&delString);
     Tcl_DStringAppend(&delString, "CmdDelProc2 ", -1);
@@ -1182,7 +1178,7 @@ CmdDelProc2(
 	/* ARGSUSED */
 static int
 TestcmdtokenCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1198,7 +1194,7 @@ TestcmdtokenCmd(
     }
     if (strcmp(argv[1], "create") == 0) {
 	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
-		(ClientData) "original", NULL);
+		(void *) "original", NULL);
 	sprintf(buf, "%p", (void *)token);
 	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "name") == 0) {
@@ -1246,7 +1242,7 @@ TestcmdtokenCmd(
 	/* ARGSUSED */
 static int
 TestcmdtraceCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1302,7 +1298,7 @@ TestcmdtraceCmd(
 	deleteCalled = 0;
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
-		(ClientData) &deleteCalled, ObjTraceDeleteProc);
+		&deleteCalled, ObjTraceDeleteProc);
 	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
@@ -1335,7 +1331,7 @@ TestcmdtraceCmd(
 
 static void
 CmdTraceProc(
-    ClientData clientData,	/* Pointer to buffer in which the
+    void *clientData,	/* Pointer to buffer in which the
 				 * command and arguments are appended.
 				 * Accumulates test result. */
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -1343,7 +1339,7 @@ CmdTraceProc(
     char *command,		/* The command being traced (after
 				 * substitutions). */
     Tcl_CmdProc *cmdProc,	/* Points to command's command procedure. */
-    ClientData cmdClientData,	/* Client data associated with command
+    void *cmdClientData,	/* Client data associated with command
 				 * procedure. */
     int argc,			/* Number of arguments. */
     const char *argv[])		/* Argument strings. */
@@ -1362,13 +1358,13 @@ CmdTraceProc(
 
 static void
 CmdTraceDeleteProc(
-    ClientData clientData,	/* Unused. */
+    void *clientData,	/* Unused. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int level,			/* Current trace level. */
     char *command,		/* The command being traced (after
 				 * substitutions). */
     Tcl_CmdProc *cmdProc,	/* Points to command's command procedure. */
-    ClientData cmdClientData,	/* Client data associated with command
+    void *cmdClientData,	/* Client data associated with command
 				 * procedure. */
     int argc,			/* Number of arguments. */
     const char *argv[])		/* Argument strings. */
@@ -1384,7 +1380,7 @@ CmdTraceDeleteProc(
 
 static int
 ObjTraceProc(
-    ClientData clientData,	/* unused */
+    void *clientData,	/* unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int level,			/* Execution level */
     const char *command,	/* Command being executed */
@@ -1412,7 +1408,7 @@ ObjTraceProc(
 
 static void
 ObjTraceDeleteProc(
-    ClientData clientData)
+    void *clientData)
 {
     int *intPtr = (int *) clientData;
     *intPtr = 1;		/* Record that the trace was deleted */
@@ -1441,7 +1437,7 @@ ObjTraceDeleteProc(
 
 static int
 TestcreatecommandCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1471,7 +1467,7 @@ TestcreatecommandCmd(
 
 static int
 CreatedCommandProc(
-    ClientData clientData,	/* String to return. */
+    void *clientData,	/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1493,7 +1489,7 @@ CreatedCommandProc(
 
 static int
 CreatedCommandProc2(
-    ClientData clientData,	/* String to return. */
+    void *clientData,	/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1532,7 +1528,7 @@ CreatedCommandProc2(
 	/* ARGSUSED */
 static int
 TestdcallCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1547,10 +1543,10 @@ TestdcallCmd(
 	}
 	if (id < 0) {
 	    Tcl_DontCallWhenDeleted(delInterp, DelCallbackProc,
-		    (ClientData) INT2PTR(-id));
+		    INT2PTR(-id));
 	} else {
 	    Tcl_CallWhenDeleted(delInterp, DelCallbackProc,
-		    (ClientData) INT2PTR(id));
+		    INT2PTR(id));
 	}
     }
     Tcl_DeleteInterp(delInterp);
@@ -1564,7 +1560,7 @@ TestdcallCmd(
 
 static void
 DelCallbackProc(
-    ClientData clientData,	/* Numerical value to append to delString. */
+    void *clientData,	/* Numerical value to append to delString. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
     int id = PTR2INT(clientData);
@@ -1597,7 +1593,7 @@ DelCallbackProc(
 	/* ARGSUSED */
 static int
 TestdelCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1620,14 +1616,14 @@ TestdelCmd(
     dPtr->deleteCmd = ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
 
-    Tcl_CreateCommand(slave, argv[2], DelCmdProc, (ClientData) dPtr,
+    Tcl_CreateCommand(slave, argv[2], DelCmdProc, dPtr,
 	    DelDeleteProc);
     return TCL_OK;
 }
 
 static int
 DelCmdProc(
-    ClientData clientData,	/* String result to return. */
+    void *clientData,	/* String result to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1642,7 +1638,7 @@ DelCmdProc(
 
 static void
 DelDeleteProc(
-    ClientData clientData)	/* String command to evaluate. */
+    void *clientData)	/* String command to evaluate. */
 {
     DelCmd *dPtr = clientData;
 
@@ -1672,7 +1668,7 @@ DelDeleteProc(
 
 static int
 TestdelassocdataCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1708,7 +1704,7 @@ TestdelassocdataCmd(
  */
 
 static int
-TestdoubledigitsObjCmd(ClientData unused,
+TestdoubledigitsObjCmd(void *unused,
 				/* NULL */
 		       Tcl_Interp* interp,
 				/* Tcl interpreter */
@@ -1802,7 +1798,7 @@ TestdoubledigitsObjCmd(ClientData unused,
 	/* ARGSUSED */
 static int
 TestdstringCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -1929,7 +1925,7 @@ static void SpecialFree(blockPtr)
 	/* ARGSUSED */
 static int
 TestencodingObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1974,7 +1970,7 @@ TestencodingObjCmd(
 	type.toUtfProc = EncodingToUtfProc;
 	type.fromUtfProc = EncodingFromUtfProc;
 	type.freeProc = EncodingFreeProc;
-	type.clientData = (ClientData) encodingPtr;
+	type.clientData = encodingPtr;
 	type.nullSize = 1;
 
 	Tcl_CreateEncoding(&type);
@@ -1997,7 +1993,7 @@ TestencodingObjCmd(
 
 static int
 EncodingToUtfProc(
-    ClientData clientData,	/* TclEncoding structure. */
+    void *clientData,	/* TclEncoding structure. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2029,7 +2025,7 @@ EncodingToUtfProc(
 
 static int
 EncodingFromUtfProc(
-    ClientData clientData,	/* TclEncoding structure. */
+    void *clientData,	/* TclEncoding structure. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2061,7 +2057,7 @@ EncodingFromUtfProc(
 
 static void
 EncodingFreeProc(
-    ClientData clientData)	/* ClientData associated with type. */
+    void *clientData)	/* ClientData associated with type. */
 {
     TclEncoding *encodingPtr = clientData;
 
@@ -2089,7 +2085,7 @@ EncodingFreeProc(
 
 static int
 TestevalexObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2134,7 +2130,7 @@ TestevalexObjCmd(
 
 static int
 TestevalobjvObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2183,7 +2179,7 @@ TestevalobjvObjCmd(
 
 static int
 TesteventObjCmd(
-    ClientData unused,		/* Not used */
+    void *unused,		/* Not used */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
@@ -2319,7 +2315,7 @@ TesteventProc(
 static int
 TesteventDeleteProc(
     Tcl_Event *event,		/* Event to examine */
-    ClientData clientData)	/* Tcl_Obj containing the name of the event(s)
+    void *clientData)	/* Tcl_Obj containing the name of the event(s)
 				 * to remove */
 {
     TestEvent *ev;		/* Event to examine */
@@ -2362,7 +2358,7 @@ TesteventDeleteProc(
 
 static int
 TestexithandlerCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2379,10 +2375,10 @@ TestexithandlerCmd(
     }
     if (strcmp(argv[1], "create") == 0) {
 	Tcl_CreateExitHandler((value & 1) ? ExitProcOdd : ExitProcEven,
-		(ClientData) INT2PTR(value));
+		INT2PTR(value));
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_DeleteExitHandler((value & 1) ? ExitProcOdd : ExitProcEven,
-		(ClientData) INT2PTR(value));
+		INT2PTR(value));
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create or delete", NULL);
@@ -2393,7 +2389,7 @@ TestexithandlerCmd(
 
 static void
 ExitProcOdd(
-    ClientData clientData)	/* Integer value to print. */
+    void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
@@ -2407,7 +2403,7 @@ ExitProcOdd(
 
 static void
 ExitProcEven(
-    ClientData clientData)	/* Integer value to print. */
+    void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
@@ -2438,7 +2434,7 @@ ExitProcEven(
 
 static int
 TestexprlongCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2481,7 +2477,7 @@ TestexprlongCmd(
 
 static int
 TestexprlongobjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument objects. */
@@ -2523,7 +2519,7 @@ TestexprlongobjCmd(
 
 static int
 TestexprdoubleCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2567,7 +2563,7 @@ TestexprdoubleCmd(
 
 static int
 TestexprdoubleobjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument objects. */
@@ -2609,7 +2605,7 @@ TestexprdoubleobjCmd(
 
 static int
 TestexprstringCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2641,7 +2637,7 @@ TestexprstringCmd(
 
 static int
 TestfilelinkCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -2708,7 +2704,7 @@ TestfilelinkCmd(
 
 static int
 TestgetassocdataCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2746,7 +2742,7 @@ TestgetassocdataCmd(
 
 static int
 TestgetplatformCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2787,7 +2783,7 @@ TestgetplatformCmd(
 	/* ARGSUSED */
 static int
 TestinterpdeleteCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -2828,7 +2824,7 @@ TestinterpdeleteCmd(
 	/* ARGSUSED */
 static int
 TestlinkCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -3296,7 +3292,7 @@ TestlinkCmd(
 
 static int
 TestlocaleCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3358,7 +3354,7 @@ TestlocaleCmd(
 	/* ARGSUSED */
 static void
 CleanupTestSetassocdataTests(
-    ClientData clientData,	/* Data to be released. */
+    void *clientData,	/* Data to be released. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
     ckfree(clientData);
@@ -3383,7 +3379,7 @@ CleanupTestSetassocdataTests(
 
 static int
 TestparserObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3439,7 +3435,7 @@ TestparserObjCmd(
 
 static int
 TestexprparserObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3586,7 +3582,7 @@ PrintParse(
 
 static int
 TestparsevarObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3627,7 +3623,7 @@ TestparsevarObjCmd(
 
 static int
 TestparsevarnameObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3690,7 +3686,7 @@ TestparsevarnameObjCmd(
 
 static int
 TestpreferstableObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3719,7 +3715,7 @@ TestpreferstableObjCmd(
 
 static int
 TestprintObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -3761,7 +3757,7 @@ TestprintObjCmd(
 	/* ARGSUSED */
 static int
 TestregexpObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4085,7 +4081,7 @@ TestregexpXflags(
 	/* ARGSUSED */
 static int
 TestreturnObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4113,7 +4109,7 @@ TestreturnObjCmd(
 
 static int
 TestsetassocdataCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4140,8 +4136,7 @@ TestsetassocdataCmd(
 	ckfree(oldData);
     }
 
-    Tcl_SetAssocData(interp, argv[1], CleanupTestSetassocdataTests,
-	(ClientData) buf);
+    Tcl_SetAssocData(interp, argv[1], CleanupTestSetassocdataTests,	buf);
     return TCL_OK;
 }
 
@@ -4165,7 +4160,7 @@ TestsetassocdataCmd(
 
 static int
 TestsetplatformCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4214,7 +4209,7 @@ TestsetplatformCmd(
 
 static int
 TeststaticpkgCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4232,7 +4227,7 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tclStubsPtr->tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
 	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }
@@ -4265,7 +4260,7 @@ StaticInitProc(
 
 static int
 TesttranslatefilenameCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4307,7 +4302,7 @@ TesttranslatefilenameCmd(
 	/* ARGSUSED */
 static int
 TestupvarCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4360,7 +4355,7 @@ TestupvarCmd(
 	/* ARGSUSED */
 static int
 TestseterrorcodeCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4413,7 +4408,7 @@ TestseterrorcodeCmd(
 	/* ARGSUSED */
 static int
 TestsetobjerrorcodeCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4442,7 +4437,7 @@ TestsetobjerrorcodeCmd(
 	/* ARGSUSED */
 static int
 TestfeventCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4514,7 +4509,7 @@ TestfeventCmd(
 
 static int
 TestpanicCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -4535,7 +4530,7 @@ TestpanicCmd(
 
 static int
 TestfileCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     Tcl_Obj *const argv[])	/* The argument objects. */
@@ -4617,7 +4612,7 @@ TestfileCmd(
 
 static int
 TestgetvarfullnameCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4691,7 +4686,7 @@ TestgetvarfullnameCmd(
 
 static int
 GetTimesObjCmd(
-    ClientData unused,		/* Unused. */
+    void *unused,		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
     int notused1,			/* Number of arguments. */
     Tcl_Obj *const notused2[])	/* The argument objects. */
@@ -4870,7 +4865,7 @@ GetTimesObjCmd(
 
 static int
 NoopCmd(
-    ClientData unused,		/* Unused. */
+    void *unused,		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
     int argc,			/* The number of arguments. */
     const char **argv)		/* The argument strings. */
@@ -4897,7 +4892,7 @@ NoopCmd(
 
 static int
 NoopObjCmd(
-    ClientData unused,		/* Not used. */
+    void *unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4922,7 +4917,7 @@ NoopObjCmd(
 
 static int
 TeststringbytesObjCmd(
-    ClientData unused,		/* Not used. */
+    void *unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4958,7 +4953,7 @@ TeststringbytesObjCmd(
 
 static int
 TestbytestringObjCmd(
-    ClientData unused,		/* Not used. */
+    void *unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4995,7 +4990,7 @@ TestbytestringObjCmd(
 	/* ARGSUSED */
 static int
 TestsetCmd(
-    ClientData data,		/* Additional flags for Get/SetVar2. */
+    void *data,		/* Additional flags for Get/SetVar2. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5027,7 +5022,7 @@ TestsetCmd(
 }
 static int
 Testset2Cmd(
-    ClientData data,		/* Additional flags for Get/SetVar2. */
+    void *data,		/* Additional flags for Get/SetVar2. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5078,7 +5073,7 @@ Testset2Cmd(
 	/* ARGSUSED */
 static int
 TestsaveresultCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -5209,7 +5204,7 @@ TestsaveresultFree(
 
 static int
 TestmainthreadCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5270,7 +5265,7 @@ MainLoop(void)
 
 static int
 TestsetmainloopCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5299,7 +5294,7 @@ TestsetmainloopCmd(
 
 static int
 TestexitmainloopCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     register Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5328,7 +5323,7 @@ TestexitmainloopCmd(
 	/* ARGSUSED */
 static int
 TestChannelCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter for result. */
     int argc,			/* Count of additional args. */
     const char **argv)		/* Additional arg strings. */
@@ -5797,7 +5792,7 @@ TestChannelCmd(
 	/* ARGSUSED */
 static int
 TestChannelEventCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -5851,7 +5846,7 @@ TestChannelEventCmd(
 	Tcl_IncrRefCount(esPtr->scriptPtr);
 
 	Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
-		TclChannelEventScriptInvoker, (ClientData) esPtr);
+		TclChannelEventScriptInvoker, esPtr);
 
 	return TCL_OK;
     }
@@ -5895,7 +5890,7 @@ TestChannelEventCmd(
 	    prevEsPtr->nextPtr = esPtr->nextPtr;
 	}
 	Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
-		TclChannelEventScriptInvoker, (ClientData) esPtr);
+		TclChannelEventScriptInvoker, esPtr);
 	Tcl_DecrRefCount(esPtr->scriptPtr);
 	ckfree(esPtr);
 
@@ -5936,7 +5931,7 @@ TestChannelEventCmd(
 	     esPtr = nextEsPtr) {
 	    nextEsPtr = esPtr->nextPtr;
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
-		    TclChannelEventScriptInvoker, (ClientData) esPtr);
+		    TclChannelEventScriptInvoker, esPtr);
 	    Tcl_DecrRefCount(esPtr->scriptPtr);
 	    ckfree(esPtr);
 	}
@@ -5982,7 +5977,7 @@ TestChannelEventCmd(
 	}
 	esPtr->mask = mask;
 	Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
-		TclChannelEventScriptInvoker, (ClientData) esPtr);
+		TclChannelEventScriptInvoker, esPtr);
 	return TCL_OK;
     }
     Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of "
@@ -6010,7 +6005,7 @@ TestChannelEventCmd(
 	/* ARGSUSED */
 static int
 TestSocketCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter for result. */
     int argc,			/* Count of additional args. */
     const char **argv)		/* Additional arg strings. */
@@ -6077,7 +6072,7 @@ TestSocketCmd(
 
 static int
 TestWrongNumArgsObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6133,7 +6128,7 @@ TestWrongNumArgsObjCmd(
 
 static int
 TestGetIndexFromObjStructObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6187,7 +6182,7 @@ TestGetIndexFromObjStructObjCmd(
 
 static int
 TestFilesystemObjCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6203,7 +6198,7 @@ TestFilesystemObjCmd(
 	return TCL_ERROR;
     }
     if (boolVal) {
-	res = Tcl_FSRegister((ClientData)interp, &testReportingFilesystem);
+	res = Tcl_FSRegister(interp, &testReportingFilesystem);
 	msg = (res == TCL_OK) ? "registered" : "failed";
     } else {
 	res = Tcl_FSUnregister(&testReportingFilesystem);
@@ -6216,7 +6211,7 @@ TestFilesystemObjCmd(
 static int
 TestReportInFilesystem(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    void **clientDataPtr)
 {
     static Tcl_Obj *lastPathPtr = NULL;
     Tcl_Obj *newPathPtr;
@@ -6238,7 +6233,7 @@ TestReportInFilesystem(
 	return -1;
     }
     lastPathPtr = NULL;
-    *clientDataPtr = (ClientData) newPathPtr;
+    *clientDataPtr = newPathPtr;
     return TCL_OK;
 }
 
@@ -6256,7 +6251,7 @@ TestReportGetNativePath(
 
 static void
 TestReportFreeInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Obj *nativeRep = (Tcl_Obj *) clientData;
 
@@ -6268,7 +6263,7 @@ TestReportFreeInternalRep(
 
 static ClientData
 TestReportDupInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Obj *original = (Tcl_Obj *) clientData;
 
@@ -6534,7 +6529,7 @@ TestReportNormalizePath(
 static int
 SimplePathInFilesystem(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    void **clientDataPtr)
 {
     const char *str = Tcl_GetString(pathPtr);
 
@@ -6563,7 +6558,7 @@ SimplePathInFilesystem(
 
 static int
 TestSimpleFilesystemObjCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6579,7 +6574,7 @@ TestSimpleFilesystemObjCmd(
 	return TCL_ERROR;
     }
     if (boolVal) {
-	res = Tcl_FSRegister((ClientData)interp, &simpleFilesystem);
+	res = Tcl_FSRegister(interp, &simpleFilesystem);
 	msg = (res == TCL_OK) ? "registered" : "failed";
     } else {
 	res = Tcl_FSUnregister(&simpleFilesystem);
@@ -6723,7 +6718,7 @@ SimpleListVolumes(void)
 
 static int
 TestNumUtfCharsCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6746,7 +6741,7 @@ TestNumUtfCharsCmd(
 
 static int
 TestFindFirstCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6768,7 +6763,7 @@ TestFindFirstCmd(
 
 static int
 TestFindLastCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6810,7 +6805,7 @@ TestFindLastCmd(
 
 static int
 TestcpuidCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -6846,7 +6841,7 @@ TestcpuidCmd(
 
 static int
 TestHashSystemHashCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6922,7 +6917,7 @@ TestHashSystemHashCmd(
  */
 static int
 TestgetintCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int argc,
     const char **argv)
@@ -6949,7 +6944,7 @@ TestgetintCmd(
  */
 static int
 TestlongsizeCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int argc,
     const char **argv)
@@ -6964,7 +6959,7 @@ TestlongsizeCmd(
 
 static int
 NREUnwind_callback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -6991,7 +6986,7 @@ NREUnwind_callback(
 
 static int
 TestNREUnwind(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -7009,7 +7004,7 @@ TestNREUnwind(
 
 static int
 TestNRELevels(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -7065,7 +7060,7 @@ TestNRELevels(
 
 static int
 TestconcatobjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -7362,7 +7357,7 @@ TestconcatobjCmd(
 
 static int
 TestparseargsCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Arguments. */
@@ -7601,7 +7596,7 @@ InterpCompiledVarResolver(
 
 static int
 TestInterpResolverCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
