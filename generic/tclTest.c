@@ -444,6 +444,10 @@ static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
@@ -3036,7 +3040,7 @@ TestlinkCmd(
 	tmp = Tcl_NewLongObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewLongObj((long)ulongVar);
+	tmp = Tcl_NewLongObj(ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
@@ -6951,7 +6955,7 @@ TestlongsizeCmd(
 	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)sizeof(long)));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sizeof(long)));
     return TCL_OK;
 }
 
@@ -6974,9 +6978,9 @@ NREUnwind_callback(
                 &none, NULL);
     } else {
         Tcl_Obj *idata[3];
-        idata[0] = Tcl_NewIntObj((int) ((char *) data[1] - (char *) data[0]));
-        idata[1] = Tcl_NewIntObj((int) ((char *) data[2] - (char *) data[0]));
-        idata[2] = Tcl_NewIntObj((int) ((char *) &none   - (char *) data[0]));
+        idata[0] = Tcl_NewIntObj(((char *) data[1] - (char *) data[0]));
+        idata[1] = Tcl_NewIntObj(((char *) data[2] - (char *) data[0]));
+        idata[2] = Tcl_NewIntObj(((char *) &none   - (char *) data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;

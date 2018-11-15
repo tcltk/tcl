@@ -840,7 +840,7 @@ UpdateStringOfInstName(
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
-	unsigned int len = strlen(s);
+	size_t len = strlen(s);
 	dst = Tcl_InitStringRep(objPtr, s, len);
 	TclOOM(dst, len);
     }

@@ -1746,7 +1746,7 @@ EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
 /* 637 */
 EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-				unsigned int numBytes);
+				size_t numBytes);
 /* 638 */
 EXTERN Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr);
@@ -1933,7 +1933,7 @@ typedef struct TclStubs {
     int (*tcl_ExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 141 */
     int (*tcl_ExprString) (Tcl_Interp *interp, const char *expr); /* 142 */
     void (*tcl_Finalize) (void); /* 143 */
-    void (*tcl_FindExecutable) (const char *argv0); /* 144 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_FindExecutable) (const char *argv0); /* 144 */
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
@@ -2027,7 +2027,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*reserved232)(void);
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2041,7 +2041,7 @@ typedef struct TclStubs {
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
-    void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     void (*reserved246)(void);
     void (*reserved247)(void);
@@ -2316,7 +2316,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
     int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
-    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData); /* 521 */
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
@@ -2434,7 +2434,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
     void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 636 */
-    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 637 */
+    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, size_t numBytes); /* 637 */
     Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
     void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 639 */
     int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
@@ -3724,12 +3724,12 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
 #   undef Tcl_SetPanicProc
+#   undef Tcl_SetExitProc
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
@@ -3822,10 +3822,6 @@ extern const TclStubs *tclStubsPtr;
 #	undef Tcl_GetLongFromObj
 #	undef Tcl_ExprLong
 #	undef Tcl_ExprLongObj
-#	undef Tcl_UniCharNcmp
-#	undef Tcl_UtfNcmp
-#	undef Tcl_UtfNcasecmp
-#	undef Tcl_UniCharNcasecmp
 #	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
 #	define Tcl_ExprLong TclExprLong
 	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
