@@ -1268,8 +1268,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#if defined(USE_TCL_STUBS)
+#undef Tcl_StaticPackage
 #define Tcl_StaticPackage \
-	(tclIntStubsPtr->tclStaticPackage) /* 257 */
+	(tclIntStubsPtr->tclStaticPackage)
+#endif /* defined(USE_TCL_STUBS) */
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
