@@ -444,6 +444,10 @@ static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
