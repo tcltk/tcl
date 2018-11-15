@@ -471,11 +471,68 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+#if TCL_UTF_MAX > 4
+    Tcl_UniChar ch = 0;
+    TCHAR *w, *wString;
+    const char *p, *end;
+    int oldLength;
+#endif
+
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
+#if TCL_UTF_MAX > 4
+
+    if (len < 0) {
+	len = strlen(string);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + (int) ((len + 1) * sizeof(TCHAR)));
+    wString = (TCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    p = string;
+    end = string + len - 4;
+    while (p < end) {
+	p += TclUtfToUniChar(p, &ch);
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    end += 4;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + ((char *) w - (char *) wString));
+
+    return wString;
+#else
     return Tcl_UtfToUniCharDString(string, len, dsPtr);
+#endif
 }
 
 char *
@@ -486,16 +543,47 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+#if TCL_UTF_MAX > 4
+    const TCHAR *w, *wEnd;
+    char *p, *result;
+    int oldLength, blen = 1;
+#endif
+
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
     if (len < 0) {
-	len = wcslen(string);
+	len = wcslen((TCHAR *)string);
     } else {
 	len /= 2;
     }
-    return Tcl_UniCharToUtfDString(string, len, dsPtr);
+#if TCL_UTF_MAX > 4
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
+    result = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = result;
+    wEnd = (TCHAR *)string + len;
+    for (w = (TCHAR *)string; w < wEnd; ) {
+	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling upper surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	blen = Tcl_UniCharToUtf(*w, p);
+	p += blen;
+	w++;
+    }
+    if (!blen) {
+	/* Special case for handling upper surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
+
+    return result;
+#else
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
+#endif
 }
 
 /*
