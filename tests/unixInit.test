@@ -333,7 +333,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
-    return $enc
+    set enc
 } -cleanup {
     unset -nocomplain env(LANG)
 } -match regexp -result {^(iso8859-15?|utf-8)$}
