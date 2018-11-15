@@ -649,6 +649,11 @@ EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
 EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, const int flags);
+/* 257 */
+EXTERN void		TclStaticPackage(Tcl_Interp *interp,
+				const char *pkgName,
+				Tcl_PackageInitProc *initProc,
+				Tcl_PackageInitProc *safeInitProc);
 
 typedef struct TclIntStubs {
     int magic;
@@ -911,6 +916,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, const int flags); /* 254 */
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
+    void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1352,6 +1358,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrObjMakeUpvar) /* 255 */
 #define TclPtrUnsetVar \
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
+#define TclStaticPackage \
+	(tclIntStubsPtr->tclStaticPackage) /* 257 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1382,6 +1390,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclGetCommandFullName
 #   undef TclCopyChannelOld
 #   undef TclSockMinimumBuffersOld
+#   undef Tcl_StaticPackage
+#   define Tcl_StaticPackage (tclIntStubsPtr->tclStaticPackage)
 #endif
 
 #endif /* _TCLINTDECLS */
