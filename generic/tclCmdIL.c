@@ -661,7 +661,7 @@ InfoCommandsCmd(
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Command cmd;
-    int i;
+    size_t i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -1406,7 +1406,7 @@ TclInfoFrame(
 	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
-	    int i;
+	    size_t i;
 
 	    /*
 	     * This is a non-standard command. Luckily, it's told us how to
@@ -2210,7 +2210,8 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int length, listLen;
+    size_t length;
+    int listLen;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2241,7 +2242,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) Tcl_GetStringFromObj(joinObjPtr, &length);
+    (void) TclGetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -2935,7 +2936,8 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int i, match, index, result=TCL_OK, listc, length, elemLen, bisect;
+    int i, match, index, result=TCL_OK, listc, bisect;
+    size_t length = 0, elemLen;
     int allocatedIndexVector = 0;
     int dataType, isIncreasing, lower, upper, start, groupSize, groupOffset;
     Tcl_WideInt patWide, objWide;
@@ -4101,7 +4103,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = ckalloc(length * sizeof(SortElement));
+    elementArray = Tcl_Alloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -4234,7 +4236,7 @@ Tcl_LsortObjCmd(
 	TclStackFree(interp, sortInfo.indexv);
     }
     if (elementArray) {
-	ckfree(elementArray);
+	Tcl_Free(elementArray);
     }
     return sortInfo.resultCode;
 }

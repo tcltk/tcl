@@ -166,7 +166,7 @@ typedef struct ExceptionAux {
  */
 
 typedef struct {
-    int srcOffset;		/* Command location to find the entry. */
+    size_t srcOffset;		/* Command location to find the entry. */
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
@@ -202,9 +202,9 @@ typedef struct {
  * the AuxData structure.
  */
 
-typedef ClientData (AuxDataDupProc)  (ClientData clientData);
-typedef void	   (AuxDataFreeProc) (ClientData clientData);
-typedef void	   (AuxDataPrintProc)(ClientData clientData,
+typedef void *(AuxDataDupProc)  (void *clientData);
+typedef void	   (AuxDataFreeProc) (void *clientData);
+typedef void	   (AuxDataPrintProc)(void *clientData,
 			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
 			    unsigned int pcOffset);
 
@@ -251,7 +251,7 @@ typedef struct AuxDataType {
 typedef struct AuxData {
     const AuxDataType *type;	/* Pointer to the AuxData type associated with
 				 * this ClientData. */
-    ClientData clientData;	/* The compilation data itself. */
+    void *clientData;	/* The compilation data itself. */
 } AuxData;
 
 /* Forward declarations for fields below */
@@ -813,7 +813,7 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     const char *name;		/* Name of instruction. */
-    int numBytes;		/* Total number of bytes for instruction. */
+    size_t numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
@@ -960,7 +960,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
  */
 
 typedef struct {
-    int length;			/* Size of array */
+    size_t length;		/* Size of array */
     int varIndices[1];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
@@ -1016,7 +1016,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    int numBytes, CompileEnv *envPtr, int optimize);
+			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
@@ -1024,7 +1024,7 @@ MODULE_SCOPE Tcl_Token *TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, int numBytes,
+			    const char *script, size_t numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
@@ -1033,13 +1033,13 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
+MODULE_SCOPE int	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    int length);
+			    size_t length);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
@@ -1053,7 +1053,7 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE ClientData	TclFetchAuxData(CompileEnv *envPtr, int index);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
+MODULE_SCOPE int	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1066,7 +1066,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    int numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
@@ -1080,7 +1080,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+MODULE_SCOPE int	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
@@ -1092,9 +1092,9 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 MODULE_SCOPE int	TclPrintInstruction(ByteCode *codePtr,
 			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
-			    Tcl_Obj *objPtr, int maxChars);
+			    Tcl_Obj *objPtr, size_t maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
-			    const char *string, int maxChars);
+			    const char *string, size_t maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -1104,16 +1104,16 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSingleOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSortingOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclVariadicOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclNoIdentOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 #ifdef TCL_COMPILE_DEBUG
@@ -1124,12 +1124,12 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
-			    int length, const unsigned char *pc,
+			    size_t length, const unsigned char *pc,
 			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
-MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    register Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
@@ -1454,7 +1454,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * these macros are:
  *
  * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, int length);
+ *			    const char *string, size_t length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
  */
@@ -1462,7 +1462,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 #define PushLiteral(envPtr, string, length) \
     TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
+    PushLiteral(envPtr, string, sizeof(string "") - 1)
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address
@@ -1478,7 +1478,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * Macro to get the offset to the next instruction to be issued. The ANSI C
  * "prototype" for this macro is:
  *
- * static int	CurrentOffset(CompileEnv *envPtr);
+ * static ptrdiff_t	CurrentOffset(CompileEnv *envPtr);
  */
 
 #define CurrentOffset(envPtr) \

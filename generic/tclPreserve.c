@@ -314,7 +314,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = ckalloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = Tcl_Alloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG
@@ -364,7 +364,7 @@ TclHandleFree(
 #endif
     handlePtr->ptr = NULL;
     if (handlePtr->refCount == 0) {
-	ckfree(handlePtr);
+	Tcl_Free(handlePtr);
     }
 }
 
@@ -447,7 +447,7 @@ TclHandleRelease(
     }
 #endif
     if ((handlePtr->refCount-- <= 1) && (handlePtr->ptr == NULL)) {
-	ckfree(handlePtr);
+	Tcl_Free(handlePtr);
     }
 }
 

@@ -397,7 +397,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
@@ -1066,7 +1066,7 @@ TcpCloseProc(
 		TclWinConvertError((DWORD) WSAGetLastError());
 		errorCode = Tcl_GetErrno();
 	    }
-	    ckfree(thisfd);
+	    Tcl_Free(thisfd);
 	}
     }
 
@@ -1108,7 +1108,7 @@ TcpCloseProc(
      * fear of damaging the list.
      */
 
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
     return errorCode;
 }
 
@@ -2722,7 +2722,7 @@ SocketCheckProc(
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
                 && !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
-	    evPtr = ckalloc(sizeof(SocketEvent));
+	    evPtr = Tcl_Alloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = statePtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -2997,7 +2997,7 @@ AddSocketInfoFd(
          * Add the first FD.
          */
 
-	statePtr->sockets = ckalloc(sizeof(TcpFdList));
+	statePtr->sockets = Tcl_Alloc(sizeof(TcpFdList));
 	fds = statePtr->sockets;
     } else {
 	/*
@@ -3008,7 +3008,7 @@ AddSocketInfoFd(
 	    fds = fds->next;
 	}
 
-	fds->next = ckalloc(sizeof(TcpFdList));
+	fds->next = Tcl_Alloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
 
@@ -3041,7 +3041,7 @@ AddSocketInfoFd(
 static TcpState *
 NewSocketInfo(SOCKET socket)
 {
-    TcpState *statePtr = ckalloc(sizeof(TcpState));
+    TcpState *statePtr = Tcl_Alloc(sizeof(TcpState));
 
     memset(statePtr, 0, sizeof(TcpState));
 

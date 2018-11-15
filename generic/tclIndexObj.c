@@ -61,8 +61,8 @@ static const Tcl_ObjType indexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    int offset;			/* Offset between table entries */
-    int index;			/* Selected index into table. */
+    size_t offset;			/* Offset between table entries */
+    size_t index;			/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -131,14 +131,14 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = ckalloc((objc + 1) * sizeof(char *));
+    tablePtr = Tcl_Alloc((objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
 	     * An exact match is always chosen, so we can stop here.
 	     */
 
-	    ckfree(tablePtr);
+	    Tcl_Free(tablePtr);
 	    *indexPtr = t;
 	    return TCL_OK;
 	}
@@ -150,7 +150,7 @@ GetIndexFromObjList(
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
 	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
 
-    ckfree(tablePtr);
+    Tcl_Free(tablePtr);
 
     return result;
 }
@@ -190,7 +190,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    int offset,			/* The number of bytes between entries */
+    size_t offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0 or TCL_EXACT */
@@ -204,8 +204,8 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
 
     /* Protect against invalid values, like -1 or 0. */
-    if (offset < (int)sizeof(char *)) {
-	offset = (int)sizeof(char *);
+    if (offset+1 <= sizeof(char *)) {
+	offset = sizeof(char *);
     }
     /*
      * See if there is a valid cached result from a previous lookup.
@@ -277,7 +277,7 @@ Tcl_GetIndexFromObjStruct(
 	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	} else {
 	    TclFreeIntRep(objPtr);
-	    indexRep = ckalloc(sizeof(IndexRep));
+	    indexRep = Tcl_Alloc(sizeof(IndexRep));
 	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
 	    objPtr->typePtr = &indexType;
 	}
@@ -388,7 +388,7 @@ UpdateStringOfIndex(
     register const char *indexStr = EXPAND_OF(indexRep);
 
     len = strlen(indexStr);
-    buf = ckalloc(len + 1);
+    buf = Tcl_Alloc(len + 1);
     memcpy(buf, indexStr, len+1);
     objPtr->bytes = buf;
     objPtr->length = len;
@@ -418,7 +418,7 @@ DupIndex(
     Tcl_Obj *dupPtr)
 {
     IndexRep *srcIndexRep = srcPtr->internalRep.twoPtrValue.ptr1;
-    IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
+    IndexRep *dupIndexRep = Tcl_Alloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
@@ -446,7 +446,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
+    Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -1036,7 +1036,7 @@ Tcl_ParseArgsObjv(
 	 */
 
 	nrem = 1;
-	leftovers = ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
+	leftovers = Tcl_Alloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
 	leftovers[0] = objv[0];
     } else {
 	nrem = 0;
@@ -1220,7 +1220,7 @@ Tcl_ParseArgsObjv(
     }
     leftovers[nrem] = NULL;
     *objcPtr = nrem++;
-    *remObjv = ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
+    *remObjv = Tcl_Realloc(leftovers, nrem * sizeof(Tcl_Obj *));
     return TCL_OK;
 
     /*
@@ -1233,7 +1233,7 @@ Tcl_ParseArgsObjv(
 	    "\"%s\" option requires an additional argument", str));
   error:
     if (leftovers != NULL) {
-	ckfree(leftovers);
+	Tcl_Free(leftovers);
     }
     return TCL_ERROR;
 }

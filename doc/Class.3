@@ -41,12 +41,12 @@ Tcl_Object
 int
 \fBTcl_ObjectDeleted\fR(\fIobject\fR)
 .sp
-ClientData
+void *
 \fBTcl_ObjectGetMetadata\fR(\fIobject, metaTypePtr\fR)
 .sp
 \fBTcl_ObjectSetMetadata\fR(\fIobject, metaTypePtr, metadata\fR)
 .sp
-ClientData
+void *
 \fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
 .sp
 \fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
@@ -56,7 +56,7 @@ Tcl_ObjectMapMethodNameProc
 .sp
 \fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImethodNameMapper\fR)
 .SH ARGUMENTS
-.AS ClientData metadata in/out
+.AS void *metadata in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -83,7 +83,7 @@ are not arguments to any constructors.
 .AP Tcl_ObjectMetadataType *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
-.AP ClientData metadata in
+.AP void *metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
 associated with a particular \fImetaTypePtr\fR.
 .AP "Tcl_ObjectMapMethodNameProc" "methodNameMapper" in
@@ -171,7 +171,7 @@ a class or object.
 .PP
 .CS
 typedef void \fBTcl_ObjectMetadataDeleteProc\fR(
-        ClientData \fImetadata\fR);
+        void *\fImetadata\fR);
 .CE
 .PP
 The \fImetadata\fR argument gives the address of the metadata to be
@@ -184,8 +184,8 @@ associated with a class or object.
 .CS
 typedef int \fBTcl_CloneProc\fR(
         Tcl_Interp *\fIinterp\fR,
-        ClientData \fIsrcMetadata\fR,
-        ClientData *\fIdstMetadataPtr\fR);
+        void *\fIsrcMetadata\fR,
+        void **\fIdstMetadataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the

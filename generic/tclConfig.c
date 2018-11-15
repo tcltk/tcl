@@ -79,11 +79,11 @@ Tcl_RegisterConfig(
     Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
-    QCCD *cdPtr = ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = Tcl_Alloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     if (valEncoding) {
-	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	cdPtr->encoding = Tcl_Alloc(strlen(valEncoding)+1);
 	strcpy(cdPtr->encoding, valEncoding);
     } else {
 	cdPtr->encoding = NULL;
@@ -333,9 +333,9 @@ QueryConfigDelete(
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
     if (cdPtr->encoding) {
-	ckfree(cdPtr->encoding);
+	Tcl_Free(cdPtr->encoding);
     }
-    ckfree(cdPtr);
+    Tcl_Free(cdPtr);
 }
 
 /*

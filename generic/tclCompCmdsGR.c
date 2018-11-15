@@ -184,7 +184,8 @@ TclCompileIfCmd(
 				 * determined. */
     JumpFixup *falseFixupPtr = NULL, *endFixupPtr = NULL;
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpFalseDist, numWords, wordIdx, numBytes, code;
+    int jumpFalseDist, numWords, wordIdx, code;
+    size_t numBytes;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -422,7 +423,7 @@ TclCompileIfCmd(
 		jumpFalseDist += 3;
 		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
 	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", (int) opCode);
+		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%u\" updating ifFalse jump", opCode);
 	    }
 	}
 
@@ -491,7 +492,7 @@ TclCompileIncrCmd(
 	incrTokenPtr = TokenAfter(varTokenPtr);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    const char *word = incrTokenPtr[1].start;
-	    int numBytes = incrTokenPtr[1].size;
+	    size_t numBytes = incrTokenPtr[1].size;
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 
@@ -2072,7 +2073,8 @@ TclCompileRegexpCmd(
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
-    int i, len, nocase, exact, sawLast, simple;
+    size_t len;
+    int i, nocase, exact, sawLast, simple;
     const char *str;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2625,8 +2627,8 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    int numBytes;
-    const char *bytes = TclGetStringFromObj(msg, &numBytes);
+    const char *bytes = TclGetString(msg);
+    size_t numBytes = msg->length;
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);

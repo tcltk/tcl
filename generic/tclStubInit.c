@@ -50,6 +50,16 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 
+#ifdef TCL_MEM_DEBUG
+#   define Tcl_Alloc TclpAlloc
+#   define Tcl_Free TclpFree
+#   define Tcl_Realloc TclpRealloc
+#   undef Tcl_AttemptAlloc
+#   define Tcl_AttemptAlloc TclpAlloc
+#   undef Tcl_AttemptRealloc
+#   define Tcl_AttemptRealloc TclpRealloc
+#endif
+
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -101,7 +111,7 @@ TclpGetPid(Tcl_Pid pid)
 char *
 Tcl_WinUtfToTChar(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
@@ -114,14 +124,14 @@ Tcl_WinUtfToTChar(
 char *
 Tcl_WinTCharToUtf(
     const char *string,
-    int len,
+    size_t len,
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
-    if (len < 0) {
+    if (len == TCL_AUTO_LENGTH) {
 	len = wcslen((wchar_t *)string);
     } else {
 	len /= 2;

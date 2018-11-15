@@ -180,7 +180,7 @@ TclOODeleteChainCache(
 	}
     }
     Tcl_DeleteHashTable(tablePtr);
-    ckfree(tablePtr);
+    Tcl_Free(tablePtr);
 }
 
 /*
@@ -201,9 +201,9 @@ TclOODeleteChain(
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
-	ckfree(callPtr->chain);
+	Tcl_Free(callPtr->chain);
     }
-    ckfree(callPtr);
+    Tcl_Free(callPtr);
 }
 
 /*
@@ -568,7 +568,7 @@ SortMethodNames(
 				 * methods. Full private methods are handled
 				 * on insertion to the table. */
     const char ***stringsPtr)	/* Where to store the sorted list of strings
-				 * that we produce. ckalloced() */
+				 * that we produce. Tcl_Alloced() */
 {
     const char **strings;
     FOREACH_HASH_DECLS;
@@ -592,7 +592,7 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    strings = ckalloc(sizeof(char *) * namesPtr->numEntries);
+    strings = Tcl_Alloc(sizeof(char *) * namesPtr->numEntries);
     FOREACH_HASH(namePtr, isWanted, namesPtr) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -614,7 +614,7 @@ SortMethodNames(
 	}
 	*stringsPtr = strings;
     } else {
-	ckfree(strings);
+	Tcl_Free(strings);
 	*stringsPtr = NULL;
     }
     return i;
@@ -1013,11 +1013,11 @@ AddMethodToCallChain(
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
 	callPtr->chain =
-		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
+		Tcl_Alloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = ckrealloc(callPtr->chain,
+	callPtr->chain = Tcl_Realloc(callPtr->chain,
 		sizeof(struct MInvoke) * (callPtr->numChain + 1));
     }
     callPtr->chain[i].mPtr = mPtr;
@@ -1205,7 +1205,7 @@ TclOOGetCallContext(
 	doFilters = 1;
     }
 
-    callPtr = ckalloc(sizeof(CallChain));
+    callPtr = Tcl_Alloc(sizeof(CallChain));
     InitCallChain(callPtr, oPtr, flags);
 
     cb.callChainPtr = callPtr;
@@ -1223,7 +1223,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (callPtr->numChain == 0) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1300,7 +1300,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1310,7 +1310,7 @@ TclOOGetCallContext(
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
 		    oPtr->selfCls->classChainCache =
-			    ckalloc(sizeof(Tcl_HashTable));
+			    Tcl_Alloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
 		}
@@ -1318,7 +1318,7 @@ TclOOGetCallContext(
 			(char *) methodNameObj, &i);
 	    } else {
 		if (oPtr->chainCache == NULL) {
-		    oPtr->chainCache = ckalloc(sizeof(Tcl_HashTable));
+		    oPtr->chainCache = Tcl_Alloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
@@ -1425,7 +1425,7 @@ TclOOGetStereotypeCallChain(
 	hPtr = NULL;
     }
 
-    callPtr = ckalloc(sizeof(CallChain));
+    callPtr = Tcl_Alloc(sizeof(CallChain));
     memset(callPtr, 0, sizeof(CallChain));
     callPtr->flags = flags & (PUBLIC_METHOD|PRIVATE_METHOD|FILTER_HANDLING);
     callPtr->epoch = fPtr->epoch;
@@ -1472,7 +1472,7 @@ TclOOGetStereotypeCallChain(
 	AddSimpleChainToCallContext(&obj, NULL, fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1480,7 +1480,7 @@ TclOOGetStereotypeCallChain(
     } else {
 	if (hPtr == NULL) {
 	    if (clsPtr->classChainCache == NULL) {
-		clsPtr->classChainCache = ckalloc(sizeof(Tcl_HashTable));
+		clsPtr->classChainCache = Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,

@@ -2995,7 +2995,7 @@ TclNativeCreateNativeRep(
 	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
-    wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
+    wp = nativePathPtr = Tcl_Alloc( (len+6) * sizeof(WCHAR) );
     if (nativePathPtr==0) {
       goto done;
     }
@@ -3085,7 +3085,7 @@ TclNativeDupInternalRep(
 
     len = sizeof(TCHAR) * (_tcslen((const TCHAR *) clientData) + 1);
 
-    copy = ckalloc(len);
+    copy = Tcl_Alloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }
@@ -3194,7 +3194,7 @@ TclWinFileOwned(
         bufsz = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
         if (bufsz) {
-            buf = ckalloc(bufsz);
+            buf = Tcl_Alloc(bufsz);
             if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
                 owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
             }
@@ -3206,7 +3206,7 @@ TclWinFileOwned(
     if (secd)
         LocalFree(secd);            /* Also frees ownerSid */
     if (buf)
-        ckfree(buf);
+        Tcl_Free(buf);
 
     return (owned != 0);        /* Convert non-0 to 1 */
 }

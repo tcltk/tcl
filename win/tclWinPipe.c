@@ -403,7 +403,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = ckalloc(sizeof(PipeEvent));
+	    evPtr = Tcl_Alloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -434,7 +434,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = ckalloc(sizeof(WinFile));
+    filePtr = Tcl_Alloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -826,7 +826,7 @@ TclpCloseFile(
 	    if (filePtr->handle != NULL &&
 		    CloseHandle(filePtr->handle) == FALSE) {
 		TclWinConvertError(GetLastError());
-		ckfree(filePtr);
+		Tcl_Free(filePtr);
 		return -1;
 	    }
 	}
@@ -836,7 +836,7 @@ TclpCloseFile(
 	Tcl_Panic("TclpCloseFile: unexpected file type");
     }
 
-    ckfree(filePtr);
+    Tcl_Free(filePtr);
     return 0;
 }
 
@@ -851,7 +851,7 @@ TclpCloseFile(
  * Results:
  *	Returns the process id for the child process. If the pid was not known
  *	by Tcl, either because the pid was not created by Tcl or the child
- *	process has already been reaped, -1 is returned.
+ *	process has already been reaped, (size_t)-1 is returned.
  *
  * Side effects:
  *	None.
@@ -1676,7 +1676,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = Tcl_Alloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1840,7 +1840,7 @@ TclGetAndDetachPids(
     }
     Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
     }
 }
@@ -2027,7 +2027,7 @@ PipeClose2Proc(
 
 	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
 		    TCL_READABLE);
-	    ckfree(filePtr);
+	    Tcl_Free(filePtr);
 	} else {
 	    errChan = NULL;
 	}
@@ -2037,14 +2037,14 @@ PipeClose2Proc(
     }
 
     if (pipePtr->numPids > 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
     }
 
     if (pipePtr->writeBuf != NULL) {
-	ckfree(pipePtr->writeBuf);
+	Tcl_Free(pipePtr->writeBuf);
     }
 
-    ckfree(pipePtr);
+    Tcl_Free(pipePtr);
 
     if (errorCode == 0) {
 	return result;
@@ -2212,10 +2212,10 @@ PipeOutputProc(
 	     */
 
 	    if (infoPtr->writeBuf) {
-		ckfree(infoPtr->writeBuf);
+		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2594,7 +2594,7 @@ Tcl_WaitPid(
      */
 
     CloseHandle(infoPtr->hProcess);
-    ckfree(infoPtr);
+    Tcl_Free(infoPtr);
 
     return result;
 }
@@ -2622,7 +2622,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     size_t id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = Tcl_Alloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -3196,7 +3196,7 @@ TclPipeThreadCreateTI(
 #ifndef _PTI_USE_CKALLOC
     pipeTI = malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
+    pipeTI = Tcl_Alloc(sizeof(TclPipeThreadInfo));
 #endif
     pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
@@ -3507,7 +3507,7 @@ TclPipeThreadStop(
 #   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
 #   else
-	ckfree(pipeTI);
+	Tcl_Free(pipeTI);
 #   endif
     }
 }
@@ -3555,7 +3555,7 @@ TclPipeThreadExit(
 #   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
 #   else
-	ckfree(pipeTI);
+	Tcl_Free(pipeTI);
 	/* be sure all subsystems used are finalized */
 	Tcl_FinalizeThread();
 #   endif

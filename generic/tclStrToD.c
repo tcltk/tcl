@@ -474,7 +474,7 @@ TclParseNumber(
 				 * ("integer", "boolean value", etc.). */
     const char *bytes,		/* Pointer to the start of the string to
 				 * scan. */
-    int numBytes,		/* Maximum number of bytes to scan, see
+    size_t numBytes,		/* Maximum number of bytes to scan, see
 				 * above. */
     const char **endPtrPtr,	/* Place to store pointer to the character
 				 * that terminated the scan. */
@@ -1111,7 +1111,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
@@ -2118,7 +2118,7 @@ TakeAbsoluteValue(
  *
  * Results:
  *	Returns one of the strings 'Infinity' and 'NaN'.  The string returned
- *	must be freed by the caller using 'ckfree'.
+ *	must be freed by the caller using 'Tcl_Free'.
  *
  * Side effects:
  *	Stores 9999 in *decpt, and sets '*endPtr' to designate the terminating
@@ -2137,13 +2137,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = ckalloc(9);
+	retval = Tcl_Alloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = ckalloc(4);
+	retval = Tcl_Alloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2174,7 +2174,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = ckalloc(2);
+    char *retval = Tcl_Alloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -2727,7 +2727,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = ckalloc(len + 1);
+    retval = Tcl_Alloc(len + 1);
     if (ilim == 0) {
 	d -= 5.;
 	if (d > eps.d) {
@@ -2738,7 +2738,7 @@ QuickConversion(
 	    *decpt = k;
 	    return retval;
 	} else {
-	    ckfree(retval);
+	    Tcl_Free(retval);
 	    return NULL;
 	}
     }
@@ -2753,7 +2753,7 @@ QuickConversion(
 	end = StrictQuickFormat(d, k, ilim, eps.d, retval, decpt);
     }
     if (end == NULL) {
-	ckfree(retval);
+	Tcl_Free(retval);
 	return NULL;
     }
     *end = '\0';
@@ -2840,7 +2840,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3006,7 +3006,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3216,7 +3216,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3406,7 +3406,7 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3608,7 +3608,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -3823,7 +3823,7 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4330,7 +4330,7 @@ TclInitDoubleConversion(void)
 
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
-    pow10_wide = ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+    pow10_wide = Tcl_Alloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
@@ -4437,7 +4437,7 @@ TclFinalizeDoubleConversion(void)
 {
     int i;
 
-    ckfree(pow10_wide);
+    Tcl_Free(pow10_wide);
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }
