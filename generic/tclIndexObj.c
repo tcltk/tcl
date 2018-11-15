@@ -283,7 +283,7 @@ Tcl_GetIndexFromObjStruct(
     } else {
 	Tcl_ObjIntRep ir;
 
-	indexRep = ckalloc(sizeof(IndexRep));
+	indexRep = Tcl_Alloc(sizeof(IndexRep));
 	ir.twoPtrValue.ptr1 = indexRep;
 	Tcl_StoreIntRep(objPtr, &indexType, &ir);
     }

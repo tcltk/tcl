@@ -1919,7 +1919,7 @@ TclOOGetDefineContextNamespace(
 	Tcl_ResetResult(interp);
     }
     if (define.list != staticSpace) {
-	ckfree(define.list);
+	Tcl_Free(define.list);
     }
     return nsPtr;
 }
@@ -2084,11 +2084,11 @@ AddDefinitionNamespaceToChain(
 	    DefineEntry *staticList = definePtr->list;
 
 	    definePtr->list =
-		    ckalloc(sizeof(DefineEntry) * definePtr->size);
+		    Tcl_Alloc(sizeof(DefineEntry) * definePtr->size);
 	    memcpy(definePtr->list, staticList,
 		    sizeof(DefineEntry) * definePtr->num);
 	} else {
-	    definePtr->list = ckrealloc(definePtr->list,
+	    definePtr->list = Tcl_Realloc(definePtr->list,
 		    sizeof(DefineEntry) * definePtr->size);
 	}
     }

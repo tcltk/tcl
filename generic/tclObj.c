@@ -1698,7 +1698,7 @@ Tcl_GetStringFromObj(
  *	the tools needed to set an object's string representation. The
  *	function is determined by the arguments.
  *	
- *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes < 0)
+ *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes == -1)
  *	    Invalid call -- panic!
  *	
  *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
@@ -1737,35 +1737,31 @@ char *
 Tcl_InitStringRep(
     Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
     const char *bytes,
-    unsigned int numBytes)
+    size_t numBytes)
 {
     assert(objPtr->bytes == NULL || bytes == NULL);
-
-    if (numBytes > INT_MAX) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-    }
 
     /* Allocate */
     if (objPtr->bytes == NULL) {
 	/* Allocate only as empty - extend later if bytes copied */
 	objPtr->length = 0;
 	if (numBytes) {
-	    objPtr->bytes = attemptckalloc(numBytes + 1);
+	    objPtr->bytes = Tcl_AttemptAlloc(numBytes + 1);
 	    if (objPtr->bytes == NULL) {
 		return NULL;
 	    }
 	    if (bytes) {
 		/* Copy */
 		memcpy(objPtr->bytes, bytes, numBytes);
-		objPtr->length = (int) numBytes;
+		objPtr->length = numBytes;
 	    }
 	} else {
 	    TclInitStringRep(objPtr, NULL, 0);
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
-	objPtr->bytes = ckrealloc(objPtr->bytes, numBytes + 1);
-	objPtr->length = (int)numBytes;
+	objPtr->bytes = Tcl_Realloc(objPtr->bytes, numBytes + 1);
+	objPtr->length = numBytes;
     }
 
     /* Terminate */

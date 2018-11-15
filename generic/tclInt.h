@@ -2304,7 +2304,7 @@ typedef struct Interp {
  */
 
 #define TclOOM(ptr, size) \
-	((size) && ((ptr)||(Tcl_Panic("unable to alloc %zu bytes", (size_t)(size)),1)))
+	((size) && ((ptr)||(Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes", (size_t)(size)),1)))
 
 /*
  * The following enum values are used to specify the runtime platform setting

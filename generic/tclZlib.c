@@ -568,7 +568,7 @@ ExtractHeader(
 	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
-	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
+	SetValue(dictObj, "time", Tcl_NewLongObj(headerPtr->time));
     }
     if (headerPtr->text != Z_UNKNOWN) {
 	SetValue(dictObj, "type",
@@ -1862,7 +1862,7 @@ Tcl_ZlibInflate(
     if (headerPtr != NULL) {
 	ExtractHeader(&header, gzipHeaderDictObj);
 	SetValue(gzipHeaderDictObj, "size",
-		Tcl_NewLongObj((long) stream.total_out));
+		Tcl_NewLongObj(stream.total_out));
 	Tcl_Free(nameBuf);
 	Tcl_Free(commentBuf);
     }
