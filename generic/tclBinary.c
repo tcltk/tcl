@@ -2914,6 +2914,11 @@ BinaryDecode64(
 	    } else if (i > 1) {
 		c = '=';
 	    } else {
+		if (strict && i <= 1) {
+		    /* single resp. unfulfilled char (each 4th next single char)
+		     * is rather bad64 error case in strict mode */
+		    goto bad64;
+		}
 		cut += 3;
 		break;
 	    }
@@ -2944,9 +2949,11 @@ BinaryDecode64(
 		value = (value << 6) | 0x3e;
 	    } else if (c == '/') {
 		value = (value << 6) | 0x3f;
-	    } else if (c == '=') {
+	    } else if (c == '=' && (
+		!strict || i > 1) /* "=" and "a=" is rather bad64 error case in strict mode */
+	    ) {
 		value <<= 6;
-		cut++;
+		if (i) cut++;
 	    } else if (strict || !isspace(c)) {
 		goto bad64;
 	    } else {
