@@ -1080,7 +1080,7 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-		int fullchar;
+	    int fullchar;
 	    len = TclUtfToUniChar(stringPtr, &ch);
 	    fullchar = ch;
 
@@ -2638,9 +2638,7 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-
-    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
-
+    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2678,25 +2676,25 @@ StringCmpCmd(
 
     int match, nocase, reqlength, status;
 
-    if ((status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength))
-	!= TCL_OK) {
-
+    status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength);
+    if (status != TCL_OK) {
 	return status;
     }
 
     objv += objc-2;
-    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
     return TCL_OK;
 }
 
-int TclStringCmp (
-	Tcl_Obj *value1Ptr,
-	Tcl_Obj *value2Ptr,
-	int checkEq,        /* comparison is only for equality */
-	int nocase,	    /* comparison is not case sensitive */
-	int reqlength	    /* requested length */
-) {
+int
+TclStringCmp(
+    Tcl_Obj *value1Ptr,
+    Tcl_Obj *value2Ptr,
+    int checkEq,		/* comparison is only for equality */
+    int nocase,			/* comparison is not case sensitive */
+    int reqlength)		/* requested length */
+{
     char *s1, *s2;
     int empty, length, match, s1len, s2len;
     memCmpFn_t memCmpFn;
@@ -2707,7 +2705,6 @@ int TclStringCmp (
 	 */
 	match = 0;
     } else {
-
 	if (!nocase && TclIsPureByteArray(value1Ptr)
 		&& TclIsPureByteArray(value2Ptr)) {
 	    /*
@@ -2716,6 +2713,7 @@ int TclStringCmp (
 	     * case-sensitive (which is all that really makes sense with byte
 	     * arrays anyway, and we have no memcasecmp() for some reason... :^)
 	     */
+
 	    s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    memCmpFn = memcmp;
@@ -2747,11 +2745,11 @@ int TclStringCmp (
 		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		    if (
 #ifdef WORDS_BIGENDIAN
-			1
+			    1
 #else
-			checkEq
-#endif
-			) {
+			    checkEq
+#endif /* WORDS_BIGENDIAN */
+			    ) {
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
@@ -2761,33 +2759,34 @@ int TclStringCmp (
 		}
 	    }
 	} else {
-	    if ((empty = TclCheckEmptyString(value1Ptr)) > 0) {
+	    empty = TclCheckEmptyString(value1Ptr);
+	    if (empty > 0) {
 		switch (TclCheckEmptyString(value2Ptr)) {
-		    case -1:
+		case -1:
 		    s1 = "";
 		    s1len = 0;
 		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 		    break;
-		    case 0:
+		case 0:
 		    match = -1;
 		    goto matchdone;
-		    case 1:
-		    default: /* avoid warn: `s2` may be used uninitialized */
+		case 1:
+		default: /* avoid warn: `s2` may be used uninitialized */
 		    match = 0;
 		    goto matchdone;
 		}
 	    } else if (TclCheckEmptyString(value2Ptr) > 0) {
 		switch (empty) {
-		    case -1:
+		case -1:
 		    s2 = "";
 		    s2len = 0;
 		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
 		    break;
-		    case 0:
+		case 0:
 		    match = 1;
 		    goto matchdone;
-		    case 1:
-		    default: /* avoid warn: `s1` may be used uninitialized */
+		case 1:
+		default: /* avoid warn: `s1` may be used uninitialized */
 		    match = 0;
 		    goto matchdone;
 		}
@@ -2797,18 +2796,18 @@ int TclStringCmp (
 	    }
 	    if (!nocase && checkEq) {
 		/*
-		 * When we have equal-length we can check only for (in)equality.
-		 * We can use memcmp in all (n)eq cases because we
-		 * don't need to worry about lexical LE/BE variance.
+		 * When we have equal-length we can check only for
+		 * (in)equality. We can use memcmp in all (n)eq cases because
+		 * we don't need to worry about lexical LE/BE variance.
 		 */
 		memCmpFn = memcmp;
 	    } else {
-
 		/*
-		 * As a catch-all we will work with UTF-8. We cannot use memcmp() as
-		 * that is unsafe with any string containing NUL (\xC0\x80 in Tcl's
-		 * utf rep). We can use the more efficient TclpUtfNcmp2 if we are
-		 * case-sensitive and no specific length was requested.
+		 * As a catch-all we will work with UTF-8. We cannot use
+		 * memcmp() as that is unsafe with any string containing NUL
+		 * (\xC0\x80 in Tcl's utf rep). We can use the more efficient
+		 * TclpUtfNcmp2 if we are case-sensitive and no specific
+		 * length was requested.
 		 */
 
 		if ((reqlength < 0) && !nocase) {
@@ -2826,8 +2825,8 @@ int TclStringCmp (
 	    length = reqlength;
 	} else if (reqlength < 0) {
 	    /*
-	     * The requested length is negative, so we ignore it by setting it to
-	     * length + 1 so we correct the match var.
+	     * The requested length is negative, so we ignore it by setting it
+	     * to length + 1 so we correct the match var.
 	     */
 
 	    reqlength = length + 1;
@@ -2851,13 +2850,12 @@ int TclStringCmp (
     return match;
 }
 
-int TclStringCmpOpts (
+int TclStringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     int *nocase,
-    int *reqlength
-)
+    int *reqlength)
 {
     int i, length;
     const char *string;

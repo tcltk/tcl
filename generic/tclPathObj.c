@@ -1359,6 +1359,7 @@ TclNewFSPathObj(
 		count = 0;
 		state = 1;
 	    }
+	    break;
 	case 1:		/* Scanning for next dirsep */
 	    switch (*p) {
 	    case '/':
