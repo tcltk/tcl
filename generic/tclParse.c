@@ -494,7 +494,7 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
     Tcl_Token *result;
 
-    if (numBytes < 0) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(script);
     }
     TclParseInit(NULL, script, numBytes, parsePtr);
@@ -739,7 +739,7 @@ TclParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
     if (!append) {
@@ -1924,7 +1924,7 @@ TclParseVarName(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
@@ -2235,7 +2235,7 @@ ParseBraces(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
@@ -2454,7 +2454,7 @@ TclParseQuotedString(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
