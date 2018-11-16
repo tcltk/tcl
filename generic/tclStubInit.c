@@ -50,6 +50,8 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef TclStaticPackage
+#define TclStaticPackage Tcl_StaticPackage
 
 #ifdef TCL_MEM_DEBUG
 #   define Tcl_Alloc TclpAlloc
@@ -550,6 +552,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    TclStaticPackage, /* 257 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -916,7 +919,7 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    Tcl_FindExecutable, /* 144 */
+    0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     Tcl_FreeResult, /* 147 */
@@ -1010,7 +1013,7 @@ const TclStubs tclStubs = {
     Tcl_SetErrno, /* 227 */
     Tcl_SetErrorCode, /* 228 */
     Tcl_SetMaxBlockTime, /* 229 */
-    Tcl_SetPanicProc, /* 230 */
+    0, /* 230 */
     Tcl_SetRecursionLimit, /* 231 */
     0, /* 232 */
     Tcl_SetServiceMode, /* 233 */
@@ -1024,7 +1027,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    0, /* 244 */
     Tcl_StringMatch, /* 245 */
     0, /* 246 */
     0, /* 247 */
@@ -1299,7 +1302,7 @@ const TclStubs tclStubs = {
     Tcl_GetCommandFromObj, /* 516 */
     Tcl_GetCommandFullName, /* 517 */
     Tcl_FSEvalFileEx, /* 518 */
-    Tcl_SetExitProc, /* 519 */
+    0, /* 519 */
     Tcl_LimitAddHandler, /* 520 */
     Tcl_LimitRemoveHandler, /* 521 */
     Tcl_LimitReady, /* 522 */

@@ -528,9 +528,10 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_FindExecutable(const char *argv0)
-}
+# Removed in 9.0 (stub entry only)
+#declare 144 {
+#    void Tcl_FindExecutable(const char *argv0)
+#}
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 	    Tcl_HashSearch *searchPtr)
@@ -831,9 +832,10 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
-}
+# Removed in 9.0 (stub entry only)
+#declare 230 {
+#    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+#}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }
@@ -880,10 +882,11 @@ declare 242 {
 declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
-declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
-}
+# Removed in 9.0 (stub entry only)
+#declare 244  {
+#    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+#	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+#}
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
@@ -1914,10 +1917,10 @@ declare 518 {
 	    const char *encodingName)
 }
 
-# TIP#121 (exit handler) dkf for Joe Mistachkin
-declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
-}
+# Removed in 9.0 (stub entry only)
+#declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
+#    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+#}
 
 # TIP#143 (resource limits) dkf
 declare 520 {
