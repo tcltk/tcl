@@ -84,6 +84,21 @@ static const Tcl_ObjType ensembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
+#define ECRSetIntRep(objPtr, ecRepPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &ensembleCmdType, &ir);		\
+    } while (0)
+
+#define ECRGetIntRep(objPtr, ecRepPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &ensembleCmdType);		\
+	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 /*
  * The internal rep for caching ensemble subcommand lookups and spelling
  * corrections.
@@ -1742,10 +1757,10 @@ NsEnsembleImplementationCmdNR(
 	 * check here, and if we're still valid, we can jump straight to the
 	 * part where we do the invocation of the subcommand.
 	 */
+	EnsembleCmdRep *ensembleCmd;
 
-	if (subObj->typePtr==&ensembleCmdType){
-	    EnsembleCmdRep *ensembleCmd = subObj->internalRep.twoPtrValue.ptr1;
-
+	ECRGetIntRep(subObj, ensembleCmd);
+	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
 		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
@@ -2379,8 +2394,8 @@ MakeCachedEnsembleCommand(
 {
     register EnsembleCmdRep *ensembleCmd;
 
-    if (objPtr->typePtr == &ensembleCmdType) {
-	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    ECRGetIntRep(objPtr, ensembleCmd);
+    if (ensembleCmd) {
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
 	    Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2391,10 +2406,8 @@ MakeCachedEnsembleCommand(
 	 * our own.
 	 */
 
-	TclFreeIntRep(objPtr);
 	ensembleCmd = Tcl_Alloc(sizeof(EnsembleCmdRep));
-	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
-	objPtr->typePtr = &ensembleCmdType;
+	ECRSetIntRep(objPtr, ensembleCmd);
     }
 
     /*
@@ -2757,14 +2770,14 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    EnsembleCmdRep *ensembleCmd;
 
+    ECRGetIntRep(objPtr, ensembleCmd);
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
     }
     Tcl_Free(ensembleCmd);
-    objPtr->typePtr = NULL;
 }
 
 /*
@@ -2790,11 +2803,12 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    EnsembleCmdRep *ensembleCmd;
     EnsembleCmdRep *ensembleCopy = Tcl_Alloc(sizeof(EnsembleCmdRep));
 
-    copyPtr->typePtr = &ensembleCmdType;
-    copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
+    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRSetIntRep(copyPtr, ensembleCopy);
+
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
     ensembleCopy->token->refCount++;

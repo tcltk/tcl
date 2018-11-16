@@ -13,10 +13,10 @@
 .SH NAME
 http \- Client-side implementation of the HTTP/1.1 protocol
 .SH SYNOPSIS
-\fBpackage require http ?2.8?\fR
+\fBpackage require http\fI ?\fB2.8\fR?
 .\" See Also -useragent option documentation in body!
 .sp
-\fB::http::config ?\fI\-option value\fR ...?
+\fB::http::config\fR ?\fI\-option value\fR ...?
 .sp
 \fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
 .sp
@@ -98,6 +98,15 @@ all types of documents are accepted.  Otherwise you can supply a
 comma-separated list of mime type patterns that you are
 willing to receive.  For example,
 .QW "image/gif, image/jpeg, text/*" .
+.TP
+\fB\-cookiejar\fR \fIcommand\fR
+.VS TIP406
+The cookie store for the package to use to manage HTTP cookies.
+\fIcommand\fR is a command prefix list; if the empty list (the
+default value) is used, no cookies will be sent by requests or stored
+from responses. The command indicated by \fIcommand\fR, if supplied,
+must obey the \fBCOOKIE JAR PROTOCOL\fR described below.
+.VE TIP406
 .TP
 \fB\-pipeline\fR \fIboolean\fR
 .
@@ -770,6 +779,108 @@ Subsequent GET and HEAD requests in a failed pipeline will also be retried.
 that the retry is appropriate\fR - specifically, the application must know
 that if the failed POST successfully modified the state of the server, a repeat POST
 would have no adverse effect.
+.VS TIP406
+.SH "COOKIE JAR PROTOCOL"
+.PP
+Cookies are short key-value pairs used to implement sessions within the
+otherwise-stateless HTTP protocol. (See RFC 6265 for details; Tcl does not
+implement the Cookie2 protocol as that is rarely seen in the wild.)
+.PP
+Cookie storage managment commands \(em
+.QW "cookie jars"
+\(em must support these subcommands which form the HTTP cookie storage
+management protocol. Note that \fIcookieJar\fR below does not have to be a
+command name; it is properly a command prefix (a Tcl list of words that will
+be expanded in place) and admits many possible implementations.
+.PP
+Though not formally part of the protocol, it is expected that particular
+values of \fIcookieJar\fR will correspond to sessions; it is up to the caller
+of \fB::http::config\fR to decide what session applies and to manage the
+deletion of said sessions when they are no longer desired (which should be
+when they not configured as the current cookie jar).
+.TP
+\fIcookieJar \fBgetCookies \fIprotocol host requestPath\fR
+.
+This command asks the cookie jar what cookies should be supplied for a
+particular request. It should take the \fIprotocol\fR (typically \fBhttp\fR or
+\fBhttps\fR), \fIhost\fR name and \fIrequestPath\fR (parsed from the \fIurl\fR
+argument to \fB::http::geturl\fR) and return a list of cookie keys and values
+that describe the cookies to supply to the remote host. The list must have an
+even number of elements.
+.RS
+.PP
+There should only ever be at most one cookie with a particular key for any
+request (typically the one with the most specific \fIhost\fR/domain match and
+most specific \fIrequestPath\fR/path match), but there may be many cookies
+with different names in any request.
+.RE
+.TP
+\fIcookieJar \fBstoreCookie \fIcookieDictionary\fR
+.
+This command asks the cookie jar to store a particular cookie that was
+returned by a request; the result of this command is ignored. The cookie
+(which will have been parsed by the http package) is described by a
+dictionary, \fIcookieDictionary\fR, that may have the following keys:
+.RS
+.TP
+\fBdomain\fR
+.
+This is always present. Its value describes the domain hostname \fIor
+prefix\fR that the cookie should be returned for.  The checking of the domain
+against the origin (below) should be careful since sites that issue cookies
+should only do so for domains related to themselves. Cookies that do not obey
+a relevant origin matching rule should be ignored.
+.TP
+\fBexpires\fR
+.
+This is optional. If present, the cookie is intended to be a persistent cookie
+and the value of the option is the Tcl timestamp (in seconds from the same
+base as \fBclock seconds\fR) of when the cookie expires (which may be in the
+past, which should result in the cookie being deleted immediately). If absent,
+the cookie is intended to be a session cookie that should be not persisted
+beyond the lifetime of the cookie jar.
+.TP
+\fBhostonly\fR
+.
+This is always present. Its value is a boolean that describes whether the
+cookie is a single host cookie (true) or a domain-level cookie (false).
+.TP
+\fBhttponly\fR
+.
+This is always present. Its value is a boolean that is true when the site
+wishes the cookie to only ever be used with HTTP (or HTTPS) traffic.
+.TP
+\fBkey\fR
+.
+This is always present. Its value is the \fIkey\fR of the cookie, which is
+part of the information that must be return when sending this cookie back in a
+future request.
+.TP
+\fBorigin\fR
+.
+This is always present. Its value describes where the http package believes it
+received the cookie from, which may be useful for checking whether the
+cookie's domain is valid.
+.TP
+\fBpath\fR
+.
+This is always present. Its value describes the path prefix of requests to the
+cookie domain where the cookie should be returned.
+.TP
+\fBsecure\fR
+.
+This is always present. Its value is a boolean that is true when the cookie
+should only used on requests sent over secure channels (typically HTTPS).
+.TP
+\fBvalue\fR
+.
+This is always present. Its value is the value of the cookie, which is part of
+the information that must be return when sending this cookie back in a future
+request.
+.PP
+Other keys may always be ignored; they have no meaning in this protocol.
+.RE
+.VE TIP406
 .SH EXAMPLE
 .PP
 This example creates a procedure to copy a URL to a file while printing a

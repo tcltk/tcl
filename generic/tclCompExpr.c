@@ -1753,7 +1753,7 @@ ConvertTreeToTokens(
 
 		/*
 		 * All the Tcl_Tokens allocated and filled belong to
-		 * this subexpresion. The first token is the leading
+		 * this subexpression. The first token is the leading
 		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
 		 * are its components.
 		 */
@@ -2465,11 +2465,13 @@ CompileExprTree(
 		     * already, then use it to share via the literal table.
 		     */
 
-		    if (objPtr->bytes) {
+		    if (TclHasStringRep(objPtr)) {
 			Tcl_Obj *tableValue;
+			int numBytes;
+			const char *bytes
+				= Tcl_GetStringFromObj(objPtr, &numBytes);
 
-			index = TclRegisterLiteral(envPtr, objPtr->bytes,
-				objPtr->length, 0);
+			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, index);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {

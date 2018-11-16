@@ -45,6 +45,7 @@
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
@@ -114,11 +115,68 @@ Tcl_WinUtfToTChar(
     size_t len,
     Tcl_DString *dsPtr)
 {
+#if TCL_UTF_MAX > 4
+    Tcl_UniChar ch = 0;
+    wchar_t *w, *wString;
+    const char *p, *end;
+    int oldLength;
+#endif
+
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
+#if TCL_UTF_MAX > 4
+
+    if (len < 0) {
+	len = strlen(string);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + (int) ((len + 1) * sizeof(wchar_t)));
+    wString = (wchar_t *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    p = string;
+    end = string + len - 4;
+    while (p < end) {
+	p += TclUtfToUniChar(p, &ch);
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    end += 4;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + ((char *) w - (char *) wString));
+
+    return (char *)wString;
+#else
     return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
+#endif
 }
 
 char *
@@ -127,6 +185,12 @@ Tcl_WinTCharToUtf(
     size_t len,
     Tcl_DString *dsPtr)
 {
+#if TCL_UTF_MAX > 4
+    const wchar_t *w, *wEnd;
+    char *p, *result;
+    int oldLength, blen = 1;
+#endif
+
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
@@ -136,7 +200,32 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
+#if TCL_UTF_MAX > 4
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
+    result = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = result;
+    wEnd = (wchar_t *)string + len;
+    for (w = (wchar_t *)string; w < wEnd; ) {
+	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling upper surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	blen = Tcl_UniCharToUtf(*w, p);
+	p += blen;
+	w++;
+    }
+    if (!blen) {
+	/* Special case for handling upper surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
+
+    return result;
+#else
     return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
+#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -177,23 +266,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
-static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
-
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #endif /* __CYGWIN__ */
@@ -1344,6 +1416,14 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
+    Tcl_FreeIntRep, /* 636 */
+    Tcl_InitStringRep, /* 637 */
+    Tcl_FetchIntRep, /* 638 */
+    Tcl_StoreIntRep, /* 639 */
+    Tcl_HasStringRep, /* 640 */
+    Tcl_IncrRefCount, /* 641 */
+    Tcl_DecrRefCount, /* 642 */
+    Tcl_IsShared, /* 643 */
 };
 
 /* !END!: Do not edit above this line. */

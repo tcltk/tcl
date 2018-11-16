@@ -22,7 +22,7 @@
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0501 means Windows XP and above
  */
 
 #ifndef WINVER
@@ -535,7 +535,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size)		((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
 #define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))

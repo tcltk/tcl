@@ -42,10 +42,6 @@ extern "C" {
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * README		(sections 0 and 2, with and without separator)
- * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
- * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
- * macosx/Tcl.xcode/project.pbxproj (not patchlevel) 2 LOC
- * macosx/Tcl.xcode/default.pbxuser (not patchlevel) 1 LOC
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
@@ -618,6 +614,29 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 /*
+ * The following structure stores an internal representation (intrep) for
+ * a Tcl value. An intrep is associated with an Tcl_ObjType when both
+ * are stored in the same Tcl_Obj.  The routines of the Tcl_ObjType govern
+ * the handling of the intrep.
+ */
+
+typedef union Tcl_ObjIntRep {	/* The internal representation: */
+    long longValue;		/*   - an long integer value. */
+    double doubleValue;		/*   - a double-precision floating value. */
+    void *otherValuePtr;	/*   - another, type-specific value, */
+				/*     not used internally any more. */
+    Tcl_WideInt wideValue;	/*   - an integer value >= 64bits */
+    struct {			/*   - internal rep as two pointers. */
+	void *ptr1;		
+	void *ptr2;
+    } twoPtrValue;
+    struct {			/*   - internal rep as a pointer and a long, */
+	void *ptr;		/*     not used internally any more. */
+	unsigned long value;
+    } ptrAndLongRep;
+} Tcl_ObjIntRep;
+
+/*
  * One of the following structures exists for each object in the Tcl system.
  * An object stores a value as either a string, some internal representation,
  * or both.
@@ -642,40 +661,9 @@ typedef struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    union {			/* The internal representation: */
-	long longValue;		/*   - an long integer value. */
-	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value, not used
-				 *     internally any more. */
-	Tcl_WideInt wideValue;	/*   - a long long value. */
-	struct {		/*   - internal rep as two pointers.
-				 *     Many uses in Tcl, including a bignum's
-				 *     tightly packed fields, where the alloc,
-				 *     used and signum flags are packed into
-				 *     ptr2 with everything else hung off
-				 *     ptr1. */
-	    void *ptr1;
-	    void *ptr2;
-	} twoPtrValue;
-	struct {		/*   - internal rep as a pointer and a long,
-				 *     not used internally any more. */
-	    void *ptr;
-	    unsigned long value;
-	} ptrAndLongRep;
-    } internalRep;
+    Tcl_ObjIntRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
-/*
- * Macros to increment and decrement a Tcl_Obj's reference count, and to test
- * whether an object is shared (i.e. has reference count > 1). Note: clients
- * should use Tcl_DecrRefCount() when they are finished using an object, and
- * should never call TclFreeObj() directly. TclFreeObj() is only defined and
- * made public in tcl.h to support Tcl_DecrRefCount's macro definition.
- */
-
-void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
-void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
-int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
@@ -2306,28 +2294,15 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif /* !TCL_MEM_DEBUG */
 
 #ifdef TCL_MEM_DEBUG
+#   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
 	Tcl_DbIncrRefCount(objPtr, __FILE__, __LINE__)
+#   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
 	Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
+#   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
-#else
-#   define Tcl_IncrRefCount(objPtr) \
-	++(objPtr)->refCount
-    /*
-     * Use do/while0 idiom for optimum correctness without compiler warnings.
-     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
-     */
-#   define Tcl_DecrRefCount(objPtr) \
-	do { \
-	    Tcl_Obj *_objPtr = (objPtr); \
-	    if ((_objPtr)->refCount-- <= 1) { \
-		TclFreeObj(_objPtr); \
-	    } \
-	} while(0)
-#   define Tcl_IsShared(objPtr) \
-	((objPtr)->refCount > 1)
 #endif
 
 /*

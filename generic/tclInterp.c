@@ -409,7 +409,7 @@ Tcl_Init(
 "	} else {\n"
 "	    lappend scripts {::tcl::pkgconfig get scriptdir,runtime}\n"
 "	}\n"
-"   lappend scripts {zipfs tcl_library}\n"
+"	lappend scripts {::tcl::zipfs::tcl_library_init}\n"
 "	lappend scripts {\n"
 "set parentDir [file dirname [file dirname [info nameofexecutable]]]\n"
 "set grandParentDir [file dirname $parentDir]\n"
@@ -1826,7 +1826,7 @@ AliasNRCmd(
     cmdc = prefc + objc - 1;
 
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = listPtr->internalRep.twoPtrValue.ptr1;
+    listRep = ListRepPtr(listPtr);
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
 

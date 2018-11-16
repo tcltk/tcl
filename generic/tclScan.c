@@ -932,8 +932,7 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
@@ -1010,8 +1009,10 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    if (objPtr->typePtr == &tclDoubleType) {
-			dvalue = objPtr->internalRep.doubleValue;
+		    const Tcl_ObjIntRep *irPtr
+			    = Tcl_FetchIntRep(objPtr, &tclDoubleType);
+		    if (irPtr) {
+			dvalue = irPtr->doubleValue;
 		    } else
 #endif
 		    {

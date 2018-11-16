@@ -447,6 +447,10 @@ static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
@@ -2399,7 +2403,7 @@ ExitProcOdd(
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
 
-    sprintf(buf, "odd %d\n", PTR2INT(clientData));
+    sprintf(buf, "odd %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
@@ -2413,7 +2417,7 @@ ExitProcEven(
     char buf[16 + TCL_INTEGER_SPACE];
     size_t len;
 
-    sprintf(buf, "even %d\n", PTR2INT(clientData));
+    sprintf(buf, "even %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
@@ -3040,7 +3044,7 @@ TestlinkCmd(
 	tmp = Tcl_NewLongObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewLongObj((long)ulongVar);
+	tmp = Tcl_NewLongObj(ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
@@ -7000,7 +7004,7 @@ TestlongsizeCmd(
 	Tcl_AppendResult(interp, "wrong # args", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)sizeof(long)));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sizeof(long)));
     return TCL_OK;
 }
 
@@ -7023,9 +7027,9 @@ NREUnwind_callback(
                 &none, NULL);
     } else {
         Tcl_Obj *idata[3];
-        idata[0] = Tcl_NewIntObj((int) ((char *) data[1] - (char *) data[0]));
-        idata[1] = Tcl_NewIntObj((int) ((char *) data[2] - (char *) data[0]));
-        idata[2] = Tcl_NewIntObj((int) ((char *) &none   - (char *) data[0]));
+        idata[0] = Tcl_NewIntObj(((char *) data[1] - (char *) data[0]));
+        idata[1] = Tcl_NewIntObj(((char *) data[2] - (char *) data[0]));
+        idata[2] = Tcl_NewIntObj(((char *) &none   - (char *) data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;
@@ -7128,17 +7132,11 @@ TestconcatobjCmd(
 
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
-    if (list1Ptr->bytes != NULL) {
-	Tcl_Free(list1Ptr->bytes);
-	list1Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list1Ptr);
 
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
-    if (list2Ptr->bytes != NULL) {
-	Tcl_Free(list2Ptr->bytes);
-	list2Ptr->bytes = NULL;
-    }
+    Tcl_InvalidateStringRep(list2Ptr);
 
     /*
      * Verify that concat'ing a list obj with one or more empty strings does

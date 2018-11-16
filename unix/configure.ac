@@ -381,26 +381,6 @@ SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
 ])
 
 #--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strtod, [
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-])
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-SC_BUGGY_STRTOD
-
-#--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
 #	they don't exist.
 #--------------------------------------------------------------------
