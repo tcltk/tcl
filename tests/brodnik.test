@@ -41,7 +41,7 @@ namespace eval ::tcl::test::brodnik {
     }
 
     variable i 8
-    while {$i < 8*$::tcl_platform(pointerSize)} {
+    while {$i < 8*$::tcl_platform(pointerSize) - 1} {
 
 	variable j -1 
 	while {$j < 2} {
