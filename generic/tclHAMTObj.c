@@ -333,7 +333,8 @@ UpdateStringOfHamt(
     Tcl_Obj *objPtr)
 {
     Tcl_Obj *listPtr = HamtToList(HAMT(objPtr));
-    objPtr->bytes = Tcl_GetStringFromObj(listPtr, &(objPtr->length));
+    objPtr->bytes = Tcl_GetString(listPtr);
+    objPtr->bytes = listPtr->bytes;
     listPtr->bytes = NULL;
     Tcl_DecrRefCount(listPtr);
 }

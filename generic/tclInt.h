@@ -2979,7 +2979,7 @@ MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    size_t numBytes, int flags, int line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE int	TclEvalScriptTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int length, int flags,
+			    Tcl_Token *tokenPtr, size_t length, int flags,
 			    int line, int* clNextOuter,
 			    const char* outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
@@ -3266,7 +3266,7 @@ MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line,
+			    size_t count, int *tokensLeftPtr, int line,
 			    int* clNextOuter, const char* outerScript,
 			    int flags);
 MODULE_SCOPE Tcl_Obj *	TclTokensCopy(Tcl_Obj *objPtr);

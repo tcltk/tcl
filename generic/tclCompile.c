@@ -2216,7 +2216,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    Tcl_Panic("CompileScriptTokens: overran token array");
 	}
         if (tokenPtr->type != TCL_TOKEN_CMD) {
-            Tcl_Panic("CompileScriptTokens: invalid token array, expected cmd: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+            Tcl_Panic("CompileScriptTokens: invalid token array, expected cmd: %d: %.*s", tokenPtr->type, (int)tokenPtr->size, tokenPtr->start);
         }
 
 	/* TODO: comment here justifying. */
@@ -2375,15 +2375,15 @@ TclCompileTokens(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
-    int i, numObjsToConcat, adjust;
-    size_t length;
+    int numObjsToConcat, adjust;
+    size_t i, length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;

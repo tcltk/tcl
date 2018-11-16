@@ -4794,7 +4794,7 @@ int
 TclEvalScriptTokens(
     Tcl_Interp *interp,
     Tcl_Token *tokenPtr,
-    int length,
+    size_t length,
     int flags,
     int line,
     int*  clNextOuter,		/* Information about an outer context for */
@@ -4980,7 +4980,7 @@ TclEvalScriptTokens(
             }
             if (!(tokenPtr->type & (TCL_TOKEN_WORD 
 		    | TCL_TOKEN_SIMPLE_WORD | TCL_TOKEN_EXPAND_WORD))) {
-                Tcl_Panic("EvalScriptTokens: invalid token array, expected word: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+                Tcl_Panic("EvalScriptTokens: invalid token array, expected word: %d: %.*s", tokenPtr->type, (int)tokenPtr->size, tokenPtr->start);
             }
             if (length < tokenPtr->numComponents + 1) {
                 Tcl_Panic("EvalScriptTokens: overran token array");
