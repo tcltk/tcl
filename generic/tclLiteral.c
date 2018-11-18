@@ -193,7 +193,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (size_t) -1) {
+    if (hash == TCL_AUTO_LENGTH) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -397,7 +397,7 @@ TclRegisterLiteral(
     int new;
     Namespace *nsPtr;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_AUTO_LENGTH) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -453,7 +453,7 @@ TclRegisterLiteral(
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr != NULL && (globalPtr->refCount < 1 || globalPtr->refCount == (size_t)-1)) {
+    if (globalPtr != NULL && ((globalPtr->refCount < 1) || (globalPtr->refCount == TCL_AUTO_LENGTH))) {
 	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes,
 		(int)globalPtr->refCount);
@@ -615,7 +615,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = (size_t)-1;	/* i.e., unused */
+    lPtr->refCount = TCL_AUTO_LENGTH;	/* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {

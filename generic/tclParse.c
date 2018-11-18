@@ -190,7 +190,7 @@ void
 TclParseInit(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting */
     const char *start,		/* Start of string to be parsed. */
-    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Points to struct to initialize */
@@ -236,7 +236,7 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
@@ -266,7 +266,7 @@ Tcl_ParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
     TclParseInit(interp, start, numBytes, parsePtr);
@@ -1360,7 +1360,7 @@ Tcl_ParseVarName(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of variable substitution string.
 				 * First character must be "$". */
-    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,	/* Structure to fill in with information about
@@ -1378,7 +1378,7 @@ Tcl_ParseVarName(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
@@ -1638,7 +1638,7 @@ Tcl_ParseBraces(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1661,7 +1661,7 @@ Tcl_ParseBraces(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
@@ -1841,7 +1841,7 @@ Tcl_ParseQuotedString(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1859,7 +1859,7 @@ Tcl_ParseQuotedString(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes == (size_t)-1) {
+    if (numBytes == TCL_AUTO_LENGTH) {
 	numBytes = strlen(start);
     }
 
