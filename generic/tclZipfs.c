@@ -291,6 +291,11 @@ static const char pwrot[16] = {
 /*
  * Table to compute CRC32.
  */
+#ifdef Z_U4
+   typedef Z_U4 z_crc_t;
+#else
+   typedef unsigned long z_crc_t;
+#endif
 
 static const z_crc_t crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
@@ -356,7 +361,7 @@ static inline int	DescribeMounted(Tcl_Interp *interp,
 static inline int	ListMountPoints(Tcl_Interp *interp);
 static int		ZipfsAppHookFindTclInit(const char *archive);
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
-			    ClientData *clientDataPtr);
+			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
 static Tcl_Obj *	ZipFSFilesystemSeparatorProc(Tcl_Obj *pathPtr);
 static int		ZipFSStatProc(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -377,17 +382,17 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 static void		ZipfsSetup(void);
-static int		ZipChannelClose(ClientData instanceData,
+static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
-static int		ZipChannelGetFile(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		ZipChannelRead(ClientData instanceData, char *buf,
+static int		ZipChannelGetFile(void *instanceData,
+			    int direction, void **handlePtr);
+static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-static int		ZipChannelSeek(ClientData instanceData, long offset,
+static int		ZipChannelSeek(void *instanceData, long offset,
 			    int mode, int *errloc);
-static void		ZipChannelWatchChannel(ClientData instanceData,
+static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
-static int		ZipChannelWrite(ClientData instanceData,
+static int		ZipChannelWrite(void *instanceData,
 			    const char *buf, int toWrite, int *errloc);
 
 /*
@@ -1089,7 +1094,7 @@ ZipFSOpenArchive(
     ZipFile *zf)
 {
     size_t i;
-    ClientData handle;
+    void *handle;
 
     zf->nameLength = 0;
     zf->isMemBuffer = 0;
@@ -1862,7 +1867,7 @@ TclZipfs_Unmount(
 
 static int
 ZipFSMountObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1896,7 +1901,7 @@ ZipFSMountObjCmd(
 
 static int
 ZipFSMountBufferObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1948,7 +1953,7 @@ ZipFSMountBufferObjCmd(
 
 static int
 ZipFSRootObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1975,7 +1980,7 @@ ZipFSRootObjCmd(
 
 static int
 ZipFSUnmountObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2006,7 +2011,7 @@ ZipFSUnmountObjCmd(
 
 static int
 ZipFSMkKeyObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2785,7 +2790,7 @@ ZipFSMkZipOrImgObjCmd(
 
 static int
 ZipFSMkZipObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2805,7 +2810,7 @@ ZipFSMkZipObjCmd(
 
 static int
 ZipFSLMkZipObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2842,7 +2847,7 @@ ZipFSLMkZipObjCmd(
 
 static int
 ZipFSMkImgObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2863,7 +2868,7 @@ ZipFSMkImgObjCmd(
 
 static int
 ZipFSLMkImgObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2900,7 +2905,7 @@ ZipFSLMkImgObjCmd(
 
 static int
 ZipFSCanonicalObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2956,7 +2961,7 @@ ZipFSCanonicalObjCmd(
 
 static int
 ZipFSExistsObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3009,7 +3014,7 @@ ZipFSExistsObjCmd(
 
 static int
 ZipFSInfoObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3059,7 +3064,7 @@ ZipFSInfoObjCmd(
 
 static int
 ZipFSListObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3274,7 +3279,7 @@ TclZipfs_TclLibrary(void)
 
 static int
 ZipFSTclLibraryObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3308,7 +3313,7 @@ ZipFSTclLibraryObjCmd(
 
 static int
 ZipChannelClose(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     ZipChannel *info = instanceData;
@@ -3366,7 +3371,7 @@ ZipChannelClose(
 
 static int
 ZipChannelRead(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errloc)
@@ -3439,7 +3444,7 @@ ZipChannelRead(
 
 static int
 ZipChannelWrite(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errloc)
@@ -3486,7 +3491,7 @@ ZipChannelWrite(
 
 static int
 ZipChannelSeek(
-    ClientData instanceData,
+    void *instanceData,
     long offset,
     int mode,
     int *errloc)
@@ -3558,7 +3563,7 @@ ZipChannelSeek(
 
 static void
 ZipChannelWatchChannel(
-    ClientData instanceData,
+    void *instanceData,
     int mask)
 {
     return;
@@ -3583,9 +3588,9 @@ ZipChannelWatchChannel(
 
 static int
 ZipChannelGetFile(
-    ClientData instanceData,
+    void *instanceData,
     int direction,
-    ClientData *handlePtr)
+    void **handlePtr)
 {
     return TCL_ERROR;
 }
@@ -4330,7 +4335,7 @@ ZipFSMatchInDirectoryProc(
 static int
 ZipFSPathInFilesystemProc(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    void **clientDataPtr)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
