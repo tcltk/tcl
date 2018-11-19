@@ -202,7 +202,7 @@ CreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (length < 0) {
+    if (length == TCL_AUTO_LENGTH) {
 	length = strlen(bytes);
     }
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -396,9 +396,9 @@ TclRegisterLiteral(
     register const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    size_t length,			/* Number of bytes in the string. If -1, the
-				 * string consists of all bytes up to the
-				 * first null character. */
+    size_t length,		/* Number of bytes in the string. If
+				 * TCL_AUTO_LENGTH, the string consists of
+				 * all bytes up to the first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
 				 * this function. If LITERAL_CMD_NAME then

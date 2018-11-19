@@ -96,7 +96,7 @@ A null-terminated Unicode string.
 A null-terminated Unicode string.
 .AP size_t length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
-(size_t)-1, all bytes up to the first null byte are used.
+TCL_AUTO_LENGTH, all bytes up to the first null byte are used.
 .AP size_t uniLength in
 The length of the Unicode string in characters.
 .AP "Tcl_DString" *dsPtr in/out
@@ -243,7 +243,7 @@ characters.
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling
-\fBTcl_UtfNext\fR \fIindex\fR times.  If \fIindex\fR is (size_t)-1,
+\fBTcl_UtfNext\fR \fIindex\fR times.  If \fIindex\fR is TCL_AUTO_LENGTH,
 the return pointer points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl
