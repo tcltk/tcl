@@ -71,7 +71,7 @@ typedef struct {
 				 * expression patterns. NULL means that this
 				 * slot isn't used. Malloc-ed. */
     size_t patLengths[NUM_REGEXPS];/* Number of non-null characters in
-				 * corresponding entry in patterns. (size_t)-1 means
+				 * corresponding entry in patterns. -1 means
 				 * entry isn't used. */
     struct TclRegexp *regexps[NUM_REGEXPS];
 				/* Compiled forms of above strings. Also
@@ -306,7 +306,7 @@ RegExpExecUniChar(
     size_t numChars,		/* Length of Tcl_UniChar string. */
     size_t nm,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
-				 * interest. (size_t)-1 means "don't know". */
+				 * interest. -1 means "don't know". */
     int flags)			/* Regular expression flags. */
 {
     int status;
@@ -363,7 +363,7 @@ TclRegExpRangeUniChar(
 				 * passed to Tcl_RegExpExec. */
     size_t index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
-				 * subrange, (size_t)-1 means the range of the
+				 * subrange, -1 means the range of the
 				 * rm_extend field. */
     int *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
@@ -372,7 +372,7 @@ TclRegExpRangeUniChar(
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && index == (size_t)-1) {
+    if ((regexpPtr->flags&REG_EXPECT) && index == TCL_AUTO_LENGTH) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
     } else if (index > regexpPtr->re.re_nsub) {
@@ -445,7 +445,7 @@ Tcl_RegExpExecObj(
 				 * should begin. */
     size_t nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
-				 * interest. (size_t)-1 means all of them. */
+				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;

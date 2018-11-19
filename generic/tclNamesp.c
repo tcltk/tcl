@@ -4909,7 +4909,7 @@ TclLogCommandInfo(
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    size_t length,			/* Number of bytes in command ((size_t)-1 means
+    size_t length,			/* Number of bytes in command (-1 means
 				 * use all bytes up to first null byte). */
     const unsigned char *pc,    /* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
@@ -4941,7 +4941,7 @@ TclLogCommandInfo(
 	    }
 	}
 
-	if (length == (size_t)-1) {
+	if (length == TCL_AUTO_LENGTH) {
 	    length = strlen(command);
 	}
 	overflow = (length > (size_t)limit);
@@ -5121,7 +5121,7 @@ Tcl_LogCommandInfo(
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    size_t length)		/* Number of bytes in command ((size_t)-1 means use
+    size_t length)		/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
 {
     TclLogCommandInfo(interp, script, command, length, NULL, NULL);
