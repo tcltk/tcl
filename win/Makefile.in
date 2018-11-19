@@ -514,10 +514,10 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
-ifeq (${ZIPFS_BUILD},1)
-	cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}
-	${NATIVE_ZIP} -A ${TCL_DLL_FILE}
-endif
+	@if test "${ZIPFS_BUILD}" = "1" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
+	  ${NATIVE_ZIP} -A ${TCL_DLL_FILE}; \
+	fi
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
