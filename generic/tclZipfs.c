@@ -458,12 +458,6 @@ static Tcl_ChannelType ZipChannelType = {
     NULL,		    /* Thread action function, NULL'able */
     NULL,		    /* Truncate function, NULL'able */
 };
-
-/*
- * Miscellaneous constants.
- */
-
-#define ERROR_LENGTH	((size_t) -1)
 
 /*
  *-------------------------------------------------------------------------
@@ -1115,7 +1109,7 @@ ZipFSOpenArchive(
     }
     if (Tcl_GetChannelHandle(zf->chan, TCL_READABLE, &handle) != TCL_OK) {
 	zf->length = Tcl_Seek(zf->chan, 0, SEEK_END);
-	if (zf->length == ERROR_LENGTH) {
+	if (zf->length == TCL_IO_FAILURE) {
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
@@ -1174,7 +1168,7 @@ ZipFSOpenArchive(
 	}
 #else /* !_WIN32 */
 	zf->length = lseek(PTR2INT(handle), 0, SEEK_END);
-	if (zf->length == ERROR_LENGTH || zf->length < ZIP_CENTRAL_END_LEN) {
+	if (zf->length == TCL_IO_FAILURE || zf->length < ZIP_CENTRAL_END_LEN) {
 	    ZIPFS_POSIX_ERROR(interp, "invalid file size");
 	    goto error;
 	}
@@ -2140,7 +2134,7 @@ ZipAddFile(
     nbyte = nbytecompr = 0;
     while (1) {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == ERROR_LENGTH) {
+	if (len == TCL_IO_FAILURE) {
 	    if (nbyte == 0 && errno == EISDIR) {
 		Tcl_Close(interp, in);
 		return TCL_OK;
@@ -2256,7 +2250,7 @@ ZipAddFile(
     }
     do {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == ERROR_LENGTH) {
+	if (len == TCL_IO_FAILURE) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "read error on %s: %s", path, Tcl_PosixError(interp)));
 	    deflateEnd(&stream);
@@ -2317,7 +2311,7 @@ ZipAddFile(
 	nbytecompr = (passwd ? 12 : 0);
 	while (1) {
 	    len = Tcl_Read(in, buf, bufsize);
-	    if (len == ERROR_LENGTH) {
+	    if (len == TCL_IO_FAILURE) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"read error on \"%s\": %s",
 			path, Tcl_PosixError(interp)));
@@ -2602,7 +2596,7 @@ ZipFSMkZipOrImgObjCmd(
 		return TCL_ERROR;
 	    }
 	    i = Tcl_Seek(in, 0, SEEK_END);
-	    if (i == ERROR_LENGTH) {
+	    if (i == TCL_IO_FAILURE) {
 	    cperr:
 		memset(passBuf, 0, sizeof(passBuf));
 		Tcl_DecrRefCount(list);

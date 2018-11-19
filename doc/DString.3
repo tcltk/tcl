@@ -48,7 +48,7 @@ Pointer to characters to append to dynamic string.
 .AP "const char" *element in
 Pointer to characters to append as list element to dynamic string.
 .AP size_t length in
-Number of bytes from \fIbytes\fR to add to dynamic string.  If (size_t)-1,
+Number of bytes from \fIbytes\fR to add to dynamic string.  If TCL_AUTO_LENGTH,
 add all characters up to null terminating character.
 .AP size_t newLength in
 New length for dynamic string, not including null terminating

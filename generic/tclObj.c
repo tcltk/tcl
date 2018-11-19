@@ -1319,16 +1319,16 @@ TclFreeObj(
      * sure we do not accept a second free when falling from 0 to -1.
      * Skip that possibility so any double free will trigger the panic.
      */
-    objPtr->refCount = (size_t)-1;
+    objPtr->refCount = TCL_AUTO_LENGTH;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
-     * with 'length == (size_t)-1'.
+     * with 'length == TCL_AUTO_LENGTH'.
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = (size_t)-1;
+    objPtr->length = TCL_AUTO_LENGTH;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
@@ -1498,7 +1498,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == (size_t)-1);
+    return (objPtr->length == TCL_AUTO_LENGTH);
 }
 
 /*
@@ -1617,7 +1617,7 @@ Tcl_GetString(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == (size_t)-1
+	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1676,7 +1676,7 @@ Tcl_GetStringFromObj(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == (size_t)-1
+	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
