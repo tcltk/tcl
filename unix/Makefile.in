@@ -689,10 +689,10 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	rm -f $@
 	@MAKE_LIB@
-ifeq (${ZIPFS_BUILD},1)
-	cat ${TCL_ZIP_FILE} >> ${LIB_FILE}
-	${NATIVE_ZIP} -A ${LIB_FILE}
-endif
+	@if test "${ZIPFS_BUILD}" = "1" ; then \
+		cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
+	  ${NATIVE_ZIP} -A ${LIB_FILE}; \
+	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if [ "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
