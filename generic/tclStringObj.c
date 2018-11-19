@@ -3360,7 +3360,8 @@ TclStringCat(
  *---------------------------------------------------------------------------
  */
 
-int TclStringCmp(
+int
+TclStringCmp(
     Tcl_Obj *value1Ptr,
     Tcl_Obj *value2Ptr,
     int checkEq,		/* comparison is only for equality */
@@ -3377,7 +3378,6 @@ int TclStringCmp(
 	 */
 	match = 0;
     } else {
-
 	if (!nocase && TclIsPureByteArray(value1Ptr)
 		&& TclIsPureByteArray(value2Ptr)) {
 	    /*
@@ -3418,11 +3418,11 @@ int TclStringCmp(
 		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		    if (
 #ifdef WORDS_BIGENDIAN
-			1
+			    1
 #else
-			checkEq
+			    checkEq
 #endif
-			) {
+			    ) {
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
@@ -3432,7 +3432,8 @@ int TclStringCmp(
 		}
 	    }
 	} else {
-	    if ((empty = TclCheckEmptyString(value1Ptr)) > 0) {
+	    empty = TclCheckEmptyString(value1Ptr);
+	    if (empty > 0) {
 		switch (TclCheckEmptyString(value2Ptr)) {
 		case -1:
 		    s1 = 0;

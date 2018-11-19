@@ -47,7 +47,7 @@ typedef struct Method {
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
     int refCount;
-    ClientData clientData;	/* Type-specific data. */
+    void *clientData;	/* Type-specific data. */
     Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
 				/* The object that declares this method, or
@@ -84,7 +84,7 @@ typedef struct ProcedureMethod {
 				 * body bytecodes. */
     int flags;			/* Flags to control features. */
     int refCount;
-    ClientData clientData;
+    void *clientData;
     TclOO_PmCDDeleteProc *deleteClientdataProc;
     TclOO_PmCDCloneProc *cloneClientdataProc;
     ProcErrorProc *errProc;	/* Replacement error handler. */
