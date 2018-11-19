@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
+#include <tchar.h>
 
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
@@ -116,6 +117,24 @@ static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
+static unsigned char *
+getByteArrayFromObj(
+	Tcl_Obj *objPtr,
+	size_t *lengthPtr
+) {
+    int length;
+
+    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &length);
+#if TCL_MAJOR_VERSION > 8
+    if (sizeof(TCL_HASH_TYPE) > sizeof(int)) {
+	/* 64-bit and TIP #494 situation: */
+	 *lengthPtr = *(TCL_HASH_TYPE *) objPtr->internalRep.twoPtrValue.ptr1;
+    } else
+#endif
+	/* 32-bit or without TIP #494 */
+    *lengthPtr = (size_t) (unsigned) length;
+    return result;
+}
 
 DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
@@ -1278,7 +1297,7 @@ DdeObjCmd(
     };
 
     int index, i, argIndex;
-    int length;
+    size_t length;
     int flags = 0, result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
@@ -1488,14 +1507,14 @@ DdeObjCmd(
 	break;
 
     case DDE_EXECUTE: {
-	int dataLength;
+	size_t dataLength;
 	const void *dataString;
 	Tcl_DString dsBuf;
 
 	Tcl_DStringInit(&dsBuf);
 	if (flags & DDE_FLAG_BINARY) {
 	    dataString =
-		    Tcl_GetByteArrayFromObj(objv[firstArg + 2], &dataLength);
+		    getByteArrayFromObj(objv[firstArg + 2], &dataLength);
 	} else {
 	    const char *src;
 
@@ -1632,7 +1651,7 @@ DdeObjCmd(
 	Tcl_DStringInit(&dsBuf);
 	if (flags & DDE_FLAG_BINARY) {
 	    dataString = (BYTE *)
-		    Tcl_GetByteArrayFromObj(objv[firstArg + 3], &length);
+		    getByteArrayFromObj(objv[firstArg + 3], &length);
 	} else {
 	    const char *data =
 		    Tcl_GetString(objv[firstArg + 3]);
