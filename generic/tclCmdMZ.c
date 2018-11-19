@@ -1216,7 +1216,7 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-		int fullchar;
+	    int fullchar;
 	    len = TclUtfToUniChar(stringPtr, &ch);
 	    fullchar = ch;
 
@@ -2632,9 +2632,7 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-
     match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
-
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2683,7 +2681,8 @@ StringCmpCmd(
     return TCL_OK;
 }
 
-int TclStringCmpOpts(
+int
+TclStringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */

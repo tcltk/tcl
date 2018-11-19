@@ -8891,6 +8891,8 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2018-11-09 (bug)[35a8f1] overlong string length of some lists (owens)
 
+2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
+
 - Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
 
 Changes to 8.7a1 include all changes to the 8.6 line through 8.6.7,

@@ -56,6 +56,8 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
+#undef TclStaticPackage
+#define TclStaticPackage Tcl_StaticPackage
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -807,6 +809,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    TclStaticPackage, /* 257 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
