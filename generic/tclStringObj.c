@@ -651,7 +651,7 @@ Tcl_GetRange(
     String *stringPtr;
     size_t length;
 
-    if (first == TCL_AUTO_LENGTH1) {
+    if (first == TCL_AUTO_LENGTH) {
 	first = 0;
     }
     if (last + 2 <= first + 1) {
@@ -1369,7 +1369,7 @@ Tcl_AppendObjToObj(
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if ((numChars != TCL_AUTO_LENGTH() && (appendNumChars != TCL_AUTO_LENGTH)) {
+    if ((numChars != TCL_AUTO_LENGTH) && (appendNumChars != TCL_AUTO_LENGTH)) {
 	stringPtr->numChars = numChars + appendNumChars;
     }
 }
