@@ -87,14 +87,14 @@ Tcl_Obj *
 Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string value.
 This byte array may contain embedded null characters
-unless \fInumChars\fR is (size_t)-1.  (Applications needing null bytes
+unless \fInumChars\fR is TCL_AUTO_LENGTH.  (Applications needing null bytes
 should represent them as the two-byte sequence \fI\e700\e600\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP size_t length in
 The number of bytes to copy from \fIbytes\fR when
 initializing, setting, or appending to a string value.
-If (size_t)-1, all bytes up to the first null are used.
+If TCL_AUTO_LENGTH, all bytes up to the first null are used.
 .AP "const Tcl_UniChar" *unicode in
 Points to the first byte of an array of Unicode characters
 used to set or append to a string value.
@@ -103,7 +103,7 @@ unless \fInumChars\fR is negative.
 .AP size_t numChars in
 The number of Unicode characters to copy from \fIunicode\fR when
 initializing, setting, or appending to a string value.
-If (size_t)-1, all characters up to the first null character are used.
+If TCL_AUTO_LENGTH, all characters up to the first null character are used.
 .AP size_t index in
 The index of the Unicode character to return.
 .AP size_t first in

@@ -5731,7 +5731,7 @@ fi
 	    CFLAGS="$CFLAGS -pthread"
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
-	FreeBSD-*)
+	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
@@ -6472,7 +6472,7 @@ fi
 	    BSD/OS*) ;;
 	    CYGWIN_*) ;;
 	    IRIX*) ;;
-	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -8835,140 +8835,6 @@ $as_echo "$tcl_cv_strtoul_unbroken" >&6; }
 esac
 
 	USE_COMPAT=1
-    fi
-
-
-#--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-
-    ac_fn_c_check_func "$LINENO" "strtod" "ac_cv_func_strtod"
-if test "x$ac_cv_func_strtod" = xyes; then :
-  tcl_ok=1
-else
-  tcl_ok=0
-fi
-
-    if test "$tcl_ok" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking proper strtod implementation" >&5
-$as_echo_n "checking proper strtod implementation... " >&6; }
-if ${tcl_cv_strtod_unbroken+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  tcl_cv_strtod_unbroken=unknown
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int main() {
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  tcl_cv_strtod_unbroken=ok
-else
-  tcl_cv_strtod_unbroken=broken
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_strtod_unbroken" >&5
-$as_echo "$tcl_cv_strtod_unbroken" >&6; }
-	if test "$tcl_cv_strtod_unbroken" = "ok"; then
-	    tcl_ok=1
-	else
-	    tcl_ok=0
-	fi
-    fi
-    if test "$tcl_ok" = 0; then
-	case " $LIBOBJS " in
-  *" strtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS strtod.$ac_objext"
- ;;
-esac
-
-	USE_COMPAT=1
-    fi
-
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-
-    ac_fn_c_check_func "$LINENO" "strtod" "ac_cv_func_strtod"
-if test "x$ac_cv_func_strtod" = xyes; then :
-  tcl_strtod=1
-else
-  tcl_strtod=0
-fi
-
-    if test "$tcl_strtod" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Solaris2.4/Tru64 strtod bugs" >&5
-$as_echo_n "checking for Solaris2.4/Tru64 strtod bugs... " >&6; }
-if ${tcl_cv_strtod_buggy+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    if test "$cross_compiling" = yes; then :
-  tcl_cv_strtod_buggy=buggy
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-		extern double strtod();
-		int main() {
-		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		    char *term;
-		    double value;
-		    value = strtod(infString, &term);
-		    if ((term != infString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(nanString, &term);
-		    if ((term != nanString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(spaceString, &term);
-		    if (term == (spaceString+1)) {
-			exit(1);
-		    }
-		    exit(0);
-		}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  tcl_cv_strtod_buggy=ok
-else
-  tcl_cv_strtod_buggy=buggy
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_strtod_buggy" >&5
-$as_echo "$tcl_cv_strtod_buggy" >&6; }
-	if test "$tcl_cv_strtod_buggy" = buggy; then
-	    case " $LIBOBJS " in
-  *" fixstrtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS fixstrtod.$ac_objext"
- ;;
-esac
-
-	    USE_COMPAT=1
-
-$as_echo "#define strtod fixstrtod" >>confdefs.h
-
-	fi
     fi
 
 

@@ -1288,7 +1288,7 @@ ReflectInput(
 		PassReceivedError(rcPtr->chan, &p);
 		*errorCodePtr = EINVAL;
 	    }
-	    p.input.toRead = (size_t)-1;
+	    p.input.toRead = TCL_AUTO_LENGTH;
 	} else {
 	    *errorCodePtr = EOK;
 	}
@@ -2996,7 +2996,7 @@ ForwardProc(
 	    } else {
 		ForwardSetObjError(paramPtr, resObj);
 	    }
-	    paramPtr->input.toRead = (size_t)-1;
+	    paramPtr->input.toRead = TCL_IO_FAILURE;
 	} else {
 	    /*
 	     * Process a regular result.
@@ -3012,7 +3012,7 @@ ForwardProc(
 		paramPtr->input.toRead = -1;
 	    } else if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
-		paramPtr->input.toRead = (size_t)-1;
+		paramPtr->input.toRead = TCL_IO_FAILURE;
 	    } else {
 		if (bytec + 1 > 1) {
 		    memcpy(paramPtr->input.buf, bytev, bytec);

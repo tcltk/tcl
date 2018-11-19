@@ -539,7 +539,6 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 int 3 2}
 
-
 test obj-32.1 {freeing very large object trees} {
     set x {}
     for {set i 0} {$i<100000} {incr i} {

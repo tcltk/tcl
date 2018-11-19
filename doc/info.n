@@ -481,6 +481,24 @@ list; the first element is the list of arguments to the method in a form
 suitable for passing to another call to \fBproc\fR or a method definition, and
 the second element is the body of the method.
 .TP
+\fBinfo class definitionnamespace\fI class\fR ?\fIkind\fR?
+.VS TIP524
+This subcommand returns the definition namespace for \fIkind\fR definitions of
+the class \fIclass\fR; the definition namespace only affects the instances of
+\fIclass\fR, not \fIclass\fR itself. The \fIkind\fR can be either
+\fB\-class\fR to return the definition namespace used for \fBoo::define\fR, or
+\fB\-instance\fR to return the definition namespace used for
+\fBoo::objdefine\fR; the \fB\-class\fR kind is default (though this is only
+actually useful on classes that are subclasses of \fBoo::class\fR).
+.RS
+.PP
+If \fIclass\fR does not provide a definition namespace of the specified kind,
+this command returns the empty string. In those circumstances, the
+\fBoo::define\fR and \fBoo::objdefine\fR commands look up which definition
+namespace to use using the class inheritance hierarchy.
+.RE
+.VE TIP524
+.TP
 \fBinfo class destructor\fI class\fR
 .
 This subcommand returns the body of the destructor of class \fIclass\fR. If no

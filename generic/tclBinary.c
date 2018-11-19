@@ -15,6 +15,7 @@
 #include "tommath.h"
 
 #include <math.h>
+#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
@@ -54,11 +55,11 @@
  * Prototypes for local procedures defined in this file:
  */
 
-static void		DupByteArrayInternalRep(Tcl_Obj *srcPtr,
+static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
-static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
+static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    int *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
@@ -242,8 +243,8 @@ static const EnsembleImplMap decodeMap[] = {
 
 static const Tcl_ObjType properByteArrayType = {
     "bytearray",
-    FreeByteArrayInternalRep,
-    DupByteArrayInternalRep,
+    FreeProperByteArrayInternalRep,
+    DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
     NULL
 };
@@ -267,16 +268,15 @@ typedef struct {
 
 #define BYTEARRAY_SIZE(len) \
 		((TclOffset(ByteArray, bytes) + (len)))
-#define GET_BYTEARRAY(objPtr) \
-		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
-#define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (baPtr)
+#define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
+#define SET_BYTEARRAY(irPtr, baPtr) \
+		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
 
 int
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
-    return (objPtr->typePtr == &properByteArrayType);
+    return (NULL != Tcl_FetchIntRep(objPtr, &properByteArrayType));
 }
 
 /*
@@ -389,11 +389,11 @@ Tcl_SetByteArrayObj(
 				   be >= 0. */
 {
     ByteArray *byteArrayPtr;
+    Tcl_ObjIntRep ir;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayObj");
     }
-    TclFreeIntRep(objPtr);
     TclInvalidateStringRep(objPtr);
 
     byteArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
@@ -403,8 +403,9 @@ Tcl_SetByteArrayObj(
     if ((bytes != NULL) && (length > 0)) {
 	memcpy(byteArrayPtr->bytes, bytes, length);
     }
-    objPtr->typePtr = &properByteArrayType;
-    SET_BYTEARRAY(objPtr, byteArrayPtr);
+    SET_BYTEARRAY(&ir, byteArrayPtr);
+
+    Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
 }
 
 /*
@@ -432,21 +433,23 @@ Tcl_GetByteArrayFromObj(
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
 
-    if (objPtr->typePtr != &properByteArrayType) {
+    if (irPtr == NULL) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    if (lengthPtr != NULL) {
 		*lengthPtr = 0;
 	    }
 	    return NULL;
 	}
+	irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
     }
-    baPtr = GET_BYTEARRAY(objPtr);
+    baPtr = GET_BYTEARRAY(irPtr);
 
     if (lengthPtr != NULL) {
 	*lengthPtr = baPtr->used;
     }
-    return (unsigned char *) baPtr->bytes;
+    return baPtr->bytes;
 }
 
 /*
@@ -474,26 +477,30 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t length)			/* New length for internal byte array. */
+    size_t length)		/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
+    Tcl_ObjIntRep *irPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
-    if (objPtr->typePtr != &properByteArrayType) {
+
+    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    if (irPtr == NULL) {
 	if (length == 0) {
 	    Tcl_SetByteArrayObj(objPtr, NULL, 0);
 	} else if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    return NULL;
 	}
+	irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
     }
 
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
+    byteArrayPtr = GET_BYTEARRAY(irPtr);
     if (length > byteArrayPtr->allocated) {
 	byteArrayPtr = Tcl_Realloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
     TclInvalidateStringRep(objPtr);
     byteArrayPtr->used = length;
@@ -553,16 +560,16 @@ Tcl_Obj *
 TclNarrowToBytes(
     Tcl_Obj *objPtr)
 {
-    if (objPtr->typePtr != &properByteArrayType) {
+    if (NULL == Tcl_FetchIntRep(objPtr, &properByteArrayType)) {
+	Tcl_ObjIntRep ir;
 	ByteArray *byteArrayPtr;
 
 	if (0 == MakeByteArray(objPtr, 0, &byteArrayPtr)) {
 	    objPtr = Tcl_NewObj();
 	    TclInvalidateStringRep(objPtr);
 	}
-	TclFreeIntRep(objPtr);
-	objPtr->typePtr = &properByteArrayType;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+	SET_BYTEARRAY(&ir, byteArrayPtr);
+	Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
     }
     Tcl_IncrRefCount(objPtr);
     return objPtr;
@@ -574,8 +581,10 @@ SetByteArrayFromAny(
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     ByteArray *byteArrayPtr;
+    Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
+    if (Tcl_FetchIntRep(objPtr, &properByteArrayType)) {
+fprintf(stdout, "COVER\n"); fflush(stdout);
 	return TCL_OK;
     }
 
@@ -583,9 +592,8 @@ SetByteArrayFromAny(
 	return TCL_ERROR;
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = &properByteArrayType;
-    SET_BYTEARRAY(objPtr, byteArrayPtr);
+    SET_BYTEARRAY(&ir, byteArrayPtr);
+    Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
     return TCL_OK;
 }
 
@@ -607,11 +615,10 @@ SetByteArrayFromAny(
  */
 
 static void
-FreeByteArrayInternalRep(
+FreeProperByteArrayInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    Tcl_Free(GET_BYTEARRAY(objPtr));
-    objPtr->typePtr = NULL;
+    Tcl_Free(GET_BYTEARRAY(Tcl_FetchIntRep(objPtr, &properByteArrayType)));
 }
 
 /*
@@ -632,23 +639,24 @@ FreeByteArrayInternalRep(
  */
 
 static void
-DupByteArrayInternalRep(
+DupProperByteArrayInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     size_t length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
+    Tcl_ObjIntRep ir;
 
-    srcArrayPtr = GET_BYTEARRAY(srcPtr);
+    srcArrayPtr = GET_BYTEARRAY(Tcl_FetchIntRep(srcPtr, &properByteArrayType));
     length = srcArrayPtr->used;
 
     copyArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
-    SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
-    copyPtr->typePtr = srcPtr->typePtr;
+    SET_BYTEARRAY(&ir, copyArrayPtr);
+    Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
 }
 
 /*
@@ -656,9 +664,7 @@ DupByteArrayInternalRep(
  *
  * UpdateStringOfByteArray --
  *
- *	Update the string representation for a ByteArray data object. Note:
- *	This procedure does not invalidate an existing old string rep so
- *	storage will be lost if this has not already been done.
+ *	Update the string representation for a ByteArray data object.
  *
  * Results:
  *	None.
@@ -666,9 +672,6 @@ DupByteArrayInternalRep(
  * Side effects:
  *	The object's string is set to a valid string that results from the
  *	ByteArray-to-string conversion.
- *
- *	The object becomes a string object -- the internal rep is discarded
- *	and the typePtr becomes NULL.
  *
  *----------------------------------------------------------------------
  */
@@ -678,41 +681,32 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    size_t i, length, size;
-    unsigned char *src;
-    char *dst;
-    ByteArray *byteArrayPtr;
-
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
-    src = byteArrayPtr->bytes;
-    length = byteArrayPtr->used;
+    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    ByteArray *byteArrayPtr = GET_BYTEARRAY(irPtr);
+    unsigned char *src = byteArrayPtr->bytes;
+    size_t i, length = byteArrayPtr->used;
+    size_t size = length;
 
     /*
      * How much space will string rep need?
      */
 
-    size = length;
-    for (i = 0; (i < length) && (size != TCL_AUTO_LENGTH); i++) {
+    for (i = 0; i < length; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size == TCL_AUTO_LENGTH) {
-	Tcl_Panic("max size for a Tcl value exceeded");
-    }
-
-    dst = Tcl_Alloc(size + 1);
-    objPtr->bytes = dst;
-    objPtr->length = size;
 
     if (size == length) {
-	memcpy(dst, src, size);
-	dst[size] = '\0';
+	char *dst = Tcl_InitStringRep(objPtr, (char *)src, size);
+	TclOOM(dst, size);
     } else {
+	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
+	TclOOM(dst, size);
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
-	*dst = '\0';
+	(void)Tcl_InitStringRep(objPtr, NULL, size);
     }
 }
 
@@ -743,6 +737,7 @@ TclAppendBytesToByteArray(
 {
     ByteArray *byteArrayPtr;
     size_t needed;
+    Tcl_ObjIntRep *irPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -755,14 +750,17 @@ TclAppendBytesToByteArray(
 	/* Append zero bytes is a no-op. */
 	return;
     }
-    if (objPtr->typePtr != &properByteArrayType) {
+
+    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    if (irPtr == NULL) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    Tcl_Panic("attempt to append bytes to non-bytearray");
 	}
+	irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
     }
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
+    byteArrayPtr = GET_BYTEARRAY(irPtr);
 
-    if (len + byteArrayPtr->used > UINT_MAX) {
+    if (len > UINT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%u bytes) exceeded", UINT_MAX);
     }
 
@@ -782,7 +780,7 @@ TclAppendBytesToByteArray(
 	}
 	if (ptr == NULL) {
 	    /* Try to allocate double the increment that is needed (plus). */
-	    size_t limit = INT_MAX - needed;
+	    size_t limit = UINT_MAX - needed;
 	    size_t extra = len + TCL_MIN_GROWTH;
 	    size_t growth = (extra > limit) ? limit : extra;
 
@@ -796,7 +794,7 @@ TclAppendBytesToByteArray(
 	}
 	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
 
     if (bytes) {
@@ -2011,10 +2009,11 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if (src->typePtr != &tclDoubleType) {
+	    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(src, &tclDoubleType);
+	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    dvalue = src->internalRep.doubleValue;
+	    dvalue = irPtr->doubleValue;
 	}
 	CopyNumber(&dvalue, *cursorPtr, sizeof(double), type);
 	*cursorPtr += sizeof(double);
@@ -2030,10 +2029,11 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if (src->typePtr != &tclDoubleType) {
+	    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(src, &tclDoubleType);
+	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    dvalue = src->internalRep.doubleValue;
+	    dvalue = irPtr->doubleValue;
 	}
 
 	/*
@@ -3054,6 +3054,11 @@ BinaryDecode64(
 	    } else if (i > 1) {
 		c = '=';
 	    } else {
+		if (strict && i <= 1) {
+		    /* single resp. unfulfilled char (each 4th next single char)
+		     * is rather bad64 error case in strict mode */
+		    goto bad64;
+		}
 		cut += 3;
 		break;
 	    }
@@ -3084,9 +3089,11 @@ BinaryDecode64(
 		value = (value << 6) | 0x3e;
 	    } else if (c == '/') {
 		value = (value << 6) | 0x3f;
-	    } else if (c == '=') {
+	    } else if (c == '=' && (
+		!strict || i > 1) /* "=" and "a=" is rather bad64 error case in strict mode */
+	    ) {
 		value <<= 6;
-		cut++;
+		if (i) cut++;
 	    } else if (strict || !TclIsSpaceProc(c)) {
 		goto bad64;
 	    } else {
