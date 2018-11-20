@@ -1731,15 +1731,15 @@ Tcl_GetStringFromObj(
  *	the tools needed to set an object's string representation. The
  *	function is determined by the arguments.
  *	
- *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes < 0)
+ *	objPtr->bytes != NULL && bytes != NULL
  *	    Invalid call -- panic!
  *	
- *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
+ *	objPtr->bytes == NULL && bytes == NULL
  *	    Allocation only - allocate space for (numBytes+1) chars.
  *	    store in objPtr->bytes and return. Also sets
  *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
  *	
- *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
+ *	objPtr->bytes == NULL && bytes != NULL
  *	    Allocate and copy. bytes is assumed to point to chars to
  *	    copy into the string rep. objPtr->length = numBytes. Allocate
  *	    array of (numBytes + 1) chars. store in objPtr->bytes. Copy
@@ -1748,7 +1748,7 @@ Tcl_GetStringFromObj(
  *	    Caller must guarantee there are numBytes chars at bytes to
  *	    be copied.
  *
- *	objPtr->bytes != NULL && bytes == NULL && numBytes >= 0
+ *	objPtr->bytes != NULL && bytes == NULL
  *	    Truncate.  Set objPtr->length to numBytes and
  *	    objPr->bytes[numBytes] to NUL.  Caller has to guarantee
  *	    that a prior allocating call allocated enough bytes for
@@ -1770,7 +1770,7 @@ char *
 Tcl_InitStringRep(
     Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
     const char *bytes,
-    unsigned int numBytes)
+    size_t numBytes)
 {
     assert(objPtr->bytes == NULL || bytes == NULL);
 
