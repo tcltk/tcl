@@ -806,9 +806,6 @@ set isafe [interp issafe]
 set dir [file dirname [info script]]
 foreach {safe package version file} {
   1 opt             0.4.7  {opt optparse.tcl}
-  0 platform        1.0.14 {platform platform.tcl}
-  0 platform::shell 1.1.4  {platform shell.tcl}
-  1 tcltest         2.5.0  {tcltest tcltest.tcl}
 } {
   if {$isafe && !$safe} continue
   package ifneeded $package $version  [list source [file join $dir {*}$file]]
