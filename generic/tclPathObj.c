@@ -2515,8 +2515,12 @@ SetFsPathFromAny(
 		pair[0] = transPtr;
 		pair[1] = Tcl_NewStringObj(name+split+1, -1);
 		transPtr = TclJoinPath(2, pair);
-		TclDecrRefCount(pair[0]);
-		TclDecrRefCount(pair[1]);
+		if (transPtr != pair[0]) {
+		    TclDecrRefCount(pair[0]);
+		}
+		if (transPtr != pair[1]) {
+		    TclDecrRefCount(pair[1]);
+		}
 	    }
 	}
 	Tcl_DStringFree(&temp);
