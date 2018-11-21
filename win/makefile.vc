@@ -492,10 +492,10 @@ genstubs:
 !if !exist($(TCLSH))
 	@echo Build tclsh first!
 !else
-	tclsh8.7 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
 		$(GENERICDIR:\=/)/tclTomMath.decls
-	tclsh8.7 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 

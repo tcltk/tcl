@@ -487,6 +487,7 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
+	$(COPY) -a ${TCL_VFS_PATH}/manfest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
 	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
 	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
@@ -514,10 +515,10 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
-ifeq (${ZIPFS_BUILD},1)
-	cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}
-	${NATIVE_ZIP} -A ${TCL_DLL_FILE}
-endif
+	@if test "${ZIPFS_BUILD}" = "1" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
+	  ${NATIVE_ZIP} -A ${TCL_DLL_FILE}; \
+	fi
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
