@@ -681,7 +681,8 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	@rm -rf ${TCL_VFS_ROOT}
 	@mkdir -p ${TCL_VFS_PATH}
 	cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	-find ${TCL_VFS_ROOT} -type d -empty -delete
+	cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
+	find ${TCL_VFS_ROOT} -type d -empty -delete
 	( cd ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH})
 
 # The following target is configured by autoconf to generate either a shared

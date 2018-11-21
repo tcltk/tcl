@@ -798,15 +798,3 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
-set isafe [interp issafe]
-###
-# Package manifest for all Tcl packages included in the /library file system
-###
-set isafe [interp issafe]
-set dir [file dirname [info script]]
-foreach {safe package version file} {
-  1 opt             0.4.7  {opt optparse.tcl}
-} {
-  if {$isafe && !$safe} continue
-  package ifneeded $package $version  [list source [file join $dir {*}$file]]
-}
