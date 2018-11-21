@@ -123,6 +123,7 @@ TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLZIPFILE = tcl$(VERSION).zip
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -411,6 +412,10 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installVfs.tcl" \
+	    $(TCLZIPFILE) "" \
+	    tcl_library "$(ROOT:\=/)/library"
+
 !else
 
 $(TCLLIB): $(TCLOBJS)
@@ -418,6 +423,9 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installVfs.tcl" \
+	    $(TCLLIB) $(TCLLIB) \
+	    tcl_library "$(ROOT:\=/)/library"
 
 $(TCLIMPLIB): $(TCLLIB)
 
@@ -682,7 +690,8 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
-	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
+	$(cc32) $(pkgcflags) /DCFG_RUNTIME_ZIPFILE=$(TCLZIPFILE) \
+	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
@@ -811,6 +820,8 @@ install-binaries:
 	@echo Installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
+!else
+	@$(CPY) "$(TCLZIPFILE)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
 !if exist($(TCLSH))
@@ -820,23 +831,7 @@ install-binaries:
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
-install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
-	@if not exist "$(SCRIPT_INSTALL_DIR)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7"
-	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
-		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
+install-libraries: tclConfig tcl-nmake
 	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
@@ -864,24 +859,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WINDIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WINDIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library opt0.4 directory
-	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
-	@$(COPY) "$(ROOT)\library\http\http.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
-	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
-	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
-	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
-	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
-	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
-	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform-$(PKG_PLATFORM_VER).tm"
-	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
-	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-$(PKG_SHELL_VER).tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
@@ -902,22 +879,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
 !endif
-	@echo Installing encodings
-	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
-		"$(SCRIPT_INSTALL_DIR)\encoding\"
-# "emacs font-lock highlighting fix
-
-install-tzdata:
-	@echo Installing time zone data
-	@set TCL_LIBRARY=$(ROOT:\=/)/library
-	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
-	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
-
-install-msgs:
-	@echo Installing message catalogs
-	@set TCL_LIBRARY=$(ROOT:\=/)/library
-	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
-	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------
 # Clean up
