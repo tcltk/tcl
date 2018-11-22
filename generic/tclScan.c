@@ -135,7 +135,7 @@ BuildCharSet(
 	     * as well as the dash.
 	     */
 
-	    if (*format == ']') {
+	    if (*format == ']' || !cset->ranges) {
 		cset->chars[cset->nchars++] = start;
 		cset->chars[cset->nchars++] = ch;
 	    } else {
