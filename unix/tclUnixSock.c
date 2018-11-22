@@ -283,11 +283,11 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     if (native) {
 	*lengthPtr = strlen(native);
-	*valuePtr = ckalloc(*lengthPtr + 1);
+	*valuePtr = Tcl_Alloc(*lengthPtr + 1);
 	memcpy(*valuePtr, native, *lengthPtr + 1);
     } else {
 	*lengthPtr = 0;
-	*valuePtr = ckalloc(1);
+	*valuePtr = Tcl_Alloc(1);
 	*valuePtr[0] = '\0';
     }
 }
