@@ -487,7 +487,7 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	$(COPY) -a ${TCL_VFS_PATH}/manfest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
+	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
 	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
 	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
