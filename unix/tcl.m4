@@ -3020,7 +3020,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     else
         # It is not an error if an installed version of Zip can't be located.
         # We can use the locally distributed minizip instead
-        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
         ZIP_PROG_OPTIONS="-o -r"
         ZIP_PROG_VFSSEARCH="."
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
