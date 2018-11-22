@@ -1739,7 +1739,7 @@ LoadTableEncoding(
     };
 
     Tcl_DStringInit(&lineString);
-    if (Tcl_Gets(chan, &lineString) != TCL_IO_FAILURE) {
+    if (Tcl_Gets(chan, &lineString) == TCL_IO_FAILURE) {
 	return NULL;
     }
     line = Tcl_DStringValue(&lineString);
