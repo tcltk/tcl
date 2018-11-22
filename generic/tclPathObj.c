@@ -825,7 +825,7 @@ Tcl_FSJoinPath(
 				 * reference count. */
     int elements)		/* Number of elements to use (-1 = all) */
 {
-    Tcl_Obj *copy, *res;
+    Tcl_Obj *res;
     int objc;
     Tcl_Obj **objv;
 
@@ -834,17 +834,17 @@ Tcl_FSJoinPath(
     }
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
-    copy = TclListObjCopy(NULL, listObj);
     Tcl_ListObjGetElements(NULL, listObj, &objc, &objv);
-    res = TclJoinPath(elements, objv);
-    Tcl_DecrRefCount(copy);
+    res = TclJoinPath(elements, objv, 0);
     return res;
 }
 
 Tcl_Obj *
 TclJoinPath(
-    int elements,
-    Tcl_Obj * const objv[])
+    int elements,		/* Number of elements to use (-1 = all) */
+    Tcl_Obj * const objv[],	/* Path elements to join */
+    int forceRelative)		/* If non-zero, assume all more paths are
+				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
     int i;
@@ -876,10 +876,13 @@ TclJoinPath(
 
 	if ((eltIr)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
-                && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
-            Tcl_Obj *tailObj = objv[1];
-	    Tcl_PathType type = TclGetPathType(tailObj, NULL, NULL, NULL);
+		&& TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
+	    Tcl_Obj *tailObj = objv[1];
+	    Tcl_PathType type;
 
+	    /* if forceRelative - second path is relative */
+	    type = forceRelative ? TCL_PATH_RELATIVE :
+		    TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
 		size_t len;
@@ -957,7 +960,9 @@ TclJoinPath(
 
 	strElt = TclGetStringFromObj(elt, &strEltLen);
 	driveNameLength = 0;
-	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
+	/* if forceRelative - all paths excepting first one are relative */
+	type = (forceRelative && (i > 0)) ? TCL_PATH_RELATIVE :
+		TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
 	     * Zero out the current result.
@@ -2269,35 +2274,28 @@ SetFsPathFromAny(
      * Handle tilde substitutions, if needed.
      */
 
-    if (name[0] == '~') {
+    if (len && name[0] == '~') {
 	Tcl_DString temp;
 	size_t split;
 	char separator = '/';
 
+	/*
+	 * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
+	 * split becomes value 1 for '~/...' as well as for '~'.
+	 */
 	split = FindSplitPos(name, separator);
-	if (split != len) {
-	    /*
-	     * We have multiple pieces '~user/foo/bar...'
-	     */
-
-	    name[split] = '\0';
-	}
 
 	/*
 	 * Do some tilde substitution.
 	 */
 
-	if (name[1] == '\0') {
+	if (split == 1) {
 	    /*
-	     * We have just '~'
+	     * We have just '~' (or '~/...')
 	     */
 
 	    const char *dir;
 	    Tcl_DString dirString;
-
-	    if (split != len) {
-		name[split] = separator;
-	    }
 
 	    dir = TclGetEnv("HOME", &dirString);
 	    if (dir == NULL) {
@@ -2318,23 +2316,26 @@ SetFsPathFromAny(
 	     * We have a user name '~user'
 	     */
 
+	    const char *expandedUser;
+	    Tcl_DString userName;
+
+	    Tcl_DStringInit(&userName);
+	    Tcl_DStringAppend(&userName, name+1, split-1);
+	    expandedUser = Tcl_DStringValue(&userName);
+
 	    Tcl_DStringInit(&temp);
-	    if (TclpGetUserHome(name+1, &temp) == NULL) {
+	    if (TclpGetUserHome(expandedUser, &temp) == NULL) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "user \"%s\" doesn't exist", name+1));
+			    "user \"%s\" doesn't exist", expandedUser));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
 			    NULL);
 		}
+		Tcl_DStringFree(&userName);
 		Tcl_DStringFree(&temp);
-		if (split != len) {
-		    name[split] = separator;
-		}
 		return TCL_ERROR;
 	    }
-	    if (split != len) {
-		name[split] = separator;
-	    }
+	    Tcl_DStringFree(&userName);
 	}
 
 	transPtr = TclDStringToObj(&temp);
@@ -2371,13 +2372,17 @@ SetFsPathFromAny(
 
 		pair[0] = transPtr;
 		pair[1] = Tcl_NewStringObj(name+split+1, -1);
-		transPtr = TclJoinPath(2, pair);
-		Tcl_DecrRefCount(pair[0]);
-		Tcl_DecrRefCount(pair[1]);
+		transPtr = TclJoinPath(2, pair, 1);
+		if (transPtr != pair[0]) {
+		    Tcl_DecrRefCount(pair[0]);
+		}
+		if (transPtr != pair[1]) {
+		    Tcl_DecrRefCount(pair[1]);
+		}
 	    }
 	}
     } else {
-	transPtr = TclJoinPath(1, &pathPtr);
+	transPtr = TclJoinPath(1, &pathPtr, 1);
     }
 
     /*
