@@ -387,7 +387,7 @@ TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc
 
-tcltest: $(TCLTEST)
+tcltest: binaries $(TCLTEST)
 
 binaries: @LIBRARIES@ $(TCLSH)
 
