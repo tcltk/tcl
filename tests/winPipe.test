@@ -22,8 +22,12 @@ catch {
     set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
 }
 
-set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
+set org_pwd [pwd]
+set bindir [file join $org_pwd [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
+
+# several test-cases here expect current directory == [temporaryDirectory]:
+cd [temporaryDirectory]
 
 testConstraint exec         [llength [info commands exec]]
 testConstraint cat32        [file exists $cat32]
@@ -608,6 +612,8 @@ if {[info exists path(echoArgs.tcl)]} { removeFile echoArgs.tcl }
 if {[info exists path(echoArgs.bat)]} { removeFile echoArgs.bat }
 if {[info exists path(echoArgs2.bat)]} { removeDirectory test(Dir)Check }
 ::tcltest::cleanupTests
+# back to original directory:
+cd $org_pwd; unset org_pwd
 return
 
 # Local Variables:
