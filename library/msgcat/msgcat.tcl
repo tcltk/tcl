@@ -1105,7 +1105,7 @@ proc msgcat::mcflmset {pairs} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    tailcal mcmset $FileLocale $pairs
+    tailcall mcmset $FileLocale $pairs
 }
 
 # msgcat::mcunknown --
