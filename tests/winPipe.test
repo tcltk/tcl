@@ -17,8 +17,12 @@ namespace import -force ::tcltest::*
 unset -nocomplain path
 
 
-set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
+set org_pwd [pwd]
+set bindir [file join $org_pwd [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
+
+# several test-cases here expect current directory == [temporaryDirectory]:
+cd [temporaryDirectory]
 
 testConstraint exec         [llength [info commands exec]]
 testConstraint testexcept   [llength [info commands testexcept]]
@@ -600,4 +604,6 @@ if {[catch {set env(TEMP) $env_temp}]} {
 file delete big little stdout stderr nothing echoArgs.tcl echoArgs.bat 
 file delete -force [file join [temporaryDirectory] test(Dir)Check]
 ::tcltest::cleanupTests
+# back to original directory:
+cd $org_pwd; unset org_pwd
 return
