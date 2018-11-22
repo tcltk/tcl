@@ -1719,7 +1719,7 @@ LoadTableEncoding(
     for (i = 0; i < numPages; i++) {
 	int ch;
 	const char *p;
-	int expected = 3 + 16 * (16 * 4 + 1);
+	size_t expected = 3 + 16 * (16 * 4 + 1);
 
 	if (Tcl_ReadChars(chan, objPtr, expected, 0) != expected) {
 	    return NULL;
