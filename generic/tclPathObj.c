@@ -29,6 +29,9 @@ static int		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
+static Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
+			    int forceRelative);
+
 
 /*
  * Define the 'path' object type, which Tcl uses to represent file paths
@@ -821,8 +824,6 @@ GetExtension(
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj * TclJoinPath(int elements, Tcl_Obj * const objv[], int normalize);
-
 Tcl_Obj *
 Tcl_FSJoinPath(
     Tcl_Obj *listObj,		/* Path elements to join, may have a zero
@@ -843,12 +844,12 @@ Tcl_FSJoinPath(
     return res;
 }
 
-Tcl_Obj *
+static Tcl_Obj *
 TclJoinPath(
     int elements,		/* Number of elements to use (-1 = all) */
     Tcl_Obj * const objv[],	/* Path elements to join */
-    int normalize)		/* 1 if special normalization case (force second
-				 * path relative) */
+    int forceRelative)		/* If non-zero, assume all more paths are
+				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;	/* Resulting path object (container of join) */
     Tcl_Obj *elt;		/* Path part (result if returns part of path) */
@@ -880,8 +881,8 @@ TclJoinPath(
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
                 && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
             Tcl_Obj *tailObj = objv[i+1];
-
-	    type = normalize ? TCL_PATH_RELATIVE :
+	    /* if forceRelative - second path is relative */
+	    type = forceRelative ? TCL_PATH_RELATIVE :
 		    TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
@@ -954,7 +955,8 @@ TclJoinPath(
 	}
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	driveNameLength = 0;
-	type = (normalize && (i > 0)) ? TCL_PATH_RELATIVE :
+	/* if forceRelative - all paths excepting first one are relative */
+	type = (forceRelative && (i > 0)) ? TCL_PATH_RELATIVE :
 		TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
