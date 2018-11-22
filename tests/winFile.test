@@ -60,13 +60,15 @@ test winFile-1.4 {TclpGetUserHome} {win nt nonPortable} {
 
 test winFile-2.1 {TclpMatchFiles: case sensitivity} {win} {
     makeFile {} GlobCapS
-    set result [list [glob -nocomplain GlobC*] [glob -nocomplain globc*]]
+    set args [list -nocomplain -tails -directory [temporaryDirectory]]
+    set result [list [glob {*}$args GlobC*] [glob {*}$args globc*]]
     removeFile GlobCapS
     set result
 } {GlobCapS GlobCapS}
 test winFile-2.2 {TclpMatchFiles: case sensitivity} {win} {
     makeFile {} globlower
-    set result [list [glob -nocomplain globl*] [glob -nocomplain gLOBl*]]
+    set args [list -nocomplain -tails -directory [temporaryDirectory]]
+    set result [list [glob {*}$args globl*] [glob {*}$args gLOBl*]]
     removeFile globlower
     set result
 } {globlower globlower}
