@@ -683,9 +683,8 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
 	cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	find ${TCL_VFS_ROOT} -type d -empty -delete
-	echo "${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}"
-	(zip=`readlink -m '${NATIVE_ZIP}'`; \
-	  cd ${TCL_VFS_ROOT} && $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && cd ..)
+	(zip=`readlink -m '${NATIVE_ZIP}'`; cd ${TCL_VFS_ROOT} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && cd ..)
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
