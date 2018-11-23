@@ -490,7 +490,9 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
 	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
-	(zip=`readlink -m '${NATIVE_ZIP}'`; cd ${TCL_VFS_ROOT} && \
+	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
+	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
+	  cd ${TCL_VFS_ROOT} && \
 	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
 	  cd ..)
 
