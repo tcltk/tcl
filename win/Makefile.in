@@ -487,10 +487,12 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	$(COPY) -a ${TCL_VFS_PATH}/manfest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
+	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
 	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
-	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
+	(zip=`readlink -m '${NATIVE_ZIP}'`; cd ${TCL_VFS_ROOT} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
+	  cd ..)
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
@@ -517,7 +519,8 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@VC_MANIFEST_EMBED_DLL@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
-	  ${NATIVE_ZIP} -A ${TCL_DLL_FILE}; \
+		${NATIVE_ZIP} -A ${TCL_DLL_FILE} \
+		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}

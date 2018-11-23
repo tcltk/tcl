@@ -693,18 +693,18 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     set msgdir3 [makeDirectory msgdir3]
     makeFile "::msgcat::mcflset k2 v2 ; ::msgcat::mcload [list $msgdir3]"\
 	    l2.msg $msgdir2
-    makeFile {::msgcat::mcflset k3 v3} l2.msg $msgdir3
+    makeFile {::msgcat::mcflset k3 v3 ; ::msgcat::mcflmset {k4 v4 k5 v5}} l2.msg $msgdir3
 
 	# chained mcload
-	test msgcat-8.2 {mcflset} -setup {
+	test msgcat-8.2 {mcflset/mcflmset} -setup {
 	    variable locale [mclocale]
 	    mclocale l2
 	    mcload $msgdir2
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    return [mc k2][mc k3]
-	} -result v2v3
+	    return [mc k2][mc k3]--[mc k4][mc k5]
+	} -result v2v3--v4v5
 
     removeFile l2.msg $msgdir2
     removeDirectory msgdir2
