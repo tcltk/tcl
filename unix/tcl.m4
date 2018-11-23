@@ -3011,7 +3011,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     done
     ])
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip "
+        ZIP_PROG="$ac_cv_path_zip"
         AC_MSG_RESULT([$ZIP_PROG])
         ZIP_PROG_OPTIONS="-rq"
         ZIP_PROG_VFSSEARCH="."
