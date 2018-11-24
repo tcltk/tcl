@@ -10098,7 +10098,7 @@ else
 fi
 
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip "
+        ZIP_PROG="$ac_cv_path_zip"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 $as_echo "$ZIP_PROG" >&6; }
         ZIP_PROG_OPTIONS="-rq"
