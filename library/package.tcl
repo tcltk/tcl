@@ -493,7 +493,8 @@ proc tclPkgUnknown {name args} {
 			# $file was not readable; silently ignore
 			continue
 		    } on error msg {
-			tclLog "error reading package index file $file: $msg"
+			# $file is not usable; silently ignore
+			continue
 		    } on ok {} {
 			set procdDirs($dir) 1
 		    }
@@ -511,7 +512,8 @@ proc tclPkgUnknown {name args} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
-		    tclLog "error reading package index file $file: $msg"
+		    # $file is not usable; silently ignore
+		    continue
 		} on ok {} {
 		    set procdDirs($dir) 1
 		}
@@ -595,7 +597,8 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
-		    tclLog "error reading package index file $file: $msg"
+		    # $file is not usable; silently ignore
+		    continue
 		} on ok {} {
 		    set procdDirs($dir) 1
 		}
