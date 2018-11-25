@@ -493,8 +493,11 @@ proc tclPkgUnknown {name args} {
 			# $file was not readable; silently ignore
 			continue
 		    } on error msg {
-			# $file is not usable; silently ignore
-			continue
+			if {[regexp {version conflict for package} $msg]} {
+			    # In case of version conflict, silently ignore
+			    continue
+			}
+    			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
 			set procdDirs($dir) 1
 		    }
@@ -512,8 +515,11 @@ proc tclPkgUnknown {name args} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
-		    # $file is not usable; silently ignore
-		    continue
+		    if {[regexp {version conflict for package} $msg]} {
+			# In case of version conflict, silently ignore
+			continue
+		    }
+		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
 		}
@@ -597,8 +603,11 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
-		    # $file is not usable; silently ignore
-		    continue
+		    if {[regexp {version conflict for package} $msg]} {
+		 	# In case of version conflict, silently ignore
+			continue
+		    }
+		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
 		}
