@@ -3233,14 +3233,18 @@ TclZipfs_TclLibrary(void)
      */
 
 #ifdef CFG_RUNTIME_ZIPFILE
+#ifdef CFG_RUNTIME_LIBDIR
     if (ZipfsAppHookFindTclInit(
 	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
+#endif /* CFG_RUNTIME_LIBDIR */
+#ifdef CFG_RUNTIME_SCRDIR
     if (ZipfsAppHookFindTclInit(
 	    CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
+#endif /* CFG_RUNTIME_SCRDIR */
     if (ZipfsAppHookFindTclInit(CFG_RUNTIME_ZIPFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
