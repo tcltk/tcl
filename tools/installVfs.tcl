@@ -43,12 +43,12 @@ if {[llength $argv]<4} {
   error "Usage: [file tail [info script]] IMG_OUTPUT IMG_INPUT PREFIX FILE_SYSTEM ?PREFIX FILE_SYSTEM?..."
 }
 
-set paths [lassign $argv DLL_OUTPUT DLL_INPUT]
+set paths [lassign $argv IMG_OUTPUT IMG_INPUT]
 foreach {prefix fpath} $paths {
   mapDir files $prefix [file normalize $fpath]
 }
-if {$DLL_INPUT != {}} {
-  zipfs lmkzip $DLL_OUTPUT $files
+if {$IMG_INPUT eq {}} {
+  zipfs lmkzip $IMG_OUTPUT $files
 } else {
-  zipfs lmkimg $DLL_OUTPUT $files {} $DLL_INPUT
+  zipfs lmkimg $IMG_OUTPUT $files {} $IMG_INPUT
 }
