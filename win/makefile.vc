@@ -426,8 +426,8 @@ $**
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installVfs.tcl" \
 	    $(TCLLIB).tmp $(TCLLIB) \
 	    tcl_library "$(ROOT:\=/)/library"
-	move $(TCLLIB) $(TCLLIB).bare
-	move $(TCLLIB).tmp $(TCLLIB)
+	move /Y $(TCLLIB) $(TCLLIB).bare
+	move /Y $(TCLLIB).tmp $(TCLLIB)
 
 $(TCLIMPLIB): $(TCLLIB)
 
