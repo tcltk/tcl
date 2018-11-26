@@ -424,8 +424,10 @@ $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installVfs.tcl" \
-	    $(TCLLIB) $(TCLLIB) \
+	    $(TCLLIB).tmp $(TCLLIB) \
 	    tcl_library "$(ROOT:\=/)/library"
+	move $(TCLLIB) $(TCLLIB).bare
+	move $(TCLLIB).tmp $(TCLLIB)
 
 $(TCLIMPLIB): $(TCLLIB)
 
