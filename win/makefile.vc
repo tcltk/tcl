@@ -690,7 +690,10 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
-	$(cc32) $(pkgcflags) /DCFG_RUNTIME_ZIPFILE=$(TCLZIPFILE) \
+	$(cc32) $(pkgcflags) \
+	-DCFG_RUNTIME_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_ZIPFILE="\"$(TCLZIPFILE:\=\\)\"" \
 	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
