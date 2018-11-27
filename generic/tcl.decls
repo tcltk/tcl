@@ -134,9 +134,10 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-declare 30 {deprecated {Kept only for deployed refcounting macros}} {
-    void TclFreeObj(Tcl_Obj *objPtr)
-}
+# Removed in 9.0
+#declare 30 {
+#    void TclFreeObj(Tcl_Obj *objPtr)
+#}
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
 }

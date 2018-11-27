@@ -3648,7 +3648,7 @@ int
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */
 {
-    return ((objPtr)->refCount > 1);
+    return ((objPtr)->refCount + 1 > 2);
 }
 
 /*
