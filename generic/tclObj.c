@@ -3869,6 +3869,7 @@ TclGetNumberFromObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_IncrRefCount
 void
 Tcl_IncrRefCount(
     Tcl_Obj *objPtr)	/* The object we are registering a reference to. */
@@ -3889,6 +3890,7 @@ Tcl_IncrRefCount(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DecrRefCount
 void
 Tcl_DecrRefCount(
     Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
@@ -3911,6 +3913,7 @@ Tcl_DecrRefCount(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_IsShared
 int
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */

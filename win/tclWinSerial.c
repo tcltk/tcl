@@ -1024,7 +1024,7 @@ SerialOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
@@ -1849,7 +1849,7 @@ SerialSetOptionProc(
 	 * -sysbuffer 4096 or -sysbuffer {64536 4096}
 	 */
 
-	size_t inSize = (size_t) -1, outSize = (size_t) -1;
+	int inSize = -1, outSize = -1;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
