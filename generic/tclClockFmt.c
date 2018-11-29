@@ -2310,7 +2310,10 @@ ClockScan(
     while (tok->map != NULL) {
 	if (!(opts->flags & CLF_STRICT) && (tok->map->type == CTOKT_SPACE)) {
 	    tok++;
-	    if (tok->map == NULL) break;
+	    if (tok->map == NULL) {
+		/* no tokens anymore - trailing spaces are mandatory */
+		goto not_match;
+	    }
 	}
 	if (!(tok->map->flags & CLF_OPTIONAL)) {
 	    goto not_match;
