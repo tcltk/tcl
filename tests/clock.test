@@ -36511,12 +36511,53 @@ test clock-44.1 {regression test - time zone name containing hyphen } \
 	}
     } \
     -result {12:34:56-0500}
-
-test clock-45.1 {regression test - time zone containing only two digits} \
+test clock-44.2 {regression test - time zone containing only two digits} \
     -body {
 	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
     } \
     -result 482134530
+
+test clock-45.1 {compat: scan regression on spaces (multiple spaces in format)} \
+    -body {
+	list \
+	    [clock scan "11/08/2018  0612"      -format "%m/%d/%Y  %H%M" -gmt 1] \
+	    [clock scan "11/08/2018   0612"     -format "%m/%d/%Y   %H%M" -gmt 1] \
+	    [clock scan "11/08/2018    0612"    -format "%m/%d/%Y   %H%M" -gmt 1] \
+	    [clock scan "  11/08/2018  0612"    -format "  %m/%d/%Y  %H%M" -gmt 1] \
+	    [clock scan "  11/08/2018   0612"   -format "  %m/%d/%Y   %H%M" -gmt 1] \
+	    [clock scan "  11/08/2018    0612"  -format "  %m/%d/%Y   %H%M" -gmt 1] \
+	    [clock scan "11/08/2018  0612  "    -format "%m/%d/%Y  %H%M  " -gmt 1] \
+	    [clock scan "11/08/2018   0612  "   -format "%m/%d/%Y   %H%M  " -gmt 1] \
+	    [clock scan "11/08/2018    0612  "  -format "%m/%d/%Y   %H%M  " -gmt 1]
+    } -result [lrepeat 9 1541657520]
+
+test clock-45.2 {compat: scan regression on spaces (multiple leading/trailing spaces in input)} \
+    -body {
+	set sp [string repeat " " 20]
+	list \
+	    [clock scan "NOV   7${sp}"             -format "%b %d" -base 0 -gmt 1 -locale en] \
+	    [clock scan "${sp}NOV   7"             -format "%b %d" -base 0 -gmt 1 -locale en] \
+	    [clock scan "${sp}NOV   7${sp}"        -format "%b %d" -base 0 -gmt 1 -locale en] \
+	    [clock scan "1970   NOV   7${sp}"      -format "%Y %b %d" -gmt 1 -locale en] \
+	    [clock scan "${sp}1970   NOV   7"      -format "%Y %b %d" -gmt 1 -locale en] \
+	    [clock scan "${sp}1970   NOV   7${sp}" -format "%Y %b %d" -gmt 1 -locale en]
+    } -result [lrepeat 6 26784000]
+test clock-45.3 {compat: scan regression on spaces (shortest match)} \
+    -body {
+	list \
+	    [clock scan "11 1 120" -format "%y%m%d %H%M%S" -gmt 1] \
+	    [clock scan "11 1 120 " -format "%y%m%d %H%M%S" -gmt 1] \
+	    [clock scan " 11 1 120" -format "%y%m%d %H%M%S" -gmt 1] \
+	    [clock scan "11 1 120        " -format "%y%m%d %H%M%S " -gmt 1] \
+	    [clock scan "         11 1 120" -format " %y%m%d %H%M%S" -gmt 1]
+    } -result [lrepeat 5 978310920]
+test clock-45.4 {compat: scan regression on spaces (mandatory leading/trailing spaces in format)} \
+    -body {
+	list \
+	    [catch {clock scan "11 1 120" -format "%y%m%d %H%M%S " -gmt 1} ret] $ret \
+	    [catch {clock scan "11 1 120" -format " %y%m%d %H%M%S" -gmt 1} ret] $ret \
+	    [catch {clock scan "11 1 120" -format " %y%m%d %H%M%S " -gmt 1} ret] $ret
+    } -result [lrepeat 3 1 "input string does not match supplied format"]
 
 test clock-46.1 {regression test - month zero} -constraints valid_off \
     -body {
