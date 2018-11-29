@@ -2149,14 +2149,18 @@ ClockScan(
     x = end;
     while (p < end) {
 	if (isspace(UCHAR(*p))) {
-	    x = p++;
+	    x = ++p; /* after first space in space block */
 	    yySpaceCount++;
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+		yySpaceCount++;
+	    }
 	    continue;
 	}
 	x = end;
 	p++;
     }
-    /* ignore spaces at end */
+    /* ignore more as 1 space at end */
     yySpaceCount -= (end - x);
     end = x;
     /* ignore mandatory spaces used in format */
@@ -2245,9 +2249,10 @@ ClockScan(
 	    };
 	    /* decrement count for possible spaces in match */
 	    while (p < yyInput) {
-		if (isspace(UCHAR(*p++))) {
+		if (isspace(UCHAR(*p))) {
 		    yySpaceCount--;
 		}
+		p++;
 	    }
 	    p = yyInput;
 	    flags = (flags & ~map->clearFlags) | map->flags;
@@ -2258,7 +2263,8 @@ ClockScan(
 		/* unmatched -> error */
 		goto not_match;
 	    }
-	    yySpaceCount--;
+	    /* don't decrement yySpaceCount by regular (first expected space), 
+	     * already considered above with fss->scnSpaceCount */;
 	    p++;
 	    while (p < end && isspace(UCHAR(*p))) {
 		yySpaceCount--;
@@ -2288,8 +2294,17 @@ ClockScan(
     }
     /* check end was reached */
     if (p < end) {
+	/* in non-strict mode bypass spaces at end of input */
+	if ( !(opts->flags & CLF_STRICT) && isspace(UCHAR(*p)) ) {
+	    p++;
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+	    }
+	}
 	/* something after last token - wrong format */
-	goto not_match;
+	if (p < end) {
+	    goto not_match;
+	}
     }
     /* end of string, check only optional tokens at end, otherwise - not match */
     while (tok->map != NULL) {
