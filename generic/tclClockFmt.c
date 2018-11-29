@@ -1862,11 +1862,10 @@ static const char *ScnOTokenMapAliasIndex[2] = {
     "dHHHu"
 };
 
-static const char *ScnSpecTokenMapIndex =
-    " ";
-static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0, 0, 1, 1, 0,
-	NULL},
+/* Token map reserved for CTOKT_SPACE */
+static ClockScanTokenMap ScnSpaceTokenMap = {
+    CTOKT_SPACE,  0, 0, 1, 1, 0,
+	NULL,
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
@@ -2035,21 +2034,20 @@ ClockGetOrParseScanFormat(
 		continue;
 	    }
 	    break;
-	    case ' ':
-		cp = strchr(ScnSpecTokenMapIndex, *p);
-		if (!cp || *cp == '\0') {
-		    p--;
-		    goto word_tok;
+	    default:
+	    if ( *p == ' ' || isspace(UCHAR(*p)) ) {
+		tok->map = &ScnSpaceTokenMap;
+		tok->tokWord.start = p++;
+		while (p < e && isspace(UCHAR(*p))) {
+		    p++;
 		}
-		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapIndex];
+		tok->tokWord.end = p;
 		/* increase space count used in format */
 		fss->scnSpaceCount++;
 		/* next token */
 		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
-		p++;
 		continue;
-	    break;
-	    default:
+	    }
 word_tok:
 	    if (1) {
 		ClockScanToken	 *wordTok = tok;
@@ -2151,14 +2149,18 @@ ClockScan(
     x = end;
     while (p < end) {
 	if (isspace(UCHAR(*p))) {
-	    x = p++;
+	    x = ++p; /* after first space in space block */
 	    yySpaceCount++;
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+		yySpaceCount++;
+	    }
 	    continue;
 	}
 	x = end;
 	p++;
     }
-    /* ignore spaces at end */
+    /* ignore more as 1 space at end */
     yySpaceCount -= (end - x);
     end = x;
     /* ignore mandatory spaces used in format */
@@ -2247,9 +2249,10 @@ ClockScan(
 	    };
 	    /* decrement count for possible spaces in match */
 	    while (p < yyInput) {
-		if (isspace(UCHAR(*p++))) {
+		if (isspace(UCHAR(*p))) {
 		    yySpaceCount--;
 		}
+		p++;
 	    }
 	    p = yyInput;
 	    flags = (flags & ~map->clearFlags) | map->flags;
@@ -2260,7 +2263,8 @@ ClockScan(
 		/* unmatched -> error */
 		goto not_match;
 	    }
-	    yySpaceCount--;
+	    /* don't decrement yySpaceCount by regular (first expected space), 
+	     * already considered above with fss->scnSpaceCount */;
 	    p++;
 	    while (p < end && isspace(UCHAR(*p))) {
 		yySpaceCount--;
@@ -2290,14 +2294,26 @@ ClockScan(
     }
     /* check end was reached */
     if (p < end) {
+	/* in non-strict mode bypass spaces at end of input */
+	if ( !(opts->flags & CLF_STRICT) && isspace(UCHAR(*p)) ) {
+	    p++;
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+	    }
+	}
 	/* something after last token - wrong format */
-	goto not_match;
+	if (p < end) {
+	    goto not_match;
+	}
     }
     /* end of string, check only optional tokens at end, otherwise - not match */
     while (tok->map != NULL) {
 	if (!(opts->flags & CLF_STRICT) && (tok->map->type == CTOKT_SPACE)) {
 	    tok++;
-	    if (tok->map == NULL) break;
+	    if (tok->map == NULL) {
+		/* no tokens anymore - trailing spaces are mandatory */
+		goto not_match;
+	    }
 	}
 	if (!(tok->map->flags & CLF_OPTIONAL)) {
 	    goto not_match;
