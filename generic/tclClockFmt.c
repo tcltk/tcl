@@ -1862,11 +1862,10 @@ static const char *ScnOTokenMapAliasIndex[2] = {
     "dHHHu"
 };
 
-static const char *ScnSpecTokenMapIndex =
-    " ";
-static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0, 0, 1, 1, 0,
-	NULL},
+/* Token map reserved for CTOKT_SPACE */
+static ClockScanTokenMap ScnSpaceTokenMap = {
+    CTOKT_SPACE,  0, 0, 1, 1, 0,
+	NULL,
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
@@ -2035,21 +2034,20 @@ ClockGetOrParseScanFormat(
 		continue;
 	    }
 	    break;
-	    case ' ':
-		cp = strchr(ScnSpecTokenMapIndex, *p);
-		if (!cp || *cp == '\0') {
-		    p--;
-		    goto word_tok;
+	    default:
+	    if ( *p == ' ' || isspace(UCHAR(*p)) ) {
+		tok->map = &ScnSpaceTokenMap;
+		tok->tokWord.start = p++;
+		while (p < e && isspace(UCHAR(*p))) {
+		    p++;
 		}
-		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapIndex];
+		tok->tokWord.end = p;
 		/* increase space count used in format */
 		fss->scnSpaceCount++;
 		/* next token */
 		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
-		p++;
 		continue;
-	    break;
-	    default:
+	    }
 word_tok:
 	    if (1) {
 		ClockScanToken	 *wordTok = tok;
