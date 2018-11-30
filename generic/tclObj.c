@@ -1775,7 +1775,7 @@ Tcl_InitStringRep(
     assert(objPtr->bytes == NULL || bytes == NULL);
 
     if (numBytes > INT_MAX) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	return NULL;
     }
 
     /* Allocate */
