@@ -2663,7 +2663,7 @@ Tcl_NewIntObj(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_SetIntObj
 void
 Tcl_SetIntObj(
@@ -2676,6 +2676,7 @@ Tcl_SetIntObj(
 
     TclSetIntObj(objPtr, intValue);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2942,6 +2943,7 @@ Tcl_DbNewLongObj(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_SetLongObj
 void
 Tcl_SetLongObj(
@@ -2955,6 +2957,7 @@ Tcl_SetLongObj(
 
     TclSetIntObj(objPtr, longValue);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
