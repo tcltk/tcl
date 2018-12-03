@@ -757,7 +757,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = Tcl_ListObjGetElements(interp, objv[3], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
