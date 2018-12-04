@@ -1058,19 +1058,19 @@ test io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} {stdio o
     puts -nonewline $f "foobar"
     fconfigure $f -blocking 0
     variable x {}
-    after 500 [namespace code { lappend x timeout }]
-    fileevent $f readable [namespace code { lappend x [gets $f] }]
+    fileevent $f readable [namespace code { lappend x [gets $f] ready }]
+    set tmr [after 1000 [namespace code { lappend x timeout }]]
     vwait [namespace which -variable x]
-    vwait [namespace which -variable x]
+    after cancel $tmr
     fconfigure $f -blocking 1
     puts -nonewline $f "baz\n"
-    after 500 [namespace code { lappend x timeout }]
     fconfigure $f -blocking 0
+    set tmr [after 1000 [namespace code { lappend x timeout }]]
     vwait [namespace which -variable x]
-    vwait [namespace which -variable x]
+    after cancel $tmr
     close $f
     set x
-} {{} timeout foobarbaz timeout}
+} {{} ready foobarbaz ready}
 
 test io-7.1 {FilterInputBytes: split up character at end of buffer} {
     # (result == TCL_CONVERT_MULTIBYTE)
@@ -1388,9 +1388,9 @@ test io-12.3 {ReadChars: allocate more space} {
     close $f
     set x
 } {abcdefghijklmnopqrstuvwxyz}
-test io-12.4 {ReadChars: split-up char} {stdio testchannel openpipe fileevent} {
+proc _test_split_up_char {time} {
     # (srcRead == 0)
-
+    variable path
     set f [open "|[list [interpreter] $path(cat)]" w+]
     fconfigure $f -encoding binary -buffering none -buffersize 16
     puts -nonewline $f "123456789012345\x96"
@@ -1407,11 +1407,17 @@ test io-12.4 {ReadChars: split-up char} {stdio testchannel openpipe fileevent} {
     vwait [namespace which -variable x]
     fconfigure $f -encoding binary -blocking 1
     puts -nonewline $f "\x7b"
-    after 500			;# Give the cat process time to catch up
+    after $time			;# Give the cat process time to catch up
     fconfigure $f -encoding shiftjis -blocking 0
     vwait [namespace which -variable x]
     close $f
     set x
+}
+test io-12.4a {ReadChars: split-up char} {stdio testchannel openpipe fileevent} {
+    _test_split_up_char 100
+} [list "123456789012345" 1 "\u672c" 0]
+test io-12.4b {ReadChars: split-up char} {stdio testchannel openpipe fileevent slowTest} {
+    _test_split_up_char 5000
 } [list "123456789012345" 1 "\u672c" 0]
 test io-12.5 {ReadChars: fileevents on partial characters} {stdio openpipe fileevent} {
     set path(test1) [makeFile {
@@ -1432,12 +1438,12 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio openpipe filee
     fconfigure $f -blocking 0 -encoding utf-8
     variable x {}
     vwait [namespace which -variable x]
-    after 500 [namespace code { lappend x timeout }]
+    after 50 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
     puts $f "go2"
     flush $f
     vwait [namespace which -variable x]
-    after 500 [namespace code { lappend x timeout }]
+    after 50 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
     puts $f "go3"
     flush $f
@@ -1610,25 +1616,28 @@ test io-13.5 {TranslateInputEOL: crlf mode: naked lf} {
 test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio testchannel openpipe fileevent} {
     # (chanPtr->flags & INPUT_SAW_CR)
     # This test may fail on slower machines.
-
     set f [open "|[list [interpreter] $path(cat)]" w+]
     fconfigure $f -blocking 0 -buffering none -translation {auto lf}
 
     fileevent $f read [namespace code "ready $f"]
     proc ready {f} {
 	variable x
+	variable y
 	lappend x [read $f] [testchannel queuedcr $f]
+	set y ok
     }
     variable x {}
     variable y {}
 
     puts -nonewline $f "abcdefghj\r"
-    after 500 [namespace code {set y ok}]
+    set tmr [after 500 [namespace code {set y ok}]]
     vwait [namespace which -variable y]
+    after cancel $tmr
 
     puts -nonewline $f "\n01234"
-    after 500 [namespace code {set y ok}]
+    set tmr [after 500 [namespace code {set y ok}]]
     vwait [namespace which -variable y]
+    after cancel $tmr
 
     close $f
     set x
@@ -1910,9 +1919,12 @@ test io-14.9 {reuse of stdio special channels} {stdio openpipe fileevent} {
     # Added delay to give Windows time to stop the spawned process and clean
     # up its grip on the file test1. Added delete as proper test cleanup.
     # The failing tests were 18.1 and 18.2 as first re-users of file "test1".
-    after 10000
-    file delete $path(script)
-    file delete $path(test1)
+    while {[catch {
+	file delete $path(script)
+	file delete $path(test1)
+    }]} {
+	after 50
+    }
     set c
 } hello
 
@@ -2224,7 +2236,7 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
-	{stdio asyncPipeClose openpipe} {
+-constraints {stdio asyncPipeClose openpipe} -setup {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -2234,12 +2246,13 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     puts $f {
 	fconfigure $f -translation lf -buffering none -eofchar {}
 	while {![eof stdin]} {
-	    after 20
-	    puts -nonewline $f [read stdin 1024]
+	    after 5
+	    puts -nonewline $f [read stdin 4096]
 	}
 	close $f
     }
     close $f
+} -body {
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
         set x "$x$x"
@@ -2252,7 +2265,7 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     close $f
     set counter 0
     while {([file size $path(output)] < 65536) && ($counter < 1000)} {
-	after 20 [list incr [namespace which -variable counter]]
+	after 1 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
@@ -2260,7 +2273,17 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     } else {
         set result ok
     }
-} ok
+} -result ok -cleanup {
+    # allow a little time for the background process to close.
+    # otherwise, the following test fails on the [file delete $path(output)
+    # on Windows because a process still has the file open.
+    while {[catch {
+	file delete $path(pipe)
+	file delete $path(output)
+    }]} {
+	after 50
+    }
+}
 
 # Tests closing a channel. The functions tested are CloseChannel and Tcl_Close.
 
@@ -2785,7 +2808,8 @@ test io-29.30 {Tcl_WriteChars, crlf mode} {
     close $f
     file size $path(test1)
 } 25
-test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
+test io-29.31 {Tcl_WriteChars, background flush} \
+-constraints {stdio openpipe} -setup {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -2801,10 +2825,12 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
     puts $f "}"
     puts $f {close $f}
     close $f
+} -body {
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
 	set x "$x$x"
     }
+    # length of x is 65536
     set f [open $path(output) w]
     close $f
     set f [open "|[list [interpreter] $path(pipe)]" r+]
@@ -2821,14 +2847,20 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
     } else {
 	set result ok
     }
+    set result
+} -result ok -cleanup {
     # allow a little time for the background process to close.
     # otherwise, the following test fails on the [file delete $path(output)
     # on Windows because a process still has the file open.
-    after 100 set v 1; vwait v
-    set result
-} ok
+    while {[catch {
+	file delete $path(pipe)
+	file delete $path(output)
+    }]} {
+	after 50
+    }
+}
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
-	{stdio asyncPipeClose openpipe} {
+-constraints {stdio asyncPipeClose openpipe} -setup {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -2839,16 +2871,18 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     set x [list while {![eof stdin]}]
     set x "$x \{"
     puts $f $x
-    puts $f {  after 20}
-    puts $f {  puts -nonewline $f [read stdin 1024]}
+    puts $f {  after 5}
+    puts $f {  puts -nonewline $f [read stdin 4096]}
     puts $f {  flush $f}
     puts $f "\}"
     puts $f {close $f}
     close $f
+} -body {
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
 	set x "$x$x"
     }
+    # length of x is 65536
     set f [open $path(output) w]
     close $f
     set f [open "|[list [interpreter] $path(pipe)]" r+]
@@ -2857,7 +2891,7 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     close $f
     set counter 0
     while {([file size $path(output)] < 65536) && ($counter < 1000)} {
-	after 20 [list incr [namespace which -variable counter]]
+	after 1 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
@@ -2865,7 +2899,17 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     } else {
 	set result ok
     }
-} ok
+} -result ok -cleanup {
+    # allow a little time for the background process to close.
+    # otherwise, the following test fails on the [file delete $path(output)
+    # on Windows because a process still has the file open.
+    while {[catch {
+	file delete $path(pipe)
+	file delete $path(output)
+    }]} {
+	after 50
+    }
+}
 test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     set f [open $path(script) w]
     puts $f "set f \[[list open $path(test1) w]]"
@@ -4700,9 +4744,44 @@ test io-34.20 {Tcl_Tell combined with writing} {
     close $f
     set l
 } {29 39 40 447}
-test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
-    file delete $path(test3)
-    set f [open $path(test3) w]
+proc _test_seek_tell {fn offset} {
+    if {$fn eq ""} {
+    	# test using virtual (reflected) channel:
+	proc driver {cmd args} {
+	    variable index
+	    set chan [lindex $args 0]
+	    switch -- $cmd {
+		initialize {
+		    set index($chan) 0
+		    return {initialize finalize watch write seek}
+		}
+		finalize {
+		    unset index($chan)
+		    return
+		}
+		watch {}
+		write {
+		    set s [string length [lindex $args 1]]
+		    incr index($chan) $s
+		    return $s
+		}
+		seek {
+		    switch -- [lindex $args 2] \
+		    current {
+			return [incr index($chan) [lindex $args 1]]
+		    } start {
+			return [set index($chan) [lindex $args 1]]
+		    }
+		    return -code error EINVARG
+		}
+	    }
+	}
+	set f [chan create write [namespace which driver]]
+    } else {
+	# test using file:
+	file delete $fn
+	set f [open $fn w]
+    }
     fconfigure $f -encoding binary
     set l ""
     lappend l [tell $f]
@@ -4710,17 +4789,34 @@ test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
     lappend l [tell $f]
     flush $f
     lappend l [tell $f]
-    # 4GB offset!
-    seek $f 0x100000000
+    # jump to offset
+    seek $f $offset
     lappend l [tell $f]
     puts -nonewline $f abcdef
     lappend l [tell $f]
     close $f
-    lappend l [file size $path(test3)]
-    # truncate...
-    close [open $path(test3) w]
-    lappend l [file size $path(test3)]
+    if {$fn ne ""} {
+	lappend l [file size $fn]
+	# truncate...
+	close [open $fn w]
+	lappend l [file size $fn]
+	file delete $fn
+    } else {
+	lappend l - -
+    }
     set l
+}
+test io-34.21a {Tcl_Seek outside and Tcl_Tell} {} {
+    _test_seek_tell $path(test3) 4096
+} {0 6 6 4096 4102 4102 0}
+test io-34.21b {Tcl_Seek and Tcl_Tell on large files} {
+    # Note: this test-case is fast because it does nothing in virtual testfilesystem
+    _test_seek_tell "" 0x100000000
+} {0 6 6 4294967296 4294967302 - -}
+test io-34.21c {Tcl_Seek and Tcl_Tell on large files} {largefileSupport slowTest} {
+    # Note: this test-case may be very slow (write 4GB by seek), so provided via constraint slowTest
+    # 4GB offset!
+    _test_seek_tell 0x100000000 1
 } {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof
@@ -5084,8 +5180,11 @@ test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
     lappend x [gets $f1]
     lappend x [fblocked $f1]
     flush $f1
-    after 200
-    lappend x [gets $f1]
+    set i 100
+    while {[set v [gets $f1]] eq "" && [incr i -1]} {
+	after 10
+    }
+    lappend x $v
     lappend x [fblocked $f1]
     lappend x [gets $f1]
     lappend x [fblocked $f1]
@@ -5107,8 +5206,11 @@ test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
     lappend x [gets $f1]
     lappend x [fblocked $f1]
     flush $f1
-    after 200
-    lappend x [gets $f1]
+    set i 100
+    while {[set v [gets $f1]] eq "" && [incr i -1]} {
+	after 10
+    }
+    lappend x $v
     lappend x [fblocked $f1]
     lappend x [gets $f1]
     lappend x [fblocked $f1]
@@ -5479,15 +5581,15 @@ test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA}
     variable x {}
     fileevent $f readable [namespace code { lappend x [read $f] }]
     vwait [namespace which -variable x]
-    after 300 [namespace code { lappend x timeout }]
+    after 30 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
     fconfigure $f -encoding utf-8
     vwait [namespace which -variable x]
-    after 300 [namespace code { lappend x timeout }]
+    after 30 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
     fconfigure $f -encoding binary
     vwait [namespace which -variable x]
-    after 300 [namespace code { lappend x timeout }]
+    after 30 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
     close $f
     set x
@@ -7324,8 +7426,8 @@ test io-53.3 {CopyData: background read underflow} {stdio unix openpipe fcopy} {
 	fcopy stdin stdout -command { set x }
 	vwait x
 	set f [}
-    puts $f1 [list open $path(test1) w]]
-    puts $f1 {
+	puts $f1 [list open $path(test1) w]]
+	puts $f1 {
 	fconfigure $f -translation lf
 	puts $f "done"
 	close $f
@@ -7472,7 +7574,7 @@ proc doFcopy {in out {bytes 0} {error {}}} {
 	set fcopyTestDone 0
     } else {
         # Delay next fcopy to wait for size>0 input bytes
-        after 100 [list fcopy $in $out -size 1000 \
+        after 1 [list fcopy $in $out -size 1000 \
 		-command [namespace code [list doFcopy $in $out]]]
     }
 }
@@ -7485,16 +7587,16 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio openpipe fcopy} {
     puts $f1 {
 	# Write  10 bytes / 10 msec
 	proc Write {count} {
-	    puts -nonewline "1234567890"
-	    if {[incr count -1]} {
-	        after 10 [list Write $count]
-	    } else {
-	        set ::ready 1
+	    while {$count} {
+		puts -nonewline "1234567890"
+		if {($count % 10) == 0} {
+		    after 1
+		}
+		incr count -1
 	    }
 	}
 	fconfigure stdout -buffering none
-	Write 345 ;# 3450 bytes ~3.45 sec
-	vwait ready
+	Write 345 ;# 3450 bytes ~ upto 0.05sec
 	exit 0
     }
     close $f1
@@ -7642,11 +7744,11 @@ test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     puts $pipe {
 	fconfigure stdout -translation binary -buffering line
 	puts stderr Waiting...
-	after 1000
+	after 50
 	foreach x {a b c} {
 	    puts stderr Looping...
 	    puts $x
-	    after 500
+	    after 10
 	}
 	proc bye args {
 	    if {[gets stdin line]<0} {
@@ -7665,22 +7767,27 @@ test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
 	return
     }
     set ::forever {}
-    set out [open $out w]
+    set outf [open $out w]
 } -constraints {stdio openpipe fcopy} -body {
-    fcopy $pipe $out -size 6 -command ::done
+    fcopy $pipe $outf -size 6 -command ::done
     set token [after 5000 {
 	set ::forever {fcopy hangs}
     }]
     vwait ::forever
-    catch {after cancel $token}
     set ::forever
 } -cleanup {
     close $pipe
+    catch {close $outf}
     rename ::done {}
-    after 1000;			# Give Windows time to kill the process
-    catch {close $out}
+    while {$::forever ne {fcopy hangs} && [catch {
+	file delete $err
+	file delete $out
+    }]} {
+	after 50;		# Give Windows time to kill the process
+    }
     catch {removeFile out}
     catch {removeFile err}
+    catch {after cancel $token}
     catch {unset ::forever}
 } -result OK
 test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
@@ -7946,9 +8053,12 @@ test io-54.1 {Recursive channel events} {socket fileevent} {
     close $cs
     list $result $x
 } {{{line 1} 1 2} 2}
-test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileevent} {
-    set accept {}
-    set after {}
+proc _test_busy_wait {time} {
+    variable writer
+    variable accept {}
+    variable counter
+    variable aftertime $time
+    variable after {}
     variable s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     proc accept {s a p} {
 	variable counter
@@ -7960,6 +8070,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 	fileevent $s readable [namespace code "doit $s"]
     }
     proc doit {s} {
+    	variable aftertime
 	variable counter
 	variable after
 
@@ -7967,10 +8078,11 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 	set l [gets $s]
 	if {"$l" == ""} {
 	    fileevent $s readable [namespace code "doit1 $s"]
-	    set after [after 1000 [namespace code newline]]
+	    set after [after $aftertime [namespace code newline]]
 	}
     }
     proc doit1 {s} {
+    	# this will be normally never executed:
 	variable counter
 	variable accept
 
@@ -8003,7 +8115,13 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
     close $s
     after cancel $after
     if {$accept != {}} {close $accept}
-    set counter
+    return $counter
+}
+test io-54.2a {Testing for busy-wait in recursive channel events} {socket fileevent} {
+    _test_busy_wait 100
+} 1
+test io-54.2b {Testing for busy-wait in recursive channel events} {socket fileevent slowTest} {
+    _test_busy_wait 5000
 } 1
 
 set path(fooBar) [makeFile {} fooBar]
@@ -8068,15 +8186,15 @@ test io-57.1 {buffered data and file events, gets} {fileevent} {
     puts $s "12\n34567890"
     flush $s
     variable result [gets $s2]
-    after 1000 [namespace code {lappend result timer}]
+    set tmr [after 1000 [namespace code {lappend result timeout}]]
     vwait [namespace which -variable result]
     lappend result [gets $s2]
-    vwait [namespace which -variable result]
+    after cancel $tmr
     close $s
     close $s2
     close $server
     set result
-} {12 readable 34567890 timer}
+} {12 readable 34567890}
 test io-57.2 {buffered data and file events, read} {fileevent} {
     proc accept {sock args} {
 	variable s2
@@ -8091,15 +8209,15 @@ test io-57.2 {buffered data and file events, read} {fileevent} {
     puts -nonewline $s "1234567890"
     flush $s
     variable result [read $s2 1]
-    after 1000 [namespace code {lappend result timer}]
+    set tmr [after 1000 [namespace code {lappend result timeout}]]
     vwait [namespace which -variable result]
     lappend result [read $s2 9]
-    vwait [namespace which -variable result]
+    after cancel $tmr
     close $s
     close $s2
     close $server
     set result
-} {1 readable 234567890 timer}
+} {1 readable 234567890}
 
 test io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc openpipe fileevent} {
     set out [open $path(script) w]
