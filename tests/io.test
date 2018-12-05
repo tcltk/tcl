@@ -4816,7 +4816,7 @@ test io-34.21b {Tcl_Seek and Tcl_Tell on large files} {
 test io-34.21c {Tcl_Seek and Tcl_Tell on large files} {largefileSupport slowTest} {
     # Note: this test-case may be very slow (write 4GB by seek), so provided via constraint slowTest
     # 4GB offset!
-    _test_seek_tell 0x100000000 1
+    _test_seek_tell $path(test3) 0x100000000
 } {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof
