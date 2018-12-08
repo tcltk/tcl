@@ -47,7 +47,7 @@ typedef struct Method {
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
     int refCount;
-    ClientData clientData;	/* Type-specific data. */
+    void *clientData;	/* Type-specific data. */
     Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
 				/* The object that declares this method, or
@@ -84,7 +84,7 @@ typedef struct ProcedureMethod {
 				 * body bytecodes. */
     int flags;			/* Flags to control features. */
     int refCount;
-    ClientData clientData;
+    void *clientData;
     TclOO_PmCDDeleteProc *deleteClientdataProc;
     TclOO_PmCDCloneProc *cloneClientdataProc;
     ProcErrorProc *errProc;	/* Replacement error handler. */
@@ -304,6 +304,24 @@ typedef struct Class {
     PrivateVariableList privateVariables;
 				/* Configurations for the variable resolver
 				 * used inside methods. */
+    Tcl_Obj *clsDefinitionNs;	/* Name of the namespace to use for
+				 * definitions commands of instances of this
+				 * class in when those instances are defined
+				 * as classes. If NULL, use the value from the
+				 * class hierarchy. It's an error at
+				 * [oo::define] call time if this namespace is
+				 * defined but doesn't exist; we also check at
+				 * setting time but don't check between
+				 * times. */
+    Tcl_Obj *objDefinitionNs;	/* Name of the namespace to use for
+				 * definitions commands of instances of this
+				 * class in when those instances are defined
+				 * as instances. If NULL, use the value from
+				 * the class hierarchy. It's an error at
+				 * [oo::objdefine]/[self] call time if this
+				 * namespace is defined but doesn't exist; we
+				 * also check at setting time but don't check
+				 * between times. */
 } Class;
 
 /*
@@ -441,6 +459,9 @@ MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineDefnNsObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineDeleteMethodObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -553,6 +574,8 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
 			    Tcl_Obj *cacheInThisObj);
+MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(
+			    Tcl_Interp *interp, Object *oPtr, int forClass);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);

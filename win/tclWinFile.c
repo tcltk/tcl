@@ -531,6 +531,11 @@ TclWinSymLinkDelete(
  *--------------------------------------------------------------------
  */
 
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 static Tcl_Obj *
 WinReadLinkDirectory(
     const TCHAR *linkDirPath)
@@ -646,6 +651,10 @@ WinReadLinkDirectory(
     Tcl_SetErrno(EINVAL);
     return NULL;
 }
+
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic pop
+#endif
 
 /*
  *--------------------------------------------------------------------
@@ -865,7 +874,8 @@ TclpFindExecutable(
      */
 
     if (argv0 == NULL) {
-	TclSetPanicProc(tclWinDebugPanic);
+#	undef Tcl_SetPanicProc
+	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
     GetModuleFileNameW(NULL, wName, MAX_PATH);
