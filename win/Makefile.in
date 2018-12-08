@@ -487,9 +487,14 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
+	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
 	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
-	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
+	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
+	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
+	  cd ${TCL_VFS_ROOT} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
+	  cd ..)
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
@@ -514,10 +519,11 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
-ifeq (${ZIPFS_BUILD},1)
-	cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}
-	${NATIVE_ZIP} -A ${TCL_DLL_FILE}
-endif
+	@if test "${ZIPFS_BUILD}" = "1" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
+		${NATIVE_ZIP} -A ${TCL_DLL_FILE} \
+		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
@@ -868,7 +874,7 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
 	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" | $(WINE) ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
@@ -876,7 +882,7 @@ runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
 	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via

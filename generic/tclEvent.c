@@ -994,7 +994,7 @@ Tcl_Exit(
 /*
  *-------------------------------------------------------------------------
  *
- * TclInitSubsystems --
+ * Tcl_InitSubsystems --
  *
  *	Initialize various subsytems in Tcl. This should be called the first
  *	time an interp is created, or before any of the subsystems are used.
@@ -1017,10 +1017,10 @@ Tcl_Exit(
  */
 
 void
-TclInitSubsystems(void)
+Tcl_InitSubsystems(void)
 {
     if (inExit != 0) {
-	Tcl_Panic("TclInitSubsystems called while exiting");
+	Tcl_Panic("Tcl_InitSubsystems called while exiting");
     }
 
     if (subsystemsInitialized == 0) {
