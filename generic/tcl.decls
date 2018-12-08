@@ -136,9 +136,10 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-declare 30 {
-    void TclFreeObj(Tcl_Obj *objPtr)
-}
+# Removed in 9.0
+#declare 30 {
+#    void TclFreeObj(Tcl_Obj *objPtr)
+#}
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
 }
@@ -530,7 +531,7 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-# Removed (from stubtable only) in 9.0:
+# Removed in 9.0 (stub entry only)
 #declare 144 {
 #    void Tcl_FindExecutable(const char *argv0)
 #}
@@ -834,9 +835,9 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-# Removed (from stubtable only) in 9.0:
+# Removed in 9.0 (stub entry only)
 #declare 230 {
-#    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+#    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 #}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -884,10 +885,11 @@ declare 242 {
 declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
-declare 244 {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
-}
+# Removed in 9.0 (stub entry only)
+#declare 244  {
+#    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+#	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+#}
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
@@ -1918,10 +1920,10 @@ declare 518 {
 	    const char *encodingName)
 }
 
-# TIP#121 (exit handler) dkf for Joe Mistachkin
-declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
-}
+# Removed in 9.0 (stub entry only)
+#declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
+#    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+#}
 
 # TIP#143 (resource limits) dkf
 declare 520 {
@@ -2398,6 +2400,38 @@ declare 635 {
 	    unsigned char *data, size_t datalen, int copy)
 }
 
+# TIP #445
+declare 636 {
+    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+}
+declare 637 {
+    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+	    size_t numBytes)
+}
+declare 638 {
+    Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
+}
+declare 639 {
+    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    const Tcl_ObjIntRep *irPtr)
+}
+declare 640 {
+    int Tcl_HasStringRep(Tcl_Obj *objPtr)
+}
+
+# TIP #506
+declare 641 {
+    void Tcl_IncrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 642 {
+    void Tcl_DecrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 643 {
+    int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2444,6 +2478,19 @@ declare 1 macosx {
 export {
     void Tcl_MainEx(int argc, char **argv, Tcl_AppInitProc *appInitProc,
     Tcl_Interp *interp)
+}
+export {
+    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+export {
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+}
+export {
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+}
+export {
+    void Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,

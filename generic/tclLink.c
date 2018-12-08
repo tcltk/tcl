@@ -408,7 +408,8 @@ LinkTraceProc(
     case TCL_LINK_DOUBLE:
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	    if (valueObj->typePtr != &tclDoubleType) {
+	    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(valueObj, &tclDoubleType);
+	    if (irPtr == NULL) {
 #endif
 		if (GetInvalidDoubleFromObj(valueObj, &linkPtr->lastValue.d) != TCL_OK) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
@@ -417,7 +418,7 @@ LinkTraceProc(
 		}
 #ifdef ACCEPT_NAN
 	    }
-	    linkPtr->lastValue.d = valueObj->internalRep.doubleValue;
+	    linkPtr->lastValue.d = irPtr->doubleValue;
 #endif
 	}
 	LinkedVar(double) = linkPtr->lastValue.d;

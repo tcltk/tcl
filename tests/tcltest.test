@@ -1208,7 +1208,7 @@ test tcltest-21.2 {force a test command failure} {
 	} {1}
     }
     -returnCodes 1
-    -result {bad option "1": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
+    -result {bad option "1": must be -body, -cleanup, -constraints, -errorCode, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 }
 
 test tcltest-21.3 {test command with setup} {
@@ -1301,7 +1301,7 @@ test tcltest-21.7 {test command - bad flag} {
 	}
     }
     -returnCodes 1
-    -result {bad option "-foobar": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
+    -result {bad option "-foobar": must be -body, -cleanup, -constraints, -errorCode, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 }
 
 # alternate test command format (these are the same as 21.1-21.6, with the
@@ -1321,7 +1321,7 @@ test tcltest-21.8 {force a test command failure} \
     } \
     -returnCodes 1 \
     -cleanup {set ::tcltest::currentFailure $fail} \
-    -result {bad option "1": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
+    -result {bad option "1": must be -body, -cleanup, -constraints, -errorCode, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 
 test tcltest-21.9 {test command with setup} \
 	-setup {set foo 1} \

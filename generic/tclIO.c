@@ -337,6 +337,22 @@ static const Tcl_ObjType chanObjType = {
     NULL			/* setFromAnyProc */
 };
 
+#define ChanSetIntRep(objPtr, resPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	(resPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (resPtr);					\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &chanObjType, &ir);			\
+    } while (0)
+
+#define ChanGetIntRep(objPtr, resPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &chanObjType);		\
+	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 #define BUSY_STATE(st, fl) \
      ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
@@ -1515,12 +1531,12 @@ TclGetChannelFromObj(
 	return TCL_ERROR;
     }
 
-    if (objPtr->typePtr == &chanObjType) {
+    ChanGetIntRep(objPtr, resPtr);
+    if (resPtr) {
 	/*
  	 * Confirm validity of saved lookup results.
  	 */
 
-	resPtr = (ResolvedChanName *) objPtr->internalRep.twoPtrValue.ptr1;
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
 			/* No epoch change in channel since lookup */
@@ -1537,7 +1553,7 @@ TclGetChannelFromObj(
 
     if (chan == NULL) {
 	if (resPtr) {
-	    FreeChannelIntRep(objPtr);
+	    Tcl_StoreIntRep(objPtr, &chanObjType, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1548,14 +1564,10 @@ TclGetChannelFromObj(
          */
 
 	Tcl_Release((ClientData) resPtr->statePtr);
-
     } else {
-	TclFreeIntRep(objPtr);
-
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
-	resPtr->refCount = 1;
-	objPtr->internalRep.twoPtrValue.ptr1 = (ClientData) resPtr;
-	objPtr->typePtr = &chanObjType;
+	resPtr->refCount = 0;
+	ChanSetIntRep(objPtr, resPtr);		/* Overwrites, if needed */
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
@@ -3974,8 +3986,8 @@ Tcl_ClearChannelHandlers(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_IO_FAILURE in case of error. If
+ *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4028,8 +4040,8 @@ Tcl_Write(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_IO_FAILURE in case of error. If
+ *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4042,7 +4054,7 @@ size_t
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    size_t srcLen)		/* Length of data in bytes, or (size_t)-1 for
+    size_t srcLen)		/* Length of data in bytes, or -1 for
 				 * strlen(). */
 {
     Channel *chanPtr = ((Channel *) chan);
@@ -4052,10 +4064,10 @@ Tcl_WriteRaw(
     size_t written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
-	return (size_t)-1;
+	return TCL_IO_FAILURE;
     }
 
-    if (srcLen == (size_t)-1) {
+    if (srcLen == TCL_AUTO_LENGTH) {
 	srcLen = strlen(src);
     }
 
@@ -4065,7 +4077,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (written == (size_t)-1) {
+    if (written == TCL_IO_FAILURE) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4085,8 +4097,8 @@ Tcl_WriteRaw(
  *	specified channel to the topmost channel in a stack.
  *
  * Results:
- *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_IO_FAILURE in case of error. If
+ *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4100,7 +4112,7 @@ Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    size_t len)			/* Length of string in bytes, or (size_t)-1 for
+    size_t len)			/* Length of string in bytes, or -1 for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -6602,7 +6614,7 @@ TranslateInputEOL(
  *	channel, at either the head or tail of the queue.
  *
  * Results:
- *	The number of bytes stored in the channel, or (size_t)-1 on error.
+ *	The number of bytes stored in the channel, or TCL_IO_FAILURE on error.
  *
  * Side effects:
  *	Adds input to the input queue of a channel.
@@ -6638,7 +6650,7 @@ Tcl_Ungets(
 
     flags = statePtr->flags;
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	len = (size_t)-1;
+	len = TCL_IO_FAILURE;
 	goto done;
     }
     statePtr->flags = flags;
@@ -11184,11 +11196,11 @@ DupChannelIntRep(
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ResolvedChanName *resPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
 
-    resPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-    copyPtr->typePtr = srcPtr->typePtr;
+    ChanGetIntRep(srcPtr, resPtr);
+    assert(resPtr);
+    ChanSetIntRep(copyPtr, resPtr);
 }
 
 /*
@@ -11211,9 +11223,10 @@ static void
 FreeChannelIntRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
 
-    objPtr->typePtr = NULL;
+    ChanGetIntRep(objPtr, resPtr);
+    assert(resPtr);
     if (resPtr->refCount-- > 1) {
 	return;
     }

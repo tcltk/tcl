@@ -392,8 +392,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.0 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.2 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.1 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.3 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -492,10 +492,10 @@ genstubs:
 !if !exist($(TCLSH))
 	@echo Build tclsh first!
 !else
-	tclsh8.7 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
 		$(GENERICDIR:\=/)/tclTomMath.decls
-	tclsh8.7 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 

@@ -135,7 +135,7 @@ BuildCharSet(
 	     * as well as the dash.
 	     */
 
-	    if (*format == ']') {
+	    if (*format == ']' || !cset->ranges) {
 		cset->chars[cset->nchars++] = start;
 		cset->chars[cset->nchars++] = ch;
 	    } else {
@@ -1009,8 +1009,10 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    if (objPtr->typePtr == &tclDoubleType) {
-			dvalue = objPtr->internalRep.doubleValue;
+		    const Tcl_ObjIntRep *irPtr
+			    = Tcl_FetchIntRep(objPtr, &tclDoubleType);
+		    if (irPtr) {
+			dvalue = irPtr->doubleValue;
 		    } else
 #endif
 		    {

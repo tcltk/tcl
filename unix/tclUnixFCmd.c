@@ -611,18 +611,18 @@ TclUnixCopyFile(
     buffer = Tcl_Alloc(blockSize);
     while (1) {
 	nread = (size_t) read(srcFd, buffer, blockSize);
-	if ((nread == (size_t) -1) || (nread == 0)) {
+	if ((nread == TCL_IO_FAILURE) || (nread == 0)) {
 	    break;
 	}
 	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = (size_t) -1;
+	    nread = TCL_IO_FAILURE;
 	    break;
 	}
     }
 
     Tcl_Free(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
+    if ((close(dstFd) != 0) || (nread == TCL_IO_FAILURE)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }

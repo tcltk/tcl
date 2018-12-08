@@ -564,6 +564,13 @@ test cmdAH-9.51 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {foo\bar}
 } bar
+test cmdAH-9.52 {Tcl_FileObjCmd: tail / normalize, bug 7a9dc52b29} {
+    list \
+	[file tail {~/~foo}] \
+	[file tail {~/test/~foo}] \
+	[file tail [file normalize {~/~foo}]] \
+	[file tail [file normalize {~/test/~foo}]]
+} [lrepeat 4 ./~foo]
 
 # rootname
 test cmdAH-10.1 {Tcl_FileObjCmd: rootname} -returnCodes error -body {

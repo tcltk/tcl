@@ -124,8 +124,7 @@ TCLAPI Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, size_t length,
 				const char *file, int line);
 /* 29 */
 TCLAPI Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
-/* 30 */
-TCLAPI void		TclFreeObj(Tcl_Obj *objPtr);
+/* Slot 30 is reserved */
 /* 31 */
 TCLAPI int		Tcl_GetBoolean(Tcl_Interp *interp, const char *src,
 				int *boolPtr);
@@ -678,11 +677,7 @@ TCLAPI int		Tcl_SplitList(Tcl_Interp *interp,
 /* 243 */
 TCLAPI void		Tcl_SplitPath(const char *path, int *argcPtr,
 				const char ***argvPtr);
-/* 244 */
-TCLAPI void		Tcl_StaticPackage(Tcl_Interp *interp,
-				const char *pkgName,
-				Tcl_PackageInitProc *initProc,
-				Tcl_PackageInitProc *safeInitProc);
+/* Slot 244 is reserved */
 /* 245 */
 TCLAPI int		Tcl_StringMatch(const char *str, const char *pattern);
 /* Slot 246 is reserved */
@@ -1392,8 +1387,7 @@ TCLAPI void		Tcl_GetCommandFullName(Tcl_Interp *interp,
 /* 518 */
 TCLAPI int		Tcl_FSEvalFileEx(Tcl_Interp *interp,
 				Tcl_Obj *fileName, const char *encodingName);
-/* 519 */
-TCLAPI Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+/* Slot 519 is reserved */
 /* 520 */
 TCLAPI void		Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
 				Tcl_LimitHandlerProc *handlerProc,
@@ -1725,6 +1719,26 @@ TCLAPI Tcl_Obj *	TclZipfs_TclLibrary(void);
 TCLAPI int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 				const char *mountPoint, unsigned char *data,
 				size_t datalen, int copy);
+/* 636 */
+TCLAPI void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
+/* 637 */
+TCLAPI char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+				size_t numBytes);
+/* 638 */
+TCLAPI Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
+				const Tcl_ObjType *typePtr);
+/* 639 */
+TCLAPI void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
+				const Tcl_ObjType *typePtr,
+				const Tcl_ObjIntRep *irPtr);
+/* 640 */
+TCLAPI int		Tcl_HasStringRep(Tcl_Obj *objPtr);
+/* 641 */
+TCLAPI void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
+/* 642 */
+TCLAPI void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
+/* 643 */
+TCLAPI int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1784,7 +1798,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, size_t length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
-    void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
+    void (*reserved30)(void);
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
@@ -2006,7 +2020,7 @@ typedef struct TclStubs {
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
-    void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
+    void (*reserved244)(void);
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     void (*reserved246)(void);
     void (*reserved247)(void);
@@ -2281,7 +2295,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
     int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
-    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
+    void (*reserved519)(void);
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData); /* 521 */
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
@@ -2398,6 +2412,14 @@ typedef struct TclStubs {
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
+    void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 636 */
+    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, size_t numBytes); /* 637 */
+    Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
+    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 639 */
+    int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
+    void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
+    void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
+    int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2482,8 +2504,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbNewStringObj) /* 28 */
 #define Tcl_DuplicateObj \
 	(tclStubsPtr->tcl_DuplicateObj) /* 29 */
-#define TclFreeObj \
-	(tclStubsPtr->tclFreeObj) /* 30 */
+/* Slot 30 is reserved */
 #define Tcl_GetBoolean \
 	(tclStubsPtr->tcl_GetBoolean) /* 31 */
 #define Tcl_GetBooleanFromObj \
@@ -2894,8 +2915,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SplitList) /* 242 */
 #define Tcl_SplitPath \
 	(tclStubsPtr->tcl_SplitPath) /* 243 */
-#define Tcl_StaticPackage \
-	(tclStubsPtr->tcl_StaticPackage) /* 244 */
+/* Slot 244 is reserved */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 /* Slot 246 is reserved */
@@ -3417,8 +3437,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetCommandFullName) /* 517 */
 #define Tcl_FSEvalFileEx \
 	(tclStubsPtr->tcl_FSEvalFileEx) /* 518 */
-#define Tcl_SetExitProc \
-	(tclStubsPtr->tcl_SetExitProc) /* 519 */
+/* Slot 519 is reserved */
 #define Tcl_LimitAddHandler \
 	(tclStubsPtr->tcl_LimitAddHandler) /* 520 */
 #define Tcl_LimitRemoveHandler \
@@ -3651,6 +3670,22 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclZipfs_TclLibrary) /* 634 */
 #define TclZipfs_MountBuffer \
 	(tclStubsPtr->tclZipfs_MountBuffer) /* 635 */
+#define Tcl_FreeIntRep \
+	(tclStubsPtr->tcl_FreeIntRep) /* 636 */
+#define Tcl_InitStringRep \
+	(tclStubsPtr->tcl_InitStringRep) /* 637 */
+#define Tcl_FetchIntRep \
+	(tclStubsPtr->tcl_FetchIntRep) /* 638 */
+#define Tcl_StoreIntRep \
+	(tclStubsPtr->tcl_StoreIntRep) /* 639 */
+#define Tcl_HasStringRep \
+	(tclStubsPtr->tcl_HasStringRep) /* 640 */
+#define Tcl_IncrRefCount \
+	(tclStubsPtr->tcl_IncrRefCount) /* 641 */
+#define Tcl_DecrRefCount \
+	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
+#define Tcl_IsShared \
+	(tclStubsPtr->tcl_IsShared) /* 643 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3658,16 +3693,12 @@ extern const TclStubs *tclStubsPtr;
 
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
-#   undef Tcl_FindExecutable
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
-#   undef Tcl_SetPanicProc
 #   undef Tcl_ObjSetVar2
-#   undef Tcl_StaticPackage
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif

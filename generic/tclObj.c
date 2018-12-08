@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #include "tommath.h"
 #include <math.h>
+#include <assert.h>
 
 /*
  * Table of all object types.
@@ -1032,9 +1033,8 @@ TclDbInitNewObj(
 				 * debugging. */
 {
     objPtr->refCount = 0;
-    objPtr->bytes = &tclEmptyString;
-    objPtr->length = 0;
     objPtr->typePtr = NULL;
+    TclInitStringRep(objPtr, NULL, 0);
 
 #if TCL_THREADS
     /*
@@ -1319,16 +1319,16 @@ TclFreeObj(
      * sure we do not accept a second free when falling from 0 to -1.
      * Skip that possibility so any double free will trigger the panic.
      */
-    objPtr->refCount = (size_t)-1;
+    objPtr->refCount = TCL_AUTO_LENGTH;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
-     * with 'length == (size_t)-1'.
+     * with 'length == TCL_AUTO_LENGTH'.
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = (size_t)-1;
+    objPtr->length = TCL_AUTO_LENGTH;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
@@ -1498,7 +1498,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == (size_t)-1);
+    return (objPtr->length == TCL_AUTO_LENGTH);
 }
 
 /*
@@ -1617,7 +1617,7 @@ Tcl_GetString(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == (size_t)-1
+	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1676,7 +1676,7 @@ Tcl_GetStringFromObj(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == (size_t)-1
+	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1686,6 +1686,87 @@ Tcl_GetStringFromObj(
     if (lengthPtr != NULL) {
 	*lengthPtr = (objPtr->length < INT_MAX)? objPtr->length: INT_MAX;
     }
+    return objPtr->bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InitStringRep --
+ *
+ *	This function is called in several configurations to provide all
+ *	the tools needed to set an object's string representation. The
+ *	function is determined by the arguments.
+ *	
+ *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes == -1)
+ *	    Invalid call -- panic!
+ *	
+ *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
+ *	    Allocation only - allocate space for (numBytes+1) chars.
+ *	    store in objPtr->bytes and return. Also sets
+ *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
+ *	
+ *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
+ *	    Allocate and copy. bytes is assumed to point to chars to
+ *	    copy into the string rep. objPtr->length = numBytes. Allocate
+ *	    array of (numBytes + 1) chars. store in objPtr->bytes. Copy
+ *	    numBytes chars from bytes to objPtr->bytes; Set
+ *	    objPtr->bytes[numBytes] to NUL and return objPtr->bytes.
+ *	    Caller must guarantee there are numBytes chars at bytes to
+ *	    be copied.
+ *
+ *	objPtr->bytes != NULL && bytes == NULL && numBytes >= 0
+ *	    Truncate.  Set objPtr->length to numBytes and
+ *	    objPr->bytes[numBytes] to NUL.  Caller has to guarantee
+ *	    that a prior allocating call allocated enough bytes for
+ *	    this to be valid. Return objPtr->bytes.
+ *
+ *	Caller is expected to ascertain that the bytes copied into
+ *	the string rep make up complete valid UTF-8 characters.
+ *
+ * Results:
+ *	A pointer to the string rep of objPtr.
+ *
+ * Side effects:
+ *	As described above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_InitStringRep(
+    Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
+    const char *bytes,
+    size_t numBytes)
+{
+    assert(objPtr->bytes == NULL || bytes == NULL);
+
+    /* Allocate */
+    if (objPtr->bytes == NULL) {
+	/* Allocate only as empty - extend later if bytes copied */
+	objPtr->length = 0;
+	if (numBytes) {
+	    objPtr->bytes = Tcl_AttemptAlloc(numBytes + 1);
+	    if (objPtr->bytes == NULL) {
+		return NULL;
+	    }
+	    if (bytes) {
+		/* Copy */
+		memcpy(objPtr->bytes, bytes, numBytes);
+		objPtr->length = numBytes;
+	    }
+	} else {
+	    TclInitStringRep(objPtr, NULL, 0);
+	}
+    } else {
+	/* objPtr->bytes != NULL bytes == NULL - Truncate */
+	objPtr->bytes = Tcl_Realloc(objPtr->bytes, numBytes + 1);
+	objPtr->length = numBytes;
+    }
+
+    /* Terminate */
+    objPtr->bytes[objPtr->length] = '\0';
+
     return objPtr->bytes;
 }
 
@@ -1713,6 +1794,123 @@ Tcl_InvalidateStringRep(
 				 * be freed. */
 {
     TclInvalidateStringRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_HasStringRep --
+ *
+ *	This function reports whether object has a string representation.
+ *
+ * Results:
+ *	Boolean.
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_HasStringRep(
+    Tcl_Obj *objPtr)	/* Object to test */
+{
+    return TclHasStringRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_StoreIntRep --
+ *
+ *	This function is called to set the object's internal
+ *	representation to match a particular type.
+ *
+ *	It is the caller's responsibility to guarantee that
+ *	the value of the submitted IntRep is in agreement with
+ *	the value of any existing string rep.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets the internalRep and typePtr fields to the submitted values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_StoreIntRep(
+    Tcl_Obj *objPtr,		/* Object whose internal rep should be set. */
+    const Tcl_ObjType *typePtr,	/* New type for the object */
+    const Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
+{
+    /* Clear out any existing IntRep ( "shimmer" ) */
+    TclFreeIntRep(objPtr);
+
+    /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */
+    if (irPtr) {
+	/* Copy the new IntRep into place */
+	objPtr->internalRep = *irPtr;
+
+	/* Set the type to match */
+	objPtr->typePtr = typePtr;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FetchIntRep --
+ *
+ *	This function is called to retrieve the object's internal
+ *	representation matching a requested type, if any.
+ *
+ * Results:
+ *	A read-only pointer to the associated Tcl_ObjIntRep, or
+ *	NULL if no such internal representation exists.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets the internalRep and typePtr fields to the submitted values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_ObjIntRep *
+Tcl_FetchIntRep(
+    Tcl_Obj *objPtr,		/* Object to fetch from. */
+    const Tcl_ObjType *typePtr)	/* Requested type */
+{
+    /* If objPtr type doesn't match request, nothing can be fetched */
+    if (objPtr->typePtr != typePtr) {
+	return NULL;
+    }
+
+    /* Type match! objPtr IntRep is the one sought. */
+    return &(objPtr->internalRep);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FreeIntRep --
+ *
+ *	This function is called to free an object's internal representation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets typePtr field to NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_FreeIntRep(
+    Tcl_Obj *objPtr)	/* Object whose internal rep should be freed. */
+{
+    TclFreeIntRep(objPtr);
 }
 
 /*
@@ -2039,6 +2237,7 @@ Tcl_DbNewDoubleObj(
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
+    /* Optimized TclInvalidateStringRep() */
     objPtr->bytes = NULL;
 
     objPtr->internalRep.doubleValue = dblValue;
@@ -2198,15 +2397,12 @@ static void
 UpdateStringOfDouble(
     register Tcl_Obj *objPtr)	/* Double obj with string rep to update. */
 {
-    char buffer[TCL_DOUBLE_SPACE];
-    size_t len;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
-    Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, buffer);
-    len = strlen(buffer);
+    TclOOM(dst, TCL_DOUBLE_SPACE + 1);
 
-    objPtr->length = len;
-    objPtr->bytes = Tcl_Alloc(++len);
-    memcpy(objPtr->bytes, buffer, len);
+    Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
+    (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
 }
 
 /*
@@ -2314,15 +2510,137 @@ static void
 UpdateStringOfInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
-    char buffer[TCL_INTEGER_SPACE];
-    size_t len;
+    char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
 
-    len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
-
-    objPtr->length = len;
-    objPtr->bytes = Tcl_Alloc(len + 1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
+    TclOOM(dst, TCL_INTEGER_SPACE + 1);
+    (void) Tcl_InitStringRep(objPtr, NULL,
+	    TclFormatInt(dst, objPtr->internalRep.wideValue));
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NewLongObj --
+ *
+ *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
+ *	Tcl_NewLongObj to create a new long integer object end up calling the
+ *	debugging function Tcl_DbNewLongObj instead.
+ *
+ *	Otherwise, if the client is compiled without TCL_MEM_DEBUG defined,
+ *	calls to Tcl_NewLongObj result in a call to one of the two
+ *	Tcl_NewLongObj implementations below. We provide two implementations
+ *	so that the Tcl core can be compiled to do memory debugging of the
+ *	core even if a client does not request it for itself.
+ *
+ *	Integer and long integer objects share the same "integer" type
+ *	implementation. We store all integers as longs and Tcl_GetIntFromObj
+ *	checks whether the current value of the long can be represented by an
+ *	int.
+ *
+ * Results:
+ *	The newly created object is returned. This object will have an invalid
+ *	string representation. The returned object has ref count 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_NewLongObj
+#ifdef TCL_MEM_DEBUG
+
+Tcl_Obj *
+Tcl_NewLongObj(
+    register long longValue)	/* Long integer used to initialize the
+				 * new object. */
+{
+    return Tcl_DbNewLongObj(longValue, "unknown", 0);
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_NewLongObj(
+    register long longValue)	/* Long integer used to initialize the
+				 * new object. */
+{
+    register Tcl_Obj *objPtr;
+
+    TclNewIntObj(objPtr, longValue);
+    return objPtr;
+}
+#endif /* if TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DbNewLongObj --
+ *
+ *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
+ *	Tcl_NewIntObj and Tcl_NewLongObj to create new integer or long integer
+ *	objects end up calling the debugging function Tcl_DbNewLongObj
+ *	instead. We provide two implementations of Tcl_DbNewLongObj so that
+ *	whether the Tcl core is compiled to do memory debugging of the core is
+ *	independent of whether a client requests debugging for itself.
+ *
+ *	When the core is compiled with TCL_MEM_DEBUG defined, Tcl_DbNewLongObj
+ *	calls Tcl_DbCkalloc directly with the file name and line number from
+ *	its caller. This simplifies debugging since then the [memory active]
+ *	command will report the caller's file name and line number when
+ *	reporting objects that haven't been freed.
+ *
+ *	Otherwise, when the core is compiled without TCL_MEM_DEBUG defined,
+ *	this function just returns the result of calling Tcl_NewLongObj.
+ *
+ * Results:
+ *	The newly created long integer object is returned. This object will
+ *	have an invalid string representation. The returned object has ref
+ *	count 0.
+ *
+ * Side effects:
+ *	Allocates memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_DbNewLongObj
+#ifdef TCL_MEM_DEBUG
+
+Tcl_Obj *
+Tcl_DbNewLongObj(
+    register long longValue,	/* Long integer used to initialize the new
+				 * object. */
+    const char *file,		/* The name of the source file calling this
+				 * function; used for debugging. */
+    int line)			/* Line number in the source file; used for
+				 * debugging. */
+{
+    register Tcl_Obj *objPtr;
+
+    TclDbNewObj(objPtr, file, line);
+    /* Optimized TclInvalidateStringRep */
+    objPtr->bytes = NULL;
+
+    objPtr->internalRep.wideValue = longValue;
+    objPtr->typePtr = &tclIntType;
+    return objPtr;
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_DbNewLongObj(
+    register long longValue,	/* Long integer used to initialize the new
+				 * object. */
+    const char *file,		/* The name of the source file calling this
+				 * function; used for debugging. */
+    int line)			/* Line number in the source file; used for
+				 * debugging. */
+{
+    return Tcl_NewLongObj(longValue);
+}
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -2826,12 +3144,10 @@ UpdateStringOfBignum(
 {
     mp_int bignumVal;
     int size;
-    int status;
     char *stringVal;
 
     UNPACK_BIGNUM(objPtr, bignumVal);
-    status = mp_radix_size(&bignumVal, 10, &size);
-    if (status != MP_OKAY) {
+    if (MP_OKAY != mp_radix_size(&bignumVal, 10, &size)) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
     if (size < 2) {
@@ -2846,13 +3162,14 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = Tcl_Alloc(size);
-    status = mp_toradix_n(&bignumVal, stringVal, 10, size);
-    if (status != MP_OKAY) {
+
+    stringVal = Tcl_InitStringRep(objPtr, NULL, size - 1);
+
+    TclOOM(stringVal, size);
+    if (MP_OKAY != mp_toradix_n(&bignumVal, stringVal, 10, size)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
-    objPtr->bytes = stringVal;
-    objPtr->length = size - 1;	/* size includes a trailing NUL byte. */
+    (void) Tcl_InitStringRep(objPtr, NULL, size - 1);
 }
 
 /*
@@ -2972,11 +3289,17 @@ GetBignumFromObj(
 		mp_init_copy(bignumValue, &temp);
 	    } else {
 		UNPACK_BIGNUM(objPtr, *bignumValue);
+		/* Optimized TclFreeIntRep */
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
+		/*
+		 * TODO: If objPtr has a string rep, this leaves
+		 * it undisturbed.  Not clear that's proper. Pure
+		 * bignum values are converted to empty string.
+		 */
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, &tclEmptyString, 0);
+		    TclInitStringRep(objPtr, NULL, 0);
 		}
 	    }
 	    return TCL_OK;
@@ -3216,6 +3539,71 @@ TclGetNumberFromObj(
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IncrRefCount --
+ *
+ *	Increments the reference count of the object.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_IncrRefCount
+void
+Tcl_IncrRefCount(
+    Tcl_Obj *objPtr)	/* The object we are registering a reference to. */
+{
+    ++(objPtr)->refCount;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DecrRefCount --
+ *
+ *	Decrements the reference count of the object.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_DecrRefCount
+void
+Tcl_DecrRefCount(
+    Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
+{
+    if (objPtr->refCount-- <= 1) {
+	TclFreeObj(objPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsShared --
+ *
+ *	Tests if the object has a ref count greater than one.
+ *
+ * Results:
+ *	Boolean value that is the result of the test.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_IsShared
+int
+Tcl_IsShared(
+    Tcl_Obj *objPtr)	/* The object to test for being shared. */
+{
+    return ((objPtr)->refCount + 1 > 2);
 }
 
 /*
