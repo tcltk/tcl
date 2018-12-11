@@ -685,7 +685,8 @@ Tcl_CreateNamespace(
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     Tcl_DString *namePtr, *buffPtr;
-    int newEntry, nameLen;
+    int newEntry;
+    size_t nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     const char *nameStr;
     Tcl_DString tmpBuffer;
@@ -875,7 +876,7 @@ Tcl_CreateNamespace(
     name = Tcl_DStringValue(namePtr);
     nameLen = Tcl_DStringLength(namePtr);
     nsPtr->fullName = Tcl_Alloc(nameLen + 1);
-    memcpy(nsPtr->fullName, name, (unsigned) nameLen + 1);
+    memcpy(nsPtr->fullName, name, nameLen + 1);
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
@@ -1461,7 +1462,7 @@ Tcl_Export(
 
     len = strlen(pattern);
     patternCpy = Tcl_Alloc(len + 1);
-    memcpy(patternCpy, pattern, (unsigned) len + 1);
+    memcpy(patternCpy, pattern, len + 1);
 
     nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
     nsPtr->numExportPatterns++;

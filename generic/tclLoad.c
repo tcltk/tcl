@@ -131,7 +131,7 @@ Tcl_LoadObjCmd(
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
-    unsigned len;
+    size_t len;
     int index, flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
@@ -405,7 +405,7 @@ Tcl_LoadObjCmd(
 	len = strlen(fullFileName) + 1;
 	pkgPtr->fileName	   = Tcl_Alloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
-	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
+	len = Tcl_DStringLength(&pkgName) + 1;
 	pkgPtr->packageName	   = Tcl_Alloc(len);
 	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;

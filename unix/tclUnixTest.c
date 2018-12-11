@@ -761,7 +761,7 @@ TestchmodCmd(
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (chmod(translated, (unsigned) mode) != 0) {
+	if (chmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    NULL);
 	    return TCL_ERROR;
