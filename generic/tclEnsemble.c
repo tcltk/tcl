@@ -3353,7 +3353,7 @@ TclAttemptCompileProc(
 
 	if (diff != 1) {
 	    Tcl_Panic("bad stack adjustment when compiling"
-		    " %.*s (was %d instead of 1)", parsePtr->tokenPtr->size,
+		    " %.*s (was %d instead of 1)", (int)parsePtr->tokenPtr->size,
 		    parsePtr->tokenPtr->start, diff);
 	}
 #endif

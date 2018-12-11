@@ -2199,14 +2199,8 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
-TCLAPI void		Tcl_FindExecutable(const char *argv0);
-TCLAPI void		Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 TCLAPI TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#if defined(_WIN32) && defined(UNICODE)
-TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
-	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#endif
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);

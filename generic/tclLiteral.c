@@ -453,10 +453,10 @@ TclRegisterLiteral(
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr != NULL && ((globalPtr->refCount < 1) || (globalPtr->refCount == TCL_AUTO_LENGTH))) {
-	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
+    if (globalPtr != NULL && (globalPtr->refCount + 1 < 2)) {
+	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "d",
 		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes,
-		(int)globalPtr->refCount);
+		globalPtr->refCount);
     }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
@@ -1082,7 +1082,7 @@ TclLiteralStats(
     LiteralTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    int count[NUM_COUNTERS], overflow, i, j;
+    size_t count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     register LiteralEntry *entryPtr;
     char *result, *p;
@@ -1121,11 +1121,11 @@ TclLiteralStats(
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
-	sprintf(p, "number of buckets with %d entries: %d\n",
+	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "d entries: %" TCL_Z_MODIFIER "d\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %d\n",
+    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "d\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
@@ -1164,7 +1164,7 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != -1) {
+	    if (localPtr->refCount != TCL_AUTO_LENGTH) {
 		bytes = TclGetString(localPtr->objPtr);
 		length = localPtr->objPtr->length;
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
@@ -1178,7 +1178,7 @@ TclVerifyLocalLiteralTable(
 	}
     }
     if (count != localTablePtr->numEntries) {
-	Tcl_Panic("%s: local literal table had %d entries, should be %d",
+	Tcl_Panic("%s: local literal table had %" TCL_Z_MODIFIER "d entries, should be %" TCL_Z_MODIFIER "d",
 		"TclVerifyLocalLiteralTable", count,
 		localTablePtr->numEntries);
     }
@@ -1214,10 +1214,10 @@ TclVerifyGlobalLiteralTable(
 	for (globalPtr=globalTablePtr->buckets[i] ; globalPtr!=NULL;
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
-	    if (globalPtr->refCount < 1) {
+	    if (globalPtr->refCount + 1 < 2) {
 		bytes = TclGetString(globalPtr->objPtr);
 		length = globalPtr->objPtr->length;
-		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : (int)length), bytes, globalPtr->refCount);
 	    }
@@ -1228,7 +1228,7 @@ TclVerifyGlobalLiteralTable(
 	}
     }
     if (count != globalTablePtr->numEntries) {
-	Tcl_Panic("%s: global literal table had %d entries, should be %d",
+	Tcl_Panic("%s: global literal table had %" TCL_Z_MODIFIER "d entries, should be %" TCL_Z_MODIFIER "d",
 		"TclVerifyGlobalLiteralTable", count,
 		globalTablePtr->numEntries);
     }

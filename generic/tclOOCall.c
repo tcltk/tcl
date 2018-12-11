@@ -595,7 +595,7 @@ SortMethodNames(
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
-    int i = 0;
+    size_t i = 0;
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
@@ -631,7 +631,7 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    qsort((void *) strings, i, sizeof(char *), CmpStr);
 	}
 	*stringsPtr = strings;
     } else {

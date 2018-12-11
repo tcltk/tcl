@@ -1013,7 +1013,8 @@ TclNRPackageObjCmd(
 	break;
     }
     case PKG_IFNEEDED: {
-	int length, res;
+	size_t length;
+	int res;
 	char *argv3i, *avi;
 
 	if ((objc != 4) && (objc != 5)) {
@@ -1071,7 +1072,7 @@ TclNRPackageObjCmd(
 	if (availPtr == NULL) {
 	    availPtr = Tcl_Alloc(sizeof(PkgAvail));
 	    availPtr->pkgIndex = NULL;
-	    DupBlock(availPtr->version, argv3, (unsigned) length + 1);
+	    DupBlock(availPtr->version, argv3, length + 1);
 
 	    if (prevPtr == NULL) {
 		availPtr->nextPtr = pkgPtr->availPtr;
@@ -1083,10 +1084,10 @@ TclNRPackageObjCmd(
 	}
 	if (iPtr->scriptFile) {
 	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
-	    DupBlock(availPtr->pkgIndex, argv4, (unsigned) length + 1);
+	    DupBlock(availPtr->pkgIndex, argv4, length + 1);
 	}
 	argv4 = TclGetStringFromObj(objv[4], &length);
-	DupBlock(availPtr->script, argv4, (unsigned) length + 1);
+	DupBlock(availPtr->script, argv4, length + 1);
 	break;
     }
     case PKG_NAMES:
@@ -1245,7 +1246,7 @@ TclNRPackageObjCmd(
 	}
 	break;
     case PKG_UNKNOWN: {
-	int length;
+	size_t length;
 
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1260,7 +1261,7 @@ TclNRPackageObjCmd(
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
-		DupBlock(iPtr->packageUnknown, argv2, (unsigned) length+1);
+		DupBlock(iPtr->packageUnknown, argv2, length+1);
 	    }
 	} else {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?command?");

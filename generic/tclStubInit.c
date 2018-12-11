@@ -50,32 +50,6 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
-#undef TclPkgProvide
-#undef Tcl_SetIntObj
-
-#define TclPkgProvide pkgProvide
-static int TclPkgProvide(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of package. */
-    const char *version)	/* Version string for package. */
-{
-    /* In Tcl 9, Tcl_PkgProvide is a macro calling Tcl_PkgProvideEx.
-     * The only way this stub can be called is by an extension compiled
-     * against Tcl 8 headers. The Tcl_StubsInit() function already
-     * succeeded, so the extension author lied: It did something like:
-     *     Tcl_StubsInit(interp, "8.6-", 0)
-     * or
-     *     Tcl_StubsInit(interp, "8.6-9.1", 0)
-     *
-     * The best we can do is provide an error-message, as if the
-     * extension originally called:
-     *     Tcl_StubsInit(interp, "8", 0)
-     */
-	Tcl_PkgRequireEx(interp, "Tcl", "8", 0, NULL);
-	return TCL_ERROR;
-}
-
 #undef TclStaticPackage
 #define TclStaticPackage Tcl_StaticPackage
 
