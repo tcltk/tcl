@@ -1694,7 +1694,7 @@ BinaryScanCmd(
      */
 
  done:
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 3));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;

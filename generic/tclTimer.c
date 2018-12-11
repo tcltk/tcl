@@ -788,7 +788,7 @@ Tcl_AfterObjCmd(
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
-    int length;
+    size_t length;
     int index = -1;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
@@ -883,7 +883,7 @@ Tcl_AfterObjCmd(
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
 	const char *command, *tempCommand;
-	int tempLength;
+	size_t tempLength;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
@@ -900,7 +900,7 @@ Tcl_AfterObjCmd(
 	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
-		    && !memcmp(command, tempCommand, (unsigned) length)) {
+		    && !memcmp(command, tempCommand, length)) {
 		break;
 	    }
 	}

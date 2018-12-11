@@ -17,9 +17,7 @@
 #endif
 
 /*
- * TclpGetDate is coded to return a pointer to a 'struct tm'. For thread
- * safety, this structure must be in thread-specific data. The 'tmKey'
- * variable is the key to this buffer.
+ * Static functions declared in this file.
  */
 
 static void		NativeScaleTime(Tcl_Time *timebuf,

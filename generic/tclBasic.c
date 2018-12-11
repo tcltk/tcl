@@ -2699,7 +2699,7 @@ TclInvokeStringCommand(
     Command *cmdPtr = clientData;
     int i, result;
     const char **argv =
-	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
+	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
 	argv[i] = TclGetString(objv[i]);
@@ -2748,7 +2748,7 @@ TclInvokeObjectCommand(
     Tcl_Obj *objPtr;
     int i, length, result;
     Tcl_Obj **objv =
-	    TclStackAlloc(interp, (unsigned)(argc * sizeof(Tcl_Obj *)));
+	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
 
     for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
@@ -4551,7 +4551,7 @@ TEOV_NotFound(
 	newObjv[i] = handlerObjv[i];
 	Tcl_IncrRefCount(newObjv[i]);
     }
-    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
+    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * objc);
 
     /*
      * Look up and invoke the handler (by recursive call to this function). If
@@ -7059,7 +7059,7 @@ ExprAbsFunc(
 
 		while (numBytes) {
 		    if (*bytes == '-') {
-			Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+			Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 			return TCL_OK;
 		    }
 		    bytes++; numBytes--;
@@ -7424,7 +7424,7 @@ ExprRoundFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	double fractPart, intPart;
-	long max = LONG_MAX, min = LONG_MIN;
+	Tcl_WideInt max = WIDE_MAX, min = WIDE_MIN;
 
 	fractPart = modf(*((const double *) ptr), &intPart);
 	if (fractPart <= -0.5) {
@@ -7447,14 +7447,14 @@ ExprRoundFunc(
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
 	} else {
-	    long result = (long)intPart;
+	    Tcl_WideInt result = (Tcl_WideInt)intPart;
 
 	    if (fractPart <= -0.5) {
 		result--;
 	    } else if (fractPart >= 0.5) {
 		result++;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
 	    return TCL_OK;
 	}
     }

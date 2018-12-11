@@ -85,15 +85,15 @@ typedef union Block {
 typedef struct {
     Block *firstPtr;		/* First block available */
     Block *lastPtr;		/* End of block list */
-    long numFree;		/* Number of blocks available */
+    size_t numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
 
-    long numRemoves;		/* Number of removes from bucket */
-    long numInserts;		/* Number of inserts into bucket */
-    long numWaits;		/* Number of waits to acquire a lock */
-    long numLocks;		/* Number of locks acquired */
-    long totalAssigned;		/* Total space assigned to bucket */
+    size_t numRemoves;		/* Number of removes from bucket */
+    size_t numInserts;		/* Number of inserts into bucket */
+    size_t numWaits;		/* Number of waits to acquire a lock */
+    size_t numLocks;		/* Number of locks acquired */
+    size_t totalAssigned;	/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -120,8 +120,8 @@ typedef struct Cache {
 
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
-    int maxBlocks;		/* Max blocks before move to share. */
-    int numMove;		/* Num blocks to move to share. */
+    size_t maxBlocks;		/* Max blocks before move to share. */
+    size_t numMove;			/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -671,8 +671,8 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
-		    (unsigned long) bucketInfo[n].blockSize,
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d",
+		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
 		    cachePtr->buckets[n].numInserts,
@@ -961,7 +961,7 @@ GetBlocks(
     int bucket)
 {
     register Block *blockPtr;
-    register int n;
+    register size_t n;
 
     /*
      * First, atttempt to move blocks from the shared cache. Note the
@@ -1016,7 +1016,7 @@ GetBlocks(
 	blockPtr = NULL;
 	n = NBUCKETS;
 	size = 0; /* lint */
-	while (--n > bucket) {
+	while (--n > (size_t)bucket) {
 	    if (cachePtr->buckets[n].numFree > 0) {
 		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;

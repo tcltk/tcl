@@ -1537,10 +1537,10 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    long numExecutions;		/* Number of ByteCodes executed. */
-    long numCompilations;	/* Number of ByteCodes created. */
-    long numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    long instructionCount[256];	/* Number of times each instruction was
+    size_t numExecutions;		/* Number of ByteCodes executed. */
+    size_t numCompilations;	/* Number of ByteCodes created. */
+    size_t numByteCodesFreed;	/* Number of ByteCodes destroyed. */
+    size_t instructionCount[256];	/* Number of times each instruction was
 				 * executed. */
 
     double totalSrcBytes;	/* Total source bytes ever compiled. */
@@ -1548,10 +1548,10 @@ typedef struct ByteCodeStats {
     double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
 
-    long srcCount[32];		/* Source size distribution: # of srcs of
+    size_t srcCount[32];		/* Source size distribution: # of srcs of
 				 * size [2**(n-1)..2**n), n in [0..32). */
-    long byteCodeCount[32];	/* ByteCode size distribution. */
-    long lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
+    size_t byteCodeCount[32];	/* ByteCode size distribution. */
+    size_t lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
 
     double currentInstBytes;	/* Instruction bytes-current ByteCodes. */
     double currentLitBytes;	/* Current literal bytes. */
@@ -1559,11 +1559,11 @@ typedef struct ByteCodeStats {
     double currentAuxBytes;	/* Current auxiliary information bytes. */
     double currentCmdMapBytes;	/* Current src<->code map bytes. */
 
-    long numLiteralsCreated;	/* Total literal objects ever compiled. */
+    size_t numLiteralsCreated;	/* Total literal objects ever compiled. */
     double totalLitStringBytes;	/* Total string bytes in all literals. */
     double currentLitStringBytes;
 				/* String bytes in current literals. */
-    long literalCount[32];	/* Distribution of literal string sizes. */
+    size_t literalCount[32];	/* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
 
@@ -1769,7 +1769,7 @@ typedef struct AllocCache {
     struct Cache *nextPtr;	/* Linked list of cache entries. */
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread. */
-    int numObjects;		/* Number of objects for thread. */
+    size_t numObjects;		/* Number of objects for thread. */
 } AllocCache;
 
 /*
@@ -1865,7 +1865,7 @@ typedef struct Interp {
      * Miscellaneous information:
      */
 
-    int cmdCount;		/* Total number of times a command procedure
+    size_t cmdCount;		/* Total number of times a command procedure
 				 * has been called for this interpreter. */
     int evalFlags;		/* Flags to control next call to Tcl_Eval.
 				 * Normally zero, but may be set before
@@ -1950,7 +1950,7 @@ typedef struct Interp {
 				 * as flag values the same as the 'active'
 				 * field. */
 
-	int cmdCount;		/* Limit for how many commands to execute in
+	size_t cmdCount;		/* Limit for how many commands to execute in
 				 * the interpreter. */
 	LimitHandler *cmdHandlers;
 				/* Handlers to execute when the limit is
@@ -2371,7 +2371,7 @@ typedef struct List {
 #define LIST_MAX \
 	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
 #define LIST_SIZE(numElems) \
-	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
+	(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
 
 /*
  * Macro used to get the elements of a list object.

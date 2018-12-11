@@ -2011,9 +2011,9 @@ LoadEscapeEncoding(
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = Tcl_Alloc(size);
     dataPtr->initLen = strlen(init);
-    memcpy(dataPtr->init, init, (unsigned) dataPtr->initLen + 1);
+    memcpy(dataPtr->init, init, dataPtr->initLen + 1);
     dataPtr->finalLen = strlen(final);
-    memcpy(dataPtr->final, final, (unsigned) dataPtr->finalLen + 1);
+    memcpy(dataPtr->final, final, dataPtr->finalLen + 1);
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
     memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),

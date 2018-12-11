@@ -1246,7 +1246,7 @@ Tcl_ZlibStreamPut(
 	     * case. [Bug b26e38a3e4] [Tk Bug 10f2e7872b]
 	     */
 
-	    if ((e != Z_BUF_ERROR) && (e != Z_OK || (size_t)(unsigned)toStore < outSize)) {
+	    if ((e != Z_BUF_ERROR) && (e != Z_OK || toStore < outSize)) {
 		if ((e == Z_OK) || (flush == Z_FINISH && e == Z_STREAM_END)) {
 		    break;
 		}
