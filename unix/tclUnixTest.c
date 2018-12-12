@@ -570,7 +570,7 @@ TestforkObjCmd(
     if (pid==0) {
 	Tcl_InitNotifier();
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pid));
     return TCL_OK;
 }
 

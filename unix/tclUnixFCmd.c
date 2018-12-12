@@ -1369,7 +1369,7 @@ GetGroupAttribute(
     groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	const char *utf;
@@ -1423,7 +1423,7 @@ GetOwnerAttribute(
     pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 
@@ -2340,8 +2340,8 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj(
-	    (fileAttributes & attributeArray[objIndex]) != 0);
+    *attributePtrPtr = Tcl_NewBooleanObj(
+	    fileAttributes & attributeArray[objIndex]);
     return TCL_OK;
 }
 
