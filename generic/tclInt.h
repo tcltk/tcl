@@ -2527,7 +2527,7 @@ typedef struct List {
 
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
+	? (*(wideIntPtr) =						\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 
