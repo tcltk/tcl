@@ -3841,6 +3841,13 @@ extern const TclStubs *tclStubsPtr;
 
 #define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
 #define Tcl_NewIntObj(value) Tcl_NewWideIntObj((int)(value))
+#if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
+    static inline Tcl_Obj * Tcl_NewWideIntObjFromSize(size_t value) {
+	return Tcl_NewWideIntObj(value != ((size_t)-1) ? (Tcl_WideInt)value : -1);
+    }
+#else
+#   define Tcl_NewWideIntObjFromSize Tcl_NewWideIntObj
+#endif
 #define Tcl_DbNewLongObj(value, file, line) Tcl_DbNewWideIntObj((long)(value), file, line)
 #define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (int)(value))
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
