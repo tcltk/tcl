@@ -178,7 +178,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 
 #define PACK_BIGNUM(bignum, objPtr) \
     if ((bignum).used > 0x7fff) {                                       \
-	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
+	mp_int *temp = (void *) ckalloc(sizeof(mp_int));     \
 	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
@@ -1980,7 +1980,7 @@ Tcl_Obj *
 Tcl_NewBooleanObj(
     register int boolValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewLongObj(boolValue!=0, "unknown", 0);
+    return Tcl_DbNewWideIntObj(boolValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2623,6 +2623,7 @@ UpdateStringOfDouble(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_NewIntObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2630,7 +2631,7 @@ Tcl_Obj *
 Tcl_NewIntObj(
     register int intValue)	/* Int used to initialize the new object. */
 {
-    return Tcl_DbNewLongObj((long)intValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj((long)intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2645,6 +2646,7 @@ Tcl_NewIntObj(
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2830,6 +2832,7 @@ UpdateStringOfOldInt(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_NewLongObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2838,7 +2841,7 @@ Tcl_NewLongObj(
     register long longValue)	/* Long integer used to initialize the
 				 * new object. */
 {
-    return Tcl_DbNewLongObj(longValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(longValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2854,6 +2857,7 @@ Tcl_NewLongObj(
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2887,6 +2891,7 @@ Tcl_NewLongObj(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_DbNewLongObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2921,9 +2926,10 @@ Tcl_DbNewLongObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    return Tcl_NewLongObj(longValue);
+    return Tcl_NewWideIntObj(longValue);
 }
 #endif /* TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

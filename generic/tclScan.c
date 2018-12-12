@@ -719,7 +719,7 @@ Tcl_ScanObjCmd(
 	switch (ch) {
 	case 'n':
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj(string - baseString);
+		objPtr = Tcl_NewWideIntObj(string - baseString);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -889,7 +889,7 @@ Tcl_ScanObjCmd(
 #endif
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj(i);
+		objPtr = Tcl_NewWideIntObj(i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -900,7 +900,7 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
-	    objPtr = Tcl_NewLongObj(0);
+	    objPtr = Tcl_NewWideIntObj(0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1081,7 +1081,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewIntObj(-1);
+		objPtr = Tcl_NewWideIntObj(-1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
@@ -1090,7 +1090,7 @@ Tcl_ScanObjCmd(
 		}
 	    }
 	} else if (numVars) {
-	    objPtr = Tcl_NewIntObj(result);
+	    objPtr = Tcl_NewWideIntObj(result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }

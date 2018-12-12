@@ -2171,7 +2171,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int) s);
+		    pure = Tcl_NewWideIntObj(s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
@@ -2179,7 +2179,7 @@ Tcl_AppendFormatToObj(
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    pure = Tcl_NewLongObj(l);
+		    pure = Tcl_NewWideIntObj(l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = TclGetStringFromObj(pure, &length);
@@ -2635,11 +2635,11 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
-			    (long) va_arg(argList, int)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+			    va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
 			    va_arg(argList, long)));
 		    break;
 		case 2:
@@ -2670,7 +2670,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = (int) va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(lastNum));
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':
