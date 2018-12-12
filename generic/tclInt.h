@@ -4908,6 +4908,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
 
+#if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
+#   define TclNewWideIntObjFromSize(value) Tcl_NewWideIntObj(((Tcl_WideInt)((value)+1))-1)
+#else
+#   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
+#endif
+
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */
