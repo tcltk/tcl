@@ -4909,7 +4909,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #endif   /* TCL_MEM_DEBUG */
 
 #if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
-#   define TclNewWideIntObjFromSize(value) Tcl_NewWideIntObj(((Tcl_WideInt)((value)+1))-1)
+    static inline Tcl_Obj * TclNewWideIntObjFromSize(size_t value) {
+	return Tcl_NewWideIntObj(value != ((size_t)-1) ? (Tcl_WideInt)value : -1);
+    }
 #else
 #   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
 #endif
