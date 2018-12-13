@@ -4525,6 +4525,7 @@ TEBCresume(
     {
 	int index, numIndices, fromIdx, toIdx;
 	int nocase, match, length2, cflags, s1len, s2len;
+	size_t slength;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -5246,19 +5247,19 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-	match = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+	slength = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewIntObj(objResultPtr, match);
+	TRACE(("%.20s %.20s => %" TCL_Z_MODIFIER "d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), slength));
+	objResultPtr = TclNewWideIntObjFromSize(slength);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
-	match = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
+	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, (size_t)-2);
 
-	TRACE(("%.20s %.20s => %d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewIntObj(objResultPtr, match);
+	TRACE(("%.20s %.20s => %" TCL_Z_MODIFIER "d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), slength));
+	objResultPtr = TclNewWideIntObjFromSize(slength);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_CLASS:
