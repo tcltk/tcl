@@ -3471,7 +3471,7 @@ TclStringFirst(
 	/* We don't find empty substrings.  Bizarre!
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -3480,6 +3480,10 @@ TclStringFirst(
 
 	/* Find bytes in bytes */
 	bh = TclGetByteArrayFromObj(haystack, &lh);
+	if ((lh < ln) || (start > lh - ln)) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	end = bh + lh;
 
 	try = bh + start;
@@ -3492,7 +3496,7 @@ TclStringFirst(
 	    try = memchr(try, bn[0], (end + 1 - ln) - try);
 	    if (try == NULL) {
 		/* Leading byte not found -> needle cannot be found. */
-		return -1;
+		return TCL_IO_FAILURE;
 	    }
 	    /* Leading byte found, check rest of needle. */
 	    if (0 == memcmp(try+1, bn+1, ln-1)) {
@@ -3502,7 +3506,7 @@ TclStringFirst(
 	    /* Rest of needle match failed; Iterate to continue search. */
 	    try++;
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     /*
@@ -3522,6 +3526,10 @@ TclStringFirst(
 	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
 
 	uh = TclGetUnicodeFromObj(haystack, &lh);
+	if ((lh < ln) || (start > lh - ln)) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	end = uh + lh;
 
 	for (try = uh + start; try + ln <= end; try++) {
@@ -3530,7 +3538,7 @@ TclStringFirst(
 		return (try - uh);
 	    }
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 }
 
@@ -3570,20 +3578,19 @@ TclStringLast(
 	return TCL_IO_FAILURE;
     }
 
-    lh = Tcl_GetCharLength(haystack);
-    if (last >= lh) {
-	last = lh - 1;
-    }
-
-    if (last < ln - 1) {
-	return TCL_IO_FAILURE;
-    }
-
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
 	unsigned char *try, *bh = TclGetByteArrayFromObj(haystack, &lh);
 	unsigned char *bn = TclGetByteArrayFromObj(needle, &ln);
 
+	if (last + 1 >= lh + 1) {
+	    last = lh - 1;
+	}
+	if (last + 1 < ln) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	try = bh + last + 1 - ln;
+
 	while (try >= bh) {
 	    if ((*try == bn[0])
 		    && (0 == memcmp(try+1, bn+1, ln-1))) {
@@ -3591,13 +3598,20 @@ TclStringLast(
 	    }
 	    try--;
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     {
 	Tcl_UniChar *try, *uh = TclGetUnicodeFromObj(haystack, &lh);
 	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
 
+	if (last + 1 >= lh + 1) {
+	    last = lh - 1;
+	}
+	if (last + 1 < ln) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	try = uh + last + 1 - ln;
 	while (try >= uh) {
 	    if ((*try == un[0])

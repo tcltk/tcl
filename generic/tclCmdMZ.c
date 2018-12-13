@@ -1338,6 +1338,9 @@ StringFirstCmd(
 	    return TCL_ERROR;
 	}
     }
+    if (start < -1) {
+	start = -1;
+    }
     Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringFirst(objv[1],
 	    objv[2], start)));
     return TCL_OK;
@@ -1382,6 +1385,9 @@ StringLastCmd(
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
 	}
+    }
+    if (last < -1) {
+	last = -1;
     }
     Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringLast(objv[1],
 	    objv[2], last)));
