@@ -128,7 +128,6 @@ matrix:
         - NO_DIRECT_TEST=1
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm get stable; fi
   - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
