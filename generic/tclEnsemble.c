@@ -2079,8 +2079,8 @@ TclResetRewriteEnsemble(
  *
  * TclSpellFix --
  *
- *	Record a spelling correction that needs making in the
- *	generation of the WrongNumArgs usage message.
+ *	Record a spelling correction that needs making in the generation of
+ *	the WrongNumArgs usage message.
  *
  * Results:
  *	None.
@@ -2097,9 +2097,10 @@ FreeER(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **tmp = (Tcl_Obj **)data[0];
+    Tcl_Obj **tmp = (Tcl_Obj **) data[0];
+    Tcl_Obj **store = (Tcl_Obj **) data[1];
 
-    ckfree(tmp[2]);
+    ckfree(store);
     ckfree(tmp);
     return result;
 }
@@ -2135,8 +2136,9 @@ TclSpellFix(
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
 	/*
-	 * Awful casting abuse here...
+	 * Awful casting abuse here!
 	 */
+
 	search = (Tcl_Obj *const *) search[1];
     }
 
@@ -2157,7 +2159,10 @@ TclSpellFix(
 	    return;
 	}
     } else {
-	/* Jump to the misspelled value. */
+	/*
+	 * Jump to the misspelled value.
+	 */
+
 	idx = iPtr->ensembleRewrite.numRemovedObjs + badIdx
 		- iPtr->ensembleRewrite.numInsertedObjs;
 
@@ -2170,17 +2175,25 @@ TclSpellFix(
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
-    } else {
+    }  else {
 	Tcl_Obj **tmp = ckalloc(3 * sizeof(Tcl_Obj *));
+
+	store = ckalloc(size * sizeof(Tcl_Obj *));
+	memcpy(store, iPtr->ensembleRewrite.sourceObjs,
+		size * sizeof(Tcl_Obj *));
+
+	/*
+	 * Awful casting abuse here! Note that the NULL in the first element
+	 * indicates that the initial objects are a raw array in the second
+	 * element and the rewritten ones are a raw array in the third.
+	 */
 
 	tmp[0] = NULL;
 	tmp[1] = (Tcl_Obj *) iPtr->ensembleRewrite.sourceObjs;
-	tmp[2] = (Tcl_Obj *) ckalloc(size * sizeof(Tcl_Obj *));
-	memcpy(tmp[2], tmp[1], size * sizeof(Tcl_Obj *));
-
+	tmp[2] = (Tcl_Obj *) store;
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
-	TclNRAddCallback(interp, FreeER, tmp, NULL, NULL, NULL);
-	store = (Tcl_Obj **)tmp[2];
+
+	TclNRAddCallback(interp, FreeER, tmp, store, NULL, NULL);
     }
 
     store[idx] = fix;

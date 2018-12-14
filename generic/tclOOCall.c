@@ -96,7 +96,7 @@ static void		AddClassMethodNames(Class *clsPtr, const int flags,
 			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
 			    Tcl_Obj *const namespaceName,
-			    DefineChain *const definePtr, const int flags);
+			    DefineChain *const definePtr, int flags);
 static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
@@ -2022,8 +2022,8 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *definerCls,		/* What class defines this entry. */
-    Tcl_Obj *namespaceName,	/* The name for this entry (or NULL, a
+    Class *const definerCls,		/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method

@@ -10098,7 +10098,7 @@ else
 fi
 
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip "
+        ZIP_PROG="$ac_cv_path_zip"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 $as_echo "$ZIP_PROG" >&6; }
         ZIP_PROG_OPTIONS="-rq"
@@ -10109,7 +10109,7 @@ $as_echo "Found INFO Zip in environment" >&6; }
     else
         # It is not an error if an installed version of Zip can't be located.
         # We can use the locally distributed minizip instead
-        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
         ZIP_PROG_OPTIONS="-o -r"
         ZIP_PROG_VFSSEARCH="."
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
