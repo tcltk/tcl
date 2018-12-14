@@ -382,7 +382,7 @@ CatchObjCmdCallback(
     }
 
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
@@ -1179,7 +1179,7 @@ FileAttrAccessTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_atime));
     return TCL_OK;
 }
 
@@ -1259,7 +1259,7 @@ FileAttrModifyTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_mtime));
     return TCL_OK;
 }
 
@@ -1882,7 +1882,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
     return TCL_OK;
 }
 
@@ -2278,23 +2278,23 @@ StoreStatData(
      * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
-    STORE_ARY("dev",	Tcl_NewLongObj((long)statPtr->st_dev));
+    STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
     STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-    STORE_ARY("nlink",	Tcl_NewLongObj((long)statPtr->st_nlink));
-    STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
-    STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
+    STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+    STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
+    STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
     STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ARY("blksize", Tcl_NewLongObj((long)statPtr->st_blksize));
+    STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-    STORE_ARY("atime",	Tcl_NewLongObj((long)statPtr->st_atime));
-    STORE_ARY("mtime",	Tcl_NewLongObj((long)statPtr->st_mtime));
-    STORE_ARY("ctime",	Tcl_NewLongObj((long)statPtr->st_ctime));
+    STORE_ARY("atime",	Tcl_NewWideIntObj((long)statPtr->st_atime));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj((long)statPtr->st_mtime));
+    STORE_ARY("ctime",	Tcl_NewWideIntObj((long)statPtr->st_ctime));
     mode = (unsigned short) statPtr->st_mode;
-    STORE_ARY("mode",	Tcl_NewIntObj(mode));
+    STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
 

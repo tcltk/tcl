@@ -95,6 +95,12 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_CreateMathFunc 0
 #   define Tcl_GetMathFuncInfo 0
 #   define Tcl_ListMathFuncs 0
+#   define Tcl_SetIntObj 0
+#   define Tcl_SetLongObj 0
+#   define Tcl_NewIntObj 0
+#   define Tcl_NewLongObj 0
+#   define Tcl_DbNewLongObj 0
+
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -491,6 +497,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
+#   define TclOldFreeObj 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -511,6 +518,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define TclOldFreeObj TclFreeObj
 
 static int
 seekOld(
@@ -1062,7 +1070,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    TclFreeObj, /* 30 */
+    TclOldFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */
