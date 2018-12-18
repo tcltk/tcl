@@ -1539,12 +1539,12 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
     file delete $path(script1)
     file delete $path(script2)
 
-    # Script1 is just a 20 second delay.  If the server socket
+    # Script1 is just a 5 second delay.  If the server socket
     # is inherited, it will be held open for 10 seconds
 
     set f [open $path(script1) w]
     puts $f {
-	after 20000 exit
+	after 5000 exit
 	vwait forever
     }
     close $f
@@ -1555,16 +1555,17 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
 
     set f [open $path(script2) w]
     puts $f [list set tcltest [interpreter]]
+    puts $f [list set script1 $path(script1)]
     puts -nonewline $f {
-        gets stdin port
-	set f [socket 127.0.0.1 $port]
-        exec $tcltest }
-    puts $f [list $path(script1) &]
-    puts $f {
-	puts $f testing
-	flush $f
-	after 1000 exit
-	vwait forever
+	set port [lindex $::argv 0]
+	puts "testing from [pid]: for port $port"
+	set sock [socket 127.0.0.1 $port]
+	if {$::tcl_platform(platform) eq "windows"} {set redir NUL:} else {set redir /dev/null}
+	set pid1 [exec $tcltest $script1 >& $redir &]
+	puts $sock [list "started" $pid1]
+	flush $sock
+	puts "testing end"
+	exit
     }
     close $f
 
@@ -1576,50 +1577,91 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
 	global server
 	close $server
 	fileevent $file readable [list getdata $file]
-	fconfigure $file -buffering line -blocking 0
+	fconfigure $file -buffering none -blocking 0
 	return
     }
     proc getdata { file } {
 	# Read handler on the accepted socket.
 	global x
-	global failed
+	global done
+	set data {}
 	set status [catch {read $file} data]
 	if {$status != 0} {
 	    set x {read failed, error was $data}
+	    set done -2
 	    catch { close $file }
-	} elseif {[string compare {} $data]} {
+	} elseif {$data ne ""} {
+	    if {[lindex $data 0] eq "started"} {
+		variable pid1 [lindex $data 1]
+	    }
 	} elseif {[fblocked $file]} {
 	} elseif {[eof $file]} {
-	    if {$failed} {
-		set x {client socket was inherited}
+	    fileevent $file readable {}
+	    if {$done} {
+		if {$done <= -1} {
+		    if {$x eq "none"} {set x timeout}
+		} else {
+		    set x {client socket was inherited}
+		}
 	    } else {
 		set x {client socket was not inherited}
 	    }
+	    # touch to signal end:
+	    set done $done
 	    catch { close $file }
 	} else {
 	    set x {impossible case}
 	    catch { close $file }
+	    set done -2
 	}
 	return
     }
-
-    # If the socket doesn't hit end-of-file in 10 seconds, the
-    # script1 process must have inherited the client.
-
-    set failed 0
-    after 10000 [list set failed 1]
-
-    # Launch the script2 process
-    ### exec [interpreter] script2 &
-
-    set p [open "|[list [interpreter] $path(script2)]" w]
-    puts $p [lindex [fconfigure $server -sockname] 2] ; flush $p
-
-    vwait x
-    if {!$failed} {
-	vwait failed
+    proc scriptend {p} {
+	# wait for end of p:
+	variable pid2
+	variable done
+	set time 100
+	if {![eof $p]} {
+	    if {[info command ::testisprocessrunning] eq ""
+	     || [testisprocessrunning $pid2]
+	    } {
+		return
+	    }
+	    set time 0; # process exited - notify immediately
+	}
+	fileevent $p readable {}
+	# Pipe closed - process exited, give few time (0.1s) to fulfill the end.
+	after $time [list set done 1]
+	# If the socket doesn't hit end-of-file in 0.1 seconds, the
+	# script1 process must have inherited the client.
+	close $p
     }
-    close $p
+
+    set done 0
+
+    # Launch the script2 process with port as argument
+    set port [lindex [fconfigure $server -sockname] 2]
+    set pid1 {}
+    set p [open "|[list [interpreter] $path(script2) $port]" w+]
+    set pid2 [pid $p]
+    fconfigure $p -buffering none -blocking 0
+    fileevent $p readable [list scriptend $p]
+
+    set x none
+    set tmr [after 2000 {set done -1; set x timeout}]
+    vwait done
+    if {[info command ::testisprocessrunning] ne ""} {
+    	# be sure process 2 is exited:
+	while {$done == 0 && [testisprocessrunning $pid2]} {
+	    after 10; update
+	}
+	# and process 1 is still running:
+	if {$done >= 0 && $pid1 ne "" && ![testisprocessrunning $pid1]} {
+	    set x {unexpected, process 2 exited}
+	}
+    }
+    after cancel $tmr
+    catch {close $p}
     set x
 } {client socket was not inherited}
 test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
@@ -1628,7 +1670,7 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
 
     set f [open $path(script1) w]
     puts $f {
-	after 10000 exit
+	after 1000 exit
 	vwait forever
     }
     close $f

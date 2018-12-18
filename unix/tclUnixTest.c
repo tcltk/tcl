@@ -82,6 +82,8 @@ static int		TestgotsigCmd(ClientData dummy,
 static void		AlarmHandler(int signum);
 static int		TestchmodCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
+static int		TestIsProcessRunningCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -124,6 +126,8 @@ TclplatformtestInit(
             (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
             (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testisprocessrunning", TestIsProcessRunningCmd,
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -781,5 +785,44 @@ TestchmodCmd(
 	}
 	Tcl_DStringFree(&buffer);
     }
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TestIsProcessRunningCmd --
+ *
+ *	Implements the "testisprocessrunning" cmd.  Used for testing whether
+ *	the process with given pid is running (exists).
+ *
+ * Results:
+ *	A standard Tcl boolean result (1 - if process exists, 0 - otherwise).
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+TestIsProcessRunningCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
+{
+    Tcl_WideInt pid;
+    int ret;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "pid");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &pid) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    /* first reap detached processes (to avoid hangs on half-closed handles) */
+    Tcl_ReapDetachedProcs();
+    /* now check via OS mechanisms it is really exited */
+    ret = kill((pid_t)pid, 0);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(ret == 0 ? 1 : 0));
     return TCL_OK;
 }

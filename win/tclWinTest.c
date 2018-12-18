@@ -43,6 +43,8 @@ static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static int		TestchmodCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestIsProcessRunningCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -76,6 +78,8 @@ TclplatformtestInit(
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testisprocessrunning", TestIsProcessRunningCmd,
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -761,6 +765,51 @@ TestchmodCmd(
     return TCL_OK;
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TestIsProcessRunningCmd --
+ *
+ *	Implements the "testisprocessrunning" cmd.  Used for testing whether
+ *	the process with given pid is running (exists).
+ *
+ * Results:
+ *	A standard Tcl boolean result (1 - if process exists, 0 - otherwise).
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+TestIsProcessRunningCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
+{
+    int pid;
+    HANDLE process;
+    DWORD ret = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "pid");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[1], &pid) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    /* first reap detached processes (to avoid hangs on half-closed handles) */
+    Tcl_ReapDetachedProcs();
+    /* now check via OS mechanisms it is really exited */
+    process = OpenProcess(SYNCHRONIZE, FALSE, (DWORD)pid);
+    if (process == INVALID_HANDLE_VALUE) {
+	goto end;
+    }
+    ret = WaitForSingleObject(process, 0);
+    CloseHandle(process);
+end:
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(ret == WAIT_TIMEOUT ? 1 : 0));
+    return TCL_OK;
+}
 /*
  * Local Variables:
  * mode: c
