@@ -1607,7 +1607,7 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
 		set x {client socket was not inherited}
 	    }
 	    # touch to signal end:
-	    set done $done
+	    after 0 [namespace code {set done $done}]
 	    catch { close $file }
 	} else {
 	    set x {impossible case}
@@ -1620,18 +1620,24 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
 	# wait for end of p:
 	variable pid2
 	variable done
+	variable waitcntr
 	set time 100
+	gets $p
 	if {![eof $p]} {
 	    if {[info command ::testisprocessrunning] eq ""
 	     || [testisprocessrunning $pid2]
 	    } {
+		# avoid endless event-cycle if process "hangs" before eof signaled:
+		if {[incr waitcntr] > 1000} {
+		    fileevent $p readable {}
+		}
 		return
 	    }
 	    set time 0; # process exited - notify immediately
 	}
 	fileevent $p readable {}
 	# Pipe closed - process exited, give few time (0.1s) to fulfill the end.
-	after $time [list set done 1]
+	after $time [namespace code {set done 1}]
 	# If the socket doesn't hit end-of-file in 0.1 seconds, the
 	# script1 process must have inherited the client.
 	close $p
@@ -1645,13 +1651,14 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
     set p [open "|[list [interpreter] $path(script2) $port]" w+]
     set pid2 [pid $p]
     fconfigure $p -buffering none -blocking 0
+    set waitcntr 0
     fileevent $p readable [list scriptend $p]
 
     set x none
-    set tmr [after 2000 {set done -1; set x timeout}]
+    set tmr [after 2000 [namespace code {set done -1; set x timeout}]]
     vwait done
     if {[info command ::testisprocessrunning] ne ""} {
-    	# be sure process 2 is exited:
+	# be sure process 2 is exited:
 	while {$done == 0 && [testisprocessrunning $pid2]} {
 	    after 10; update
 	}
