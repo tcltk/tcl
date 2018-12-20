@@ -4754,7 +4754,6 @@ TclZipfs_Init(
      */
 
     WriteLock();
-    /* Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init); */
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
