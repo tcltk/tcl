@@ -2505,7 +2505,7 @@ TclObjCommandComplete(
     Tcl_Obj *objPtr)		/* Points to object holding script to
 				 * check. */
 {
-    int length;
+    size_t length;
     const char *script = TclGetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);

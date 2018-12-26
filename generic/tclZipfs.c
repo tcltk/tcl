@@ -1902,7 +1902,7 @@ ZipFSMountBufferObjCmd(
 {
     const char *mountPoint;	/* Mount point path. */
     unsigned char *data;
-    int length;
+    size_t length;
 
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
@@ -1925,7 +1925,7 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = Tcl_GetByteArrayFromObj(objv[2], &length);
+    data = TclGetByteArrayFromObj(objv[2], &length);
     return TclZipfs_MountBuffer(interp, mountPoint, data, length, 1);
 }
 

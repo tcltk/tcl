@@ -3108,7 +3108,8 @@ TclpOpenTemporaryFile(
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
-    int length, counter, counter2;
+    size_t length;
+    int counter, counter2;
     Tcl_DString buf;
 
     if (!resultingNameObj) {
@@ -3130,7 +3131,7 @@ TclpOpenTemporaryFile(
 	Tcl_DStringFree(&buf);
     } else {
 	const TCHAR *baseStr = TEXT("TCL");
-	int length = 3 * sizeof(TCHAR);
+	length = 3 * sizeof(TCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;

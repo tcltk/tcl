@@ -3429,7 +3429,7 @@ GetWideForIndex(
                                  * NULL, then no error message is left after
                                  * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
+	Tcl_WideInt endValue,            /* The value to be stored at *widePtr if
                                  * objPtr holds "end".
 				 * NOTE: this value may be negative. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
@@ -3632,7 +3632,7 @@ TclGetIntForIndex(
 				 * errors. */
     Tcl_Obj *objPtr,		/* Points to an object containing either "end"
 				 * or an integer. */
-    int endValue,		/* The value to be stored at "indexPtr" if
+    size_t endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
@@ -3671,7 +3671,7 @@ TclGetIntForIndex(
 static int
 GetEndOffsetFromObj(
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_WideInt endValue,       /* The value to be stored at "indexPtr" if
+	Tcl_WideInt endValue,            /* The value to be stored at "indexPtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3681,7 +3681,7 @@ GetEndOffsetFromObj(
 
     while ((irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
-	int length;
+	size_t length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
 	if ((length < 3) || (length == 4)) {
@@ -3819,8 +3819,8 @@ int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
     Tcl_Obj *objPtr,	/* Index value to parse */
-    int before,		/* Value to return for index before beginning */
-    int after,		/* Value to return for index after end */
+    size_t before,		/* Value to return for index before beginning */
+    size_t after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
     ClientData cd;
@@ -3848,7 +3848,7 @@ TclIndexEncode(
          */
         if (wide > 0) {
             /*
-             * All end+postive or end-negative expressions
+             * All end+positive or end-negative expressions
              * always indicate "after the end".
              */
             idx = after;
@@ -3894,7 +3894,7 @@ TclIndexEncode(
 int
 TclIndexDecode(
     int encoded,	/* Value to decode */
-    int endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
     if (encoded <= TCL_INDEX_END) {
 	return (encoded - TCL_INDEX_END) + endValue;
@@ -4298,7 +4298,7 @@ int
 TclReToGlob(
     Tcl_Interp *interp,
     const char *reStr,
-    int reStrLen,
+    size_t reStrLen,
     Tcl_DString *dsPtr,
     int *exactPtr,
     int *quantifiersFoundPtr)

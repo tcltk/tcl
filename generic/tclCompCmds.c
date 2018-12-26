@@ -908,12 +908,13 @@ TclCompileConcatCmd(
 	Tcl_Obj **objs;
 	const char *bytes;
 	int len;
+	size_t slen;
 
 	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
-	bytes = TclGetStringFromObj(objPtr, &len);
-	PushLiteral(envPtr, bytes, len);
+	bytes = TclGetStringFromObj(objPtr, &slen);
+	PushLiteral(envPtr, bytes, slen);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_OK;
     }
@@ -1281,7 +1282,8 @@ TclCompileDictCreateCmd(
     Tcl_Token *tokenPtr;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     const char *bytes;
-    int i, len;
+    int i;
+    size_t len;
 
     if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -3144,7 +3146,8 @@ TclCompileFormatCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
     char *bytes, *start;
-    int i, j, len;
+    int i, j;
+    size_t len;
 
     /*
      * Don't handle any guaranteed-error cases.
