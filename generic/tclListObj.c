@@ -966,9 +966,9 @@ Tcl_ListObjReplace(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int length;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (objc == 0) {
 		return TCL_OK;
@@ -1241,7 +1241,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1346,7 +1346,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_BEFORE, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1410,7 +1410,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1658,7 +1658,7 @@ TclLsetFlat(
 	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
-	
+
 	if (result == TCL_OK) {
 
 	    /*
@@ -1883,7 +1883,7 @@ TclListObjSetElement(
  *	a list object.
  *
  * Effect
- * 
+ *
  *	Frees listPtr's List* internal representation, if no longer shared.
  *	May decrement the ref counts of element objects, which may free them.
  *

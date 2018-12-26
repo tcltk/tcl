@@ -1697,15 +1697,15 @@ Tcl_GetStringFromObj(
  *	This function is called in several configurations to provide all
  *	the tools needed to set an object's string representation. The
  *	function is determined by the arguments.
- *	
+ *
  *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes == -1)
  *	    Invalid call -- panic!
- *	
+ *
  *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
  *	    Allocation only - allocate space for (numBytes+1) chars.
  *	    store in objPtr->bytes and return. Also sets
  *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
- *	
+ *
  *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
  *	    Allocate and copy. bytes is assumed to point to chars to
  *	    copy into the string rep. objPtr->length = numBytes. Allocate

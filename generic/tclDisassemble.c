@@ -653,7 +653,7 @@ FormatInstruction(
     }
     if (suffixObj) {
 	const char *bytes;
-	int length;
+	size_t length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
 	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
