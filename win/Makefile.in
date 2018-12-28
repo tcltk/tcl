@@ -830,7 +830,8 @@ install-headers:
 	    do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(INSTALL_DATA_DIR) "$$i"; \
+		$(MKDIR) "$$i"; \
+		chmod 755 "$$i"; \
 		else true; \
 		fi; \
 	    done;
