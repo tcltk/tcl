@@ -30,8 +30,11 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
-    loadTestedCommands
-    catch [list package require -exact Tcltest [info patchlevel]]
+    catch {
+	::tcltest::loadTestedCommands
+	package require -exact Tcltest [info patchlevel]
+	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+    }
     package require tcltests
     
     testConstraint testbytestring   [llength [info commands testbytestring]]
@@ -7446,6 +7449,7 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
 test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
+    chan puts $out "catch {load $::tcltestlib Tcltest}"
     chan puts $out {
 	chan puts [testbytestring \xe2]
 	exit 1
