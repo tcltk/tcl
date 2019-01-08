@@ -962,9 +962,11 @@ test basic-48.23.$noComp {expansion: handle return codes} -constraints $constrai
 	unset res t
 } -result {0 10 1 Hejsan}
 
-test basic-48.24.$noComp {expansion: empty not canonical list, regression test, bug [cc1e91552c]} $constraints {
+test basic-48.24.$noComp {expansion: empty not canonical list, regression test, bug [cc1e91552c]} -constraints $constraints -setup {
+    unset -nocomplain a
+} -body {
     run {list [list {*}{ }] [list {*}[format %c 32]] [list {*}[set a { }]]}
-} [lrepeat 3 {}]
+} -result [lrepeat 3 {}] -cleanup {unset -nocomplain a}
 
 } ;# End of noComp loop
 
