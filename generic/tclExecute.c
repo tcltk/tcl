@@ -4963,8 +4963,12 @@ TEBCresume(
 
 	/* Every range of an empty list is an empty list */
 	if (objc == 0) {
-	    TRACE_APPEND(("\n"));
-	    NEXT_INST_F(9, 0, 0);
+	    /* avoid return of not canonical list (e. g. spaces in string repr.) */
+	    if (ListObjIsCanonical(valuePtr)) {
+		TRACE_APPEND(("\n"));
+		NEXT_INST_F(9, 0, 0);
+	    }
+	    goto emptyList;
 	}
 
 	/* Decode index value operands. */
