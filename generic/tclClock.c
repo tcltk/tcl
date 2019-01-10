@@ -17,7 +17,6 @@
 #include "tclInt.h"
 #include "tclStrIdxTree.h"
 #include "tclDate.h"
-#include "tclCompile.h"
 
 /*
  * Windows has mktime. The configurators do not check.
