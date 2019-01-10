@@ -513,63 +513,6 @@ Tcl_ContinueObjCmd(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * Tcl_EncodingObjCmd --
- *
- *	This command manipulates encodings.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_EncodingObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    int index;
-
-    static const char *const optionStrings[] = {
-	"convertfrom", "convertto", "dirs", "names", "system",
-	NULL
-    };
-    enum options {
-	ENC_CONVERTFROM, ENC_CONVERTTO, ENC_DIRS, ENC_NAMES, ENC_SYSTEM
-    };
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    switch ((enum options) index) {
-    case ENC_CONVERTTO:
-	return EncodingConverttoObjCmd(dummy, interp, objc, objv);
-    case ENC_CONVERTFROM:
-	return EncodingConvertfromObjCmd(dummy, interp, objc, objv);
-    case ENC_DIRS:
-	return EncodingDirsObjCmd(dummy, interp, objc, objv);
-    case ENC_NAMES:
-	return EncodingNamesObjCmd(dummy, interp, objc, objv);
-    case ENC_SYSTEM:
-	return EncodingSystemObjCmd(dummy, interp, objc, objv);
-    }
-    return TCL_OK;
-}
-
-/*
  *-----------------------------------------------------------------------------
  *
  * TclInitEncodingCmd --
@@ -2184,7 +2127,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
     return TCL_OK;
 }
 

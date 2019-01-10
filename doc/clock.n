@@ -462,6 +462,19 @@ If this situation occurs, the first occurrence of the time is chosen.
 (For this reason, it is wise to have the input string contain the
 time zone when converting local times.  This caveat does not apply to
 UTC times.)
+.PP
+If the interpretation of the groups yields an impossible time because
+a field is out of range, enough of that field's unit will be added to
+or subtracted from the time to bring it in range. Thus, if attempting to
+scan or format day 0 of the month, one day will be subtracted from day
+1 of the month, yielding the last day of the previous month.
+.PP
+If the interpretation of the groups yields an impossible time because
+a Daylight Saving Time change skips over that time, or an ambiguous
+time because a Daylight Saving Time change skips back so that the clock
+observes the given time twice, and no time zone specifier (\fB%z\fR
+or \fB%Z\fR) is present in the format, the time is interpreted as
+if the clock had not changed. 
 .SH "FORMAT GROUPS"
 .PP
 The following format groups are recognized by the \fBclock scan\fR and

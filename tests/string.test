@@ -225,6 +225,24 @@ test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.17 {string first, corner case} {
+    string first a aaa 4294967295
+} {0}
+test string-4.18 {string first, corner case} {
+    string first a aaa -1
+} {0}
+test string-4.19 {string first, corner case} {
+    string first a aaa end-5
+} {0}
+test string-4.20 {string last, corner case} {
+    string last a aaa 4294967295
+} {-1}
+test string-4.21 {string last, corner case} {
+    string last a aaa -1
+} {-1}
+test string-4.22 {string last, corner case} {
+    string last a aaa end-5
+} {-1}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -2015,6 +2033,12 @@ test string-29.4 {string cat, many args} {
     list $r1 $r2
 } {0 0}
 
+test string-30.1.1 {[Bug ba921a8d98]: string cat} {
+    string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]
+} hellohello
+test string-30.1.2 {[Bug ba921a8d98]: inplace cat by subst (compiled to "strcat" instruction)} {
+    set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"
+} hellohello
 
 
 # cleanup

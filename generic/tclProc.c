@@ -504,10 +504,11 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	nameLength = Tcl_NumUtfChars(Tcl_GetString(fieldValues[0]), fieldValues[0]->length);
+	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
+	nameLength = Tcl_NumUtfChars(argname, plen);
 	if (fieldCount == 2) {
-	    valueLength = Tcl_NumUtfChars(Tcl_GetString(fieldValues[1]),
-		fieldValues[1]->length);
+	    const char * value = TclGetString(fieldValues[1]);
+	    valueLength = Tcl_NumUtfChars(value, fieldValues[1]->length);
 	} else {
 	    valueLength = 0;
 	}
@@ -516,7 +517,6 @@ TclCreateProc(
 	 * Check that the formal parameter name is a scalar.
 	 */
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
 	argnamei = argname;
 	argnamelast = argname[plen-1];
 	while (plen--) {
@@ -611,7 +611,7 @@ TclCreateProc(
 		procPtr->lastLocalPtr = localPtr;
 	    }
 	    localPtr->nextPtr = NULL;
-	    localPtr->nameLength = Tcl_NumUtfChars(argname, fieldValues[0]->length);
+	    localPtr->nameLength = nameLength;
 	    localPtr->frameIndex = i;
 	    localPtr->flags = VAR_ARGUMENT;
 	    localPtr->resolveInfo = NULL;
@@ -1035,7 +1035,6 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    register Var *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, i;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
@@ -1059,23 +1058,26 @@ ProcWrongNumArgs(
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
-    defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
-    for (i=1 ; i<=numArgs ; i++, defPtr++) {
-	Tcl_Obj *argObj;
-	Tcl_Obj *namePtr = localName(framePtr, i-1);
+    if (localCt > 0) {
+	register Var *defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
 
-	if (defPtr->value.objPtr != NULL) {
-	    TclNewObj(argObj);
-	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
-	} else if (defPtr->flags & VAR_IS_ARGS) {
-	    numArgs--;
-	    final = "?arg ...?";
-	    break;
-	} else {
-	    argObj = namePtr;
-	    Tcl_IncrRefCount(namePtr);
+	for (i=1 ; i<=numArgs ; i++, defPtr++) {
+	    Tcl_Obj *argObj;
+	    Tcl_Obj *namePtr = localName(framePtr, i-1);
+
+	    if (defPtr->value.objPtr != NULL) {
+		TclNewObj(argObj);
+		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
+	    } else if (defPtr->flags & VAR_IS_ARGS) {
+		numArgs--;
+		final = "?arg ...?";
+		break;
+	    } else {
+		argObj = namePtr;
+		Tcl_IncrRefCount(namePtr);
+	    }
+	    desiredObjs[i] = argObj;
 	}
-	desiredObjs[i] = argObj;
     }
 
     Tcl_ResetResult(interp);
