@@ -220,6 +220,9 @@ static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestpurebytesobjObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestbytestringObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -570,6 +573,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
@@ -4953,6 +4957,56 @@ NoopObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpurebytesobjObjCmd --
+ *
+ *	This object-based procedure constructs a pure bytes object
+ *	without type and with internal representation containing NULL's.
+ *
+ *	If no argument supplied it returns empty object with tclEmptyStringRep,
+ *	otherwise it returns this as pure bytes object with bytes value equal 
+ *	string.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpurebytesobjObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_Obj *objPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?string?");
+	return TCL_ERROR;
+    }
+    objPtr = Tcl_NewObj();
+    /*
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    */
+    memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
+    if (objc == 2) {
+    	const char *s = Tcl_GetStringFromObj(objv[1], &objPtr->length);
+	objPtr->bytes = ckalloc(objPtr->length + 1);
+	memcpy(objPtr->bytes, s, objPtr->length);
+	objPtr->bytes[objPtr->length] = 0;
+    }
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
