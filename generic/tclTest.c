@@ -227,6 +227,9 @@ static int		TestasyncCmd(void *dummy,
 static int		TestbytestringObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestpurebytesobjObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TeststringbytesObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -247,8 +250,8 @@ static int		TestdelCmd(void *dummy,
 static int		TestdelassocdataCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestdoubledigitsObjCmd(void *dummy,
-					       Tcl_Interp* interp,
-					       int objc, Tcl_Obj* const objv[]);
+			    Tcl_Interp* interp, int objc,
+			    Tcl_Obj* const objv[]);
 static int		TestdstringCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestencodingObjCmd(void *dummy,
@@ -579,6 +582,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
@@ -2096,7 +2100,7 @@ TestevalexObjCmd(
 
     flags = 0;
     if (objc == 3) {
-	const char *global = Tcl_GetStringFromObj(objv[2], &length);
+	const char *global = Tcl_GetString(objv[2]);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", NULL);
@@ -4932,6 +4936,57 @@ TeststringbytesObjCmd(
     }
     p = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(p, n));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpurebytesobjObjCmd --
+ *
+ *	This object-based procedure constructs a pure bytes object
+ *	without type and with internal representation containing NULL's.
+ *
+ *	If no argument supplied it returns empty object with tclEmptyStringRep,
+ *	otherwise it returns this as pure bytes object with bytes value equal
+ *	string.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpurebytesobjObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_Obj *objPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?string?");
+	return TCL_ERROR;
+    }
+    objPtr = Tcl_NewObj();
+    /*
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    */
+    memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
+    if (objc == 2) {
+	const char *s = Tcl_GetString(objv[1]);
+	objPtr->length = objv[1]->length;
+	objPtr->bytes = ckalloc(objPtr->length + 1);
+	memcpy(objPtr->bytes, s, objPtr->length);
+	objPtr->bytes[objPtr->length] = 0;
+    }
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
