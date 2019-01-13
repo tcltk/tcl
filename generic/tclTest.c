@@ -2085,7 +2085,7 @@ TestevalexObjCmd(
 
     flags = 0;
     if (objc == 3) {
-	const char *global = Tcl_GetStringFromObj(objv[2], &length);
+	const char *global = Tcl_GetString(objv[2]);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", NULL);
@@ -5001,7 +5001,8 @@ TestpurebytesobjObjCmd(
     */
     memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
     if (objc == 2) {
-    	const char *s = Tcl_GetStringFromObj(objv[1], &objPtr->length);
+	const char *s = Tcl_GetString(objv[1]);
+	objPtr->length = objv[1]->length;
 	objPtr->bytes = ckalloc(objPtr->length + 1);
 	memcpy(objPtr->bytes, s, objPtr->length);
 	objPtr->bytes[objPtr->length] = 0;
