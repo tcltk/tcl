@@ -1454,7 +1454,7 @@ CompileExprObj(
      */
 
     ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
-    
+
     if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
@@ -4964,7 +4964,7 @@ TEBCresume(
 	/* Every range of an empty list is an empty list */
 	if (objc == 0) {
 	    /* avoid return of not canonical list (e. g. spaces in string repr.) */
-	    if (ListObjIsCanonical(valuePtr)) {
+	    if (!valuePtr->bytes || !valuePtr->bytes[0]) {
 		TRACE_APPEND(("\n"));
 		NEXT_INST_F(9, 0, 0);
 	    }

@@ -572,7 +572,7 @@ TestplatformChmod(
      */
 
     if (set_readOnly == acl_readOnly_found || SetNamedSecurityInfoA(
-	    (LPSTR) nativePath, SE_FILE_OBJECT, 
+	    (LPSTR) nativePath, SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION /*| PROTECTED_DACL_SECURITY_INFORMATION*/,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
