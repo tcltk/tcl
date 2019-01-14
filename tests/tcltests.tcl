@@ -9,3 +9,5 @@ testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [
     expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
+
+package provide tcltests 0.1
