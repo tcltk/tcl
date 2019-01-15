@@ -3426,11 +3426,11 @@ TclFormatInt(
 static int
 GetWideForIndex(
     Tcl_Interp *interp,         /* Interpreter to use for error reporting. If
-                                 * NULL, then no error message is left after
-                                 * errors. */
+				 * NULL, then no error message is left after
+				 * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-	Tcl_WideInt endValue,            /* The value to be stored at *widePtr if
-                                 * objPtr holds "end".
+    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
+				 * objPtr holds "end".
 				 * NOTE: this value may be negative. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
                                  * representing an index. */
@@ -3639,7 +3639,10 @@ TclGetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+    /* Use platform-related size_t to wide-int to consider negative value 
+     * ((size_t)-1) if wide-int and size_t have different dimensions. */
+    if (GetWideForIndex(interp, objPtr, TclWideIntFromSize(endValue),
+	   &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (wide < INT_MIN) {
@@ -3670,11 +3673,11 @@ TclGetIntForIndex(
 
 static int
 GetEndOffsetFromObj(
-    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-	Tcl_WideInt endValue,            /* The value to be stored at "indexPtr" if
-                                 * "objPtr" holds "end". */
-    Tcl_WideInt *widePtr)       /* Location filled in with an integer
-                                 * representing an index. */
+    Tcl_Obj *objPtr,		/* Pointer to the object to parse */
+    Tcl_WideInt endValue,	/* The value to be stored at "indexPtr" if
+				 * "objPtr" holds "end". */
+    Tcl_WideInt *widePtr)	/* Location filled in with an integer
+				 * representing an index. */
 {
     Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
