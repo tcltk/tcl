@@ -2512,7 +2512,7 @@ typedef struct List {
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= INT_MIN \
+	    && (objPtr)->internalRep.wideValue >= -1 \
 	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
 	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
@@ -4175,9 +4175,8 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           (-2)
-#define TCL_INDEX_BEFORE        (-1)
+#define TCL_INDEX_NONE          (-1) /* Index out of range or END+1 */
 #define TCL_INDEX_START         (0)
-#define TCL_INDEX_AFTER         (INT_MAX)
 
 /*
  *----------------------------------------------------------------

@@ -4973,16 +4973,7 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	/*
-	assert ( toIdx != TCL_INDEX_AFTER);
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (toIdx == TCL_INDEX_AFTER) {
-	    toIdx = TCL_INDEX_END;
-	}
-
-	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
+	if (toIdx == TCL_INDEX_NONE) {
 	emptyList:
 	    objResultPtr = Tcl_NewObj();
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
@@ -4997,11 +4988,11 @@ TEBCresume(
 
 	assert ( toIdx >= 0 && toIdx < objc);
 	/*
-	assert ( fromIdx != TCL_INDEX_BEFORE );
+	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_BEFORE) {
+	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = TCL_INDEX_START;
 	}
 
@@ -5288,16 +5279,12 @@ TEBCresume(
 	/* Decode index operands. */
 
 	/*
-	assert ( toIdx != TCL_INDEX_BEFORE );
-	assert ( toIdx != TCL_INDEX_AFTER);
+	assert ( toIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (toIdx == TCL_INDEX_BEFORE) {
+	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyRange;
-	}
-	if (toIdx == TCL_INDEX_AFTER) {
-	    toIdx = TCL_INDEX_END;
 	}
 
 	toIdx = TclIndexDecode(toIdx, length - 1);
@@ -5310,16 +5297,12 @@ TEBCresume(
 	assert ( toIdx >= 0 && toIdx < length );
 
 	/*
-	assert ( fromIdx != TCL_INDEX_BEFORE );
-	assert ( fromIdx != TCL_INDEX_AFTER);
+	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_BEFORE) {
+	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = TCL_INDEX_START;
-	}
-	if (fromIdx == TCL_INDEX_AFTER) {
-	    goto emptyRange;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, length - 1);
