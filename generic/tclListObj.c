@@ -1346,7 +1346,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_BEFORE, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_NONE, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
