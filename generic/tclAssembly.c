@@ -2260,7 +2260,7 @@ GetListIndexOperand(
      * when list size limits grow.
      */
     status = TclIndexEncode(interp, value,
-	    TCL_INDEX_BEFORE,TCL_INDEX_BEFORE, result);
+	    TCL_INDEX_NONE,TCL_INDEX_NONE, result);
 
     Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
