@@ -154,7 +154,7 @@ declare 32 {
 #}
 declare 34 {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t endValue, int *indexPtr)
+	    size_t endValue, size_t *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {

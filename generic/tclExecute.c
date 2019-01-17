@@ -4560,7 +4560,7 @@ TEBCresume(
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& (NULL == Tcl_FetchIntRep(value2Ptr, &tclListType))
-		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
+		&& (TclGetIntForIndexM2(NULL, value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
 	    tosPtr--;
@@ -4764,7 +4764,7 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	if (toIdx == TCL_INDEX_NONE) {
+	if (toIdx == (int)TCL_INDEX_NONE) {
 	emptyList:
 	    objResultPtr = Tcl_NewObj();
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
@@ -4783,8 +4783,8 @@ TEBCresume(
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
+	if (fromIdx == (int)TCL_INDEX_NONE) {
+	    fromIdx = (int)TCL_INDEX_START;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
@@ -4994,7 +4994,7 @@ TEBCresume(
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
-	if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
+	if (TclGetIntForIndexM2(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -5034,9 +5034,9 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
+	if (TclGetIntForIndexM2(interp, OBJ_UNDER_TOS, slength,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
+	    || TclGetIntForIndexM2(interp, OBJ_AT_TOS, slength,
 		    &toIdx) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5076,7 +5076,7 @@ TEBCresume(
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (toIdx == TCL_INDEX_NONE) {
+	if (toIdx == (int)TCL_INDEX_NONE) {
 	    goto emptyRange;
 	}
 
@@ -5094,8 +5094,8 @@ TEBCresume(
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
+	if (fromIdx == (int)TCL_INDEX_NONE) {
+	    fromIdx = (int)TCL_INDEX_START;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, slength - 1);
@@ -5123,9 +5123,9 @@ TEBCresume(
 	slength = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
+	if (TclGetIntForIndexM2(interp, OBJ_UNDER_TOS, slength,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
+	    || TclGetIntForIndexM2(interp, OBJ_AT_TOS, slength,
 		    &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
@@ -5236,16 +5236,16 @@ TEBCresume(
     case INST_STR_FIND:
 	slength = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %" TCL_Z_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), slength));
+	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
 	objResultPtr = TclNewWideIntObjFromSize(slength);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
 	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, (size_t)-2);
 
-	TRACE(("%.20s %.20s => %" TCL_Z_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), slength));
+	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
 	objResultPtr = TclNewWideIntObjFromSize(slength);
 	NEXT_INST_F(1, 2, 1);
 

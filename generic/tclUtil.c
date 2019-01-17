@@ -3634,6 +3634,35 @@ TclGetIntForIndex(
 				 * or an integer. */
     size_t endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
+    size_t *indexPtr)		/* Location filled in with an integer
+				 * representing an index. */
+{
+    Tcl_WideInt wide;
+
+    /* Use platform-related size_t to wide-int to consider negative value
+     * ((size_t)-1) if wide-int and size_t have different dimensions. */
+    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    if (wide < 0) {
+	*indexPtr = TCL_INDEX_NONE;
+    } else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
+	*indexPtr = TCL_INDEX_END;
+    } else {
+	*indexPtr = (size_t) wide;
+    }
+    return TCL_OK;
+}
+
+int
+TclGetIntForIndex2(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    Tcl_Obj *objPtr,		/* Points to an object containing either "end"
+				 * or an integer. */
+    size_t endValue,		/* The value to be stored at "indexPtr" if
+				 * "objPtr" holds "end". */
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
@@ -3641,8 +3670,7 @@ TclGetIntForIndex(
 
     /* Use platform-related size_t to wide-int to consider negative value 
      * ((size_t)-1) if wide-int and size_t have different dimensions. */
-    if (GetWideForIndex(interp, objPtr, TclWideIntFromSize(endValue),
-	   &wide) == TCL_ERROR) {
+    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (wide < 0) {
@@ -3828,7 +3856,7 @@ TclIndexEncode(
         /* We parsed a value in the range WIDE_MIN...WIDE_MAX */
 	wide = (*(Tcl_WideInt *)cd);
     integerEncode:
-        if (wide < TCL_INDEX_START) {
+        if (wide < 0) {
             /* All negative absolute indices are "before the beginning" */
             idx = before;
         } else if (wide >= INT_MAX) {
@@ -3848,13 +3876,13 @@ TclIndexEncode(
              * All end+positive or end-negative expressions
              * always indicate "after the end".
              */
-            idx = after;
-        } else if (wide < INT_MIN - TCL_INDEX_END) {
+            idx = (int) after;
+        } else if (wide < INT_MIN - (int) TCL_INDEX_END) {
             /* These indices always indicate "before the beginning */
-            idx = before;
+            idx = (int) before;
         } else {
             /* Encoded end-positive (or end+negative) are offset */
-            idx = (int)wide + TCL_INDEX_END;
+            idx = (int) wide + (int) TCL_INDEX_END;
         }
 
     /* TODO: Consider flag to suppress repeated end-offset parse. */
@@ -3888,15 +3916,15 @@ TclIndexEncode(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclIndexDecode(
     int encoded,	/* Value to decode */
     size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded <= TCL_INDEX_END) {
-	return (encoded - TCL_INDEX_END) + endValue;
+    if (encoded <= (int)TCL_INDEX_END) {
+	return endValue + encoded - TCL_INDEX_END;
     }
-    return encoded;
+    return (size_t) encoded;
 }
 
 /*
