@@ -2449,8 +2449,18 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= -1 \
 	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
-	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    ? ((*(idxPtr) = (size_t)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+/* TODO: Eliminate TclGetIntForIndex2() and TclGetIntForIndex2() usage everywhere */
+MODULE_SCOPE int TclGetIntForIndex2(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, size_t endValue,
+				int *indexPtr);
+#define TclGetIntForIndexM2(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue >= -1 \
+	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
+	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    : TclGetIntForIndex2((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
  * Macro used to save a function call for common uses of
@@ -4095,12 +4105,12 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t before, size_t after, int *indexPtr);
-MODULE_SCOPE int	TclIndexDecode(int encoded, size_t endValue);
+MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
-#define TCL_INDEX_END           (-2)
-#define TCL_INDEX_NONE          (-1) /* Index out of range or END+1 */
-#define TCL_INDEX_START         (0)
+#define TCL_INDEX_END           ((size_t)-2)
+#define TCL_INDEX_NONE          ((size_t)-1) /* Index out of range or END+1 */
+#define TCL_INDEX_START         ((size_t)0)
 
 /*
  *----------------------------------------------------------------

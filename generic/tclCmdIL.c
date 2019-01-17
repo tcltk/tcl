@@ -35,7 +35,7 @@ typedef struct SortElement {
     } collationKey;
     union {			/* Object being sorted, or its index. */
 	Tcl_Obj *objPtr;
-	int index;
+	size_t index;
     } payload;
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
 				 * of list. */
@@ -2438,7 +2438,7 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, &index);
+    result = TclGetIntForIndexM2(interp, objv[2], /*end*/ len, &index);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2686,13 +2686,13 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndexM2(interp, objv[2], /*endValue*/ listLen - 1,
 	    &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndexM2(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
     if (result != TCL_OK) {
 	return result;
@@ -2855,12 +2855,12 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
+    result = TclGetIntForIndexM2(interp, objv[2], /*end*/ listLen-1, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
+    result = TclGetIntForIndexM2(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3245,7 +3245,7 @@ Tcl_LsearchObjCmd(
 			TCL_INDEX_NONE, &encoded) != TCL_OK) {
 		    result = TCL_ERROR;
 		}
-		if (encoded == TCL_INDEX_NONE) {
+		if (encoded == (int)TCL_INDEX_NONE) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indices[j])));
@@ -3374,7 +3374,7 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM(interp, startPtr, listc-1, &start);
+	result = TclGetIntForIndexM2(interp, startPtr, listc-1, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}
@@ -3595,8 +3595,7 @@ Tcl_LsearchObjCmd(
 			if (noCase) {
 			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
-			    match = (memcmp(bytes, patternBytes,
-				    (size_t) length) == 0);
+			    match = (memcmp(bytes, patternBytes, length) == 0);
 			}
 		    }
 		    break;
@@ -3682,7 +3681,7 @@ Tcl_LsearchObjCmd(
 
 		itemPtr = Tcl_NewWideIntObj(i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
+		    Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
 			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3704,7 +3703,7 @@ Tcl_LsearchObjCmd(
 
 	    itemPtr = Tcl_NewWideIntObj(index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
+		Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
 			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
@@ -3962,7 +3961,7 @@ Tcl_LsortObjCmd(
 		int result = TclIndexEncode(interp, indexv[j],
 			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
 
-		if ((result == TCL_OK) && (encoded == TCL_INDEX_NONE)) {
+		if ((result == TCL_OK) && (encoded == (int)TCL_INDEX_NONE)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indexv[j])));
@@ -4290,7 +4289,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = Tcl_NewWideIntObj(elementPtr->payload.index);
+		objPtr = TclNewWideIntObjFromSize(elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
