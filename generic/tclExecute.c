@@ -4523,9 +4523,9 @@ TEBCresume(
      */
 
     {
-	int index, numIndices, fromIdx, toIdx;
+	int numIndices;
 	int nocase, match, length2, cflags, s1len, s2len;
-	size_t slength;
+	size_t index, slength, fromIdx, toIdx;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -4560,7 +4560,7 @@ TEBCresume(
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& (NULL == Tcl_FetchIntRep(value2Ptr, &tclListType))
-		&& (TclGetIntForIndexM2(NULL, value2Ptr, objc-1,
+		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
 	    tosPtr--;
@@ -4608,7 +4608,7 @@ TEBCresume(
 	pcAdjustment = 5;
 
     lindexFastPath:
-	if (index >= 0 && index < objc) {
+	if (index < (size_t)objc) {
 	    objResultPtr = objv[index];
 	} else {
 	    TclNewObj(objResultPtr);
@@ -4764,27 +4764,27 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	if (toIdx == (int)TCL_INDEX_NONE) {
+	if (toIdx == TCL_INDEX_NONE) {
 	emptyList:
 	    objResultPtr = Tcl_NewObj();
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
 	toIdx = TclIndexDecode(toIdx, objc - 1);
-	if (toIdx < 0) {
+	if ((int)toIdx < 0) {
 	    goto emptyList;
-	} else if (toIdx >= objc) {
+	} else if (toIdx + 1 >= (size_t)objc + 1) {
 	    toIdx = objc - 1;
 	}
 
-	assert ( toIdx >= 0 && toIdx < objc);
+	assert (toIdx < (size_t)objc);
 	/*
 	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == (int)TCL_INDEX_NONE) {
-	    fromIdx = (int)TCL_INDEX_START;
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
@@ -4994,12 +4994,12 @@ TEBCresume(
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
-	if (TclGetIntForIndexM2(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
+	if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
-	if ((index < 0) || (index >= (int)slength)) {
+	if (index >= slength) {
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
@@ -5034,21 +5034,21 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
-	if (TclGetIntForIndexM2(interp, OBJ_UNDER_TOS, slength,
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM2(interp, OBJ_AT_TOS, slength,
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
 		    &toIdx) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
-	if (fromIdx < 0) {
-	    fromIdx = 0;
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
 	}
-	if (toIdx >= (int)slength) {
+	if (toIdx + 1 >= slength + 1) {
 	    toIdx = slength;
 	}
-	if (toIdx >= fromIdx) {
+	if (toIdx + 1 >= fromIdx + 1) {
 	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	} else {
 	    TclNewObj(objResultPtr);
@@ -5061,7 +5061,7 @@ TEBCresume(
 	fromIdx = TclGetInt4AtPtr(pc+1);
 	toIdx = TclGetInt4AtPtr(pc+5);
 	slength = Tcl_GetCharLength(valuePtr);
-	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
+	TRACE(("\"%.20s\" %" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d => ", O2S(valuePtr), TclWideIntFromSize(fromIdx), TclWideIntFromSize(toIdx)));
 
 	/* Every range of an empty value is an empty value */
 	if (slength == 0) {
@@ -5076,34 +5076,34 @@ TEBCresume(
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (toIdx == (int)TCL_INDEX_NONE) {
+	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyRange;
 	}
 
 	toIdx = TclIndexDecode(toIdx, slength - 1);
-	if (toIdx < 0) {
+	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyRange;
-	} else if (toIdx >= (int)slength) {
+	} else if (toIdx >= slength) {
 	    toIdx = slength - 1;
 	}
 
-	assert ( toIdx >= 0 && (size_t)toIdx < slength );
+	assert ( toIdx != TCL_INDEX_NONE && toIdx < slength );
 
 	/*
 	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == (int)TCL_INDEX_NONE) {
-	    fromIdx = (int)TCL_INDEX_START;
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, slength - 1);
-	if (fromIdx < 0) {
-	    fromIdx = 0;
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
 	}
 
-	if (fromIdx <= toIdx) {
+	if (fromIdx + 1 <= toIdx + 1) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	} else {
 	emptyRange:
@@ -5123,9 +5123,9 @@ TEBCresume(
 	slength = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM2(interp, OBJ_UNDER_TOS, slength,
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM2(interp, OBJ_AT_TOS, slength,
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
 		    &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
@@ -5136,23 +5136,23 @@ TEBCresume(
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 
-	if ((toIdx < 0) ||
-		(fromIdx > (int)slength) ||
-		(toIdx < fromIdx)) {
+	if ((toIdx == TCL_INDEX_NONE) ||
+		(fromIdx + 1 > slength + 1) ||
+		(toIdx + 1 < fromIdx + 1)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	if (fromIdx < 0) {
-	    fromIdx = 0;
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
 	}
 
-	if (toIdx > (int)slength) {
+	if (toIdx + 1 > slength + 1) {
 	    toIdx = slength;
 	}
 
-	if (fromIdx == 0 && toIdx == (int)slength) {
+	if ((fromIdx == TCL_INDEX_START) && (toIdx == slength)) {
 	    TclDecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = value3Ptr;
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
