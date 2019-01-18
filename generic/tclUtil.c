@@ -4159,10 +4159,14 @@ TclIndexDecode(
     int encoded,	/* Value to decode */
     int endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded <= TCL_INDEX_END) {
-	return (encoded - TCL_INDEX_END) + endValue;
+    if (encoded > TCL_INDEX_END) {
+	return encoded;
     }
-    return encoded;
+    endValue += encoded - TCL_INDEX_END;
+    if (endValue >= 0) {
+	return endValue;
+    }
+    return TCL_INDEX_NONE;
 }
 
 /*
