@@ -3888,15 +3888,18 @@ TclIndexEncode(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclIndexDecode(
     int encoded,	/* Value to decode */
     size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded <= TCL_INDEX_END) {
-	return (encoded - TCL_INDEX_END) + endValue;
+    if (encoded > TCL_INDEX_END) {
+	return encoded;
     }
-    return encoded;
+    if (endValue >= TCL_INDEX_END - (size_t)encoded) {
+	return endValue + encoded - TCL_INDEX_END;
+    }
+    return TCL_INDEX_NONE;
 }
 
 /*
