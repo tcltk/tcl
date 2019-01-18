@@ -3682,7 +3682,7 @@ Tcl_LsearchObjCmd(
 
 		itemPtr = Tcl_NewWideIntObj(i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
+		    Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
 			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3704,7 +3704,7 @@ Tcl_LsearchObjCmd(
 
 	    itemPtr = Tcl_NewWideIntObj(index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
+		Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
 			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
@@ -4722,9 +4722,16 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-		    "element %d missing from sublist \"%s\"",
-		    index, TclGetString(objPtr)));
+	    if (index == TCL_INDEX_NONE) {
+		index = TCL_INDEX_END - infoPtr->indexv[i];
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element end-%d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    } else {
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element %d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
