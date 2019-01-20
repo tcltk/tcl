@@ -3640,7 +3640,7 @@ TclGetIntForIndex(
     Tcl_WideInt wide;
 
     /* Use platform-related size_t to wide-int to consider negative value
-     * ((size_t)-1) if wide-int and size_t have different dimensions. */
+     * TCL_INDEX_NONE if wide-int and size_t have different dimensions. */
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -3650,35 +3650,6 @@ TclGetIntForIndex(
 	*indexPtr = TCL_INDEX_END;
     } else {
 	*indexPtr = (size_t) wide;
-    }
-    return TCL_OK;
-}
-
-int
-TclGetIntForIndex2(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
-				 * NULL, then no error message is left after
-				 * errors. */
-    Tcl_Obj *objPtr,		/* Points to an object containing either "end"
-				 * or an integer. */
-    size_t endValue,		/* The value to be stored at "indexPtr" if
-				 * "objPtr" holds "end". */
-    int *indexPtr)		/* Location filled in with an integer
-				 * representing an index. */
-{
-    Tcl_WideInt wide;
-
-    /* Use platform-related size_t to wide-int to consider negative value 
-     * ((size_t)-1) if wide-int and size_t have different dimensions. */
-    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    if (wide < 0) {
-	*indexPtr = -1;
-    } else if (wide > INT_MAX) {
-	*indexPtr = INT_MAX;
-    } else {
-	*indexPtr = (int) wide;
     }
     return TCL_OK;
 }
@@ -3772,7 +3743,7 @@ GetEndOffsetFromObj(
 
     offset = irPtr->wideValue;
 
-    if (endValue == (size_t)-1) {
+    if (endValue == TCL_INDEX_NONE) {
         *widePtr = offset - 1;
     } else if (offset < 0) {
         /* Different signs, sum cannot overflow */
@@ -3921,10 +3892,13 @@ TclIndexDecode(
     int encoded,	/* Value to decode */
     size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded <= (int)TCL_INDEX_END) {
+    if (encoded > (int)TCL_INDEX_END) {
+	return encoded;
+    }
+    if (endValue >= TCL_INDEX_END - encoded) {
 	return endValue + encoded - TCL_INDEX_END;
     }
-    return (size_t) encoded;
+    return TCL_INDEX_NONE;
 }
 
 /*

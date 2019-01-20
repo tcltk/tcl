@@ -536,9 +536,10 @@ Tcl_ListObjGetElements(
     ListGetIntRep(listPtr, listRepPtr);
 
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
@@ -659,9 +660,10 @@ Tcl_ListObjAppendElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
@@ -833,9 +835,10 @@ Tcl_ListObjIndex(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
@@ -889,9 +892,10 @@ Tcl_ListObjLength(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *intPtr = 0;
 	    return TCL_OK;
@@ -1777,9 +1781,10 @@ TclListObjSetElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
@@ -2013,7 +2018,8 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
-	int estCount, length;
+	int estCount;
+	size_t length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
 	/*

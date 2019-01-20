@@ -4771,7 +4771,7 @@ TEBCresume(
 	    NEXT_INST_F(9, 1, 1);
 	}
 	toIdx = TclIndexDecode(toIdx, objc - 1);
-	if ((int)toIdx < 0) {
+	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
 	} else if (toIdx + 1 >= (size_t)objc + 1) {
 	    toIdx = objc - 1;
@@ -5242,7 +5242,7 @@ TEBCresume(
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
-	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, (size_t)-2);
+	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, TCL_INDEX_END);
 
 	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));

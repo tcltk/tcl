@@ -539,7 +539,7 @@ TclFSCwdPointerEquals(
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
     } else {
-	int len1, len2;
+	size_t len1, len2;
 	const char *str1, *str2;
 
 	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
@@ -1203,7 +1203,7 @@ FsAddMountsToGlobResult(
 	}
 	if (!found && dir) {
 	    Tcl_Obj *norm;
-	    int len, mlen;
+	    size_t len, mlen;
 
 	    /*
 	     * We know mElt is absolute normalized and lies inside pathPtr, so
@@ -1390,7 +1390,7 @@ TclFSNormalizeToUniquePath(
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
-    int i;
+    size_t i;
     int isVfsPath = 0;
     char *path;
 
@@ -1403,7 +1403,7 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = Tcl_GetStringFromObj(pathPtr, &i);
+    path = TclGetStringFromObj(pathPtr, &i);
 
     if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
 		    || (path[0] == '\\' && path[1] == '\\') ) ) {

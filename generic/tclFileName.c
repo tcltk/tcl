@@ -386,8 +386,7 @@ TclpGetNativePathType(
     Tcl_Obj **driveNameRef)
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
-    int pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetString(pathPtr);
 
     if (path[0] == '~') {
 	/*
@@ -557,7 +556,8 @@ Tcl_SplitPath(
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
-    int i, size, len;
+    int i;
+    size_t size, len;
     char *p;
     const char *str;
 
@@ -977,7 +977,8 @@ Tcl_JoinPath(
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    int i, len;
+    int i;
+    size_t len;
     Tcl_Obj *listObj = Tcl_NewObj();
     Tcl_Obj *resultObj;
     const char *resultStr;
@@ -1250,7 +1251,7 @@ Tcl_GlobObjCmd(
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    string = TclGetStringFromObj(objv[i], &length);
+	    string = TclGetString(objv[i]);
 	    if (string[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -1356,7 +1357,7 @@ Tcl_GlobObjCmd(
     }
 
     if (dir == PATH_GENERAL) {
-	int pathlength;
+	size_t pathlength;
 	const char *last;
 	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
 
@@ -1982,7 +1983,7 @@ TclGlob(
     if (globFlags & TCL_GLOBMODE_TAILS) {
 	int objc, i;
 	Tcl_Obj **objv;
-	int prefixLen;
+	size_t prefixLen;
 	const char *pre;
 
 	/*
@@ -2010,7 +2011,7 @@ TclGlob(
 
 	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
-	    int len;
+	    size_t len;
 	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
@@ -2359,7 +2360,7 @@ DoGlob(
 		    Tcl_ListObjLength(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
-			int numBytes;
+			size_t numBytes;
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
@@ -2446,7 +2447,7 @@ DoGlob(
 		 * The current prefix must end in a separator.
 		 */
 
-		int len;
+		size_t len;
 		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if (strchr(separators, joined[len-1]) == NULL) {
@@ -2483,7 +2484,7 @@ DoGlob(
 	     * This behaviour is not currently tested for in the test suite.
 	     */
 
-	    int len;
+	    size_t len;
 	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 	    if (strchr(separators, joined[len-1]) == NULL) {

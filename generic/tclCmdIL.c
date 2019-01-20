@@ -2420,7 +2420,8 @@ Tcl_LinsertObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    int index, len, result;
+    size_t index;
+    int len, result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
@@ -2438,11 +2439,11 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndexM2(interp, objv[2], /*end*/ len, &index);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, &index);
     if (result != TCL_OK) {
 	return result;
     }
-    if (index > len) {
+    if (index + 1 > (size_t)len + 1) {
 	index = len;
     }
 
@@ -2456,7 +2457,7 @@ Tcl_LinsertObjCmd(
 	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
-    if ((objc == 4) && (index == len)) {
+    if ((objc == 4) && (index == (size_t)len)) {
 	/*
 	 * Special case: insert one element at the end of the list.
 	 */
@@ -2674,7 +2675,8 @@ Tcl_LrangeObjCmd(
     register Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    int listLen, first, last, result;
+    int listLen, result;
+    size_t first, last;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
@@ -2686,13 +2688,13 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM2(interp, objv[2], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
 	    &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM2(interp, objv[3], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
     if (result != TCL_OK) {
 	return result;
@@ -2836,7 +2838,8 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Tcl_Obj *listPtr;
-    int first, last, listLen, numToDelete, result;
+    size_t first, last;
+    int listLen, numToDelete, result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2855,27 +2858,26 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndexM2(interp, objv[2], /*end*/ listLen-1, &first);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM2(interp, objv[3], /*end*/ listLen-1, &last);
+    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
     }
 
-    if (first < 0) {
+    if (first == TCL_INDEX_NONE) {
 	first = 0;
-    }
-    if (first > listLen) {
+    } else if (first > (size_t)listLen) {
 	first = listLen;
     }
 
-    if (last >= listLen) {
+    if (last + 1 > (size_t)listLen) {
 	last = listLen - 1;
     }
-    if (first <= last) {
+    if (first + 1 <= last + 1) {
 	numToDelete = last - first + 1;
     } else {
 	numToDelete = 0;
@@ -3017,9 +3019,9 @@ Tcl_LsearchObjCmd(
 {
     const char *bytes, *patternBytes;
     int i, match, index, result=TCL_OK, listc, bisect;
-    size_t length = 0, elemLen;
+    size_t length = 0, elemLen, start;
     int allocatedIndexVector = 0;
-    int dataType, isIncreasing, lower, upper, start, groupSize, groupOffset;
+    int dataType, isIncreasing, lower, upper, groupSize, groupOffset;
     Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
@@ -3374,12 +3376,12 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM2(interp, startPtr, listc-1, &start);
+	result = TclGetIntForIndexM(interp, startPtr, listc-1, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}
-	if (start < 0) {
-	    start = 0;
+	if (start == TCL_INDEX_NONE) {
+	    start = TCL_INDEX_START;
 	}
 
 	/*
@@ -3387,7 +3389,7 @@ Tcl_LsearchObjCmd(
 	 * "did not match anything at all" result straight away. [Bug 1374778]
 	 */
 
-	if (start > listc-1) {
+	if (start >= (size_t)listc) {
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
@@ -4705,7 +4707,8 @@ SelectObjFromSublist(
      */
 
     for (i=0 ; i<infoPtr->indexc ; i++) {
-	int listLen, index;
+	int listLen;
+	int index;
 	Tcl_Obj *currentObj;
 
 	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
@@ -4721,9 +4724,16 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-		    "element %d missing from sublist \"%s\"",
-		    index, TclGetString(objPtr)));
+	    if (index == (int)TCL_INDEX_NONE) {
+		index = TCL_INDEX_END - infoPtr->indexv[i];
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element end-%d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    } else {
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element %d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
