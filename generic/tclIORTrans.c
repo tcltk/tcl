@@ -89,8 +89,8 @@ static const Tcl_ChannelType tclRTransformType = {
 
 typedef struct {
     unsigned char *buf;		/* Reference to the buffer area. */
-    int allocated;		/* Allocated size of the buffer area. */
-    int used;			/* Number of bytes in the buffer,
+    size_t allocated;		/* Allocated size of the buffer area. */
+    size_t used;			/* Number of bytes in the buffer,
 				 * <= allocated. */
 } ResultBuffer;
 
@@ -270,7 +270,7 @@ struct ForwardParamTransform {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* I: Bytes to transform,
 				 * O: Bytes in transform result */
-    int size;			/* I: #bytes to transform,
+    size_t size;		/* I: #bytes to transform,
 				 * O: #bytes in the transform result */
 };
 struct ForwardParamLimit {
@@ -2590,7 +2590,7 @@ ForwardProc(
 
 	if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = -1;
+	    paramPtr->transform.size = TCL_AUTO_LENGTH;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2624,7 +2624,7 @@ ForwardProc(
 
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = -1;
+	    paramPtr->transform.size = TCL_AUTO_LENGTH;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2654,7 +2654,7 @@ ForwardProc(
     case ForwardedDrain:
 	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = -1;
+	    paramPtr->transform.size = TCL_AUTO_LENGTH;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2680,7 +2680,7 @@ ForwardProc(
     case ForwardedFlush:
 	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = -1;
+	    paramPtr->transform.size = TCL_AUTO_LENGTH;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -3037,7 +3037,7 @@ ResultCopy(
 	 */
 
 	copied = 0;
-    } else if (rPtr->used == toRead) {
+    } else if (rPtr->used == (size_t)toRead) {
 	/*
 	 * We have just enough. Copy everything to the caller.
 	 */
@@ -3045,7 +3045,7 @@ ResultCopy(
 	memcpy(buf, rPtr->buf, toRead);
 	rPtr->used = 0;
 	copied = toRead;
-    } else if (rPtr->used > toRead) {
+    } else if (rPtr->used > (size_t)toRead) {
 	/*
 	 * The internal buffer contains more than requested. Copy the
 	 * requested subset to the caller, and shift the remaining bytes down.

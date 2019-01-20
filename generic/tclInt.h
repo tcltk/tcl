@@ -2434,7 +2434,7 @@ typedef struct List {
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(LONG_MIN) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX))	\
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX)) \
 	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 #endif
@@ -2442,25 +2442,15 @@ typedef struct List {
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(INT_MIN) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX))	\
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= -1 \
-	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
-	    ? ((*(idxPtr) = (size_t)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
+	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
+	    ? (size_t)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
-/* TODO: Eliminate TclGetIntForIndex2() and TclGetIntForIndex2() usage everywhere */
-MODULE_SCOPE int TclGetIntForIndex2(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, size_t endValue,
-				int *indexPtr);
-#define TclGetIntForIndexM2(interp, objPtr, endValue, idxPtr) \
-    (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= -1 \
-	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
-	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
-	    : TclGetIntForIndex2((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
  * Macro used to save a function call for common uses of
@@ -4912,10 +4902,10 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
 
-/* 
- * Macros to convert size_t to wide-int (and wide-int object) considering 
- * platform-related negative value ((size_t)-1), if wide-int and size_t 
- * have different dimensions (e. g. 32-bit platform). 
+/*
+ * Macros to convert size_t to wide-int (and wide-int object) considering
+ * platform-related negative value ((size_t)-1), if wide-int and size_t
+ * have different dimensions (e. g. 32-bit platform).
  */
 
 #if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)

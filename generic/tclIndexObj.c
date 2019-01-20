@@ -634,7 +634,8 @@ PrefixAllObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t, length, elemLength;
+    int tableObjc, result, t;
+    size_t length, elemLength;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -691,7 +692,8 @@ PrefixLongestObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, i, t, length, elemLength, resultLength;
+    int tableObjc, result, t;
+    size_t i, length, elemLength, resultLength;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 

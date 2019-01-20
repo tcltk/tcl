@@ -3075,8 +3075,8 @@ ZipFSListObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	int n;
-	char *what = Tcl_GetStringFromObj(objv[1], &n);
+	size_t n;
+	char *what = TclGetStringFromObj(objv[1], &n);
 
 	if ((n >= 2) && (strncmp(what, "-glob", n) == 0)) {
 	    pattern = Tcl_GetString(objv[2]);
@@ -4045,13 +4045,11 @@ ZipFSOpenFileChannelProc(
     int mode,
     int permissions)
 {
-    int len;
-
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return NULL;
     }
-    return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len), mode,
+    return ZipChannelOpen(interp, TclGetString(pathPtr), mode,
 	    permissions);
 }
 
@@ -4077,13 +4075,12 @@ ZipFSStatProc(
     Tcl_Obj *pathPtr,
     Tcl_StatBuf *buf)
 {
-    int len;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-    return ZipEntryStat(Tcl_GetStringFromObj(pathPtr, &len), buf);
+    return ZipEntryStat(TclGetString(pathPtr), buf);
 }
 
 /*
@@ -4108,13 +4105,11 @@ ZipFSAccessProc(
     Tcl_Obj *pathPtr,
     int mode)
 {
-    int len;
-
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-    return ZipEntryAccess(Tcl_GetStringFromObj(pathPtr, &len), mode);
+    return ZipEntryAccess(TclGetString(pathPtr), mode);
 }
 
 /*
@@ -4173,8 +4168,8 @@ ZipFSMatchInDirectoryProc(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    int scnt, l, dirOnly = -1, prefixLen, strip = 0;
-    size_t len;
+    int scnt, l, dirOnly = -1, strip = 0;
+    size_t len, prefixLen;
     char *pat, *prefix, *path;
     Tcl_DString dsPref;
 
@@ -4189,7 +4184,7 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
+    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
@@ -4493,7 +4488,7 @@ ZipFSFileAttrsGetProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
-    int len, ret = TCL_OK;
+    int ret = TCL_OK;
     char *path;
     ZipEntry *z;
 
@@ -4501,7 +4496,7 @@ ZipFSFileAttrsGetProc(
     if (!pathPtr) {
 	return -1;
     }
-    path = Tcl_GetStringFromObj(pathPtr, &len);
+    path = Tcl_GetString(pathPtr);
     ReadLock();
     z = ZipFSLookup(path);
     if (!z) {
