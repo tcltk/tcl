@@ -523,14 +523,14 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	@mkdir -p ${TCL_VFS_PATH}
 	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
 	@( \
-	  $(LN) -t ${TCL_VFS_PATH}/ $$(find $(TOP_DIR)/library/* -maxdepth 0 -type f) && \
+	  $(LN) $$(find $(TOP_DIR)/library/* -maxdepth 0 -type f) ${TCL_VFS_PATH}/ && \
 	  (for D in $$(find $(TOP_DIR)/library/* -maxdepth 0 -type d); do \
 	    mkdir -p "${TCL_VFS_PATH}/$$(basename $$D)"; \
-	    $(LN) -st ${TCL_VFS_PATH}/$$(basename $$D) $$D/*; \
+	    $(LN) -s $$D/* ${TCL_VFS_PATH}/$$(basename $$D)/; \
 	  done) && \
 	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
-	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde && \
-	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg \
+	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
+	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg/ \
 	) || ( \
 	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
