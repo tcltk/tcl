@@ -1830,7 +1830,7 @@ TclIncrObj(
 	return TCL_ERROR;
     }
 
-    if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
+    if ((type1 == TCL_NUMBER_INT) && (type2 == TCL_NUMBER_INT)) {
 	Tcl_WideInt w1, w2, sum;
 
 	w1 = *((const Tcl_WideInt *)ptr1);
@@ -7888,7 +7888,7 @@ ExecuteExtendedBinaryMathOp(
 
 		return constants[0];
 	    }
-	    if (type2 != TCL_NUMBER_BIG) {
+	    if (type2 == TCL_NUMBER_INT) {
 		Tcl_WideInt wQuotient, wRemainder;
 		w2 = *((const Tcl_WideInt *)ptr2);
 		wQuotient = w1 / w2;
@@ -8010,7 +8010,7 @@ ExecuteExtendedBinaryMathOp(
 	     * Handle shifts within the native wide range.
 	     */
 
-	    if ((type1 != TCL_NUMBER_BIG)
+	    if ((type1 == TCL_NUMBER_INT)
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		w1 = *((const Tcl_WideInt *)ptr1);
 		if (!((w1>0 ? w1 : ~w1)
@@ -8076,16 +8076,7 @@ ExecuteExtendedBinaryMathOp(
 	if (opcode == INST_LSHIFT) {
 	    mp_mul_2d(&big1, shift, &bigResult);
 	} else {
-	    mp_init(&bigRemainder);
-	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_isneg(&bigRemainder)) {
-		/*
-		 * Convert to Tcl's integer division rules.
-		 */
-
-		mp_sub_d(&bigResult, 1, &bigResult);
-	    }
-	    mp_clear(&bigRemainder);
+	    mp_tc_div_2d(&big1, shift, &bigResult);
 	}
 	mp_clear(&big1);
 	BIG_RESULT(&bigResult);
@@ -8094,7 +8085,7 @@ ExecuteExtendedBinaryMathOp(
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND:
-	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
+	if ((type1 != TCL_NUMBER_INT) || (type2 != TCL_NUMBER_INT)) {
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
@@ -8473,7 +8464,7 @@ ExecuteExtendedBinaryMathOp(
 #endif
 	    DOUBLE_RESULT(dResult);
 	}
-	if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
+	if ((type1 == TCL_NUMBER_INT) && (type2 == TCL_NUMBER_INT)) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    w2 = *((const Tcl_WideInt *)ptr2);
 
