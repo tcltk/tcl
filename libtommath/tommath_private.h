@@ -7,8 +7,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef TOMMATH_PRIV_H_
 #define TOMMATH_PRIV_H_
