@@ -7,8 +7,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef BN_H_
 #define BN_H_
@@ -18,7 +17,7 @@
 #include <stdint.h>
 #include <limits.h>
 
-#include <tommath_class.h>
+#include "tommath_class.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,6 +114,7 @@ typedef mp_digit mp_min_u32;
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
+#define MP_ITER       -4  /* Max. iterations reached */
 
 #define MP_YES        1   /* yes response */
 #define MP_NO         0   /* no response */
@@ -201,6 +201,9 @@ void mp_zero(mp_int *a);
 /* set to a digit */
 void mp_set(mp_int *a, mp_digit b);
 
+/* set a double */
+int mp_set_double(mp_int *a, double b);
+
 /* set a 32-bit const */
 int mp_set_int(mp_int *a, unsigned long b);
 
@@ -209,6 +212,9 @@ int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
 int mp_set_long_long(mp_int *a, unsigned long long b);
+
+/* get a double */
+double mp_get_double(const mp_int *a);
 
 /* get a 32-bit value */
 unsigned long mp_get_int(const mp_int *a);
@@ -271,8 +277,10 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 int mp_rand(mp_int *a, int digits);
+/* makes a pseudo-random small int of a given size */
+int mp_rand_digit(mp_digit *r);
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
 /* as last resort we will fall back to libtomcrypt's rng_get_bytes()
@@ -291,6 +299,11 @@ int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a AND b */
 int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* Checks the bit at position b and returns MP_YES
+   if the bit is 1, MP_NO if it is 0 and MP_VAL
+   in case of error */
+int mp_get_bit(const mp_int *a, int b);
 
 /* c = a XOR b (two complement) */
 int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c);
@@ -411,6 +424,9 @@ int mp_is_square(const mp_int *arg, int *ret);
 /* computes the jacobi c = (a | n) (or Legendre if b is prime)  */
 int mp_jacobi(const mp_int *a, const mp_int *n, int *c);
 
+/* computes the Kronecker symbol c = (a | p) (like jacobi() but with {a,p} in Z */
+int mp_kronecker(const mp_int *a, const mp_int *p, int *c);
+
 /* used to setup the Barrett reduction for a given modulus b */
 int mp_reduce_setup(mp_int *a, const mp_int *b);
 
@@ -492,10 +508,27 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
  */
 int mp_prime_rabin_miller_trials(int size);
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs one strong Lucas-Selfridge test of "a".
+ * Sets result to 0 if composite or 1 if probable prime
+ */
+int mp_prime_strong_lucas_selfridge(const mp_int *a, int *result);
+
+/* performs one Frobenius test of "a" as described by Paul Underwood.
+ * Sets result to 0 if composite or 1 if probable prime
+ */
+int mp_prime_frobenius_underwood(const mp_int *N, int *result);
+
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */

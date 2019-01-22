@@ -9,25 +9,31 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 
 static const struct {
    int k, t;
 } sizes[] = {
-   {   128,    28 },
+   {    80,    -1 }, /* Use deterministic algorithm for size <= 80 bits */
+   {    81,    39 },
+   {    96,    37 },
+   {   128,    32 },
+   {   160,    27 },
+   {   192,    21 },
    {   256,    16 },
    {   384,    10 },
    {   512,     7 },
    {   640,     6 },
    {   768,     5 },
    {   896,     4 },
-   {  1024,     4 }
+   {  1024,     4 },
+   {  2048,     2 },
+   {  4096,     1 },
 };
 
-/* returns # of RM trials required for a given bit size */
+/* returns # of RM trials required for a given bit size and max. error of 2^(-96)*/
 int mp_prime_rabin_miller_trials(int size)
 {
    int x;

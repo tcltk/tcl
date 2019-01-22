@@ -1,32 +1,15 @@
 #!/bin/bash
 
-bash genlist.sh > tmplist
+./helper.pl --update-makefiles || exit 1
 
-perl filter.pl makefile tmplist
-sed -e 's/ *$//' < tmp.delme > makefile
-rm -f tmp.delme
+makefiles=(makefile makefile.shared makefile_include.mk makefile.msvc makefile.unix makefile.mingw)
+vcproj=(libtommath_VS2008.vcproj)
 
-perl filter.pl makefile.icc tmplist
-sed -e 's/ *$//' < tmp.delme > makefile.icc
-rm -f tmp.delme
+if [ $# -eq 1 ] && [ "$1" == "-c" ]; then
+  git add ${makefiles[@]} ${vcproj[@]} && git commit -m 'Update makefiles'
+fi
 
-perl filter.pl makefile.shared tmplist
-sed -e 's/ *$//' < tmp.delme > makefile.shared
-rm -f tmp.delme
-
-perl filter.pl makefile.cygwin_dll tmplist
-sed -e 's/ *$//' < tmp.delme > makefile.cygwin_dll
-rm -f tmp.delme
-
-perl filter.pl makefile.bcc tmplist
-sed -e 's/\.o /.obj /g' -e 's/ *$//' < tmp.delme > makefile.bcc
-rm -f tmp.delme
-
-perl filter.pl makefile.msvc tmplist
-sed -e 's/\.o /.obj /g' -e 's/ *$//' < tmp.delme > makefile.msvc
-rm -f tmp.delme
-
-rm -f tmplist
+exit 0
 
 # ref:         $Format:%D$
 # git commit:  $Format:%H$
