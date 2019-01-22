@@ -157,7 +157,7 @@ TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 			  package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde];\
 			  package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]
 TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
-			  $(TEST_LOAD_PRMS)			  
+			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
