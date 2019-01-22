@@ -108,6 +108,7 @@
 #define mp_sub TclBN_mp_sub
 #define mp_sub_d TclBN_mp_sub_d
 #define mp_tc_and TclBN_mp_tc_and
+#define mp_tc_div_2d TclBN_mp_tc_div_2d
 #define mp_tc_or TclBN_mp_tc_or
 #define mp_tc_xor TclBN_mp_tc_xor
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
@@ -337,6 +338,8 @@ EXTERN int		TclBN_mp_tc_or(const mp_int *a, const mp_int *b,
 /* 75 */
 EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 				mp_int *c);
+/* 76 */
+EXTERN int		TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -418,6 +421,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
     int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
+    int (*tclBN_mp_tc_div_2d) (const mp_int *a, int b, mp_int *c); /* 76 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -584,6 +588,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_tc_or) /* 74 */
 #define TclBN_mp_tc_xor \
 	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
+#define TclBN_mp_tc_div_2d \
+	(tclTomMathStubsPtr->tclBN_mp_tc_div_2d) /* 76 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
