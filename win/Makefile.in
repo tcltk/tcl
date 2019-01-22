@@ -418,6 +418,9 @@ TOMMATH_OBJS = \
 	bn_mp_sqrt.${OBJEXT} \
 	bn_mp_sub.${OBJEXT} \
 	bn_mp_sub_d.${OBJEXT} \
+	bn_mp_tc_and.${OBJEXT} \
+	bn_mp_tc_or.${OBJEXT} \
+	bn_mp_tc_xor.${OBJEXT} \
 	bn_mp_to_unsigned_bin.${OBJEXT} \
 	bn_mp_to_unsigned_bin_n.${OBJEXT} \
 	bn_mp_toom_mul.${OBJEXT} \

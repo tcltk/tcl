@@ -254,6 +254,17 @@ declare 72 {
     unsigned long TclBN_mp_get_int(const mp_int *a)
 }
 
+# Added in libtommath 1.1.0
+declare 73 {
+    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 74 {
+    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 75 {
+    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
+}
+
 # Local Variables:
 # mode: tcl
 # End:

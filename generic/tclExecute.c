@@ -1833,8 +1833,8 @@ TclIncrObj(
     if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	Tcl_WideInt w1, w2, sum;
 
-	TclGetWideIntFromObj(NULL, valuePtr, &w1);
-	TclGetWideIntFromObj(NULL, incrPtr, &w2);
+	w1 = *((const Tcl_WideInt *)ptr1);
+	w2 = *((const Tcl_WideInt *)ptr2);
 	sum = w1 + w2;
 
 	/*
@@ -7854,7 +7854,7 @@ ExecuteExtendedBinaryMathOp(
     Tcl_WideInt w1, w2, wResult;
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
-    int invalid, numPos, zero;
+    int invalid, zero;
     long shift;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
@@ -7890,7 +7890,7 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	    if (type2 != TCL_NUMBER_BIG) {
 		Tcl_WideInt wQuotient, wRemainder;
-		Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+		w2 = *((const Tcl_WideInt *)ptr2);
 		wQuotient = w1 / w2;
 
 		/*
@@ -8012,7 +8012,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    if ((type1 != TCL_NUMBER_BIG)
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
-		TclGetWideIntFromObj(NULL, valuePtr, &w1);
+		w1 = *((const Tcl_WideInt *)ptr1);
 		if (!((w1>0 ? w1 : ~w1)
 			& -(((Tcl_WideInt)1)
 			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
@@ -8095,138 +8095,22 @@ ExecuteExtendedBinaryMathOp(
     case INST_BITXOR:
     case INST_BITAND:
 	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
-	    mp_int *First, *Second;
-
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
-	    /*
-	     * Count how many positive arguments we have. If only one of the
-	     * arguments is negative, store it in 'Second'.
-	     */
-
-	    if (!mp_isneg(&big1)) {
-		numPos = 1 + !mp_isneg(&big2);
-		First = &big1;
-		Second = &big2;
-	    } else {
-		First = &big2;
-		Second = &big1;
-		numPos = (!mp_isneg(First));
-	    }
 	    mp_init(&bigResult);
 
 	    switch (opcode) {
 	    case INST_BITAND:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_and(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1))
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(First, &bigResult, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_or(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_tc_and(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_or(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(Second, &bigResult, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_and(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_tc_or(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITXOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P^N = ~(P^~N) = -(P^(-N-1))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a ^ b = (~a ^ ~b) = (-a-1^-b-1)
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		}
+		mp_tc_xor(&big1, &big2, &bigResult);
 		break;
 	    }
 
@@ -8235,26 +8119,6 @@ ExecuteExtendedBinaryMathOp(
 	    BIG_RESULT(&bigResult);
 	}
 
-	if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT)) {
-	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
-	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
-
-	    switch (opcode) {
-	    case INST_BITAND:
-		wResult = w1 & w2;
-		break;
-	    case INST_BITOR:
-		wResult = w1 | w2;
-		break;
-	    case INST_BITXOR:
-		wResult = w1 ^ w2;
-		break;
-	    default:
-		/* Unused, here to silence compiler warning. */
-		wResult = 0;
-	    }
-	    WIDE_RESULT(wResult);
-	}
 	w1 = *((const Tcl_WideInt *)ptr1);
 	w2 = *((const Tcl_WideInt *)ptr2);
 
@@ -8610,8 +8474,8 @@ ExecuteExtendedBinaryMathOp(
 	    DOUBLE_RESULT(dResult);
 	}
 	if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
-	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
-	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
 
 	    switch (opcode) {
 	    case INST_ADD:
