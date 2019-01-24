@@ -1954,7 +1954,8 @@ AddRequirementsToResult(
 				 * available. */
 {
     Tcl_Obj *result = Tcl_GetObjResult(interp);
-    int i, length;
+    int i;
+    size_t length;
 
     for (i = 0; i < reqc; i++) {
 	const char *v = TclGetStringFromObj(reqv[i], &length);

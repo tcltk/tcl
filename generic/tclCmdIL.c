@@ -541,7 +541,7 @@ InfoBodyCmd(
     register Interp *iPtr = (Interp *) interp;
     const char *name, *bytes;
     Proc *procPtr;
-    int numBytes;
+    size_t numBytes;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "procname");
@@ -566,7 +566,7 @@ InfoBodyCmd(
      * the object do not invalidate the internal rep.
      */
 
-    bytes = Tcl_GetStringFromObj(procPtr->bodyPtr, &numBytes);
+    bytes = TclGetStringFromObj(procPtr->bodyPtr, &numBytes);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(bytes, numBytes));
     return TCL_OK;
 }

@@ -248,7 +248,7 @@ TclOO_Class_CreateNs(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName, *nsName;
-    int len;
+    size_t len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a

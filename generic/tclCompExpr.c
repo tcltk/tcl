@@ -2478,9 +2478,9 @@ CompileExprTree(
 
 		    if (TclHasStringRep(objPtr)) {
 			Tcl_Obj *tableValue;
-			int numBytes;
+			size_t numBytes;
 			const char *bytes
-				= Tcl_GetStringFromObj(objPtr, &numBytes);
+				= TclGetStringFromObj(objPtr, &numBytes);
 
 			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, index);

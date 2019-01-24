@@ -467,7 +467,7 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    int length;
+	    size_t length;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -488,7 +488,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length < 0) {
+	    if (length == (size_t)-1) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -753,7 +753,8 @@ StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
     int mask)			/* Not used. */
 {
-    int code, length;
+    int code;
+    size_t length;
     InteractiveState *isPtr = clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -765,7 +766,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}
