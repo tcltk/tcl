@@ -689,7 +689,7 @@ TclOOUnknownDefinition(
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    int soughtLen;
+    size_t soughtLen;
     const char *soughtStr, *matchedStr = NULL;
 
     if (objc < 2) {
@@ -762,7 +762,7 @@ FindCommand(
     Tcl_Obj *stringObj,
     Tcl_Namespace *const namespacePtr)
 {
-    int length;
+    size_t length;
     const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
     register Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
@@ -1514,7 +1514,7 @@ TclOODefineConstructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    int bodyLength;
+    size_t bodyLength;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arguments body");
@@ -1725,7 +1725,7 @@ TclOODefineDestructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    int bodyLength;
+    size_t bodyLength;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "body");

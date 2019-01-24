@@ -3639,7 +3639,7 @@ TclGetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    /* Use platform-related size_t to wide-int to consider negative value 
+    /* Use platform-related size_t to wide-int to consider negative value
      * ((size_t)-1) if wide-int and size_t have different dimensions. */
     if (GetWideForIndex(interp, objPtr, TclWideIntFromSize(endValue),
 	   &wide) == TCL_ERROR) {

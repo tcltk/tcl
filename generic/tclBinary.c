@@ -927,7 +927,7 @@ BinaryFormatCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_ALL) {
-		Tcl_GetByteArrayFromObj(objv[arg], &count);
+		TclGetByteArrayFromObj(objv[arg], &count);
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
@@ -1091,7 +1091,7 @@ BinaryFormatCmd(
 	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
 	    unsigned char *bytes;
 
-	    bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
+	    bytes = TclGetByteArrayFromObj(objv[arg++], &length);
 
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1404,7 +1404,7 @@ BinaryScanCmd(
     }
     numberCachePtr = &numberCacheHash;
     Tcl_InitHashTable(numberCachePtr, TCL_ONE_WORD_KEYS);
-    buffer = Tcl_GetByteArrayFromObj(objv[1], &length);
+    buffer = TclGetByteArrayFromObj(objv[1], &length);
     format = TclGetString(objv[2]);
     arg = 3;
     offset = 0;
@@ -2453,7 +2453,7 @@ BinaryEncodeHex(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetByteArrayFromObj(objv[1], &count);
+    data = TclGetByteArrayFromObj(objv[1], &count);
     cursor = Tcl_SetByteArrayLength(resultObj, count * 2);
     for (offset = 0; offset < count; ++offset) {
 	*cursor++ = HexDigits[((data[offset] >> 4) & 0x0f)];
@@ -2648,7 +2648,7 @@ BinaryEncode64(
     }
 
     resultObj = Tcl_NewObj();
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    data = TclGetByteArrayFromObj(objv[objc-1], &count);
     if (count > 0) {
 	size = (((count * 4) / 3) + 3) & ~3; /* ensure 4 byte chunks */
 	if (maxlen > 0 && size > maxlen) {
@@ -2746,7 +2746,7 @@ BinaryEncodeUu(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = Tcl_GetByteArrayFromObj(objv[i+1], &wrapcharlen);
+	    wrapchar = TclGetByteArrayFromObj(objv[i+1], &wrapcharlen);
 	    break;
 	}
     }
@@ -2758,7 +2758,7 @@ BinaryEncodeUu(
 
     resultObj = Tcl_NewObj();
     offset = 0;
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    data = TclGetByteArrayFromObj(objv[objc-1], &count);
     rawLength = (lineLength - 1) * 3 / 4;
     start = cursor = Tcl_SetByteArrayLength(resultObj,
 	    (lineLength + wrapcharlen) *
