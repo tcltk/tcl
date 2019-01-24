@@ -1091,8 +1091,8 @@ BinaryFormatCmd(
 	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
 	    unsigned char *bytes;
 
-	    bytes = TclGetByteArrayFromObj(objv[arg++], &length);
-
+	    bytes = TclGetByteArrayFromObj(objv[arg], &length);
+	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
 	    } else if (count == BINARY_NOCOUNT) {
