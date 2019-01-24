@@ -1457,7 +1457,7 @@ Tcl_GlobObjCmd(
 	globTypes->macCreator = NULL;
 
 	while (--length >= 0) {
-	    int len;
+	    size_t len;
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
@@ -1515,9 +1515,10 @@ Tcl_GlobObjCmd(
 
 	    } else {
 		Tcl_Obj *item;
+		int llen;
 
-		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK)
-			&& (len == 3)) {
+		if ((Tcl_ListObjLength(NULL, look, &llen) == TCL_OK)
+			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", Tcl_GetString(item))) {
 			Tcl_ListObjIndex(interp, look, 1, &item);
