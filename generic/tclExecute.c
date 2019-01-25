@@ -7793,6 +7793,91 @@ FinalizeOONextFilter(
 }
 
 /*
+ * WidePwrSmallExpon --
+ *
+ * Helper to calculate small powers of integers whose result is wide.
+ */
+static inline Tcl_WideInt
+WidePwrSmallExpon(Tcl_WideInt w1, Tcl_WideInt exponent) {
+
+    Tcl_WideInt wResult;
+
+    wResult = w1 * w1;		/* b**2 */
+    switch (exponent) {
+    case 2:
+	break;
+    case 3:
+	wResult *= w1;		/* b**3 */
+	break;
+    case 4:
+	wResult *= wResult;	/* b**4 */
+	break;
+    case 5:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	break;
+    case 6:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	break;
+    case 7:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	break;
+    case 8:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	break;
+    case 9:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	wResult *= w1;		/* b**9 */
+	break;
+    case 10:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	wResult *= wResult;	/* b**10 */
+	break;
+    case 11:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	wResult *= wResult;	/* b**10 */
+	wResult *= w1;		/* b**11 */
+	break;
+    case 12:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= wResult;	/* b**12 */
+	break;
+    case 13:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= wResult;	/* b**12 */
+	wResult *= w1;		/* b**13 */
+	break;
+    case 14:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	wResult *= wResult;	/* b**14 */
+	break;
+    case 15:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	wResult *= wResult;	/* b**14 */
+	wResult *= w1;		/* b**15 */
+	break;
+    case 16:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	wResult *= wResult;	/* b**16 */
+	break;
+    }
+    return wResult;
+}
+/*
  *----------------------------------------------------------------------
  *
  * ExecuteExtendedBinaryMathOp, ExecuteExtendedUnaryMathOp --
@@ -8143,7 +8228,7 @@ ExecuteExtendedBinaryMathOp(
 	    dResult = pow(d1, d2);
 	    goto doubleResult;
 	}
-	w2 = 0;
+	w1 = w2 = 0; /* to silence compiler warning (maybe-uninitialized) */
 	if (type2 == TCL_NUMBER_INT) {
 	    w2 = *((const Tcl_WideInt *) ptr2);
 	    if (w2 == 0) {
@@ -8159,28 +8244,21 @@ ExecuteExtendedBinaryMathOp(
 
 		return NULL;
 	    }
-	}
 
-	switch (type2) {
-	case TCL_NUMBER_INT:
-	    w2 = *((const Tcl_WideInt *)ptr2);
 	    negativeExponent = (w2 < 0);
 	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
-	    break;
-	case TCL_NUMBER_BIG:
+	} else {
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
-	    break;
 	}
 
 	if (type1 == TCL_NUMBER_INT) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
-	}
-	if (negativeExponent) {
-	    if (type1 == TCL_NUMBER_INT) {
+
+	    if (negativeExponent) {
 		switch (w1) {
 		case 0:
 		    /*
@@ -8201,17 +8279,21 @@ ExecuteExtendedBinaryMathOp(
 		    return constants[1];
 		}
 	    }
+	}
+	if (negativeExponent) {
 
 	    /*
 	     * Integers with magnitude greater than 1 raise to a negative
 	     * power yield the answer zero (see TIP 123).
 	     */
-
 	    return constants[0];
 	}
 
-	if (type1 == TCL_NUMBER_INT) {
-	    switch (w1) {
+	if (type1 != TCL_NUMBER_INT) {
+	    goto overflowExpon;
+	}
+
+	switch (w1) {
 	    case 0:
 		/*
 		 * Zero to a positive power is zero.
@@ -8229,7 +8311,6 @@ ExecuteExtendedBinaryMathOp(
 		    return constants[1];
 		}
 		WIDE_RESULT(-1);
-	    }
 	}
 
 	/*
@@ -8247,33 +8328,29 @@ ExecuteExtendedBinaryMathOp(
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
-	if (type1 == TCL_NUMBER_INT) {
-	    if (w1 == 2) {
-		/*
-		 * Reduce small powers of 2 to shifts.
-		 */
+	/* From here (up to overflowExpon) w1 and exponent w2 are wide-int's. */
+	assert(type1 == TCL_NUMBER_INT && type2 == TCL_NUMBER_INT);
 
-		if ((Tcl_WideUInt) w2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
-		    WIDE_RESULT(((Tcl_WideInt) 1) << (int)w2);
-		}
-		goto overflowExpon;
+	if (w1 == 2) {
+	    /*
+	     * Reduce small powers of 2 to shifts.
+	     */
+
+	    if ((Tcl_WideUInt) w2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
+		WIDE_RESULT(((Tcl_WideInt) 1) << (int)w2);
 	    }
-	    if (w1 == -2) {
-		int signum = oddExponent ? -1 : 1;
-
-		/*
-		 * Reduce small powers of 2 to shifts.
-		 */
-
-		if ((Tcl_WideUInt)w2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
-		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
-		}
-		goto overflowExpon;
-	    }
+	    goto overflowExpon;
 	}
-	if (type1 == TCL_NUMBER_INT) {
-	    w1 = *((const Tcl_WideInt *) ptr1);
-	} else {
+	if (w1 == -2) {
+	    int signum = oddExponent ? -1 : 1;
+
+	    /*
+	     * Reduce small powers of 2 to shifts.
+	     */
+
+	    if ((Tcl_WideUInt)w2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
+		WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
+	    }
 	    goto overflowExpon;
 	}
 	if (w2 - 2 < (long)MaxBase64Size
@@ -8282,80 +8359,8 @@ ExecuteExtendedBinaryMathOp(
 	    /*
 	     * Small powers of integers whose result is wide.
 	     */
+	    wResult = WidePwrSmallExpon(w1, w2);
 
-	    wResult = w1 * w1;		/* b**2 */
-	    switch (w2) {
-	    case 2:
-		break;
-	    case 3:
-		wResult *= w1;		/* b**3 */
-		break;
-	    case 4:
-		wResult *= wResult;	/* b**4 */
-		break;
-	    case 5:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		break;
-	    case 6:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		break;
-	    case 7:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		break;
-	    case 8:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		break;
-	    case 9:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		wResult *= w1;		/* b**9 */
-		break;
-	    case 10:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		wResult *= wResult;	/* b**10 */
-		break;
-	    case 11:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		wResult *= wResult;	/* b**10 */
-		wResult *= w1;		/* b**11 */
-		break;
-	    case 12:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= wResult;	/* b**12 */
-		break;
-	    case 13:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= wResult;	/* b**12 */
-		wResult *= w1;		/* b**13 */
-		break;
-	    case 14:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		wResult *= wResult;	/* b**14 */
-		break;
-	    case 15:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		wResult *= wResult;	/* b**14 */
-		wResult *= w1;		/* b**15 */
-		break;
-	    case 16:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		wResult *= wResult;	/* b**16 */
-		break;
-	    }
 	    WIDE_RESULT(wResult);
 	}
 
