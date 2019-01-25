@@ -2801,7 +2801,7 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %V */
     {CTOKT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.iso8601Week), NULL},
     /* %z %Z */
-    {CTOKT_INT, NULL, 0, 0, 0, 0, 0,
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_TimeZone_Proc, NULL},
     /* %g */
     {CTOKT_INT, "0", 2, 0, 0, 100, TclOffset(DateFormat, date.iso8601Year), NULL},
@@ -2818,7 +2818,7 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %t */
     {CTOKT_CHAR, "\t", 0, 0, 0, 0, 0, NULL},
     /* %Q */
-    {CTOKT_INT, NULL, 0, 0, 0, 0, 0,
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_StarDate_Proc, NULL},
 };
 static const char *FmtSTokenMapAliasIndex[2] = {
@@ -2830,7 +2830,7 @@ static const char *FmtETokenMapIndex =
     "Eys";
 static ClockFormatTokenMap FmtETokenMap[] = {
     /* %EE */
-    {CTOKT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.era),
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_LocaleERA_Proc, NULL},
     /* %Ey %EC */
     {CTOKT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
