@@ -247,7 +247,7 @@ _witoaw(
     if (!width) width++;
     /* check resp. recalculate width (regarding sign) */
     width--;
-    if (val <= 10000000000L) {
+    if (val <= -10000000000L) {
 	Tcl_WideInt val2;
 	val2 = val / 10000000000L;
 	while (width <= 9 && val2 <= -wrange[width]) {
