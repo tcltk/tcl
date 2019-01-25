@@ -85,6 +85,9 @@ endif
 ifeq ($(PLATFORM), Darwin)
 CFLAGS += -Wno-nullability-completeness
 endif
+ifeq ($(PLATFORM), CYGWIN)
+LIBTOOLFLAGS += -no-undefined
+endif
 
 ifeq ($(PLATFORM),FreeBSD)
   _ARCH := $(shell sysctl -b hw.machine_arch)
