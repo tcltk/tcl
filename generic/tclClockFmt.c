@@ -2810,7 +2810,7 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %j */
     {CTOKT_INT, "0", 3, 0, 0, 0, TclOffset(DateFormat, date.dayOfYear), NULL},
     /* %J */
-    {CTOKT_WIDE, "0", 1, 0, 0, 0, TclOffset(DateFormat, date.julianDay), NULL},
+    {CTOKT_WIDE, "0", 7, 0, 0, 0, TclOffset(DateFormat, date.julianDay), NULL},
     /* %s */
     {CTOKT_WIDE, "0", 1, 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
     /* %n */
