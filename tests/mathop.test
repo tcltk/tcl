@@ -1236,9 +1236,11 @@ test mathop-25.32 { exp operator } {expr {[set res [TestOp ** -$big -2.0]]   >  
 test mathop-25.33 { exp operator } {expr {[set res [TestOp ** -$big -3.0]]   > -1 && $res < 0}} 1
 test mathop-25.34 { exp operator } {TestOp ** $big -1e-30} 1.0
 test mathop-25.35 { exp operator } {TestOp ** $big -1e+30} 0.0
-test mathop-25.36 { exp operator } {TestOp ** 0 $big} 0
-test mathop-25.37 { exp operator } {TestOp ** 1 $big} 1
-test mathop-25.38 { exp operator (small exponent power helper and its boundaries) } {
+test mathop-25.36 { exp operator } {TestOp **    0  $big}             0
+test mathop-25.37 { exp operator } {TestOp **    1  $big}             1
+test mathop-25.38 { exp operator } {TestOp **   -1  $big}            -1
+test mathop-25.39 { exp operator } {TestOp **   -1  [expr {$big+1}]}  1
+test mathop-25.40 { exp operator (small exponent power helper and its boundaries) } {
     set pwr 0
     set res 1
     while {[incr pwr] <= 17 && [set i [TestOp ** 15 $pwr]] == [set res [expr {$res * 15}]]} {}
