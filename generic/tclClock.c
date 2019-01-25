@@ -235,6 +235,7 @@ TclClockInit(
     data->yearOfCenturySwitch = ClockDefaultCenturySwitch;
     data->validMinYear = INT_MIN;
     data->validMaxYear = INT_MAX;
+    data->maxJulianDay = 5373484; /* corresponds 9999-12-31 23:59:59 per default */
 
     data->systemTimeZone = NULL;
     data->systemSetupTZData = NULL;
@@ -981,14 +982,14 @@ ClockConfigureObjCmd(
 	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
 	"-clear",
 	"-year-century",  "-century-switch",
-	"-min-year", "-max-year", "-validate",
+	"-min-year", "-max-year", "-max-jdn", "-validate",
 	NULL
     };
     enum optionInd {
 	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
 	CLOCK_CLEAR_CACHE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
-	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_VALIDATE
+	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -1115,6 +1116,21 @@ ClockConfigureObjCmd(
 	    if (i+1 >= objc) {
 		Tcl_SetObjResult(interp,
 		    Tcl_NewIntObj(dataPtr->validMaxYear));
+	    }
+	break;
+	case CLOCK_MAX_JDN:
+	    if (i < objc) {
+		Tcl_WideInt jd;
+		if (TclGetWideIntFromObj(interp, objv[i], &jd) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		dataPtr->maxJulianDay = jd;
+		Tcl_SetObjResult(interp, objv[i]);
+		continue;
+	    }
+	    if (i+1 >= objc) {
+		Tcl_SetObjResult(interp,
+		    Tcl_NewWideIntObj(dataPtr->maxJulianDay));
 	    }
 	break;
 	case CLOCK_VALIDATE:
@@ -3715,9 +3731,10 @@ ClockScanCommit(
 	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
     }
 
-    /* some overflow checks, if not extended */
-    if (!(opts->flags & CLF_EXTENDED)) {
-	if (yydate.julianDay > 5373484) {
+    /* some overflow checks */
+    if (info->flags & CLF_JULIANDAY) {
+    	ClockClientData *dataPtr = opts->clientData;
+    	if (yydate.julianDay > dataPtr->maxJulianDay) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 		"requested date too large to represent", -1));
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
