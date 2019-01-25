@@ -1246,7 +1246,7 @@ test mathop-25.40 { exp operator (small exponent power helper and its boundaries
     while {[incr pwr] <= 17 && [set i [TestOp ** 15 $pwr]] == [set res [expr {$res * 15}]]} {}
     list [incr pwr -1] $res
 } {17 98526125335693359375}
-test mathop-25.37 { exp operator errors } {
+test mathop-25.41 { exp operator errors } {
     set res {}
     set exp {}
 
