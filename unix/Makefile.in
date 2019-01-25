@@ -337,6 +337,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_int.o \
 	bn_mp_set_long.o bn_mp_set_long_long.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
+	bn_mp_tc_and.o bn_mp_tc_div_2d.o bn_mp_tc_or.o bn_mp_tc_xor.o \
 	bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
@@ -547,6 +548,10 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_sqrt.c \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
+	$(TOMMATH_DIR)/bn_mp_tc_and.c \
+	$(TOMMATH_DIR)/bn_mp_tc_div_2d.c \
+	$(TOMMATH_DIR)/bn_mp_tc_or.c \
+	$(TOMMATH_DIR)/bn_mp_tc_xor.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c \
 	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
@@ -680,13 +685,20 @@ tclzipfile: ${TCL_ZIP_FILE}
 ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	@rm -rf ${TCL_VFS_ROOT}
 	@mkdir -p ${TCL_VFS_PATH}
-	cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	find ${TCL_VFS_ROOT} -type d -empty -delete
+	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
+	@( \
+	  ln -s $(TOP_DIR)/library/* ${TCL_VFS_PATH}/ && \
+	  ln ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl \
+	) || ( \
+	  cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
+	  cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	)
+	@find ${TCL_VFS_ROOT} -type d -empty -delete
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
 	  cd ${TCL_VFS_ROOT} && \
-	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
+	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
 
 # The following target is configured by autoconf to generate either a shared
@@ -1621,6 +1633,18 @@ bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c $(MATHHDRS)
 
 bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
+
+bn_mp_tc_and.o: $(TOMMATH_DIR)/bn_mp_tc_and.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_and.c
+
+bn_mp_tc_div_2d.o: $(TOMMATH_DIR)/bn_mp_tc_div_2d.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_div_2d.c
+
+bn_mp_tc_or.o: $(TOMMATH_DIR)/bn_mp_tc_or.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_or.c
+
+bn_mp_tc_xor.o: $(TOMMATH_DIR)/bn_mp_tc_xor.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_xor.c
 
 bn_mp_to_unsigned_bin.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c
