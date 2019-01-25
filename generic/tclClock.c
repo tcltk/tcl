@@ -1616,11 +1616,11 @@ ClockGetDateFields(
     }
 
     /*
-     * Extract Julian day.
+     * Extract Julian day and seconds of the day.
      */
 
-    fields->julianDay = (fields->localSeconds + JULIAN_SEC_POSIX_EPOCH)
-	    / SECONDS_PER_DAY;
+    ClockExtractJDAndSODFromSeconds(fields->julianDay, fields->secondOfDay,
+	fields->localSeconds);
 
     /*
      * Convert to Julian or Gregorian calendar.
@@ -1629,15 +1629,6 @@ ClockGetDateFields(
     GetGregorianEraYearDay(fields, changeover);
     GetMonthDay(fields);
     GetYearWeekDay(fields, changeover);
-
-    
-    /*
-     * Seconds of the day.
-     */
-    fields->secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
-    if (fields->secondOfDay < 0) {
-	fields->secondOfDay += SECONDS_PER_DAY;
-    }
 
     return TCL_OK;
 }
@@ -2102,19 +2093,14 @@ ConvertLocalToUTCUsingC(
     struct tm timeVal;
     int localErrno;
     int secondOfDay;
-    Tcl_WideInt jsec;
 
     /*
      * Convert the given time to a date.
      */
 
-    jsec = fields->localSeconds + JULIAN_SEC_POSIX_EPOCH;
-    fields->julianDay = (jsec / SECONDS_PER_DAY);
-    secondOfDay = (int)(jsec % SECONDS_PER_DAY);
-    if (secondOfDay < 0) {
-	secondOfDay += SECONDS_PER_DAY;
-	fields->julianDay--;
-    }
+    ClockExtractJDAndSODFromSeconds(fields->julianDay, secondOfDay,
+	fields->localSeconds);
+
     GetGregorianEraYearDay(fields, changeover);
     GetMonthDay(fields);
 

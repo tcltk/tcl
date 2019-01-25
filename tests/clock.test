@@ -15357,6 +15357,62 @@ test clock-4.96 { format time of day 23:59:59 } {
 	  -locale en_US_roman \
         -gmt true
 } {23 xxiii 11 xi 23 xxiii 11 xi 59 lix PM pm 11:59:59 pm 23:59 59 lix 23:59:59 23:59:59 xxiii h lix m lix s Thu Jan  1 23:59:59 GMT 1970}
+
+test clock-4.97.1 { format julian day } {
+    clock format 0 -format {%J} -gmt true
+} {2440588}
+test clock-4.97.2 { format julian day } {
+    clock format 43200 -format {%J} -gmt true
+} {2440588}
+test clock-4.97.3 { format julian day } {
+    clock format 86399 -format {%J} -gmt true
+} {2440588}
+test clock-4.97.4 { format julian day } {
+    clock format 86400 -format {%J} -gmt true
+} {2440589}
+test clock-4.97.5 { format julian day } {
+    clock format 129599 -format {%J} -gmt true
+} {2440589}
+test clock-4.97.6 { format julian day } {
+    clock format 129600 -format {%J} -gmt true
+} {2440589}
+test clock-4.97.7 { format julian day } {
+    set i 1548249092
+    list \
+	[clock format $i -format {%J} -gmt true] \
+	[clock format [incr i] -format {%J} -gmt true] \
+	[clock format [incr i] -format {%J} -gmt true]
+} {2458507 2458507 2458507}
+test clock-4.97.8 { format julian day } {
+    set res {}
+    foreach i {
+	-172800 -129600 -86400 -43200
+	-1 0 1 21600 43199 43200 86399 
+	86400 86401 108000 129600 172800
+    } {
+	lappend res $i [clock format [expr -210866803200 - $i] \
+	    -format {%EE %Y-%m-%d %T -- %J} -gmt true]
+    }
+    set res
+} [list \
+   -172800 {B.C.E. 4713-01-03 00:00:00 -- 2} \
+   -129600 {B.C.E. 4713-01-02 12:00:00 -- 1} \
+    -86400 {B.C.E. 4713-01-02 00:00:00 -- 1} \
+    -43200 {B.C.E. 4713-01-01 12:00:00 -- 0} \
+        -1 {B.C.E. 4713-01-01 00:00:01 -- 0} \
+         0 {B.C.E. 4713-01-01 00:00:00 -- 0} \
+         1 {B.C.E. 4714-12-31 23:59:59 -- -1} \
+     21600 {B.C.E. 4714-12-31 18:00:00 -- -1} \
+     43199 {B.C.E. 4714-12-31 12:00:01 -- -1} \
+     43200 {B.C.E. 4714-12-31 12:00:00 -- -1} \
+     86399 {B.C.E. 4714-12-31 00:00:01 -- -1} \
+     86400 {B.C.E. 4714-12-31 00:00:00 -- -1} \
+     86401 {B.C.E. 4714-12-30 23:59:59 -- -2} \
+    108000 {B.C.E. 4714-12-30 18:00:00 -- -2} \
+    129600 {B.C.E. 4714-12-30 12:00:00 -- -2} \
+    172800 {B.C.E. 4714-12-30 00:00:00 -- -2} \
+]
+
 # END testcases4
 
 # BEGIN testcases5
