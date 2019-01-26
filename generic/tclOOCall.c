@@ -1994,7 +1994,7 @@ AddSimpleClassDefineNamespaces(
     } else {
 	AddDefinitionNamespaceToChain(classPtr, classPtr->objDefinitionNs,
 		definePtr, flags);
-    }	
+    }
 
     switch (classPtr->superclasses.num) {
     case 1:
