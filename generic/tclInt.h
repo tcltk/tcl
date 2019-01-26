@@ -3011,8 +3011,8 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsSpaceProc(char byte);
-MODULE_SCOPE int	TclIsBareword(char byte);
+MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
@@ -4902,10 +4902,10 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
 
-/* 
- * Macros to convert size_t to wide-int (and wide-int object) considering 
- * platform-related negative value ((size_t)-1), if wide-int and size_t 
- * have different dimensions (e. g. 32-bit platform). 
+/*
+ * Macros to convert size_t to wide-int (and wide-int object) considering
+ * platform-related negative value ((size_t)-1), if wide-int and size_t
+ * have different dimensions (e. g. 32-bit platform).
  */
 
 #if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
