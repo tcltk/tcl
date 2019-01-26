@@ -613,7 +613,7 @@ Tcl_ParseCommand(
 
 int
 TclIsSpaceProc(
-    char byte)
+    int byte)
 {
     return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
 }
@@ -642,7 +642,7 @@ TclIsSpaceProc(
 
 int
 TclIsBareword(
-    char byte)
+    int byte)
 {
     if (byte < '0' || byte > 'z') {
 	return 0;
