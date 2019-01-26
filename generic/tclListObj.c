@@ -1691,7 +1691,7 @@ TclLsetFlat(
 	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
-	
+
 	if (result == TCL_OK) {
 
 	    /*

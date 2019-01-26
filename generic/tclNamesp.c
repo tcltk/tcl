@@ -4711,7 +4711,7 @@ FreeNsNameInternalRep(
 
     NsNameGetIntRep(objPtr, resNamePtr);
     assert(resNamePtr != NULL);
-	
+
     /*
      * Decrement the reference count of the namespace. If there are no more
      * references, free it up.
