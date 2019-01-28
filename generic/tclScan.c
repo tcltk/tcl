@@ -1010,7 +1010,7 @@ Tcl_ScanObjCmd(
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
 		    const Tcl_ObjIntRep *irPtr
-			    = Tcl_FetchIntRep(objPtr, &tclDoubleType);
+			    = TclFetchIntRep(objPtr, &tclDoubleType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
