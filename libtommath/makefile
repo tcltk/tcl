@@ -141,6 +141,8 @@ zipup: clean astyle new_file manual poster docs
 	$(MAKE) -C libtommath-$(VERSION)/ pre_gen
 	tar -c libtommath-$(VERSION)/ | xz -6e -c - > ltm-$(VERSION).tar.xz
 	zip -9rq ltm-$(VERSION).zip libtommath-$(VERSION)
+	cp doc/bn.pdf bn-$(VERSION).pdf
+	cp doc/tommath.pdf tommath-$(VERSION).pdf
 	rm -rf libtommath-$(VERSION)
 	gpg -b -a ltm-$(VERSION).tar.xz
 	gpg -b -a ltm-$(VERSION).zip

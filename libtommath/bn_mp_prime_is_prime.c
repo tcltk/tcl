@@ -71,7 +71,7 @@ int mp_prime_is_prime(const mp_int *a, int t, int *result)
    }
 #ifdef MP_8BIT
    /* The search in the loop above was exhaustive in this case */
-   if (a->used == 1 && PRIME_SIZE >= 31) {
+   if ((a->used == 1) && (PRIME_SIZE >= 31)) {
       return MP_OKAY;
    }
 #endif
@@ -126,7 +126,7 @@ int mp_prime_is_prime(const mp_int *a, int t, int *result)
        */
 #if defined (MP_8BIT) || defined (LTM_USE_FROBENIUS_TEST)
       err = mp_prime_frobenius_underwood(a, &res);
-      if (err != MP_OKAY && err != MP_ITER) {
+      if ((err != MP_OKAY) && (err != MP_ITER)) {
          goto LBL_B;
       }
       if (res == MP_NO) {
@@ -296,7 +296,7 @@ int mp_prime_is_prime(const mp_int *a, int t, int *result)
           * One 8-bit digit is too small, so concatenate two if the size of
           * unsigned int allows for it.
           */
-         if ((sizeof(unsigned int) * CHAR_BIT)/2 >= (sizeof(mp_digit) * CHAR_BIT)) {
+         if (((sizeof(unsigned int) * CHAR_BIT)/2) >= (sizeof(mp_digit) * CHAR_BIT)) {
             if ((err = mp_rand(&b, 1)) != MP_OKAY) {
                goto LBL_B;
             }
@@ -305,10 +305,9 @@ int mp_prime_is_prime(const mp_int *a, int t, int *result)
             fips_rand &= mask;
          }
 #endif
-         if (fips_rand > ((unsigned int) INT_MAX - DIGIT_BIT)) {
+         if (fips_rand > (unsigned int)(INT_MAX - DIGIT_BIT)) {
             len = INT_MAX / DIGIT_BIT;
-         }
-         else {
+         } else {
             len = (((int)fips_rand + DIGIT_BIT) / DIGIT_BIT);
          }
          /*  Unlikely. */
