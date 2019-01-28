@@ -4575,6 +4575,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+#define TclFetchIntRep(objPtr, type) \
+	(((objPtr)->typePtr == type) ? &((objPtr)->internalRep) : NULL)
 
 
 /*

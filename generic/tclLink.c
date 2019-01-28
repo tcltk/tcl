@@ -416,7 +416,7 @@ LinkTraceProc(
     case TCL_LINK_DOUBLE:
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(valueObj, &tclDoubleType);
+	    Tcl_ObjIntRep *irPtr = TclFetchIntRep(valueObj, &tclDoubleType);
 	    if (irPtr == NULL) {
 #endif
 		if (GetInvalidDoubleFromObj(valueObj, &linkPtr->lastValue.d) != TCL_OK) {
