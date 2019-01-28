@@ -83,6 +83,7 @@ test_standalone: $(LIBNAME) demo/demo.o
 	$(CC) $(CFLAGS) -c demo/demo.c -o demo/demo.o
 	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o test demo/demo.o $(LIBNAME)
 
+.PHONY: mtest
 mtest:
 	cd mtest ; $(CC) $(CFLAGS) $(LDFLAGS) mtest.c -o mtest
 

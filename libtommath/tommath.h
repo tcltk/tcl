@@ -282,9 +282,10 @@ int mp_rand(mp_int *a, int digits);
 int mp_rand_digit(mp_digit *r);
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
-/* as last resort we will fall back to libtomcrypt's rng_get_bytes()
- * in case you don't use libtomcrypt or use it w/o rng_get_bytes()
- * you have to implement it somewhere else, as it's required */
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
 extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
 extern void (*ltm_rng_callback)(void);
 #endif
