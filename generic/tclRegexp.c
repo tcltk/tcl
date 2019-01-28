@@ -121,7 +121,7 @@ const Tcl_ObjType tclRegexpType = {
 #define RegexpGetIntRep(objPtr, rePtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclRegexpType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
 	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 

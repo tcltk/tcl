@@ -1917,13 +1917,7 @@ Tcl_FetchIntRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    /* If objPtr type doesn't match request, nothing can be fetched */
-    if (objPtr->typePtr != typePtr) {
-	return NULL;
-    }
-
-    /* Type match! objPtr IntRep is the one sought. */
-    return &(objPtr->internalRep);
+    return TclFetchIntRep(objPtr, typePtr);
 }
 
 /*

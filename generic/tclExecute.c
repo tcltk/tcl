@@ -750,7 +750,7 @@ ReleaseDictIterator(
     Tcl_Obj *dictPtr;
     const Tcl_ObjIntRep *irPtr;
 
-    irPtr = Tcl_FetchIntRep(objPtr, &dictIteratorType);
+    irPtr = TclFetchIntRep(objPtr, &dictIteratorType);
     assert(irPtr != NULL);
 
     /*
@@ -4768,7 +4768,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (NULL == Tcl_FetchIntRep(value2Ptr, &tclListType))
+		&& (value2Ptr->typePtr != &tclListType)
 		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
@@ -7108,7 +7108,7 @@ TEBCresume(
 	}
 	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
-	    if (Tcl_FetchIntRep(varPtr->value.objPtr, &dictIteratorType)) {
+	    if (varPtr->value.objPtr->typePtr == &dictIteratorType) {
 		Tcl_Panic("mis-issued dictFirst!");
 	    }
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -7125,7 +7125,7 @@ TEBCresume(
 	    const Tcl_ObjIntRep *irPtr;
 
 	    if (statePtr &&
-		    (irPtr = Tcl_FetchIntRep(statePtr, &dictIteratorType))) {
+		    (irPtr = TclFetchIntRep(statePtr, &dictIteratorType))) {
 		searchPtr = irPtr->twoPtrValue.ptr1;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
@@ -9622,7 +9622,7 @@ EvalStatsCmd(
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
-	    if (NULL != Tcl_FetchIntRep(entryPtr->objPtr, &tclByteCodeType)) {
+	    if (entryPtr->objPtr->typePtr == &tclByteCodeType) {
 		numByteCodeLits++;
 	    }
 	    (void) TclGetStringFromObj(entryPtr->objPtr, &length);

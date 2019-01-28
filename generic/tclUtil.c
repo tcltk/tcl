@@ -3945,7 +3945,7 @@ GetEndOffsetFromObj(
     Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
-    while ((irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);

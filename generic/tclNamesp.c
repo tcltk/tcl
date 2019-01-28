@@ -165,7 +165,7 @@ static const Tcl_ObjType nsNameType = {
 #define NsNameGetIntRep(objPtr, nnPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &nsNameType);			\
+	irPtr = TclFetchIntRep((objPtr), &nsNameType);			\
 	(nnPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
