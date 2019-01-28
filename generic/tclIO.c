@@ -349,7 +349,7 @@ static const Tcl_ObjType chanObjType = {
 #define ChanGetIntRep(objPtr, resPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &chanObjType);		\
+	irPtr = TclFetchIntRep((objPtr), &chanObjType);		\
 	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 

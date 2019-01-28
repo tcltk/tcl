@@ -80,7 +80,7 @@ const Tcl_ObjType tclProcBodyType = {
 #define ProcGetIntRep(objPtr, procPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclProcBodyType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclProcBodyType);		\
 	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -126,7 +126,7 @@ static const Tcl_ObjType lambdaType = {
 #define LambdaGetIntRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &lambdaType);			\
+	irPtr = TclFetchIntRep((objPtr), &lambdaType);			\
 	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
 	(nsObjPtr) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
     } while (0)
@@ -329,7 +329,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (Tcl_FetchIntRep(objv[3], &tclProcBodyType)) {
+    if (TclFetchIntRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 
@@ -794,7 +794,7 @@ TclObjGetFrame(
 	    level = curLevel - level;
 	    result = 1;
 	}
-    } else if ((irPtr = Tcl_FetchIntRep(objPtr, &levelReferenceType))) {
+    } else if ((irPtr = TclFetchIntRep(objPtr, &levelReferenceType))) {
 	level = irPtr->wideValue;
 	result = 1;
     } else {
