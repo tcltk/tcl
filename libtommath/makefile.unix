@@ -21,7 +21,7 @@ RANLIB    = ranlib
 CFLAGS    = -O2
 LDFLAGS   =
 
-VERSION   = 1.0.1
+VERSION   = 1.1.0
 
 #Compilation flags
 LTM_CFLAGS  = -I. $(CFLAGS)
