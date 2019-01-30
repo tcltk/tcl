@@ -474,7 +474,7 @@ TclCreateProc(
     }
 
     for (i = 0; i < numArgs; i++) {
-	int fieldCount, nameLength, valueLength;
+	int fieldCount, nameLength;
 	Tcl_Obj **fieldValues;
 
 	/*
@@ -504,20 +504,14 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
-	nameLength = Tcl_NumUtfChars(argname, plen);
-	if (fieldCount == 2) {
-	    const char * value = TclGetString(fieldValues[1]);
-	    valueLength = Tcl_NumUtfChars(value, fieldValues[1]->length);
-	} else {
-	    valueLength = 0;
-	}
+	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
 	 */
 
 	argnamei = argname;
+	plen = nameLength;
 	argnamelast = argname[plen-1];
 	while (plen--) {
 	    if (argnamei[0] == '(') {
@@ -554,7 +548,7 @@ TclCreateProc(
 	     */
 
 	    if ((localPtr->nameLength != nameLength)
-		    || (Tcl_UtfNcmp(localPtr->name, argname, nameLength))
+		    || (memcmp(localPtr->name, argname, nameLength) != 0)
 		    || (localPtr->frameIndex != i)
 		    || !(localPtr->flags & VAR_ARGUMENT)
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
@@ -572,12 +566,15 @@ TclCreateProc(
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
-		int tmpLength;
+		int tmpLength, valueLength;
 		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
 			&tmpLength);
+		const char *value = TclGetStringFromObj(fieldValues[1],
+			&valueLength);
 
-		if ((valueLength != tmpLength) ||
-			Tcl_UtfNcmp(Tcl_GetString(fieldValues[1]), tmpPtr, tmpLength)) {
+		if ((valueLength != tmpLength)
+		     || memcmp(value, tmpPtr, tmpLength) != 0
+		) {
 		    errorObj = Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"" ,procName);
 		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
@@ -626,7 +623,7 @@ TclCreateProc(
 	    if ((i == numArgs - 1)
 		    && (localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
-		    && (strcmp(localPtr->name, "args") == 0)) {
+		    && (memcmp(localPtr->name, "args", 4) == 0)) {
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 	}
