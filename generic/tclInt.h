@@ -902,7 +902,7 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    int nameLength;		/* The number of characters in local
+    int nameLength;		/* The number of bytes in local
 				 * variable's name. Used to speed up variable
 				 * lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
