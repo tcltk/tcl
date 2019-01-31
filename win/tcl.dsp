@@ -204,10 +204,6 @@ SOURCE=..\compat\tclErrno.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\unistd.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\waitpid.c
 # End Source File
 # End Group
