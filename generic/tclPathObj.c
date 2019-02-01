@@ -916,7 +916,7 @@ TclJoinPath(
 		     */
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
-			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
+			    || (strchr(TclGetString(elt), '\\') == NULL)) {
 
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len);
@@ -952,7 +952,8 @@ TclJoinPath(
     assert ( res == NULL );
 
     for (i = 0; i < elements; i++) {
-	int driveNameLength, strEltLen, length;
+	int driveNameLength;
+	size_t strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;
 	Tcl_Obj *driveName = NULL;
@@ -1407,7 +1408,7 @@ TclFSMakePathRelative(
     Tcl_Obj *pathPtr,		/* The path we have. */
     Tcl_Obj *cwdPtr)		/* Make it relative to this. */
 {
-    int cwdLen, len;
+    size_t cwdLen, len;
     const char *tempStr;
     Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
@@ -1677,11 +1678,11 @@ Tcl_FSGetTranslatedStringPath(
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
 
     if (transPtr != NULL) {
-	int len;
+	size_t len;
 	const char *orig = TclGetStringFromObj(transPtr, &len);
 	char *result = Tcl_Alloc(len+1);
 
-	memcpy(result, orig, (size_t) len+1);
+	memcpy(result, orig, len+1);
 	TclDecrRefCount(transPtr);
 	return result;
     }
@@ -1727,7 +1728,8 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	Tcl_Obj *dir, *copy;
-	int tailLen, cwdLen, pathType;
+	size_t tailLen, cwdLen;
+	int pathType;
 
 	pathType = Tcl_FSGetPathType(fsPathPtr->cwdPtr);
 	dir = Tcl_FSGetNormalizedPath(interp, fsPathPtr->cwdPtr);
@@ -1843,7 +1845,7 @@ Tcl_FSGetNormalizedPath(
 	    copy = AppendPath(fsPathPtr->cwdPtr, pathPtr);
 
 	    (void) TclGetStringFromObj(fsPathPtr->cwdPtr, &cwdLen);
-	    cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
+	    cwdLen += (TclGetString(copy)[cwdLen] == '/');
 
 	    /*
 	     * Normalize the combined string, but only starting after the end
@@ -2364,7 +2366,8 @@ SetFsPathFromAny(
 
 		objc--; objv++;
 		while (objc--) {
-		    TclpNativeJoinPath(transPtr, Tcl_GetString(*objv++));
+		    TclpNativeJoinPath(transPtr, TclGetString(*objv));
+		    objv++;
 		}
 		TclDecrRefCount(parts);
 	    } else {

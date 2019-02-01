@@ -4211,7 +4211,7 @@ TclNRTryObjCmd(
 	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
-			Tcl_GetString(objv[i+1])));
+			TclGetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", NULL);
@@ -4750,7 +4750,7 @@ TclListLines(
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char *listStr = Tcl_GetString(listObj);
+    const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;

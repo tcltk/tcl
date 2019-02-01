@@ -230,7 +230,7 @@ Tcl_GetStringResult(
 {
     Interp *iPtr = (Interp *) interp;
 
-    return Tcl_GetString(iPtr->objResultPtr);
+    return TclGetString(iPtr->objResultPtr);
 }
 
 /*

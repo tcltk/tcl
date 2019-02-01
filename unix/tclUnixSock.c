@@ -313,7 +313,8 @@ InitializeHostName(
 const char *
 Tcl_GetHostName(void)
 {
-    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+    Tcl_Obj *tclObj = TclGetProcessGlobalValue(&hostName);
+    return TclGetString(tclObj);
 }
 
 /*

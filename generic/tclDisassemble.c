@@ -288,7 +288,7 @@ DisassembleByteCodeObj(
     GetLocationInformation(codePtr->procPtr, &fileObj, &line);
     if (line > -1 && fileObj != NULL) {
 	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
-		Tcl_GetString(fileObj), line);
+		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",

@@ -1007,7 +1007,7 @@ TclNRPackageObjCmd(
 	}
 	pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 	if (pkgFiles) {
-	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table, Tcl_GetString(objv[2]));
+	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table, TclGetString(objv[2]));
 	    if (entry) {
 		Tcl_SetObjResult(interp, (Tcl_Obj *)Tcl_GetHashValue(entry));
 	    }

@@ -2217,7 +2217,7 @@ PipeOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
@@ -2672,7 +2672,7 @@ Tcl_PidObjCmd(
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
@@ -3123,9 +3123,10 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetString(basenameObj);
+	size_t length;
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
+	Tcl_WinUtfToTChar(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
