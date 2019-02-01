@@ -22,8 +22,8 @@
  * special conditions in the parsing of a format specifier.
  */
 
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+#define BINARY_ALL ((size_t)-1)		/* Use all elements in the argument. */
+#define BINARY_NOCOUNT ((size_t)-2)	/* No count was specified in format. */
 
 /*
  * The following flags may be ORed together and returned by GetFormatSpec
@@ -61,7 +61,7 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
-			    int *countPtr, int *flagsPtr);
+			    size_t *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp,
@@ -70,7 +70,7 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned length, int type);
+			    size_t length, int type);
 /* Binary ensemble commands */
 static int		BinaryFormatCmd(ClientData clientData,
 			    Tcl_Interp *interp,
@@ -219,7 +219,7 @@ static const EnsembleImplMap decodeMap[] = {
  * Bytearrays should simply be usable as bytearrays without a kabuki
  * dance of testing.
  *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct
+ * The "Pure" ByteArray type is (nearly) a correct
  * implementation of bytearrays.  Any Tcl value with the type
  * properByteArrayType can have its bytearray value fetched and
  * used with confidence that acting on that value is equivalent to
@@ -282,8 +282,8 @@ typedef struct {
 		((TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
 #define SET_BYTEARRAY(irPtr, baPtr) \
-		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
-
+		(irPtr)->twoPtrValue.ptr1 = (baPtr)
+
 /*
  *----------------------------------------------------------------------
  *
@@ -543,10 +543,8 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &tclPureByteArrayType) {
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if ((objPtr->typePtr == &tclPureByteArrayType)
+	    || (objPtr->typePtr == &tclByteArrayType)) {
 	return TCL_OK;
     }
 
@@ -838,7 +836,7 @@ BinaryFormatCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    int count;			/* Count associated with current format
+    size_t count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;	/* Pointer to current position in format
@@ -850,7 +848,8 @@ BinaryFormatCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size, length;
+    int offset, size;
+    size_t length;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -889,7 +888,7 @@ BinaryFormatCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_ALL) {
-		TclGetByteArrayFromObj(objv[arg], &count);
+		(void)TclGetByteArrayFromObj(objv[arg], &count);
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
@@ -961,7 +960,7 @@ BinaryFormatCmd(
 
 		if (count == BINARY_ALL) {
 		    count = listc;
-		} else if (count > listc) {
+		} else if (count > (size_t)listc) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
 			    -1));
@@ -985,16 +984,16 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count > offset) || (count == BINARY_ALL)) {
+	    if ((count > (size_t)offset) || (count == BINARY_ALL)) {
 		count = offset;
 	    }
-	    if (offset > length) {
+	    if (offset > (int)length) {
 		length = offset;
 	    }
 	    offset -= count;
 	    break;
 	case '@':
-	    if (offset > length) {
+	    if (offset > (int)length) {
 		length = offset;
 	    }
 	    if (count == BINARY_ALL) {
@@ -1010,7 +1009,7 @@ BinaryFormatCmd(
 	    goto badField;
 	}
     }
-    if (offset > length) {
+    if (offset > (int)length) {
 	length = offset;
     }
     if (length == 0) {
@@ -1024,7 +1023,7 @@ BinaryFormatCmd(
 
     resultPtr = Tcl_NewObj();
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
-    memset(buffer, 0, (size_t) length);
+    memset(buffer, 0, length);
 
     /*
      * Pack the data into the result object. Note that we can skip the
@@ -1061,10 +1060,10 @@ BinaryFormatCmd(
 		count = 1;
 	    }
 	    if (length >= count) {
-		memcpy(cursor, bytes, (size_t) count);
+		memcpy(cursor, bytes, count);
 	    } else {
-		memcpy(cursor, bytes, (size_t) length);
-		memset(cursor + length, pad, (size_t) (count - length));
+		memcpy(cursor, bytes, length);
+		memset(cursor + length, pad, count - length);
 	    }
 	    cursor += count;
 	    break;
@@ -1073,7 +1072,7 @@ BinaryFormatCmd(
 	case 'B': {
 	    unsigned char *last;
 
-	    str = Tcl_GetStringFromObj(objv[arg], &length);
+	    str = TclGetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1087,7 +1086,7 @@ BinaryFormatCmd(
 	    value = 0;
 	    errorString = "binary";
 	    if (cmd == 'B') {
-		for (offset = 0; offset < count; offset++) {
+		for (offset = 0; (size_t)offset < count; offset++) {
 		    value <<= 1;
 		    if (str[offset] == '1') {
 			value |= 1;
@@ -1102,7 +1101,7 @@ BinaryFormatCmd(
 		    }
 		}
 	    } else {
-		for (offset = 0; offset < count; offset++) {
+		for (offset = 0; (size_t)offset < count; offset++) {
 		    value >>= 1;
 		    if (str[offset] == '1') {
 			value |= 128;
@@ -1135,7 +1134,7 @@ BinaryFormatCmd(
 	    unsigned char *last;
 	    int c;
 
-	    str = Tcl_GetStringFromObj(objv[arg], &length);
+	    str = TclGetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1149,7 +1148,7 @@ BinaryFormatCmd(
 	    value = 0;
 	    errorString = "hexadecimal";
 	    if (cmd == 'H') {
-		for (offset = 0; offset < count; offset++) {
+		for (offset = 0; (size_t)offset < count; offset++) {
 		    value <<= 4;
 		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
 			errorValue = str;
@@ -1170,7 +1169,7 @@ BinaryFormatCmd(
 		    }
 		}
 	    } else {
-		for (offset = 0; offset < count; offset++) {
+		for (offset = 0; (size_t)offset < count; offset++) {
 		    value >>= 4;
 
 		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
@@ -1241,7 +1240,7 @@ BinaryFormatCmd(
 		}
 	    }
 	    arg++;
-	    for (i = 0; i < count; i++) {
+	    for (i = 0; (size_t)i < count; i++) {
 		if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);
 		    return TCL_ERROR;
@@ -1253,7 +1252,7 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    memset(cursor, 0, (size_t) count);
+	    memset(cursor, 0, count);
 	    cursor += count;
 	    break;
 	case 'X':
@@ -1263,7 +1262,7 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
+	    if ((count == BINARY_ALL) || (count > (size_t)(cursor - buffer))) {
 		cursor = buffer;
 	    } else {
 		cursor -= count;
@@ -1343,7 +1342,7 @@ BinaryScanCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    int count;			/* Count associated with current format
+    size_t count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;	/* Pointer to current position in format
@@ -1352,7 +1351,8 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, length;
+    int offset, size;
+    size_t length;
 
     int i;
     Tcl_Obj *valuePtr, *elementPtr;
@@ -1391,7 +1391,7 @@ BinaryScanCmd(
 		if (count == BINARY_NOCOUNT) {
 		    count = 1;
 		}
-		if (count > (length - offset)) {
+		if (count > length - offset) {
 		    goto done;
 		}
 	    }
@@ -1450,7 +1450,7 @@ BinaryScanCmd(
 		if (count == BINARY_NOCOUNT) {
 		    count = 1;
 		}
-		if (count > (length - offset) * 8) {
+		if (count > (size_t)(length - offset) * 8) {
 		    goto done;
 		}
 	    }
@@ -1460,7 +1460,7 @@ BinaryScanCmd(
 	    dest = TclGetString(valuePtr);
 
 	    if (cmd == 'b') {
-		for (i = 0; i < count; i++) {
+		for (i = 0; (size_t)i < count; i++) {
 		    if (i % 8) {
 			value >>= 1;
 		    } else {
@@ -1469,7 +1469,7 @@ BinaryScanCmd(
 		    *dest++ = (char) ((value & 1) ? '1' : '0');
 		}
 	    } else {
-		for (i = 0; i < count; i++) {
+		for (i = 0; (size_t)i < count; i++) {
 		    if (i % 8) {
 			value <<= 1;
 		    } else {
@@ -1515,7 +1515,7 @@ BinaryScanCmd(
 	    dest = TclGetString(valuePtr);
 
 	    if (cmd == 'h') {
-		for (i = 0; i < count; i++) {
+		for (i = 0; (size_t)i < count; i++) {
 		    if (i % 2) {
 			value >>= 4;
 		    } else {
@@ -1524,7 +1524,7 @@ BinaryScanCmd(
 		    *dest++ = hexdigit[value & 0xf];
 		}
 	    } else {
-		for (i = 0; i < count; i++) {
+		for (i = 0; (size_t)i < count; i++) {
 		    if (i % 2) {
 			value <<= 4;
 		    } else {
@@ -1581,7 +1581,7 @@ BinaryScanCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_NOCOUNT) {
-		if ((length - offset) < size) {
+		if ((length - offset) < (size_t)size) {
 		    goto done;
 		}
 		valuePtr = ScanNumber(buffer+offset, cmd, flags,
@@ -1596,7 +1596,7 @@ BinaryScanCmd(
 		}
 		valuePtr = Tcl_NewObj();
 		src = buffer + offset;
-		for (i = 0; i < count; i++) {
+		for (i = 0; (size_t)i < count; i++) {
 		    elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
 		    src += size;
 		    Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
@@ -1617,7 +1617,7 @@ BinaryScanCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > (length - offset))) {
+	    if ((count == BINARY_ALL) || (count > length - offset)) {
 		offset = length;
 	    } else {
 		offset += count;
@@ -1627,7 +1627,7 @@ BinaryScanCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > offset)) {
+	    if ((count == BINARY_ALL) || (count > (size_t)offset)) {
 		offset = 0;
 	    } else {
 		offset -= count;
@@ -1711,7 +1711,7 @@ static int
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
-    int *countPtr,		/* Pointer to repeat count value. */
+    size_t *countPtr,		/* Pointer to repeat count value. */
     int *flagsPtr)		/* Pointer to field flags */
 {
     /*
@@ -1877,7 +1877,7 @@ static void
 CopyNumber(
     const void *from,		/* source */
     void *to,			/* destination */
-    unsigned length,		/* Number of bytes to copy */
+    size_t length,		/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
     switch (NeedReversing(type)) {
@@ -2407,7 +2407,7 @@ BinaryEncodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
-    int offset = 0, count = 0;
+    size_t offset = 0, count = 0;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
@@ -2573,7 +2573,8 @@ BinaryEncode64(
     int maxlen = 0;
     const char *wrapchar = "\n";
     size_t wrapcharlen = 1;
-    int offset, i, index, size, outindex = 0, count = 0;
+    int i, index, size, outindex = 0;
+    size_t offset, count = 0;
     enum {OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2676,11 +2677,11 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int offset, count, rawLength, n, i, j, bits, index;
+    int rawLength, n, i, bits, index;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { (unsigned char) '\n' };
     const unsigned char *wrapchar = SingleNewline;
-    int wrapcharlen = sizeof(SingleNewline);
+    size_t j, offset, count, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 

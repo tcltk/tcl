@@ -816,7 +816,7 @@ InfoObjectVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	private = 1;
@@ -1595,7 +1595,7 @@ InfoClassVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	private = 1;

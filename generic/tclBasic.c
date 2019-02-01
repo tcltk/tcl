@@ -1055,11 +1055,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
     if (TclOOInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
     /*
@@ -1069,10 +1069,10 @@ Tcl_CreateInterp(void)
 
 #ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
     if (TclZipfs_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 #endif
 
@@ -1204,7 +1204,7 @@ TclHideUnsafeCommands(
                             TclGetString(hideName)) != TCL_OK) {
                 Tcl_Panic("problem making '%s %s' safe: %s",
                         unsafePtr->ensembleNsName, unsafePtr->commandName,
-                        Tcl_GetString(Tcl_GetObjResult(interp)));
+                        Tcl_GetStringResult(interp));
             }
             Tcl_CreateObjCommand(interp, TclGetString(cmdName),
                     BadEnsembleSubcommand, (ClientData) unsafePtr, NULL);
@@ -1219,7 +1219,7 @@ TclHideUnsafeCommands(
                     unsafePtr->ensembleNsName) != TCL_OK) {
                 Tcl_Panic("problem making '%s' safe: %s",
                         unsafePtr->ensembleNsName,
-                        Tcl_GetString(Tcl_GetObjResult(interp)));
+                        Tcl_GetStringResult(interp));
             }
         }
     }

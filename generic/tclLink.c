@@ -293,7 +293,7 @@ LinkTraceProc(
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    Tcl_TraceVar2(interp, Tcl_GetString(linkPtr->varName), NULL,
+	    Tcl_TraceVar2(interp, TclGetString(linkPtr->varName), NULL,
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
 	}

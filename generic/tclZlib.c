@@ -185,7 +185,7 @@ static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static inline int	ResultCopy(ZlibChannelData *cd, char *buf,
-			    int toRead);
+			    size_t toRead);
 static int		ResultGenerate(ZlibChannelData *cd, int n, int flush,
 			    int *errorCodePtr);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
@@ -3391,7 +3391,7 @@ ZlibTransformGetOption(
 	    Tcl_DStringAppendElement(dsPtr, "-dictionary");
 	    if (cd->compDictObj) {
 		Tcl_DStringAppendElement(dsPtr,
-			Tcl_GetString(cd->compDictObj));
+			TclGetString(cd->compDictObj));
 	    } else {
 		Tcl_DStringAppendElement(dsPtr, "");
 	    }
@@ -3417,7 +3417,7 @@ ZlibTransformGetOption(
 	ExtractHeader(&cd->inHeader.header, tmpObj);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-header");
-	    Tcl_DStringAppendElement(dsPtr, Tcl_GetString(tmpObj));
+	    Tcl_DStringAppendElement(dsPtr, TclGetString(tmpObj));
 	    Tcl_DecrRefCount(tmpObj);
 	} else {
 	    TclDStringAppendObj(dsPtr, tmpObj);
@@ -3740,9 +3740,9 @@ static inline int
 ResultCopy(
     ZlibChannelData *cd,	/* The location of the buffer to read from. */
     char *buf,			/* The buffer to copy into */
-    int toRead)			/* Number of requested bytes */
+    size_t toRead)			/* Number of requested bytes */
 {
-    int have = Tcl_DStringLength(&cd->decompressed);
+    size_t have = Tcl_DStringLength(&cd->decompressed);
 
     if (have == 0) {
 	/*
@@ -4003,7 +4003,7 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,
     Tcl_Obj *data,
-    int count)
+    size_t count)
 {
     return TCL_OK;
 }
@@ -4041,7 +4041,7 @@ Tcl_ZlibInflate(
 unsigned int
 Tcl_ZlibCRC32(
     unsigned int crc,
-    const char *buf,
+    const unsigned char *buf,
     size_t len)
 {
     return 0;
@@ -4050,7 +4050,7 @@ Tcl_ZlibCRC32(
 unsigned int
 Tcl_ZlibAdler32(
     unsigned int adler,
-    const char *buf,
+    const unsigned char *buf,
     size_t len)
 {
     return 0;
