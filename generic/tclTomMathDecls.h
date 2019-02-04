@@ -102,6 +102,9 @@
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
 #define mp_sub_d TclBN_mp_sub_d
+#define mp_tc_and TclBN_mp_tc_and
+#define mp_tc_or TclBN_mp_tc_or
+#define mp_tc_xor TclBN_mp_tc_xor
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
@@ -307,6 +310,15 @@ EXTERN void		TclBNInitBignumFromWideUInt(mp_int *bignum,
 /* 67 */
 EXTERN int		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 				mp_int *c, int fast);
+/* 73 */
+EXTERN int		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 74 */
+EXTERN int		TclBN_mp_tc_or(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 75 */
+EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
+				mp_int *c);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -380,6 +392,9 @@ typedef struct TclTomMathStubs {
     void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
     void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     int (*tclBN_mp_expt_d_ex) (const mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
+    int (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
+    int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
+    int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -530,6 +545,12 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
 #define TclBN_mp_expt_d_ex \
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
+#define TclBN_mp_tc_and \
+	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
+#define TclBN_mp_tc_or \
+	(tclTomMathStubsPtr->tclBN_mp_tc_or) /* 74 */
+#define TclBN_mp_tc_xor \
+	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
