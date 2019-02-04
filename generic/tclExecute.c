@@ -7798,7 +7798,7 @@ FinalizeOONextFilter(
  * Helper to calculate small powers of integers whose result is wide.
  */
 static inline Tcl_WideInt
-WidePwrSmallExpon(Tcl_WideInt w1, Tcl_WideInt exponent) {
+WidePwrSmallExpon(Tcl_WideInt w1, long exponent) {
 
     Tcl_WideInt wResult;
 
@@ -8359,7 +8359,7 @@ ExecuteExtendedBinaryMathOp(
 	    /*
 	     * Small powers of integers whose result is wide.
 	     */
-	    wResult = WidePwrSmallExpon(w1, w2);
+	    wResult = WidePwrSmallExpon(w1, (long)w2);
 
 	    WIDE_RESULT(wResult);
 	}
