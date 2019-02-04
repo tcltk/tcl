@@ -123,7 +123,7 @@ Tcl_GetIndexFromObj(
      * the common case where the result is cached).
      */
 
-    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objPtr, &indexType);
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &indexType);
 
     if (irPtr) {
 	IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
@@ -282,7 +282,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & INDEX_TEMP_TABLE)) {
-    irPtr = Tcl_FetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = irPtr->twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
@@ -346,7 +346,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & INDEX_TEMP_TABLE)) {
-    irPtr = Tcl_FetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = irPtr->twoPtrValue.ptr1;
     } else {
@@ -457,7 +457,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = Tcl_FetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
     register const char *indexStr = EXPAND_OF(indexRep);
 
     Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
@@ -489,7 +489,7 @@ DupIndex(
     Tcl_ObjIntRep ir;
     IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
 
-    memcpy(dupIndexRep, Tcl_FetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
+    memcpy(dupIndexRep, TclFetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
 	    sizeof(IndexRep));
 
     ir.twoPtrValue.ptr1 = dupIndexRep;
@@ -517,7 +517,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    ckfree(Tcl_FetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1);
+    ckfree(TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -966,7 +966,7 @@ Tcl_WrongNumArgs(
 	     */
 	    const Tcl_ObjIntRep *irPtr;
 
-	    if ((irPtr = Tcl_FetchIntRep(origObjv[i], &indexType))) {
+	    if ((irPtr = TclFetchIntRep(origObjv[i], &indexType))) {
 		register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
@@ -1016,7 +1016,7 @@ Tcl_WrongNumArgs(
 	 */
 	const Tcl_ObjIntRep *irPtr;
 
-	if ((irPtr = Tcl_FetchIntRep(objv[i], &indexType))) {
+	if ((irPtr = TclFetchIntRep(objv[i], &indexType))) {
 	    register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);

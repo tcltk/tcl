@@ -335,7 +335,7 @@ Tcl_RegexpObjCmd(
 		 */
 
 		if (!doinline) {
-		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 		}
 		return TCL_OK;
 	    }
@@ -388,8 +388,8 @@ Tcl_RegexpObjCmd(
 		    end = -1;
 		}
 
-		objs[0] = Tcl_NewLongObj(start);
-		objs[1] = Tcl_NewLongObj(end);
+		objs[0] = Tcl_NewWideIntObj(start);
+		objs[1] = Tcl_NewWideIntObj(end);
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
@@ -457,7 +457,7 @@ Tcl_RegexpObjCmd(
     if (doinline) {
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(all ? all-1 : 1));
     }
     return TCL_OK;
 }
@@ -959,7 +959,7 @@ Tcl_RegsubObjCmd(
 	     * holding the number of matches.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(numMatches));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(numMatches));
 	}
     } else {
 	/*
@@ -1336,7 +1336,7 @@ StringFirstCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFirst(objv[1],
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclStringFirst(objv[1],
 	    objv[2], start)));
     return TCL_OK;
 }
@@ -1381,7 +1381,7 @@ StringLastCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclStringLast(objv[1],
 	    objv[2], last)));
     return TCL_OK;
 }
@@ -1641,9 +1641,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (Tcl_FetchIntRep(objPtr, &tclDoubleType) ||
-		Tcl_FetchIntRep(objPtr, &tclIntType) ||
-		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
+	if ((objPtr->typePtr == &tclDoubleType) ||
+		(objPtr->typePtr == &tclIntType) ||
+		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1672,8 +1672,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (Tcl_FetchIntRep(objPtr, &tclIntType) ||
-		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
+	if ((objPtr->typePtr == &tclIntType) ||
+		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1873,7 +1873,7 @@ StringIsCmd(
 
  str_is_done:
     if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(failat),
+	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(failat),
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	return TCL_ERROR;
     }
@@ -1951,8 +1951,8 @@ StringMapCmd(
      * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
-    if (!TclHasStringRep(objv[objc-2]) 
-	    && Tcl_FetchIntRep(objv[objc-2], &tclDictType)){
+    if (!TclHasStringRep(objv[objc-2])
+	    && (objv[objc-2]->typePtr == &tclDictType)){
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -2496,7 +2496,7 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
     return TCL_OK;
 }
 
@@ -2558,7 +2558,7 @@ StringEndCmd(
     } else {
 	cur = numChars;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
     return TCL_OK;
 }
 
@@ -2677,7 +2677,7 @@ StringCmpCmd(
 
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(match));
     return TCL_OK;
 }
 
@@ -2803,7 +2803,7 @@ StringBytesCmd(
     }
 
     (void) TclGetStringFromObj(objv[1], &length);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(length));
     return TCL_OK;
 }
 
@@ -2837,7 +2837,7 @@ StringLenCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_GetCharLength(objv[1])));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetCharLength(objv[1])));
     return TCL_OK;
 }
 
@@ -3726,10 +3726,10 @@ TclNRSwitchObjCmd(
 		Tcl_Obj *rangeObjAry[2];
 
 		if (info.matches[j].end > 0) {
-		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
-		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end-1);
+		    rangeObjAry[0] = Tcl_NewWideIntObj(info.matches[j].start);
+		    rangeObjAry[1] = Tcl_NewWideIntObj(info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewIntObj(-1);
+		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewWideIntObj(-1);
 		}
 
 		/*
@@ -4049,7 +4049,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }

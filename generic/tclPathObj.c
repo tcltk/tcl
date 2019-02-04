@@ -101,7 +101,7 @@ typedef struct FsPath {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (Tcl_FetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
 	do {							\
 		Tcl_ObjIntRep ir;				\
@@ -560,7 +560,7 @@ TclPathPart(
     Tcl_Obj *pathPtr,		/* Path to take dirname of */
     Tcl_PathPart portion)	/* Requested portion of name */
 {
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     if (irPtr) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
@@ -862,7 +862,7 @@ TclJoinPath(
 
     if (elements == 2) {
 	Tcl_Obj *elt = objv[0];
-	Tcl_ObjIntRep *eltIr = Tcl_FetchIntRep(elt, &fsPathType);
+	Tcl_ObjIntRep *eltIr = TclFetchIntRep(elt, &fsPathType);
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -1158,7 +1158,7 @@ Tcl_FSConvertToPathType(
     Tcl_Obj *pathPtr)		/* Object to convert to a valid, current path
 				 * type. */
 {
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     /*
      * While it is bad practice to examine an object's type directly, this is
@@ -1412,7 +1412,7 @@ TclFSMakePathRelative(
 {
     int cwdLen, len;
     const char *tempStr;
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     if (irPtr) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
@@ -1481,7 +1481,7 @@ MakePathFromNormalized(
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     FsPath *fsPathPtr;
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     if (irPtr) {
 	return TCL_OK;
@@ -1622,7 +1622,7 @@ Tcl_FSGetTranslatedPath(
 	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
 		    &srcFsPathPtr->normPathPtr);
 	    Tcl_IncrRefCount(srcFsPathPtr->translatedPathPtr = retObj);
-	    translatedCwdIrPtr = Tcl_FetchIntRep(translatedCwdPtr, &fsPathType);
+	    translatedCwdIrPtr = TclFetchIntRep(translatedCwdPtr, &fsPathType);
 	    if (translatedCwdIrPtr) {
 		srcFsPathPtr->filesystemEpoch
 			= PATHOBJ(translatedCwdPtr)->filesystemEpoch;
@@ -2087,7 +2087,7 @@ TclFSEnsureEpochOk(
     const Tcl_Filesystem **fsPtrPtr)
 {
     FsPath *srcFsPathPtr;
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     if (irPtr == NULL) {
 	return TCL_OK;
@@ -2146,7 +2146,7 @@ TclFSSetPathDetails(
     ClientData clientData)
 {
     FsPath *srcFsPathPtr;
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);;
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);;
 
     /*
      * Make sure pathPtr is of the correct type.
@@ -2250,7 +2250,7 @@ SetFsPathFromAny(
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
     char *name;
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     if (irPtr) {
 	return TCL_OK;
@@ -2558,7 +2558,7 @@ TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
     ClientData *clientDataPtr)
 {
-    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
     /*
      * A special case is required to handle the empty path "". This is a valid
