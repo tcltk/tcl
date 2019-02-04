@@ -1270,7 +1270,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
         ZIP_PROG="$ac_cv_path_zip"
         AC_MSG_RESULT([$ZIP_PROG])
         ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         AC_MSG_RESULT([Found INFO Zip in environment])
         # Use standard arguments for zip
     else
@@ -1278,7 +1278,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
         # We can use the locally distributed minizip instead
         ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
         ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
         AC_MSG_RESULT([No zip found on PATH building minizip])
     fi

@@ -570,7 +570,7 @@ TestforkObjCmd(
     if (pid==0) {
 	Tcl_InitNotifier();
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pid));
     return TCL_OK;
 }
 
@@ -761,7 +761,7 @@ TestchmodCmd(
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (chmod(translated, (unsigned) mode) != 0) {
+	if (chmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    NULL);
 	    return TCL_ERROR;

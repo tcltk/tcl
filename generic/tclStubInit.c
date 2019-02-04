@@ -97,6 +97,9 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_ListMathFuncs 0
 #   define Tcl_SetIntObj 0
 #   define Tcl_SetLongObj 0
+#   define Tcl_NewIntObj 0
+#   define Tcl_NewLongObj 0
+#   define Tcl_DbNewLongObj 0
 
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -1010,6 +1013,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
     TclBN_mp_get_int, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_tc_div_2d, /* 76 */
 };
 
 static const TclStubHooks tclStubHooks = {

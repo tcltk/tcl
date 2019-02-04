@@ -56,7 +56,7 @@ static const Tcl_ObjType instNameType = {
 #define InstNameGetIntRep(objPtr, inst)				\
     do {							\
 	const Tcl_ObjIntRep *irPtr;				\
-	irPtr = Tcl_FetchIntRep((objPtr), &instNameType);	\
+	irPtr = TclFetchIntRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
 	(inst) = (size_t)irPtr->wideValue;			\
     } while (0)
@@ -1384,7 +1384,7 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if ((NULL == Tcl_FetchIntRep(objv[2], &tclByteCodeType)) && (TCL_OK
+	if ((objv[2]->typePtr != &tclByteCodeType) && (TCL_OK
 		!= TclSetByteCodeFromAny(interp, objv[2], NULL, NULL))) {
 	    return TCL_ERROR;
 	}
@@ -1585,7 +1585,7 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
 	}
-	if (NULL == Tcl_FetchIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
+	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
 	    Command cmd;
 
 	    /*
