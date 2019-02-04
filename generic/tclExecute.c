@@ -8754,6 +8754,7 @@ ExecuteExtendedBinaryMathOp(
 #ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
+	    /* check it fits in long */
 	    l2 = (long)w2;
 	    if (w2 == l2) {
 		type2 = TCL_NUMBER_LONG;
@@ -8846,7 +8847,7 @@ ExecuteExtendedBinaryMathOp(
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
-	/* From here (up to overflowExpon) exponent is long. */
+	/* From here (up to overflowExpon) exponent is long (l2). */
 
 	if (type1 == TCL_NUMBER_LONG) {
 	    if (l1 == 2) {
@@ -8922,12 +8923,13 @@ ExecuteExtendedBinaryMathOp(
 		}
 	    }
 #endif
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+	    /* Code below (up to overflowExpon) works with wide-int base */
+	    w1 = l1;
+#endif
 	}
 
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-	if (type1 == TCL_NUMBER_LONG) {
-	    w1 = l1;
-	}
 
 	/* From here (up to overflowExpon) base is wide-int (w1). */
 
