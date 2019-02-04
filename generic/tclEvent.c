@@ -1403,7 +1403,7 @@ Tcl_VwaitObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    nameString = Tcl_GetString(objv[1]);
+    nameString = TclGetString(objv[1]);
     if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done) != TCL_OK) {

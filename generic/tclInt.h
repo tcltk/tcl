@@ -921,9 +921,8 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    int nameLength;		/* The number of characters in local
-				 * variable's name. Used to speed up variable
-				 * lookups. */
+    size_t nameLength;		/* The number of bytes in local variable's name.
+				 * Among others used to speed up var lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
     int flags;			/* Flag bits for the local variable. Same as
@@ -2680,6 +2679,7 @@ MODULE_SCOPE void *tclTimeClientData;
 MODULE_SCOPE const Tcl_ObjType tclBignumType;
 MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
+MODULE_SCOPE const Tcl_ObjType tclPureByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
@@ -3011,8 +3011,8 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsSpaceProc(char byte);
-MODULE_SCOPE int	TclIsBareword(char byte);
+MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
@@ -3179,7 +3179,7 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE int	TclUtfCount(int ch);
+MODULE_SCOPE size_t TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -4384,6 +4384,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
    }
 
 #else
+#include "tclStringRep.h"
 #define TclGetStringFromObj(objPtr, lenPtr) \
     (((objPtr)->bytes \
 	    ? 0 : Tcl_GetString((objPtr)), \
@@ -4391,11 +4392,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
     (Tcl_GetUnicodeFromObj(objPtr, NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj(objPtr, NULL))
+	    ((String *)(objPtr)->internalRep.twoPtrValue.ptr1)->unicode)
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
     (Tcl_GetByteArrayFromObj(objPtr, NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetByteArrayFromObj(objPtr, NULL))
+	    (unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2))
 #endif
 
 /*
@@ -4493,19 +4494,19 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
 	    newPtr = (Tcl_Token *) Tcl_AttemptRealloc((char *) oldPtr,	\
-		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
+		    (allocated * sizeof(Tcl_Token)));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		if (allocated > TCL_MAX_TOKENS) {			\
 		    allocated = TCL_MAX_TOKENS;				\
 		}							\
 		newPtr = (Tcl_Token *) Tcl_Realloc((char *) oldPtr,	\
-			(unsigned int) (allocated * sizeof(Tcl_Token))); \
+			(allocated * sizeof(Tcl_Token))); \
 	    }								\
 	    (available) = allocated;					\
 	    if (oldPtr == NULL) {					\
 		memcpy(newPtr, staticPtr,				\
-			(size_t) ((used) * sizeof(Tcl_Token)));		\
+			((used) * sizeof(Tcl_Token)));		\
 	    }								\
 	    (tokenPtr) = newPtr;					\
 	}								\
@@ -4572,9 +4573,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+#define TclIsPureByteArray(objPtr) \
+	((objPtr)->typePtr==&tclPureByteArrayType)
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+#define TclFetchIntRep(objPtr, type) \
+	(((objPtr)->typePtr == type) ? &((objPtr)->internalRep) : NULL)
 
 
 /*

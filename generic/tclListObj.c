@@ -61,12 +61,12 @@ const Tcl_ObjType tclListType = {
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclListType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclListType);		\
 	(listRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    Tcl_FetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -765,7 +765,7 @@ Tcl_ListObjAppendElement(
 	     * Old intrep to be freed, re-use refCounts.
 	     */
 
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
 	    Tcl_Free(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -1080,7 +1080,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1147,7 +1147,7 @@ Tcl_ListObjReplace(
 	     */
 
 	    if (first > 0) {
-		memcpy(elemPtrs, oldPtrs, (size_t) first * sizeof(Tcl_Obj *));
+		memcpy(elemPtrs, oldPtrs, first * sizeof(Tcl_Obj *));
 	    }
 
 	    /*
@@ -1640,7 +1640,7 @@ TclLsetFlat(
 	     * them at that time.
 	     */
 
-	    irPtr = Tcl_FetchIntRep(parentList, &tclListType);
+	    irPtr = TclFetchIntRep(parentList, &tclListType);
 	    irPtr->twoPtrValue.ptr2 = chainPtr;
 	    chainPtr = parentList;
 	}
@@ -1661,7 +1661,7 @@ TclLsetFlat(
 	 * Clear away our intrep surgery mess.
 	 */
 
-	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
+	irPtr = TclFetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
 
@@ -1983,7 +1983,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && Tcl_FetchIntRep(objPtr, &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && (objPtr->typePtr == &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;

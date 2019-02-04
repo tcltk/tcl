@@ -503,11 +503,11 @@ TclpNativeSplitPath(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	resultPtr = SplitUnixPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitUnixPath(TclGetString(pathPtr));
 	break;
 
     case TCL_PLATFORM_WINDOWS:
-	resultPtr = SplitWinPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitWinPath(TclGetString(pathPtr));
 	break;
     }
 
@@ -598,7 +598,7 @@ Tcl_SplitPath(
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = TclGetStringFromObj(eltPtr, &len);
-	memcpy(p, str, (size_t) len+1);
+	memcpy(p, str, len+1);
 	p += len+1;
     }
 
@@ -896,7 +896,7 @@ TclpNativeJoinPath(
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
 
-	dest = Tcl_GetString(prefix) + length;
+	dest = TclGetString(prefix) + length;
 	for (; *p != '\0'; p++) {
 	    if (*p == '/') {
 		while (p[1] == '/') {
@@ -910,7 +910,7 @@ TclpNativeJoinPath(
 		needsSep = 1;
 	    }
 	}
-	length = dest - Tcl_GetString(prefix);
+	length = dest - TclGetString(prefix);
 	Tcl_SetObjLength(prefix, length);
 	break;
 
@@ -931,7 +931,7 @@ TclpNativeJoinPath(
 	 */
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
-	dest = Tcl_GetString(prefix) + length;
+	dest = TclGetString(prefix) + length;
 	for (; *p != '\0'; p++) {
 	    if ((*p == '/') || (*p == '\\')) {
 		while ((p[1] == '/') || (p[1] == '\\')) {
@@ -945,7 +945,7 @@ TclpNativeJoinPath(
 		needsSep = 1;
 	    }
 	}
-	length = dest - Tcl_GetString(prefix);
+	length = dest - TclGetString(prefix);
 	Tcl_SetObjLength(prefix, length);
 	break;
     }
@@ -1409,7 +1409,7 @@ Tcl_GlobObjCmd(
 		 * there are none presently in the prefix.
 		 */
 
-		if (strpbrk(Tcl_GetString(pathOrDir), "\\/") == NULL) {
+		if (strpbrk(TclGetString(pathOrDir), "\\/") == NULL) {
 		    Tcl_AppendToObj(pathOrDir, last-1, 1);
 		}
 	    }
@@ -1521,9 +1521,9 @@ Tcl_GlobObjCmd(
 		if ((Tcl_ListObjLength(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
-		    if (!strcmp("macintosh", Tcl_GetString(item))) {
+		    if (!strcmp("macintosh", TclGetString(item))) {
 			Tcl_ListObjIndex(interp, look, 1, &item);
-			if (!strcmp("type", Tcl_GetString(item))) {
+			if (!strcmp("type", TclGetString(item))) {
 			    Tcl_ListObjIndex(interp, look, 2, &item);
 			    if (globTypes->macType != NULL) {
 				goto badMacTypesArg;
@@ -1531,7 +1531,7 @@ Tcl_GlobObjCmd(
 			    globTypes->macType = item;
 			    Tcl_IncrRefCount(item);
 			    continue;
-			} else if (!strcmp("creator", Tcl_GetString(item))) {
+			} else if (!strcmp("creator", TclGetString(item))) {
 			    Tcl_ListObjIndex(interp, look, 2, &item);
 			    if (globTypes->macCreator != NULL) {
 				goto badMacTypesArg;
@@ -1551,7 +1551,7 @@ Tcl_GlobObjCmd(
 	    badTypesArg:
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad argument to \"-types\": %s",
-			Tcl_GetString(look)));
+			TclGetString(look)));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
 		result = TCL_ERROR;
 		join = 0;
@@ -1615,7 +1615,7 @@ Tcl_GlobObjCmd(
 	Tcl_DStringFree(&str);
     } else {
 	for (i = 0; i < objc; i++) {
-	    string = Tcl_GetString(objv[i]);
+	    string = TclGetString(objv[i]);
 	    if (TclGlob(interp, string, pathOrDir, globFlags,
 		    globTypes) != TCL_OK) {
 		result = TCL_ERROR;
@@ -1647,7 +1647,7 @@ Tcl_GlobObjCmd(
 
 		for (i = 0; i < objc; i++) {
 		    Tcl_AppendPrintfToObj(errorMsg, "%s%s",
-			    sep, Tcl_GetString(objv[i]));
+			    sep, TclGetString(objv[i]));
 		    sep = " ";
 		}
 	    }
@@ -1850,7 +1850,7 @@ TclGlob(
 		    Tcl_DecrRefCount(temp);
 		    return TCL_ERROR;
 		}
-		pathPrefix = Tcl_NewStringObj(Tcl_GetString(cwd), 3);
+		pathPrefix = Tcl_NewStringObj(TclGetString(cwd), 3);
 		Tcl_DecrRefCount(cwd);
 		if (tail[0] == '/') {
 		    tail++;
@@ -2344,7 +2344,7 @@ DoGlob(
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
-		if (pathPtr == NULL && Tcl_GetString(subdirv[i])[0] == '~') {
+		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
 		    Tcl_ListObjLength(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);

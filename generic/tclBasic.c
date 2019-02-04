@@ -1055,11 +1055,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
     if (TclOOInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
     /*
@@ -1069,10 +1069,10 @@ Tcl_CreateInterp(void)
 
 #ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
     if (TclZipfs_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 #endif
 
@@ -1204,7 +1204,7 @@ TclHideUnsafeCommands(
                             TclGetString(hideName)) != TCL_OK) {
                 Tcl_Panic("problem making '%s %s' safe: %s",
                         unsafePtr->ensembleNsName, unsafePtr->commandName,
-                        Tcl_GetString(Tcl_GetObjResult(interp)));
+                        Tcl_GetStringResult(interp));
             }
             Tcl_CreateObjCommand(interp, TclGetString(cmdName),
                     BadEnsembleSubcommand, (ClientData) unsafePtr, NULL);
@@ -1219,7 +1219,7 @@ TclHideUnsafeCommands(
                     unsafePtr->ensembleNsName) != TCL_OK) {
                 Tcl_Panic("problem making '%s' safe: %s",
                         unsafePtr->ensembleNsName,
-                        Tcl_GetString(Tcl_GetObjResult(interp)));
+                        Tcl_GetStringResult(interp));
             }
         }
     }
@@ -3992,7 +3992,7 @@ Tcl_CancelEval(
     if (resultObjPtr != NULL) {
 	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = Tcl_Realloc(cancelInfo->result,cancelInfo->length);
-	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;
@@ -6704,7 +6704,7 @@ ExprCeilFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -6744,7 +6744,7 @@ ExprFloorFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -6884,7 +6884,7 @@ ExprSqrtFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -6931,7 +6931,7 @@ ExprUnaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d = irPtr->doubleValue;
@@ -6995,7 +6995,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d1 = irPtr->doubleValue;
@@ -7010,7 +7010,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d2 = irPtr->doubleValue;
@@ -7158,7 +7158,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (Tcl_FetchIntRep(objv[1], &tclDoubleType)) {
+	if (objv[1]->typePtr == &tclDoubleType) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}

@@ -1120,8 +1120,8 @@ ProcedureMethodCompiledVarResolver(
      * which look like array accesses. Both will lead us astray.
      */
 
-    if (strstr(Tcl_GetString(variableObj), "::") != NULL ||
-	    Tcl_StringMatch(Tcl_GetString(variableObj), "*(*)")) {
+    if (strstr(TclGetString(variableObj), "::") != NULL ||
+	    Tcl_StringMatch(TclGetString(variableObj), "*(*)")) {
 	Tcl_DecrRefCount(variableObj);
 	return TCL_CONTINUE;
     }
@@ -1338,7 +1338,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
-    Tcl_GetString(bodyObj);
+    TclGetString(bodyObj);
     Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*

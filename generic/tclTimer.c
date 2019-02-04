@@ -821,7 +821,7 @@ Tcl_AfterObjCmd(
     if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
-            const char *arg = Tcl_GetString(objv[1]);
+            const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"

@@ -708,7 +708,7 @@ Tcl_CloseObjCmd(
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	const char *string;
-	int len;
+	size_t len;
 
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
@@ -870,8 +870,8 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, i, index, keepNewline, result, skip, length;
-    int ignoreStderr;
+    int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
+    size_t length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1476,7 +1476,7 @@ Tcl_SocketObjCmd(
     }
 
     for (a = 1; a < objc; a++) {
-	const char *arg = Tcl_GetString(objv[a]);
+	const char *arg = TclGetString(objv[a]);
 
 	if (arg[0] != '-') {
 	    break;

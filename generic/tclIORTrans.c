@@ -620,7 +620,7 @@ TclChanPushObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "chan handler \"%s initialize\" returned %s",
 		    TclGetString(cmdObj),
-		    Tcl_GetString(Tcl_GetObjResult(interp))));
+		    Tcl_GetStringResult(interp)));
 	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
@@ -1014,7 +1014,7 @@ ReflectClose(
 
     if (!rtPtr->dead) {
 	rtmPtr = GetReflectedTransformMap(rtPtr->interp);
-	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, TclGetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
@@ -2041,7 +2041,7 @@ InvokeTclMethod(
 	     */
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
-		int cmdLen;
+		size_t cmdLen;
 		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -2607,7 +2607,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2641,7 +2641,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2670,7 +2670,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2697,7 +2697,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }

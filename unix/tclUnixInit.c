@@ -455,6 +455,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr, *objPtr;
     const char *str;
     Tcl_DString buffer;
+    size_t length;
 
     pathPtr = Tcl_NewObj();
 
@@ -537,8 +538,7 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
+    str = TclGetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);

@@ -293,7 +293,7 @@ LinkTraceProc(
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    Tcl_TraceVar2(interp, Tcl_GetString(linkPtr->varName), NULL,
+	    Tcl_TraceVar2(interp, TclGetString(linkPtr->varName), NULL,
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
 	}
@@ -416,7 +416,7 @@ LinkTraceProc(
     case TCL_LINK_DOUBLE:
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(valueObj, &tclDoubleType);
+	    Tcl_ObjIntRep *irPtr = TclFetchIntRep(valueObj, &tclDoubleType);
 	    if (irPtr == NULL) {
 #endif
 		if (GetInvalidDoubleFromObj(valueObj, &linkPtr->lastValue.d) != TCL_OK) {

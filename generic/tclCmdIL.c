@@ -1047,7 +1047,7 @@ InfoErrorStackCmd(
 
     target = interp;
     if (objc == 2) {
-	target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
+	target = Tcl_GetSlave(interp, TclGetString(objv[1]));
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2155,7 +2155,7 @@ InfoCmdTypeCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "commandName");
 	return TCL_ERROR;
     }
-    command = Tcl_FindCommand(interp, Tcl_GetString(objv[1]), NULL,
+    command = Tcl_FindCommand(interp, TclGetString(objv[1]), NULL,
 	    TCL_LEAVE_ERR_MSG);
     if (command == NULL) {
 	return TCL_ERROR;
@@ -3250,7 +3250,7 @@ Tcl_LsearchObjCmd(
 		if (encoded == (int)TCL_INDEX_NONE) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
-			    "from any list", Tcl_GetString(indices[j])));
+			    "from any list", TclGetString(indices[j])));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
 			    "OUTOFRANGE", NULL);
 		    result = TCL_ERROR;
@@ -3966,7 +3966,7 @@ Tcl_LsortObjCmd(
 		if ((result == TCL_OK) && (encoded == (int)TCL_INDEX_NONE)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
-			    "from any list", Tcl_GetString(indexv[j])));
+			    "from any list", TclGetString(indexv[j])));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
 			    "OUTOFRANGE", NULL);
 		    result = TCL_ERROR;

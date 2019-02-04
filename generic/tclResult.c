@@ -230,7 +230,7 @@ Tcl_GetStringResult(
 {
     Interp *iPtr = (Interp *) interp;
 
-    return Tcl_GetString(iPtr->objResultPtr);
+    return TclGetString(iPtr->objResultPtr);
 }
 
 /*
@@ -383,12 +383,13 @@ Tcl_AppendElement(
     Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
+    size_t length;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = TclGetString(iPtr->objResultPtr);
-    if (TclNeedSpace(bytes, bytes+iPtr->objResultPtr->length)) {
+    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
+    if (TclNeedSpace(bytes, bytes + length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
     Tcl_AppendObjToObj(iPtr->objResultPtr, listPtr);

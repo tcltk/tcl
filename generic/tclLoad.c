@@ -165,7 +165,7 @@ Tcl_LoadObjCmd(
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fullFileName = Tcl_GetString(objv[1]);
+    fullFileName = TclGetString(objv[1]);
 
     Tcl_DStringInit(&pkgName);
     Tcl_DStringInit(&initName);
@@ -176,7 +176,7 @@ Tcl_LoadObjCmd(
 
     packageName = NULL;
     if (objc >= 3) {
-	packageName = Tcl_GetString(objv[2]);
+	packageName = TclGetString(objv[2]);
 	if (packageName[0] == '\0') {
 	    packageName = NULL;
 	}
@@ -196,7 +196,7 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	const char *slaveIntName = Tcl_GetString(objv[3]);
+	const char *slaveIntName = TclGetString(objv[3]);
 
 	target = Tcl_GetSlave(interp, slaveIntName);
 	if (target == NULL) {
@@ -324,7 +324,7 @@ Tcl_LoadObjCmd(
 
 		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
-		pkgGuess = Tcl_GetString(pkgGuessPtr);
+		pkgGuess = TclGetString(pkgGuessPtr);
 		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 			&& (pkgGuess[2] == 'b')) {
 		    pkgGuess += 3;
@@ -564,7 +564,7 @@ Tcl_UnloadObjCmd(
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    fullFileName = Tcl_GetString(objv[i]);
+	    fullFileName = TclGetString(objv[i]);
 	    if (fullFileName[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -604,13 +604,13 @@ Tcl_UnloadObjCmd(
 	return TCL_ERROR;
     }
 
-    fullFileName = Tcl_GetString(objv[i]);
+    fullFileName = TclGetString(objv[i]);
     Tcl_DStringInit(&pkgName);
     Tcl_DStringInit(&tmp);
 
     packageName = NULL;
     if (objc - i >= 2) {
-	packageName = Tcl_GetString(objv[i+1]);
+	packageName = TclGetString(objv[i+1]);
 	if (packageName[0] == '\0') {
 	    packageName = NULL;
 	}
@@ -630,7 +630,7 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	const char *slaveIntName = Tcl_GetString(objv[i + 2]);
+	const char *slaveIntName = TclGetString(objv[i + 2]);
 
 	target = Tcl_GetSlave(interp, slaveIntName);
 	if (target == NULL) {

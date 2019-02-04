@@ -913,7 +913,8 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = TclGetString(norm);
+	    size_t length;
+	    const char *str = TclGetStringFromObj(norm, &length);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -923,7 +924,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,norm->length), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str, length), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -973,8 +974,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -2398,7 +2398,7 @@ TclpFilesystemPathType(
     if (normPath == NULL) {
 	return NULL;
     }
-    path = Tcl_GetString(normPath);
+    path = TclGetString(normPath);
     if (path == NULL) {
 	return NULL;
     }
@@ -2476,7 +2476,7 @@ TclpObjNormalizePath(
     Tcl_DString ds;		/* Some workspace. */
 
     Tcl_DStringInit(&dsNorm);
-    path = Tcl_GetString(pathPtr);
+    path = TclGetString(pathPtr);
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
@@ -2570,12 +2570,12 @@ TclpObjNormalizePath(
 		     * Convert link to forward slashes.
 		     */
 
-		    for (path = Tcl_GetString(to); *path != 0; path++) {
+		    for (path = TclGetString(to); *path != 0; path++) {
 			if (*path == '\\') {
 			    *path = '/';
 			}
 		    }
-		    path = Tcl_GetString(to);
+		    path = TclGetString(to);
 		    currentPathEndPosition = path + nextCheckpoint;
 		    if (temp != NULL) {
 			Tcl_DecrRefCount(temp);
@@ -2734,12 +2734,13 @@ TclpObjNormalizePath(
 
 	    char *path;
 	    Tcl_Obj *tmpPathPtr;
+	    size_t length;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = TclGetString(tmpPathPtr);
-	    Tcl_SetStringObj(pathPtr, path, tmpPathPtr->length);
+	    path = TclGetStringFromObj(tmpPathPtr, &length);
+	    Tcl_SetStringObj(pathPtr, path, length);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
 	    /*
@@ -2807,7 +2808,7 @@ TclWinVolumeRelativeNormalize(
 	 * current volume.
 	 */
 
-	const char *drive = Tcl_GetString(useThisCwd);
+	const char *drive = TclGetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
 	Tcl_AppendToObj(absolutePath, path, -1);
@@ -2822,8 +2823,8 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	const char *drive = TclGetString(useThisCwd);
-	size_t cwdLen = useThisCwd->length;
+	size_t cwdLen;
+	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -2986,10 +2987,9 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
 
-    if (strlen(str)!=(unsigned int)len) {
+    if (strlen(str) != len) {
 	/* String contains NUL-bytes. This is invalid. */
 	goto done;
     }

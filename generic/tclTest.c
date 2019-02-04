@@ -976,7 +976,7 @@ AsyncHandlerProc(
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetString(Tcl_GetObjResult(interp));
+    listArgv[1] = Tcl_GetStringResult(interp);
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
@@ -4982,7 +4982,7 @@ TestpurebytesobjObjCmd(
     if (objc == 2) {
 	const char *s = Tcl_GetString(objv[1]);
 	objPtr->length = objv[1]->length;
-	objPtr->bytes = ckalloc(objPtr->length + 1);
+	objPtr->bytes = Tcl_Alloc(objPtr->length + 1);
 	memcpy(objPtr->bytes, s, objPtr->length);
 	objPtr->bytes[objPtr->length] = 0;
     }

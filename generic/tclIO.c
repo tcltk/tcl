@@ -349,7 +349,7 @@ static const Tcl_ObjType chanObjType = {
 #define ChanGetIntRep(objPtr, resPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &chanObjType);		\
+	irPtr = TclFetchIntRep((objPtr), &chanObjType);		\
 	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -1563,7 +1563,7 @@ TclGetChannelFromObj(
          * Re-use the ResolvedCmdName struct.
          */
 
-	Tcl_Release((ClientData) resPtr->statePtr);
+	Tcl_Release(resPtr->statePtr);
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -1571,7 +1571,7 @@ TclGetChannelFromObj(
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
-    Tcl_Preserve((ClientData) statePtr);
+    Tcl_Preserve(statePtr);
     resPtr->interp = interp;
     resPtr->epoch = statePtr->epoch;
 
@@ -4321,7 +4321,7 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
@@ -4409,7 +4409,7 @@ Write(
 	     */
 
 	    saved = -SpaceLeft(bufPtr);
-	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
 
@@ -4524,7 +4524,8 @@ Tcl_GetsObj(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
+    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    size_t oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
@@ -4718,7 +4719,7 @@ Tcl_GetsObj(
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
 		    gs.charsWrote--;
-		    memmove(dst, dst + 1, (size_t) (dstEnd - dst));
+		    memmove(dst, dst + 1, dstEnd - dst);
 		    dstEnd--;
 		}
 	    }
@@ -5088,7 +5089,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5105,7 +5106,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5401,7 +5402,7 @@ FilterInputBytes(
 	    }
 	    extra = rawLen - gsPtr->rawRead;
 	    memcpy(nextPtr->buf + (BUFFER_PADDING - extra),
-		    raw + gsPtr->rawRead, (size_t) extra);
+		    raw + gsPtr->rawRead, extra);
 	    nextPtr->nextRemoved -= extra;
 	    bufPtr->nextAdded -= extra;
 	}
@@ -5656,7 +5657,7 @@ Tcl_ReadRaw(
          * Copy the current chunk into the read buffer.
          */
 
-	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	memcpy(readBuf, RemovePoint(bufPtr), toCopy);
 	bufPtr->nextRemoved += toCopy;
 	copied += toCopy;
 	readBuf += toCopy;
@@ -6085,7 +6086,8 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    int numBytes, srcLen = BytesLeft(bufPtr);
+    size_t numBytes;
+    int srcLen = BytesLeft(bufPtr);
 
     /*
      * One src byte can yield at most one character.  So when the number of
@@ -6404,7 +6406,7 @@ ReadChars(
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
-	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    memcpy(RemovePoint(nextPtr), src, srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
 	    Tcl_SetObjLength(objPtr, numBytes);
@@ -6510,7 +6512,7 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) srcLen);
+	    memcpy(dstStart, srcStart, srcLen);
 	}
 	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
 	    char *dst = dstStart;
@@ -9426,7 +9428,8 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size, sizeb;
+    int result = TCL_OK, size;
+    size_t sizeb;
     Tcl_WideInt total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
@@ -9492,7 +9495,7 @@ CopyData(
                     || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
-		sizeb = (int) csPtr->toRead;
+		sizeb = csPtr->toRead;
 	    }
 
 	    if (inBinary || sameEncoding) {
@@ -9502,7 +9505,7 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
 	    }
-	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {
@@ -9586,7 +9589,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb < 0) {
+	if (sizeb == TCL_AUTO_LENGTH) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);
@@ -10403,7 +10406,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
+		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }

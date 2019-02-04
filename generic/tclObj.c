@@ -1396,7 +1396,7 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = TCL_AUTO_LENGTH;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
@@ -1701,12 +1701,12 @@ Tcl_GetStringFromObj(
  *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes == -1)
  *	    Invalid call -- panic!
  *
- *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
+ *	objPtr->bytes == NULL && bytes == NULL && numBytes != -1
  *	    Allocation only - allocate space for (numBytes+1) chars.
  *	    store in objPtr->bytes and return. Also sets
  *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
  *
- *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
+ *	objPtr->bytes == NULL && bytes != NULL && numBytes != -1
  *	    Allocate and copy. bytes is assumed to point to chars to
  *	    copy into the string rep. objPtr->length = numBytes. Allocate
  *	    array of (numBytes + 1) chars. store in objPtr->bytes. Copy
@@ -1715,7 +1715,7 @@ Tcl_GetStringFromObj(
  *	    Caller must guarantee there are numBytes chars at bytes to
  *	    be copied.
  *
- *	objPtr->bytes != NULL && bytes == NULL && numBytes >= 0
+ *	objPtr->bytes != NULL && bytes == NULL && numBytes != -1
  *	    Truncate.  Set objPtr->length to numBytes and
  *	    objPr->bytes[numBytes] to NUL.  Caller has to guarantee
  *	    that a prior allocating call allocated enough bytes for
@@ -1880,13 +1880,7 @@ Tcl_FetchIntRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    /* If objPtr type doesn't match request, nothing can be fetched */
-    if (objPtr->typePtr != typePtr) {
-	return NULL;
-    }
-
-    /* Type match! objPtr IntRep is the one sought. */
-    return &(objPtr->internalRep);
+    return TclFetchIntRep(objPtr, typePtr);
 }
 
 /*
