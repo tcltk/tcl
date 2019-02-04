@@ -627,7 +627,7 @@ typedef union Tcl_ObjIntRep {	/* The internal representation: */
 				/*     not used internally any more. */
     Tcl_WideInt wideValue;	/*   - an integer value >= 64bits */
     struct {			/*   - internal rep as two pointers. */
-	void *ptr1;		
+	void *ptr1;
 	void *ptr2;
     } twoPtrValue;
     struct {			/*   - internal rep as a pointer and a long, */

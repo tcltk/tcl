@@ -143,7 +143,7 @@ GetIndexFromObjList(
 	    return TCL_OK;
 	}
 
-	tablePtr[t] = Tcl_GetString(objv[t]);
+	tablePtr[t] = TclGetString(objv[t]);
     }
     tablePtr[objc] = NULL;
 
@@ -213,7 +213,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & INDEX_TEMP_TABLE)) {
-    irPtr = Tcl_FetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = irPtr->twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
@@ -277,7 +277,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & INDEX_TEMP_TABLE)) {
-    irPtr = Tcl_FetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = irPtr->twoPtrValue.ptr1;
     } else {
@@ -388,7 +388,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = Tcl_FetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
     register const char *indexStr = EXPAND_OF(indexRep);
 
     Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
@@ -420,7 +420,7 @@ DupIndex(
     Tcl_ObjIntRep ir;
     IndexRep *dupIndexRep = Tcl_Alloc(sizeof(IndexRep));
 
-    memcpy(dupIndexRep, Tcl_FetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
+    memcpy(dupIndexRep, TclFetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
 	    sizeof(IndexRep));
 
     ir.twoPtrValue.ptr1 = dupIndexRep;
@@ -448,7 +448,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    Tcl_Free(Tcl_FetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1);
+    Tcl_Free(TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -544,7 +544,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    message = Tcl_GetString(objv[i]);
+	    message = TclGetString(objv[i]);
 	    break;
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
@@ -877,7 +877,7 @@ Tcl_WrongNumArgs(
 	     */
 	    const Tcl_ObjIntRep *irPtr;
 
-	    if ((irPtr = Tcl_FetchIntRep(origObjv[i], &indexType))) {
+	    if ((irPtr = TclFetchIntRep(origObjv[i], &indexType))) {
 		register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
@@ -924,7 +924,7 @@ Tcl_WrongNumArgs(
 	 */
 	const Tcl_ObjIntRep *irPtr;
 
-	if ((irPtr = Tcl_FetchIntRep(objv[i], &indexType))) {
+	if ((irPtr = TclFetchIntRep(objv[i], &indexType))) {
 	    register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
@@ -1126,7 +1126,7 @@ Tcl_ParseArgsObjv(
 		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, Tcl_GetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex])));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1137,7 +1137,7 @@ Tcl_ParseArgsObjv(
 		goto missingArg;
 	    }
 	    *((const char **) infoPtr->dstPtr) =
-		    Tcl_GetString(objv[srcIndex]);
+		    TclGetString(objv[srcIndex]);
 	    srcIndex++;
 	    objc--;
 	    break;
@@ -1159,7 +1159,7 @@ Tcl_ParseArgsObjv(
 		    (double *) infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected floating-point argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, Tcl_GetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex])));
 		goto error;
 	    }
 	    srcIndex++;

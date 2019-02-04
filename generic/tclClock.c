@@ -452,7 +452,7 @@ ClockGetdatefieldsObjCmd(
      * that it isn't.
      */
 
-    if (Tcl_FetchIntRep(objv[1], &tclBignumType)) {
+    if (objv[1]->typePtr == &tclBignumType) {
 	Tcl_SetObjResult(interp, literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
@@ -1922,7 +1922,7 @@ ClockParseformatargsObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
+		    TclGetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {

@@ -173,7 +173,7 @@ const Tcl_ObjType tclDictType = {
 #define DictGetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
         const Tcl_ObjIntRep *irPtr;                                     \
-        irPtr = Tcl_FetchIntRep((objPtr), &tclDictType);                \
+        irPtr = TclFetchIntRep((objPtr), &tclDictType);                \
         (dictRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
 
@@ -617,7 +617,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (Tcl_FetchIntRep(objPtr, &tclListType)) {
+    if (objPtr->typePtr == &tclListType) {
 	int objc, i;
 	Tcl_Obj **objv;
 
@@ -640,7 +640,7 @@ SetDictFromAny(
 		 * convert back.
 		 */
 
-		(void) Tcl_GetString(objPtr);
+		(void) TclGetString(objPtr);
 
 		TclDecrRefCount(discardedValue);
 	    }
@@ -3236,7 +3236,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar(interp, Tcl_GetString(objv[i+1]), 0);
+	    Tcl_UnsetVar(interp, TclGetString(objv[i+1]), 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);

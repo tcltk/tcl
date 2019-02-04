@@ -241,7 +241,7 @@ InitializeHostName(
 	    if (dot != NULL) {
 		char *node = Tcl_Alloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
 		Tcl_Free(node);
@@ -313,7 +313,8 @@ InitializeHostName(
 const char *
 Tcl_GetHostName(void)
 {
-    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+    Tcl_Obj *tclObj = TclGetProcessGlobalValue(&hostName);
+    return TclGetString(tclObj);
 }
 
 /*

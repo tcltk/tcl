@@ -2819,7 +2819,7 @@ TclInitByteCode(
 
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
-    memcpy(p, envPtr->codeStart, (size_t) codeBytes);
+    memcpy(p, envPtr->codeStart, codeBytes);
 
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
@@ -2830,7 +2830,7 @@ TclInitByteCode(
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
-	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
+	memcpy(p, envPtr->exceptArrayPtr, exceptArrayBytes);
     } else {
 	codePtr->exceptArrayPtr = NULL;
     }
@@ -2838,7 +2838,7 @@ TclInitByteCode(
     p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy(p, envPtr->auxDataArrayPtr, (size_t) auxDataArrayBytes);
+	memcpy(p, envPtr->auxDataArrayPtr, auxDataArrayBytes);
     } else {
 	codePtr->auxDataArrayPtr = NULL;
     }
@@ -2989,7 +2989,7 @@ TclFindCompiledLocal(
 	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localPtr->name;
 
-		if ((nameBytes == (size_t)localPtr->nameLength) &&
+		if ((nameBytes == localPtr->nameLength) &&
 			(strncmp(name,localName,nameBytes) == 0)) {
 		    return i;
 		}
@@ -3022,7 +3022,7 @@ TclFindCompiledLocal(
 	localPtr->resolveInfo = NULL;
 
 	if (name != NULL) {
-	    memcpy(localPtr->name, name, (size_t) nameBytes);
+	    memcpy(localPtr->name, name, nameBytes);
 	}
 	localPtr->name[nameBytes] = '\0';
 	procPtr->numCompiledLocals++;

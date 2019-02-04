@@ -1027,7 +1027,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    int bytesNeeded;		/* Buffer length computed to complete the
+    size_t bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1197,7 +1197,7 @@ TclScanElement(
 	    bytesNeeded++;
 	}
 	*flagPtr = CONVERT_ESCAPE;
-	goto overflowCheck;
+	return bytesNeeded;
     }
     if (*flagPtr & CONVERT_ANY) {
 	/*
@@ -1245,7 +1245,7 @@ TclScanElement(
 		bytesNeeded += braceCount;
 	    }
 	    *flagPtr = CONVERT_MASK;
-	    goto overflowCheck;
+	    return bytesNeeded;
 	}
 #endif /* COMPAT */
 	if (*flagPtr & TCL_DONT_USE_BRACES) {
@@ -1271,7 +1271,7 @@ TclScanElement(
 	    bytesNeeded += 2;
 	}
 	*flagPtr = CONVERT_BRACE;
-	goto overflowCheck;
+	return bytesNeeded;
     }
 
     /*
@@ -1286,11 +1286,6 @@ TclScanElement(
 	bytesNeeded += 2;
     }
     *flagPtr = CONVERT_NONE;
-
-  overflowCheck:
-    if (bytesNeeded < 0) {
-	Tcl_Panic("TclScanElement: string length overflow");
-    }
     return bytesNeeded;
 }
 
@@ -1669,15 +1664,15 @@ UtfWellFormedEnd(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 TrimRight(
     const char *bytes,		/* String to be trimmed... */
-    int numBytes,		/* ...and its length in bytes */
+	size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    int numTrim)		/* ...and its length in bytes */
+	size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes + numBytes;
-    int pInc;
+    size_t pInc;
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
@@ -1686,7 +1681,7 @@ TrimRight(
 
     do {
 	const char *q = trim;
-	int bytesLeft = numTrim;
+	size_t bytesLeft = numTrim;
 
 	p = Tcl_UtfPrev(p, bytes);
  	pInc = TclUtfToUniChar(p, &ch1);
@@ -1696,7 +1691,7 @@ TrimRight(
 	 */
 
 	do {
-	    int qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1783,16 +1778,16 @@ TrimLeft(
      */
 
     do {
-	int pInc = TclUtfToUniChar(p, &ch1);
+	size_t pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
-	int bytesLeft = numTrim;
+	size_t bytesLeft = numTrim;
 
 	/*
 	 * Inner loop: scan trim string for match to current character.
 	 */
 
 	do {
-	    int qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1992,7 +1987,7 @@ Tcl_Concat(
 	if (needSpace) {
 	    *p++ = ' ';
 	}
-	memcpy(p, element, (size_t) elemLength);
+	memcpy(p, element, elemLength);
 	p += elemLength;
 	needSpace = 1;
     }
@@ -2041,8 +2036,7 @@ Tcl_ConcatObj(
 	if (TclListObjIsCanonical(objPtr)) {
 	    continue;
 	}
-	TclGetString(objPtr);
-	length = objPtr->length;
+	(void)TclGetStringFromObj(objPtr, &length);
 	if (length > 0) {
 	    break;
 	}
@@ -2079,8 +2073,7 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	element = TclGetString(objv[i]);
-	elemLength = objv[i]->length;
+	element = TclGetStringFromObj(objv[i], &elemLength);
 	bytesNeeded += elemLength;
     }
 
@@ -2097,8 +2090,7 @@ Tcl_ConcatObj(
     for (i = 0;  i < objc;  i++) {
 	size_t triml, trimr;
 
-	element = TclGetString(objv[i]);
-	elemLength = objv[i]->length;
+	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading/trailing whitespace. */
 	triml = TclTrim(element, elemLength, CONCAT_TRIM_SET,
@@ -3446,18 +3438,15 @@ GetWideForIndex(
 	    *widePtr = *(Tcl_WideInt *)cd;
 	    return TCL_OK;
 	}
-	if (numType == TCL_NUMBER_BIG) {
-	    /* objPtr holds an integer outside the signed wide range */
-	    /* Truncate to the signed wide range. */
-	    if (mp_isneg((mp_int *)cd)) {
-		*widePtr = WIDE_MIN;
-	    } else {
-		*widePtr = WIDE_MAX;
-	    }
-	    return TCL_OK;
+	if (numType != TCL_NUMBER_BIG) {
+	    /* Must be a double -> not a valid index */
+	    goto parseError;
 	}
-	/* Must be a double -> not a valid index */
-	goto parseError;
+
+	/* objPtr holds an integer outside the signed wide range */
+	/* Truncate to the signed wide range. */
+	*widePtr = mp_isneg((mp_int *)cd) ? WIDE_MIN : WIDE_MAX;
+    return TCL_OK;
     }
 
     /* objPtr does not hold a number, check the end+/- format... */
@@ -3681,7 +3670,7 @@ GetEndOffsetFromObj(
     Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
-    while ((irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	size_t length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
