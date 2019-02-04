@@ -332,7 +332,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
         bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_int.o \
 	bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
-	bn_mp_tc_and.o bn_mp_tc_or.o bn_mp_tc_xor.o \
+	bn_mp_tc_and.o bn_mp_tc_div_2d.o bn_mp_tc_or.o bn_mp_tc_xor.o \
 	bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
@@ -537,6 +537,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
 	$(TOMMATH_DIR)/bn_mp_tc_and.c \
+	$(TOMMATH_DIR)/bn_mp_tc_div_2d.c \
 	$(TOMMATH_DIR)/bn_mp_tc_or.c \
 	$(TOMMATH_DIR)/bn_mp_tc_xor.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c \
@@ -1519,6 +1520,9 @@ bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c $(MATHHDRS)
 
 bn_mp_tc_and.o: $(TOMMATH_DIR)/bn_mp_tc_and.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_and.c
+
+bn_mp_tc_div_2d.o: $(TOMMATH_DIR)/bn_mp_tc_div_2d.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_div_2d.c
 
 bn_mp_tc_or.o: $(TOMMATH_DIR)/bn_mp_tc_or.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_or.c

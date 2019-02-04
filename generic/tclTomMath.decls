@@ -248,6 +248,10 @@ declare 74 {
 declare 75 {
     int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
 }
+declare 76 {
+    int TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
+}
+
 
 # Local Variables:
 # mode: tcl
