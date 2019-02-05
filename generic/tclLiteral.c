@@ -213,7 +213,7 @@ TclCreateLiteral(
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])
-		    && (memcmp(objBytes, bytes, (unsigned) length) == 0)))) {
+		    && (memcmp(objBytes, bytes, length) == 0)))) {
 		/*
 		 * A literal was found: return it
 		 */
@@ -422,7 +422,7 @@ TclRegisterLiteral(
     for (localPtr=localTablePtr->buckets[localHash] ; localPtr!=NULL;
 	    localPtr = localPtr->nextPtr) {
 	objPtr = localPtr->objPtr;
-	if (((size_t)objPtr->length == length) && ((length == 0)
+	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
 		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
@@ -504,10 +504,10 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *entryPtr;
     const char *bytes;
-    size_t globalHash;
+    size_t globalHash, length;
 
-    bytes = TclGetString(objPtr);
-    globalHash = (HashString(bytes, objPtr->length) & globalTablePtr->mask);
+    bytes = TclGetStringFromObj(objPtr, &length);
+    globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
 	    entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {

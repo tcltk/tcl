@@ -1415,10 +1415,11 @@ CompileExprObj(
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
-	const char *string = TclGetString(objPtr);
+	size_t length;
+	const char *string = TclGetStringFromObj(objPtr, &length);
 
-	TclInitCompileEnv(interp, &compEnv, string, objPtr->length, NULL, 0);
-	TclCompileExpr(interp, string, objPtr->length, &compEnv, 0);
+	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
+	TclCompileExpr(interp, string, length, &compEnv, 0);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,
@@ -4798,8 +4799,7 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = TclGetString(valuePtr);
-	s1len = valuePtr->length;
+	s1 = TclGetStringFromObj(valuePtr, &s1len);
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 	if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -4817,8 +4817,7 @@ TEBCresume(
 	    do {
 		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		if (o != NULL) {
-		    s2 = TclGetString(o);
-		    s2len = o->length;
+		    s2 = TclGetStringFromObj(o, &s2len);
 		} else {
 		    s2 = "";
 		    s2len = 0;

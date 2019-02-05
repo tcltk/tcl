@@ -1586,7 +1586,7 @@ ConvertFileNameFormat(
 {
     int pathc, i;
     Tcl_Obj *splitPath;
-	size_t length;
+    size_t length;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 

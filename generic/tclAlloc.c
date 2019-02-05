@@ -255,7 +255,7 @@ TclpAlloc(
 {
     register union overhead *overPtr;
     register size_t bucket;
-    register unsigned amount;
+    register size_t amount;
     struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {

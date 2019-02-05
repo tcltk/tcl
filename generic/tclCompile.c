@@ -769,8 +769,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = TclGetString(objPtr);
-    length = objPtr->length;
+    stringPtr = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
@@ -1308,8 +1307,8 @@ CompileSubstObj(
     }
     if (codePtr == NULL) {
 	CompileEnv compEnv;
-	const char *bytes = TclGetString(objPtr);
-	size_t numBytes = objPtr->length;
+	size_t numBytes;
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1791,14 +1790,15 @@ CompileCmdLiteral(
     const char *bytes;
     Command *cmdPtr;
     int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t length;
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = TclGetString(cmdObj);
-    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, cmdObj->length, extraLiteralFlags);
+    bytes = TclGetStringFromObj(cmdObj, &length);
+    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
 
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
@@ -2733,8 +2733,8 @@ PreventCycle(
              * can be sure we do not have any lingering cycles hiding in
 	     * the intrep.
 	     */
-	    const char *bytes = TclGetString(objPtr);
-	    size_t numBytes = objPtr->length;
+	    size_t numBytes;
+	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -2971,8 +2971,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = TclGetString(*varNamePtr);
-		len = (*varNamePtr)->length;
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

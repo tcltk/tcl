@@ -1811,8 +1811,7 @@ NsEnsembleImplementationCmdNR(
 	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetString(subObj);
-	stringLength = subObj->length;
+	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
@@ -3379,6 +3378,7 @@ CompileToInvokedCommand(
     Tcl_Obj *objPtr, **words;
     char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t length;
     DefineLineInformation;
 
     /*
@@ -3391,8 +3391,8 @@ CompileToInvokedCommand(
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
-	    bytes = TclGetString(words[i-1]);
-	    PushLiteral(envPtr, bytes, words[i-1]->length);
+	    bytes = TclGetStringFromObj(words[i-1], &length);
+	    PushLiteral(envPtr, bytes, length);
 	    continue;
 	}
 
@@ -3420,11 +3420,11 @@ CompileToInvokedCommand(
 
     objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = TclGetString(objPtr);
+    bytes = TclGetStringFromObj(objPtr, &length);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, objPtr->length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);

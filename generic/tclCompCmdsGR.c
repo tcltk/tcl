@@ -2636,8 +2636,8 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    const char *bytes = TclGetString(msg);
-    size_t numBytes = msg->length;
+    size_t numBytes;
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
