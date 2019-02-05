@@ -268,7 +268,7 @@ static void
 SetTimer(
     const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
-    long timeout;
+    unsigned long timeout;
 
     if (!initialized) {
 	InitNotifier();
@@ -281,7 +281,7 @@ SetTimer(
     if (timePtr) {
 	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
 	notifier.currentTimeout = XtAppAddTimeOut(notifier.appContext,
-		(unsigned long) timeout, TimerProc, NULL);
+		timeout, TimerProc, NULL);
     } else {
 	notifier.currentTimeout = 0;
     }

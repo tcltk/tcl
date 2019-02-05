@@ -541,13 +541,11 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -561,15 +559,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }

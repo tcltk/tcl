@@ -797,7 +797,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    size_t subno;			/* capturing-parens or backref number */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;

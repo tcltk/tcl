@@ -1667,9 +1667,9 @@ UtfWellFormedEnd(
 static inline size_t
 TrimRight(
     const char *bytes,		/* String to be trimmed... */
-	size_t numBytes,		/* ...and its length in bytes */
+    size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-	size_t numTrim)		/* ...and its length in bytes */
+    size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes + numBytes;
     size_t pInc;
@@ -2733,9 +2733,10 @@ TclDStringAppendObj(
     Tcl_DString *dsPtr,
     Tcl_Obj *objPtr)
 {
-    char *bytes = TclGetString(objPtr);
+    size_t length;
+    const char *bytes = TclGetStringFromObj(objPtr, &length);
 
-    return Tcl_DStringAppend(dsPtr, bytes, objPtr->length);
+    return Tcl_DStringAppend(dsPtr, bytes, length);
 }
 
 char *

@@ -3179,7 +3179,7 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE size_t TclUtfCount(int ch);
+MODULE_SCOPE size_t	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -4382,17 +4382,15 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
       return response;
    }
-
 #else
-#include "tclStringRep.h"
 #define TclGetStringFromObj(objPtr, lenPtr) \
     (((objPtr)->bytes \
-	    ? 0 : Tcl_GetString((objPtr)), \
+	    ? NULL : Tcl_GetString((objPtr)), \
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
     (Tcl_GetUnicodeFromObj(objPtr, NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    ((String *)(objPtr)->internalRep.twoPtrValue.ptr1)->unicode)
+	    Tcl_GetUnicodeFromObj(objPtr, NULL))
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
     (Tcl_GetByteArrayFromObj(objPtr, NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \

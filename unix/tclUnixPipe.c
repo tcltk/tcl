@@ -1059,7 +1059,7 @@ PipeInputProc(
      */
 
     do {
-	bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
+	bytesRead = read(GetFd(psPtr->inFile), buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -1105,7 +1105,7 @@ PipeOutputProc(
      */
 
     do {
-	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+	written = write(GetFd(psPtr->outFile), buf, toWrite);
     } while ((written < 0) && (errno == EINTR));
 
     if (written < 0) {

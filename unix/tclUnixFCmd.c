@@ -612,7 +612,7 @@ TclUnixCopyFile(
     }
     buffer = Tcl_Alloc(blockSize);
     while (1) {
-	nread = (size_t) read(srcFd, buffer, blockSize);
+	nread = read(srcFd, buffer, blockSize);
 	if ((nread == TCL_IO_FAILURE) || (nread == 0)) {
 	    break;
 	}

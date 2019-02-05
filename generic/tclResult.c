@@ -779,8 +779,10 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    (void) TclGetString(valuePtr);
-	    if (valuePtr->length) {
+	    size_t length;
+
+	    (void) TclGetStringFromObj(valuePtr, &length);
+	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
 		iPtr->flags |= ERR_ALREADY_LOGGED;
