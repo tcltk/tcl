@@ -1834,7 +1834,7 @@ TclGetAndDetachPids(
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
-		Tcl_NewWideIntObj((unsigned)
+		Tcl_NewWideIntObj(
 			TclpGetPid(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }

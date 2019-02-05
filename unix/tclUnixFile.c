@@ -269,8 +269,7 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -940,6 +939,7 @@ TclpObjLink(
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
+	    size_t length;
 
 	    /*
 	     * Now we don't want to link to the absolute, normalized path.
@@ -951,8 +951,8 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetString(transPtr);
-	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
+	    target = TclGetStringFromObj(transPtr, &length);
+	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -1105,8 +1105,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {

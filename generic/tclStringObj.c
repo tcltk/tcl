@@ -141,10 +141,8 @@ GrowStringBuffer(
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
-	if (needed <= STRING_MAXCHARS / 2) {
-	    attempt = 2 * needed;
-	    ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
-	}
+	attempt = 2 * needed;
+	ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
@@ -180,7 +178,6 @@ GrowUnicodeBuffer(
      * Pre-conditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->maxChars
-     *	needed < STRING_MAXCHARS
      */
 
     String *ptr = NULL, *stringPtr = GET_STRING(objPtr);
@@ -191,22 +188,18 @@ GrowUnicodeBuffer(
 	 * Subsequent appends - apply the growth algorithm.
 	 */
 
-	if (needed <= STRING_MAXCHARS / 2) {
-	    attempt = 2 * needed;
-	    ptr = stringAttemptRealloc(stringPtr, attempt);
-	}
+	attempt = 2 * needed;
+	ptr = stringAttemptRealloc(stringPtr, attempt);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
 	     * overflow into invalid argument values for attempt.
 	     */
 
-	    size_t limit = STRING_MAXCHARS - needed;
 	    size_t extra = needed - stringPtr->numChars
 		    + TCL_MIN_UNICHAR_GROWTH;
-	    size_t growth = (extra > limit) ? limit : extra;
 
-	    attempt = needed + growth;
+	    attempt = needed + extra;
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
     }
@@ -854,11 +847,6 @@ Tcl_SetObjLength(
 	stringPtr->numChars = TCL_AUTO_LENGTH;
 	stringPtr->hasUnicode = 0;
     } else {
-	/*
-	 * Changing length of pure unicode string.
-	 */
-
-	stringCheckLimits(length);
 	if (length > stringPtr->maxChars) {
 	    stringPtr = stringRealloc(stringPtr, length);
 	    SET_STRING(objPtr, stringPtr);
@@ -960,9 +948,6 @@ Tcl_AttemptSetObjLength(
 	 * Changing length of pure unicode string.
 	 */
 
-	if (length > STRING_MAXCHARS) {
-	    return 0;
-	}
 	if (length > stringPtr->maxChars) {
 	    stringPtr = stringAttemptRealloc(stringPtr, length);
 	    if (stringPtr == NULL) {
@@ -1030,7 +1015,6 @@ UnicodeLength(
 	    numChars++;
 	}
     }
-    stringCheckLimits(numChars);
     return numChars;
 }
 
@@ -1052,7 +1036,6 @@ SetUnicodeObj(
      * Allocate enough space for the String structure + Unicode string.
      */
 
-    stringCheckLimits(numChars);
     stringPtr = stringAlloc(numChars);
     SET_STRING(objPtr, stringPtr);
     objPtr->typePtr = &tclStringType;
@@ -1419,7 +1402,6 @@ AppendUnicodeToUnicodeRep(
      */
 
     numChars = stringPtr->numChars + appendNumChars;
-    stringCheckLimits(numChars);
 
     if (numChars > stringPtr->maxChars) {
 	size_t offset = TCL_AUTO_LENGTH;
@@ -3004,7 +2986,7 @@ TclStringCat(
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		size_t numChars;
 
-		TclGetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
+		(void)TclGetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
 		if (numChars) {
 		    last = objc - oc;
 		    if (length == 0) {
@@ -3061,8 +3043,7 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    TclGetString(objPtr); /* PANIC? */
-		    numBytes = objPtr->length;
+		    (void)TclGetStringFromObj(objPtr, &numBytes); /* PANIC? */
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
@@ -3154,7 +3135,7 @@ TclStringCat(
 	    objResultPtr = *objv++; objc--;
 
 	    /* Ugly interface! Force resize of the unicode array. */
-	    TclGetUnicodeFromObj(objResultPtr, &start);
+	    (void)TclGetUnicodeFromObj(objResultPtr, &start);
 	    Tcl_InvalidateStringRep(objResultPtr);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
@@ -3239,7 +3220,7 @@ TclStringCat(
 		size_t more;
 		char *src = TclGetStringFromObj(objPtr, &more);
 
-		memcpy(dst, src, (size_t) more);
+		memcpy(dst, src, more);
 		dst += more;
 	    }
 	}
@@ -3429,7 +3410,7 @@ TclStringCmp(
 	     * length only.
 	     */
 
-	    match = memCmpFn(s1, s2, (size_t) length);
+	    match = memCmpFn(s1, s2, length);
 	}
 	if ((match == 0) && (reqlength > length)) {
 	    match = s1len - s2len;
@@ -3959,7 +3940,6 @@ ExtendUnicodeRepWithString(
 	TclNumUtfChars(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
-    stringCheckLimits(needed);
 
     if (needed > stringPtr->maxChars) {
 	GrowUnicodeBuffer(objPtr, needed);

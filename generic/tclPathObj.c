@@ -576,8 +576,8 @@ TclPathPart(
 		 * the standardPath code.
 		 */
 
-		const char *rest = TclGetString(fsPathPtr->normPathPtr);
-		size_t numBytes = fsPathPtr->normPathPtr->length;
+		size_t numBytes;
+		const char *rest = TclGetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
 		    goto standardPath;
@@ -613,8 +613,8 @@ TclPathPart(
 		 * we don't, and instead just use the standardPath code.
 		 */
 
-		const char *rest = TclGetString(fsPathPtr->normPathPtr);
-		size_t numBytes = fsPathPtr->normPathPtr->length;
+		size_t numBytes;
+		const char *rest = TclGetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
 		    goto standardPath;
@@ -1362,6 +1362,7 @@ AppendPath(
 {
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
+    size_t length;
 
     /*
      * This is likely buggy when dealing with virtual filesystem drivers
@@ -1371,8 +1372,8 @@ AppendPath(
      * intrep produce the same results; that is, bugward compatibility.  If
      * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
-    bytes = TclGetString(tail);
-    if (tail->length == 0) {
+    bytes = TclGetStringFromObj(tail, &length);
+    if (length == 0) {
 	Tcl_AppendToObj(copy, "/", 1);
     } else {
 	TclpNativeJoinPath(copy, bytes);

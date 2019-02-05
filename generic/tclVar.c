@@ -6395,7 +6395,7 @@ CompareVarKeys(
     Tcl_Obj *objPtr1 = (Tcl_Obj *)keyPtr;
     Tcl_Obj *objPtr2 = hPtr->key.objPtr;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
