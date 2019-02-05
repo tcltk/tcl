@@ -422,6 +422,7 @@ GenerateHeader(
 {
     Tcl_Obj *value;
     int len, result = TCL_ERROR;
+    size_t length;
     const char *valueStr;
     Tcl_Encoding latin1enc;
     static const char *const types[] = {
@@ -440,8 +441,8 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = TclGetString(value);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, value->length, 0, NULL,
+	valueStr = TclGetStringFromObj(value, &length);
+	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
 	headerPtr->nativeCommentBuf[len] = '\0';
@@ -461,8 +462,8 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = TclGetString(value);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, value->length, 0, NULL,
+	valueStr = TclGetStringFromObj(value, &length);
+	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
 	headerPtr->header.name = (Bytef *) headerPtr->nativeFilenameBuf;
@@ -3397,9 +3398,10 @@ ZlibTransformGetOption(
 	    }
 	} else {
 	    if (cd->compDictObj) {
-		const char *str = TclGetString(cd->compDictObj);
+		size_t length;
+		const char *str = TclGetStringFromObj(cd->compDictObj, &length);
 
-		Tcl_DStringAppend(dsPtr, str, cd->compDictObj->length);
+		Tcl_DStringAppend(dsPtr, str, length);
 	    }
 	    return TCL_OK;
 	}

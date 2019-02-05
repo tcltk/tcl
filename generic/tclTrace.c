@@ -1306,7 +1306,7 @@ TraceCommandProc(
 	 */
 
 	Tcl_DStringInit(&cmd);
-	Tcl_DStringAppend(&cmd, tcmdPtr->command, (int) tcmdPtr->length);
+	Tcl_DStringAppend(&cmd, tcmdPtr->command, tcmdPtr->length);
 	Tcl_DStringAppendElement(&cmd, oldName);
 	Tcl_DStringAppendElement(&cmd, (newName ? newName : ""));
 	if (flags & TCL_TRACE_RENAME) {
@@ -1823,7 +1823,7 @@ TraceExecutionProc(
 	    int i, saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
-	    Tcl_DStringAppend(&cmd, tcmdPtr->command, (int)tcmdPtr->length);
+	    Tcl_DStringAppend(&cmd, tcmdPtr->command, tcmdPtr->length);
 
 	    /*
 	     * Append command with arguments.
@@ -1992,14 +1992,14 @@ TraceVarProc(
     result = NULL;
     if ((tvarPtr->flags & flags) && !Tcl_InterpDeleted(interp)
 	    && !Tcl_LimitExceeded(interp)) {
-	if (tvarPtr->length != (size_t) 0) {
+	if (tvarPtr->length) {
 	    /*
 	     * Generate a command to execute by appending list elements for
 	     * the two variable names and the operation.
 	     */
 
 	    Tcl_DStringInit(&cmd);
-	    Tcl_DStringAppend(&cmd, tvarPtr->command, (int) tvarPtr->length);
+	    Tcl_DStringAppend(&cmd, tvarPtr->command, tvarPtr->length);
 	    Tcl_DStringAppendElement(&cmd, name1);
 	    Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
 #ifndef TCL_REMOVE_OBSOLETE_TRACES

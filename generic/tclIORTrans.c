@@ -2607,7 +2607,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2641,7 +2641,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2670,7 +2670,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2697,7 +2697,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }

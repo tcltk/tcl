@@ -927,7 +927,7 @@ TclParseBackslash(
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
-	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
+	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
 	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}

@@ -548,8 +548,7 @@ SetByteArrayFromAny(
 	return TCL_OK;
     }
 
-    src = TclGetString(objPtr);
-    length = objPtr->length;
+    src = TclGetStringFromObj(objPtr, &length);
     srcEnd = src + length;
 
     byteArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
