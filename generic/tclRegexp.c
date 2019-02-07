@@ -593,7 +593,7 @@ Tcl_GetRegExpFromObj(
 				 * expression. */
     int flags)			/* Regular expression compilation flags. */
 {
-    int length;
+    size_t length;
     TclRegexp *regexpPtr;
     const char *pattern;
 

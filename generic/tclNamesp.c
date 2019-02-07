@@ -1229,7 +1229,7 @@ TclTeardownNamespace(
 #else
     if (nsPtr->childTablePtr != NULL) {
 	while (nsPtr->childTablePtr->numEntries > 0) {
-	    int length = nsPtr->childTablePtr->numEntries;
+	    size_t length = nsPtr->childTablePtr->numEntries;
 	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
 		    sizeof(Namespace *) * length);
 
@@ -3095,7 +3095,7 @@ NamespaceChildrenCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	unsigned int length = strlen(nsPtr->fullName);
+	size_t length = strlen(nsPtr->fullName);
 
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
@@ -3175,7 +3175,7 @@ NamespaceCodeCmd(
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
     register const char *arg;
-    int length;
+    size_t length;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg");
@@ -3488,15 +3488,15 @@ NsEval_Callback(
     Tcl_Namespace *namespacePtr = data[0];
 
     if (result == TCL_ERROR) {
-	int length = strlen(namespacePtr->fullName);
-	int limit = 200;
+	size_t length = strlen(namespacePtr->fullName);
+	unsigned limit = 200;
 	int overflow = (length > limit);
 	char *cmd = data[1];
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
 		cmd,
-		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? limit : (unsigned)length), namespacePtr->fullName,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -4358,7 +4358,7 @@ NamespaceQualifiersCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register const char *name, *p;
-    int length;
+    size_t length;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -4822,7 +4822,7 @@ FreeNsNameInternalRep(
 
     NsNameGetIntRep(objPtr, resNamePtr);
     assert(resNamePtr != NULL);
-	
+
     /*
      * Decrement the reference count of the namespace. If there are no more
      * references, free it up.

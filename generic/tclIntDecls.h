@@ -111,7 +111,8 @@ EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 /* Slot 33 is reserved */
 /* 34 */
 EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int endValue, int *indexPtr);
+				Tcl_Obj *objPtr, size_t endValue,
+				int *indexPtr);
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
 /* 37 */
@@ -622,7 +623,7 @@ typedef struct TclIntStubs {
     const char * (*tclGetExtension) (const char *name); /* 31 */
     int (*tclGetFrame) (Tcl_Interp *interp, const char *str, CallFrame **framePtrPtr); /* 32 */
     void (*reserved33)(void);
-    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
+    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t endValue, int *indexPtr); /* 34 */
     void (*reserved35)(void);
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */

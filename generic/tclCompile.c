@@ -1747,7 +1747,7 @@ TclWordKnownAtCompileTime(
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
 		char utfBuf[TCL_UTF_MAX];
-		int length = TclParseBackslash(tokenPtr->start,
+		size_t length = TclParseBackslash(tokenPtr->start,
 			tokenPtr->size, NULL, utfBuf);
 
 		Tcl_AppendToObj(tempPtr, utfBuf, length);

@@ -2078,12 +2078,12 @@ Tcl_AppendFormatToObj(
 
 	    switch (ch) {
 	    case 'd': {
-		int length;
+		size_t length;
 		Tcl_Obj *pure;
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj(s);
+		    pure = Tcl_NewWideIntObj(s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
@@ -2091,7 +2091,7 @@ Tcl_AppendFormatToObj(
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    pure = Tcl_NewLongObj(l);
+		    pure = Tcl_NewWideIntObj(l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = TclGetStringFromObj(pure, &length);
@@ -2113,10 +2113,10 @@ Tcl_AppendFormatToObj(
 		 */
 
 		if (gotPrecision) {
-		    if (length < precision) {
+		    if (length < (size_t)precision) {
 			segmentLimit -= precision - length;
 		    }
-		    while (length < precision) {
+		    while (length < (size_t)precision) {
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
@@ -2124,10 +2124,10 @@ Tcl_AppendFormatToObj(
 		}
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
-		    if (length < width) {
+		    if (length < (size_t)width) {
 			segmentLimit -= width - length;
 		    }
-		    while (length < width) {
+		    while (length < (size_t)width) {
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
@@ -2150,7 +2150,8 @@ Tcl_AppendFormatToObj(
 	    case 'b': {
 		Tcl_WideUInt bits = 0;
 		Tcl_WideInt numDigits = 0;
-		int length, numBits = 4, base = 16, index = 0, shift = 0;
+		int numBits = 4, base = 16, index = 0, shift = 0;
+		size_t length;
 		Tcl_Obj *pure;
 		char *bytes;
 
@@ -2244,10 +2245,10 @@ Tcl_AppendFormatToObj(
 		    mp_clear(&big);
 		}
 		if (gotPrecision) {
-		    if (length < precision) {
+		    if (length < (size_t)precision) {
 			segmentLimit -= precision - length;
 		    }
-		    while (length < precision) {
+		    while (length < (size_t)precision) {
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
@@ -2255,10 +2256,10 @@ Tcl_AppendFormatToObj(
 		}
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
-		    if (length < width) {
+		    if (length < (size_t)width) {
 			segmentLimit -= width - length;
 		    }
-		    while (length < width) {
+		    while (length < (size_t)width) {
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
@@ -2547,11 +2548,11 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
-			    (long) va_arg(argList, int)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+			    va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
 			    va_arg(argList, long)));
 		    break;
 		case 2:
@@ -2582,7 +2583,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(lastNum));
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':
@@ -3471,7 +3472,7 @@ TclStringFirst(
 	/* We don't find empty substrings.  Bizarre!
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -3480,6 +3481,10 @@ TclStringFirst(
 
 	/* Find bytes in bytes */
 	bh = TclGetByteArrayFromObj(haystack, &lh);
+	if ((lh < ln) || (start > lh - ln)) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	end = bh + lh;
 
 	try = bh + start;
@@ -3492,7 +3497,7 @@ TclStringFirst(
 	    try = memchr(try, bn[0], (end + 1 - ln) - try);
 	    if (try == NULL) {
 		/* Leading byte not found -> needle cannot be found. */
-		return -1;
+		return TCL_IO_FAILURE;
 	    }
 	    /* Leading byte found, check rest of needle. */
 	    if (0 == memcmp(try+1, bn+1, ln-1)) {
@@ -3502,7 +3507,7 @@ TclStringFirst(
 	    /* Rest of needle match failed; Iterate to continue search. */
 	    try++;
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     /*
@@ -3522,6 +3527,10 @@ TclStringFirst(
 	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
 
 	uh = TclGetUnicodeFromObj(haystack, &lh);
+	if ((lh < ln) || (start > lh - ln)) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	end = uh + lh;
 
 	for (try = uh + start; try + ln <= end; try++) {
@@ -3530,7 +3539,7 @@ TclStringFirst(
 		return (try - uh);
 	    }
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 }
 
@@ -3570,20 +3579,19 @@ TclStringLast(
 	return TCL_IO_FAILURE;
     }
 
-    lh = Tcl_GetCharLength(haystack);
-    if (last >= lh) {
-	last = lh - 1;
-    }
-
-    if (last < ln - 1) {
-	return TCL_IO_FAILURE;
-    }
-
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
 	unsigned char *try, *bh = TclGetByteArrayFromObj(haystack, &lh);
 	unsigned char *bn = TclGetByteArrayFromObj(needle, &ln);
 
+	if (last + 1 >= lh + 1) {
+	    last = lh - 1;
+	}
+	if (last + 1 < ln) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	try = bh + last + 1 - ln;
+
 	while (try >= bh) {
 	    if ((*try == bn[0])
 		    && (0 == memcmp(try+1, bn+1, ln-1))) {
@@ -3591,13 +3599,20 @@ TclStringLast(
 	    }
 	    try--;
 	}
-	return -1;
+	return TCL_IO_FAILURE;
     }
 
     {
 	Tcl_UniChar *try, *uh = TclGetUnicodeFromObj(haystack, &lh);
 	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
 
+	if (last + 1 >= lh + 1) {
+	    last = lh - 1;
+	}
+	if (last + 1 < ln) {
+	    /* Don't start the loop if there cannot be a valid answer */
+	    return TCL_IO_FAILURE;
+	}
 	try = uh + last + 1 - ln;
 	while (try >= uh) {
 	    if ((*try == un[0])

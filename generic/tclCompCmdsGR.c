@@ -2262,7 +2262,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, quantified, result = TCL_ERROR;
+    int exact, quantified, result = TCL_ERROR;
+    size_t len;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2340,7 +2341,7 @@ TclCompileRegsubCmd(
 		 */
 
 		len = Tcl_DStringLength(&pattern) - 2;
-		if (len > 0) {
+		if (len + 2 > 2) {
 		    goto isSimpleGlob;
 		}
 
@@ -2855,7 +2856,8 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    int n = varTokenPtr->numComponents;
+    size_t len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

@@ -1864,14 +1864,14 @@ Tcl_FSEvalFileEx(
 	 * Record information telling where the error occurred.
 	 */
 
-	int length;
+	size_t length;
 	const char *pathString = TclGetStringFromObj(pathPtr, &length);
-	int limit = 150;
+	unsigned limit = 150;
 	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : length), pathString,
+		(overflow ? limit : (unsigned)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 

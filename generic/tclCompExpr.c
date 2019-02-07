@@ -2254,7 +2254,7 @@ CompileExprTree(
 	    case FUNCTION: {
 		Tcl_DString cmdName;
 		const char *p;
-		int length;
+		size_t length;
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
@@ -2408,7 +2408,7 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		int length;
+		size_t length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
 		int index = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);

@@ -65,7 +65,7 @@
 static inline Tcl_Obj *
 NewNativeObj(
     char *string,
-    int length)
+    size_t length)
 {
     Tcl_DString ds;
 

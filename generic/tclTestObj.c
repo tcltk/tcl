@@ -723,9 +723,9 @@ TestintobjCmd(
 	}
 	intValue = i;
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetLongObj(varPtr[varIndex], intValue);
+	    Tcl_SetWideIntObj(varPtr[varIndex], intValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewLongObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "setmaxlong") == 0) {
@@ -734,9 +734,9 @@ TestintobjCmd(
 	    goto wrongNumArgs;
 	}
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetLongObj(varPtr[varIndex], maxLong);
+	    Tcl_SetWideIntObj(varPtr[varIndex], maxLong);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewLongObj(maxLong));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(maxLong));
 	}
     } else if (strcmp(subCmd, "ismaxlong") == 0) {
 	if (objc != 3) {
@@ -782,9 +782,9 @@ TestintobjCmd(
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), "1", -1);
 #else
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetLongObj(varPtr[varIndex], LONG_MAX);
+	    Tcl_SetWideIntObj(varPtr[varIndex], LONG_MAX);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewLongObj(LONG_MAX));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(LONG_MAX));
 	}
 	if (Tcl_GetIntFromObj(interp, varPtr[varIndex], &i) != TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1348,7 +1348,7 @@ TeststringobjCmd(
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL);
+	    Tcl_GetUnicode(varPtr[varIndex]);
 	    break;
 	case 11:			/* appendself */
 	    if (objc != 4) {

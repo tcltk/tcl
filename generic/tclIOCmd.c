@@ -462,7 +462,7 @@ Tcl_ReadObjCmd(
 
     if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
-	int length;
+	size_t length;
 
 	result = TclGetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {

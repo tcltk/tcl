@@ -642,7 +642,7 @@ static Tcl_Obj *
 SplitUnixPath(
     const char *path)		/* Pointer to string containing a path. */
 {
-    int length;
+    size_t length;
     const char *origPath = path, *elementStart;
     Tcl_Obj *result = Tcl_NewObj();
 
@@ -731,7 +731,7 @@ static Tcl_Obj *
 SplitWinPath(
     const char *path)		/* Pointer to string containing a path. */
 {
-    int length;
+    size_t length;
     const char *p, *elementStart;
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     Tcl_DString buf;
@@ -852,7 +852,8 @@ TclpNativeJoinPath(
     Tcl_Obj *prefix,
     const char *joining)
 {
-    int length, needsSep;
+    int needsSep;
+    size_t length;
     char *dest;
     const char *p;
     const char *start;
@@ -2381,7 +2382,7 @@ DoGlob(
      */
 
     if (*p == '\0') {
-	int length;
+	size_t length;
 	Tcl_DString append;
 
 	/*

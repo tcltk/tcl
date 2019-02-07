@@ -1963,11 +1963,11 @@ TestencodingObjCmd(
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
 	encodingPtr->toUtfCmd = Tcl_Alloc(length + 1);
-	memcpy(encodingPtr->toUtfCmd, string, (unsigned) length + 1);
+	memcpy(encodingPtr->toUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[4], &length);
 	encodingPtr->fromUtfCmd = Tcl_Alloc(length + 1);
-	memcpy(encodingPtr->fromUtfCmd, string, (unsigned) (length + 1));
+	memcpy(encodingPtr->fromUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[2], &length);
 
@@ -2019,7 +2019,7 @@ EncodingToUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -2051,7 +2051,7 @@ EncodingFromUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -3037,10 +3037,10 @@ TestlinkCmd(
 	Tcl_AppendElement(interp, buffer);
 	TclFormatInt(buffer, (int) uintVar);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewLongObj(longVar);
+	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewLongObj(ulongVar);
+	tmp = Tcl_NewWideIntObj((long)ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
@@ -3992,8 +3992,8 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewLongObj(start);
-	    objs[1] = Tcl_NewLongObj(end);
+	    objs[0] = Tcl_NewWideIntObj(start);
+	    objs[1] = Tcl_NewWideIntObj(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
@@ -5863,7 +5863,7 @@ TestChannelEventCmd(
 
     cmd = argv[2];
     len = strlen(cmd);
-    if ((cmd[0] == 'a') && (strncmp(cmd, "add", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'a') && (strncmp(cmd, "add", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName add eventSpec script\"", NULL);
@@ -5897,7 +5897,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", len) == 0)) {
 	if (argc != 4) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index\"", NULL);
@@ -5943,7 +5943,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'l') && (strncmp(cmd, "list", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'l') && (strncmp(cmd, "list", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName list\"", NULL);
@@ -5966,7 +5966,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName removeall\"", NULL);
@@ -5985,7 +5985,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if	((cmd[0] == 's') && (strncmp(cmd, "set", (unsigned) len) == 0)) {
+    if	((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index event\"", NULL);

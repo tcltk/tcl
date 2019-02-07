@@ -6426,7 +6426,7 @@ Tcl_ExprString(
 	 * An empty string. Just set the interpreter's result to 0.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
     } else {
 	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
 

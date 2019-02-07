@@ -2464,7 +2464,7 @@ typedef struct List {
 
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
+	? (*(wideIntPtr) =						\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 
@@ -3229,7 +3229,7 @@ MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
-			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
+			    size_t reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
 MODULE_SCOPE size_t	TclScanElement(const char *string, size_t length,
 			    char *flagPtr);
@@ -3305,10 +3305,6 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
-MODULE_SCOPE int	TclZipfsInit(Tcl_Interp *interp);
-MODULE_SCOPE int        TclZipfsMount(Tcl_Interp *interp, const char *zipname,
-			 const char *mntpt, const char *passwd);
-MODULE_SCOPE int 	TclZipfsUnmount(Tcl_Interp *interp, const char *zipname);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
@@ -3317,7 +3313,6 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, size_t length);
 /* Tip 430 */
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
-MODULE_SCOPE int    TclZipfs_SafeInit(Tcl_Interp *interp);
 
 
 /*
@@ -4205,8 +4200,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int before, int after, int *indexPtr);
-MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
+			    size_t before, size_t after, int *indexPtr);
+MODULE_SCOPE int	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           (-2)
@@ -5013,6 +5008,13 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclDecrRefCount(_objPtr);					\
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
+
+#if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
+#   define TclNewWideIntObjFromSize(value) \
+	Tcl_NewWideIntObj(((Tcl_WideInt)(((size_t)(value))+1))-1)
+#else
+#   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
+#endif
 
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
