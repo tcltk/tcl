@@ -1,5 +1,5 @@
 README:  Tcl
-    This is the Tcl 8.6.6 source distribution.
+    This is the Tcl 8.6.9 source distribution.
 	http://sourceforge.net/projects/tcl/files/Tcl/
     You can get any source release of Tcl from the URL above.
 
@@ -29,7 +29,7 @@ Tcl is maintained, enhanced, and distributed freely by the Tcl community.
 Source code development and tracking of bug reports and feature requests
 takes place at:
 
-	http://core.tcl.tk/
+	http://core.tcl-lang.org/
 
 Tcl/Tk release and mailing list services are hosted by SourceForge:
 
@@ -37,7 +37,7 @@ Tcl/Tk release and mailing list services are hosted by SourceForge:
 
 with the Tcl Developer Xchange hosted at:
 
-	http://www.tcl.tk/
+	http://www.tcl-lang.org/
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
@@ -49,21 +49,21 @@ and selling it either in whole or in part.  See the file
 
 Extensive documentation is available at our website.
 The home page for this release, including new features, is
-	http://www.tcl.tk/software/tcltk/8.6.html
+	http://www.tcl-lang.org/software/tcltk/8.6.html
 
 Detailed release notes can be found at the file distributions page
 by clicking on the relevant version.
 	http://sourceforge.net/projects/tcl/files/Tcl/
 
 Information about Tcl itself can be found at
-	http://www.tcl.tk/about/
+	http://www.tcl-lang.org/about/
 
 There have been many Tcl books on the market.  Many are mentioned in the Wiki:
-	http://wiki.tcl.tk/_/ref?N=25206
+	http://wiki.tcl-lang.org/_/ref?N=25206
 
 To view the complete set of reference manual entries for Tcl 8.6 online,
 visit the URL:
-	http://www.tcl.tk/man/tcl8.6/
+	http://www.tcl-lang.org/man/tcl8.6/
 
 2a. Unix Documentation
 ----------------------
@@ -101,7 +101,7 @@ There are brief notes in the unix/README, win/README, and macosx/README about
 compiling on these different platforms.  There is additional information
 about building Tcl from sources at
 
-	http://www.tcl.tk/doc/howto/compile.html
+	http://www.tcl-lang.org/doc/howto/compile.html
 
 4. Development tools
 ---------------------------
@@ -127,7 +127,7 @@ see the "Support and bug fixes" section below.
 
 A Wiki-based open community site covering all aspects of Tcl/Tk is at:
 
-	http://wiki.tcl.tk/
+	http://wiki.tcl-lang.org/
 
 It is dedicated to the Tcl programming language and its extensions.  A
 wealth of useful information can be found there.  It contains code
@@ -153,7 +153,7 @@ We are very interested in receiving bug reports, patches, and suggestions
 for improvements.  We prefer that you send this information to us as
 tickets entered into our tracker at:
 
-	http://core.tcl.tk/tcl/reportlist
+	http://core.tcl-lang.org/tcl/reportlist
 
 We will log and follow-up on each bug, although we cannot promise a
 specific turn-around time.  Enhancements may take longer and may not happen
@@ -169,13 +169,13 @@ questions for which no one else is likely to know the answer.  In addition,
 see the following Web site for links to other organizations that offer
 Tcl/Tk training:
 
-	http://wiki.tcl.tk/training
+	http://wiki.tcl-lang.org/training
 
 9. Tracking Development
 -----------------------
 
 Tcl is developed in public.  To keep an eye on how Tcl is changing, see
-	http://core.tcl.tk/
+	http://core.tcl-lang.org/
 
 10. Thank You
 -------------

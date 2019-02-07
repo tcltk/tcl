@@ -93,8 +93,11 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d ${prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl8.6 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tcl8.6 2>/dev/null` \
 			; do
 		    if test -f "$i/tclConfig.sh" ; then
 			ac_cv_c_tclconfig="`(cd $i; pwd)`"
@@ -223,8 +226,11 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 			`ls -d ${prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -d /usr/local/lib/tk8.6 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tk8.6 2>/dev/null` \
 			; do
 		    if test -f "$i/tkConfig.sh" ; then
 			ac_cv_c_tkconfig="`(cd $i; pwd)`"
@@ -611,7 +617,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #		TCL_THREADS
 #		_REENTRANT
 #		_THREAD_SAFE
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_THREADS], [
@@ -727,7 +732,6 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
 #		DBGX		Formerly used as debug library extension;
 #				always blank now.
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
@@ -977,7 +981,7 @@ AC_DEFUN([SC_CONFIG_SYSTEM], [
 #       SHLIB_LD_LIBS - Dependent libraries for the linker to scan when
 #                       creating shared libraries.  This symbol typically
 #                       goes at the end of the "ld" commands that build
-#                       shared libraries. The value of the symbol is
+#                       shared libraries. The value of the symbol defaults to
 #                       "${LIBS}" if all of the dependent libraries should
 #                       be specified when creating a shared library.  If
 #                       dependent libraries should not be specified (as on
@@ -1107,7 +1111,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
+    AS_IF([test "x${SHLIB_VERSION}" = x],[SHLIB_VERSION=".1.0"],[SHLIB_VERSION=".${SHLIB_VERSION}"])
     case $system in
 	AIX-*)
 	    AS_IF([test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"], [
@@ -1236,9 +1240,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
 		# The eval makes quoting arguments work.
-		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1259,7 +1263,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-lroot"
 	    AC_CHECK_LIB(network, inet_ntoa, [LIBS="$LIBS -lnetwork"])
@@ -1403,7 +1407,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -1467,44 +1471,23 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
-	    vax)
-		# Equivalent using configure option --disable-load
-		# Step 4 will set the necessary variables
-		DL_OBJS=""
-		SHLIB_LD_LIBS=""
-		LDFLAGS=""
+	    alpha|sparc64)
+		SHLIB_CFLAGS="-fPIC"
 		;;
 	    *)
-		case "$arch" in
-		alpha|sparc|sparc64)
-		    SHLIB_CFLAGS="-fPIC"
-		    ;;
-		*)
-		    SHLIB_CFLAGS="-fpic"
-		    ;;
-		esac
-		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		AS_IF([test $doRpath = yes], [
-		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
+		SHLIB_CFLAGS="-fpic"
 		;;
 	    esac
-	    case "$arch" in
-	    vax)
-		CFLAGS_OPTIMIZE="-O1"
-		;;
-	    sh)
-		CFLAGS_OPTIMIZE="-O0"
-		;;
-	    *)
-		CFLAGS_OPTIMIZE="-O2"
-		;;
-	    esac
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    AS_IF([test $doRpath = yes], [
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
+	    LDFLAGS="-Wl,-export-dynamic"
+	    CFLAGS_OPTIMIZE="-O2"
 	    AS_IF([test "${TCL_THREADS}" = "1"], [
 		# On OpenBSD:	Compile with -pthread
 		#		Don't link with -lpthread
@@ -1518,7 +1501,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1533,7 +1516,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    	LDFLAGS="$LDFLAGS -pthread"
 	    ])
 	    ;;
-	FreeBSD-*)
+	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
@@ -1619,10 +1602,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    AS_IF([test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int([$]2)}'`" -lt 4 -a \
-		"`echo "${CPPFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int([$]2)}'`" -lt 4], [
-		LDFLAGS="$LDFLAGS -prebind"])
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag],
 		    tcl_cv_ld_search_paths_first, [
@@ -1825,7 +1804,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
@@ -2029,7 +2008,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    BSD/OS*) ;;
 	    CYGWIN_*|MINGW32_*) ;;
 	    IRIX*) ;;
-	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -2415,59 +2394,6 @@ AC_DEFUN([SC_TIME_HANDLER], [
 ])
 
 #--------------------------------------------------------------------
-# SC_BUGGY_STRTOD
-#
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" (provided by Tcl) that corrects the error.
-#	Also, on Compaq's Tru64 Unix 5.0,
-#	strtod(" ") returns 0.0 instead of a failure to convert.
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Might defines some of the following vars:
-#		strtod (=fixstrtod)
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN([SC_BUGGY_STRTOD], [
-    AC_CHECK_FUNC(strtod, tcl_strtod=1, tcl_strtod=0)
-    if test "$tcl_strtod" = 1; then
-	AC_CACHE_CHECK([for Solaris2.4/Tru64 strtod bugs], tcl_cv_strtod_buggy,[
-	    AC_TRY_RUN([
-		extern double strtod();
-		int main() {
-		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		    char *term;
-		    double value;
-		    value = strtod(infString, &term);
-		    if ((term != infString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(nanString, &term);
-		    if ((term != nanString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(spaceString, &term);
-		    if (term == (spaceString+1)) {
-			exit(1);
-		    }
-		    exit(0);
-		}], tcl_cv_strtod_buggy=ok, tcl_cv_strtod_buggy=buggy,
-		    tcl_cv_strtod_buggy=buggy)])
-	if test "$tcl_cv_strtod_buggy" = buggy; then
-	    AC_LIBOBJ([fixstrtod])
-	    USE_COMPAT=1
-	    AC_DEFINE(strtod, fixstrtod, [Do we want to use the strtod() in compat?])
-	fi
-    fi
-])
-
-#--------------------------------------------------------------------
 # SC_TCL_LINK_LIBS
 #
 #	Search for the libraries needed to link the Tcl shell.
@@ -2492,12 +2418,9 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
-    AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
 
     #--------------------------------------------------------------------
     # Interactive UNIX requires -linet instead of -lsocket, plus it
@@ -2601,7 +2524,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #	Might define the following vars:
 #		TCL_WIDE_INT_IS_LONG
 #		TCL_WIDE_INT_TYPE
-#		HAVE_STRUCT_DIRENT64
+#		HAVE_STRUCT_DIRENT64, HAVE_DIR64
 #		HAVE_STRUCT_STAT64
 #		HAVE_TYPE_OFF64_T
 #
@@ -2635,6 +2558,15 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
 	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
+	fi
+
+	AC_CACHE_CHECK([for DIR64], tcl_cv_DIR64,[
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <dirent.h>],[struct dirent64 *p; DIR64 d = opendir64(".");
+            p = readdir64(d); rewinddir64(d); closedir64(d);],
+		tcl_cv_DIR64=yes,tcl_cv_DIR64=no)])
+	if test "x${tcl_cv_DIR64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
 	fi
 
 	AC_CACHE_CHECK([for struct stat64], tcl_cv_struct_stat64,[
