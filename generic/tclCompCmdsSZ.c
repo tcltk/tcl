@@ -948,7 +948,7 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -957,14 +957,14 @@ TclCompileStringRangeCmd(
      * the string the same as the start of the string.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
+    if (idx1 == TCL_INDEX_NONE) {
 	/* [string range $s end+1 $last] must be empty string */
 	OP(		POP);
 	PUSH(		"");
 	return TCL_OK;
     }
 
-    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -972,7 +972,7 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
-    if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx2 == TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(		POP);
 	PUSH(		"");
@@ -1022,7 +1022,7 @@ TclCompileStringReplaceCmd(
      * Check for first index known and useful at compile time.
      */
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &first) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1031,7 +1031,7 @@ TclCompileStringReplaceCmd(
      * Check for last index known and useful at compile time.
      */
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &last) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1050,8 +1050,8 @@ TclCompileStringReplaceCmd(
      * compile direct to bytecode implementing the no-op.
      */
 
-    if ((last == TCL_INDEX_BEFORE)		/* Know (last < 0) */
-	    || (first == TCL_INDEX_AFTER)	/* Know (first > end) */
+    if ((last == TCL_INDEX_NONE)		/* Know (last < 0) */
+	    || (first == TCL_INDEX_NONE)	/* Know (first > end) */
 
 	/*
 	 * Tricky to determine when runtime (last < first) can be
@@ -1059,20 +1059,17 @@ TclCompileStringReplaceCmd(
 	 * cases...
 	 *
 	 * (first <= TCL_INDEX_END) &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX END) && (last < first) => ACCEPT
 	 *	else => cannot tell REJECT
 	 */
 	    || ((first <= TCL_INDEX_END) && (last <= TCL_INDEX_END)
 		&& (last < first))		/* Know (last < first) */
 	/*
-	 * (first == TCL_INDEX_BEFORE) &&
-	 *	(last == TCL_INDEX_AFTER) => (first < last) REJECT
+	 * (first == TCL_INDEX_NONE) &&
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else		=> (first < last) REJECT
 	 *
 	 * else [[first >= TCL_INDEX_START]] &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else [[last >= TCL_INDEX START]] && (last < first) => ACCEPT
 	 */
@@ -1105,26 +1102,26 @@ TclCompileStringReplaceCmd(
      *		(first <= end)
      *
      * The encoded indices (first <= TCL_INDEX END) and
-     * (first == TCL_INDEX_BEFORE) always meets this condition, but
+     * (first == TCL_INDEX_NONE) always meets this condition, but
      * any other encoded first index has some list for which it fails.
      *
      * We also need, second:
      *
      *		(last >= 0)
      *
-     * The encoded indices (last >= TCL_INDEX_START) and
-     * (last == TCL_INDEX_AFTER) always meet this condition but any
-     * other encoded last index has some list for which it fails.
+     * The encoded index (last >= TCL_INDEX_START) always meet this
+     * condition but any other encoded last index has some list for
+     * which it fails.
      *
      * Finally we need, third:
      *
      *		(first <= last)
      *
      * Considered in combination with the constraints we already have,
-     * we see that we can proceed when (first == TCL_INDEX_BEFORE)
-     * or (last == TCL_INDEX_AFTER). These also permit simplification
-     * of the prefix|replace|suffix construction. The other constraints,
-     * though, interfere with getting a guarantee that first <= last.
+     * we see that we can proceed when (first == TCL_INDEX_NONE).
+     * These also permit simplification of the prefix|replace|suffix
+     * construction. The other constraints, though, interfere with
+     * getting a guarantee that first <= last.
      */
 
     if ((first == TCL_INDEX_START) && (last >= TCL_INDEX_START)) {
@@ -1132,7 +1129,7 @@ TclCompileStringReplaceCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
 	OP4(		REVERSE, 2);
-	if (last == TCL_INDEX_AFTER) {
+	if (last == INT_MAX) {
 	    OP(		POP);		/* Pop  original */
 	} else {
 	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
@@ -1141,7 +1138,7 @@ TclCompileStringReplaceCmd(
 	return TCL_OK;
     }
 
-    if ((last == TCL_INDEX_AFTER) && (first <= TCL_INDEX_END)) {
+    if ((last == TCL_INDEX_NONE) && (first <= TCL_INDEX_END)) {
 	OP44(		STR_RANGE_IMM, 0, first-1);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);

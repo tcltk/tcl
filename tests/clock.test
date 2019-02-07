@@ -252,6 +252,8 @@ proc ::testClock::registry { cmd path key } {
 
 proc timeWithinDuration {duration start end} {
     regexp {([\d.]+)(s|ms|us)} $duration -> duration unit
+    if {[llength $start] > 1} { set start [expr "([join $start +])/[llength $start]"] }
+    if {[llength $end] > 1} { set end [expr "([join $end +])/[llength $end]"] }
     set delta [expr {$end - $start}]
     expr {
 	  ($delta > 0) && ($delta <= $duration) ?
@@ -35449,22 +35451,22 @@ test clock-33.4a {clock milliseconds} {
     concat {}
 } {}
 test clock-33.5 {clock clicks tests, millisecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >120 ms to run.
-    set start [clock clicks -milli]
-    after 10
-    set end [clock clicks -milli]
-    # 60 msecs seems to be the max time slice under Windows 95/98;
-    timeWithinDuration 120ms $start $end
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock clicks -milli]
+	after 1 {lappend end [clock clicks -milli]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >120 ms to run.
-    set start [clock milliseconds]
-    after 10
-    set end [clock milliseconds]
-    # 60 msecs seems to be the max time slice under Windows 95/98
-    timeWithinDuration 120ms $start $end
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock milliseconds]
+	after 1 {lappend end [clock milliseconds]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
@@ -35474,20 +35476,22 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >120 ms to run.
-    set start [clock clicks -micro]
-    after 10
-    set end [clock clicks -micro]
-    timeWithinDuration 120000us $start $end
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock clicks -micro]
+	after 1 {lappend end [clock clicks -micro]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm + 10)}]us $start $end
 } {ok}
 test clock-33.8a {clock test, microsecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >120 ms to run.
-    set start [clock microseconds]
-    after 10
-    set end [clock microseconds]
-    timeWithinDuration 120000us $start $end
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock microseconds]
+	after 1 {lappend end [clock microseconds]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm + 10)}]us $start $end
 } {ok}
 
 test clock-33.9 {clock clicks test, millis align with seconds} {

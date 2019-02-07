@@ -1851,7 +1851,7 @@ ArgumentBCEnter(
  *----------------------------------------------------------------------
  */
 #define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
+#define	initCatchTop	((ptrdiff_t *) (TD->stack-1))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
@@ -4754,22 +4754,17 @@ TEBCresume(
 
 	/* Every range of an empty list is an empty list */
 	if (objc == 0) {
-	    TRACE_APPEND(("\n"));
-	    NEXT_INST_F(9, 0, 0);
+	    /* avoid return of not canonical list (e. g. spaces in string repr.) */
+	    if (!valuePtr->bytes || !valuePtr->length) {
+		TRACE_APPEND(("\n"));
+		NEXT_INST_F(9, 0, 0);
+	    }
+	    goto emptyList;
 	}
 
 	/* Decode index value operands. */
 
-	/*
-	assert ( toIdx != TCL_INDEX_AFTER);
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (toIdx == TCL_INDEX_AFTER) {
-	    toIdx = TCL_INDEX_END;
-	}
-
-	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
+	if (toIdx == TCL_INDEX_NONE) {
 	emptyList:
 	    objResultPtr = Tcl_NewObj();
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
@@ -4784,11 +4779,11 @@ TEBCresume(
 
 	assert ( toIdx >= 0 && toIdx < objc);
 	/*
-	assert ( fromIdx != TCL_INDEX_BEFORE );
+	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_BEFORE) {
+	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = TCL_INDEX_START;
 	}
 
@@ -5077,16 +5072,12 @@ TEBCresume(
 	/* Decode index operands. */
 
 	/*
-	assert ( toIdx != TCL_INDEX_BEFORE );
-	assert ( toIdx != TCL_INDEX_AFTER);
+	assert ( toIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (toIdx == TCL_INDEX_BEFORE) {
+	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyRange;
-	}
-	if (toIdx == TCL_INDEX_AFTER) {
-	    toIdx = TCL_INDEX_END;
 	}
 
 	toIdx = TclIndexDecode(toIdx, slength - 1);
@@ -5096,19 +5087,15 @@ TEBCresume(
 	    toIdx = slength - 1;
 	}
 
-	assert ( toIdx >= 0 && toIdx < slength );
+	assert ( toIdx >= 0 && (size_t)toIdx < slength );
 
 	/*
-	assert ( fromIdx != TCL_INDEX_BEFORE );
-	assert ( fromIdx != TCL_INDEX_AFTER);
+	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
-	if (fromIdx == TCL_INDEX_BEFORE) {
+	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = TCL_INDEX_START;
-	}
-	if (fromIdx == TCL_INDEX_AFTER) {
-	    goto emptyRange;
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, slength - 1);

@@ -1082,8 +1082,8 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_BEFORE,
-	    &idx) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+	    TCL_INDEX_NONE, &idx) == TCL_OK) {
 	/*
 	 * The idxTokenPtr parsed as a valid index value and was
 	 * encoded as expected by INST_LIST_INDEX_IMM.
@@ -1311,8 +1311,8 @@ TclCompileLrangeCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
-	    &idx1) != TCL_OK) {
+    if ((TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
+	    &idx1) != TCL_OK) || (idx1 == TCL_INDEX_NONE)) {
 	return TCL_ERROR;
     }
     /*
@@ -1321,7 +1321,7 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1476,13 +1476,13 @@ TclCompileLreplaceCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1498,12 +1498,12 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
-	suffixStart = idx1;
-    } else if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx1 == TCL_INDEX_NONE) {
+	suffixStart = TCL_INDEX_NONE;
+    } else if (idx2 == TCL_INDEX_NONE) {
 	suffixStart = idx1;
     } else if (idx2 == TCL_INDEX_END) {
-	suffixStart = TCL_INDEX_AFTER;
+	suffixStart = TCL_INDEX_NONE;
     } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
 	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
 	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
@@ -1563,7 +1563,7 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     }
 
-    if (suffixStart == TCL_INDEX_AFTER) {
+    if (suffixStart == TCL_INDEX_NONE) {
 	TclEmitOpcode(		INST_POP,			envPtr);
 	if (emptyPrefix) {
 	    PushStringLiteral(envPtr, "");

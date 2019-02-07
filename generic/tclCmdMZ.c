@@ -1884,7 +1884,7 @@ StringIsCmd(
 
  str_is_done:
     if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(failat),
+	Tcl_ObjSetVar2(interp, failVarObj, NULL, TclNewWideIntObjFromSize(failat),
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	return TCL_ERROR;
     }
