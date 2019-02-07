@@ -437,7 +437,7 @@ puts $foo
 #    prints: \fIa b foo {a b} bar 2 baz 3\fR
 .CE
 .SH "SEE ALSO"
-append(n), array(n), foreach(n), mapeach(n), incr(n), list(n), lappend(n), set(n)
+append(n), array(n), foreach(n), incr(n), list(n), lappend(n), lmap(n), set(n)
 .SH KEYWORDS
 dictionary, create, update, lookup, iterate, filter, map
 '\" Local Variables:

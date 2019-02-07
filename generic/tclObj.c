@@ -2467,23 +2467,26 @@ Tcl_SetIntObj(
  *
  * Tcl_GetIntFromObj --
  *
- *	Attempt to return an int from the Tcl object "objPtr". If the object
- *	is not already an int, an attempt will be made to convert it to one.
+ *	Retrieve the integer value of 'objPtr'.
  *
- *	Integer and long integer objects share the same "integer" type
- *	implementation. We store all integers as longs and Tcl_GetIntFromObj
- *	checks whether the current value of the long can be represented by an
- *	int.
+ * Value
  *
- * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during conversion or if the long integer held by the object can not be
- *	represented by an int, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	TCL_OK
  *
- * Side effects:
- *	If the object is not already an int, the conversion will free any old
- *	internal representation.
+ *	    Success.
+ *
+ *	TCL_ERROR
+ *	
+ *	    An error occurred during conversion or the integral value can not
+ *	    be represented as an integer (it might be too large). An error
+ *	    message is left in the interpreter's result if 'interp' is not
+ *	    NULL.
+ *
+ * Effect
+ *
+ *	'objPtr' is converted to an integer if necessary if it is not one
+ *	already.  The conversion frees any previously-existing internal
+ *	representation.
  *
  *----------------------------------------------------------------------
  */
@@ -4488,6 +4491,24 @@ Tcl_RepresentationCmd(
             objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, ptrBuffer);
 
+    /*
+     * This is a workaround to silence reports from `make valgrind`
+     * on 64-bit systems.  The problem is that the test suite
+     * includes calling the [represenation] command on values of
+     * &tclDoubleType.  When these values are created, the "doubleValue"
+     * is set, but when the "twoPtrValue" is examined, its "ptr2"
+     * field has never been initialized.  Since [representation]
+     * presents the value of the ptr2 value in its output, valgrind
+     * alerts about the read of uninitialized memory.
+     *
+     * The general problem with [representation], that it can read
+     * and report uninitialized fields, is still present.  This is
+     * just the minimal workaround to silence one particular test.
+     */
+
+    if ((sizeof(void *) > 4) && objv[1]->typePtr == &tclDoubleType) {
+	objv[1]->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     if (objv[1]->typePtr) {
 	sprintf(ptrBuffer, "%p:%p",
 		(void *) objv[1]->internalRep.twoPtrValue.ptr1,

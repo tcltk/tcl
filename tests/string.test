@@ -24,6 +24,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
+testConstraint tip389 [expr {[string length \U010000] == 2}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -219,11 +220,29 @@ test string-4.14 {string first, negative start index} {
 } 1
 test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
-    # strings was incorrect, leading to an index returned by [string first] 
+    # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.17 {string first, corner case} {
+    string first a aaa 4294967295
+} {0}
+test string-4.18 {string first, corner case} {
+    string first a aaa -1
+} {0}
+test string-4.19 {string first, corner case} {
+    string first a aaa end-5
+} {0}
+test string-4.20 {string last, corner case} {
+    string last a aaa 4294967295
+} {-1}
+test string-4.21 {string last, corner case} {
+    string last a aaa -1
+} {-1}
+test string-4.22 {string last, corner case} {
+    string last a aaa end-5
+} {-1}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -290,6 +309,9 @@ test string-5.19 {string index, bytearray object out of bounds} {
 test string-5.20 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] 20
 } {}
+test string-5.21 {string index, surrogates, bug [11ae2be95dac9417]} tip389 {
+    list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]
+} [list \U100000 {} b]
 
 
 proc largest_int {} {
@@ -419,7 +441,7 @@ test string-6.37 {string is double, false on int overflow} -setup {
 } -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {
-    # This test is non-portable because IRIX thinks 
+    # This test is non-portable because IRIX thinks
     # that .e1 is a valid double - this is really a bug
     # on IRIX as .e1 should NOT be a valid double
     #
@@ -576,12 +598,12 @@ test string-6.85 {string is control} {
 } 0
 test string-6.86 {string is graph} {
     ## graph is any print char, except space
-    list [string is gra -fail var "0123abc!@#\$\u0100 "] $var
-} {0 12}
+    list [string is gra -fail var "0123abc!@#\$\u0100\UE0100\UE01EF "] $var
+} {0 14}
 test string-6.87 {string is print} {
     ## basically any printable char
-    list [string is print -fail var "0123abc!@#\$\u0100 \u0010"] $var
-} {0 13}
+    list [string is print -fail var "0123abc!@#\$\u0100 \UE0100\UE01EF\u0010"] $var
+} {0 15}
 test string-6.88 {string is punct} {
     ## any graph char that isn't alnum
     list [string is punct -fail var "_!@#\u00beq0"] $var
@@ -901,6 +923,10 @@ test string-10.20 {string map, dictionaries don't alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
 } {XY XY 2 XY}
+test string-10.20.1 {string map, dictionaries don't alter map ordering} {
+    set map {a X b Y a Z}
+    list [string map [dict create a X b Y a Z] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
+} {ZZZ XXX 2 XXX}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long
@@ -1187,6 +1213,9 @@ test string-11.54 {string match, failure} {
 	    [string match *a*l*\u0000*cba* $longString] \
 	    [string match *===* $longString]
 } {0 1 1 1 0 0}
+test string-11.55 {string match, invalid binary optimization} {
+    [format string] match \u0141 [binary format c 65]
+} 0
 
 test string-12.1 {string range} {
     list [catch {string range} msg] $msg
@@ -1272,6 +1301,9 @@ test string-12.22 {string range, shimmering binary/index} {
     binary scan $s a* x
     string range $s $s end
 } 000000001
+test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} tip389 {
+    list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]
+} [list \U100000 {} b]
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
@@ -1367,6 +1399,12 @@ test string-14.16 {string replace} {
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
 } {abcdefghijklmnop}
+test string-14.18 {string replace} {
+    string replace abcdefghijklmnop 10 9 XXX
+} {abcdefghijklmnop}
+test string-14.19 {string replace} {
+    string replace {} -1 0 A
+} A
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -1460,6 +1498,10 @@ test string-17.7 {string totitle, unicode} {
 test string-17.8 {string totitle, compiled} {
     lindex [string totitle [list aa bb [list cc]]] 0
 } Aa
+test string-17.9 {string totitle, surrogates, bug [11ae2be95dac9417]} tip389 {
+    list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
+	[string totitle a\U118c0c 3 3]
+} [list a\U118a0c a\U118c0C a\U118c0C]
 
 test string-18.1 {string trim} {
     list [catch {string trim} msg] $msg
@@ -1678,40 +1720,40 @@ test string-24.4 {string reverse command - unshared string} {
     string reverse $x$y
 } edcba
 test string-24.5 {string reverse command - shared unicode string} {
-    set x abcde\udead
+    set x abcde\ud0ad
     string reverse $x
-} \udeadedcba
+} \ud0adedcba
 test string-24.6 {string reverse command - unshared string} {
     set x abc
-    set y de\udead
+    set y de\ud0ad
     string reverse $x$y
-} \udeadedcba
+} \ud0adedcba
 test string-24.7 {string reverse command - simple case} {
     string reverse a
 } a
 test string-24.8 {string reverse command - simple case} {
-    string reverse \udead
-} \udead
+    string reverse \ud0ad
+} \ud0ad
 test string-24.9 {string reverse command - simple case} {
     string reverse {}
 } {}
 test string-24.10 {string reverse command - corner case} {
-    set x \ubeef\udead
+    set x \ubeef\ud0ad
     string reverse $x
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.11 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string reverse $x$y
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.12 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string is ascii [string reverse $x$y]
 } 0
 test string-24.13 {string reverse command - pure Unicode string} {
-    string reverse [string range \ubeef\udead\ubeef\udead\ubeef\udead 1 5]
-} \udead\ubeef\udead\ubeef\udead
+    string reverse [string range \ubeef\ud0ad\ubeef\ud0ad\ubeef\ud0ad 1 5]
+} \ud0ad\ubeef\ud0ad\ubeef\ud0ad
 test string-24.14 {string reverse command - pure bytearray} {
     binary scan [string reverse [binary format H* 010203]] H* x
     set x
@@ -1833,7 +1875,7 @@ proc MemStress {args} {
     set res {}
     foreach body $args {
         set end 0
-        for {set i 0} {$i < 5} {incr i} { 
+        for {set i 0} {$i < 5} {incr i} {
             proc MemStress_Body {} $body
             uplevel 1 MemStress_Body
             rename MemStress_Body {}
@@ -1991,6 +2033,12 @@ test string-29.4 {string cat, many args} {
     list $r1 $r2
 } {0 0}
 
+test string-30.1.1 {[Bug ba921a8d98]: string cat} {
+    string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]
+} hellohello
+test string-30.1.2 {[Bug ba921a8d98]: inplace cat by subst (compiled to "strcat" instruction)} {
+    set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"
+} hellohello
 
 
 # cleanup

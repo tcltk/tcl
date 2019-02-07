@@ -652,6 +652,13 @@ test set-old-8.52 {array command, array names -regexp on regexp pattern} {
     set a(11) 1
     list [catch {lsort [array names a -regexp ^1]} msg] $msg
 } {0 {1*2 11 12}}
+test set-old-8.52.1 {array command, array names -regexp, backrefs} {
+    catch {unset a}
+    set a(1*2) 1
+    set a(12) 1
+    set a(11) 1
+    list [catch {lsort [array names a -regexp {^(.)\1}]} msg] $msg
+} {0 11}
 test set-old-8.53 {array command, array names -regexp} {
     catch {unset a}
     set a(-glob) 1

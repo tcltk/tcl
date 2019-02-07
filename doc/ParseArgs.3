@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Tcl_ParseArgsObjv 3 8.6 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -103,8 +103,8 @@ the argument's value. The following values are acceptable values for
 \fBTCL_ARGV_CONSTANT\fR
 .
 The argument does not take any following value argument. If this argument is
-present, the int pointed to by the \fIsrcPtr\fR field is copied to the
-\fIdstPtr\fR field. The \fIclientData\fR field is ignored.
+present, the \fIsrcPtr\fR field (casted to \fIint\fR) is copied to the variable
+pointed to by the \fIdstPtr\fR field. The \fIclientData\fR field is ignored.
 .TP
 \fBTCL_ARGV_END\fR
 .

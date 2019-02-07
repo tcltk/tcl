@@ -78,6 +78,25 @@ test format-1.11.1 {integer formatting} longIs64bit {
 test format-1.12 {integer formatting} {
     format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
 } {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+test format-1.13 {integer formatting} longIs32bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.13.1 {integer formatting} longIs64bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.14 {integer formatting} longIs32bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.14.1 {integer formatting} longIs64bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.15 {integer formatting} longIs32bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+test format-1.15.1 {integer formatting} longIs64bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+
 
 test format-2.1 {string formatting} {
     format "%s %s %c %s" abcd {This is a very long test string.} 120 x
@@ -565,6 +584,20 @@ test format-19.2 {Bug 1867855} {
 test format-19.3 {Bug 2830354} {
     string length [format %340f 0]
 } 340
+
+test format-19.4.1 {Bug d498578df4: width overflow should cause limit exceeded} \
+-constraints {longIs32bit} -body {
+    # in case of overflow into negative, it produces width -2 (and limit exceeded),
+    # in case of width will be unsigned, it will be outside limit (2GB for 32bit)...
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
+test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} -body {
+    # limit should exceeds in any case,
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffffffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
 
 # Note that this test may fail in future versions
 test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
