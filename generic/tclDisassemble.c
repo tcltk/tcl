@@ -195,10 +195,10 @@ TclPrintObject(
     FILE *outFile,		/* The file to print the source to. */
     Tcl_Obj *objPtr,		/* Points to the Tcl object whose string
 				 * representation should be printed. */
-    int maxChars)		/* Maximum number of chars to print. */
+    size_t maxChars)		/* Maximum number of chars to print. */
 {
     char *bytes;
-    int length;
+    size_t length;
 
     bytes = TclGetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
@@ -226,7 +226,7 @@ void
 TclPrintSource(
     FILE *outFile,		/* The file to print the source to. */
     const char *stringPtr,	/* The string to print. */
-    int maxChars)		/* Maximum number of chars to print. */
+    size_t maxChars)		/* Maximum number of chars to print. */
 {
     Tcl_Obj *bufferObj;
 
@@ -408,7 +408,7 @@ DisassembleByteCodeObj(
     srcLengthNext = codePtr->srcLengthStart;
     codeOffset = srcOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
-	if ((unsigned) *codeDeltaNext == (unsigned) 0xFF) {
+	if (*codeDeltaNext == 0xFF) {
 	    codeDeltaNext++;
 	    delta = TclGetInt4AtPtr(codeDeltaNext);
 	    codeDeltaNext += 4;
@@ -418,7 +418,7 @@ DisassembleByteCodeObj(
 	}
 	codeOffset += delta;
 
-	if ((unsigned) *codeLengthNext == (unsigned) 0xFF) {
+	if (*codeLengthNext == 0xFF) {
 	    codeLengthNext++;
 	    codeLen = TclGetInt4AtPtr(codeLengthNext);
 	    codeLengthNext += 4;
@@ -427,7 +427,7 @@ DisassembleByteCodeObj(
 	    codeLengthNext++;
 	}
 
-	if ((unsigned) *srcDeltaNext == (unsigned) 0xFF) {
+	if (*srcDeltaNext == 0xFF) {
 	    srcDeltaNext++;
 	    delta = TclGetInt4AtPtr(srcDeltaNext);
 	    srcDeltaNext += 4;
@@ -437,7 +437,7 @@ DisassembleByteCodeObj(
 	}
 	srcOffset += delta;
 
-	if ((unsigned) *srcLengthNext == (unsigned) 0xFF) {
+	if (*srcLengthNext == 0xFF) {
 	    srcLengthNext++;
 	    srcLen = TclGetInt4AtPtr(srcLengthNext);
 	    srcLengthNext += 4;
@@ -467,7 +467,7 @@ DisassembleByteCodeObj(
     codeOffset = srcOffset = 0;
     pc = codeStart;
     for (i = 0;  i < numCmds;  i++) {
-	if ((unsigned) *codeDeltaNext == (unsigned) 0xFF) {
+	if (*codeDeltaNext == 0xFF) {
 	    codeDeltaNext++;
 	    delta = TclGetInt4AtPtr(codeDeltaNext);
 	    codeDeltaNext += 4;
@@ -477,7 +477,7 @@ DisassembleByteCodeObj(
 	}
 	codeOffset += delta;
 
-	if ((unsigned) *srcDeltaNext == (unsigned) 0xFF) {
+	if (*srcDeltaNext == 0xFF) {
 	    srcDeltaNext++;
 	    delta = TclGetInt4AtPtr(srcDeltaNext);
 	    srcDeltaNext += 4;
@@ -487,7 +487,7 @@ DisassembleByteCodeObj(
 	}
 	srcOffset += delta;
 
-	if ((unsigned) *srcLengthNext == (unsigned) 0xFF) {
+	if (*srcLengthNext == 0xFF) {
 	    srcLengthNext++;
 	    srcLen = TclGetInt4AtPtr(srcLengthNext);
 	    srcLengthNext += 4;
@@ -567,7 +567,7 @@ FormatInstruction(
 	    break;
 	case OPERAND_UINT1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
-	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
@@ -575,7 +575,7 @@ FormatInstruction(
 		sprintf(suffixBuffer+strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
-	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_OFFSET1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
@@ -594,16 +594,16 @@ FormatInstruction(
 	case OPERAND_LIT1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    suffixObj = codePtr->objArrayPtr[opnd];
-	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_LIT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    suffixObj = codePtr->objArrayPtr[opnd];
-	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_AUX4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
-	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    auxPtr = BA_AuxData_At(codePtr->auxData,opnd);
 	    break;
 	case OPERAND_IDX4:
@@ -627,19 +627,19 @@ FormatInstruction(
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
 		    Tcl_Panic("FormatInstruction: bad local var index %u (%u locals)",
-			    (unsigned) opnd, localCt);
+			    opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
 		}
 		if (TclIsVarTemporary(localPtr)) {
-		    sprintf(suffixBuffer, "temp var %u", (unsigned) opnd);
+		    sprintf(suffixBuffer, "temp var %u", opnd);
 		} else {
 		    sprintf(suffixBuffer, "var ");
 		    suffixSrc = localPtr->name;
 		}
 	    }
-	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", (unsigned) opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", opnd);
 	    break;
 	case OPERAND_SCLS1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;

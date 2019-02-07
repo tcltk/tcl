@@ -127,7 +127,7 @@ NewListIntRep(
     listRepPtr = Tcl_AttemptAlloc(LIST_SIZE(objc));
     if (listRepPtr == NULL) {
 	if (p) {
-	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 		    LIST_SIZE(objc));
 	}
 	return NULL;
@@ -178,7 +178,7 @@ AttemptNewList(
 		    LIST_MAX));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "list creation failed: unable to alloc %u bytes",
+		    "list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 		    LIST_SIZE(objc)));
 	}
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
@@ -2109,7 +2109,8 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int numElems, i, length, bytesNeeded = 0;
+    int numElems, i;
+    size_t length, bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
@@ -2156,12 +2157,6 @@ UpdateStringOfList(
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-    }
-    if (bytesNeeded > INT_MAX - numElems + 1) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems - 1;
 

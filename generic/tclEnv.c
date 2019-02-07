@@ -205,7 +205,7 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    unsigned nameLength, valueLength;
+    size_t nameLength, valueLength;
     size_t index, length;
     char *p, *oldValue;
     const char *p2;
@@ -262,7 +262,7 @@ TclSetEnv(
 	Tcl_DStringFree(&envString);
 
 	oldValue = environ[index];
-	nameLength = (unsigned) length;
+	nameLength = length;
     }
 
     /*
@@ -283,7 +283,7 @@ TclSetEnv(
      */
 
     p = Tcl_Realloc(p, Tcl_DStringLength(&envString) + 1);
-    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
+    memcpy(p, p2, Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -455,7 +455,7 @@ TclUnsetEnv(
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = Tcl_Realloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
-	    (unsigned) Tcl_DStringLength(&envString)+1);
+	    Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
 
     putenv(string);

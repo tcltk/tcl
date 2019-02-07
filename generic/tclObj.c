@@ -178,15 +178,15 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 
 #define PACK_BIGNUM(bignum, objPtr) \
     if ((bignum).used > 0x7fff) {                                       \
-	mp_int *temp = (void *) Tcl_Alloc((unsigned) sizeof(mp_int));     \
-	*temp = bignum;                                                 \
+	mp_int *temp = Tcl_Alloc(sizeof(mp_int));                      \
+	*temp = bignum;                                                \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
     } else {                                                            \
 	if ((bignum).alloc > 0x7fff) {                                  \
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));            \
     }
@@ -2516,19 +2516,6 @@ UpdateStringOfInt(
     (void) Tcl_InitStringRep(objPtr, NULL,
 	    TclFormatInt(dst, objPtr->internalRep.wideValue));
 }
-
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
-static void
-UpdateStringOfOldInt(
-    register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
-{
-    char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
-
-    TclOOM(dst, TCL_INTEGER_SPACE + 1);
-    (void) Tcl_InitStringRep(objPtr, NULL,
-	    TclFormatInt(dst, objPtr->internalRep.longValue));
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2654,38 +2641,6 @@ Tcl_DbNewLongObj(
     return Tcl_NewLongObj(longValue);
 }
 #endif /* TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetLongObj --
- *
- *	Modify an object to be an integer object and to have the specified
- *	long integer value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep, if any, is freed. Also, any old internal
- *	rep is freed.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_SetLongObj
-void
-Tcl_SetLongObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    register long longValue)	/* Long integer used to initialize the
-				 * object's value. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetLongObj");
-    }
-
-    TclSetIntObj(objPtr, longValue);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -3599,6 +3554,7 @@ TclGetNumberFromObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_IncrRefCount
 void
 Tcl_IncrRefCount(
     Tcl_Obj *objPtr)	/* The object we are registering a reference to. */
@@ -3619,6 +3575,7 @@ Tcl_IncrRefCount(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DecrRefCount
 void
 Tcl_DecrRefCount(
     Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
@@ -3641,11 +3598,12 @@ Tcl_DecrRefCount(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_IsShared
 int
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */
 {
-    return ((objPtr)->refCount > 1);
+    return ((objPtr)->refCount + 1 > 2);
 }
 
 /*

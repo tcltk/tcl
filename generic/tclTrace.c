@@ -121,7 +121,7 @@ static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
  */
 
 static int		CallTraceFunction(Tcl_Interp *interp, Trace *tracePtr,
-			    Command *cmdPtr, const char *command, int numChars,
+			    Command *cmdPtr, const char *command, size_t numChars,
 			    int objc, Tcl_Obj *const objv[]);
 static char *		TraceVarProc(ClientData clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
@@ -538,9 +538,7 @@ TraceExecutionObjCmd(
 
 			Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 			tcmdPtr->stepTrace = NULL;
-			if (tcmdPtr->startCmd != NULL) {
-			    Tcl_Free(tcmdPtr->startCmd);
-			}
+			Tcl_Free(tcmdPtr->startCmd);
 		    }
 		    if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 			/*
@@ -1350,9 +1348,7 @@ TraceCommandProc(
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		Tcl_Free(tcmdPtr->startCmd);
-	    }
+	    Tcl_Free(tcmdPtr->startCmd);
 	}
 	if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 	    /*
@@ -1681,7 +1677,7 @@ CallTraceFunction(
     Command *cmdPtr,		/* Points to command's Command struct. */
     const char *command,	/* Points to the first character of the
 				 * command's source before substitutions. */
-    int numChars,		/* The number of characters in the command's
+    size_t numChars,		/* The number of characters in the command's
 				 * source. */
     register int objc,		/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
@@ -1694,8 +1690,8 @@ CallTraceFunction(
      * Copy the command characters into a new string.
      */
 
-    commandCopy = TclStackAlloc(interp, (unsigned) numChars + 1);
-    memcpy(commandCopy, command, (size_t) numChars);
+    commandCopy = TclStackAlloc(interp, numChars + 1);
+    memcpy(commandCopy, command, numChars);
     commandCopy[numChars] = '\0';
 
     /*
@@ -1815,9 +1811,7 @@ TraceExecutionProc(
 		&& (strcmp(command, tcmdPtr->startCmd) == 0)) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		Tcl_Free(tcmdPtr->startCmd);
-	    }
+	    Tcl_Free(tcmdPtr->startCmd);
 	}
 
 	/*
@@ -1942,9 +1936,7 @@ TraceExecutionProc(
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		Tcl_Free(tcmdPtr->startCmd);
-	    }
+	    Tcl_Free(tcmdPtr->startCmd);
 	}
     }
     if (call) {
@@ -2284,7 +2276,7 @@ StringTraceProc(
      */
 
     argv = (const char **) TclStackAlloc(interp,
-	    (unsigned) ((objc + 1) * sizeof(const char *)));
+	    (objc + 1) * sizeof(const char *));
     for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
     }
