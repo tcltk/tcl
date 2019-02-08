@@ -765,7 +765,7 @@ Tcl_ListObjAppendElement(
 	     * Old intrep to be freed, re-use refCounts.
 	     */
 
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
 	    Tcl_Free(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -1080,7 +1080,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1147,7 +1147,7 @@ Tcl_ListObjReplace(
 	     */
 
 	    if (first > 0) {
-		memcpy(elemPtrs, oldPtrs, (size_t) first * sizeof(Tcl_Obj *));
+		memcpy(elemPtrs, oldPtrs, first * sizeof(Tcl_Obj *));
 	    }
 
 	    /*
@@ -1233,7 +1233,7 @@ TclLindexList(
     Tcl_Obj *argPtr)		/* Index or index list. */
 {
 
-    int index;			/* Index into the list. */
+    size_t index;			/* Index into the list. */
     Tcl_Obj *indexListCopy;
     List *listRepPtr;
 
@@ -1319,7 +1319,8 @@ TclLindexFlat(
     Tcl_IncrRefCount(listPtr);
 
     for (i=0 ; i<indexCount && listPtr ; i++) {
-	int index, listLen = 0;
+	size_t index;
+	int listLen = 0;
 	Tcl_Obj **elemPtrs = NULL, *sublistCopy;
 
 	/*
@@ -1343,7 +1344,7 @@ TclLindexFlat(
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
-	    if (index<0 || index>=listLen) {
+	    if (index >= (size_t)listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
 		 * First check remaining indices for validity
@@ -1402,7 +1403,7 @@ TclLsetList(
     int indexCount = 0;		/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
     Tcl_Obj *retValuePtr;	/* Pointer to the list to be returned. */
-    int index;			/* Current index in the list - discarded. */
+    size_t index;			/* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;
     List *listRepPtr;
 
@@ -1500,7 +1501,8 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
-    int index, result, len;
+    size_t index;
+    int result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
     Tcl_ObjIntRep *irPtr;
 
@@ -1573,8 +1575,8 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index > elemCount
-		|| (valuePtr == NULL && index >= elemCount)) {
+	if (index > (size_t)elemCount
+		|| (valuePtr == NULL && index >= (size_t)elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1596,7 +1598,7 @@ TclLsetFlat(
 
 	if (--indexCount) {
 	    parentList = subListPtr;
-	    if (index == elemCount) {
+	    if (index == (size_t)elemCount) {
 		subListPtr = Tcl_NewObj();
 	    } else {
 		subListPtr = elemPtrs[index];
@@ -1614,7 +1616,7 @@ TclLsetFlat(
 	     * and store another copy.
 	     */
 
-	    if (index == elemCount) {
+	    if (index == (size_t)elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListPtr);
 	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListPtr);
@@ -1703,7 +1705,7 @@ TclLsetFlat(
     TclListObjLength(NULL, subListPtr, &len);
     if (valuePtr == NULL) {
 	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
-    } else if (index == len) {
+    } else if (index == (size_t)len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
