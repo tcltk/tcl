@@ -100,6 +100,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewIntObj 0
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
+#   define Tcl_BackgroundError 0
 
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
