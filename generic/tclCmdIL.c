@@ -3976,7 +3976,7 @@ Tcl_LsortObjCmd(
 		}
 		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (-index option item number %d)", j));
+			    "\n    (-index option item number %" TCL_Z_MODIFIER "d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
 		    goto done;
 		}
