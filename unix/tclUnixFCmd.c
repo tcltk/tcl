@@ -327,13 +327,13 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = opendir(dst);			/* INTL: Native. */
+	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
@@ -343,11 +343,11 @@ DoRenameFile(
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			closedir(dirPtr);
+			TclOSclosedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		closedir(dirPtr);
+		TclOSclosedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -920,7 +920,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    TclDIR *dirPtr;
 #else
     CONST char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -945,7 +945,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = opendir(source);				/* INTL: Native. */
+    dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -957,7 +957,7 @@ TraverseUnixTree(
     result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	closedir(dirPtr);
+	TclOSclosedir(dirPtr);
 	return result;
     }
 
@@ -1007,11 +1007,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    rewinddir(dirPtr);
+	    TclOSrewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    closedir(dirPtr);
+    TclOSclosedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added

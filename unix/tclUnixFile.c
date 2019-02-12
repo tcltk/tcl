@@ -259,7 +259,7 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	DIR *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	CONST char *dirName;
 	int dirLength;
@@ -310,7 +310,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = opendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -383,7 +383,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	closedir(d);
+	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);

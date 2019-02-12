@@ -17,6 +17,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Initialise the test constraints
 
+testConstraint winVista 0
+testConstraint winXP 0
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
@@ -50,20 +52,24 @@ proc cleanup {args} {
     }
 }
 
+if {[testConstraint win]} {
+    if {$::tcl_platform(osVersion) >= 5.0} {
+	testConstraint winVista 1
+    } elseif {$::tcl_platform(osVersion) >= 4.0} {
+	testConstraint winXP 1
+    }
+}
+
 # find a CD-ROM so we can test read-only filesystems.
 
 proc findfile {dir} {
-    foreach p [glob -directory $dir *] {
-        if {[file type $p] == "file"} {
-	    return $p
-	}
+    foreach p [glob -nocomplain -type f -directory $dir *] {
+	return $p
     }
-    foreach p [glob -directory $dir *] {
-        if {[file type $p] == "directory"} {
-	    set f [findfile $p]
-	    if {$f != ""} {
-	        return $f
-	    }
+    foreach p [glob -nocomplain -type d -directory $dir *] {
+	set f [findfile $p]
+	if {$f ne ""} {
+	    return $f
 	}
     }
     return ""
@@ -71,7 +77,7 @@ proc findfile {dir} {
 
 if {[testConstraint testvolumetype]} {
     foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
-        if {![catch {testvolumetype ${p}:} result] && $result eq "CDFS"} {
+        if {![catch {testvolumetype ${p}:} result] && $result in {CDFS UDF}} {
             set cdrom ${p}:
 	    set cdfile [findfile $cdrom]
 	    testConstraint cdrom 1
@@ -893,11 +899,23 @@ test winFCmd-12.4 {ConvertFileNameFormat} {win} {
 test winFCmd-12.5 {ConvertFileNameFormat: absolute path} {win} {
     list [file attributes / -longname] [file attributes \\ -longname]
 } {/ /}
-test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} {win} {
+test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
     catch {file delete -force -- c:/td1}
-    close [open c:/td1 w]
-    list [catch {string tolower [file attributes c:/td1 -longname]} msg] $msg [file delete -force -- c:/td1]
-} {0 c:/td1 {}}
+} -constraints {win winXP} -body {
+    createfile c:/td1 {}
+    string tolower [file attributes c:/td1 -longname]
+} -cleanup {
+    file delete -force -- c:/td1
+} -result {c:/td1}
+test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
+    catch {file delete -force -- $::env(TEMP)/td1}
+} -constraints {win} -body {
+    createfile $::env(TEMP)/td1 {}
+    string equal [string tolower [file attributes $::env(TEMP)/td1 -longname]] \
+	    [string tolower [file normalize $::env(TEMP)]/td1]
+} -cleanup {
+    file delete -force -- $::env(TEMP)/td1
+} -result 1
 test winFCmd-12.7 {ConvertFileNameFormat} {nonPortable win} {
     string tolower [file attributes //bisque/tcl/ws -longname]
 } {//bisque/tcl/ws}

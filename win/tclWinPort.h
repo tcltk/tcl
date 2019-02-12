@@ -382,6 +382,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #   pragma warning(disable:4244)
 #   pragma warning(disable:4267)
+#   pragma warning(disable:4311)
+#   pragma warning(disable:4312)
 #   pragma warning(disable:4996)
 #endif
 
@@ -473,5 +475,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef LABEL_SECURITY_INFORMATION
 #   define LABEL_SECURITY_INFORMATION (0x00000010L)
 #endif
+
+#define Tcl_DirEntry void
+#define TclDIR void
 
 #endif /* _TCLWINPORT */
