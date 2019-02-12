@@ -4169,7 +4169,14 @@ usage:
 	    result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	}
 	if (result != TCL_OK) {
-	    goto done;
+	    /* allow break from measurement cycle (used for conditional stop) */
+	    if (result != TCL_BREAK) {
+		goto done;
+	    }
+	    /* force stop immediately */
+	    threshold = 1;
+	    stop = -0x7FFFFFFFFFFFFFFFL;
+	    result = TCL_OK;
 	}
 	
 	/* don't check time up to threshold */
