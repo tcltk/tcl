@@ -4243,11 +4243,11 @@ usage:
 	    /* minimize influence of measurement overhead */
 	    if (overhead > 0) {
 		/* estimate the time of overhead (microsecs) */
-		Tcl_WideInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = overhead * count;
 		if (middle > curOverhead) {
 		    middle -= curOverhead;
 		} else {
-		    middle = 1;
+		    middle = 0;
 		}
 	    }
 	} else {
