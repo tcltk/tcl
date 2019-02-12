@@ -193,6 +193,9 @@
 /* Is 'struct dirent64' in <sys/types.h>? */
 #undef HAVE_STRUCT_DIRENT64
 
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Is 'struct stat64' in <sys/stat.h>? */
 #undef HAVE_STRUCT_STAT64
 

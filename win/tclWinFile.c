@@ -569,6 +569,11 @@ TclWinSymLinkDelete(
  *--------------------------------------------------------------------
  */
 
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 static Tcl_Obj *
 WinReadLinkDirectory(
     const TCHAR *linkDirPath)
@@ -684,6 +689,10 @@ WinReadLinkDirectory(
     Tcl_SetErrno(EINVAL);
     return NULL;
 }
+
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic pop
+#endif
 
 /*
  *--------------------------------------------------------------------
@@ -1394,6 +1403,12 @@ NativeMatchType(
     return 1;
 }
 
+static void
+FreeLoadLibHandle(
+    ClientData clientData)
+{
+    FreeLibrary((HMODULE)clientData);
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1422,83 +1437,127 @@ TclpGetUserHome(
 				 * name of user's home directory. */
 {
     char *result;
-    HINSTANCE netapiInst;
-    HINSTANCE userenvInst;
+
+    static NETAPIBUFFERFREEPROC *netApiBufferFreeProc;
+    static NETGETDCNAMEPROC *netGetDCNameProc;
+    static NETUSERGETINFOPROC *netUserGetInfoProc;
+    static GETPROFILESDIRECTORYPROC *getProfilesDirectoryProc;
+    static int apistubs = 0;
 
     result = NULL;
     Tcl_DStringInit(bufferPtr);
 
-    netapiInst = LoadLibraryA("netapi32.dll");
-    userenvInst = LoadLibraryA("userenv.dll");
-    if (netapiInst != NULL && userenvInst != NULL) {
-	NETAPIBUFFERFREEPROC *netApiBufferFreeProc;
-	NETGETDCNAMEPROC *netGetDCNameProc;
-	NETUSERGETINFOPROC *netUserGetInfoProc;
-	GETPROFILESDIRECTORYPROC *getProfilesDirectoryProc;
-
-	netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
-		GetProcAddress(netapiInst, "NetApiBufferFree");
-	netGetDCNameProc = (NETGETDCNAMEPROC *)
-		GetProcAddress(netapiInst, "NetGetDCName");
-	netUserGetInfoProc = (NETUSERGETINFOPROC *)
-		GetProcAddress(netapiInst, "NetUserGetInfo");
-	getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
-		GetProcAddress(userenvInst, "GetProfilesDirectoryW");
-	if ((netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
-		&& (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)) {
-	    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
-	    Tcl_DString ds;
-	    int nameLen, badDomain;
-	    char *domain;
-	    WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
-	    WCHAR buf[MAX_PATH];
-
-	    badDomain = 0;
-	    nameLen = -1;
-	    wDomain = NULL;
-	    domain = strchr(name, '@');
-	    if (domain != NULL) {
-		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (netGetDCNameProc)(NULL, wName,
-			(LPBYTE *) wDomainPtr);
-		Tcl_DStringFree(&ds);
-		nameLen = domain - name;
+    if (!apistubs) {
+	HINSTANCE handle;
+	TCL_DECLARE_MUTEX(initializeMutex)
+	Tcl_MutexLock(&initializeMutex);
+	if (!apistubs) {
+	    handle = LoadLibraryA("netapi32.dll");
+	    if (handle) {
+		netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
+			GetProcAddress(handle, "NetApiBufferFree");
+		netGetDCNameProc = (NETGETDCNAMEPROC *)
+			GetProcAddress(handle, "NetGetDCName");
+		netUserGetInfoProc = (NETUSERGETINFOPROC *)
+			GetProcAddress(handle, "NetUserGetInfo");
+		Tcl_CreateExitHandler(FreeLoadLibHandle, handle);
 	    }
-	    if (badDomain == 0) {
-		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((netUserGetInfoProc)(wDomain, wName, 1,
-			(LPBYTE *) uiPtrPtr) == 0) {
-		    wHomeDir = uiPtr->usri1_home_dir;
-		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
-			Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
-				bufferPtr);
-		    } else {
-			/*
-			 * User exists but has no home dir. Return
-			 * "{GetProfilesDirectory}/<user>".
-			 */
-			DWORD i, size = MAX_PATH;
-			getProfilesDirectoryProc(buf, &size);
-			for (i = 0; i < size; ++i){
-			    if (buf[i] == '\\') buf[i] = '/';
-			}
-			Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
-			Tcl_DStringAppend(bufferPtr, "/", -1);
-			Tcl_DStringAppend(bufferPtr, name, -1);
-		    }
-		    result = Tcl_DStringValue(bufferPtr);
-		    (*netApiBufferFreeProc)((void *) uiPtr);
-		}
-		Tcl_DStringFree(&ds);
+	    handle = LoadLibraryA("userenv.dll");
+	    if (handle) {
+		getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
+			GetProcAddress(handle, "GetProfilesDirectoryW");
+		Tcl_CreateExitHandler(FreeLoadLibHandle, handle);
 	    }
-	    if (wDomain != NULL) {
-		(*netApiBufferFreeProc)((void *) wDomain);
+	    
+	    apistubs = -1;
+	    if ( (netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
+	      && (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)
+	    ) {
+		apistubs = 1;
 	    }
 	}
-	FreeLibrary(userenvInst);
-	FreeLibrary(netapiInst);
+	Tcl_MutexUnlock(&initializeMutex);
+    }
+
+    if (apistubs == 1) {
+	USER_INFO_1 *uiPtr;
+	Tcl_DString ds;
+	int nameLen, rc;
+	const char *domain;
+	WCHAR *wName, *wHomeDir, *wDomain;
+	WCHAR buf[MAX_PATH];
+
+	rc = 0;
+	nameLen = -1;
+	wDomain = NULL;
+	domain = Tcl_UtfFindFirst(name, '@');
+	if (domain == NULL) {
+	    const char *ptr;
+	    
+	    /* no domain - firstly check it's the current user */
+	    if ( (ptr = TclpGetUserName(&ds)) != NULL 
+	      && strcasecmp(name, ptr) == 0
+	    ) {
+		/* try safest and fastest way to get current user home */
+		ptr = TclGetEnv("HOME", &ds);
+		if (ptr != NULL) {
+		    Tcl_JoinPath(1, &ptr, bufferPtr);
+		    rc = 1;
+		    result = Tcl_DStringValue(bufferPtr);
+		}
+	    }
+	    Tcl_DStringFree(&ds);
+	} else {
+	    Tcl_DStringInit(&ds);
+	    wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	    rc = (netGetDCNameProc)(NULL, wName, (LPBYTE *) &wDomain);
+	    Tcl_DStringFree(&ds);
+	    nameLen = domain - name;
+	}
+	if (rc == 0) {
+	    Tcl_DStringInit(&ds);
+	    wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	    while ((netUserGetInfoProc)(wDomain, wName, 1,
+		    (LPBYTE *) &uiPtr) != 0) {
+		/* 
+		 * user does not exists - if domain was not specified,
+		 * try again using current domain.
+		 */
+		rc = 1;
+		if (domain != NULL) break;
+		/* get current domain */
+		rc = (netGetDCNameProc)(NULL, NULL, (LPBYTE *) &wDomain);
+		if (rc != 0) break;
+		domain = INT2PTR(-1); /* repeat once */
+	    }
+	    if (rc == 0) {
+		DWORD i, size = MAX_PATH;
+		wHomeDir = uiPtr->usri1_home_dir;
+		if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
+		    size = lstrlenW(wHomeDir);
+		    Tcl_UniCharToUtfDString(wHomeDir, size, bufferPtr);
+		} else {
+		    /*
+		     * User exists but has no home dir. Return
+		     * "{GetProfilesDirectory}/<user>".
+		     */
+		    getProfilesDirectoryProc(buf, &size);
+		    Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		    Tcl_DStringAppend(bufferPtr, "/", 1);
+		    Tcl_DStringAppend(bufferPtr, name, nameLen);
+		}
+		result = Tcl_DStringValue(bufferPtr);
+		/* be sure we returns normalized path */
+		for (i = 0; i < size; ++i){
+		    if (result[i] == '\\') result[i] = '/';
+		}
+		(*netApiBufferFreeProc)((void *) uiPtr);
+	    }
+	    Tcl_DStringFree(&ds);
+	}
+	if (wDomain != NULL) {
+	    (*netApiBufferFreeProc)((void *) wDomain);
+	}
     }
     if (result == NULL) {
 	/*
@@ -1576,11 +1635,12 @@ NativeAccess(
 	return 0;
     }
 
-    if ((mode & W_OK)
-	&& (attr & FILE_ATTRIBUTE_READONLY)
-	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    /* 
+     * If it's not a directory (assume file), do several fast checks:
+     */
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
-	 * The attributes say the file is not writable.	 If the file is a
+	 * If the attributes say this is not writable at all.  The file is a
 	 * regular file (i.e., not a directory), then the file is not
 	 * writable, full stop.	 For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
@@ -1588,21 +1648,38 @@ NativeAccess(
 	 * advanced 'getFileSecurityProc', then more robust ACL checks
 	 * will be done below.
 	 */
-
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    if (mode & X_OK) {
-	if (!(attr & FILE_ATTRIBUTE_DIRECTORY) && !NativeIsExec(nativePath)) {
-	    /*
-	     * It's not a directory and doesn't have the correct extension.
-	     * Therefore it can't be executable
-	     */
-
+	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
+
+	/* If doesn't have the correct extension, it can't be executable */
+	if ((mode & X_OK) && !NativeIsExec(nativePath)) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+	/* Special case for read/write/executable check on file */
+	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
+	    DWORD mask = 0;
+	    HANDLE hFile;
+	    if (mode & R_OK) { mask |= GENERIC_READ;  }
+	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
+	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
+
+	    hFile = (tclWinProcs->createFileProc)(nativePath, mask,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
+	    if (hFile != INVALID_HANDLE_VALUE) {
+		CloseHandle(hFile);
+		return 0;
+	    }
+	    /* fast exit if access was denied */
+	    if (GetLastError() == ERROR_ACCESS_DENIED) {
+		Tcl_SetErrno(EACCES);
+		return -1;
+	    }
+	}
+	/* We cannnot verify the access fast, check it below using security info. */
     }
 
     /*
@@ -1811,9 +1888,12 @@ NativeIsExec(
 	 * Use wide-char case-insensitive comparison
 	 */
 
-	if ((_wcsicmp(path+len-3, L"exe") == 0)
-		|| (_wcsicmp(path+len-3, L"com") == 0)
-		|| (_wcsicmp(path+len-3, L"bat") == 0)) {
+	path += len-3;
+	if ((_wcsicmp(path, L"exe") == 0)
+		|| (_wcsicmp(path, L"com") == 0)
+		|| (_wcsicmp(path, L"cmd") == 0)
+		|| (_wcsicmp(path, L"ps1") == 0)
+		|| (_wcsicmp(path, L"bat") == 0)) {
 	    return 1;
 	}
     } else {
@@ -2022,7 +2102,8 @@ NativeStat(
      */
 
     fileHandle = (tclWinProcs->createFileProc)(nativePath, GENERIC_READ,
-	    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	    NULL, OPEN_EXISTING,
 	    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (fileHandle != INVALID_HANDLE_VALUE) {

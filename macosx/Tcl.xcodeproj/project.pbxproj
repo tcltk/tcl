@@ -893,7 +893,6 @@
 		F96D449608F272BA004A47F5 /* tclWinSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinSock.c; sourceTree = "<group>"; };
 		F96D449708F272BA004A47F5 /* tclWinTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTest.c; sourceTree = "<group>"; };
 		F96D449808F272BA004A47F5 /* tclWinThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinThrd.c; sourceTree = "<group>"; };
-		F96D449908F272BA004A47F5 /* tclWinThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclWinThrd.h; sourceTree = "<group>"; };
 		F96D449A08F272BA004A47F5 /* tclWinTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTime.c; sourceTree = "<group>"; };
 		F97AE7F10B65C1E900310EA2 /* Tcl-Common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Tcl-Common.xcconfig"; sourceTree = "<group>"; };
 		F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Tcl-Release.xcconfig"; sourceTree = "<group>"; };
@@ -1824,7 +1823,6 @@
 				F96D449608F272BA004A47F5 /* tclWinSock.c */,
 				F96D449708F272BA004A47F5 /* tclWinTest.c */,
 				F96D449808F272BA004A47F5 /* tclWinThrd.c */,
-				F96D449908F272BA004A47F5 /* tclWinThrd.h */,
 				F96D449A08F272BA004A47F5 /* tclWinTime.c */,
 			);
 			path = win;
