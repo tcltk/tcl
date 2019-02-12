@@ -3985,13 +3985,15 @@ Tcl_TimeRateObjCmd(
     register Tcl_Obj *objPtr;
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
-    Tcl_WideInt count = 0;	/* Holds repetition count */
+    Tcl_WideUInt count = 0;	/* Holds repetition count */
     Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL; 
 				/* Maximal running time (in milliseconds) */
-    Tcl_WideInt threshold = 1;	/* Current threshold for check time (faster
+    Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
-    Tcl_WideInt maxIterTm = 1;	/* Max time of some iteration as max threshold
+    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max threshold
 				 * additionally avoid divide to zero (never < 1) */
+    unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
+				 * growth of execution time. */
     register Tcl_WideInt start, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
@@ -4184,8 +4186,8 @@ usage:
 	    break;
 	}
 
-	/* don't calculate threshold by few iterations, because sometimes
-	 * first iteration(s) can be too fast (cached, delayed clean up, etc) */
+	/* don't calculate threshold by few iterations, because sometimes first
+	 * iteration(s) can be too fast or slow (cached, delayed clean up, etc) */
 	if (count < 10) {
 	   threshold = 1; continue;
 	}
@@ -4194,9 +4196,24 @@ usage:
 	threshold = (middle - start) / count;
 	if (threshold > maxIterTm) {
 	    maxIterTm = threshold;
+	    /* interations seems to be longer */
+	    if (threshold > (maxIterTm * 2)) {
+		if ((factor *= 2) > 50) factor = 50;
+	    } else {
+		if (factor < 50) factor++;
+	    }
+	} else if (factor > 4) {
+	    /* interations seems to be shorter */
+	    if (threshold < (maxIterTm / 2)) {
+		if ((factor /= 2) < 4) factor = 4;
+	    } else {
+		factor--;
+	    }
 	}
-	/* as relation between remaining time and time since last check */
-	threshold = ((stop - middle) / maxIterTm) / 4;
+	/* as relation between remaining time and time since last check,
+	 * maximal some % of time (by factor), so avoid growing of the execution time
+	 * if iterations are not consistent, e. g. wax continuously on time) */
+	threshold = ((stop - middle) / maxIterTm) / factor + 1;
 	if (threshold > 100000) {	    /* fix for too large threshold */
 	    threshold = 100000;
 	}
