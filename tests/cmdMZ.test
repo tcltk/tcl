@@ -349,13 +349,19 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
 
 test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} {
     list [catch {timerate} msg] $msg
-} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time?"}}
-test cmdMZ-6.2 {Tcl_TimeRateObjCmd: basic format of command} {
+} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
+test cmdMZ-6.2.1 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate a b c d} msg] $msg
+} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
+test cmdMZ-6.2.2 {Tcl_TimeRateObjCmd: basic format of command} {
     list [catch {timerate a b c} msg] $msg
-} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time?"}}
-test cmdMZ-6.3 {Tcl_TimeRateObjCmd: basic format of command} {
+} {1 {expected integer but got "b"}}
+test cmdMZ-6.2.3 {Tcl_TimeRateObjCmd: basic format of command} {
     list [catch {timerate a b} msg] $msg
 } {1 {expected integer but got "b"}}
+test cmdMZ-6.3 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate -overhead b {} a b} msg] $msg
+} {1 {expected floating-point number but got "b"}}
 test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative iteration counts} {
     list [catch {timerate "foreach a {c d e} \{" -12456} msg] $msg
 } {1 {missing close-brace}}
@@ -390,6 +396,19 @@ test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
 	[expr {[lindex $m1 2] == 1}] \
 	[expr {[lindex $m1 4] > 1000}] \
 	[expr {[lindex $m1 6] < 10}]
+} {1 1 1 1}
+test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
+    set m1 [timerate {} 1000 5];	# max-count wins
+    set m2 [timerate {after 20} 1 5];	# max-time wins
+    list [lindex $m1 2] [lindex $m2 2]
+} {5 1}
+test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
+    set m1 [timerate -overhead 1e6 {after 10} 100 1]
+    list \
+	[expr {[lindex $m1 0] == 0.0}] \
+	[expr {[lindex $m1 2] == 1}] \
+	[expr {[lindex $m1 4] == 1000000}] \
+	[expr {[lindex $m1 6] <= 0.001}]
 } {1 1 1 1}
 
 # The tests for Tcl_WhileObjCmd are in while.test
