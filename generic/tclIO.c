@@ -673,7 +673,7 @@ TclFinalizeIOSubsystem(void)
 		statePtr->refCount--;
 	    }
 
-	    if (statePtr->refCount <= 0) {
+	    if (statePtr->refCount + 1 <= 1) {
 		/*
 		 * Close it only if the refcount indicates that the channel is
 		 * not referenced from any interpreter. If it is, that
@@ -1091,7 +1091,7 @@ CheckForStdChannelsBeingClosed(
     if (tsdPtr->stdinInitialized == 1
 	    && tsdPtr->stdinChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
-	if (statePtr->refCount < 2) {
+	if (statePtr->refCount + 1 < 3) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdinChannel = NULL;
 	    return;
@@ -1099,7 +1099,7 @@ CheckForStdChannelsBeingClosed(
     } else if (tsdPtr->stdoutInitialized == 1
 	    && tsdPtr->stdoutChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
-	if (statePtr->refCount < 2) {
+	if (statePtr->refCount + 1 < 3) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdoutChannel = NULL;
 	    return;
@@ -1107,7 +1107,7 @@ CheckForStdChannelsBeingClosed(
     } else if (tsdPtr->stderrInitialized == 1
 	    && tsdPtr->stderrChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
-	if (statePtr->refCount < 2) {
+	if (statePtr->refCount + 1 < 3) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stderrChannel = NULL;
 	    return;
@@ -1269,7 +1269,7 @@ Tcl_UnregisterChannel(
      * If the refCount reached zero, close the actual channel.
      */
 
-    if (statePtr->refCount <= 0) {
+    if (statePtr->refCount + 1 <= 1) {
 	Tcl_Preserve(statePtr);
 	if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    /*
@@ -2015,7 +2015,7 @@ static void
 ChannelFree(
     Channel *chanPtr)
 {
-    if (chanPtr->refCount == 0) {
+    if (!chanPtr->refCount) {
 	Tcl_Free(chanPtr);
 	return;
     }
@@ -2187,7 +2187,7 @@ Tcl_UnstackChannel(
 	 * necessary.
 	 */
 
-	if (statePtr->refCount <= 0) {
+	if (statePtr->refCount + 1 <= 1) {
 	    if (Tcl_Close(interp, chan) != TCL_OK) {
 		/*
 		 * TIP #219, Tcl Channel Reflection API.
@@ -2487,7 +2487,7 @@ static void
 PreserveChannelBuffer(
     ChannelBuffer *bufPtr)
 {
-    if (bufPtr->refCount == 0) {
+    if (!bufPtr->refCount) {
 	Tcl_Panic("Reuse of ChannelBuffer! %p", bufPtr);
     }
     bufPtr->refCount++;
@@ -2507,7 +2507,7 @@ static int
 IsShared(
     ChannelBuffer *bufPtr)
 {
-    return bufPtr->refCount > 1;
+    return bufPtr->refCount + 1 > 2;
 }
 
 /*
@@ -2943,7 +2943,7 @@ FlushChannel(
      * current output buffer.
      */
 
-    if (GotFlag(statePtr, CHANNEL_CLOSED) && (statePtr->refCount <= 0) &&
+    if (GotFlag(statePtr, CHANNEL_CLOSED) && (statePtr->refCount + 1 <= 1) &&
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
@@ -3410,7 +3410,7 @@ Tcl_Close(
     statePtr = chanPtr->state;
     chanPtr = statePtr->topChanPtr;
 
-    if (statePtr->refCount > 0) {
+    if (statePtr->refCount + 1 > 1) {
 	Tcl_Panic("called Tcl_Close on channel with refCount > 0");
     }
 
@@ -6108,7 +6108,7 @@ ReadChars(
     (void) TclGetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
-	unsigned int size;
+	size_t size;
 
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
 	dstLimit = size - numBytes;
@@ -10359,7 +10359,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return ((statePtr->refCount + 1 > 2) ? 1 : 0);
 }
 
 /*

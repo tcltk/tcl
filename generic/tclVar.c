@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	int len;
+	size_t len;
 	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
@@ -840,7 +840,8 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, i, result, varLen;
+    int isNew, i, result;
+    size_t varLen;
     const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
@@ -970,7 +971,7 @@ TclLookupSimpleVar(
 	if (localCt > 0) {
 	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
 	    const char *localNameStr;
-	    int localLen;
+	    size_t localLen;
 
 	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
 		register Tcl_Obj *objPtr = *objPtrPtr;

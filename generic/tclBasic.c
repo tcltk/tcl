@@ -7037,7 +7037,7 @@ ExprAbsFunc(
 	    goto unChanged;
 	} else if (l == (Tcl_WideInt)0) {
 	    if (TclHasStringRep(objv[1])) {
-		int numBytes;
+		size_t numBytes;
 		const char *bytes = TclGetStringFromObj(objv[1], &numBytes);
 
 		while (numBytes) {

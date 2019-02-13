@@ -1688,8 +1688,8 @@ Tcl_AppendFormatToObj(
     Tcl_Obj *const objv[])
 {
     const char *span = format, *msg, *errCode;
-    int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
-    int originalLength, limit;
+    int objIndex = 0, gotXpg = 0, gotSequential = 0;
+    size_t originalLength, limit, numBytes = 0;
     Tcl_UniChar ch = 0;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
@@ -1703,7 +1703,7 @@ Tcl_AppendFormatToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
     }
     (void)TclGetStringFromObj(appendObj, &originalLength);
-    limit = INT_MAX - originalLength;
+    limit = (size_t)INT_MAX - originalLength;
 
     /*
      * Format string is NUL-terminated.
@@ -1716,7 +1716,8 @@ Tcl_AppendFormatToObj(
 #ifndef TCL_WIDE_INT_IS_LONG
 	int useWide = 0;
 #endif
-	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
+	int newXpg, numChars, allocSegment = 0, segmentLimit;
+	size_t segmentNumBytes;
 	Tcl_Obj *segment;
 	int step = TclUtfToUniChar(format, &ch);
 
@@ -1848,7 +1849,7 @@ Tcl_AppendFormatToObj(
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	}
-	if (width > limit) {
+	if (width > (int) limit) {
 	    msg = overflow;
 	    errCode = "OVERFLOW";
 	    goto errorMsg;
@@ -2721,12 +2722,12 @@ Tcl_ObjPrintf(
 char *
 TclGetStringStorage(
     Tcl_Obj *objPtr,
-    unsigned int *sizePtr)
+    size_t *sizePtr)
 {
     String *stringPtr;
 
     if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
-	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+	return TclGetStringFromObj(objPtr, sizePtr);
     }
 
     stringPtr = GET_STRING(objPtr);

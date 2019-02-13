@@ -230,7 +230,7 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(currentInstPtr + 1));
-		int numBytes;
+		size_t numBytes;
 
 		(void) TclGetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
@@ -245,7 +245,7 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(currentInstPtr + 1));
-		int numBytes;
+		size_t numBytes;
 
 		(void) TclGetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {

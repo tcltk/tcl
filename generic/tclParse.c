@@ -2659,7 +2659,7 @@ TclSubstTokens(
 	    if ((appendByteLength == 1) && (utfCharBytes[0] == ' ')
 		    && (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
-		    int clPos;
+		    size_t clPos;
 
 		    if (result == 0) {
 			clPos = 0;
