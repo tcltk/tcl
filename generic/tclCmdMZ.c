@@ -4299,8 +4299,10 @@ Tcl_TimeRateObjCmd(
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideUInt count = 0;	/* Holds repetition count */
-    Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL; 
+    Tcl_WideInt  maxms  = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
+    Tcl_WideUInt maxcnt = WIDE_MAX;
+				/* Maximal count of iterations. */
     Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
     Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max threshold
@@ -4350,16 +4352,24 @@ Tcl_TimeRateObjCmd(
 	}
     }
 
-    if (i >= objc || i < objc-2) {
+    if (i >= objc || i < objc-3) {
 usage:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??");
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
-    if (i < objc) {
-	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
+    if (i < objc) {	/* max-time */
+	result = Tcl_GetWideIntFromObj(interp, objv[i++], &maxms);
 	if (result != TCL_OK) {
 	    return result;
+	}
+	if (i < objc) {	/* max-count*/
+	    Tcl_WideInt v;
+	    result = Tcl_GetWideIntFromObj(interp, objv[i], &v);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    maxcnt = (v > 0) ? v : 0;
 	}
     }
 
@@ -4367,7 +4377,7 @@ usage:
     if (calibrate) {
 
 	/* if no time specified for the calibration */
-	if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+	if (maxms == WIDE_MIN) {
 	    Tcl_Obj *clobjv[6];
 	    Tcl_WideInt maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
@@ -4397,7 +4407,7 @@ usage:
 	    clobjv[i++] = objPtr; 
 
 	    /* set last measurement overhead to max */
-	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+	    measureOverhead = (double)UWIDE_MAX;
 
 	    /* calibration cycle until it'll be preciser */
 	    maxms = -1000;
@@ -4431,14 +4441,14 @@ usage:
 	/* if time is negative - make current overhead more precise */
 	if (maxms > 0) {
 	    /* set last measurement overhead to max */
-	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+	    measureOverhead = (double)UWIDE_MAX;
 	} else {
 	    maxms = -maxms;
 	}
 
     }
 
-    if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+    if (maxms == WIDE_MIN) {
     	maxms = 1000;
     }
     if (overhead == -1) {
@@ -4471,6 +4481,7 @@ usage:
 #endif
 
     /* start measurement */
+    if (maxcnt > 0)
     while (1) {
     	/* eval single iteration */
     	count++;
@@ -4485,7 +4496,14 @@ usage:
 	    result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	}
 	if (result != TCL_OK) {
-	    goto done;
+	    /* allow break from measurement cycle (used for conditional stop) */
+	    if (result != TCL_BREAK) {
+		goto done;
+	    }
+	    /* force stop immediately */
+	    threshold = 1;
+	    maxcnt = 0;
+	    result = TCL_OK;
 	}
 	
 	/* don't check time up to threshold */
@@ -4498,7 +4516,7 @@ usage:
 	Tcl_GetTime(&now);
 	middle = now.sec; middle *= 1000000; middle += now.usec;
     #endif
-	if (middle >= stop) {
+	if (middle >= stop || count >= maxcnt) {
 	    break;
 	}
 
@@ -4533,6 +4551,10 @@ usage:
 	if (threshold > 100000) {	    /* fix for too large threshold */
 	    threshold = 100000;
 	}
+	/* consider max-count */
+	if (threshold > maxcnt - count) {
+	    threshold = maxcnt - count;
+	}
     }
 
     {
@@ -4552,11 +4574,11 @@ usage:
 	    /* minimize influence of measurement overhead */
 	    if (overhead > 0) {
 		/* estimate the time of overhead (microsecs) */
-		Tcl_WideInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = overhead * count;
 		if (middle > curOverhead) {
 		    middle -= curOverhead;
 		} else {
-		    middle = 1;
+		    middle = 0;
 		}
 	    }
 	} else {
@@ -4585,7 +4607,7 @@ usage:
 	
 	/* calculate speed as rate (count) per sec */
 	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
-	if (count < (0x7FFFFFFFFFFFFFFFL / 1000000)) {
+	if (count < (WIDE_MAX / 1000000)) {
 	    val = (count * 1000000) / middle;
 	    if (val < 100000) {
 		if (val < 100)	{ fmt = "%.3f"; } else

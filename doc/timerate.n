@@ -11,17 +11,20 @@
 .SH NAME
 timerate \- Time-related execution resp. performance measurement of a script
 .SH SYNOPSIS
-\fBtimerate \fIscript\fR \fI?time?\fR
+\fBtimerate \fIscript\fR \fI?time ?max-count??\fR
 .sp
-\fBtimerate \fI?-direct?\fR \fI?-overhead double?\fR \fIscript\fR \fI?time?\fR
+\fBtimerate \fI?-direct?\fR \fI?-overhead double?\fR \fIscript\fR \fI?time ?max-count??\fR
 .sp
-\fBtimerate \fI?-calibrate?\fR \fI?-direct?\fR \fIscript\fR \fI?time?\fR
+\fBtimerate \fI?-calibrate?\fR \fI?-direct?\fR \fIscript\fR \fI?time ?max-count??\fR
 .BE
 .SH DESCRIPTION
 .PP
 The first and second form will evaluate \fIscript\fR until the interval
 \fItime\fR given in milliseconds elapses, or for 1000 milliseconds (1 second)
-if \fItime\fR is not specified. 
+if \fItime\fR is not specified.
+.sp
+If \fImax-count\fR is specified, it imposes a further restriction by the maximal 
+number of iterations.
 .sp
 It will then return a canonical tcl-list of the form
 .PP
