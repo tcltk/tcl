@@ -485,10 +485,10 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *entryPtr;
     const char *bytes;
-    size_t globalHash;
+    size_t globalHash, length;
 
-    bytes = TclGetString(objPtr);
-    globalHash = (HashString(bytes, objPtr->length) & globalTablePtr->mask);
+    bytes = TclGetStringFromObj(objPtr, &length);
+    globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
 	    entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {
@@ -692,8 +692,7 @@ TclReleaseLiteral(
     }
 
     globalTablePtr = &iPtr->literalTable;
-    bytes = TclGetString(objPtr);
-    length = objPtr->length;
+    bytes = TclGetStringFromObj(objPtr, &length);
     index = HashString(bytes, length) & globalTablePtr->mask;
 
     /*
@@ -864,8 +863,7 @@ RebuildLiteralTable(
 
     for (oldChainPtr=oldBuckets ; oldSize>0 ; oldSize--,oldChainPtr++) {
 	for (entryPtr=*oldChainPtr ; entryPtr!=NULL ; entryPtr=*oldChainPtr) {
-	    bytes = TclGetString(entryPtr->objPtr);
-	    length = entryPtr->objPtr->length;
+	    bytes = TclGetStringFromObj(entryPtr->objPtr, &length);
 	    index = (HashString(bytes, length) & tablePtr->mask);
 
 	    *oldChainPtr = entryPtr->nextPtr;
@@ -1067,8 +1065,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount + 1 < 2) {
-		bytes = TclGetString(globalPtr->objPtr);
-		length = globalPtr->objPtr->length;
+		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : (int)length), bytes, globalPtr->refCount);

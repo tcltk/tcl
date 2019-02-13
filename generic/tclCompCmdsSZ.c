@@ -765,7 +765,7 @@ TclCompileStringMatchCmd(
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
-	if ((length <= 1) || strncmp(str, "-nocase", (size_t) length)) {
+	if ((length <= 1) || strncmp(str, "-nocase", length)) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */

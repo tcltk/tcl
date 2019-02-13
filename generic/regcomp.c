@@ -39,7 +39,7 @@
 /* automatically gathered by fwd; do not hand-edit */
 /* === regcomp.c === */
 int compile(regex_t *, const chr *, size_t, int);
-static void moresubs(struct vars *, int);
+static void moresubs(struct vars *, size_t);
 static int freev(struct vars *, int);
 static void makesearch(struct vars *, struct nfa *);
 static struct subre *parse(struct vars *, int, int, struct state *, struct state *);
@@ -469,18 +469,18 @@ compile(
 
 /*
  - moresubs - enlarge subRE vector
- ^ static void moresubs(struct vars *, int);
+ ^ static void moresubs(struct vars *, size_t);
  */
 static void
 moresubs(
     struct vars *v,
-    int wanted)			/* want enough room for this one */
+    size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
     size_t n;
 
-    assert(wanted > 0 && (size_t)wanted >= v->nsubs);
-    n = (size_t)wanted * 3 / 2 + 1;
+    assert(wanted > 0 && wanted >= v->nsubs);
+    n = wanted * 3 / 2 + 1;
     if (v->subs == v->sub10) {
 	p = (struct subre **) MALLOC(n * sizeof(struct subre *));
 	if (p != NULL) {
@@ -499,7 +499,7 @@ moresubs(
 	*p = NULL;
     }
     assert(v->nsubs == n);
-    assert((size_t)wanted < v->nsubs);
+    assert(wanted < v->nsubs);
 }
 
 /*
@@ -797,7 +797,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    int subno;			/* capturing-parens or backref number */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;
@@ -954,10 +954,10 @@ parseqatom(
 	if (cap) {
 	    v->nsubexp++;
 	    subno = v->nsubexp;
-	    if ((size_t)subno >= v->nsubs) {
+	    if (subno >= v->nsubs) {
 		moresubs(v, subno);
 	    }
-	    assert((size_t)subno < v->nsubs);
+	    assert(subno < v->nsubs);
 	} else {
 	    atomtype = PLAIN;	/* something that's not '(' */
 	}

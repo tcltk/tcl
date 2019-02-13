@@ -354,8 +354,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetString(objv[3]);
-	numBytes = objv[3]->length;
+	procBody = TclGetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -510,7 +509,8 @@ TclCreateProc(
 
     for (i = 0; i < numArgs; i++) {
 	const char *argname, *argnamei, *argnamelast;
-	int fieldCount, nameLength;
+	int fieldCount;
+	size_t nameLength;
 	Tcl_Obj **fieldValues;
 
 	/*
@@ -602,10 +602,9 @@ TclCreateProc(
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
-		const char *tmpPtr = TclGetString(localPtr->defValuePtr);
-		size_t tmpLength = localPtr->defValuePtr->length;
-		const char *value = TclGetString(fieldValues[1]);
-		size_t valueLength = fieldValues[1]->length;
+		size_t tmpLength, valueLength;
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
 		     || memcmp(value, tmpPtr, tmpLength) != 0

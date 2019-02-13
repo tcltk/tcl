@@ -923,7 +923,7 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    int nameLength;		/* The number of bytes in local variable's name.
+    size_t nameLength;		/* The number of bytes in local variable's name.
 				 * Among others used to speed up var lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
@@ -2450,7 +2450,7 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
-	    ? (int)(objPtr)->internalRep.wideValue : -1), TCL_OK) \
+	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -3284,7 +3284,7 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE int	TclUtfCount(int ch);
+MODULE_SCOPE size_t	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -4488,11 +4488,10 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
       return response;
    }
-
 #else
 #define TclGetStringFromObj(objPtr, lenPtr) \
     (((objPtr)->bytes \
-	    ? 0 : Tcl_GetString((objPtr)), \
+	    ? NULL : Tcl_GetString((objPtr)), \
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
     (Tcl_GetUnicodeFromObj(objPtr, NULL), \
@@ -4501,7 +4500,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
     (Tcl_GetByteArrayFromObj(objPtr, NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-		(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2))
+	    (unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2))
 #endif
 
 /*

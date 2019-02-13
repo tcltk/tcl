@@ -443,12 +443,12 @@ TclUnsetEnv(
 
 #if defined(_WIN32)
     string = Tcl_Alloc(length + 2);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
     string = Tcl_Alloc(length + 1);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
