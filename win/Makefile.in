@@ -157,7 +157,7 @@ TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 			  package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde];\
 			  package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]
 TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
-			  $(TEST_LOAD_PRMS)			  
+			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
@@ -208,6 +208,7 @@ MKDIR		= mkdir -p
 SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
+LN		= ln
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -417,6 +418,10 @@ TOMMATH_OBJS = \
 	bn_mp_sqrt.${OBJEXT} \
 	bn_mp_sub.${OBJEXT} \
 	bn_mp_sub_d.${OBJEXT} \
+	bn_mp_tc_and.${OBJEXT} \
+	bn_mp_tc_div_2d.${OBJEXT} \
+	bn_mp_tc_or.${OBJEXT} \
+	bn_mp_tc_xor.${OBJEXT} \
 	bn_mp_to_unsigned_bin.${OBJEXT} \
 	bn_mp_to_unsigned_bin_n.${OBJEXT} \
 	bn_mp_toom_mul.${OBJEXT} \
@@ -518,16 +523,29 @@ doc:
 tclzipfile: ${TCL_ZIP_FILE}
 
 ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
-	rm -rf ${TCL_VFS_ROOT}
-	mkdir -p ${TCL_VFS_PATH}
-	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
-	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
+	@rm -rf ${TCL_VFS_ROOT}
+	@mkdir -p ${TCL_VFS_PATH}
+	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
+	@( \
+	  $(LN) $$(find $(TOP_DIR)/library/* -maxdepth 0 -type f) ${TCL_VFS_PATH}/ && \
+	  (for D in $$(find $(TOP_DIR)/library/* -maxdepth 0 -type d); do \
+	    mkdir -p "${TCL_VFS_PATH}/$$(basename $$D)"; \
+	    $(LN) -s $$D/* ${TCL_VFS_PATH}/$$(basename $$D)/; \
+	  done) && \
+	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
+	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
+	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg/ \
+	) || ( \
+	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
+	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	  $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
+	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg; \
+	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
 	  cd ${TCL_VFS_ROOT} && \
-	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
+	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
