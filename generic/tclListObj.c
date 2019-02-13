@@ -61,12 +61,12 @@ const Tcl_ObjType tclListType = {
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclListType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclListType);		\
 	(listRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    Tcl_FetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -536,9 +536,10 @@ Tcl_ListObjGetElements(
     ListGetIntRep(listPtr, listRepPtr);
 
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
@@ -659,9 +660,10 @@ Tcl_ListObjAppendElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
@@ -833,9 +835,10 @@ Tcl_ListObjIndex(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
@@ -889,9 +892,10 @@ Tcl_ListObjLength(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *intPtr = 0;
 	    return TCL_OK;
@@ -1634,7 +1638,7 @@ TclLsetFlat(
 	     * them at that time.
 	     */
 
-	    irPtr = Tcl_FetchIntRep(parentList, &tclListType);
+	    irPtr = TclFetchIntRep(parentList, &tclListType);
 	    irPtr->twoPtrValue.ptr2 = chainPtr;
 	    chainPtr = parentList;
 	}
@@ -1655,7 +1659,7 @@ TclLsetFlat(
 	 * Clear away our intrep surgery mess.
 	 */
 
-	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
+	irPtr = TclFetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
 
@@ -1775,9 +1779,10 @@ TclListObjSetElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1976,7 +1981,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && Tcl_FetchIntRep(objPtr, &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && (objPtr->typePtr == &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
@@ -2011,7 +2016,8 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
-	int estCount, length;
+	int estCount;
+	size_t length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
 	/*

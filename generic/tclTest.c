@@ -980,7 +980,7 @@ AsyncHandlerProc(
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetString(Tcl_GetObjResult(interp));
+    listArgv[1] = Tcl_GetStringResult(interp);
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);

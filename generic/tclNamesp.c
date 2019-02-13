@@ -165,7 +165,7 @@ static const Tcl_ObjType nsNameType = {
 #define NsNameGetIntRep(objPtr, nnPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &nsNameType);			\
+	irPtr = TclFetchIntRep((objPtr), &nsNameType);			\
 	(nnPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -3620,7 +3620,7 @@ NamespaceExportCmd(
      */
 
     firstArg = 1;
-    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
+    if (strcmp("-clear", TclGetString(objv[firstArg])) == 0) {
 	if (nsPtr->exportPatternList) {
 	    Tcl_DecrRefCount(nsPtr->exportPatternList);
 	    nsPtr->exportPatternList = NULL;

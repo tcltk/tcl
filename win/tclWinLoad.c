@@ -95,7 +95,7 @@ TclpDlopen(
         firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
-	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
+	nativeName = Tcl_WinUtfToTChar(TclGetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -117,7 +117,7 @@ TclpDlopen(
             lastError = firstError;
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
-		Tcl_GetString(pathPtr));
+		TclGetString(pathPtr));
 
 	/*
 	 * Check for possible DLL errors. This doesn't work quite right,

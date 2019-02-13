@@ -349,7 +349,7 @@ static const Tcl_ObjType chanObjType = {
 #define ChanGetIntRep(objPtr, resPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &chanObjType);		\
+	irPtr = TclFetchIntRep((objPtr), &chanObjType);		\
 	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -4524,7 +4524,8 @@ Tcl_GetsObj(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
+    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    size_t oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
@@ -6085,7 +6086,8 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    int numBytes, srcLen = BytesLeft(bufPtr);
+    size_t numBytes;
+    int srcLen = BytesLeft(bufPtr);
 
     /*
      * One src byte can yield at most one character.  So when the number of
@@ -9426,7 +9428,8 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size, sizeb;
+    int result = TCL_OK, size;
+    size_t sizeb;
     Tcl_WideInt total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
@@ -9492,7 +9495,7 @@ CopyData(
                     || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
-		sizeb = (int) csPtr->toRead;
+		sizeb = csPtr->toRead;
 	    }
 
 	    if (inBinary || sameEncoding) {
@@ -9502,7 +9505,7 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
 	    }
-	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {
@@ -9586,7 +9589,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb < 0) {
+	if (sizeb == TCL_AUTO_LENGTH) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);

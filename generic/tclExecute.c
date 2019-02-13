@@ -692,7 +692,7 @@ ReleaseDictIterator(
     Tcl_Obj *dictPtr;
     const Tcl_ObjIntRep *irPtr;
 
-    irPtr = Tcl_FetchIntRep(objPtr, &dictIteratorType);
+    irPtr = TclFetchIntRep(objPtr, &dictIteratorType);
     assert(irPtr != NULL);
 
     /*
@@ -3562,7 +3562,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
+	TRACE(("%u %s => ", opnd, TclGetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -4524,8 +4524,8 @@ TEBCresume(
 
     {
 	int index, numIndices, fromIdx, toIdx;
-	int nocase, match, length2, cflags, s1len, s2len;
-	size_t slength;
+	int nocase, match, cflags, s1len, s2len;
+	size_t slength, length2;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -4559,7 +4559,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (NULL == Tcl_FetchIntRep(value2Ptr, &tclListType))
+		&& (value2Ptr->typePtr != &tclListType)
 		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
@@ -5114,7 +5114,7 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3;
+	size_t length3;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
@@ -5190,10 +5190,10 @@ TEBCresume(
 	    goto doneStringMap;
 	}
 	ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
-	if (length2 > (int)slength || length2 == 0) {
+	if (length2 > slength || length2 == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
-	} else if (length2 == (int)slength) {
+	} else if (length2 == slength) {
 	    if (memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * slength)) {
 		objResultPtr = valuePtr;
 	    } else {
@@ -6738,7 +6738,7 @@ TEBCresume(
 	}
 	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
-	    if (Tcl_FetchIntRep(varPtr->value.objPtr, &dictIteratorType)) {
+	    if (varPtr->value.objPtr->typePtr == &dictIteratorType) {
 		Tcl_Panic("mis-issued dictFirst!");
 	    }
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -6755,7 +6755,7 @@ TEBCresume(
 	    const Tcl_ObjIntRep *irPtr;
 
 	    if (statePtr &&
-		    (irPtr = Tcl_FetchIntRep(statePtr, &dictIteratorType))) {
+		    (irPtr = TclFetchIntRep(statePtr, &dictIteratorType))) {
 		searchPtr = irPtr->twoPtrValue.ptr1;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
@@ -8639,7 +8639,7 @@ IllegalExprOperandType(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s \"%s\" as operand of \"%s\"", description,
-	    Tcl_GetString(opndPtr), operator));
+	    TclGetString(opndPtr), operator));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 
@@ -9243,7 +9243,7 @@ EvalStatsCmd(
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
-	    if (NULL != Tcl_FetchIntRep(entryPtr->objPtr, &tclByteCodeType)) {
+	    if (entryPtr->objPtr->typePtr == &tclByteCodeType) {
 		numByteCodeLits++;
 	    }
 	    (void) TclGetStringFromObj(entryPtr->objPtr, &length);

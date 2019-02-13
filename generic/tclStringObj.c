@@ -2642,7 +2642,7 @@ AppendPrintfToObjVA(
     if (code != TCL_OK) {
 	Tcl_AppendPrintfToObj(objPtr,
 		"Unable to format \"%s\" with supplied arguments: %s",
-		format, Tcl_GetString(list));
+		format, TclGetString(list));
     }
     Tcl_DecrRefCount(list);
 }
@@ -2784,10 +2784,10 @@ TclStringRepeat(
 
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
-	TclGetByteArrayFromObj(objPtr, &length);
+	(void)TclGetByteArrayFromObj(objPtr, &length);
     } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
-	TclGetUnicodeFromObj(objPtr, &length);
+	(void)TclGetUnicodeFromObj(objPtr, &length);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)TclGetStringFromObj(objPtr, &length);
@@ -2856,7 +2856,7 @@ TclStringRepeat(
 	 */
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objResultPtr = Tcl_NewStringObj(Tcl_GetString(objPtr), length);
+	    objResultPtr = Tcl_NewStringObj(TclGetString(objPtr), length);
 	} else {
 	    TclFreeIntRep(objPtr);
 	    objResultPtr = objPtr;
@@ -2875,7 +2875,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	Tcl_AppendToObj(objResultPtr, Tcl_GetString(objResultPtr),
+	Tcl_AppendToObj(objResultPtr, TclGetString(objResultPtr),
 		(count - done) * length);
     }
     return objResultPtr;
@@ -2980,7 +2980,7 @@ TclStringCat(
 	     */
 
 	    if (TclIsPureByteArray(objPtr)) {
-		TclGetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+		(void)TclGetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
 
 		if (numBytes) {
 		    last = objc - oc;
@@ -3061,7 +3061,7 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    Tcl_GetString(objPtr); /* PANIC? */
+		    TclGetString(objPtr); /* PANIC? */
 		    numBytes = objPtr->length;
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
@@ -3088,7 +3088,7 @@ TclStringCat(
 
 	    /* assert ( length > 0 && pendingPtr == NULL )  */
 
-	    Tcl_GetString(objPtr); /* PANIC? */
+	    TclGetString(objPtr); /* PANIC? */
 	    numBytes = objPtr->length;
 	    if (numBytes) {
 		last = objc - oc;
@@ -3122,7 +3122,7 @@ TclStringCat(
 	    size_t start;
 
 	    objResultPtr = *objv++; objc--;
-	    TclGetByteArrayFromObj(objResultPtr, &start);
+	    (void)TclGetByteArrayFromObj(objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
 	} else {
 	    objResultPtr = Tcl_NewByteArrayObj(NULL, length);
@@ -3214,7 +3214,7 @@ TclStringCat(
 		}
 		return NULL;
 	    }
-	    dst = Tcl_GetString(objResultPtr) + start;
+	    dst = TclGetString(objResultPtr) + start;
 
 	    /* assert ( length > start ) */
 	    TclFreeIntRep(objResultPtr);
@@ -3230,7 +3230,7 @@ TclStringCat(
 		}
 		return NULL;
 	    }
-	    dst = Tcl_GetString(objResultPtr);
+	    dst = TclGetString(objResultPtr);
 	}
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;

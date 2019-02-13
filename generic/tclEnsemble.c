@@ -95,7 +95,7 @@ static const Tcl_ObjType ensembleCmdType = {
 #define ECRGetIntRep(objPtr, ecRepPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &ensembleCmdType);		\
+	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
 	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -1624,7 +1624,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
 		} else {
 		    /*

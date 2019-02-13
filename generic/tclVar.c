@@ -267,7 +267,7 @@ static const Tcl_ObjType localVarNameType = {
 #define LocalGetIntRep(objPtr, index, name)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &localVarNameType);		\
+	irPtr = TclFetchIntRep((objPtr), &localVarNameType);		\
 	(name) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
 	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : -1;	\
     } while (0)
@@ -292,7 +292,7 @@ static const Tcl_ObjType parsedVarNameType = {
 #define ParsedGetIntRep(objPtr, parsed, array, elem)			\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &parsedVarNameType);		\
+	irPtr = TclFetchIntRep((objPtr), &parsedVarNameType);		\
 	(parsed) = (irPtr != NULL);					\
 	(array) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
 	(elem) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
@@ -343,7 +343,7 @@ NotArrayError(
     Tcl_Interp *interp,
     Tcl_Obj *name)
 {
-    const char *nameStr = Tcl_GetString(name);
+    const char *nameStr = TclGetString(name);
 
     Tcl_SetObjResult(interp,
 	    Tcl_ObjPrintf("\"%s\" isn't an array", nameStr));

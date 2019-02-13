@@ -1651,9 +1651,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (Tcl_FetchIntRep(objPtr, &tclDoubleType) ||
-		Tcl_FetchIntRep(objPtr, &tclIntType) ||
-		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
+	if ((objPtr->typePtr == &tclDoubleType) ||
+		(objPtr->typePtr == &tclIntType) ||
+		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1682,8 +1682,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (Tcl_FetchIntRep(objPtr, &tclIntType) ||
-		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
+	if ((objPtr->typePtr == &tclIntType) ||
+		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1964,7 +1964,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && Tcl_FetchIntRep(objv[objc-2], &tclDictType)){
+	    && (objv[objc-2]->typePtr == &tclDictType)){
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -4072,7 +4072,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt) totalMicroSec);
+	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }
@@ -4211,7 +4211,7 @@ TclNRTryObjCmd(
 	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
-			Tcl_GetString(objv[i+1])));
+			TclGetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", NULL);
@@ -4750,7 +4750,7 @@ TclListLines(
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char *listStr = Tcl_GetString(listObj);
+    const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
