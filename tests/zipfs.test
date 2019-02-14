@@ -67,15 +67,15 @@ test zipfs-0.4 {zipfs basics: glob} -constraints zipfslib -setup {
     set pwd [pwd]
 } -body {
     cd $tcl_library
-    expr { [list $tcl_library/http] in [glob -dir [pwd] http*] }
+    expr { "$tcl_library/http" in [glob -dir [pwd] http*] }
 } -cleanup {
     cd $pwd
 } -result 1
 test zipfs-0.5 {zipfs basics: glob} -constraints zipfslib -body {
-    expr { [list $tcl_library/http] in [glob -dir $tcl_library http*] }
+    expr { "$tcl_library/http" in [glob -dir $tcl_library http*] }
 } -result 1
 test zipfs-0.6 {zipfs basics: glob} -constraints zipfslib -body {
-    expr { [list $tcl_library/http] in [glob $tcl_library/http*] }
+    expr { "$tcl_library/http" in [glob $tcl_library/http*] }
 } -result 1
 test zipfs-0.7 {zipfs basics: glob} -constraints zipfslib -body {
     expr { "http" in [glob -tails -dir $tcl_library http*] }
