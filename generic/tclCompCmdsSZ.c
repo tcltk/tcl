@@ -259,7 +259,7 @@ TclCompileStringCatCmd(
 	} else {
 	    Tcl_DecrRefCount(obj);
 	    if (folded) {
-		int len;
+		size_t len;
 		const char *bytes = TclGetStringFromObj(folded, &len);
 
 		PushLiteral(envPtr, bytes, len);
@@ -277,7 +277,7 @@ TclCompileStringCatCmd(
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
     if (folded) {
-	int len;
+	size_t len;
 	const char *bytes = TclGetStringFromObj(folded, &len);
 
 	PushLiteral(envPtr, bytes, len);
@@ -844,9 +844,9 @@ TclCompileStringLenCmd(
 	 */
 
 	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_GetCharLength(objPtr);
+	size_t len = Tcl_GetCharLength(objPtr);
 
-	len = sprintf(buf, "%d", len);
+	len = sprintf(buf, "%" TCL_Z_MODIFIER "d", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);
@@ -871,6 +871,7 @@ TclCompileStringMapCmd(
     Tcl_Obj *mapObj, **objv;
     char *bytes;
     int len;
+    size_t slen;
 
     /*
      * We only handle the case:
@@ -906,13 +907,13 @@ TclCompileStringMapCmd(
      * correct semantics for mapping.
      */
 
-    bytes = TclGetStringFromObj(objv[0], &len);
-    if (len == 0) {
+    bytes = TclGetStringFromObj(objv[0], &slen);
+    if (slen == 0) {
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
     } else {
-	PushLiteral(envPtr, bytes, len);
-	bytes = TclGetStringFromObj(objv[1], &len);
-	PushLiteral(envPtr, bytes, len);
+	PushLiteral(envPtr, bytes, slen);
+	bytes = TclGetStringFromObj(objv[1], &slen);
+	PushLiteral(envPtr, bytes, slen);
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
 	OP(STR_MAP);
     }
@@ -947,7 +948,7 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -956,14 +957,14 @@ TclCompileStringRangeCmd(
      * the string the same as the start of the string.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
+    if (idx1 == TCL_INDEX_NONE) {
 	/* [string range $s end+1 $last] must be empty string */
 	OP(		POP);
 	PUSH(		"");
 	return TCL_OK;
     }
 
-    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -971,7 +972,7 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
-    if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx2 == TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(		POP);
 	PUSH(		"");
@@ -1021,7 +1022,7 @@ TclCompileStringReplaceCmd(
      * Check for first index known and useful at compile time.
      */
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &first) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1030,7 +1031,7 @@ TclCompileStringReplaceCmd(
      * Check for last index known and useful at compile time.
      */
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &last) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1049,8 +1050,8 @@ TclCompileStringReplaceCmd(
      * compile direct to bytecode implementing the no-op.
      */
 
-    if ((last == TCL_INDEX_BEFORE)		/* Know (last < 0) */
-	    || (first == TCL_INDEX_AFTER)	/* Know (first > end) */
+    if ((last == TCL_INDEX_NONE)		/* Know (last < 0) */
+	    || (first == TCL_INDEX_NONE)	/* Know (first > end) */
 
 	/*
 	 * Tricky to determine when runtime (last < first) can be
@@ -1058,20 +1059,17 @@ TclCompileStringReplaceCmd(
 	 * cases...
 	 *
 	 * (first <= TCL_INDEX_END) &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX END) && (last < first) => ACCEPT
 	 *	else => cannot tell REJECT
 	 */
 	    || ((first <= TCL_INDEX_END) && (last <= TCL_INDEX_END)
 		&& (last < first))		/* Know (last < first) */
 	/*
-	 * (first == TCL_INDEX_BEFORE) &&
-	 *	(last == TCL_INDEX_AFTER) => (first < last) REJECT
+	 * (first == TCL_INDEX_NONE) &&
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else		=> (first < last) REJECT
 	 *
 	 * else [[first >= TCL_INDEX_START]] &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else [[last >= TCL_INDEX START]] && (last < first) => ACCEPT
 	 */
@@ -1104,34 +1102,34 @@ TclCompileStringReplaceCmd(
      *		(first <= end)
      *
      * The encoded indices (first <= TCL_INDEX END) and
-     * (first == TCL_INDEX_BEFORE) always meets this condition, but
+     * (first == TCL_INDEX_NONE) always meets this condition, but
      * any other encoded first index has some list for which it fails.
      *
      * We also need, second:
      *
      *		(last >= 0)
      *
-     * The encoded indices (last >= TCL_INDEX_START) and
-     * (last == TCL_INDEX_AFTER) always meet this condition but any
-     * other encoded last index has some list for which it fails.
+     * The encoded index (last >= TCL_INDEX_START) always meet this
+     * condition but any other encoded last index has some list for
+     * which it fails.
      *
      * Finally we need, third:
      *
      *		(first <= last)
      *
      * Considered in combination with the constraints we already have,
-     * we see that we can proceed when (first == TCL_INDEX_BEFORE)
-     * or (last == TCL_INDEX_AFTER). These also permit simplification
-     * of the prefix|replace|suffix construction. The other constraints,
-     * though, interfere with getting a guarantee that first <= last.
+     * we see that we can proceed when (first == TCL_INDEX_NONE).
+     * These also permit simplification of the prefix|replace|suffix
+     * construction. The other constraints, though, interfere with
+     * getting a guarantee that first <= last.
      */
 
-    if ((first == TCL_INDEX_BEFORE) && (last >= TCL_INDEX_START)) {
+    if ((first == TCL_INDEX_START) && (last >= TCL_INDEX_START)) {
 	/* empty prefix */
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
 	OP4(		REVERSE, 2);
-	if (last == TCL_INDEX_AFTER) {
+	if (last == INT_MAX) {
 	    OP(		POP);		/* Pop  original */
 	} else {
 	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
@@ -1140,7 +1138,7 @@ TclCompileStringReplaceCmd(
 	return TCL_OK;
     }
 
-    if ((last == TCL_INDEX_AFTER) && (first <= TCL_INDEX_END)) {
+    if ((last == TCL_INDEX_NONE) && (first <= TCL_INDEX_END)) {
 	OP44(		STR_RANGE_IMM, 0, first-1);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
@@ -1157,10 +1155,10 @@ TclCompileStringReplaceCmd(
 	 * are harmless when they are replaced by another empty string.
 	 */
 
-	if ((first == TCL_INDEX_BEFORE) || (first == TCL_INDEX_START)) {
+	if (first == TCL_INDEX_START) {
 	    /* empty prefix - build suffix only */
 
-	    if ((last == TCL_INDEX_END) || (last == TCL_INDEX_AFTER)) {
+	    if (last == TCL_INDEX_END) {
 		/* empty suffix too => empty result */
 		OP(	POP);		/* Pop  original */
 		PUSH	(	"");
@@ -1169,7 +1167,7 @@ TclCompileStringReplaceCmd(
 	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
 	    return TCL_OK;
 	} else {
-	    if ((last == TCL_INDEX_END) || (last == TCL_INDEX_AFTER)) {
+	    if (last == TCL_INDEX_END) {
 		/* empty suffix - build prefix only */
 		OP44(	STR_RANGE_IMM, 0, first-1);
 		return TCL_OK;
@@ -1505,7 +1503,8 @@ TclSubstCompile(
 
     for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
-	int length, literal, catchRange, breakJump;
+	size_t length;
+	int literal, catchRange, breakJump;
 	char buf[TCL_UTF_MAX];
 	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
 	JumpFixup continueFixup, otherFixup, endFixup;
@@ -1536,7 +1535,7 @@ TclSubstCompile(
 	     */
 
 	    if (tokenPtr->numComponents > 1) {
-		size_t i;	
+		size_t i;
 		int foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
@@ -2881,7 +2880,7 @@ TclCompileTryCmd(
 		goto failedToCompile;
 	    }
 	    if (objc > 0) {
-		int len;
+		size_t len;
 		const char *varname = TclGetStringFromObj(objv[0], &len);
 
 		resultVarIndices[i] = LocalScalar(varname, len, envPtr);
@@ -2893,7 +2892,7 @@ TclCompileTryCmd(
 		resultVarIndices[i] = -1;
 	    }
 	    if (objc == 2) {
-		int len;
+		size_t len;
 		const char *varname = TclGetStringFromObj(objv[1], &len);
 
 		optionVarIndices[i] = LocalScalar(varname, len, envPtr);
@@ -3012,6 +3011,7 @@ IssueTryClausesInstructions(
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
     int i, j, len, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
+    size_t slen;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     int *noError;
     char buf[TCL_INTEGER_SPACE];
@@ -3097,8 +3097,8 @@ IssueTryClausesInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = TclGetStringFromObj(matchClauses[i], &len);
-	    PushLiteral(envPtr, p, len);
+	    p = TclGetStringFromObj(matchClauses[i], &slen);
+	    PushLiteral(envPtr, p, slen);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
@@ -3225,6 +3225,7 @@ IssueTryClausesFinallyInstructions(
     int trapZero = 0, afterBody = 0, finalOK, finalError, noFinalError;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
+    size_t slen;
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
@@ -3308,8 +3309,8 @@ IssueTryClausesFinallyInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = TclGetStringFromObj(matchClauses[i], &len);
-	    PushLiteral(envPtr, p, len);
+	    p = TclGetStringFromObj(matchClauses[i], &slen);
+	    PushLiteral(envPtr, p, slen);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
@@ -3634,7 +3635,7 @@ TclCompileUnsetCmd(
 	}
 	if (varCount == 0) {
 	    const char *bytes;
-	    int len;
+	    size_t len;
 
 	    bytes = TclGetStringFromObj(leadingWord, &len);
 	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {

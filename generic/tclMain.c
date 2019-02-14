@@ -18,7 +18,7 @@
 
 /*
  * On Windows, this file needs to be compiled twice, once with TCL_ASCII_MAIN
- * defined. This way both Tcl_Main and Tcl_MainExW can be implemented, sharing
+ * defined. This way both Tcl_MainEx and Tcl_MainExW can be implemented, sharing
  * the same source code.
  */
 
@@ -65,7 +65,7 @@
 static inline Tcl_Obj *
 NewNativeObj(
     char *string,
-    int length)
+    size_t length)
 {
     Tcl_DString ds;
 

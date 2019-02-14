@@ -642,7 +642,7 @@ static Tcl_Obj *
 SplitUnixPath(
     const char *path)		/* Pointer to string containing a path. */
 {
-    int length;
+    size_t length;
     const char *origPath = path, *elementStart;
     Tcl_Obj *result = Tcl_NewObj();
 
@@ -731,7 +731,7 @@ static Tcl_Obj *
 SplitWinPath(
     const char *path)		/* Pointer to string containing a path. */
 {
-    int length;
+    size_t length;
     const char *p, *elementStart;
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     Tcl_DString buf;
@@ -808,24 +808,24 @@ Tcl_FSJoinToPath(
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv);
+	return TclJoinPath(objc, objv, 0);
     }
     if (objc == 0) {
-	return TclJoinPath(1, &pathPtr);
+	return TclJoinPath(1, &pathPtr, 0);
     }
     if (objc == 1) {
 	Tcl_Obj *pair[2];
 
 	pair[0] = pathPtr;
 	pair[1] = objv[0];
-	return TclJoinPath(2, pair);
+	return TclJoinPath(2, pair, 0);
     } else {
 	int elemc = objc + 1;
 	Tcl_Obj *ret, **elemv = Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
-	ret = TclJoinPath(elemc, elemv);
+	ret = TclJoinPath(elemc, elemv, 0);
 	Tcl_Free(elemv);
 	return ret;
     }
@@ -852,7 +852,8 @@ TclpNativeJoinPath(
     Tcl_Obj *prefix,
     const char *joining)
 {
-    int length, needsSep;
+    int needsSep;
+    size_t length;
     char *dest;
     const char *p;
     const char *start;
@@ -2381,7 +2382,7 @@ DoGlob(
      */
 
     if (*p == '\0') {
-	int length;
+	size_t length;
 	Tcl_DString append;
 
 	/*

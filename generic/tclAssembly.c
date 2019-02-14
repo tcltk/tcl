@@ -801,7 +801,7 @@ TclNRAssembleObjCmd(
 	Tcl_AddErrorInfo(interp, "\n    (\"");
 	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
-	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
+	backtrace = Tcl_NewWideIntObj(Tcl_GetErrorLine(interp));
 	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
@@ -1078,8 +1078,8 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= 2) && (envPtr->procPtr == NULL)) {
-		printf("  %4ld Assembling: ",
-			(long)(envPtr->codeNext - envPtr->codeStart));
+		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
+			envPtr->codeNext - envPtr->codeStart);
 		TclPrintSource(stdout, parsePtr->commandStart,
 			TclMin(instLen, 55));
 		printf("\n");
@@ -2260,7 +2260,7 @@ GetListIndexOperand(
      * when list size limits grow.
      */
     status = TclIndexEncode(interp, value,
-	    TCL_INDEX_BEFORE,TCL_INDEX_BEFORE, result);
+	    TCL_INDEX_NONE,TCL_INDEX_NONE, result);
 
     Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
@@ -4261,7 +4261,7 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_Obj* lineNo;		/* Line number in the source */
 
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    lineNo = Tcl_NewIntObj(bbPtr->startLine);
+    lineNo = Tcl_NewWideIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
     Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");

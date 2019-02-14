@@ -232,7 +232,7 @@ test cmdIL-3.5.3 {SortCompare procedure, -index option (out of range, calculated
 } -returnCodes error -result {index "-2" cannot select an element from any list}
 test cmdIL-3.5.4 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end-4 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {element -2 missing from sublist "1 . c"}
+} -returnCodes error -result {element end-4 missing from sublist "1 . c"}
 test cmdIL-3.5.5 {SortCompare procedure, -index option} {
     lsort -index {} {a b}
 } {a b}
@@ -248,6 +248,9 @@ test cmdIL-3.5.8 {SortCompare procedure, -index option (out of range, calculated
 test cmdIL-3.5.9 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end+2 {{1 . c} {2 . b} {3 . a}}
 } -returnCodes error -result {index "end+2" cannot select an element from any list}
+test cmdIL-3.5.10 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index 0 {{}}
+} -returnCodes error -result {element 0 missing from sublist ""}
 test cmdIL-3.6 {SortCompare procedure, -index option} {
     lsort -integer -index 2 {{1 15 30} {2 5 25} {3 25 20}}
 } {{3 25 20} {2 5 25} {1 15 30}}

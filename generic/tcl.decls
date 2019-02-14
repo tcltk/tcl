@@ -134,9 +134,10 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-declare 30 {deprecated {Kept only for deployed refcounting macros}} {
-    void TclFreeObj(Tcl_Obj *objPtr)
-}
+# Removed in 9.0
+#declare 30 {
+#    void TclFreeObj(Tcl_Obj *objPtr)
+#}
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
 }
@@ -2475,6 +2476,19 @@ declare 1 macosx {
 export {
     void Tcl_MainEx(int argc, char **argv, Tcl_AppInitProc *appInitProc,
     Tcl_Interp *interp)
+}
+export {
+    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+export {
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+}
+export {
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+}
+export {
+    void Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,

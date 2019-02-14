@@ -814,7 +814,8 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    int i, len, elemLen;
+    int i;
+    size_t len, elemLen;
     char flags;
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
@@ -886,8 +887,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned)len + 1);
+		char *quotedElementStr = TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -936,8 +936,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned) len + 1);
+		char *quotedElementStr = TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1028,7 +1027,7 @@ Tcl_ParseArgsObjv(
 				 * being processed, primarily for error
 				 * reporting. */
     int objc;			/* # arguments in objv still to process. */
-    int length;			/* Number of characters in current argument */
+    size_t length;			/* Number of characters in current argument */
 
     if (remObjv != NULL) {
 	/*
@@ -1280,13 +1279,13 @@ PrintUsage(
 
     width = 4;
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
-	int length;
+	size_t length;
 
 	if (infoPtr->keyStr == NULL) {
 	    continue;
 	}
 	length = strlen(infoPtr->keyStr);
-	if (length > width) {
+	if (length > (size_t)width) {
 	    width = length;
 	}
     }

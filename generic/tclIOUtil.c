@@ -1752,7 +1752,8 @@ Tcl_FSEvalFileEx(
     const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
-    int length, result = TCL_ERROR;
+    size_t length;
+	int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
@@ -1866,12 +1867,12 @@ Tcl_FSEvalFileEx(
 	 */
 
 	const char *pathString = TclGetStringFromObj(pathPtr, &length);
-	int limit = 150;
+	unsigned limit = 150;
 	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : length), pathString,
+		(overflow ? limit : (unsigned)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 

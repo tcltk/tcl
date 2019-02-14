@@ -462,7 +462,7 @@ Tcl_ReadObjCmd(
 
     if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
-	int length;
+	size_t length;
 
 	result = TclGetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
@@ -925,7 +925,7 @@ Tcl_ExecObjCmd(
      */
 
     argc = objc - skip;
-    argv = TclStackAlloc(interp, (unsigned)(argc + 1) * sizeof(char *));
+    argv = TclStackAlloc(interp, (argc + 1) * sizeof(char *));
 
     /*
      * Copy the string conversions of each (post option) object into the

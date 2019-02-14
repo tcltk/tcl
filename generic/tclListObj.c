@@ -127,7 +127,7 @@ NewListIntRep(
     listRepPtr = Tcl_AttemptAlloc(LIST_SIZE(objc));
     if (listRepPtr == NULL) {
 	if (p) {
-	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 		    LIST_SIZE(objc));
 	}
 	return NULL;
@@ -178,7 +178,7 @@ AttemptNewList(
 		    LIST_MAX));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "list creation failed: unable to alloc %u bytes",
+		    "list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 		    LIST_SIZE(objc)));
 	}
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
@@ -966,9 +966,9 @@ Tcl_ListObjReplace(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int length;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (objc == 0) {
 		return TCL_OK;
@@ -1241,7 +1241,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1346,7 +1346,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_NONE, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1410,7 +1410,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1658,7 +1658,7 @@ TclLsetFlat(
 	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
-	
+
 	if (result == TCL_OK) {
 
 	    /*
@@ -1883,7 +1883,7 @@ TclListObjSetElement(
  *	a list object.
  *
  * Effect
- * 
+ *
  *	Frees listPtr's List* internal representation, if no longer shared.
  *	May decrement the ref counts of element objects, which may free them.
  *
@@ -2109,7 +2109,8 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int numElems, i, length, bytesNeeded = 0;
+    int numElems, i;
+    size_t length, bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
@@ -2156,12 +2157,6 @@ UpdateStringOfList(
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-    }
-    if (bytesNeeded > INT_MAX - numElems + 1) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems - 1;
 

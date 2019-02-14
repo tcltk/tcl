@@ -1090,8 +1090,8 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_BEFORE,
-	    &idx) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+	    TCL_INDEX_NONE, &idx) == TCL_OK) {
 	/*
 	 * The idxTokenPtr parsed as a valid index value and was
 	 * encoded as expected by INST_LIST_INDEX_IMM.
@@ -1319,8 +1319,8 @@ TclCompileLrangeCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
-	    &idx1) != TCL_OK) {
+    if ((TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
+	    &idx1) != TCL_OK) || (idx1 == TCL_INDEX_NONE)) {
 	return TCL_ERROR;
     }
     /*
@@ -1329,7 +1329,7 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1484,13 +1484,13 @@ TclCompileLreplaceCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1506,12 +1506,12 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
-	suffixStart = idx1;
-    } else if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx1 == TCL_INDEX_NONE) {
+	suffixStart = TCL_INDEX_NONE;
+    } else if (idx2 == TCL_INDEX_NONE) {
 	suffixStart = idx1;
     } else if (idx2 == TCL_INDEX_END) {
-	suffixStart = TCL_INDEX_AFTER;
+	suffixStart = TCL_INDEX_NONE;
     } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
 	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
 	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
@@ -1571,7 +1571,7 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     }
 
-    if (suffixStart == TCL_INDEX_AFTER) {
+    if (suffixStart == TCL_INDEX_NONE) {
 	TclEmitOpcode(		INST_POP,			envPtr);
 	if (emptyPrefix) {
 	    PushStringLiteral(envPtr, "");
@@ -2123,7 +2123,7 @@ TclCompileRegexpCmd(
 	    sawLast++;
 	    i++;
 	    break;
-	} else if ((len > 1) && (strncmp(str,"-nocase",(unsigned)len) == 0)) {
+	} else if ((len > 1) && (strncmp(str,"-nocase", len) == 0)) {
 	    nocase = 1;
 	} else {
 	    /*
@@ -2270,7 +2270,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, quantified, result = TCL_ERROR;
+    int exact, quantified, result = TCL_ERROR;
+    size_t len;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2348,7 +2349,7 @@ TclCompileRegsubCmd(
 		 */
 
 		len = Tcl_DStringLength(&pattern) - 2;
-		if (len > 0) {
+		if (len + 2 > 2) {
 		    goto isSimpleGlob;
 		}
 
@@ -2863,7 +2864,8 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    int n = varTokenPtr->numComponents;
+    size_t len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

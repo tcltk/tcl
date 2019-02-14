@@ -1537,10 +1537,10 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    long numExecutions;		/* Number of ByteCodes executed. */
-    long numCompilations;	/* Number of ByteCodes created. */
-    long numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    long instructionCount[256];	/* Number of times each instruction was
+    size_t numExecutions;		/* Number of ByteCodes executed. */
+    size_t numCompilations;	/* Number of ByteCodes created. */
+    size_t numByteCodesFreed;	/* Number of ByteCodes destroyed. */
+    size_t instructionCount[256];	/* Number of times each instruction was
 				 * executed. */
 
     double totalSrcBytes;	/* Total source bytes ever compiled. */
@@ -1548,10 +1548,10 @@ typedef struct ByteCodeStats {
     double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
 
-    long srcCount[32];		/* Source size distribution: # of srcs of
+    size_t srcCount[32];		/* Source size distribution: # of srcs of
 				 * size [2**(n-1)..2**n), n in [0..32). */
-    long byteCodeCount[32];	/* ByteCode size distribution. */
-    long lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
+    size_t byteCodeCount[32];	/* ByteCode size distribution. */
+    size_t lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
 
     double currentInstBytes;	/* Instruction bytes-current ByteCodes. */
     double currentLitBytes;	/* Current literal bytes. */
@@ -1559,11 +1559,11 @@ typedef struct ByteCodeStats {
     double currentAuxBytes;	/* Current auxiliary information bytes. */
     double currentCmdMapBytes;	/* Current src<->code map bytes. */
 
-    long numLiteralsCreated;	/* Total literal objects ever compiled. */
+    size_t numLiteralsCreated;	/* Total literal objects ever compiled. */
     double totalLitStringBytes;	/* Total string bytes in all literals. */
     double currentLitStringBytes;
 				/* String bytes in current literals. */
-    long literalCount[32];	/* Distribution of literal string sizes. */
+    size_t literalCount[32];	/* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
 
@@ -1769,7 +1769,7 @@ typedef struct AllocCache {
     struct Cache *nextPtr;	/* Linked list of cache entries. */
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread. */
-    int numObjects;		/* Number of objects for thread. */
+    size_t numObjects;		/* Number of objects for thread. */
 } AllocCache;
 
 /*
@@ -1865,7 +1865,7 @@ typedef struct Interp {
      * Miscellaneous information:
      */
 
-    int cmdCount;		/* Total number of times a command procedure
+    size_t cmdCount;		/* Total number of times a command procedure
 				 * has been called for this interpreter. */
     int evalFlags;		/* Flags to control next call to Tcl_Eval.
 				 * Normally zero, but may be set before
@@ -1950,7 +1950,7 @@ typedef struct Interp {
 				 * as flag values the same as the 'active'
 				 * field. */
 
-	int cmdCount;		/* Limit for how many commands to execute in
+	size_t cmdCount;		/* Limit for how many commands to execute in
 				 * the interpreter. */
 	LimitHandler *cmdHandlers;
 				/* Handlers to execute when the limit is
@@ -2371,7 +2371,7 @@ typedef struct List {
 #define LIST_MAX \
 	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
 #define LIST_SIZE(numElems) \
-	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
+	(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
 
 /*
  * Macro used to get the elements of a list object.
@@ -2434,7 +2434,7 @@ typedef struct List {
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(LONG_MIN) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX))	\
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX)) \
 	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 #endif
@@ -2442,14 +2442,14 @@ typedef struct List {
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(INT_MIN) \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX))	\
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue >= -1 \
-	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
-	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
+	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
+	    ? (int)(objPtr)->internalRep.wideValue : -1), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -2462,7 +2462,7 @@ typedef struct List {
 
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
+	? (*(wideIntPtr) =						\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 
@@ -3012,7 +3012,8 @@ MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclIsBareword(char byte);
-MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[]);
+MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
+			    int forceRelative);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -3124,7 +3125,7 @@ MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
-			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
+			    size_t reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
 MODULE_SCOPE size_t	TclScanElement(const char *string, size_t length,
 			    char *flagPtr);
@@ -3199,10 +3200,6 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
-MODULE_SCOPE int	TclZipfsInit(Tcl_Interp *interp);
-MODULE_SCOPE int        TclZipfsMount(Tcl_Interp *interp, const char *zipname,
-			 const char *mntpt, const char *passwd);
-MODULE_SCOPE int 	TclZipfsUnmount(Tcl_Interp *interp, const char *zipname);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
@@ -3211,7 +3208,6 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, size_t length);
 /* Tip 430 */
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
-MODULE_SCOPE int    TclZipfs_SafeInit(Tcl_Interp *interp);
 
 
 /*
@@ -4042,6 +4038,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
  */
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+MODULE_SCOPE void	TclFreeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
@@ -4097,14 +4094,13 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int before, int after, int *indexPtr);
-MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
+			    size_t before, size_t after, int *indexPtr);
+MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           (-2)
-#define TCL_INDEX_BEFORE        (-1)
+#define TCL_INDEX_NONE          (-1) /* Index out of range or END+1 */
 #define TCL_INDEX_START         (0)
-#define TCL_INDEX_AFTER         (INT_MAX)
 
 /*
  *----------------------------------------------------------------
@@ -4905,6 +4901,21 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclDecrRefCount(_objPtr);					\
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
+
+/* 
+ * Macros to convert size_t to wide-int (and wide-int object) considering 
+ * platform-related negative value ((size_t)-1), if wide-int and size_t 
+ * have different dimensions (e. g. 32-bit platform). 
+ */
+
+#if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
+#   define TclWideIntFromSize(value)	(((Tcl_WideInt)(((size_t)(value))+1))-1)
+#   define TclNewWideIntObjFromSize(value) \
+	Tcl_NewWideIntObj(TclWideIntFromSize(value))
+#else
+#   define TclWideIntFromSize(value)	(value)
+#   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
+#endif
 
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>

@@ -546,12 +546,13 @@ DosTimeDate(
     struct tm tm;
     time_t ret;
 
-    memset(&tm, 0, sizeof(struct tm));
+    memset(&tm, 0, sizeof(tm));
+    tm.tm_isdst = -1;			/* let mktime() deal with DST */
     tm.tm_year = ((dosDate & 0xfe00) >> 9) + 80;
     tm.tm_mon = ((dosDate & 0x1e0) >> 5) - 1;
     tm.tm_mday = dosDate & 0x1f;
     tm.tm_hour = (dosTime & 0xf800) >> 11;
-    tm.tm_min = (dosTime & 0x7e) >> 5;
+    tm.tm_min = (dosTime & 0x7e0) >> 5;
     tm.tm_sec = (dosTime & 0x1f) << 1;
     ret = mktime(&tm);
     if (ret == (time_t) -1) {
@@ -1902,7 +1903,7 @@ ZipFSMountBufferObjCmd(
 {
     const char *mountPoint;	/* Mount point path. */
     unsigned char *data;
-    int length;
+    size_t length;
 
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
@@ -1925,7 +1926,7 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = Tcl_GetByteArrayFromObj(objv[2], &length);
+    data = TclGetByteArrayFromObj(objv[2], &length);
     return TclZipfs_MountBuffer(interp, mountPoint, data, length, 1);
 }
 
@@ -3719,7 +3720,7 @@ ZipChannelOpen(
 	    unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	    if (z->isEncrypted) {
-		int len = z->zipFilePtr->passBuf[0];
+		int len = z->zipFilePtr->passBuf[0] & 0xFF;
 		char passBuf[260];
 
 		for (i = 0; i < len; i++) {
@@ -3820,7 +3821,7 @@ ZipChannelOpen(
 	info->numBytes = z->numBytes;
 	info->maxWrite = 0;
 	if (info->isEncrypted) {
-	    int len = z->zipFilePtr->passBuf[0];
+	    int len = z->zipFilePtr->passBuf[0] & 0xFF;
 	    char passBuf[260];
 
 	    for (i = 0; i < len; i++) {
@@ -3908,6 +3909,31 @@ ZipChannelOpen(
 		Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "CORRUPT", NULL);
 	    }
 	    goto error;
+	} else if (info->isEncrypted) {
+	    unsigned char *ubuf = NULL;
+	    unsigned int j, len;
+
+	    /*
+	     * Decode encrypted but uncompressed file, since we support
+	     * Tcl_Seek() on it, and it can be randomly accessed later.
+	     */
+
+	    len = z->numCompressedBytes - 12;
+	    ubuf = (unsigned char *) Tcl_AttemptAlloc(len);
+	    if (ubuf == NULL) {
+		Tcl_Free((char *) info);
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("out of memory", -1));
+		}
+		goto error;
+	    }
+	    for (j = 0; j < len; j++) {
+		ch = info->ubuf[j];
+		ubuf[j] = zdecode(info->keys, crc32tab, ch);
+	    }
+	    info->ubuf = ubuf;
+	    info->isEncrypted = 0;
 	}
     }
 
@@ -4502,7 +4528,7 @@ ZipFSFileAttrsGetProc(
 	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->name, -1);
 	break;
     case 5:
-	*objPtrRef = Tcl_NewStringObj("0555", -1);
+	*objPtrRef = Tcl_NewStringObj("0o555", -1);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
@@ -4653,7 +4679,7 @@ ZipFSLoadFile(
 		    TCL_PATH_DIRNAME);
 	}
 	if (objs[0]) {
-	    altPath = TclJoinPath(2, objs);
+	    altPath = TclJoinPath(2, objs, 0);
 	    if (altPath) {
 		Tcl_IncrRefCount(altPath);
 		if (Tcl_FSAccess(altPath, R_OK) == 0) {
@@ -4748,7 +4774,6 @@ TclZipfs_Init(
      */
 
     WriteLock();
-    /* Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init); */
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
