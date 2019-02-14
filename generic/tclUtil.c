@@ -3446,18 +3446,15 @@ GetWideForIndex(
 	    *widePtr = *(Tcl_WideInt *)cd;
 	    return TCL_OK;
 	}
-	if (numType == TCL_NUMBER_BIG) {
-	    /* objPtr holds an integer outside the signed wide range */
-	    /* Truncate to the signed wide range. */
-	    if (mp_isneg((mp_int *)cd)) {
-		*widePtr = WIDE_MIN;
-	    } else {
-		*widePtr = WIDE_MAX;
-	    }
-	    return TCL_OK;
+	if (numType != TCL_NUMBER_BIG) {
+	    /* Must be a double -> not a valid index */
+	    goto parseError;
 	}
-	/* Must be a double -> not a valid index */
-	goto parseError;
+
+	/* objPtr holds an integer outside the signed wide range */
+	/* Truncate to the signed wide range. */
+	*widePtr = mp_isneg((mp_int *)cd) ? WIDE_MIN : WIDE_MAX;
+    return TCL_OK;
     }
 
     /* objPtr does not hold a number, check the end+/- format... */
@@ -3639,7 +3636,7 @@ TclGetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    /* Use platform-related size_t to wide-int to consider negative value 
+    /* Use platform-related size_t to wide-int to consider negative value
      * ((size_t)-1) if wide-int and size_t have different dimensions. */
     if (GetWideForIndex(interp, objPtr, TclWideIntFromSize(endValue),
 	   &wide) == TCL_ERROR) {

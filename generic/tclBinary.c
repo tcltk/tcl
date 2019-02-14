@@ -912,7 +912,7 @@ BinaryFormatCmd(
 	    }
 	    if (count == BINARY_ALL) {
 		Tcl_Obj *copy = TclNarrowToBytes(objv[arg]);
-		Tcl_GetByteArrayFromObj(copy, &count);
+		TclGetByteArrayFromObj(copy, &count);
 		Tcl_DecrRefCount(copy);
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1078,7 +1078,7 @@ BinaryFormatCmd(
 	    unsigned char *bytes;
 	    Tcl_Obj *copy = TclNarrowToBytes(objv[arg++]);
 
-	    bytes = Tcl_GetByteArrayFromObj(copy, &length);
+	    bytes = TclGetByteArrayFromObj(copy, &length);
 
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1390,7 +1390,7 @@ BinaryScanCmd(
 		"value formatString ?varName ...?");
 	return TCL_ERROR;
     }
-    buffer = Tcl_GetByteArrayFromObj(objv[1], &length);
+    buffer = TclGetByteArrayFromObj(objv[1], &length);
     if (buffer == NULL) {
 	Tcl_AppendResult(interp, "binary scan expects bytes", NULL);
 	return TCL_ERROR;
@@ -2444,7 +2444,7 @@ BinaryEncodeHex(
 	return TCL_ERROR;
     }
 
-    data = Tcl_GetByteArrayFromObj(objv[1], &count);
+    data = TclGetByteArrayFromObj(objv[1], &count);
     if (data == NULL) {
 	Tcl_AppendResult(interp, "binary encode expects bytes", NULL);
 	return TCL_ERROR;
@@ -2644,7 +2644,7 @@ BinaryEncode64(
 	}
     }
 
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    data = TclGetByteArrayFromObj(objv[objc-1], &count);
     if (data == NULL) {
 	Tcl_AppendResult(interp, "binary encode expects bytes", NULL);
 	return TCL_ERROR;
@@ -2747,7 +2747,7 @@ BinaryEncodeUu(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = Tcl_GetByteArrayFromObj(objv[i+1], &wrapcharlen);
+	    wrapchar = TclGetByteArrayFromObj(objv[i+1], &wrapcharlen);
 	    if (wrapchar == NULL) {
 		Tcl_AppendResult(interp,
 			"binary encode -wrapchar expects bytes", NULL);
@@ -2763,7 +2763,7 @@ BinaryEncodeUu(
      */
 
     offset = 0;
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    data = TclGetByteArrayFromObj(objv[objc-1], &count);
     if (data == NULL) {
 	Tcl_AppendResult(interp, "binary encode expects bytes", NULL);
 	return TCL_ERROR;

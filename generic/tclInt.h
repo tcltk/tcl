@@ -2970,7 +2970,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
-			    unsigned int *sizePtr);
+			    size_t *sizePtr);
 MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
 				const char *targetName,
 				const char *packageName);

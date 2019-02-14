@@ -128,13 +128,6 @@ on Core and ppc, i386 or x86_64 on Core2/Xeon).
 Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
 above, they will be [load]able by universal as well as thin binaries of Tcl.
 
-- To enable weak-linking, set the MACOSX_DEPLOYMENT_TARGET environment variable
-to the minimal OS version the binaries should be able to run on, e.g:
-	export MACOSX_DEPLOYMENT_TARGET=10.4
-This requires at least gcc 3.1; with gcc 4 or later, set/add to CFLAGS instead:
-	export CFLAGS="-mmacosx-version-min=10.4"
-Support for weak-linking was added with 8.4.14/8.5a5.
-
 Detailed Instructions for building with macosx/GNUmakefile
 ----------------------------------------------------------
 

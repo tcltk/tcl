@@ -2739,7 +2739,7 @@ ZlibStreamAddCmd(
      */
 
     if (compDictObj != NULL) {
-	int len;
+	size_t len;
 
 	(void) TclGetByteArrayFromObj(compDictObj, &len);
 	if (len == 0) {
