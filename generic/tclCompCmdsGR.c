@@ -50,8 +50,8 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    int before,
-    int after,
+    size_t before,
+    size_t after,
     int *indexPtr)
 {
     Tcl_Obj *tmpObj = Tcl_NewObj();
@@ -1031,7 +1031,7 @@ TclCompileLassignCmd(
      */
 
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(			TCL_INDEX_END,		envPtr);
+    TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 
     return TCL_OK;
 }
@@ -1236,7 +1236,7 @@ TclCompileListCmd(
 
     if (concat && numWords == 2) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			TCL_INDEX_END,	envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,	envPtr);
     }
     return TCL_OK;
 }
@@ -1312,7 +1312,7 @@ TclCompileLrangeCmd(
 
     tokenPtr = TokenAfter(listTokenPtr);
     if ((TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
-	    &idx1) != TCL_OK) || (idx1 == TCL_INDEX_NONE)) {
+	    &idx1) != TCL_OK) || (idx1 == (int)TCL_INDEX_NONE)) {
 	return TCL_ERROR;
     }
     /*
@@ -1401,7 +1401,7 @@ TclCompileLinsertCmd(
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 3) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
@@ -1411,10 +1411,10 @@ TclCompileLinsertCmd(
     }
     TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
 
-    if (idx == TCL_INDEX_START) {
+    if (idx == (int)TCL_INDEX_START) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == TCL_INDEX_END) {
+    } else if (idx == (int)TCL_INDEX_END) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
 	/*
@@ -1429,7 +1429,7 @@ TclCompileLinsertCmd(
 	 * differ in their interpretation of the "end" index.
 	 */
 
-	if (idx < TCL_INDEX_END) {
+	if (idx < (int)TCL_INDEX_END) {
 	    idx++;
 	}
 	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
@@ -1437,7 +1437,7 @@ TclCompileLinsertCmd(
 	TclEmitInt4(			idx - 1,		envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     }
@@ -1498,14 +1498,14 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx1 == TCL_INDEX_NONE) {
-	suffixStart = TCL_INDEX_NONE;
-    } else if (idx2 == TCL_INDEX_NONE) {
+    if (idx1 == (int)TCL_INDEX_NONE) {
+	suffixStart = (int)TCL_INDEX_NONE;
+    } else if (idx2 == (int)TCL_INDEX_NONE) {
 	suffixStart = idx1;
-    } else if (idx2 == TCL_INDEX_END) {
-	suffixStart = TCL_INDEX_NONE;
-    } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
-	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
+    } else if (idx2 == (int)TCL_INDEX_END) {
+	suffixStart = (int)TCL_INDEX_NONE;
+    } else if (((idx2 < (int)TCL_INDEX_END) && (idx1 <= (int)TCL_INDEX_END))
+	    || ((idx2 >= (int)TCL_INDEX_START) && (idx1 >= (int)TCL_INDEX_START))) {
 	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
     } else {
 	return TCL_ERROR;
@@ -1539,11 +1539,11 @@ TclCompileLreplaceCmd(
 	 * and canonicalization side effects.
 	 */
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
-    if (idx1 != TCL_INDEX_START) {
+    if (idx1 != (int)TCL_INDEX_START) {
 	/* Prefix may not be empty; generate bytecode to push it */
 	if (emptyPrefix) {
 	    TclEmitOpcode(	INST_DUP,			envPtr);
@@ -1563,7 +1563,7 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     }
 
-    if (suffixStart == TCL_INDEX_NONE) {
+    if (suffixStart == (int)TCL_INDEX_NONE) {
 	TclEmitOpcode(		INST_POP,			envPtr);
 	if (emptyPrefix) {
 	    PushStringLiteral(envPtr, "");
@@ -1571,7 +1571,7 @@ TclCompileLreplaceCmd(
     } else {
 	/* Suffix may not be empty; generate bytecode to push it */
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, suffixStart, envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	if (!emptyPrefix) {
 	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
 	}
