@@ -1519,9 +1519,9 @@ BuildCommandLine(
     Tcl_DString ds;
 
     /* characters to enclose in quotes if unpaired quote flag set */
-    const static char *specMetaChars = "&|^<>!()%";
-    /* characters to enclose in quotes in any case (regardless unpaired-flag) */
-    const static char *specMetaChars2 = "%";
+    static const char specMetaChars[] = "&|^<>!()%";
+    /* character to enclose in quotes in any case (regardless unpaired-flag) */
+    static const char specMetaChars2[] = "%";
 
     /* Quote flags:
      *   CL_ESCAPE   - escape argument;

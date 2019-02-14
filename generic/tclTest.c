@@ -227,6 +227,9 @@ static int		TestasyncCmd(void *dummy,
 static int		TestbytestringObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestpurebytesobjObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TeststringbytesObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -247,8 +250,8 @@ static int		TestdelCmd(void *dummy,
 static int		TestdelassocdataCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestdoubledigitsObjCmd(void *dummy,
-					       Tcl_Interp* interp,
-					       int objc, Tcl_Obj* const objv[]);
+			    Tcl_Interp* interp, int objc,
+			    Tcl_Obj* const objv[]);
 static int		TestdstringCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestencodingObjCmd(void *dummy,
@@ -579,6 +582,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
@@ -1958,11 +1962,11 @@ TestencodingObjCmd(
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
 	encodingPtr->toUtfCmd = ckalloc(length + 1);
-	memcpy(encodingPtr->toUtfCmd, string, (unsigned) length + 1);
+	memcpy(encodingPtr->toUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[4], &length);
 	encodingPtr->fromUtfCmd = ckalloc(length + 1);
-	memcpy(encodingPtr->fromUtfCmd, string, (unsigned) (length + 1));
+	memcpy(encodingPtr->fromUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[2], &length);
 
@@ -2014,7 +2018,7 @@ EncodingToUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -2046,7 +2050,7 @@ EncodingFromUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -2095,7 +2099,7 @@ TestevalexObjCmd(
 
     flags = 0;
     if (objc == 3) {
-	const char *global = Tcl_GetStringFromObj(objv[2], &length);
+	const char *global = Tcl_GetString(objv[2]);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", NULL);
@@ -2276,14 +2280,14 @@ TesteventProc(
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (command bound to \"testevent\" callback)");
-	Tcl_BackgroundError(interp);
+	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;		/* Avoid looping on errors */
     }
     if (Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
 	    &retval) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
-	Tcl_BackgroundError(interp);
+	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;
     }
     if (retval) {
@@ -3032,10 +3036,10 @@ TestlinkCmd(
 	Tcl_AppendElement(interp, buffer);
 	TclFormatInt(buffer, (int) uintVar);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewLongObj(longVar);
+	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewLongObj((long)ulongVar);
+	tmp = Tcl_NewWideIntObj((long)ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
@@ -3942,8 +3946,8 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewLongObj(start);
-	    objs[1] = Tcl_NewLongObj(end);
+	    objs[0] = Tcl_NewWideIntObj(start);
+	    objs[1] = Tcl_NewWideIntObj(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
@@ -4937,6 +4941,57 @@ TeststringbytesObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestpurebytesobjObjCmd --
+ *
+ *	This object-based procedure constructs a pure bytes object
+ *	without type and with internal representation containing NULL's.
+ *
+ *	If no argument supplied it returns empty object with tclEmptyStringRep,
+ *	otherwise it returns this as pure bytes object with bytes value equal
+ *	string.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpurebytesobjObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_Obj *objPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?string?");
+	return TCL_ERROR;
+    }
+    objPtr = Tcl_NewObj();
+    /*
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    */
+    memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
+    if (objc == 2) {
+	const char *s = Tcl_GetString(objv[1]);
+	objPtr->length = objv[1]->length;
+	objPtr->bytes = ckalloc(objPtr->length + 1);
+	memcpy(objPtr->bytes, s, objPtr->length);
+	objPtr->bytes[objPtr->length] = 0;
+    }
+    Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestbytestringObjCmd --
  *
  *	This object-based procedure constructs a string which can
@@ -5817,7 +5872,7 @@ TestChannelEventCmd(
 
     cmd = argv[2];
     len = strlen(cmd);
-    if ((cmd[0] == 'a') && (strncmp(cmd, "add", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'a') && (strncmp(cmd, "add", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName add eventSpec script\"", NULL);
@@ -5851,7 +5906,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", len) == 0)) {
 	if (argc != 4) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index\"", NULL);
@@ -5897,7 +5952,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'l') && (strncmp(cmd, "list", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'l') && (strncmp(cmd, "list", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName list\"", NULL);
@@ -5920,7 +5975,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName removeall\"", NULL);
@@ -5939,7 +5994,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if	((cmd[0] == 's') && (strncmp(cmd, "set", (unsigned) len) == 0)) {
+    if	((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index event\"", NULL);
