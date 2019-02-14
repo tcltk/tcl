@@ -96,7 +96,7 @@ static void		AddClassMethodNames(Class *clsPtr, const int flags,
 			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
 			    Tcl_Obj *const namespaceName,
-			    DefineChain *const definePtr, const int flags);
+			    DefineChain *const definePtr, int flags);
 static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
@@ -280,7 +280,7 @@ DupMethodNameRep(
     Tcl_Obj *dstPtr)
 {
     StashCallChain(dstPtr,
-	    Tcl_FetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
+	    TclFetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 static void
@@ -288,7 +288,7 @@ FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
     TclOODeleteChain(
-	    Tcl_FetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
+	    TclFetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 /*
@@ -1189,7 +1189,7 @@ TclOOGetCallContext(
 	const Tcl_ObjIntRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
-	if ((irPtr = Tcl_FetchIntRep(cacheInThisObj, &methodNameType))) {
+	if ((irPtr = TclFetchIntRep(cacheInThisObj, &methodNameType))) {
 	    callPtr = irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
@@ -1994,7 +1994,7 @@ AddSimpleClassDefineNamespaces(
     } else {
 	AddDefinitionNamespaceToChain(classPtr, classPtr->objDefinitionNs,
 		definePtr, flags);
-    }	
+    }
 
     switch (classPtr->superclasses.num) {
     case 1:
@@ -2022,8 +2022,8 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *definerCls,		/* What class defines this entry. */
-    Tcl_Obj *namespaceName,	/* The name for this entry (or NULL, a
+    Class *const definerCls,		/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method

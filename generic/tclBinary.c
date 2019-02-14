@@ -57,12 +57,9 @@
 
 static void		DupByteArrayInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr);
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
-static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    int *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
@@ -248,10 +245,10 @@ static const EnsembleImplMap decodeMap[] = {
  * over which bytearray values can be useful in the meanwhile.
  */
 
-static const Tcl_ObjType properByteArrayType = {
+const Tcl_ObjType tclPureByteArrayType = {
     "bytearray",
-    FreeProperByteArrayInternalRep,
-    DupProperByteArrayInternalRep,
+    FreeByteArrayInternalRep,
+    DupByteArrayInternalRep,
     UpdateStringOfByteArray,
     NULL
 };
@@ -287,13 +284,6 @@ typedef struct ByteArray {
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
 
-int
-TclIsPureByteArray(
-    Tcl_Obj * objPtr)
-{
-    return (NULL != Tcl_FetchIntRep(objPtr, &properByteArrayType));
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -425,7 +415,7 @@ Tcl_SetByteArrayObj(
     }
     SET_BYTEARRAY(&ir, byteArrayPtr);
 
-    Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
+    Tcl_StoreIntRep(objPtr, &tclPureByteArrayType, &ir);
 }
 
 /*
@@ -453,15 +443,15 @@ Tcl_GetByteArrayFromObj(
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
-    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
 
     if (irPtr == NULL) {
-	irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	if (irPtr == NULL) {
 	    SetByteArrayFromAny(NULL, objPtr);
-	    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+	    irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
 	    if (irPtr == NULL) {
-		irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	    }
 	}
     }
@@ -511,14 +501,14 @@ Tcl_SetByteArrayLength(
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
 
-    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
     if (irPtr == NULL) {
-	irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	if (irPtr == NULL) {
 	    SetByteArrayFromAny(NULL, objPtr);
-	    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+	    irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
 	    if (irPtr == NULL) {
-		irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	    }
 	}
     }
@@ -559,13 +549,14 @@ SetByteArrayFromAny(
     int improper = 0;
     const char *src, *srcEnd;
     unsigned char *dst;
+    Tcl_UniChar ch = 0;
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (Tcl_FetchIntRep(objPtr, &properByteArrayType)) {
+    if (objPtr->typePtr == &tclPureByteArrayType) {
 	return TCL_OK;
     }
-    if (Tcl_FetchIntRep(objPtr, &tclByteArrayType)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	return TCL_OK;
     }
 
@@ -575,7 +566,6 @@ SetByteArrayFromAny(
 
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	Tcl_UniChar ch = 0;
 	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
 	*dst++ = UCHAR(ch);
@@ -586,7 +576,7 @@ SetByteArrayFromAny(
 
     SET_BYTEARRAY(&ir, byteArrayPtr);
     Tcl_StoreIntRep(objPtr,
-	    improper ? &tclByteArrayType : &properByteArrayType, &ir);
+	    improper ? &tclByteArrayType : &tclPureByteArrayType, &ir);
     return TCL_OK;
 }
 
@@ -611,14 +601,7 @@ static void
 FreeByteArrayInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ckfree(GET_BYTEARRAY(Tcl_FetchIntRep(objPtr, &tclByteArrayType)));
-}
-
-static void
-FreeProperByteArrayInternalRep(
-    Tcl_Obj *objPtr)		/* Object with internal rep to free. */
-{
-    ckfree(GET_BYTEARRAY(Tcl_FetchIntRep(objPtr, &properByteArrayType)));
+    ckfree(GET_BYTEARRAY(&(objPtr->internalRep)));
 }
 
 /*
@@ -647,37 +630,16 @@ DupByteArrayInternalRep(
     ByteArray *srcArrayPtr, *copyArrayPtr;
     Tcl_ObjIntRep ir;
 
-    srcArrayPtr = GET_BYTEARRAY(Tcl_FetchIntRep(srcPtr, &tclByteArrayType));
+    srcArrayPtr = GET_BYTEARRAY(&(srcPtr->internalRep));
     length = srcArrayPtr->used;
 
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
-    Tcl_StoreIntRep(copyPtr, &tclByteArrayType, &ir);
-}
-
-static void
-DupProperByteArrayInternalRep(
-    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
-{
-    unsigned int length;
-    ByteArray *srcArrayPtr, *copyArrayPtr;
-    Tcl_ObjIntRep ir;
-
-    srcArrayPtr = GET_BYTEARRAY(Tcl_FetchIntRep(srcPtr, &properByteArrayType));
-    length = srcArrayPtr->used;
-
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
-    copyArrayPtr->used = length;
-    copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
-
-    SET_BYTEARRAY(&ir, copyArrayPtr);
-    Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
+    Tcl_StoreIntRep(copyPtr, srcPtr->typePtr, &ir);
 }
 
 /*
@@ -702,7 +664,7 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
     ByteArray *byteArrayPtr = GET_BYTEARRAY(irPtr);
     unsigned char *src = byteArrayPtr->bytes;
     unsigned int i, length = byteArrayPtr->used;
@@ -777,14 +739,14 @@ TclAppendBytesToByteArray(
 
     length = (unsigned int)len;
 
-    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+    irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
     if (irPtr == NULL) {
-	irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	if (irPtr == NULL) {
 	    SetByteArrayFromAny(NULL, objPtr);
-	    irPtr = Tcl_FetchIntRep(objPtr, &properByteArrayType);
+	    irPtr = TclFetchIntRep(objPtr, &tclPureByteArrayType);
 	    if (irPtr == NULL) {
-		irPtr = Tcl_FetchIntRep(objPtr, &tclByteArrayType);
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 	    }
 	}
     }
@@ -1708,7 +1670,7 @@ BinaryScanCmd(
      */
 
  done:
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 3));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
@@ -2031,7 +1993,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(src, &tclDoubleType);
+	    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(src, &tclDoubleType);
 	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
@@ -2051,7 +2013,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(src, &tclDoubleType);
+	    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(src, &tclDoubleType);
 	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
@@ -2275,7 +2237,7 @@ ScanNumber(
 
     returnNumericObject:
 	if (*numberCachePtrPtr == NULL) {
-	    return Tcl_NewLongObj(value);
+	    return Tcl_NewWideIntObj(value);
 	} else {
 	    register Tcl_HashTable *tablePtr = *numberCachePtrPtr;
 	    register Tcl_HashEntry *hPtr;
@@ -2286,7 +2248,7 @@ ScanNumber(
 		return Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
-		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
+		register Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
 
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, objPtr);
@@ -2304,7 +2266,7 @@ ScanNumber(
 
 	    DeleteScanNumberCache(tablePtr);
 	    *numberCachePtrPtr = NULL;
-	    return Tcl_NewLongObj(value);
+	    return Tcl_NewWideIntObj(value);
 	}
 
 	/*

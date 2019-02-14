@@ -404,7 +404,7 @@ Tcl_IncrObjCmd(
     if (objc == 3) {
 	incrPtr = objv[2];
     } else {
-	incrPtr = Tcl_NewIntObj(1);
+	incrPtr = Tcl_NewWideIntObj(1);
     }
     Tcl_IncrRefCount(incrPtr);
     newValuePtr = TclIncrObjVar2(interp, objv[1], NULL,
@@ -606,7 +606,7 @@ InfoCmdCountCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->cmdCount));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iPtr->cmdCount));
     return TCL_OK;
 }
 
@@ -988,7 +988,7 @@ InfoDefaultCmd(
 		if (valueObjPtr == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 	    } else {
 		Tcl_Obj *nullObjPtr = Tcl_NewObj();
 
@@ -997,7 +997,7 @@ InfoDefaultCmd(
 		if (valueObjPtr == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	    }
 	    return TCL_OK;
 	}
@@ -1171,7 +1171,7 @@ InfoFrameCmd(
 	 * Just "info frame".
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(topLevel));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(topLevel));
 	goto done;
     }
 
@@ -1293,9 +1293,9 @@ TclInfoFrame(
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
 	if (framePtr->line) {
-	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	    ADD_PAIR("line", Tcl_NewWideIntObj(framePtr->line[0]));
 	} else {
-	    ADD_PAIR("line", Tcl_NewIntObj(1));
+	    ADD_PAIR("line", Tcl_NewWideIntObj(1));
 	}
 	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
@@ -1332,7 +1332,7 @@ TclInfoFrame(
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
 	if (fPtr->line) {
-	    ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
+	    ADD_PAIR("line", Tcl_NewWideIntObj(fPtr->line[0]));
 	}
 
 	if (fPtr->type == TCL_LOCATION_SOURCE) {
@@ -1359,7 +1359,7 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("line", Tcl_NewWideIntObj(framePtr->line[0]));
 	ADD_PAIR("file", framePtr->data.eval.path);
 
 	/*
@@ -1430,7 +1430,7 @@ TclInfoFrame(
 		int c = framePtr->framePtr->level;
 		int t = iPtr->varFramePtr->level;
 
-		ADD_PAIR("level", Tcl_NewIntObj(t - c));
+		ADD_PAIR("level", Tcl_NewWideIntObj(t - c));
 		break;
 	    }
 	}
@@ -1585,7 +1585,7 @@ InfoLevelCmd(
     Interp *iPtr = (Interp *) interp;
 
     if (objc == 1) {		/* Just "info level" */
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
     }
 
@@ -2554,7 +2554,7 @@ Tcl_LlengthObjCmd(
      * length.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(listLen));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(listLen));
     return TCL_OK;
 }
 
@@ -2606,7 +2606,7 @@ Tcl_LpopObjCmd(
      * First, extract the element to be returned.
      * TclLindexFlat adds a ref count which is handled.
      */
-    
+
     if (objc == 2) {
 	elemPtr = elemPtrs[listLen - 1];
 	Tcl_IncrRefCount(elemPtr);
@@ -2639,7 +2639,7 @@ Tcl_LpopObjCmd(
 	    return TCL_ERROR;
 	}
     }
-    
+
     listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
     if (listPtr == NULL) {
 	return TCL_ERROR;
@@ -3239,12 +3239,11 @@ Tcl_LsearchObjCmd(
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		int encoded = 0;
-		if (TclIndexEncode(interp, indices[j], TCL_INDEX_BEFORE,
-			TCL_INDEX_AFTER, &encoded) != TCL_OK) {
+		if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
+			TCL_INDEX_NONE, &encoded) != TCL_OK) {
 		    result = TCL_ERROR;
 		}
-		if ((encoded == TCL_INDEX_BEFORE)
-			|| (encoded == TCL_INDEX_AFTER)) {
+		if (encoded == TCL_INDEX_NONE) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indices[j])));
@@ -3390,7 +3389,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
 	    }
 	    goto done;
 	}
@@ -3679,14 +3678,14 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = Tcl_NewIntObj(i+groupOffset);
+		itemPtr = Tcl_NewWideIntObj(i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
 			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
-		Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewIntObj(i));
+		Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewWideIntObj(i));
 	    }
 	}
     }
@@ -3701,14 +3700,14 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = Tcl_NewIntObj(index+groupOffset);
+	    itemPtr = Tcl_NewWideIntObj(index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
 			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(index));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
 	}
     } else if (index < 0) {
 	/*
@@ -3959,10 +3958,9 @@ Tcl_LsortObjCmd(
 	    for (j=0 ; j<indexc ; j++) {
 		int encoded = 0;
 		int result = TclIndexEncode(interp, indexv[j],
-			TCL_INDEX_BEFORE, TCL_INDEX_AFTER, &encoded);
+			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
 
-		if ((result == TCL_OK) && ((encoded == TCL_INDEX_BEFORE)
-			|| (encoded == TCL_INDEX_AFTER))) {
+		if ((result == TCL_OK) && (encoded == TCL_INDEX_NONE)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indexv[j])));
@@ -4051,7 +4049,8 @@ Tcl_LsortObjCmd(
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
 	    /* Prescreened values, no errors or out of range possible */
-	    TclIndexEncode(NULL, indexv[j], 0, 0, &sortInfo.indexv[j]);
+	    TclIndexEncode(NULL, indexv[j], TCL_INDEX_NONE,
+		    TCL_INDEX_NONE, &sortInfo.indexv[j]);
 	}
     }
 
@@ -4277,7 +4276,7 @@ Tcl_LsortObjCmd(
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
-			objPtr = Tcl_NewIntObj(idx + j - groupOffset);
+			objPtr = Tcl_NewWideIntObj(idx + j - groupOffset);
 			newArray[i++] = objPtr;
 			Tcl_IncrRefCount(objPtr);
 		    } else {
@@ -4289,7 +4288,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = Tcl_NewIntObj(elementPtr->payload.index);
+		objPtr = Tcl_NewWideIntObj(elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
@@ -4721,9 +4720,16 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-		    "element %d missing from sublist \"%s\"",
-		    index, TclGetString(objPtr)));
+	    if (index == TCL_INDEX_NONE) {
+		index = TCL_INDEX_END - infoPtr->indexv[i];
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element end-%d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    } else {
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element %d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
