@@ -13,7 +13,7 @@
  */
 
 /* set a platform dependent unsigned long long int */
-MP_SET_XLONG(mp_set_long_long, Tcl_WideUInt)
+MP_SET_XLONG(mp_set_long_long, unsigned TCL_WIDE_INT_TYPE)
 #endif
 
 /* ref:         $Format:%D$ */

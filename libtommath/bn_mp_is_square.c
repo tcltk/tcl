@@ -55,7 +55,7 @@ int mp_is_square(const mp_int *arg, int *ret)
    }
 
    /* First check mod 128 (suppose that DIGIT_BIT is at least 7) */
-   if (rem_128[127u & DIGIT(arg, 0)] == (char)1) {
+   if (rem_128[127u & arg->dp[0]] == (char)1) {
       return MP_OKAY;
    }
 

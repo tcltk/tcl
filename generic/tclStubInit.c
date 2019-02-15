@@ -57,6 +57,8 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
+#undef TclBNInitBignumFromLong
+#undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -101,8 +103,12 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
-
 #else
+#define TclBNInitBignumFromLong initBignumFromLong
+static void TclBNInitBignumFromLong(mp_int *a, long b)
+{
+    TclInitBignumFromWideInt(a, b);
+}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -153,7 +159,6 @@ TclWinGetPlatformId(void)
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -499,6 +504,17 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
 #   define TclOldFreeObj 0
+#   define TclBN_reverse 0
+#   define TclBN_fast_s_mp_mul_digs 0
+#   define TclBN_fast_s_mp_sqr 0
+#   define TclBN_mp_karatsuba_mul 0
+#   define TclBN_mp_karatsuba_sqr 0
+#   define TclBN_mp_toom_mul 0
+#   define TclBN_mp_toom_sqr 0
+#   define TclBN_s_mp_add 0
+#   define TclBN_s_mp_mul_digs 0
+#   define TclBN_s_mp_sqr 0
+#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -520,6 +536,17 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #   define TclOldFreeObj TclFreeObj
+#   define TclBN_reverse bn_reverse
+#   define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
+#   define TclBN_fast_s_mp_sqr fast_s_mp_sqr
+#   define TclBN_mp_karatsuba_mul mp_karatsuba_mul
+#   define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
+#   define TclBN_mp_toom_mul mp_toom_mul
+#   define TclBN_mp_toom_sqr mp_toom_sqr
+#   define TclBN_s_mp_add s_mp_add
+#   define TclBN_s_mp_mul_digs s_mp_mul_digs
+#   define TclBN_s_mp_sqr s_mp_sqr
+#   define TclBN_s_mp_sub s_mp_sub
 
 static int
 seekOld(

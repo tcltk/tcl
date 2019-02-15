@@ -85,29 +85,16 @@ extern const size_t mp_s_rmap_reverse_sz;
 #define MP_SET_XLONG(func_name, type)                    \
 int func_name (mp_int * a, type b)                       \
 {                                                        \
-  unsigned int  x;                                       \
-  int           res;                                     \
-                                                         \
-  mp_zero (a);                                           \
-                                                         \
-  /* set four bits at a time */                          \
-  for (x = 0; x < (sizeof(type) * 2u); x++) {            \
-    /* shift the number up four bits */                  \
-    if ((res = mp_mul_2d (a, 4, a)) != MP_OKAY) {        \
-      return res;                                        \
-    }                                                    \
-                                                         \
-    /* OR in the top four bits of the source */          \
-    a->dp[0] |= (mp_digit)(b >> ((sizeof(type) * 8u) - 4u)) & 15uL;\
-                                                         \
-    /* shift the source up to the next four bits */      \
-    b <<= 4;                                             \
-                                                         \
-    /* ensure that digits are not clamped off */         \
-    a->used += 1;                                        \
-  }                                                      \
-  mp_clamp (a);                                          \
-  return MP_OKAY;                                        \
+   unsigned int x = 0;                                   \
+   int res = mp_grow(a, (CHAR_BIT * sizeof(type) + DIGIT_BIT - 1) / DIGIT_BIT); \
+   if (res == MP_OKAY) {                                 \
+     while (b) {                                         \
+        a->dp[x++] = ((mp_digit)b & MP_MASK);            \
+        b >>= DIGIT_BIT;                              \
+     }                                                   \
+     a->used = x;                                        \
+   }                                                     \
+   return res;                                           \
 }
 
 #ifdef __cplusplus

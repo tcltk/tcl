@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -45,8 +45,6 @@ extern "C" {
 #   endif
 #endif
 
-typedef unsigned long long Tcl_WideUInt;
-
 /* some default configurations.
  *
  * A "mp_digit" must be able to hold DIGIT_BIT + 1 bits
@@ -65,6 +63,7 @@ typedef unsigned short       mp_word;
 #elif defined(MP_16BIT)
 typedef unsigned short       mp_digit;
 typedef unsigned int         mp_word;
+#endif
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
@@ -79,7 +78,12 @@ typedef unsigned long        mp_word __attribute__((mode(TI)));
 
 /* this is to make porting into LibTomCrypt easier :-) */
 typedef unsigned int         mp_digit;
+#ifdef _WIN32
+typedef unsigned __int64   mp_word;
+#else
 typedef unsigned long long   mp_word;
+#endif
+#endif
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */
@@ -149,10 +153,14 @@ extern int KARATSUBA_MUL_CUTOFF,
 #define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* the infamous mp_int structure */
-typedef struct  {
+#ifndef MP_INT_DECLARED
+#define MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#endif
+struct mp_int {
    int used, alloc, sign;
    mp_digit *dp;
-} mp_int;
+};
 
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
@@ -212,7 +220,11 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
+#ifdef _WIN32
+int mp_set_long_long(mp_int *a, unsigned __int64 b);
+#else
 int mp_set_long_long(mp_int *a, unsigned long long b);
+#endif
 
 /* get a double */
 double mp_get_double(const mp_int *a);
@@ -224,7 +236,11 @@ unsigned long mp_get_int(const mp_int *a);
 unsigned long mp_get_long(const mp_int *a);
 
 /* get a platform dependent unsigned long long value */
+#ifdef _WIN32
+unsigned __int64 mp_get_long_long(const mp_int *a);
+#else
 unsigned long long mp_get_long_long(const mp_int *a);
+#endif
 
 /* initialize and set a digit */
 int mp_init_set(mp_int *a, mp_digit b);

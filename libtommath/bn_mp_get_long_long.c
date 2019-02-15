@@ -13,24 +13,24 @@
  */
 
 /* get the lower unsigned long long of an mp_int, platform dependent */
-Tcl_WideUInt mp_get_long_long(const mp_int *a)
+unsigned TCL_WIDE_INT_TYPE mp_get_long_long(const mp_int *a)
 {
    int i;
-   Tcl_WideUInt res;
+   unsigned TCL_WIDE_INT_TYPE res;
 
    if (a->used == 0) {
       return 0;
    }
 
    /* get number of digits of the lsb we have to read */
-   i = MIN(a->used, ((((int)sizeof(Tcl_WideUInt) * CHAR_BIT) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
+   i = MIN(a->used, ((((int)sizeof(unsigned TCL_WIDE_INT_TYPE) * CHAR_BIT) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
 
    /* get most significant digit of result */
-   res = DIGIT(a, i);
+   res = (unsigned TCL_WIDE_INT_TYPE)a->dp[i];
 
 #if DIGIT_BIT < 64
    while (--i >= 0) {
-      res = (res << DIGIT_BIT) | DIGIT(a, i);
+      res = (res << DIGIT_BIT) | (unsigned TCL_WIDE_INT_TYPE)a->dp[i];
    }
 #endif
    return res;

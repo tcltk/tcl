@@ -18,7 +18,7 @@
  */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 #define MP_ARC4RANDOM
-#define MP_GEN_RANDOM_MAX     0xffffffffu
+#define MP_GEN_RANDOM_MAX     0xFFFFFFFFU
 #define MP_GEN_RANDOM_SHIFT   32
 
 static int s_read_arc4random(mp_digit *p)

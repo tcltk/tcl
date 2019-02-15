@@ -26,11 +26,11 @@ unsigned long mp_get_long(const mp_int *a)
    i = MIN(a->used, ((((int)sizeof(unsigned long) * CHAR_BIT) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
 
    /* get most significant digit of result */
-   res = DIGIT(a, i);
+   res = (unsigned long)a->dp[i];
 
-#if (ULONG_MAX != 0xffffffffuL) || (DIGIT_BIT < 32)
+#if (ULONG_MAX != 0xFFFFFFFFUL) || (DIGIT_BIT < 32)
    while (--i >= 0) {
-      res = (res << DIGIT_BIT) | DIGIT(a, i);
+      res = (res << DIGIT_BIT) | (unsigned long)a->dp[i];
    }
 #endif
    return res;

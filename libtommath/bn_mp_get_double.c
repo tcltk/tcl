@@ -19,8 +19,8 @@ double mp_get_double(const mp_int *a)
    for (i = 0; i < DIGIT_BIT; ++i) {
       fac *= 2.0;
    }
-   for (i = USED(a); i --> 0;) {
-      d = (d * fac) + (double)DIGIT(a, i);
+   for (i = a->used; i --> 0;) {
+      d = (d * fac) + (double)a->dp[i];
    }
    return (mp_isneg(a) != MP_NO) ? -d : d;
 }
