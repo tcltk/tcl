@@ -1554,16 +1554,13 @@ BuildCommandLine(
 	if (arg[0] == '\0') {
 	    quote = CL_QUOTE;
 	} else {
-	    int count;
-	    Tcl_UniChar ch;
 	    for (start = arg;
 		*start != '\0' &&
 		    (quote & (CL_ESCAPE|CL_QUOTE)) != (CL_ESCAPE|CL_QUOTE);
-		start += count
+		start++
 	    ) {
-		count = Tcl_UtfToUniChar(start, &ch);
-		if (count > 1) continue;
-		if (Tcl_UniCharIsSpace(ch)) {
+		if (*start & 0x80) continue;
+		if (TclIsSpaceProc(*start)) {
 		    quote |= CL_QUOTE; /* quote only */
 		    if (bspos) { /* if backslash found - escape & quote */
 			quote |= CL_ESCAPE;
