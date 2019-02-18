@@ -312,6 +312,20 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
+#if TCL_UTF_MAX <= 4
+	/* If *chPtr contains a high surrogate (produced by a previous
+	 * Tcl_UtfToUniChar() call) and the next 3 bytes are UTF-8 continuation
+	 * bytes, then we must produce a follow-up low surrogate. We only
+	 * do that if the high surrogate matches the bits we encounter.
+	 */
+	if ((byte >= 0x80)
+		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
+		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))
+		&& ((src[2] & 0xC0) == 0x80)) {
+	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
+	    return 3;
+	}
+#endif
 	if ((unsigned)(byte-0x80) < (unsigned) 0x20) {
 	    *chPtr = (Tcl_UniChar) cp1252[byte-0x80];
 	} else {
@@ -358,21 +372,14 @@ Tcl_UtfToUniChar(
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
 #if TCL_UTF_MAX <= 4
-	    Tcl_UniChar surrogate;
-
-	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
-		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
-	    surrogate = (Tcl_UniChar) (0xD800 + (byte >> 10));
-	    if (byte & 0x100000) {
+	    byte = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
+		    | ((src[2] & 0x3F) >> 4)) - 0x40;
+	    if ((unsigned) byte >= 0x400) {
 		/* out of range, < 0x10000 or > 0x10ffff */
-	    } else if (*chPtr != surrogate) {
-		/* produce high surrogate, but don't advance source pointer */
-		*chPtr = surrogate;
-		return 0;
 	    } else {
-		/* produce low surrogate, and advance source pointer */
-		*chPtr = (Tcl_UniChar) (0xDC00 | (byte & 0x3FF));
-		return 4;
+		/* produce high surrogate, advance source pointer */
+		*chPtr = 0xD800 + byte;
+		return 1;
 	    }
 #else
 	    *chPtr = (Tcl_UniChar) (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
@@ -582,8 +589,8 @@ Tcl_UtfFindFirst(
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
 #if TCL_UTF_MAX <= 4
-	if (!len) {
-	    len += TclUtfToUniChar(src, &find);
+	if ((len == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
@@ -630,8 +637,8 @@ Tcl_UtfFindLast(
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
 #if TCL_UTF_MAX <= 4
-	if (!len) {
-	    len += TclUtfToUniChar(src, &find);
+	if ((len == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
@@ -673,8 +680,8 @@ Tcl_UtfNext(
     int len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX <= 4
-    if (len == 0) {
-      len = TclUtfToUniChar(src, &ch);
+    if ((len == 1) && ((ch & 0xFC00) == 0xD800)) {
+      len += TclUtfToUniChar(src + len, &ch);
     }
 #endif
     return src + len;
@@ -755,7 +762,7 @@ Tcl_UniCharAtIndex(
     Tcl_UniChar ch = 0;
     int fullchar = 0;
 #if TCL_UTF_MAX <= 4
-	int len = 1;
+	int len = 0;
 #endif
 
     while (index-- >= 0) {
@@ -767,9 +774,9 @@ Tcl_UniCharAtIndex(
     }
     fullchar = ch;
 #if TCL_UTF_MAX <= 4
-     if (!len) {
+    if ((len == 1) && ((ch & 0xFC00) == 0xD800)) {
 	/* If last Tcl_UniChar was an upper surrogate, combine with lower surrogate */
-	(void)TclUtfToUniChar(src, &ch);
+	(void)TclUtfToUniChar(src + len, &ch);
 	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
     }
 #endif
@@ -801,14 +808,14 @@ Tcl_UtfAtIndex(
     register int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
-    int len = 1;
+    int len = 0;
 
     while (index-- > 0) {
 	len = TclUtfToUniChar(src, &ch);
 	src += len;
     }
 #if TCL_UTF_MAX <= 4
-     if (!len) {
+    if ((len == 1) && ((ch & 0xFC00) == 0xD800)) {
 	/* Index points at character following High Surrogate */
 	src += TclUtfToUniChar(src, &ch);
     }
@@ -905,9 +912,8 @@ Tcl_UtfToUpper(
 	bytes = TclUtfToUniChar(src, &ch);
 	upChar = ch;
 #if TCL_UTF_MAX <= 4
-	if (!bytes) {
-	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
-	    bytes = TclUtfToUniChar(src, &ch);
+	if ((bytes == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    bytes += TclUtfToUniChar(src + bytes, &ch);
 	    /* Combine surrogates */
 	    upChar = (((upChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
@@ -968,9 +974,8 @@ Tcl_UtfToLower(
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 #if TCL_UTF_MAX <= 4
-	if (!bytes) {
-	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
-	    bytes = TclUtfToUniChar(src, &ch);
+	if ((bytes == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    bytes += TclUtfToUniChar(src + bytes, &ch);
 	    /* Combine surrogates */
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
@@ -1034,9 +1039,8 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	titleChar = ch;
 #if TCL_UTF_MAX <= 4
-	if (!bytes) {
-	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
-	    bytes = TclUtfToUniChar(src, &ch);
+	if ((bytes == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    bytes += TclUtfToUniChar(src + bytes, &ch);
 	    /* Combine surrogates */
 	    titleChar = (((titleChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
@@ -1055,9 +1059,8 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 #if TCL_UTF_MAX <= 4
-	if (!bytes) {
-	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
-	    bytes = TclUtfToUniChar(src, &ch);
+	if ((bytes == 1) && ((ch & 0xFC00) == 0xD800)) {
+	    bytes += TclUtfToUniChar(src + bytes, &ch);
 	    /* Combine surrogates */
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}

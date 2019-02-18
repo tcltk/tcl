@@ -2384,8 +2384,8 @@ UtfToUtfProc(
 	    src += len;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 #if TCL_UTF_MAX <= 4
-	    if (!len) {
-		src += TclUtfToUniChar(src, chPtr);
+	    if ((len == 1) && ((*chPtr & 0xFC00) == 0xD800)) {
+		src += TclUtfToUniChar(src + len, chPtr);
 		dst += Tcl_UniCharToUtf(*chPtr, dst);
 	    }
 #endif
@@ -3006,7 +3006,7 @@ Iso88591FromUtfProc(
 
 	if (ch > 0xff
 #if TCL_UTF_MAX <= 4
-		|| !len
+		|| ((len == 1) && ((ch & 0xFC00) == 0xD800))
 #endif
 		) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
@@ -3014,7 +3014,7 @@ Iso88591FromUtfProc(
 		break;
 	    }
 #if TCL_UTF_MAX <= 4
-	    if (!len) len = 4;
+	    if ((len == 1) && ((ch & 0xFC00) == 0xD800)) len = 4;
 #endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
