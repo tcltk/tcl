@@ -232,7 +232,7 @@ Tcl_UniCharToUtfDString(
     wEnd = uniStr + uniLength;
     for (w = uniStr; w < wEnd; ) {
 	if (!len && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling upper surrogates. */
+	    /* Special case for handling high surrogates. */
 	    p += Tcl_UniCharToUtf(-1, p);
 	}
 	len = Tcl_UniCharToUtf(*w, p);
@@ -240,7 +240,7 @@ Tcl_UniCharToUtfDString(
 	w++;
     }
     if (!len) {
-	/* Special case for handling upper surrogates. */
+	/* Special case for handling high surrogates. */
 	p += Tcl_UniCharToUtf(-1, p);
     }
     Tcl_DStringSetLength(dsPtr, oldLength + (p - string));
@@ -768,7 +768,7 @@ Tcl_UniCharAtIndex(
     fullchar = ch;
 #if TCL_UTF_MAX <= 4
      if (!len) {
-	/* If last Tcl_UniChar was an upper surrogate, combine with lower surrogate */
+	/* If last Tcl_UniChar was a high surrogate, combine with low surrogate */
 	(void)TclUtfToUniChar(src, &ch);
 	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
     }
