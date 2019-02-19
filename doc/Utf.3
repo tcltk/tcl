@@ -132,7 +132,7 @@ represent one Unicode character in the UTF-8 representation.
 .PP
 \fBTcl_UniCharToUtf\fR stores the character \fIch\fR as a UTF-8 string
 in starting at \fIbuf\fR.  The return value is the number of bytes stored
-in \fIbuf\fR. If ch is an upper surrogate (range U+D800 - U+DBFF), then
+in \fIbuf\fR. If ch is a high surrogate (range U+D800 - U+DBFF), then
 the return value will be 0 and nothing will be stored. If you still
 want to produce UTF-8 output for it (even though knowing it's an illegal
 code-point on its own), just call \fBTcl_UniCharToUtf\fR again using ch = -1.
