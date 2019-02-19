@@ -672,6 +672,30 @@ distclean: distclean-packages clean
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
 
+#----------------------------------------------------------------------------------------------
+# Dependencies:
+#
+#	Usage: make ?target? depend=1
+#
+#	Additionally configure script may be extended to set variable TCL_MAKE_DEPEND resp. 
+#	setting of this variable in environment may be used to force dependencies check.
+#
+#	The include file with dependencies could be (re)built using `tclsh ../tools/depend.tcl`
+#----------------------------------------------------------------------------------------------
+ifdef depend
+  TCL_MAKE_DEPEND = $depend
+  ifeq ($(filter $(depend),1 on yes true),)
+    TCL_MAKE_DEPEND =
+  endif
+endif
+ifdef TCL_MAKE_DEPEND
+$(info make: Check dependencies ...)
+include $(UNIX_DIR)/depend.mk
+endif
+
+depend.mk:
+	$(NATIVE_TCLSH) $(TOOL_DIR)/depend.tcl -source $(TOP_DIR) $(UNIX_DIR)/depend.mk
+
 #--------------------------------------------------------------------------
 # The following target outputs the name of the top-level source directory for
 # Tcl (it is used by Tk's configure script, for example). The .NO_PARALLEL

@@ -774,6 +774,30 @@ gdb: binaries
 
 depend:
 
+#----------------------------------------------------------------------------------------------
+# Dependencies:
+#
+#	Usage: make ?target? depend=1
+#
+#	Additionally configure script may be extended to set variable TCL_MAKE_DEPEND resp. 
+#	setting of this variable in environment may be used to force dependencies check.
+#
+#	The include file with dependencies could be (re)built using `tclsh ../tools/depend.tcl`
+#----------------------------------------------------------------------------------------------
+ifdef depend
+  TCL_MAKE_DEPEND = $depend
+  ifeq ($(filter $(depend),1 on yes true),)
+    TCL_MAKE_DEPEND =
+  endif
+endif
+ifdef TCL_MAKE_DEPEND
+$(info make: Check dependencies ...)
+include $(WIN_DIR)/depend.mk
+endif
+
+depend.mk:
+	$(NATIVE_TCLSH) $(TOOL_DIR)/depend.tcl -source $(TOP_DIR) $(WIN_DIR)/depend.mk
+
 Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
