@@ -2003,7 +2003,7 @@ Tcl_AppendFormatToObj(
 	    length = Tcl_UniCharToUtf(code, buf);
 #if TCL_UTF_MAX > 3
 	    if (!length) {
-		/* Special case for handling upper surrogates. */
+		/* Special case for handling high surrogates. */
 		length = Tcl_UniCharToUtf(-1, buf);
 	    }
 #endif
