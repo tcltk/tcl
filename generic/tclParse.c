@@ -939,9 +939,9 @@ TclParseBackslash(
 	*readPtr = count;
     }
     count = Tcl_UniCharToUtf(result, dst);
-    if (!count) {
-	/* Special case for handling upper surrogates. */
-	count = Tcl_UniCharToUtf(-1, dst);
+    if ((result >= 0xD800) && (count < 3)) {
+	/* Special case for handling high surrogates. */
+	count += Tcl_UniCharToUtf(-1, dst + count);
     }
     return count;
 }

@@ -3155,21 +3155,6 @@ ZipFSListObjCmd(
 
 #ifdef _WIN32
 #define LIBRARY_SIZE	    64
-
-static inline int
-WCharToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start = dst;
-
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
-}
 #endif /* _WIN32 */
 
 Tcl_Obj *
@@ -3213,11 +3198,8 @@ TclZipfs_TclLibrary(void)
 
 #if defined(_WIN32)
     hModule = TclWinGetTclInstance();
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, dllName, MAX_PATH);
-    } else {
-	WCharToUtf(wName, dllName);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);

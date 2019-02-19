@@ -5227,8 +5227,8 @@ TEBCresume(
 		objResultPtr = Tcl_NewObj();
 	    } else {
 		length = Tcl_UniCharToUtf(ch, buf);
-		if (!length) {
-		    length = Tcl_UniCharToUtf(-1, buf);
+		if ((ch >= 0xD800) && (length < 3)) {
+		    length = Tcl_UniCharToUtf(-1, buf + length);
 		}
 		objResultPtr = Tcl_NewStringObj(buf, length);
 	    }
