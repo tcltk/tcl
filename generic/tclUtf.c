@@ -88,7 +88,7 @@ static const unsigned char totalBytes[256] = {
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 TclUtfCount(
     int ch)			/* The Unicode character whose size is returned. */
 {
@@ -575,7 +575,8 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
+    size_t len;
+    int fullchar;
     Tcl_UniChar find = 0;
 
     while (1) {
@@ -621,7 +622,8 @@ Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
+    size_t len;
+    int fullchar;
     Tcl_UniChar find = 0;
     const char *last;
 
@@ -670,7 +672,7 @@ Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
     Tcl_UniChar ch = 0;
-    int len = TclUtfToUniChar(src, &ch);
+    size_t len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX <= 4
     if (len == 0) {
@@ -755,7 +757,7 @@ Tcl_UniCharAtIndex(
     Tcl_UniChar ch = 0;
     int fullchar = 0;
 #if TCL_UTF_MAX <= 4
-	int len = 1;
+	size_t len = 1;
 #endif
 
     src += TclUtfToUniChar(src, &ch);
@@ -803,7 +805,7 @@ Tcl_UtfAtIndex(
 {
     Tcl_UniChar ch = 0;
 #if TCL_UTF_MAX <= 4
-    int len = 1;
+    size_t len = 1;
 #endif
 
     if (index != TCL_AUTO_LENGTH) {
@@ -901,7 +903,7 @@ Tcl_UtfToUpper(
     Tcl_UniChar ch = 0;
     int upChar;
     char *src, *dst;
-    int bytes;
+    size_t bytes;
 
     /*
      * Iterate over the string until we hit the terminating null.
@@ -928,7 +930,7 @@ Tcl_UtfToUpper(
 	 */
 
 	if ((bytes < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(upChar, dst);
@@ -964,7 +966,7 @@ Tcl_UtfToLower(
     Tcl_UniChar ch = 0;
     int lowChar;
     char *src, *dst;
-    int bytes;
+    size_t bytes;
 
     /*
      * Iterate over the string until we hit the terminating null.
@@ -991,7 +993,7 @@ Tcl_UtfToLower(
 	 */
 
 	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);
@@ -1028,7 +1030,7 @@ Tcl_UtfToTitle(
     Tcl_UniChar ch = 0;
     int titleChar, lowChar;
     char *src, *dst;
-    int bytes;
+    size_t bytes;
 
     /*
      * Capitalize the first character and then lowercase the rest of the
@@ -1051,7 +1053,7 @@ Tcl_UtfToTitle(
 	titleChar = Tcl_UniCharToTitle(titleChar);
 
 	if ((bytes < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(titleChar, dst);
@@ -1075,7 +1077,7 @@ Tcl_UtfToTitle(
 	}
 
 	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);

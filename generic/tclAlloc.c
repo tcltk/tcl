@@ -255,7 +255,7 @@ TclpAlloc(
 {
     register union overhead *overPtr;
     register size_t bucket;
-    register unsigned amount;
+    register size_t amount;
     struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
@@ -603,7 +603,7 @@ TclpRealloc(
 	if (maxSize < numBytes) {
 	    numBytes = maxSize;
 	}
-	memcpy(newPtr, oldPtr, (size_t) numBytes);
+	memcpy(newPtr, oldPtr, numBytes);
 	TclpFree(oldPtr);
 	return newPtr;
     }

@@ -268,7 +268,7 @@ AppendEnvironment(
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
+	    if ((size_t)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;

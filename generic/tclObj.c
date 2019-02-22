@@ -1395,7 +1395,7 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = TCL_AUTO_LENGTH;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
