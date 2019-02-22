@@ -143,7 +143,7 @@ GetIndexFromObjList(
 	    return TCL_OK;
 	}
 
-	tablePtr[t] = Tcl_GetString(objv[t]);
+	tablePtr[t] = TclGetString(objv[t]);
     }
     tablePtr[objc] = NULL;
 
@@ -544,7 +544,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    message = Tcl_GetString(objv[i]);
+	    message = TclGetString(objv[i]);
 	    break;
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
@@ -634,7 +634,8 @@ PrefixAllObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t, length, elemLength;
+    int tableObjc, result, t;
+    size_t length, elemLength;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -691,7 +692,8 @@ PrefixLongestObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, i, t, length, elemLength, resultLength;
+    int tableObjc, result, t;
+    size_t i, length, elemLength, resultLength;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
@@ -1124,7 +1126,7 @@ Tcl_ParseArgsObjv(
 		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, Tcl_GetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex])));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1135,7 +1137,7 @@ Tcl_ParseArgsObjv(
 		goto missingArg;
 	    }
 	    *((const char **) infoPtr->dstPtr) =
-		    Tcl_GetString(objv[srcIndex]);
+		    TclGetString(objv[srcIndex]);
 	    srcIndex++;
 	    objc--;
 	    break;
@@ -1157,7 +1159,7 @@ Tcl_ParseArgsObjv(
 		    (double *) infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected floating-point argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, Tcl_GetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex])));
 		goto error;
 	    }
 	    srcIndex++;

@@ -911,8 +911,8 @@ TclpObjCopyDirectory(
 	return TCL_ERROR;
     }
 
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
+    Tcl_WinUtfToTChar(TclGetString(normSrcPtr), -1, &srcString);
+    Tcl_WinUtfToTChar(TclGetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -984,7 +984,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
+	Tcl_WinUtfToTChar(TclGetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1593,7 +1593,7 @@ ConvertFileNameFormat(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not read \"%s\": no such file or directory",
-		    Tcl_GetString(fileName)));
+		    TclGetString(fileName)));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);
 	}
@@ -1883,7 +1883,7 @@ CannotSetAttribute(
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
-	    tclpFileAttrStrings[objIndex], Tcl_GetString(fileName)));
+	    tclpFileAttrStrings[objIndex], TclGetString(fileName)));
     errno = EINVAL;
     Tcl_PosixError(interp);
     return TCL_ERROR;

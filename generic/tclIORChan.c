@@ -1961,7 +1961,7 @@ ReflectGetOption(
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
-	int len;
+	size_t len;
 	const char *str = TclGetStringFromObj(resObj, &len);
 
 	if (len) {
@@ -2334,7 +2334,7 @@ InvokeTclMethod(
 	     */
 
 	    if (result != TCL_ERROR) {
-		int cmdLen;
+		size_t cmdLen;
 		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -3201,7 +3201,7 @@ ForwardProc(
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
-		int len;
+		size_t len;
 		const char *str = TclGetStringFromObj(resObj, &len);
 
 		if (len) {

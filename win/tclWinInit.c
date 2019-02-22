@@ -223,8 +223,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
+    bytes = TclGetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);

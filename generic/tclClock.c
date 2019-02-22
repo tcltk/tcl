@@ -1922,7 +1922,7 @@ ClockParseformatargsObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
+		    TclGetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {

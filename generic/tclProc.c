@@ -329,7 +329,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (TclFetchIntRep(objv[3], &tclProcBodyType)) {
+    if (objv[3]->typePtr == &tclProcBodyType) {
 	goto done;
     }
 
@@ -553,7 +553,7 @@ TclCreateProc(
 		if (*argnamelast == ')') { /* We have an array element. */
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "formal parameter \"%s\" is an array element",
-			    Tcl_GetString(fieldValues[0])));
+			    TclGetString(fieldValues[0])));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			    "FORMALARGUMENTFORMAT", NULL);
 		    goto procError;
@@ -2423,7 +2423,7 @@ SetLambdaFromAny(
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
-		Tcl_GetString(objPtr)));
+		TclGetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
 	return TCL_ERROR;
     }
