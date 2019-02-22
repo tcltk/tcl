@@ -202,7 +202,8 @@ QueryConfigObjCmd(
     QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, index;
+    size_t n;
+    int index, m;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -274,8 +275,8 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_DictObjSize(interp, pkgDict, &n);
-	listPtr = Tcl_NewListObj(n, NULL);
+	Tcl_DictObjSize(interp, pkgDict, &m);
+	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -284,7 +285,7 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (n) {
+	if (m) {
 	    Tcl_DictSearch s;
 	    Tcl_Obj *key;
 	    int done;

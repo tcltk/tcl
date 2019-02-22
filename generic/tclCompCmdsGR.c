@@ -607,7 +607,7 @@ TclCompileInfoCommandsCmd(
     if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	goto notCompilable;
     }
-    bytes = Tcl_GetString(objPtr);
+    bytes = TclGetString(objPtr);
 
     /*
      * We require that the argument start with "::" and not have any of "*\[?"
@@ -2298,8 +2298,8 @@ TclCompileRegsubCmd(
     if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	goto done;
     }
-    if (Tcl_GetString(patternObj)[0] == '-') {
-	if (strcmp(Tcl_GetString(patternObj), "--") != 0
+    if (TclGetString(patternObj)[0] == '-') {
+	if (strcmp(TclGetString(patternObj), "--") != 0
 		|| parsePtr->numWords == 5) {
 	    goto done;
 	}
@@ -2364,7 +2364,7 @@ TclCompileRegsubCmd(
 	bytes++;
     }
   isSimpleGlob:
-    for (bytes = Tcl_GetString(replacementObj); *bytes; bytes++) {
+    for (bytes = TclGetString(replacementObj); *bytes; bytes++) {
 	switch (*bytes) {
 	case '\\': case '&':
 	    goto done;

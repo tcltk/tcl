@@ -215,7 +215,7 @@ Tcl_GetStartupScript(
 	if (tsdPtr->encoding == NULL) {
 	    *encodingPtr = NULL;
 	} else {
-	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
+	    *encodingPtr = TclGetString(tsdPtr->encoding);
 	}
     }
     return tsdPtr->path;
@@ -343,7 +343,7 @@ Tcl_MainEx(
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2], -1);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3], -1),
-		    Tcl_GetString(value));
+		    TclGetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
@@ -488,7 +488,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length == (size_t)-1) {
+	    if (length == TCL_AUTO_LENGTH) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -766,7 +766,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length == (size_t)-1) {
+    if (length == TCL_AUTO_LENGTH) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}

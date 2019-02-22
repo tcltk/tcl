@@ -79,7 +79,7 @@ TclpDlopen(
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
     char *pkg;
-    char *fileName = Tcl_GetString(pathPtr);
+    char *fileName = TclGetString(pathPtr);
     const char *native;
 
     /*
