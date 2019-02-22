@@ -124,7 +124,7 @@ static void		FinalizeThread(int quick);
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_BackgroundError --
+ * Tcl_BackgroundException --
  *
  *	This function is invoked to handle errors that occur in Tcl commands
  *	that are invoked in "background" (e.g. from event or timer bindings).
@@ -138,14 +138,6 @@ static void		FinalizeThread(int quick);
  *
  *----------------------------------------------------------------------
  */
-
-void
-Tcl_BackgroundError(
-    Tcl_Interp *interp)		/* Interpreter in which an error has
-				 * occurred. */
-{
-    Tcl_BackgroundException(interp, TCL_ERROR);
-}
 
 void
 Tcl_BackgroundException(

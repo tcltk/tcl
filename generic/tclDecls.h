@@ -242,8 +242,7 @@ EXTERN int		Tcl_AsyncInvoke(Tcl_Interp *interp, int code);
 EXTERN void		Tcl_AsyncMark(Tcl_AsyncHandler async);
 /* 75 */
 EXTERN int		Tcl_AsyncReady(void);
-/* 76 */
-EXTERN void		Tcl_BackgroundError(Tcl_Interp *interp);
+/* Slot 76 is reserved */
 /* Slot 77 is reserved */
 /* 78 */
 EXTERN int		Tcl_BadChannelOption(Tcl_Interp *interp,
@@ -1855,7 +1854,7 @@ typedef struct TclStubs {
     int (*tcl_AsyncInvoke) (Tcl_Interp *interp, int code); /* 73 */
     void (*tcl_AsyncMark) (Tcl_AsyncHandler async); /* 74 */
     int (*tcl_AsyncReady) (void); /* 75 */
-    void (*tcl_BackgroundError) (Tcl_Interp *interp); /* 76 */
+    void (*reserved76)(void);
     void (*reserved77)(void);
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, void *clientData); /* 79 */
@@ -2597,8 +2596,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AsyncMark) /* 74 */
 #define Tcl_AsyncReady \
 	(tclStubsPtr->tcl_AsyncReady) /* 75 */
-#define Tcl_BackgroundError \
-	(tclStubsPtr->tcl_BackgroundError) /* 76 */
+/* Slot 76 is reserved */
 /* Slot 77 is reserved */
 #define Tcl_BadChannelOption \
 	(tclStubsPtr->tcl_BadChannelOption) /* 78 */
@@ -3845,6 +3843,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (int)(value))
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
 #define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
+#define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 
 /*
  * Deprecated Tcl procedures:

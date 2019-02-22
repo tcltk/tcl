@@ -211,7 +211,7 @@ Tcl_WinTCharToUtf(
     wEnd = (wchar_t *)string + len;
     for (w = (wchar_t *)string; w < wEnd; ) {
 	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling upper surrogates. */
+	    /* Special case for handling high surrogates. */
 	    p += Tcl_UniCharToUtf(-1, p);
 	}
 	blen = Tcl_UniCharToUtf(*w, p);
@@ -219,7 +219,7 @@ Tcl_WinTCharToUtf(
 	w++;
     }
     if (!blen) {
-	/* Special case for handling upper surrogates. */
+	/* Special case for handling high surrogates. */
 	p += Tcl_UniCharToUtf(-1, p);
     }
     Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
@@ -855,7 +855,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncInvoke, /* 73 */
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
-    Tcl_BackgroundError, /* 76 */
+    0, /* 76 */
     0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */

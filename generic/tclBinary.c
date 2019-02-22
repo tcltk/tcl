@@ -550,6 +550,7 @@ SetByteArrayFromAny(
     int improper = 0;
     const char *src, *srcEnd;
     unsigned char *dst;
+    Tcl_UniChar ch = 0;
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
@@ -563,7 +564,6 @@ SetByteArrayFromAny(
 
     byteArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	Tcl_UniChar ch = 0;
 	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
 	*dst++ = UCHAR(ch);

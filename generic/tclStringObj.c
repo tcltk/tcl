@@ -644,8 +644,8 @@ Tcl_GetRange(
     String *stringPtr;
     size_t length;
 
-    if (first == TCL_AUTO_LENGTH) {
-	first = 0;
+    if (first == TCL_INDEX_NONE) {
+	first = TCL_INDEX_START;
     }
     if (last + 2 <= first + 1) {
 	return Tcl_NewObj();
@@ -1952,7 +1952,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
 	    if (!length) {
-		/* Special case for handling upper surrogates. */
+		/* Special case for handling high surrogates. */
 		length = Tcl_UniCharToUtf(-1, buf);
 	    }
 	    segment = Tcl_NewStringObj(buf, length);
