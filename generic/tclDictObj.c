@@ -173,7 +173,7 @@ const Tcl_ObjType tclDictType = {
 #define DictGetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
         const Tcl_ObjIntRep *irPtr;                                     \
-        irPtr = Tcl_FetchIntRep((objPtr), &tclDictType);                \
+        irPtr = TclFetchIntRep((objPtr), &tclDictType);                \
         (dictRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
 
@@ -617,7 +617,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (Tcl_FetchIntRep(objPtr, &tclListType)) {
+    if (objPtr->typePtr == &tclListType) {
 	int objc, i;
 	Tcl_Obj **objv;
 

@@ -200,25 +200,36 @@ TclCreateLiteral(
     for (globalPtr=globalTablePtr->buckets[globalHash] ; globalPtr!=NULL;
 	    globalPtr = globalPtr->nextPtr) {
 	objPtr = globalPtr->objPtr;
-	if ((globalPtr->nsPtr == nsPtr)
-		&& ((size_t)objPtr->length == length) && ((length == 0)
-		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
+	if (globalPtr->nsPtr == nsPtr) {
 	    /*
-	     * A literal was found: return it
+	     * Literals should always have UTF-8 representations... but this
+	     * is not guaranteed so we need to be careful anyway.
+	     *
+	     * https://stackoverflow.com/q/54337750/301832
 	     */
 
-	    if (newPtr) {
-		*newPtr = 0;
+	    size_t objLength;
+	    char *objBytes = TclGetStringFromObj(objPtr, &objLength);
+
+	    if ((objLength == length) && ((length == 0)
+		    || ((objBytes[0] == bytes[0])
+		    && (memcmp(objBytes, bytes, (unsigned) length) == 0)))) {
+		/*
+		 * A literal was found: return it
+		 */
+
+		if (newPtr) {
+		    *newPtr = 0;
+		}
+		if (globalPtrPtr) {
+		    *globalPtrPtr = globalPtr;
+		}
+		if (flags & LITERAL_ON_HEAP) {
+		    Tcl_Free((void *)bytes);
+		}
+		globalPtr->refCount++;
+		return objPtr;
 	    }
-	    if (globalPtrPtr) {
-		*globalPtrPtr = globalPtr;
-	    }
-	    if ((flags & LITERAL_ON_HEAP)) {
-		Tcl_Free((void *)bytes);
-	    }
-	    globalPtr->refCount++;
-	    return objPtr;
 	}
     }
     if (!newPtr) {
