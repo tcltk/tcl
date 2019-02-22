@@ -248,7 +248,7 @@ ValidateMemory(
 	}
     }
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "low guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -270,7 +270,7 @@ ValidateMemory(
     }
 
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "high guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -408,7 +408,7 @@ Tcl_DbCkalloc(
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes, %s line %d", size, file, line);
     }
 
@@ -498,7 +498,7 @@ Tcl_AttemptDbCkalloc(
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	return NULL;
     }
 
@@ -689,7 +689,7 @@ Tcl_DbCkrealloc(
 	copySize = memp->length;
     }
     newPtr = Tcl_DbCkalloc(size, file, line);
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
@@ -723,7 +723,7 @@ Tcl_AttemptDbCkrealloc(
     if (newPtr == NULL) {
 	return NULL;
     }
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }

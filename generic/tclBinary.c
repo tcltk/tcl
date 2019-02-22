@@ -222,7 +222,7 @@ static const EnsembleImplMap decodeMap[] = {
  * Bytearrays should simply be usable as bytearrays without a kabuki
  * dance of testing.
  *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct
+ * The "Pure" ByteArray type is (nearly) a correct
  * implementation of bytearrays.  Any Tcl value with the type
  * properByteArrayType can have its bytearray value fetched and
  * used with confidence that acting on that value is equivalent to
@@ -553,15 +553,12 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if ((objPtr->typePtr == &properByteArrayType)
+	    || (objPtr->typePtr == &tclByteArrayType)) {
 	return TCL_OK;
     }
 
-    src = TclGetString(objPtr);
-    length = objPtr->length;
+    src = TclGetStringFromObj(objPtr, &length);
     srcEnd = src + length;
 
     byteArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));

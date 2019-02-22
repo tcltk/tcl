@@ -913,7 +913,8 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = TclGetString(norm);
+	    size_t length;
+	    const char *str = TclGetStringFromObj(norm, &length);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -923,7 +924,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,norm->length), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str, length), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -2733,12 +2734,13 @@ TclpObjNormalizePath(
 
 	    char *path;
 	    Tcl_Obj *tmpPathPtr;
+	    size_t length;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = TclGetString(tmpPathPtr);
-	    Tcl_SetStringObj(pathPtr, path, tmpPathPtr->length);
+	    path = TclGetStringFromObj(tmpPathPtr, &length);
+	    Tcl_SetStringObj(pathPtr, path, length);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
 	    /*

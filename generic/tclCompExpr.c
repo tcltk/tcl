@@ -1560,7 +1560,7 @@ ConvertTreeToTokens(
 		TclGrowParseTokenArray(parsePtr, toCopy);
 		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		memcpy(subExprTokenPtr, tokenPtr,
-			(size_t) toCopy * sizeof(Tcl_Token));
+			toCopy * sizeof(Tcl_Token));
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 		parsePtr->numTokens += toCopy;
 	    } else {
@@ -1577,7 +1577,7 @@ ConvertTreeToTokens(
 		subExprTokenPtr->numComponents++;
 		subExprTokenPtr++;
 		memcpy(subExprTokenPtr, tokenPtr,
-			(size_t) toCopy * sizeof(Tcl_Token));
+			toCopy * sizeof(Tcl_Token));
 		parsePtr->numTokens += toCopy + 1;
 	    }
 

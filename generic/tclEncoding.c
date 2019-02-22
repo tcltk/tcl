@@ -3620,9 +3620,7 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetString(searchPathObj);
-
-    *lengthPtr = searchPathObj->length;
+    bytes = TclGetStringFromObj(searchPathObj, lengthPtr);
     *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(searchPathObj);

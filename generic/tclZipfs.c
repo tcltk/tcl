@@ -4190,8 +4190,7 @@ ZipFSMatchInDirectoryProc(
      * The (normalized) path we're searching.
      */
 
-    path = TclGetString(normPathPtr);
-    len = normPathPtr->length;
+    path = TclGetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     Tcl_DStringAppend(&dsPref, prefix, prefixLen);
@@ -4363,12 +4362,10 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
 
-    path = TclGetString(pathPtr);
+    path = TclGetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
-
-    len = pathPtr->length;
 
     ReadLock();
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);

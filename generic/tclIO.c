@@ -1563,7 +1563,7 @@ TclGetChannelFromObj(
          * Re-use the ResolvedCmdName struct.
          */
 
-	Tcl_Release((ClientData) resPtr->statePtr);
+	Tcl_Release(resPtr->statePtr);
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -1571,7 +1571,7 @@ TclGetChannelFromObj(
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
-    Tcl_Preserve((ClientData) statePtr);
+    Tcl_Preserve(statePtr);
     resPtr->interp = interp;
     resPtr->epoch = statePtr->epoch;
 
@@ -4321,7 +4321,7 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
@@ -4409,7 +4409,7 @@ Write(
 	     */
 
 	    saved = -SpaceLeft(bufPtr);
-	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
 
@@ -4719,7 +4719,7 @@ Tcl_GetsObj(
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
 		    gs.charsWrote--;
-		    memmove(dst, dst + 1, (size_t) (dstEnd - dst));
+		    memmove(dst, dst + 1, dstEnd - dst);
 		    dstEnd--;
 		}
 	    }
@@ -5089,7 +5089,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5106,7 +5106,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5402,7 +5402,7 @@ FilterInputBytes(
 	    }
 	    extra = rawLen - gsPtr->rawRead;
 	    memcpy(nextPtr->buf + (BUFFER_PADDING - extra),
-		    raw + gsPtr->rawRead, (size_t) extra);
+		    raw + gsPtr->rawRead, extra);
 	    nextPtr->nextRemoved -= extra;
 	    bufPtr->nextAdded -= extra;
 	}
@@ -5657,7 +5657,7 @@ Tcl_ReadRaw(
          * Copy the current chunk into the read buffer.
          */
 
-	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	memcpy(readBuf, RemovePoint(bufPtr), toCopy);
 	bufPtr->nextRemoved += toCopy;
 	copied += toCopy;
 	readBuf += toCopy;
@@ -6406,7 +6406,7 @@ ReadChars(
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
-	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    memcpy(RemovePoint(nextPtr), src, srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
 	    Tcl_SetObjLength(objPtr, numBytes);
@@ -6512,7 +6512,7 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) srcLen);
+	    memcpy(dstStart, srcStart, srcLen);
 	}
 	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
 	    char *dst = dstStart;
@@ -10406,7 +10406,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
+		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }

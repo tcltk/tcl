@@ -598,7 +598,7 @@ Tcl_SplitPath(
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = TclGetStringFromObj(eltPtr, &len);
-	memcpy(p, str, (size_t) len+1);
+	memcpy(p, str, len+1);
 	p += len+1;
     }
 
