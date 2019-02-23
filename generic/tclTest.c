@@ -2281,14 +2281,14 @@ TesteventProc(
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (command bound to \"testevent\" callback)");
-	Tcl_BackgroundError(interp);
+	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;		/* Avoid looping on errors */
     }
     if (Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
 	    &retval) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
-	Tcl_BackgroundError(interp);
+	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;
     }
     if (retval) {

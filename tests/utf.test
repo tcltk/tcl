@@ -44,16 +44,16 @@ test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
 test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints testbytestring -body {
     expr {"\U014e4e" eq [testbytestring "\xf0\x94\xb9\x8e"]}
 } -result 1
-test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, upper surrogate} testbytestring {
+test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
     expr {"\ud842" eq [testbytestring "\xed\xa1\x82"]}
 } 1
-test utf-1.9 {Tcl_UniCharToUtf: 3 byte sequence, lower surrogate} testbytestring {
+test utf-1.9 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
     expr {"\udc42" eq [testbytestring "\xed\xb1\x82"]}
 } 1
-test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, upper surrogate} testbytestring {
+test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
     expr {[format %c 0xd842] eq [testbytestring "\xed\xa1\x82"]}
 } 1
-test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, lower surrogate} testbytestring {
+test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
     expr {[format %c 0xdc42] eq [testbytestring "\xed\xb1\x82"]}
 } 1
 
@@ -158,10 +158,10 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4e4e\u25a\xff\u543 2
 } "\uff"
-test utf-8.5 {Tcl_UniCharAtIndex: upper surrogate} {
+test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
     string index \ud842 0
 } "\ud842"
-test utf-8.5 {Tcl_UniCharAtIndex: lower surrogate} {
+test utf-8.5 {Tcl_UniCharAtIndex: low surrogate} {
     string index \udc42 0
 } "\udc42"
 

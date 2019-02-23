@@ -534,10 +534,9 @@ MakeByteArray(
     const char *src = TclGetStringFromObj(objPtr, &length);
     ByteArray *byteArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     const char *srcEnd = src + length;
+    Tcl_UniChar ch = 0;
 
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	Tcl_UniChar ch = 0;
-
 	src += TclUtfToUniChar(src, &ch);
 	if (ch > 255) {
 	  proper = 0;
