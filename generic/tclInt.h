@@ -4392,9 +4392,9 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
 	    Tcl_GetUnicodeFromObj(objPtr, NULL))
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj(objPtr, NULL), \
-	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-		(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2))
+    (Tcl_GetByteArrayFromObj(objPtr, NULL) ? \
+	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
+	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : (*(lenPtr) = 0, NULL))
 #endif
 
 /*
