@@ -2916,7 +2916,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary encode hex \U0001f415
     binary scan \U0001f415 a* v; set v
     set str {}
-} -result {}
+} -result * -match glob -returnCodes error
 
 # ----------------------------------------------------------------------
 # cleanup
