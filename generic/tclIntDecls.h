@@ -15,7 +15,6 @@
 #ifndef _TCLINTDECLS
 #define _TCLINTDECLS
 
-#include "tclPort.h"
 
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl

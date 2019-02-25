@@ -116,6 +116,7 @@ GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
@@ -150,7 +151,13 @@ DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${LIBSUFFIX}
 REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
 REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
+TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
+TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
+			  package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde];\
+			  package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]
+TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
+			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
@@ -201,6 +208,7 @@ MKDIR		= mkdir -p
 SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
+LN		= ln
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -410,6 +418,10 @@ TOMMATH_OBJS = \
 	bn_mp_sqrt.${OBJEXT} \
 	bn_mp_sub.${OBJEXT} \
 	bn_mp_sub_d.${OBJEXT} \
+	bn_mp_tc_and.${OBJEXT} \
+	bn_mp_tc_div_2d.${OBJEXT} \
+	bn_mp_tc_or.${OBJEXT} \
+	bn_mp_tc_xor.${OBJEXT} \
 	bn_mp_to_unsigned_bin.${OBJEXT} \
 	bn_mp_to_unsigned_bin_n.${OBJEXT} \
 	bn_mp_toom_mul.${OBJEXT} \
@@ -471,7 +483,34 @@ TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc packages
 
-tcltest: $(TCLSH) $(TEST_DLL_FILE)
+# Test-suite helper (can be used to test Tcl from build directory with all expected modules).
+# To start from windows shell use:
+#   > tcltest.cmd -verbose bps -file fileName.test
+# or from mingw/msys shell:
+#   $ ./tcltest -verbose bps -file fileName.test
+
+tcltest.cmd:
+	@echo 'Create tcltest.cmd helpers';
+	@(\
+	  echo '@echo off'; \
+	  echo 'rem set LANG=en_US'; \
+	  echo 'set BDP=%~dp0'; \
+	  echo 'set OWD=%CD%'; \
+	  echo 'cd /d %TEMP%'; \
+	  echo 'rem "%BDP%\$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" %*'; \
+	  echo '"%BDP%\$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" %*'; \
+	  echo 'cd /d %OWD%'; \
+	) > tcltest.cmd;
+	@(\
+	  echo '#!/bin/sh'; \
+	  echo '#LANG=en_US'; \
+	  echo 'BDP=$$(dirname $$(readlink -f %0))'; \
+	  echo 'cd /tmp'; \
+	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
+	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" "$$@"'; \
+	) > tcltest;
+
+tcltest: $(TCLSH) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
@@ -484,16 +523,29 @@ doc:
 tclzipfile: ${TCL_ZIP_FILE}
 
 ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
-	rm -rf ${TCL_VFS_ROOT}
-	mkdir -p ${TCL_VFS_PATH}
-	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
-	$(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	$(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde
-	$(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg
+	@rm -rf ${TCL_VFS_ROOT}
+	@mkdir -p ${TCL_VFS_PATH}
+	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
+	@( \
+	  $(LN) $$(find $(TOP_DIR)/library/* -maxdepth 0 -type f) ${TCL_VFS_PATH}/ && \
+	  (for D in $$(find $(TOP_DIR)/library/* -maxdepth 0 -type d); do \
+	    mkdir -p "${TCL_VFS_PATH}/$$(basename $$D)"; \
+	    $(LN) -s $$D/* ${TCL_VFS_PATH}/$$(basename $$D)/; \
+	  done) && \
+	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
+	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
+	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg/ \
+	) || ( \
+	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
+	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	  $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
+	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg; \
+	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
 	  cd ${TCL_VFS_ROOT} && \
-	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
+	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
@@ -540,6 +592,11 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
+${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
+	@$(RM) ${TEST_EXE_FILE}
+	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR_NATIVE}/win32/zdll.libset" ; then \
@@ -556,6 +613,9 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 .SUFFIXES: .rc
 
 # Special case object targets
+
+tclTestMain.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DBUILD_tcl $(EXTFLAGS) $(CC_OBJNAME) $(WIN_DIR)/tclAppInit.c
 
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
@@ -830,7 +890,8 @@ install-headers:
 	    do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(INSTALL_DATA_DIR) "$$i"; \
+		$(MKDIR) "$$i"; \
+		chmod 755 "$$i"; \
 		else true; \
 		fi; \
 	    done;
@@ -872,18 +933,12 @@ test: test-tcl test-packages
 test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
-	package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" | $(WINE) ./$(CAT32)
+	-load "$(TEST_LOAD_FACILITIES)" | $(WINE) ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded tcltests 0.1 \"[list source [file normalize $(ROOT_DIR_NATIVE)/tests/tcltests.tcl]];package provide tcltests 0.1\"; \
-	package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
+	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`
@@ -907,7 +962,7 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32)
+	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest
 	$(RM) *.pch *.ilk *.pdb
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
 	$(RM) *.zip

@@ -271,7 +271,8 @@ EXTERN void		Tcl_AsyncMark(Tcl_AsyncHandler async);
 /* 75 */
 EXTERN int		Tcl_AsyncReady(void);
 /* 76 */
-EXTERN void		Tcl_BackgroundError(Tcl_Interp *interp);
+TCL_DEPRECATED("No longer in use, changed to macro")
+void			Tcl_BackgroundError(Tcl_Interp *interp);
 /* 77 */
 TCL_DEPRECATED("Use Tcl_UtfBackslash")
 char			Tcl_Backslash(const char *src, int *readPtr);
@@ -1998,7 +1999,7 @@ typedef struct TclStubs {
     int (*tcl_AsyncInvoke) (Tcl_Interp *interp, int code); /* 73 */
     void (*tcl_AsyncMark) (Tcl_AsyncHandler async); /* 74 */
     int (*tcl_AsyncReady) (void); /* 75 */
-    void (*tcl_BackgroundError) (Tcl_Interp *interp); /* 76 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_BackgroundError) (Tcl_Interp *interp); /* 76 */
     TCL_DEPRECATED_API("Use Tcl_UtfBackslash") char (*tcl_Backslash) (const char *src, int *readPtr); /* 77 */
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 79 */
@@ -3942,13 +3943,13 @@ extern const TclStubs *tclStubsPtr;
 	sizeof(char *), msg, flags, indexPtr)
 #undef Tcl_NewBooleanObj
 #define Tcl_NewBooleanObj(boolValue) \
-	Tcl_NewLongObj((boolValue)!=0)
+	Tcl_NewWideIntObj((boolValue)!=0)
 #undef Tcl_DbNewBooleanObj
 #define Tcl_DbNewBooleanObj(boolValue, file, line) \
-	Tcl_DbNewLongObj((boolValue)!=0, file, line)
+	Tcl_DbNewWideIntObj((boolValue)!=0, file, line)
 #undef Tcl_SetBooleanObj
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetLongObj(objPtr, (boolValue)!=0)
+	Tcl_SetWideIntObj(objPtr, (boolValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
@@ -4070,6 +4071,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
 #undef Tcl_GetUnicode
 #define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
+#undef Tcl_BackgroundError
+#define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 
 /*
  * Deprecated Tcl procedures:
