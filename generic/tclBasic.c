@@ -3870,7 +3870,7 @@ OldMathFuncProc(
 #ifdef ACCEPT_NAN
 	if (result != TCL_OK) {
 	    const Tcl_ObjIntRep *irPtr
-		    = Tcl_FetchIntRep(valuePtr, &tclDoubleType);
+		    = TclFetchIntRep(valuePtr, &tclDoubleType);
 
 	    if (irPtr) {
 		d = irPtr->doubleValue;
@@ -7435,7 +7435,7 @@ ExprCeilFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7475,7 +7475,7 @@ ExprFloorFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7615,7 +7615,7 @@ ExprSqrtFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7662,7 +7662,7 @@ ExprUnaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d = irPtr->doubleValue;
@@ -7726,7 +7726,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d1 = irPtr->doubleValue;
@@ -7741,7 +7741,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d2 = irPtr->doubleValue;
@@ -7889,7 +7889,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (Tcl_FetchIntRep(objv[1], &tclDoubleType)) {
+	if (objv[1]->typePtr == &tclDoubleType) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}

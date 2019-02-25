@@ -1730,15 +1730,15 @@ Tcl_GetStringFromObj(
  *	This function is called in several configurations to provide all
  *	the tools needed to set an object's string representation. The
  *	function is determined by the arguments.
- *	
+ *
  *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes < 0)
  *	    Invalid call -- panic!
- *	
+ *
  *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
  *	    Allocation only - allocate space for (numBytes+1) chars.
  *	    store in objPtr->bytes and return. Also sets
  *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
- *	
+ *
  *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
  *	    Allocate and copy. bytes is assumed to point to chars to
  *	    copy into the string rep. objPtr->length = numBytes. Allocate
@@ -1917,13 +1917,7 @@ Tcl_FetchIntRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    /* If objPtr type doesn't match request, nothing can be fetched */
-    if (objPtr->typePtr != typePtr) {
-	return NULL;
-    }
-
-    /* Type match! objPtr IntRep is the one sought. */
-    return &(objPtr->internalRep);
+    return TclFetchIntRep(objPtr, typePtr);
 }
 
 /*

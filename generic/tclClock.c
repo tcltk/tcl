@@ -452,7 +452,7 @@ ClockGetdatefieldsObjCmd(
      * that it isn't.
      */
 
-    if (Tcl_FetchIntRep(objv[1], &tclBignumType)) {
+    if (objv[1]->typePtr == &tclBignumType) {
 	Tcl_SetObjResult(interp, literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }

@@ -100,6 +100,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewIntObj 0
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
+#   define Tcl_BackgroundError 0
 
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -332,7 +333,7 @@ Tcl_WinTCharToUtf(
     wEnd = (wchar_t *)string + len;
     for (w = (wchar_t *)string; w < wEnd; ) {
 	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling upper surrogates. */
+	    /* Special case for handling high surrogates. */
 	    p += Tcl_UniCharToUtf(-1, p);
 	}
 	blen = Tcl_UniCharToUtf(*w, p);
@@ -340,7 +341,7 @@ Tcl_WinTCharToUtf(
 	w++;
     }
     if (!blen) {
-	/* Special case for handling upper surrogates. */
+	/* Special case for handling high surrogates. */
 	p += Tcl_UniCharToUtf(-1, p);
     }
     Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
@@ -1013,6 +1014,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
     TclBN_mp_get_int, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_tc_div_2d, /* 76 */
 };
 
 static const TclStubHooks tclStubHooks = {

@@ -290,7 +290,7 @@ static const Tcl_ObjType encodingType = {
 #define EncodingGetIntRep(objPtr, encoding)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep ((objPtr), &encodingType);		\
+	irPtr = TclFetchIntRep ((objPtr), &encodingType);		\
 	(encoding) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 

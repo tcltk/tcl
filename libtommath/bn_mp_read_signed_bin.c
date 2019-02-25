@@ -9,8 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* read signed bin, big endian, first byte is 0==positive or 1==negative */

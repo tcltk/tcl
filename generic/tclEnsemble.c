@@ -95,7 +95,7 @@ static const Tcl_ObjType ensembleCmdType = {
 #define ECRGetIntRep(objPtr, ecRepPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &ensembleCmdType);		\
+	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
 	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 

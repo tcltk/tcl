@@ -1605,7 +1605,7 @@ TclOODefineDefnNsObjCmd(
 		"may not modify the definition namespace of the root classes",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;	
+	return TCL_ERROR;
     }
 
     /*
@@ -1971,7 +1971,7 @@ TclOODefineMethodObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
 	return TCL_ERROR;
     }
-    
+
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;

@@ -109,10 +109,10 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static int		GetEndOffsetFromObj(Tcl_Obj *objPtr,
-			    Tcl_WideInt endValue, Tcl_WideInt *indexPtr);
+			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
+			    size_t endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -3702,9 +3702,9 @@ GetWideForIndex(
                                  * NULL, then no error message is left after
                                  * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
+    size_t endValue,            /* The value to be stored at *widePtr if
                                  * objPtr holds "end".
-				 * NOTE: this value may be negative. */
+                                 * NOTE: this value may be TCL_INDEX_NONE. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
                                  * representing an index. */
 {
@@ -3716,21 +3716,18 @@ GetWideForIndex(
     if (code == TCL_OK) {
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
-	    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
+	    *widePtr = *(Tcl_WideInt *)cd;
 	    return TCL_OK;
 	}
-	if (numType == TCL_NUMBER_BIG) {
-	    /* objPtr holds an integer outside the signed wide range */
-	    /* Truncate to the signed wide range. */
-	    if (mp_isneg((mp_int *)cd)) {
-		*widePtr = WIDE_MIN;
-	    } else {
-		*widePtr = WIDE_MAX;
-	    }
-	    return TCL_OK;
+	if (numType != TCL_NUMBER_BIG) {
+	    /* Must be a double -> not a valid index */
+	    goto parseError;
 	}
-	/* Must be a double -> not a valid index */
-	goto parseError;
+
+	/* objPtr holds an integer outside the signed wide range */
+	/* Truncate to the signed wide range. */
+	*widePtr = mp_isneg((mp_int *)cd) ? WIDE_MIN : WIDE_MAX;
+    return TCL_OK;
     }
 
     /* objPtr does not hold a number, check the end+/- format... */
@@ -3838,7 +3835,7 @@ GetWideForIndex(
 
 		if (numType == TCL_NUMBER_INT) {
 		    /* sum holds an integer in the signed wide range */
-		    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
+			*widePtr = *(Tcl_WideInt *)cd;
 		} else {
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
@@ -3911,8 +3908,8 @@ TclGetIntForIndex(
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < INT_MIN) {
-	*indexPtr = INT_MIN;
+    if (wide < 0) {
+	*indexPtr = -1;
     } else if (wide > INT_MAX) {
 	*indexPtr = INT_MAX;
     } else {
@@ -3940,7 +3937,7 @@ TclGetIntForIndex(
 static int
 GetEndOffsetFromObj(
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_WideInt endValue,       /* The value to be stored at "indexPtr" if
+    size_t endValue,            /* The value to be stored at "indexPtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3948,7 +3945,7 @@ GetEndOffsetFromObj(
     Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
-    while ((irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
@@ -4010,21 +4007,15 @@ GetEndOffsetFromObj(
 
     offset = irPtr->wideValue;
 
-    if ((endValue ^ offset) < 0) {
+    if (endValue == (size_t)-1) {
+        *widePtr = offset - 1;
+    } else if (offset < 0) {
         /* Different signs, sum cannot overflow */
         *widePtr = endValue + offset;
-    } else if (endValue >= 0) {
-        if (endValue < WIDE_MAX - offset) {
-            *widePtr = endValue + offset;
-        } else {
-            *widePtr = WIDE_MAX;
-        }
+    } else if (endValue < (Tcl_WideUInt)WIDE_MAX - offset) {
+        *widePtr = endValue + offset;
     } else {
-        if (endValue > WIDE_MIN - offset) {
-            *widePtr = endValue + offset;
-        } else {
-            *widePtr = WIDE_MIN;
-        }
+        *widePtr = WIDE_MAX;
     }
     return TCL_OK;
 }
@@ -4041,7 +4032,7 @@ GetEndOffsetFromObj(
  *      arithmetic expressions. The absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	those integer values >= TCL_INDEX_START (0)
- *	and < TCL_INDEX_AFTER (INT_MAX).
+ *	and < INT_MAX.
  *      The largest string supported in Tcl 8 has bytelength INT_MAX.
  *      This means the largest supported character length is also INT_MAX,
  *      and the index of the last character in a string of length INT_MAX
@@ -4050,9 +4041,9 @@ GetEndOffsetFromObj(
  *      Any absolute index value parsed outside that range is encoded
  *      using the before and after values passed in by the
  *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_AFTER
+ *      less than or greater than the usable index range. TCL_INDEX_NONE
  *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_BEFORE is good for
+ *      after. Likewise, the value TCL_INDEX_NONE is good for
  *      most callers to use for before.  Other values are possible
  *      when the caller knows it is helpful in producing its own behavior
  *      for indices before and after the indexed item.
@@ -4165,10 +4156,14 @@ TclIndexDecode(
     int encoded,	/* Value to decode */
     int endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded <= TCL_INDEX_END) {
-	return (encoded - TCL_INDEX_END) + endValue;
+    if (encoded > TCL_INDEX_END) {
+	return encoded;
     }
-    return encoded;
+    endValue += encoded - TCL_INDEX_END;
+    if (endValue >= 0) {
+	return endValue;
+    }
+    return TCL_INDEX_NONE;
 }
 
 /*

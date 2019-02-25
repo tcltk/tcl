@@ -24,7 +24,6 @@
 #include <sys/eventfd.h>
 #endif /* HAVE_EVENTFD */
 #include <sys/queue.h>
-#include <unistd.h>
 
 /*
  * This structure is used to keep track of the notifier info for a registered
