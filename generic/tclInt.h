@@ -4378,7 +4378,9 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
    }
    static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
-      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
+      if (response) {
+          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
+      }
       return response;
    }
 #else
