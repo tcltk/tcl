@@ -2606,7 +2606,7 @@ Tcl_LpopObjCmd(
      * First, extract the element to be returned.
      * TclLindexFlat adds a ref count which is handled.
      */
-    
+
     if (objc == 2) {
 	elemPtr = elemPtrs[listLen - 1];
 	Tcl_IncrRefCount(elemPtr);
@@ -2639,7 +2639,7 @@ Tcl_LpopObjCmd(
 	    return TCL_ERROR;
 	}
     }
-    
+
     listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
     if (listPtr == NULL) {
 	return TCL_ERROR;
@@ -3239,12 +3239,11 @@ Tcl_LsearchObjCmd(
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		int encoded = 0;
-		if (TclIndexEncode(interp, indices[j], TCL_INDEX_BEFORE,
-			TCL_INDEX_AFTER, &encoded) != TCL_OK) {
+		if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
+			TCL_INDEX_NONE, &encoded) != TCL_OK) {
 		    result = TCL_ERROR;
 		}
-		if ((encoded == TCL_INDEX_BEFORE)
-			|| (encoded == TCL_INDEX_AFTER)) {
+		if (encoded == TCL_INDEX_NONE) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indices[j])));
@@ -3959,10 +3958,9 @@ Tcl_LsortObjCmd(
 	    for (j=0 ; j<indexc ; j++) {
 		int encoded = 0;
 		int result = TclIndexEncode(interp, indexv[j],
-			TCL_INDEX_BEFORE, TCL_INDEX_AFTER, &encoded);
+			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
 
-		if ((result == TCL_OK) && ((encoded == TCL_INDEX_BEFORE)
-			|| (encoded == TCL_INDEX_AFTER))) {
+		if ((result == TCL_OK) && (encoded == TCL_INDEX_NONE)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" cannot select an element "
 			    "from any list", Tcl_GetString(indexv[j])));
@@ -4051,7 +4049,8 @@ Tcl_LsortObjCmd(
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
 	    /* Prescreened values, no errors or out of range possible */
-	    TclIndexEncode(NULL, indexv[j], 0, 0, &sortInfo.indexv[j]);
+	    TclIndexEncode(NULL, indexv[j], TCL_INDEX_NONE,
+		    TCL_INDEX_NONE, &sortInfo.indexv[j]);
 	}
     }
 
@@ -4721,9 +4720,16 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-		    "element %d missing from sublist \"%s\"",
-		    index, TclGetString(objPtr)));
+	    if (index == TCL_INDEX_NONE) {
+		index = TCL_INDEX_END - infoPtr->indexv[i];
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element end-%d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    } else {
+		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+			"element %d missing from sublist \"%s\"",
+			index, TclGetString(objPtr)));
+	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;

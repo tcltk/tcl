@@ -14,12 +14,56 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Utilities
+file delete [set path(test-signalfile)  [makeFile {} test-signalfile]]
+set path(test-signalfile2) [makeFile {} test-signalfile2]
+# $path(sleep) time ?filename? -- sleep for time (in ms) and stop if it gets signaled (file gets deleted)
 set path(sleep) [makeFile {
-    after [expr $argv*1000]
+    after [expr {[lindex $argv 0]*1000}] {set stop 1}
+    if {[set fn [lindex $::argv 1]] ne ""} {
+	close [open $fn w]
+	proc check {} {
+	    if {![file exists $::fn]} { # exit signaled
+		after 10 {set ::stop 2}
+	    }
+	    after 10 check
+	}
+	after 10 check
+    }
+    vwait stop
     exit
 } sleep]
+
+proc wait_for_file {fn {timeout 10000}} {
+    if {![file exists $fn]} {
+	set toev [after $timeout {set found 0}]
+	proc check {fn} {
+	    if {[file exists $fn]} {
+		set ::found 1
+		return
+	    }
+	    after 10 [list check $fn]
+	}
+	after 10 [list check $fn]
+	vwait ::found
+	after cancel $toev
+	unset ::found
+    }
+    file exists $fn
+}
+proc signal_exit {fn {wait 1}} {
+    # wait for until file created if expected:
+    if {!$wait || [wait_for_file $fn]} {
+	# delete file to signal exit for child-process:
+	while {1} {
+	    if {![catch { file delete $fn } msg opt]
+		|| [lrange [dict get $opt -errorcode] 0 1] ne {POSIX EACCES}
+	    } break
+	}
+    }
+}
+
 set path(exit) [makeFile {
-    exit $argv
+    exit [lindex $argv 0]
 } exit]
 
 # Basic syntax checking
@@ -213,10 +257,13 @@ test process-5.3 {exec 3-stage pipe} -body {
 }
 
 # Async child status
-test process-6.1 {async status} -body {
+test process-6.1 {async status} -setup {
+    signal_exit $path(test-signalfile) 0; # clean signal-file
+} -body {
     tcl::process autopurge 0
-    set pid [exec [interpreter] $path(sleep) 1 &]
+    set pid [exec [interpreter] $path(sleep) 1 $path(test-signalfile) &]
     set status1 [lindex [tcl::process status $pid] 1]
+    signal_exit $path(test-signalfile); # signal exit (stop sleep)
     set status2 [lindex [tcl::process status -wait $pid] 1]
     expr {
            $status1 eq {}
@@ -226,19 +273,24 @@ test process-6.1 {async status} -body {
     tcl::process purge
     tcl::process autopurge 1
 }
-test process-6.2 {selective wait} -body {
+test process-6.2 {selective wait} -setup {
+    signal_exit $path(test-signalfile)  0; # clean signal-files
+    signal_exit $path(test-signalfile2) 0;
+} -body {
     tcl::process autopurge 0
     # Child 1 sleeps 1s
-    set pid1 [exec [interpreter] $path(sleep) 1 &]
+    set pid1 [exec [interpreter] $path(sleep) 1 $path(test-signalfile) &]
     # Child 2 sleeps 1s
-    set pid2 [exec [interpreter] $path(sleep) 2 &]
+    set pid2 [exec [interpreter] $path(sleep) 2 $path(test-signalfile2) &]
     # Initial status
     set status1_1 [lindex [tcl::process status $pid1] 1]
     set status1_2 [lindex [tcl::process status $pid2] 1]
     # Wait until child 1 termination
+    signal_exit $path(test-signalfile); # signal exit for pid1 (stop sleep)
     set status2_1 [lindex [tcl::process status -wait $pid1] 1]
     set status2_2 [lindex [tcl::process status $pid2] 1]
     # Wait until child 2 termination
+    signal_exit $path(test-signalfile2); # signal exit for pid2 (stop sleep)
     set status3_2 [lindex [tcl::process status -wait $pid2] 1]
     set status3_1 [lindex [tcl::process status $pid1] 1]
     expr {
@@ -280,5 +332,7 @@ test process-7.3 {child killed} -constraints {win} -body {
     tcl::process autopurge 1
 }
 
+rename wait_for_file {}
+rename signal_exit {}
 ::tcltest::cleanupTests
 return

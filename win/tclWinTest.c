@@ -399,11 +399,11 @@ TestplatformChmod(
 {
     static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION
 	    | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
-    /* don't deny DELETE mask (reset writable only, allow test-cases cleanup) */
+    /* don't reset change permissions mask (WRITE_DAC, allow test-cases restore it to cleanup) */
     static const DWORD readOnlyMask = FILE_DELETE_CHILD | FILE_ADD_FILE
 	    | FILE_ADD_SUBDIRECTORY | FILE_WRITE_EA | FILE_APPEND_DATA
 	    | FILE_WRITE_DATA
-	    /* | DELETE */;
+	    | DELETE;
 
     /*
      * References to security functions (only available on NT and later).
@@ -572,7 +572,7 @@ TestplatformChmod(
      */
 
     if (set_readOnly == acl_readOnly_found || SetNamedSecurityInfoA(
-	    (LPSTR) nativePath, SE_FILE_OBJECT, 
+	    (LPSTR) nativePath, SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION /*| PROTECTED_DACL_SECURITY_INFORMATION*/,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
