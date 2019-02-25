@@ -291,7 +291,7 @@ int
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
-    return objPtr->typePtr == &properByteArrayType;
+    return TclHasIntRep(objPtr, &properByteArrayType);
 }
 
 /*
@@ -554,10 +554,10 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
+    if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
     }
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if (TclHasIntRep(objPtr, &tclByteArrayType)) {
 	return TCL_OK;
     }
 

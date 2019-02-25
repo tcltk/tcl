@@ -1983,7 +1983,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && (objPtr->typePtr == &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && TclHasIntRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
