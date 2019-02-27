@@ -643,7 +643,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &tclByteArrayType, &ir);
@@ -664,7 +664,7 @@ DupProperByteArrayInternalRep(
     copyArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
