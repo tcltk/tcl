@@ -660,11 +660,11 @@ ConsoleInputProc(
 	 */
 
 	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = bufSize;
 	    infoPtr->offset += bufSize;
 	} else {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
 	    /*
@@ -771,7 +771,7 @@ ConsoleOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(threadInfo->readyEvent);
 	TclPipeThreadSignal(&threadInfo->TI);

@@ -274,8 +274,8 @@ TclpAlloc(
 
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
-	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+	    bigBlockPtr = (struct block *) TclpSysAlloc(
+		    sizeof(struct block) + OVERHEAD + numBytes, 0);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -604,7 +604,7 @@ TclpRealloc(
 	if (maxSize < numBytes) {
 	    numBytes = maxSize;
 	}
-	memcpy(newPtr, oldPtr, (size_t) numBytes);
+	memcpy(newPtr, oldPtr, numBytes);
 	TclpFree(oldPtr);
 	return newPtr;
     }

@@ -900,7 +900,7 @@ Tcl_AfterObjCmd(
 	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
-		    && !memcmp(command, tempCommand, (unsigned) length)) {
+		    && !memcmp(command, tempCommand, length)) {
 		break;
 	    }
 	}

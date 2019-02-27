@@ -3227,7 +3227,7 @@ TclStringCat(
 	    if (TclIsPureByteArray(objPtr)) {
 		int more;
 		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
-		memcpy(dst, src, (size_t) more);
+		memcpy(dst, src, more);
 		dst += more;
 	    }
 	}
@@ -3326,7 +3326,7 @@ TclStringCat(
 		int more;
 		char *src = Tcl_GetStringFromObj(objPtr, &more);
 
-		memcpy(dst, src, (size_t) more);
+		memcpy(dst, src, more);
 		dst += more;
 	    }
 	}

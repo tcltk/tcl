@@ -876,7 +876,7 @@ Tcl_CreateNamespace(
     name = Tcl_DStringValue(namePtr);
     nameLen = Tcl_DStringLength(namePtr);
     nsPtr->fullName = ckalloc(nameLen + 1);
-    memcpy(nsPtr->fullName, name, (unsigned) nameLen + 1);
+    memcpy(nsPtr->fullName, name, nameLen + 1);
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
@@ -1462,7 +1462,7 @@ Tcl_Export(
 
     len = strlen(pattern);
     patternCpy = ckalloc(len + 1);
-    memcpy(patternCpy, pattern, (unsigned) len + 1);
+    memcpy(patternCpy, pattern, len + 1);
 
     nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
     nsPtr->numExportPatterns++;

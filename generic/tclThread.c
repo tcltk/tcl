@@ -73,13 +73,13 @@ Tcl_GetThreadData(
 
     if (result == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t) size);
+	memset(result, 0, size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t)size);
+	memset(result, 0, size);
 	*keyPtr = result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {

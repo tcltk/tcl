@@ -4408,7 +4408,7 @@ Tcl_CancelEval(
     if (resultObjPtr != NULL) {
 	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
-	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;

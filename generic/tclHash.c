@@ -1015,8 +1015,8 @@ RebuildTable(
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
-		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
+	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc(
+		tablePtr->numBuckets * sizeof(Tcl_HashEntry *), 0);
     } else {
 	tablePtr->buckets =
 		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));

@@ -2607,7 +2607,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = ckalloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2641,7 +2641,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = ckalloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2670,7 +2670,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = ckalloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2697,7 +2697,7 @@ ForwardProc(
 
 	    if (bytec > 0) {
 		paramPtr->transform.buf = ckalloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, (size_t)bytec);
+		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2810,7 +2810,7 @@ ForwardSetObjError(
 
     len++;
     ForwardSetDynamicError(paramPtr, ckalloc(len));
-    memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
+    memcpy(paramPtr->base.msgStr, msgStr, len);
 }
 #endif /* TCL_THREADS */
 

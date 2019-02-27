@@ -260,7 +260,7 @@ TclSetEnv(
 	Tcl_DStringFree(&envString);
 
 	oldValue = environ[index];
-	nameLength = (unsigned) length;
+	nameLength = length;
     }
 
     /*
@@ -281,7 +281,7 @@ TclSetEnv(
      */
 
     p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
-    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
+    memcpy(p, p2, Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -442,19 +442,19 @@ TclUnsetEnv(
 
 #if defined(_WIN32)
     string = ckalloc(length + 2);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
     string = ckalloc(length + 1);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
-	    (unsigned) Tcl_DStringLength(&envString)+1);
+	    Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
 
     putenv(string);
