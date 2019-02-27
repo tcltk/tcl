@@ -329,7 +329,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (TclFetchIntRep(objv[3], &tclProcBodyType)) {
+    if (TclHasIntRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 

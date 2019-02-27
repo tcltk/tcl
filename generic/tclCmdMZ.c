@@ -1221,8 +1221,8 @@ Tcl_SplitObjCmd(
 	    fullchar = ch;
 
 #if TCL_UTF_MAX <= 4
-	    if (!len) {
-		len += TclUtfToUniChar(stringPtr, &ch);
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len += TclUtfToUniChar(stringPtr + len, &ch);
 		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
@@ -1444,11 +1444,11 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 
 	    length = Tcl_UniCharToUtf(ch, buf);
-	    if (!length) {
-		length = Tcl_UniCharToUtf(-1, buf);
+	    if ((ch >= 0xD800) && (length < 3)) {
+		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
 	}
@@ -1641,9 +1641,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if ((objPtr->typePtr == &tclDoubleType) ||
-		(objPtr->typePtr == &tclIntType) ||
-		(objPtr->typePtr == &tclBignumType)) {
+	if (TclHasIntRep(objPtr, &tclDoubleType) ||
+		TclHasIntRep(objPtr, &tclIntType) ||
+		TclHasIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1672,8 +1672,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if ((objPtr->typePtr == &tclIntType) ||
-		(objPtr->typePtr == &tclBignumType)) {
+	if (TclHasIntRep(objPtr, &tclIntType) ||
+		TclHasIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1854,8 +1854,8 @@ StringIsCmd(
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    fullchar = ch;
 #if TCL_UTF_MAX <= 4
-	    if (!length2) {
-	    	length2 = TclUtfToUniChar(string1, &ch);
+	    if ((ch >= 0xD800) && (length2 < 3)) {
+	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
 	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
@@ -1935,7 +1935,7 @@ StringMapCmd(
 	const char *string = TclGetStringFromObj(objv[1], &length2);
 
 	if ((length2 > 1) &&
-		strncmp(string, "-nocase", (size_t) length2) == 0) {
+		strncmp(string, "-nocase", length2) == 0) {
 	    nocase = 1;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1952,7 +1952,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && (objv[objc-2]->typePtr == &tclDictType)){
+	    && TclHasIntRep(objv[objc-2], &tclDictType)){
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -2114,7 +2114,7 @@ StringMapCmd(
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
-			!strCmpFn(ustring2, ustring1, (unsigned) length2))) {
+			!strCmpFn(ustring2, ustring1, length2))) {
 		    if (p != ustring1) {
 			/*
 			 * Put the skipped chars onto the result first.
@@ -2203,7 +2203,7 @@ StringMatchCmd(
 	const char *string = TclGetStringFromObj(objv[1], &length);
 
 	if ((length > 1) &&
-	    strncmp(string, "-nocase", (size_t) length) == 0) {
+	    strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2605,10 +2605,10 @@ StringEqualCmd(
 
     for (i = 1; i < objc-2; i++) {
 	string2 = TclGetStringFromObj(objv[i], &length);
-	if ((length > 1) && !strncmp(string2, "-nocase", (size_t)length)) {
+	if ((length > 1) && !strncmp(string2, "-nocase", length)) {
 	    nocase = 1;
 	} else if ((length > 1)
-		&& !strncmp(string2, "-length", (size_t)length)) {
+		&& !strncmp(string2, "-length", length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
@@ -2703,10 +2703,10 @@ TclStringCmpOpts(
 
     for (i = 1; i < objc-2; i++) {
 	string = TclGetStringFromObj(objv[i], &length);
-	if ((length > 1) && !strncmp(string, "-nocase", (size_t)length)) {
+	if ((length > 1) && !strncmp(string, "-nocase", length)) {
 	    *nocase = 1;
 	} else if ((length > 1)
-		&& !strncmp(string, "-length", (size_t)length)) {
+		&& !strncmp(string, "-length", length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
