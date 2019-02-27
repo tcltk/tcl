@@ -921,7 +921,7 @@ Tcl_UtfToUpper(
 	 */
 
 	if ((bytes < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(upChar, dst);
@@ -984,7 +984,7 @@ Tcl_UtfToLower(
 	 */
 
 	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);
@@ -1044,7 +1044,7 @@ Tcl_UtfToTitle(
 	titleChar = Tcl_UniCharToTitle(titleChar);
 
 	if ((bytes < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(titleChar, dst);
@@ -1068,7 +1068,7 @@ Tcl_UtfToTitle(
 	}
 
 	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memcpy(dst, src, bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);

@@ -1326,7 +1326,7 @@ ReflectInput(
     *errorCodePtr = EOK;
 
     if (bytec > 0) {
-	memcpy(buf, bytev, (size_t) bytec);
+	memcpy(buf, bytev, bytec);
     }
 
  stop:
@@ -3008,7 +3008,7 @@ ForwardProc(
 		paramPtr->input.toRead = -1;
 	    } else {
 		if (bytec > 0) {
-		    memcpy(paramPtr->input.buf, bytev, (size_t) bytec);
+		    memcpy(paramPtr->input.buf, bytev, bytec);
 		}
 		paramPtr->input.toRead = bytec;
 	    }
@@ -3298,7 +3298,7 @@ ForwardSetObjError(
 
     len++;
     ForwardSetDynamicError(paramPtr, ckalloc(len));
-    memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
+    memcpy(paramPtr->base.msgStr, msgStr, len);
 }
 #endif
 

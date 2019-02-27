@@ -4320,7 +4320,7 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
@@ -4408,7 +4408,7 @@ Write(
 	     */
 
 	    saved = -SpaceLeft(bufPtr);
-	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
 
@@ -5086,7 +5086,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5103,7 +5103,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5654,7 +5654,7 @@ Tcl_ReadRaw(
          * Copy the current chunk into the read buffer.
          */
 
-	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	memcpy(readBuf, RemovePoint(bufPtr), toCopy);
 	bufPtr->nextRemoved += toCopy;
 	copied += toCopy;
 	readBuf += toCopy;
@@ -6402,7 +6402,7 @@ ReadChars(
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
-	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    memcpy(RemovePoint(nextPtr), src, srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
 	    Tcl_SetObjLength(objPtr, numBytes);
@@ -6508,7 +6508,7 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) srcLen);
+	    memcpy(dstStart, srcStart, srcLen);
 	}
 	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
 	    char *dst = dstStart;
@@ -6665,7 +6665,7 @@ Tcl_Ungets(
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     bufPtr = AllocChannelBuffer(len);
-    memcpy(InsertPoint(bufPtr), str, (size_t) len);
+    memcpy(InsertPoint(bufPtr), str, len);
     bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == NULL) {

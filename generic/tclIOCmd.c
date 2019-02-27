@@ -952,7 +952,7 @@ Tcl_ExecObjCmd(
      */
 
     argc = objc - skip;
-    argv = TclStackAlloc(interp, (unsigned)(argc + 1) * sizeof(char *));
+    argv = TclStackAlloc(interp, (argc + 1) * sizeof(char *));
 
     /*
      * Copy the string conversions of each (post option) object into the

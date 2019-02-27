@@ -978,8 +978,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned)len + 1);
+		char *quotedElementStr = TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1030,8 +1029,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned) len + 1);
+		char *quotedElementStr = TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);

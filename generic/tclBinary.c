@@ -421,7 +421,7 @@ Tcl_SetByteArrayObj(
     byteArrayPtr->allocated = length;
 
     if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+	memcpy(byteArrayPtr->bytes, bytes, length);
     }
     SET_BYTEARRAY(&ir, byteArrayPtr);
 
@@ -653,7 +653,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &tclByteArrayType, &ir);
@@ -674,7 +674,7 @@ DupProperByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
@@ -1076,7 +1076,7 @@ BinaryFormatCmd(
 
     resultPtr = Tcl_NewObj();
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
-    memset(buffer, 0, (size_t) length);
+    memset(buffer, 0, length);
 
     /*
      * Pack the data into the result object. Note that we can skip the
@@ -1113,10 +1113,10 @@ BinaryFormatCmd(
 		count = 1;
 	    }
 	    if (length >= count) {
-		memcpy(cursor, bytes, (size_t) count);
+		memcpy(cursor, bytes, count);
 	    } else {
-		memcpy(cursor, bytes, (size_t) length);
-		memset(cursor + length, pad, (size_t) (count - length));
+		memcpy(cursor, bytes, length);
+		memset(cursor + length, pad, count - length);
 	    }
 	    cursor += count;
 	    break;
@@ -1305,7 +1305,7 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    memset(cursor, 0, (size_t) count);
+	    memset(cursor, 0, count);
 	    cursor += count;
 	    break;
 	case 'X':

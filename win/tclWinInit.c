@@ -269,7 +269,7 @@ AppendEnvironment(
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
+	    if ((size_t)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;
@@ -637,7 +637,7 @@ TclpFindVariable(
 
     length = strlen(name);
     nameUpper = ckalloc(length + 1);
-    memcpy(nameUpper, name, (size_t) length+1);
+    memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);

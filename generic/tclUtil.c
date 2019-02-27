@@ -905,7 +905,7 @@ Tcl_SplitList(
 	}
 	argv[i] = p;
 	if (literal) {
-	    memcpy(p, element, (size_t) elSize);
+	    memcpy(p, element, elSize);
 	    p += elSize;
 	    *p = 0;
 	    p++;
@@ -2049,7 +2049,7 @@ Tcl_Concat(
 	if (needSpace) {
 	    *p++ = ' ';
 	}
-	memcpy(p, element, (size_t) elemLength);
+	memcpy(p, element, elemLength);
 	p += elemLength;
 	needSpace = 1;
     }
@@ -2751,7 +2751,7 @@ Tcl_DStringAppend(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2854,7 +2854,7 @@ Tcl_DStringAppendElement(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2948,7 +2948,7 @@ Tcl_DStringSetLength(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);

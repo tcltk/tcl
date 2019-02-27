@@ -4420,8 +4420,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (unsigned) (len)); \
+	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4541,19 +4541,19 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
 	    newPtr = (Tcl_Token *) attemptckrealloc((char *) oldPtr,	\
-		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
+		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		if (allocated > TCL_MAX_TOKENS) {			\
 		    allocated = TCL_MAX_TOKENS;				\
 		}							\
 		newPtr = (Tcl_Token *) ckrealloc((char *) oldPtr,	\
-			(unsigned int) (allocated * sizeof(Tcl_Token))); \
+			allocated * sizeof(Tcl_Token)); \
 	    }								\
 	    (available) = allocated;					\
 	    if (oldPtr == NULL) {					\
 		memcpy(newPtr, staticPtr,				\
-			(size_t) ((used) * sizeof(Tcl_Token)));		\
+			(used) * sizeof(Tcl_Token));		\
 	    }								\
 	    (tokenPtr) = newPtr;					\
 	}								\

@@ -2114,7 +2114,7 @@ StringMapCmd(
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
-			!strCmpFn(ustring2, ustring1, (unsigned) length2))) {
+			!strCmpFn(ustring2, ustring1, length2))) {
 		    if (p != ustring1) {
 			/*
 			 * Put the skipped chars onto the result first.
