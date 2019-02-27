@@ -5006,7 +5006,7 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
@@ -5018,8 +5018,8 @@ TEBCresume(
 		objResultPtr = Tcl_NewObj();
 	    } else {
 		slength = Tcl_UniCharToUtf(ch, buf);
-		if (!slength) {
-		    slength = Tcl_UniCharToUtf(-1, buf);
+		if ((ch >= 0xD800) && (slength < 3)) {
+		    slength += Tcl_UniCharToUtf(-1, buf + slength);
 		}
 		objResultPtr = Tcl_NewStringObj(buf, slength);
 	    }

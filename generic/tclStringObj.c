@@ -1951,9 +1951,9 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
-	    if (!length) {
+	    if ((code >= 0xD800) && (length < 3)) {
 		/* Special case for handling high surrogates. */
-		length = Tcl_UniCharToUtf(-1, buf);
+		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
