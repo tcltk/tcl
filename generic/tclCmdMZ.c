@@ -1223,8 +1223,8 @@ Tcl_SplitObjCmd(
 	    fullchar = ch;
 
 #if TCL_UTF_MAX <= 4
-	    if (!len) {
-		len += TclUtfToUniChar(stringPtr, &ch);
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len += TclUtfToUniChar(stringPtr + len, &ch);
 		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
@@ -1446,11 +1446,11 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 
 	    end = Tcl_UniCharToUtf(ch, buf);
-	    if (!end) {
-		end = Tcl_UniCharToUtf(-1, buf);
+	    if ((ch >= 0xD800) && (end < 3)) {
+		end += Tcl_UniCharToUtf(-1, buf + end);
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
 	}
@@ -1858,8 +1858,8 @@ StringIsCmd(
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    fullchar = ch;
 #if TCL_UTF_MAX <= 4
-	    if (!length2) {
-	    	length2 = TclUtfToUniChar(string1, &ch);
+	    if ((ch >= 0xD800) && (length2 < 3)) {
+	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
 	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
