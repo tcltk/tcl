@@ -2384,8 +2384,8 @@ UtfToUtfProc(
 	    src += len;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 #if TCL_UTF_MAX <= 4
-	    if (!len) {
-		src += TclUtfToUniChar(src, chPtr);
+	    if ((*chPtr >= 0xD800) && (len < 3)) {
+		src += TclUtfToUniChar(src + len, chPtr);
 		dst += Tcl_UniCharToUtf(*chPtr, dst);
 	    }
 #endif
@@ -3006,7 +3006,7 @@ Iso88591FromUtfProc(
 
 	if (ch > 0xff
 #if TCL_UTF_MAX <= 4
-		|| !len
+		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
@@ -3014,7 +3014,7 @@ Iso88591FromUtfProc(
 		break;
 	    }
 #if TCL_UTF_MAX <= 4
-	    if (!len) len = 4;
+	    if ((ch >= 0xD800) && (len < 3)) len = 4;
 #endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
@@ -3443,7 +3443,7 @@ EscapeFromUtfProc(
 		    break;
 		}
 		memcpy(dst, subTablePtr->sequence,
-			(size_t) subTablePtr->sequenceLen);
+			subTablePtr->sequenceLen);
 		dst += subTablePtr->sequenceLen;
 	    }
 	}
