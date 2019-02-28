@@ -276,7 +276,7 @@ int
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
-    return objPtr->typePtr == &properByteArrayType;
+    return TclHasIntRep(objPtr, &properByteArrayType);
 }
 
 /*
@@ -582,7 +582,7 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
+    if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
     }
 
@@ -1327,7 +1327,7 @@ BinaryFormatCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1702,7 +1702,7 @@ BinaryScanCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
