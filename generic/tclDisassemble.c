@@ -1389,7 +1389,7 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if ((objv[2]->typePtr != &tclByteCodeType) && (TCL_OK
+	if (!TclHasIntRep(objv[2], &tclByteCodeType) && (TCL_OK
 		!= TclSetByteCodeFromAny(interp, objv[2], NULL, NULL))) {
 	    return TCL_ERROR;
 	}
@@ -1440,7 +1440,7 @@ Tcl_DisassembleObjCmd(
 	 * Compile if necessary.
 	 */
 
-	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1505,7 +1505,7 @@ Tcl_DisassembleObjCmd(
 	 * Compile if necessary.
 	 */
 
-	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1590,7 +1590,7 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
 	}
-	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*

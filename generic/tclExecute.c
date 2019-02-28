@@ -4559,7 +4559,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (value2Ptr->typePtr != &tclListType)
+		&& !TclHasIntRep(value2Ptr, &tclListType)
 		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
@@ -5006,7 +5006,7 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
@@ -5018,8 +5018,8 @@ TEBCresume(
 		objResultPtr = Tcl_NewObj();
 	    } else {
 		slength = Tcl_UniCharToUtf(ch, buf);
-		if (!slength) {
-		    slength = Tcl_UniCharToUtf(-1, buf);
+		if ((ch >= 0xD800) && (slength < 3)) {
+		    slength += Tcl_UniCharToUtf(-1, buf + slength);
 		}
 		objResultPtr = Tcl_NewStringObj(buf, slength);
 	    }
@@ -6736,7 +6736,7 @@ TEBCresume(
 	}
 	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
-	    if (varPtr->value.objPtr->typePtr == &dictIteratorType) {
+	    if (TclHasIntRep(varPtr->value.objPtr, &dictIteratorType)) {
 		Tcl_Panic("mis-issued dictFirst!");
 	    }
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -9241,7 +9241,7 @@ EvalStatsCmd(
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
-	    if (entryPtr->objPtr->typePtr == &tclByteCodeType) {
+	    if (TclHasIntRep(entryPtr->objPtr, &tclByteCodeType)) {
 		numByteCodeLits++;
 	    }
 	    (void) TclGetStringFromObj(entryPtr->objPtr, &length);

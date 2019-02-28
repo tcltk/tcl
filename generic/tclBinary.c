@@ -291,7 +291,7 @@ int
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
-    return objPtr->typePtr == &properByteArrayType;
+    return TclHasIntRep(objPtr, &properByteArrayType);
 }
 
 /*
@@ -554,10 +554,10 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
+    if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
     }
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if (TclHasIntRep(objPtr, &tclByteArrayType)) {
 	return TCL_OK;
     }
 
@@ -643,7 +643,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &tclByteArrayType, &ir);
@@ -664,7 +664,7 @@ DupProperByteArrayInternalRep(
     copyArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
     SET_BYTEARRAY(&ir, copyArrayPtr);
     Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
@@ -1340,7 +1340,7 @@ BinaryFormatCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1711,7 +1711,7 @@ BinaryScanCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
