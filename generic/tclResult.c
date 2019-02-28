@@ -438,7 +438,7 @@ Tcl_SetResult(
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	memcpy(iPtr->result, result, (unsigned) length+1);
+	memcpy(iPtr->result, result, length+1);
     } else {
 	iPtr->result = (char *) result;
 	iPtr->freeProc = freeProc;
