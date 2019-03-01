@@ -1391,7 +1391,7 @@ Tcl_AppendObjToObj(
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
 
-	if (appendObjPtr->typePtr == &tclStringType) {
+	if (TclHasIntRep(appendObjPtr, &tclStringType)) {
 	    Tcl_UniChar *unicode =
 		    Tcl_GetUnicodeFromObj(appendObjPtr, &numChars);
 
@@ -1412,7 +1412,7 @@ Tcl_AppendObjToObj(
     bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
-    if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
+    if ((numChars >= 0) && TclHasIntRep(appendObjPtr, &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
 
 	appendNumChars = appendStringPtr->numChars;
@@ -2812,7 +2812,7 @@ TclGetStringStorage(
 {
     String *stringPtr;
 
-    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+    if (!TclHasIntRep(objPtr, &tclStringType) || objPtr->bytes == NULL) {
 	return TclGetStringFromObj(objPtr, (int *)sizePtr);
     }
 
@@ -2860,7 +2860,7 @@ TclStringRepeat(
      */
 
     if (!binary) {
-	if (objPtr->typePtr == &tclStringType) {
+	if (TclHasIntRep(objPtr, &tclStringType)) {
 	    String *stringPtr = GET_STRING(objPtr);
 	    if (stringPtr->hasUnicode) {
 		unichar = 1;
@@ -3037,7 +3037,7 @@ TclStringCat(
 	} else {
 	    /* assert (objPtr->typePtr != NULL) -- stork! */
 	    binary = 0;
-	    if (objPtr->typePtr == &tclStringType) {
+	    if (TclHasIntRep(objPtr, &tclStringType)) {
 		/* Have a pure Unicode value; ask to preserve it */
 		requestUniChar = 1;
 	    } else {
@@ -3390,8 +3390,8 @@ TclStringCmp(
 	    s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    memCmpFn = memcmp;
-	} else if ((value1Ptr->typePtr == &tclStringType)
-		&& (value2Ptr->typePtr == &tclStringType)) {
+	} else if (TclHasIntRep(value1Ptr, &tclStringType)
+		&& TclHasIntRep(value2Ptr, &tclStringType)) {
 	    /*
 	     * Do a unicode-specific comparison if both of the args are of
 	     * String type. If the char length == byte length, we can do a
@@ -4166,7 +4166,7 @@ SetStringFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    if (objPtr->typePtr != &tclStringType) {
+    if (!TclHasIntRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 
 	/*
