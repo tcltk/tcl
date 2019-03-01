@@ -1750,8 +1750,8 @@ TestdoubledigitsObjCmd(void *unused,
     status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
-	if (objv[1]->typePtr == doubleType
-	    || TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	if (Tcl_FetchIntRep(objv[1], doubleType)
+	    && TclIsNaN(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
 	}
