@@ -1055,7 +1055,7 @@ TclInvalidateCmdLiteral(
 	    strlen(name), -1, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
-	if (literalObjPtr->typePtr == &tclCmdNameType) {
+	if (TclHasIntRep(literalObjPtr, &tclCmdNameType)) {
 	    TclFreeIntRep(literalObjPtr);
 	}
 	/* Balance the refcount effects of TclCreateLiteral() above */
