@@ -331,7 +331,7 @@ Tcl_UtfToUniChar(
 	    return 3;
 	}
 #endif
-	if (byte-0x80 < 0x20) {
+	if ((unsigned)(byte-0x80) < (unsigned)0x20) {
 	    *chPtr = cp1252[byte-0x80];
 	} else {
 	    *chPtr = byte;
