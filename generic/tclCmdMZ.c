@@ -1085,8 +1085,8 @@ Tcl_SplitObjCmd(
 	    fullchar = ch;
 
 #if TCL_UTF_MAX == 4
-	    if (!len) {
-		len += TclUtfToUniChar(stringPtr, &ch);
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len += TclUtfToUniChar(stringPtr + len, &ch);
 		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
@@ -1425,9 +1425,14 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[TCL_UTF_MAX];
+	    char buf[TCL_UTF_MAX] = "";
 
 	    length = Tcl_UniCharToUtf(ch, buf);
+#if TCL_UTF_MAX > 3
+	    if ((ch >= 0xD800) && (length < 3)) {
+		length += Tcl_UniCharToUtf(-1, buf + length);
+	    }
+#endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
 	}
     }
@@ -1795,8 +1800,8 @@ StringIsCmd(
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    fullchar = ch;
 #if TCL_UTF_MAX == 4
-	    if (!length2) {
-	    	length2 = TclUtfToUniChar(string1, &ch);
+	    if ((ch >= 0xD800) && (length2 < 3)) {
+	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
 	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	    }
 #endif
@@ -1876,7 +1881,7 @@ StringMapCmd(
 	const char *string = TclGetStringFromObj(objv[1], &length2);
 
 	if ((length2 > 1) &&
-		strncmp(string, "-nocase", (size_t) length2) == 0) {
+		strncmp(string, "-nocase", length2) == 0) {
 	    nocase = 1;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2143,7 +2148,7 @@ StringMatchCmd(
 	const char *string = TclGetStringFromObj(objv[1], &length);
 
 	if ((length > 1) &&
-	    strncmp(string, "-nocase", (size_t) length) == 0) {
+	    strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2611,10 +2616,10 @@ StringEqualCmd(
 
     for (i = 1; i < objc-2; i++) {
 	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
+	if ((length2 > 1) && !strncmp(string2, "-nocase", length2)) {
 	    nocase = 1;
 	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
+		&& !strncmp(string2, "-length", length2)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
@@ -2888,10 +2893,10 @@ int TclStringCmpOpts(
 
     for (i = 1; i < objc-2; i++) {
 	string = TclGetStringFromObj(objv[i], &length);
-	if ((length > 1) && !strncmp(string, "-nocase", (size_t)length)) {
+	if ((length > 1) && !strncmp(string, "-nocase", length)) {
 	    *nocase = 1;
 	} else if ((length > 1)
-		&& !strncmp(string, "-length", (size_t)length)) {
+		&& !strncmp(string, "-length", length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }

@@ -260,7 +260,7 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX+1];
+    char buf[TCL_UTF_MAX+1] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -889,7 +889,7 @@ Tcl_ScanObjCmd(
 	    i = (int)sch;
 #if TCL_UTF_MAX == 4
 	    if (!offset) {
-		offset = Tcl_UtfToUniChar(string, &sch);
+		offset = TclUtfToUniChar(string, &sch);
 		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
 	    }
 #endif
