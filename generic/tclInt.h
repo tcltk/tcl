@@ -2876,8 +2876,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_SHORTEST 		0x4
 				/* Use the shortest possible string */
-#define TCL_DD_STEELE   		0x5
-				/* Use the original Steele&White algorithm */
 #define TCL_DD_E_FORMAT 		0x2
 				/* Use a fixed-length string of digits,
 				 * suitable for E format*/
@@ -2893,10 +2891,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_CONVERSION_TYPE_MASK	0x3
 				/* Mask to isolate the conversion type */
-#define TCL_DD_STEELE0 			0x1
-				/* 'Steele&White' after masking */
-#define TCL_DD_SHORTEST0		0x0
-				/* 'Shortest possible' after masking */
 
 /*
  *----------------------------------------------------------------
