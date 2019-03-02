@@ -1957,7 +1957,7 @@ Tcl_UniCharCaseMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*uniStr && (p != *uniStr)
-				&& (p != Tcl_UniCharToLower(*uniStr))) {
+				&& (p != (Tcl_UniChar)Tcl_UniCharToLower(*uniStr))) {
 			    uniStr++;
 			}
 		    } else {
@@ -2149,7 +2149,7 @@ TclUniCharMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while ((string < stringEnd) && (p != *string)
-				&& (p != Tcl_UniCharToLower(*string))) {
+				&& (p != (Tcl_UniChar)Tcl_UniCharToLower(*string))) {
 			    string++;
 			}
 		    } else {
