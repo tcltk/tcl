@@ -1701,7 +1701,7 @@ TestdelassocdataCmd(
  * Parameters:
  *	fpval - Floating-point value to format.
  *	ndigits - Digit count to request from Tcl_DoubleDigits
- *	type - One of 'shortest', 'Steele', 'e', 'f'
+ *	type - One of 'shortest', 'e', 'f'
  *	shorten - Indicates that the 'shorten' flag should be passed in.
  *
  *-----------------------------------------------------------------------------
@@ -1719,14 +1719,12 @@ TestdoubledigitsObjCmd(void *unused,
 {
     static const char* options[] = {
 	"shortest",
-	"Steele",
 	"e",
 	"f",
 	NULL
     };
     static const int types[] = {
 	TCL_DD_SHORTEST,
-	TCL_DD_STEELE,
 	TCL_DD_E_FORMAT,
 	TCL_DD_F_FORMAT
     };
