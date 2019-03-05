@@ -319,9 +319,7 @@ static const CmdInfo builtInCmds[] = {
     {"source",		Tcl_SourceObjCmd,	NULL,			TclNRSourceObjCmd,	0},
     {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-#ifdef TCL_TIMERATE
     {"timerate",	Tcl_TimeRateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-#endif
     {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	0},
     {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -976,17 +974,6 @@ Tcl_CreateInterp(void)
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
-
-    /* Create an unsupported command for timerate */
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::timerate",
-	    Tcl_TimeRateObjCmd, NULL, NULL);
-
-    /* Export unsupported commands */
-    nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
-    if (nsPtr) {
-	Tcl_Export(interp, nsPtr, "*", 1);
-    }
-
 
 #ifdef USE_DTRACE
     /*
