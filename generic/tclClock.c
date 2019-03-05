@@ -1739,9 +1739,7 @@ ClockClicksObjCmd(
 	break;
     }
     case CLICKS_MICROS:
-	Tcl_GetTime(&now);
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-		((Tcl_WideInt) now.sec * 1000000) + now.usec));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
 	break;
     }
 
@@ -1810,15 +1808,11 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj* const* objv)	/* Parameter values */
 {
-    Tcl_Time now;
-
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
     return TCL_OK;
 }
 

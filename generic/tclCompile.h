@@ -859,6 +859,9 @@ MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    const CmdFrame *invoker, int word);
+
 MODULE_SCOPE int	TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const CmdFrame *invoker, int word);
 
@@ -937,6 +940,25 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    CONST char *string, int maxChars);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
+
+static inline void
+TclPreserveByteCode(
+    register ByteCode *codePtr)
+{
+    codePtr->refCount++;
+}
+
+static inline void
+TclReleaseByteCode(
+    register ByteCode *codePtr)
+{
+    if (codePtr->refCount-- > 1) {
+	return;
+    }
+    /* Just dropped to refcount==0.  Clean up. */
+    TclCleanupByteCode(codePtr);
+}
+
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
