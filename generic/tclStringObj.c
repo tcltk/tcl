@@ -2002,9 +2002,9 @@ Tcl_AppendFormatToObj(
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
 #if TCL_UTF_MAX > 3
-	    if (!length) {
-		/* Special case for handling upper surrogates. */
-		length = Tcl_UniCharToUtf(-1, buf);
+	    if ((code >= 0xD800) && (length < 3)) {
+		/* Special case for handling high surrogates. */
+		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
 #endif
 	    segment = Tcl_NewStringObj(buf, length);
@@ -3176,7 +3176,7 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	dst += Tcl_UniCharToUtf((int) unicode[i], dst);
+	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;

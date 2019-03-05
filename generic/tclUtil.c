@@ -1649,7 +1649,7 @@ Tcl_Backslash(
     int *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
 {
-    char buf[TCL_UTF_MAX];
+    char buf[TCL_UTF_MAX] = "";
     Tcl_UniChar ch = 0;
 
     Tcl_UtfBackslash(src, readPtr, buf);

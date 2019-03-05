@@ -5515,7 +5515,7 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[TCL_UTF_MAX];
+	    char buf[TCL_UTF_MAX] = "";
 	    Tcl_UniChar ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*

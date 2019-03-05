@@ -2509,10 +2509,8 @@ static inline const char *
 bypassSpaces(
     register const char *s)
 {
-    if (isspace(UCHAR(*s))) {
-	do {
-	    s++;
-	} while (isspace(UCHAR(*s)));
+    while (TclIsSpaceProc(*s)) {
+	s++;
     }
     return s;
 }

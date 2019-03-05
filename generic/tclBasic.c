@@ -457,7 +457,7 @@ Tcl_CreateInterp(void)
     const BuiltinFuncDef *builtinFuncPtr;
     const OpCmdInfo *opcmdInfoPtr;
     const CmdInfo *cmdInfoPtr;
-    Tcl_Namespace *mathfuncNSPtr, *mathopNSPtr;
+    Tcl_Namespace *nsPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
     CancelInfo *cancelInfo;
@@ -848,9 +848,15 @@ Tcl_CreateInterp(void)
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
 
-    /* Adding the timerate (unsupported) command */
+    /* Create an unsupported command for timerate */
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::timerate",
-        Tcl_TimeRateObjCmd, NULL, NULL);
+	    Tcl_TimeRateObjCmd, NULL, NULL);
+
+    /* Export unsupported commands */
+    nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
+    if (nsPtr) {
+	Tcl_Export(interp, nsPtr, "*", 1);
+    }
 
 #ifdef USE_DTRACE
     /*
@@ -864,8 +870,8 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    mathfuncNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
-    if (mathfuncNSPtr == NULL) {
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
+    if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
 #define MATH_FUNC_PREFIX_LEN 17 /* == strlen("::tcl::mathfunc::") */
@@ -875,18 +881,18 @@ Tcl_CreateInterp(void)
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
 	Tcl_CreateObjCommand(interp, mathFuncName,
 		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData, NULL);
-	Tcl_Export(interp, mathfuncNSPtr, builtinFuncPtr->name, 0);
+	Tcl_Export(interp, nsPtr, builtinFuncPtr->name, 0);
     }
 
     /*
      * Register the mathematical "operator" commands. [TIP #174]
      */
 
-    mathopNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
-    if (mathopNSPtr == NULL) {
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
+    if (nsPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
-    Tcl_Export(interp, mathopNSPtr, "*", 1);
+    Tcl_Export(interp, nsPtr, "*", 1);
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
     memcpy(mathFuncName, "::tcl::mathop::", MATH_OP_PREFIX_LEN);
     for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++){

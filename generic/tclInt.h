@@ -902,9 +902,8 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    int nameLength;		/* The number of characters in local
-				 * variable's name. Used to speed up variable
-				 * lookups. */
+    int nameLength;		/* The number of bytes in local variable's name.
+				 * Among others used to speed up var lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
     int flags;			/* Flag bits for the local variable. Same as
@@ -3026,8 +3025,8 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsSpaceProc(char byte);
-MODULE_SCOPE int	TclIsBareword(char byte);
+MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);

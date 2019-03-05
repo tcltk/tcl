@@ -282,15 +282,19 @@ Tcl_WinTCharToUtf(
     wEnd = (wchar_t *)string + len;
     for (w = (wchar_t *)string; w < wEnd; ) {
 	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling upper surrogates. */
+	    /* Special case for handling high surrogates. */
 	    p += Tcl_UniCharToUtf(-1, p);
 	}
 	blen = Tcl_UniCharToUtf(*w, p);
 	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
 	w++;
     }
     if (!blen) {
-	/* Special case for handling upper surrogates. */
+	/* Special case for handling high surrogates. */
 	p += Tcl_UniCharToUtf(-1, p);
     }
     Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
@@ -849,6 +853,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromLong, /* 64 */
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
+    TclBN_mp_expt_d_ex, /* 67 */
 };
 
 static const TclStubHooks tclStubHooks = {
