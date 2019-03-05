@@ -36,13 +36,13 @@ It will then return a canonical tcl-list of the form
 .PP
 which indicates:
 .IP \(bu
-the average amount of time required per iteration, in microseconds (lindex $result 0)
+the average amount of time required per iteration, in microseconds ([\fBlindex\fR $result 0])
 .IP \(bu
-the count how many times it was executed (lindex $result 2)
+the count how many times it was executed ([\fBlindex\fR $result 2])
 .IP \(bu
-the estimated rate per second (lindex $result 4)
+the estimated rate per second ([\fBlindex\fR $result 4])
 .IP \(bu
-the estimated real execution time without measurement overhead (lindex $result 6)
+the estimated real execution time without measurement overhead ([\fBlindex\fR $result 6])
 .PP
 Time is measured in elapsed time using the finest timer resolution as possible,
 not CPU time.
