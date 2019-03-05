@@ -203,7 +203,9 @@ static const CmdInfo builtInCmds[] = {
     {"source",		Tcl_SourceObjCmd,	NULL,			0},
     {"tell",		Tcl_TellObjCmd,		NULL,			1},
     {"time",		Tcl_TimeObjCmd,		NULL,			1},
+#ifdef TCL_TIMERATE
     {"timerate",	Tcl_TimeRateObjCmd,	NULL,			1},
+#endif
     {"unload",		Tcl_UnloadObjCmd,	NULL,			0},
     {"update",		Tcl_UpdateObjCmd,	NULL,			1},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
@@ -387,7 +389,7 @@ Tcl_CreateInterp(void)
     const BuiltinFuncDef *builtinFuncPtr;
     const OpCmdInfo *opcmdInfoPtr;
     const CmdInfo *cmdInfoPtr;
-    Tcl_Namespace *mathfuncNSPtr, *mathopNSPtr;
+    Tcl_Namespace *nsPtr;
     union {
 	char c[sizeof(short)];
 	short s;
@@ -722,6 +724,17 @@ Tcl_CreateInterp(void)
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
 	    Tcl_DisassembleObjCmd, NULL, NULL);
 
+    /* Create an unsupported command for timerate */
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::timerate",
+	    Tcl_TimeRateObjCmd, NULL, NULL);
+
+    /* Export unsupported commands */
+    nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
+    if (nsPtr) {
+	Tcl_Export(interp, nsPtr, "*", 1);
+    }
+
+
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -734,8 +747,8 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    mathfuncNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
-    if (mathfuncNSPtr == NULL) {
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
+    if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
     strcpy(mathFuncName, "::tcl::mathfunc::");
@@ -745,19 +758,19 @@ Tcl_CreateInterp(void)
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
 	Tcl_CreateObjCommand(interp, mathFuncName,
 		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData, NULL);
-	Tcl_Export(interp, mathfuncNSPtr, builtinFuncPtr->name, 0);
+	Tcl_Export(interp, nsPtr, builtinFuncPtr->name, 0);
     }
 
     /*
      * Register the mathematical "operator" commands. [TIP #174]
      */
 
-    mathopNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
-    if (mathopNSPtr == NULL) {
+    if (nsPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
-    (void) Tcl_Export(interp, mathopNSPtr, "*", 1);
+    (void) Tcl_Export(interp, nsPtr, "*", 1);
     strcpy(mathFuncName, "::tcl::mathop::");
     for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++){
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
