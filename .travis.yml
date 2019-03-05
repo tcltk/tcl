@@ -80,7 +80,7 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
-        - CFGOPT=CFLAGS="-DTCL_UTF_MAX=6"
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
     - os: osx
       osx_image: xcode8
       env:
