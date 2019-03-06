@@ -318,7 +318,7 @@ Tcl_PkgRequireEx(
 
     if (version == NULL) {
 	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetStringResult(interp);
+	    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
 	    Tcl_ResetResult(interp);
 	}
     } else {
@@ -332,7 +332,7 @@ Tcl_PkgRequireEx(
 	}
 	Tcl_IncrRefCount(ov);
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetStringResult(interp);
+	    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
 	    Tcl_ResetResult(interp);
 	}
 	TclDecrRefCount(ov);
@@ -457,6 +457,7 @@ static int
 PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
     Require *reqPtr = data[0];
     int reqc = PTR2INT(data[1]), satisfies;
+    Tcl_Obj *res;
     Tcl_Obj **const reqv = data[2];
     char *pkgVersionI;
     void *clientDataPtr = reqPtr->clientDataPtr;
@@ -495,7 +496,10 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
 
 	*ptr = reqPtr->pkgPtr->clientData;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(reqPtr->pkgPtr->version, -1));
+
+    res = Tcl_NewStringObj(reqPtr->pkgPtr->version ,-1);
+    res->internalRep.twoPtrValue.ptr1 = reqPtr->pkgPtr->version;
+    Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
