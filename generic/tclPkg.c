@@ -316,7 +316,7 @@ Tcl_PkgRequireEx(
 
     if (version == NULL) {
 	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetStringResult(interp);
+	    result = Tcl_GetString(Tcl_GetObjResult(interp));
 	    Tcl_ResetResult(interp);
 	}
     } else {
@@ -330,7 +330,7 @@ Tcl_PkgRequireEx(
 	}
 	Tcl_IncrRefCount(ov);
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetStringResult(interp);
+	    result = Tcl_GetString(Tcl_GetObjResult(interp));
 	    Tcl_ResetResult(interp);
 	}
 	TclDecrRefCount(ov);
