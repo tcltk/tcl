@@ -4847,7 +4847,7 @@ int
 TclZipfs_AppHook(
     int *argcPtr,		/* Pointer to argc */
 #ifdef _WIN32
-    TCHAR
+    WCHAR
 #else /* !_WIN32 */
     char
 #endif /* _WIN32 */

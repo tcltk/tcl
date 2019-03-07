@@ -931,9 +931,10 @@ TclpMatchInDirectory(
 	     * Match a single file directly.
 	     */
 
+	    int len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = TclGetString(norm);
+	    const char *str = TclGetStringFromObj(norm, &len);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -943,7 +944,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,norm->length), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -954,7 +955,7 @@ TclpMatchInDirectory(
 	WIN32_FIND_DATA data;
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
-	size_t dirLength;
+	int dirLength;
 	int matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
@@ -993,8 +994,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -1464,15 +1464,13 @@ TclpGetUserHome(
 	}
 	Tcl_DStringFree(&ds);
     } else {
-	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = Tcl_WinUtfToTChar(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
-	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	wName = Tcl_WinUtfToTChar(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * user does not exists - if domain was not specified,
@@ -1490,19 +1488,19 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		Tcl_UniCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_WinTCharToUtf((TCHAR *) wHomeDir, size * sizeof(WCHAR), bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 		GetProfilesDirectoryW(buf, &size);
-		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_WinTCharToUtf(buf, (size-1) * sizeof(WCHAR), bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-	    /* be sure we returns normalized path */
+	    /* be sure we return normalized path */
 	    for (i = 0; i < size; ++i){
 		if (result[i] == '\\') result[i] = '/';
 	    }
@@ -2752,14 +2750,15 @@ TclpObjNormalizePath(
 	     * Not the end of the string.
 	     */
 
+	    int len;
 	    char *path;
 	    Tcl_Obj *tmpPathPtr;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = TclGetString(tmpPathPtr);
-	    Tcl_SetStringObj(pathPtr, path, tmpPathPtr->length);
+	    path = TclGetStringFromObj(tmpPathPtr, &len);
+	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
 	    /*
@@ -2842,8 +2841,9 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	const char *drive = TclGetString(useThisCwd);
-	size_t cwdLen = useThisCwd->length;
+	int cwdLen;
+	const char *drive =
+		TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
