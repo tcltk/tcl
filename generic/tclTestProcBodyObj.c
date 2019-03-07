@@ -340,8 +340,6 @@ ProcBodyTestCheckObjCmd(
     }
 
     version = Tcl_PkgPresent(interp, packageName, packageVersion, 1);
-fprintf(stdout, "CHECK %p '%s' %p '%s'\n", version, version,
-packageVersion, packageVersion); fflush(stdout);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
 	    strcmp(version, packageVersion) == 0));
     return TCL_OK;
