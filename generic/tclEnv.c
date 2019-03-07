@@ -119,7 +119,8 @@ TclSetupEnv(
 	Tcl_MutexLock(&envMutex);
 	for (i = 0; environ[i] != NULL; i++) {
 	    Tcl_Obj *obj1, *obj2;
-	    char *p1, *p2;
+	    const char *p1;
+	    char *p2;
 
 	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], -1, &envString);
 	    p2 = strchr(p1, '=');
