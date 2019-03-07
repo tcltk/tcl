@@ -248,7 +248,7 @@ TclpWideClicksToNanoseconds(
  *
  * TclpWideClickInMicrosec --
  *
- *	This procedure return scale to convert click values from the 
+ *	This procedure return scale to convert click values from the
  *	TclpGetWideClicks native resolution to microsecond resolution
  *	and back.
  *
