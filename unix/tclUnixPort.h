@@ -57,11 +57,22 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
-typedef struct dirent64	Tcl_DirEntry;
+typedef struct dirent64		Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
 #else
-typedef struct dirent	Tcl_DirEntry;
+typedef struct dirent		Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#endif
+#ifdef HAVE_DIR64
+typedef DIR64			TclDIR;
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
+#else
+typedef DIR			TclDIR;
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -87,8 +98,8 @@ typedef off_t		Tcl_SeekOffset;
     typedef unsigned short WCHAR;
     __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
     __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-	    const char *, int, const char *, const char *);
+    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
+	    char *, int, const char *, void *);
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);

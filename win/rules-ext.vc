@@ -35,7 +35,7 @@ macro to the name of the project makefile.
 !endif
 
 # First locate the Tcl directory that we are working with.
-!ifdef TCLDIR
+!if "$(TCLDIR)" != ""
 
 _RULESDIR = $(TCLDIR:/=\)
 

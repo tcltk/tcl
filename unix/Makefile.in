@@ -262,7 +262,9 @@ GDB			= gdb
 TRACE			= strace
 TRACE_OPTS		=
 VALGRIND		= valgrind
-VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+VALGRINDARGS		= --tool=memcheck --num-callers=24 \
+    --leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+    --suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
@@ -319,8 +321,8 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
         bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
-	bn_mp_div_2d.o bn_mp_div_3.o \
-        bn_mp_exch.o bn_mp_expt_d.o bn_mp_grow.o bn_mp_init.o \
+	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o \
+        bn_mp_expt_d.o bn_mp_expt_d_ex.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_set_int.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
@@ -503,6 +505,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
 	$(TOMMATH_DIR)/bn_mp_expt_d.c \
+	$(TOMMATH_DIR)/bn_mp_expt_d_ex.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
@@ -840,8 +843,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.12 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.12.tm;
+	@echo "Installing package http 2.9.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.9.0.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -849,8 +852,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.4.1.tm;
+	@echo "Installing package tcltest 2.5.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.5.0.tm;
 
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
@@ -1420,6 +1423,9 @@ bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
 
+bn_mp_expt_d_ex.o: $(TOMMATH_DIR)/bn_mp_expt_d_ex.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d_ex.c
+
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
 
@@ -1630,9 +1636,6 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 # relocatable.
 #--------------------------------------------------------------------------
 
-fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
-
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
@@ -1647,9 +1650,6 @@ strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
-
-strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c

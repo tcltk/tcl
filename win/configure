@@ -1311,7 +1311,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".8"
+TCL_PATCH_LEVEL=".9"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -4372,7 +4372,7 @@ if test "$tcl_ok" = "yes"; then
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  if test "$do64bit" = "yes"; then
+  if test "$do64bit" != "no"; then
 
     if test "$GCC" == "yes"; then
 

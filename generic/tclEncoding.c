@@ -1720,7 +1720,9 @@ LoadTableEncoding(
     };
 
     Tcl_DStringInit(&lineString);
-    Tcl_Gets(chan, &lineString);
+    if (Tcl_Gets(chan, &lineString) < 0) {
+	return NULL;
+    }
     line = Tcl_DStringValue(&lineString);
 
     fallback = (int) strtol(line, &line, 16);
@@ -1760,8 +1762,11 @@ LoadTableEncoding(
     for (i = 0; i < numPages; i++) {
 	int ch;
 	const char *p;
+	int expected = 3 + 16 * (16 * 4 + 1);
 
-	Tcl_ReadChars(chan, objPtr, 3 + 16 * (16 * 4 + 1), 0);
+	if (Tcl_ReadChars(chan, objPtr, expected, 0) != expected) {
+	    return NULL;
+	}
 	p = Tcl_GetString(objPtr);
 	hi = (staticHex[UCHAR(p[0])] << 4) + staticHex[UCHAR(p[1])];
 	dataPtr->toUnicode[hi] = pageMemPtr;
@@ -2296,8 +2301,11 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2349,12 +2357,19 @@ UtfToUtfProc(
 	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-	    ch = (unsigned char) *src;
+	    *chPtr = (unsigned char) *src;
 	    src += 1;
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    src += TclUtfToUniChar(src, &ch);
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    int len = TclUtfToUniChar(src, chPtr);
+	    src += len;
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+#if TCL_UTF_MAX == 4
+	    if ((*chPtr >= 0xD800) && (len < 3)) {
+		src += TclUtfToUniChar(src + len, chPtr);
+		dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    }
+#endif
 	}
     }
 
@@ -2410,8 +2425,11 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -2439,11 +2457,11 @@ UnicodeToUtfProc(
 	 * Tcl_UniChar-size data.
 	 */
 
-	ch = *(Tcl_UniChar *)src;
-	if (ch && ch < 0x80) {
-	    *dst++ = (ch & 0xFF);
+	*chPtr = *(Tcl_UniChar *)src;
+	if (*chPtr && *chPtr < 0x80) {
+	    *dst++ = (*chPtr & 0xFF);
 	} else {
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}
 	src += sizeof(Tcl_UniChar);
     }
@@ -2500,8 +2518,11 @@ UtfToUnicodeProc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2527,7 +2548,7 @@ UtfToUnicodeProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, chPtr);
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
@@ -2536,23 +2557,23 @@ UtfToUnicodeProc(
 
 #ifdef WORDS_BIGENDIAN
 #if TCL_UTF_MAX > 4
-	*dst++ = (ch >> 24);
-	*dst++ = ((ch >> 16) & 0xFF);
-	*dst++ = ((ch >> 8) & 0xFF);
-	*dst++ = (ch & 0xFF);
+	*dst++ = (*chPtr >> 24);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = (*chPtr & 0xFF);
 #else
-	*dst++ = (ch >> 8);
-	*dst++ = (ch & 0xFF);
+	*dst++ = (*chPtr >> 8);
+	*dst++ = (*chPtr & 0xFF);
 #endif
 #else
 #if TCL_UTF_MAX > 4
-	*dst++ = (ch & 0xFF);
-	*dst++ = ((ch >> 8) & 0xFF);
-	*dst++ = ((ch >> 16) & 0xFF);
-	*dst++ = (ch >> 24);
+	*dst++ = (*chPtr & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = (*chPtr >> 24);
 #else
-	*dst++ = (ch & 0xFF);
-	*dst++ = (ch >> 8);
+	*dst++ = (*chPtr & 0xFF);
+	*dst++ = (*chPtr >> 8);
 #endif
 #endif
     }
@@ -2754,13 +2775,17 @@ TableFromUtfProc(
 	}
 	len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
 	/*
 	 * This prevents a crash condition. More evaluation is required for
 	 * full support of int Tcl_UniChar. [Bug 1004065]
 	 */
 
 	if (ch & 0xffff0000) {
+	    word = 0;
+	} else
+#elif TCL_UTF_MAX == 4
+	if (!len) {
 	    word = 0;
 	} else
 #endif
@@ -2960,11 +2985,18 @@ Iso88591FromUtfProc(
 	 * Check for illegal characters.
 	 */
 
-	if (ch > 0xff) {
+	if (ch > 0xff
+#if TCL_UTF_MAX == 4
+		|| ((ch >= 0xD800) && (len < 3))
+#endif
+		) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
+#if TCL_UTF_MAX == 4
+	    if ((ch >= 0xD800) && (len < 3)) len = 4;
+#endif
 
 	    /*
 	     * Plunge on, using '?' as a fallback character.
@@ -3393,7 +3425,7 @@ EscapeFromUtfProc(
 		    break;
 		}
 		memcpy(dst, subTablePtr->sequence,
-			(size_t) subTablePtr->sequenceLen);
+			subTablePtr->sequenceLen);
 		dst += subTablePtr->sequenceLen;
 	    }
 	}
