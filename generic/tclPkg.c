@@ -207,6 +207,27 @@ Tcl_PkgProvideEx(
  *----------------------------------------------------------------------
  */
 
+static void
+UpdateStringOfPkgVersion(
+    register Tcl_Obj *objPtr)	/* Double obj with string rep to update. */
+{
+    const char *pkgVersion = objPtr->internalRep.twoPtrValue.ptr1;
+    size_t len = strlen(pkgVersion);
+
+    objPtr->bytes = ckalloc(len + 1);
+    memcpy(objPtr->bytes, pkgVersion, len + 1);
+    objPtr->length = len;
+}
+
+const Tcl_ObjType tclPkgVersionType = {
+    "pkgVersion",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfPkgVersion,	/* updateStringProc */
+	NULL		/* setFromAnyProc */
+};
+
+
 #undef Tcl_PkgRequire
 const char *
 Tcl_PkgRequire(
@@ -318,7 +339,10 @@ Tcl_PkgRequireEx(
 
     if (version == NULL) {
 	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		Tcl_Obj *obj = Tcl_GetObjResult(interp);
+		if (obj->typePtr == &tclPkgVersionType) {
+		    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		}
 	    Tcl_ResetResult(interp);
 	}
     } else {
@@ -332,7 +356,10 @@ Tcl_PkgRequireEx(
 	}
 	Tcl_IncrRefCount(ov);
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
-	    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		Tcl_Obj *obj = Tcl_GetObjResult(interp);
+		if (obj->typePtr == &tclPkgVersionType) {
+		    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		}
 	    Tcl_ResetResult(interp);
 	}
 	TclDecrRefCount(ov);
@@ -497,7 +524,9 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
 	*ptr = reqPtr->pkgPtr->clientData;
     }
 
-    res = Tcl_NewStringObj(reqPtr->pkgPtr->version ,-1);
+    TclNewObj(res);
+    res->bytes = NULL;
+    res->typePtr = &tclPkgVersionType;
     res->internalRep.twoPtrValue.ptr1 = reqPtr->pkgPtr->version;
     Tcl_SetObjResult(interp, res);
     return TCL_OK;
@@ -515,7 +544,7 @@ SelectPackage(ClientData data[], Tcl_Interp *interp, int result) {
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
     char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
-    int availStable, satisfies; 
+    int availStable, satisfies;
     Require *reqPtr = data[0];
     int reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = data[2];
