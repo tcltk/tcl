@@ -116,6 +116,7 @@ GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
@@ -145,7 +146,12 @@ DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${LIBSUFFIX}
 REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
 REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
+TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
+TEST_LOAD_PRMS		= package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde];\
+			  package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]
+TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
+			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
@@ -328,6 +334,7 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
+	bn_mp_expt_d_ex.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
@@ -417,7 +424,34 @@ TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc packages
 
-tcltest: $(TCLSH) $(TEST_DLL_FILE)
+# Test-suite helper (can be used to test Tcl from build directory with all expected modules).
+# To start from windows shell use:
+#   > tcltest.cmd -verbose bps -file fileName.test
+# or from mingw/msys shell:
+#   $ ./tcltest -verbose bps -file fileName.test
+
+tcltest.cmd:
+	@echo 'Create tcltest.cmd helpers';
+	@(\
+	  echo '@echo off'; \
+	  echo 'rem set LANG=en_US'; \
+	  echo 'set BDP=%~dp0'; \
+	  echo 'set OWD=%CD%'; \
+	  echo 'cd /d %TEMP%'; \
+	  echo 'rem "%BDP%\$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" %*'; \
+	  echo '"%BDP%\$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" %*'; \
+	  echo 'cd /d %OWD%'; \
+	) > tcltest.cmd;
+	@(\
+	  echo '#!/bin/sh'; \
+	  echo '#LANG=en_US'; \
+	  echo 'BDP=$$(dirname $$(readlink -f %0))'; \
+	  echo 'cd /tmp'; \
+	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
+	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" "$$@"'; \
+	) > tcltest;
+
+tcltest: $(TCLSH) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH)
 
@@ -466,6 +500,11 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
+${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
+	@$(RM) ${TEST_EXE_FILE}
+	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR_NATIVE}/win32/zdll.libset" ; then \
@@ -482,6 +521,9 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 .SUFFIXES: .rc
 
 # Special case object targets
+
+tclTestMain.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DBUILD_tcl $(EXTFLAGS) $(CC_OBJNAME) $(WIN_DIR)/tclAppInit.c
 
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
@@ -651,8 +693,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.8.12 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.12.tm;
+	@echo "Installing package http 2.9.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.9.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
@@ -660,8 +702,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.4.1.tm;
+	@echo "Installing package tcltest 2.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.5.0.tm;
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
@@ -711,16 +753,12 @@ test: test-tcl test-packages
 test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
+	-load "$(TEST_LOAD_FACILITIES)" | ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
+	./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`
@@ -744,7 +782,7 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32)
+	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest
 	$(RM) *.pch *.ilk *.pdb
 
 distclean: distclean-packages clean

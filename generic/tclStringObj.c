@@ -434,6 +434,7 @@ Tcl_GetCharLength(
 	return length;
     }
 
+
     /*
      * OK, need to work with the object as a string.
      */
@@ -463,6 +464,50 @@ Tcl_GetCharLength(
 #endif
     }
     return numChars;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCheckEmptyString --
+ *
+ *	Determine whether the string value of an object is or would be the
+ *	empty string, without generating a string representation.
+ *
+ * Results:
+ *	Returns 1 if empty, 0 if not, and -1 if unknown.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCheckEmptyString (
+    Tcl_Obj *objPtr
+) {
+    int length = -1;
+
+    if (objPtr->bytes == tclEmptyStringRep) {
+	return TCL_EMPTYSTRING_YES;
+    }
+
+    if (TclIsPureList(objPtr)) {
+	Tcl_ListObjLength(NULL, objPtr, &length);
+	return length == 0;
+    }
+
+    if (TclIsPureDict(objPtr)) {
+	Tcl_DictObjSize(NULL, objPtr, &length);
+	return length == 0;
+    }
+    
+    if (objPtr->bytes == NULL) {
+	return TCL_EMPTYSTRING_UNKNOWN;
+    }
+    return objPtr->length == 0;
 }
 
 /*
@@ -533,7 +578,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:
@@ -667,6 +712,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
@@ -1820,6 +1876,11 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
+	    if (width < 0) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -1940,6 +2001,12 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+#if TCL_UTF_MAX > 3
+	    if ((code >= 0xD800) && (length < 3)) {
+		/* Special case for handling high surrogates. */
+		length += Tcl_UniCharToUtf(-1, buf + length);
+	    }
+#endif
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
@@ -3109,7 +3176,7 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	dst += Tcl_UniCharToUtf((int) unicode[i], dst);
+	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;

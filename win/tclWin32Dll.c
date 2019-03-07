@@ -33,8 +33,6 @@ static int platformId;		/* Running under NT, or 95/98? */
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
-static Tcl_Encoding winTCharEncoding = NULL;
-
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
@@ -49,7 +47,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    const TCHAR *volumeName;	/* Native wide string volume name. */
+    TCHAR *volumeName;		/* Native wide string volume name. */
     TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -199,8 +197,6 @@ TclWinInit(
     if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
 	Tcl_Panic("Windows 9x is not a supported platform");
     }
-
-    TclWinResetInterfaces();
 }
 
 /*
@@ -266,7 +262,7 @@ TclWinNoBackslash(
  *
  * TclpSetInterfaces --
  *
- *	A helper proc that initializes winTCharEncoding.
+ *	A helper proc.
  *
  * Results:
  *	None.
@@ -280,8 +276,6 @@ TclWinNoBackslash(
 void
 TclpSetInterfaces(void)
 {
-    TclWinResetInterfaces();
-    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 }
 
 /*
@@ -308,8 +302,6 @@ void
 TclWinEncodingsCleanup(void)
 {
     MountPointMap *dlIter, *dlIter2;
-
-    TclWinResetInterfaces();
 
     /*
      * Clean up the mount point map.
@@ -344,10 +336,6 @@ TclWinEncodingsCleanup(void)
 void
 TclWinResetInterfaces(void)
 {
-    if (winTCharEncoding != NULL) {
-	Tcl_FreeEncoding(winTCharEncoding);
-	winTCharEncoding = NULL;
-    }
 }
 
 /*
@@ -513,39 +501,32 @@ TclWinDriveLetterForVolMountPoint(
  *
  * Tcl_WinUtfToTChar, Tcl_WinTCharToUtf --
  *
- *	Convert between UTF-8 and Unicode when running Windows NT or the
- *	current ANSI code page when running Windows 95.
+ *	Convert between UTF-8 and Unicode when running Windows.
  *
- *	On Mac, Unix, and Windows 95, all strings exchanged between Tcl and
- *	the OS are "char" oriented. We need only one Tcl_Encoding to convert
- *	between UTF-8 and the system's native encoding. We use NULL to
- *	represent that encoding.
+ *	On Mac and Unix, all strings exchanged between Tcl and the OS are
+ *	"char" oriented. We need only one Tcl_Encoding to convert between
+ *	UTF-8 and the system's native encoding. We use NULL to represent
+ *	that encoding.
  *
- *	On NT, some strings exchanged between Tcl and the OS are "char"
+ *	On Windows, some strings exchanged between Tcl and the OS are "char"
  *	oriented, while others are in Unicode. We need two Tcl_Encoding APIs
  *	depending on whether we are targeting a "char" or Unicode interface.
  *
- *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding of
- *	NULL should always used to convert between UTF-8 and the system's
+ *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding
+ *	of NULL should always used to convert between UTF-8 and the system's
  *	"char" oriented encoding. The following two functions are used in
- *	Windows-specific code to convert between UTF-8 and Unicode strings
- *	(NT) or "char" strings(95). This saves you the trouble of writing the
+ *	Windows-specific code to convert between UTF-8 and Unicode strings.
+ *	This saves you the trouble of writing the
  *	following type of fragment over and over:
  *
- *		if (running NT) {
- *		    encoding <- Tcl_GetEncoding("unicode");
- *		    nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		    Tcl_FreeEncoding(encoding);
- *		} else {
- *		    nativeBuffer <- UtfToExternal(NULL, utfBuffer);
- *		}
+ *		encoding <- Tcl_GetEncoding("unicode");
+ *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
+ *		Tcl_FreeEncoding(encoding);
  *
- *	By convention, in Windows a TCHAR is a character in the ANSI code page
- *	on Windows 95, a Unicode character on Windows NT. If you plan on
- *	targeting a Unicode interfaces when running on NT and a "char"
- *	oriented interface while running on 95, these functions should be
- *	used. If you plan on targetting the same "char" oriented function on
- *	both 95 and NT, use Tcl_UtfToExternal() with an encoding of NULL.
+ *	By convention, in Windows a TCHAR is a Unicode character. If you plan
+ *	on targeting a Unicode interface when running on Windows, these
+ *	functions should be used. If you plan on targetting a "char" oriented
+ *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
  *
  * Results:
  *	The result is a pointer to the string in the desired target encoding.
@@ -561,26 +542,128 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
+    int len,			/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
+#if TCL_UTF_MAX > 4
+    Tcl_UniChar ch = 0;
+    TCHAR *w, *wString;
+    const char *p, *end;
+    int oldLength;
+#endif
+
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+#if TCL_UTF_MAX > 4
+
+    if (len < 0) {
+	len = strlen(string);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + (int) ((len + 1) * sizeof(TCHAR)));
+    wString = (TCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    p = string;
+    end = string + len - 4;
+    while (p < end) {
+	p += TclUtfToUniChar(p, &ch);
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    end += 4;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + ((char *) w - (char *) wString));
+
+    return wString;
+#else
+    return Tcl_UtfToUniCharDString(string, len, dsPtr);
+#endif
 }
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode when running NT,
-				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
+    const TCHAR *string,	/* Source string in Unicode. */
+    int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    (const char *) string, len, dsPtr);
+#if TCL_UTF_MAX > 4
+    const TCHAR *w, *wEnd;
+    char *p, *result;
+    int oldLength, blen = 1;
+#endif
+
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((TCHAR *)string);
+    } else {
+	len /= 2;
+    }
+#if TCL_UTF_MAX > 4
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
+    result = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = result;
+    wEnd = (TCHAR *)string + len;
+    for (w = (TCHAR *)string; w < wEnd; ) {
+	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling high surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	blen = Tcl_UniCharToUtf(*w, p);
+	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
+	w++;
+    }
+    if (!blen) {
+	/* Special case for handling high surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
+
+    return result;
+#else
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
+#endif
 }
 
 /*
@@ -610,7 +693,7 @@ TclWinCPUID(
 
 #if defined(HAVE_INTRIN_H) && defined(_WIN64)
 
-    __cpuid(regsPtr, index);
+    __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
 #elif defined(__GNUC__)
