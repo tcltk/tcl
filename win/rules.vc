@@ -1535,7 +1535,7 @@ DEFAULT_BUILD_TARGET = $(PROJECT)
 
 default-target: $(DEFAULT_BUILD_TARGET)
 
-!if $(SYMBOLS)
+!if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
 	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
