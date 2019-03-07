@@ -4086,8 +4086,8 @@ Tcl_TimeObjCmd(
  * Tcl_TimeRateObjCmd --
  *
  *	This object-based procedure is invoked to process the "timerate" Tcl
- *	command. 
- *	This is similar to command "time", except the execution limited by 
+ *	command.
+ *	This is similar to command "time", except the execution limited by
  *	given time (in milliseconds) instead of repetition count.
  *
  * Example:
@@ -4109,8 +4109,7 @@ Tcl_TimeRateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static 
-    double measureOverhead = 0; /* global measure-overhead */
+    static double measureOverhead = 0; /* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
     register Tcl_Obj *objPtr;
     register int result, i;
@@ -4198,13 +4197,13 @@ usage:
 	    Tcl_Obj *clobjv[6];
 	    Tcl_WideInt maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
-	    
-	    clobjv[0] = objv[0]; 
+
+	    clobjv[0] = objv[0];
 	    i = 1;
 	    if (direct) {
 	    	clobjv[i++] = direct;
 	    }
-	    clobjv[i++] = objPtr; 
+	    clobjv[i++] = objPtr;
 
 	    /* reset last measurement overhead */
 	    measureOverhead = (double)0;
@@ -4221,7 +4220,7 @@ usage:
 
 	    i--;
 	    clobjv[i++] = calibrate;
-	    clobjv[i++] = objPtr; 
+	    clobjv[i++] = objPtr;
 
 	    /* set last measurement overhead to max */
 	    measureOverhead = (double)UWIDE_MAX;
@@ -4322,7 +4321,7 @@ usage:
 	    maxcnt = 0;
 	    result = TCL_OK;
 	}
-	
+
 	/* don't check time up to threshold */
 	if (--threshold > 0) continue;
 
@@ -4421,7 +4420,7 @@ usage:
 	}
 
 	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
-	
+
 	/* calculate speed as rate (count) per sec */
 	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
 	if (count < (WIDE_MAX / 1000000)) {

@@ -793,7 +793,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 static int LocateDependency(const char *keypath)
 {
     int i, ret;
-    static char *paths[] = {"..", "..\\..", "..\\..\\.."};
+    static const char *paths[] = {"..", "..\\..", "..\\..\\.."};
 
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);
