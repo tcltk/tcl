@@ -341,7 +341,7 @@ Tcl_PkgRequireEx(
 	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
 		Tcl_Obj *obj = Tcl_GetObjResult(interp);
 		if (obj->typePtr == &tclPkgVersionType) {
-		    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		    result = obj->internalRep.twoPtrValue.ptr1;
 		}
 	    Tcl_ResetResult(interp);
 	}
@@ -358,7 +358,7 @@ Tcl_PkgRequireEx(
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
 		Tcl_Obj *obj = Tcl_GetObjResult(interp);
 		if (obj->typePtr == &tclPkgVersionType) {
-		    result = Tcl_GetObjResult(interp)->internalRep.twoPtrValue.ptr1;
+		    result = obj->internalRep.twoPtrValue.ptr1;
 		}
 	    Tcl_ResetResult(interp);
 	}
