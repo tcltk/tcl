@@ -135,6 +135,18 @@ TclSetupEnv(
 	    }
 	    p2++;
 	    p2[-1] = '\0';
+#if defined(_WIN32)
+	    /*
+	     * Enforce PATH and COMSPEC to be all uppercase. This eliminates
+	     * additional trace logic otherwise required in init.tcl.
+	     */
+
+	    if (strcasecmp(p1, "PATH") == 0) {
+		p1 = "PATH";
+	    } else if (strcasecmp(p1, "COMSPEC") == 0) {
+		p1 = "COMSPEC";
+	    }
+#endif
 	    obj1 = Tcl_NewStringObj(p1, -1);
 	    obj2 = Tcl_NewStringObj(p2, -1);
 	    Tcl_DStringFree(&envString);
