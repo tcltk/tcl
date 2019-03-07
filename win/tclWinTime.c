@@ -261,7 +261,7 @@ TclpGetWideClicks(void)
 
 	/*
 	 * The frequency of the performance counter is fixed at system boot and
-	 * is consistent across all processors. Therefore, the frequency need 
+	 * is consistent across all processors. Therefore, the frequency need
 	 * only be queried upon application initialization.
 	 */
 	if (QueryPerformanceFrequency(&perfCounterFreq)) {
@@ -272,7 +272,7 @@ TclpGetWideClicks(void)
 	    wideClick.perfCounter = 0;
 	    wideClick.microsecsScale = 1;
 	}
-	
+
 	wideClick.initialized = 1;
     }
     if (wideClick.perfCounter) {
@@ -293,7 +293,7 @@ TclpGetWideClicks(void)
  *
  * TclpWideClickInMicrosec --
  *
- *	This procedure return scale to convert wide click values from the 
+ *	This procedure return scale to convert wide click values from the
  *	TclpGetWideClicks native resolution to microsecond resolution
  *	and back.
  *
@@ -332,7 +332,7 @@ TclpWideClickInMicrosec(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt 
+Tcl_WideInt
 TclpGetMicroseconds(void)
 {
     Tcl_WideInt usecSincePosixEpoch;
@@ -451,7 +451,7 @@ NativeCalc100NsTicks(
     LONGLONG curCounterFreq,
     LONGLONG curCounter
 ) {
-    return fileTimeLastCall + 
+    return fileTimeLastCall +
 	((curCounter - perfCounterLastCall) * 10000000 / curCounterFreq);
 }
 
@@ -1071,7 +1071,7 @@ UpdateTimeEachSecond(void)
 	return;
     }
     QueryPerformanceCounter(&curPerfCounter);
-    
+
     lastFileTime.QuadPart = curFileTime.QuadPart;
 
     /*
@@ -1139,7 +1139,7 @@ UpdateTimeEachSecond(void)
     	/* calculate new frequency and estimate drift to the next second */
 	vt1 = 20000000 + curFileTime.QuadPart;
 	driftFreq = (estFreq * 20000000 / (vt1 - vt0));
-	/* 
+	/*
 	 * Avoid too large drifts (only half of the current difference),
 	 * that allows also be more accurate (aspire to the smallest tdiff),
 	 * so then we can prolong calibration interval by tdiff < 100000
@@ -1147,13 +1147,13 @@ UpdateTimeEachSecond(void)
 	driftFreq = timeInfo.curCounterFreq.QuadPart +
 		(driftFreq - timeInfo.curCounterFreq.QuadPart) / 2;
 
-	/* 
+	/*
 	 * Average between estimated, 2 current and 5 drifted frequencies,
 	 * (do the soft drifting as possible)
 	 */
 	estFreq = (estFreq + 2 * timeInfo.curCounterFreq.QuadPart + 5 * driftFreq) / 8;
     }
-    
+
     /* Avoid too large discrepancy from nominal frequency */
     if (estFreq > 1003*timeInfo.nominalFreq.QuadPart/1000) {
 	estFreq = 1003*timeInfo.nominalFreq.QuadPart/1000;
@@ -1162,9 +1162,9 @@ UpdateTimeEachSecond(void)
 	estFreq = 997*timeInfo.nominalFreq.QuadPart/1000;
 	vt0 = curFileTime.QuadPart;
     } else if (vt0 != curFileTime.QuadPart) {
-	/* 
+	/*
 	 * Be sure the clock ticks never backwards (avoid it by negative drifting)
-	 * just compare native time (in 100-ns) before and hereafter using 
+	 * just compare native time (in 100-ns) before and hereafter using
 	 * new calibrated values) and do a small adjustment (short time freeze)
 	 */
 	LARGE_INTEGER newPerfCounter;
