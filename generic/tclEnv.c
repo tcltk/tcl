@@ -121,7 +121,8 @@ TclSetupEnv(
 	Tcl_MutexLock(&envMutex);
 	for (i = 0; environ[i] != NULL; i++) {
 	    Tcl_Obj *obj1, *obj2;
-	    char *p1, *p2;
+	    const char *p1;
+	    char *p2;
 
 	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], -1, &envString);
 	    p2 = strchr(p1, '=');
@@ -137,6 +138,18 @@ TclSetupEnv(
 	    }
 	    p2++;
 	    p2[-1] = '\0';
+#if defined(_WIN32)
+	    /*
+	     * Enforce PATH and COMSPEC to be all uppercase. This eliminates
+	     * additional trace logic otherwise required in init.tcl.
+	     */
+
+	    if (strcasecmp(p1, "PATH") == 0) {
+		p1 = "PATH";
+	    } else if (strcasecmp(p1, "COMSPEC") == 0) {
+		p1 = "COMSPEC";
+	    }
+#endif
 	    obj1 = Tcl_NewStringObj(p1, -1);
 	    obj2 = Tcl_NewStringObj(p2, -1);
 	    Tcl_DStringFree(&envString);

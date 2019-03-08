@@ -112,6 +112,19 @@ TclUtfCount(
  *	Store the given Tcl_UniChar as a sequence of UTF-8 bytes in the
  *	provided buffer. Equivalent to Plan 9 runetochar().
  *
+ *	Special handling of Surrogate pairs is handled as follows:
+ *	When this function is called for ch being a high surrogate,
+ *	the first byte of the 4-byte UTF-8 sequence is produced and
+ *	the function returns 1. Calling the function again with a
+ *	low surrogate, the remaining 3 bytes of the 4-byte UTF-8
+ *	sequence is produced, and the function returns 3. The buffer
+ *	is used to remember the high surrogate between the two calls.
+ *
+ *	If no low surrogate follows the high surrogate (which is actually
+ *	illegal), this can be handled reasonably by calling Tcl_UniCharToUtf
+ *	again with ch = -1. This will produce a 3-byte UTF-8 sequence
+ *	representing the high surrogate.
+ *
  * Results:
  *	The return values is the number of bytes in the buffer that were
  *	consumed.
@@ -270,11 +283,11 @@ Tcl_UniCharToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
- *	If TCL_UTF_MAX == 4, special handling of Surrogate pairs is done:
+ *	Special handling of Surrogate pairs is handled as follows:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
- *	and generate a return value of 0. Calling Tcl_UtfToUniChar again
- *	will produce the low surrogate and a return value of 4. Because *chPtr
+ *	and generate a return value of 1. Calling Tcl_UtfToUniChar again
+ *	will produce the low surrogate and a return value of 3. Because *chPtr
  *	is used to remember whether the high surrogate is already produced, it
  *	is recommended to initialize the variable it points to as 0 before
  *	the first call to Tcl_UtfToUniChar is done.
@@ -332,7 +345,7 @@ Tcl_UtfToUniChar(
 	    return 3;
 	}
 #endif
-	if (byte-0x80 < 0x20) {
+	if ((unsigned)(byte-0x80) < (unsigned)0x20) {
 	    *chPtr = cp1252[byte-0x80];
 	} else {
 	    *chPtr = byte;
@@ -1953,7 +1966,7 @@ Tcl_UniCharCaseMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*uniStr && (p != *uniStr)
-				&& (p != Tcl_UniCharToLower(*uniStr))) {
+				&& (p != (Tcl_UniChar)Tcl_UniCharToLower(*uniStr))) {
 			    uniStr++;
 			}
 		    } else {
@@ -2145,7 +2158,7 @@ TclUniCharMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while ((string < stringEnd) && (p != *string)
-				&& (p != Tcl_UniCharToLower(*string))) {
+				&& (p != (Tcl_UniChar)Tcl_UniCharToLower(*string))) {
 			    string++;
 			}
 		    } else {

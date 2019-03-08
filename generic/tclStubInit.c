@@ -216,6 +216,10 @@ Tcl_WinTCharToUtf(
 	}
 	blen = Tcl_UniCharToUtf(*w, p);
 	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
 	w++;
     }
     if (!blen) {

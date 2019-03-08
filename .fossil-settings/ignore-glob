@@ -19,6 +19,8 @@
 */tcltest*
 */versions.vc
 */version.vc
+*/libtcl.vfs
+*/libtcl_*.zip
 html
 libtommath/bn.ilg
 libtommath/bn.ind
