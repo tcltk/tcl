@@ -210,7 +210,7 @@ struct vars {
     int lexcon;			/* lexical context type (see lex.c) */
     int nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    size_t nsubs;		/* length of vector */
+    int nsubs;			/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -287,8 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i;
-    size_t j;
+    int i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -477,7 +476,7 @@ moresubs(
     size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    size_t n;
+    int n;
 
     assert(wanted > 0 && wanted >= v->nsubs);
     n = wanted * 3 / 2 + 1;
@@ -797,7 +796,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    size_t subno;		/* capturing-parens or backref number */
+    int subno;			/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;

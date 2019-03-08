@@ -913,7 +913,7 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    size_t length;
+	    size_t length = 0;
 	    const char *str = TclGetStringFromObj(norm, &length);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
@@ -1444,15 +1444,13 @@ TclpGetUserHome(
 	}
 	Tcl_DStringFree(&ds);
     } else {
-	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = Tcl_WinUtfToTChar(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
-	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	wName = Tcl_WinUtfToTChar(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * user does not exists - if domain was not specified,
@@ -1470,19 +1468,19 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		Tcl_UniCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_WinTCharToUtf((TCHAR *) wHomeDir, size * sizeof(WCHAR), bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 		GetProfilesDirectoryW(buf, &size);
-		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_WinTCharToUtf(buf, (size-1) * sizeof(WCHAR), bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-	    /* be sure we returns normalized path */
+	    /* be sure we return normalized path */
 	    for (i = 0; i < size; ++i){
 		if (result[i] == '\\') result[i] = '/';
 	    }

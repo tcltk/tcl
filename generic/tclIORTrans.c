@@ -2597,7 +2597,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec;		/* Number of returned bytes */
+	    size_t bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2631,7 +2631,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec;		/* Number of returned bytes */
+	    size_t bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2661,7 +2661,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec;		/* Number of returned bytes */
+	    size_t bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
 	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
@@ -2687,7 +2687,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec;		/* Number of returned bytes */
+	    size_t bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -3080,7 +3080,7 @@ TransformRead(
     Tcl_Obj *bufObj)
 {
     Tcl_Obj *resObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3135,7 +3135,7 @@ TransformWrite(
 {
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 
@@ -3202,7 +3202,7 @@ TransformDrain(
     int *errorCodePtr)
 {
     Tcl_Obj *resObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3251,7 +3251,7 @@ TransformFlush(
     int op)
 {
     Tcl_Obj *resObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 

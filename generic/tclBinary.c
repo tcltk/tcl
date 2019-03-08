@@ -1391,7 +1391,7 @@ BinaryScanCmd(
     const char *errorString;
     const char *str;
     int offset, size;
-    size_t length;
+    size_t length = 0;
 
     int i;
     Tcl_Obj *valuePtr, *elementPtr;
@@ -2720,7 +2720,7 @@ BinaryEncodeUu(
     int lineLength = 61;
     const unsigned char SingleNewline[] = { (unsigned char) '\n' };
     const unsigned char *wrapchar = SingleNewline;
-    size_t j, offset, count, wrapcharlen = sizeof(SingleNewline);
+    size_t j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 

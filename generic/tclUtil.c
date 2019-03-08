@@ -2238,7 +2238,7 @@ Tcl_StringCaseMatch(
 		    if (nocase) {
 			while (*str) {
 			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
+			    if (ch2==ch1 || ch2==(Tcl_UniChar)Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
 			    str += charLen;
@@ -2586,7 +2586,7 @@ TclStringMatchObj(
 				 * 0. */
 {
     int match;
-    size_t length, plen;
+    size_t length = 0, plen = 0;
 
     /*
      * Promote based on the type of incoming object.
