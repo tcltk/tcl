@@ -47,13 +47,15 @@ catch {unset i}
 catch {unset a}
 catch {unset arr}
 
-test var-1.1 {TclLookupVar, Array handling} {
+test var-1.1 {TclLookupVar, Array handling} -body {
     catch {unset a}
     set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd 
     set i 10
     set arr(foo) 37
     list [$x i] $i [$x arr(foo)] $arr(foo)
-} {11 11 38 38}
+} -cleanup {
+    unset -nocomplain arr
+} -result {11 11 38 38}
 test var-1.2 {TclLookupVar, TCL_GLOBAL_ONLY implies global namespace var} {
     set x "global value"
     namespace eval test_ns_var {
@@ -214,6 +216,22 @@ test var-1.21 {TclLookupVar, regression on utf-8 variable names} -setup {
 } -cleanup {
     rename p {}
 } -result [lrepeat 3 [list v\u20ac v\xe4]]
+
+test var-1.30 {TclLookupVar, direct substitution of utf-8 var name} -body {
+    namespace eval test_ns_var {
+	set vn \u0422\u0438\u043a\u043b\u044c
+	set $vn Tcl
+	set arr($vn) Tcl-In-Arr
+	set ${vn}_${vn}($vn) Tcl-In-Tcl
+	list [list [set $vn] [set arr($vn)] [set ${vn}_${vn}($vn)]] \
+	     [eval "list \${$vn} \${arr($vn)} \${${vn}_${vn}($vn)}"] \
+	     [eval "list \$$vn \$arr($vn) \$${vn}_${vn}($vn)"] \
+	     [eval "list \$[namespace current]::$vn \
+			    \$[namespace current]::arr($vn) \$[namespace current]::${vn}_${vn}($vn)"]
+    }
+} -cleanup {
+    catch {namespace delete test_ns_var}
+} -result [lrepeat 4 {Tcl Tcl-In-Arr Tcl-In-Tcl}]
 
 test var-2.1 {Tcl_LappendObjCmd, create var if new} {
     catch {unset x}
