@@ -136,14 +136,53 @@ TclpGetMicroseconds(void)
 Tcl_WideInt
 TclpGetUTimeMonotonic(void)
 {
-    struct timespec mntv;
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && clock_gettime(CLOCK_MONOTONIC, &mntv) == 0
-    ) {
+    if (tclGetTimeProcPtr == NativeGetTime) {
+#if defined(CLOCK_MONOTONIC)
+	/* monotonic time available on this platform */
+	struct timespec mntv;
+	if (clock_gettime(CLOCK_MONOTONIC, &mntv) != 0) {
+	    /* fallback to non-monotonic real-time. */
+	    return TclpGetMicroseconds();
+	}
 	/* monotonic time since some starting point in microseconds */
 	return ((Tcl_WideInt)mntv.tv_sec)*1000000 + mntv.tv_nsec / 1000;
+#elif defined(MAC_OSX_TCL)
+	/* absolute time related (tb.numer / tb.denom / 1000) microseconds */
+	static mach_timebase_info_data_t tb;
+	static uint64_t maxClicksForUInt64;
+	uint64_t clicks = mach_absolute_time();
+
+	if (!tb.denom) {
+	    mach_timebase_info(&tb);
+	    maxClicksForUInt64 = UINT64_MAX / tb.numer;
+	}
+	if ((uint64_t) clicks < maxClicksForUInt64) {
+	    return (Tcl_WideInt)(((uint64_t) clicks) * tb.numer / 1000 / tb.denom);
+	} else {
+	    return (Tcl_WideInt)(((uint64_t) clicks) / 1000 * tb.numer / tb.denom);
+	}
+
+#else	/* no MAC_OSX_TCL and no monotonic time (xcode etc) */
+
+    /* fallback to non-monotonic real-time (microseconds) */
+    return TclpGetMicroseconds();
+    /*
+     * TODO: may be the seconds could be obtained over the uptime (since last boot),
+     * like here (https://stackoverflow.com/questions/20817311/ios-real-monotonic-clock-other-than-mach-absolute-time):
+	    int mib[2] = {CTL_KERN, KERN_BOOTTIME};
+	    size_t size = sizeof(boottime);
+	    time_t now;
+	    time_t uptime = -1;
+	    (void)time(&now);
+	    if (sysctl(mib, 2, &boottime, &size, NULL, 0) != -1 && boottime.tv_sec != 0)
+	    {
+		uptime = now - (boottime.tv_sec);
+	    }
+     * but I don't think this could provide even micro- or milliseconds granularity,
+     * so a not back-drifting (monotonic) mix-in would be necessary.
+     */
+#endif
     } else {
-    	/* fallback via tclGetTimeProcPtr */
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
@@ -203,15 +242,18 @@ TclpGetWideClicks(void)
     Tcl_WideInt now;
 
     if (tclGetTimeProcPtr == NativeGetTime) {
-#ifndef MAC_OSX_TCL
-    	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
+#if defined(CLOCK_MONOTONIC)
+	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
 	struct timespec mntv;
 	
 	(void)clock_gettime(CLOCK_MONOTONIC, &mntv);
 	return ((Tcl_WideInt)mntv.tv_sec)*1000000*1000 + mntv.tv_nsec;
-#else	/* MAC_OSX_TCL: */
+#elif defined(MAC_OSX_TCL)
 	/* 1 wide click == (tb.numer / tb.denom / 1000) microseconds */
 	return (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+#else	/* no MAC_OSX_TCL and no monotonic time (xcode etc) */
+	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
+	return TclpGetMicroseconds();
 #endif
     } else {
 	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
@@ -248,10 +290,10 @@ TclpWideClicksToNanoseconds(
     double nsec;
 
     if (tclGetTimeProcPtr == NativeGetTime) {
-#ifndef MAC_OSX_TCL
+#if defined(CLOCK_MONOTONIC)
 	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
 	return clicks;
-#else	/* MAC_OSX_TCL: */
+#elif defined(MAC_OSX_TCL)
 	/* 1 wide click == (tb.numer / tb.denom) nanoseconds */
 	static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
@@ -265,6 +307,9 @@ TclpWideClicksToNanoseconds(
 	} else {
 	    nsec = ((long double) (uint64_t) clicks) * tb.numer / tb.denom;
 	}
+#else	/* no MAC_OSX_TCL and no monotonic time (xcode etc) */
+	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
+	return clicks * 1000;
 #endif
     } else {
 	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
