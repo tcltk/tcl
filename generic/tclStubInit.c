@@ -57,6 +57,7 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
+#undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
