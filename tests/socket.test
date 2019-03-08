@@ -63,6 +63,10 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
+if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]} {
+    return
+}
+
 # Some tests require the testthread and exec commands
 testConstraint testthread [llength [info commands testthread]]
 testConstraint exec [llength [info commands exec]]
@@ -1768,10 +1772,10 @@ catch {close $commandSocket}
 catch {close $remoteProcChan}
 test socket-14.13 {testing writable event when quick failure} -constraints {socket win supported_inet} -body {
     # Test for bug 336441ed59 where a quick background fail was ignored
-    
+
     # Test only for windows as socket -async 255.255.255.255 fails
     # directly on unix
-    
+
     # The following connect should fail very quickly
     set a1 [after 2000 {set x timeout}]
     set s [socket -async 255.255.255.255 43434]
@@ -1785,7 +1789,7 @@ test socket-14.13 {testing writable event when quick failure} -constraints {sock
 
 test socket-14.14 {testing fileevent readable on failed async socket connect} -constraints [list socket] -body {
     # Test for bug 581937ab1e
-    
+
     set a1 [after 5000 {set x timeout}]
     # This connect should fail
     set s [socket -async localhost [randport]]
