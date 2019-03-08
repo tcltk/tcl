@@ -803,9 +803,8 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    int nameLength;		/* The number of characters in local
-				 * variable's name. Used to speed up variable
-				 * lookups. */
+    int nameLength;		/* The number of bytes in local variable's name.
+				 * Among others used to speed up var lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
     int flags;			/* Flag bits for the local variable. Same as
@@ -3728,7 +3727,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
 
 /*
  *----------------------------------------------------------------
- * Macro used by the Tcl core to increment a namespace's export export epoch
+ * Macro used by the Tcl core to increment a namespace's export epoch
  * counter. The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE void	TclInvalidateNsCmdLookup(Namespace *nsPtr);

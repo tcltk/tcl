@@ -192,6 +192,28 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
 test var-1.19 {TclLookupVar, right error message when parsing variable name} {
     list [catch {[format set] thisvar(doesntexist)} msg] $msg
 } {1 {can't read "thisvar(doesntexist)": no such variable}}
+test var-1.20 {TclLookupVar, regression on utf-8 variable names} -setup {
+    proc p [list \u20ac \xe4] {info vars}
+} -body {
+    # test variable with non-ascii name is available (euro and a-uml chars here):
+    list \
+	[p 1 2] \
+	[apply [list [list \u20ac \xe4] {info vars}] 1 2] \
+	[apply [list [list [list \u20ac \u20ac] [list \xe4 \xe4]] {info vars}]] \
+} -cleanup {
+    rename p {}
+} -result [lrepeat 3 [list \u20ac \xe4]]
+test var-1.21 {TclLookupVar, regression on utf-8 variable names} -setup {
+    proc p [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}
+} -body {
+    # test variable with non-ascii name (and default) is resolvable (euro and a-uml chars here):
+    list \
+	[p] \
+	[apply [list [list \u20ac \xe4] {list [set \u20ac] [set \xe4]}] v\u20ac v\xe4] \
+	[apply [list [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}]] \
+} -cleanup {
+    rename p {}
+} -result [lrepeat 3 [list v\u20ac v\xe4]]
 
 test var-2.1 {Tcl_LappendObjCmd, create var if new} {
     catch {unset x}
