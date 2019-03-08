@@ -276,6 +276,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_get_int.obj \
 	$(TMP_DIR)\bn_mp_get_long.obj \
 	$(TMP_DIR)\bn_mp_get_long_long.obj \
@@ -390,6 +391,9 @@ dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
+!if $(SYMBOLS)
+install:    install-pdbs
+!endif
 setup:      default-setup
 
 test: test-core test-pkgs
@@ -922,6 +926,11 @@ install-msgs:
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+
+install-pdbs:
+	@echo Installing debug symbols
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
+# "emacs font-lock highlighting fix
 
 #---------------------------------------------------------------------
 # Clean up

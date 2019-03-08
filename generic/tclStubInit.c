@@ -343,6 +343,10 @@ Tcl_WinTCharToUtf(
 	}
 	blen = Tcl_UniCharToUtf(*w, p);
 	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
 	w++;
     }
     if (!blen) {
@@ -1045,6 +1049,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {

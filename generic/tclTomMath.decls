@@ -267,6 +267,9 @@ declare 75 {
 declare 76 {
     int TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
 }
+declare 77 {
+    int TclBN_mp_get_bit(const mp_int *a, int b)
+}
 
 
 # Local Variables:

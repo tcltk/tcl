@@ -540,11 +540,11 @@ TclParseNumber(
 
     if (bytes == NULL) {
 	if (interp == NULL && endPtrPtr == NULL) {
-	    if (objPtr->typePtr == &tclDictType) {
+	    if (TclHasIntRep(objPtr, &tclDictType)) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (objPtr->typePtr == &tclListType) {
+	    if (TclHasIntRep(objPtr, &tclListType)) {
 		int length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLength(NULL, objPtr, &length);
@@ -4577,7 +4577,7 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_isodd(&b)) {
+	    if (mp_get_bit(&b, 0)) {
 		if (b.sign == MP_ZPOS) {
 		    mp_add_d(&b, 1, &b);
 		} else {
