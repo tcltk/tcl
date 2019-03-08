@@ -74,6 +74,7 @@
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_get_bit TclBN_mp_get_bit
 #define mp_get_int TclBN_mp_get_int
 #define mp_get_long TclBN_mp_get_long
 #define mp_get_long_long TclBN_mp_get_long_long
@@ -340,6 +341,8 @@ EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 				mp_int *c);
 /* 76 */
 EXTERN int		TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+/* 77 */
+EXTERN int		TclBN_mp_get_bit(const mp_int *a, int b);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -422,6 +425,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
     int (*tclBN_mp_tc_div_2d) (const mp_int *a, int b, mp_int *c); /* 76 */
+    int (*tclBN_mp_get_bit) (const mp_int *a, int b); /* 77 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -590,6 +594,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
 #define TclBN_mp_tc_div_2d \
 	(tclTomMathStubsPtr->tclBN_mp_tc_div_2d) /* 76 */
+#define TclBN_mp_get_bit \
+	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
