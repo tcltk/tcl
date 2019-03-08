@@ -51,6 +51,7 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef TclStaticPackage
+#undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
 #ifdef TCL_MEM_DEBUG

@@ -591,7 +591,7 @@ SetInflateDictionary(
     Tcl_Obj *compDictObj)
 {
     if (compDictObj != NULL) {
-	size_t length;
+	size_t length = 0;
 	unsigned char *bytes = TclGetByteArrayFromObj(compDictObj, &length);
 
 	return inflateSetDictionary(strm, bytes, length);
@@ -605,7 +605,7 @@ SetDeflateDictionary(
     Tcl_Obj *compDictObj)
 {
     if (compDictObj != NULL) {
-	size_t length;
+	size_t length = 0;
 	unsigned char *bytes = TclGetByteArrayFromObj(compDictObj, &length);
 
 	return deflateSetDictionary(strm, bytes, length);
@@ -1190,7 +1190,7 @@ Tcl_ZlibStreamPut(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     char *dataTmp = NULL;
     int e;
-    size_t size, outSize, toStore;
+    size_t size = 0, outSize, toStore;
 
     if (zshPtr->streamEnd) {
 	if (zshPtr->interp) {
@@ -1314,10 +1314,10 @@ Tcl_ZlibStreamGet(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     int e, i, listLen;
-    size_t itemLen, dataPos = 0;
+    size_t itemLen = 0, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
-    size_t existing;
+    size_t existing = 0;
 
     /*
      * Getting beyond the of stream, just return empty string.
@@ -1929,7 +1929,7 @@ ZlibCmd(
     Tcl_Obj *const objv[])
 {
     int command, i, option, level = -1;
-    size_t dlen, start, buffersize = 0;
+    size_t dlen = 0, start, buffersize = 0;
     Tcl_WideInt wideLen;
     Byte *data;
     Tcl_Obj *headerDictObj;
@@ -2740,7 +2740,7 @@ ZlibStreamAddCmd(
      */
 
     if (compDictObj != NULL) {
-	size_t len;
+	size_t len = 0;
 
 	(void) TclGetByteArrayFromObj(compDictObj, &len);
 	if (len == 0) {
@@ -2844,7 +2844,7 @@ ZlibStreamPutCmd(
      */
 
     if (compDictObj != NULL) {
-	size_t len;
+	size_t len = 0;
 
 	(void) TclGetByteArrayFromObj(compDictObj, &len);
 	if (len == 0) {

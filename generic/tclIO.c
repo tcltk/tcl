@@ -4188,7 +4188,7 @@ Tcl_WriteObj(
     Channel *chanPtr;
     ChannelState *statePtr;	/* State info for channel */
     const char *src;
-    size_t srcLen;
+    size_t srcLen = 0;
 
     statePtr = ((Channel *) chan)->state;
     chanPtr = statePtr->topChanPtr;
@@ -4941,7 +4941,7 @@ TclGetsObjBinary(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    size_t rawLen, byteLen, oldLength;
+    size_t rawLen, byteLen = 0, oldLength;
     int eolChar;
     unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
 

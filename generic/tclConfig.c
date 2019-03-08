@@ -202,7 +202,7 @@ QueryConfigObjCmd(
     QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    size_t n;
+    size_t n = 0;
     int index, m;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL

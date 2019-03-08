@@ -5287,7 +5287,7 @@ TEBCresume(
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
 	    unsigned char *bytes1, *bytes2;
-	    size_t wlen1, wlen2;
+	    size_t wlen1 = 0, wlen2 = 0;
 
 	    bytes1 = TclGetByteArrayFromObj(valuePtr, &wlen1);
 	    bytes2 = TclGetByteArrayFromObj(value2Ptr, &wlen2);
