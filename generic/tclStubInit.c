@@ -756,6 +756,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {

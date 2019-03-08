@@ -384,6 +384,7 @@ TOMMATH_OBJS = \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
 	bn_mp_expt_d_ex.${OBJEXT} \
+	bn_mp_get_bit.${OBJEXT} \
 	bn_mp_get_int.${OBJEXT} \
 	bn_mp_get_long.${OBJEXT} \
 	bn_mp_get_long_long.${OBJEXT} \
