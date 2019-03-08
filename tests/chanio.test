@@ -13,15 +13,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+# TODO: This test is likely worthless. Confirm and remove
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
-    namespace import -force ::tcltest::*
 }
-
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -35,18 +30,19 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
-    ::tcltest::loadTestedCommands
-    catch [list package require -exact Tcltest [info patchlevel]]
+    catch {
+	::tcltest::loadTestedCommands
+	package require -exact Tcltest [info patchlevel]
+	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+    }
+    package require tcltests
     
+    testConstraint testbytestring   [llength [info commands testbytestring]]
     testConstraint testchannel      [llength [info commands testchannel]]
-    testConstraint exec             [llength [info commands exec]]
     testConstraint openpipe         1
-    testConstraint fileevent        [llength [info commands fileevent]]
-    testConstraint fcopy            [llength [info commands fcopy]]
     testConstraint testfevent       [llength [info commands testfevent]]
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
-    testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
@@ -5866,6 +5862,8 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     testfevent delete
     chan close $f
 } -result {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -5961,6 +5959,9 @@ test chan-io-48.3 {testing readability conditions} -setup {
 } -cleanup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar 
+
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
     set c 0
@@ -7449,6 +7450,7 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
 test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
+    chan puts $out "catch {load $::tcltestlib Tcltest}"
     chan puts $out {
 	chan puts [testbytestring \xe2]
 	exit 1

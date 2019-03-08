@@ -139,7 +139,6 @@ Tcl_FSRenameFileProc		TclpObjRenameFile;
 Tcl_FSCreateDirectoryProc	TclpObjCreateDirectory;
 Tcl_FSCopyDirectoryProc		TclpObjCopyDirectory;
 Tcl_FSRemoveDirectoryProc	TclpObjRemoveDirectory;
-Tcl_FSUnloadFileProc		TclpUnloadFile;
 Tcl_FSLinkProc			TclpObjLink;
 Tcl_FSListVolumesProc		TclpObjListVolumes;
 
@@ -412,7 +411,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
@@ -1762,7 +1760,7 @@ Tcl_FSEvalFileEx(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
@@ -1896,7 +1894,7 @@ TclNREvalFile(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
@@ -3160,8 +3158,8 @@ Tcl_FSLoadFile(
  * present and set to true (any integer > 0) then the unlink is skipped.
  */
 
-int
-TclSkipUnlink (Tcl_Obj* shlibFile)
+static int
+skipUnlink (Tcl_Obj* shlibFile)
 {
     /* Order of testing:
      * 1. On hpux we generally want to skip unlink in general
@@ -3415,7 +3413,7 @@ Tcl_LoadFile(
      */
 
     if (
-	!TclSkipUnlink (copyToPtr) &&
+	!skipUnlink (copyToPtr) &&
 	(Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
@@ -3684,30 +3682,10 @@ Tcl_FSUnloadFile(
 	}
 	return TCL_ERROR;
     }
-    TclpUnloadFile(handle);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpUnloadFile --
- *
- *	Unloads a library given its handle
- *
- * This function was once filesystem-specific, but has been made portable by
- * having TclpDlopen return a structure that includes procedure pointers.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpUnloadFile(
-    Tcl_LoadHandle handle)
-{
     if (handle->unloadFileProcPtr != NULL) {
 	handle->unloadFileProcPtr(handle);
     }
+    return TCL_OK;
 }
 
 /*

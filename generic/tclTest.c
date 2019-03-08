@@ -220,6 +220,9 @@ static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestpurebytesobjObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestbytestringObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -407,6 +410,12 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestFindFirstCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestFindLastCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -564,6 +573,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
@@ -668,6 +678,10 @@ Tcltest_Init(
 	    TestsetobjerrorcodeCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindfirst",
+	    TestFindFirstCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindlast",
+	    TestFindLastCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
@@ -2071,7 +2085,7 @@ TestevalexObjCmd(
 
     flags = 0;
     if (objc == 3) {
-	const char *global = Tcl_GetStringFromObj(objv[2], &length);
+	const char *global = Tcl_GetString(objv[2]);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", NULL);
@@ -4949,6 +4963,57 @@ NoopObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestpurebytesobjObjCmd --
+ *
+ *	This object-based procedure constructs a pure bytes object
+ *	without type and with internal representation containing NULL's.
+ *
+ *	If no argument supplied it returns empty object with tclEmptyStringRep,
+ *	otherwise it returns this as pure bytes object with bytes value equal 
+ *	string.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpurebytesobjObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_Obj *objPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?string?");
+	return TCL_ERROR;
+    }
+    objPtr = Tcl_NewObj();
+    /*
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    */
+    memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
+    if (objc == 2) {
+	const char *s = Tcl_GetString(objv[1]);
+	objPtr->length = objv[1]->length;
+	objPtr->bytes = ckalloc(objPtr->length + 1);
+	memcpy(objPtr->bytes, s, objPtr->length);
+	objPtr->bytes[objPtr->length] = 0;
+    }
+    Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestbytestringObjCmd --
  *
  *	This object-based procedure constructs a string which can
@@ -5224,7 +5289,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
@@ -5621,8 +5686,8 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
-	Tcl_AppendResult(interp, buf, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 
@@ -6676,6 +6741,50 @@ TestNumUtfCharsCmd(
 	}
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindFirst
+ */
+
+static int
+TestFindFirstCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
+	int len = -1;
+
+	if (objc > 2) {
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindFirst(Tcl_GetString(objv[1]), len), -1));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindLast
+ */
+
+static int
+TestFindLastCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
+	int len = -1;
+
+	if (objc > 2) {
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindLast(Tcl_GetString(objv[1]), len), -1));
     }
     return TCL_OK;
 }

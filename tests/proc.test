@@ -110,6 +110,14 @@ test proc-1.8 {Tcl_ProcObjCmd, check that formal parameter names are simple name
     proc p {b:a b::a} { 
     }
 } -returnCodes error -result {formal parameter "b::a" is not a simple name}
+test proc-1.9 {Tcl_ProcObjCmd, arguments via canonical list (string-representation bug [631b4c45df])} -body {
+    set v 2
+    binary scan AB cc a b
+    proc p [list [list a $a] [list b $b] [list v [expr {$v + 2}]]] {expr {$a + $b + $v}}
+    p
+} -result [expr {65+66+4}] -cleanup {
+   rename p {}
+}
 
 test proc-2.1 {TclFindProc, simple proc name and proc not in namespace} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -383,6 +391,14 @@ test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
     interp delete slave
     unset lambda
 } {}
+
+test proc-7.5 {[631b4c45df] Crash in argument processing} {
+    binary scan A c val
+    proc foo [list  [list from $val]] {}
+    rename foo {}
+    unset -nocomplain val
+} {}
+
 
 # cleanup
 catch {rename p ""}

@@ -970,10 +970,8 @@ ProcedureMethodVarResolver(
      * Must not retain reference to resolved information. [Bug 3105999]
      */
 
-    if (rPtr != NULL) {
-	rPtr->deleteProc(rPtr);
-    }
-    return (*varPtr? TCL_OK : TCL_CONTINUE);
+    rPtr->deleteProc(rPtr);
+    return (*varPtr ? TCL_OK : TCL_CONTINUE);
 }
 
 static Tcl_Var
@@ -1314,6 +1312,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    Tcl_GetString(bodyObj);
     TclFreeIntRep(bodyObj);
 
     /*

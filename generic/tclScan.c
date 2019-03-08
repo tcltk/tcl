@@ -72,7 +72,7 @@ BuildCharSet(
     CharSet *cset,
     const char *format)		/* Points to first char of set. */
 {
-    Tcl_UniChar ch, start;
+    Tcl_UniChar ch = 0, start;
     int offset, nranges;
     const char *end;
 
@@ -134,7 +134,7 @@ BuildCharSet(
 	     * as well as the dash.
 	     */
 
-	    if (*format == ']') {
+	    if (*format == ']' || !cset->ranges) {
 		cset->chars[cset->nchars++] = start;
 		cset->chars[cset->nchars++] = ch;
 	    } else {
@@ -257,10 +257,10 @@ ValidateFormat(
 {
     int gotXpg, gotSequential, value, i, flags;
     char *end;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX+1];
+    char buf[TCL_UTF_MAX+1] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -582,7 +582,7 @@ Tcl_ScanObjCmd(
     char op = 0;
     int width, underflow = 0;
     Tcl_WideInt wideValue;
-    Tcl_UniChar ch, sch;
+    Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];		/* Temporary buffer to hold scanned number
@@ -885,9 +885,17 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    string += TclUtfToUniChar(string, &sch);
+	    offset = TclUtfToUniChar(string, &sch);
+	    i = (int)sch;
+#if TCL_UTF_MAX == 4
+	    if ((sch >= 0xD800) && (offset < 3)) {
+		offset += TclUtfToUniChar(string+offset, &sch);
+		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
+	    }
+#endif
+	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj((int)sch);
+		objPtr = Tcl_NewIntObj(i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;

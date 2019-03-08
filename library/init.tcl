@@ -16,7 +16,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6.6
+package require -exact Tcl 8.6.9
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -624,7 +624,7 @@ proc auto_import {pattern} {
 if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
 #
-# Note that info executable doesn't work under Windows, so we have to
+# Note that file executable doesn't work under Windows, so we have to
 # look for files with .exe, .com, or .bat extensions.  Also, the path
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
@@ -637,8 +637,8 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
-	    mklink rd ren rename rmdir start time type ver vol]
+    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]

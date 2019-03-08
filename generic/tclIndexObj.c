@@ -915,7 +915,8 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    int i, len, elemLen, flags;
+    int i, len, elemLen;
+    char flags;
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
 

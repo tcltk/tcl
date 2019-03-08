@@ -5838,6 +5838,15 @@ test expr-32.5 {Bug 1585704} {
 test expr-32.6 {Bug 1585704} {
     expr -(1<<32)%(1<<63)
 } [expr (1<<63)-(1<<32)]
+test expr-32.7 {bignum regression} {
+    expr {0%(1<<63)}
+} 0
+test expr-32.8 {bignum regression} {
+    expr {0%-(1<<63)}
+} 0
+test expr-32.9 {bignum regression} {
+    expr {0%-(1+(1<<63))}
+} 0
 
 test expr-33.1 {parse largest long value} longIs32bit {
     set max_long_str 2147483647
@@ -7186,6 +7195,15 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
 test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
+
+test expr-52.1 {
+	comparison with empty string does not generate string representation
+} {
+	set a [list one two three]
+	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
+		string match {*no string representation*} [
+		::tcl::unsupported::representation $a]]
+} {0 0 1 1} 
 
 
 
