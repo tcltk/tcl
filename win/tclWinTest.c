@@ -420,9 +420,11 @@ TestplatformChmod(
 
     static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION
 	    | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+    /* don't deny DELETE mask (reset writable only, allow test-cases cleanup) */
     static const DWORD readOnlyMask = FILE_DELETE_CHILD | FILE_ADD_FILE
 	    | FILE_ADD_SUBDIRECTORY | FILE_WRITE_EA | FILE_APPEND_DATA
-	    | FILE_WRITE_DATA | DELETE;
+	    | FILE_WRITE_DATA
+	    /* | DELETE */;
 
     /*
      * References to security functions (only available on NT and later).
@@ -466,7 +468,10 @@ TestplatformChmod(
 	TCL_DECLARE_MUTEX(initializeMutex)
 	Tcl_MutexLock(&initializeMutex);
 	if (!initialized) {
-	    HMODULE handle = GetModuleHandle(TEXT("ADVAPI"));
+	    HMODULE handle = GetModuleHandle(TEXT("ADVAPI32"));
+	    if (handle == NULL) {
+	    	handle = GetModuleHandle(TEXT("ADVAPI"));
+	    }
 
 	    if (handle != NULL) {
 		setNamedSecurityInfoProc = (setNamedSecurityInfoADef)
@@ -661,11 +666,13 @@ TestplatformChmod(
     }
 
     /*
-     * Apply the new ACL.
+     * Apply the new ACL. Note PROTECTED_DACL_SECURITY_INFORMATION can be used
+     * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
     if (set_readOnly == acl_readOnly_found || setNamedSecurityInfoProc(
-	    (LPSTR) nativePath, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+	    (LPSTR) nativePath, SE_FILE_OBJECT, 
+	    DACL_SECURITY_INFORMATION /*| PROTECTED_DACL_SECURITY_INFORMATION*/,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
     }

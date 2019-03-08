@@ -29,6 +29,9 @@ static int		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
+static Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
+			    int forceRelative);
+
 
 /*
  * Define the 'path' object type, which Tcl uses to represent file paths
@@ -821,15 +824,13 @@ GetExtension(
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj * TclJoinPath(int elements, Tcl_Obj * const objv[]);
-
 Tcl_Obj *
 Tcl_FSJoinPath(
     Tcl_Obj *listObj,		/* Path elements to join, may have a zero
 				 * reference count. */
     int elements)		/* Number of elements to use (-1 = all) */
 {
-    Tcl_Obj *copy, *res;
+    Tcl_Obj *res;
     int objc;
     Tcl_Obj **objv;
 
@@ -838,17 +839,17 @@ Tcl_FSJoinPath(
     }
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
-    copy = TclListObjCopy(NULL, listObj);
     Tcl_ListObjGetElements(NULL, listObj, &objc, &objv);
-    res = TclJoinPath(elements, objv);
-    Tcl_DecrRefCount(copy);
+    res = TclJoinPath(elements, objv, 0);
     return res;
 }
 
-Tcl_Obj *
+static Tcl_Obj *
 TclJoinPath(
-    int elements,
-    Tcl_Obj * const objv[])
+    int elements,		/* Number of elements to use (-1 = all) */
+    Tcl_Obj * const objv[],	/* Path elements to join */
+    int forceRelative)		/* If non-zero, assume all more paths are
+				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;	/* Resulting path object (container of join) */
     Tcl_Obj *elt;		/* Path part (result if returns part of path) */
@@ -875,13 +876,14 @@ TclJoinPath(
          * to be an absolute path. Added a check for that elt is absolute.
 	 */
 
-	if ((i == (elements-2)) && (i == 0)
+	if ((i == 0) && (elements == 2)
                 && (elt->typePtr == &tclFsPathType)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
                 && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
             Tcl_Obj *tailObj = objv[i+1];
-
-	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
+	    /* if forceRelative - second path is relative */
+	    type = forceRelative ? TCL_PATH_RELATIVE :
+		    TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
 		int len;
@@ -953,7 +955,9 @@ TclJoinPath(
 	}
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	driveNameLength = 0;
-	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
+	/* if forceRelative - all paths excepting first one are relative */
+	type = (forceRelative && (i > 0)) ? TCL_PATH_RELATIVE :
+		TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
 	     * Zero out the current result.
@@ -1869,7 +1873,6 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	(void) Tcl_GetStringFromObj(dir, &cwdLen);
-	cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
 
 	/* Normalize the combined string. */
 
@@ -1890,13 +1893,13 @@ Tcl_FSGetNormalizedPath(
 	     * to a normalized head, we can more efficiently normalize the
 	     * combined path by passing over only the unnormalized tail
 	     * portion.  When this is sufficient, prior developers claim
-	     * this should be much faster.  We use 'cwdLen-1' so that we are
+	     * this should be much faster.  We use 'cwdLen' so that we are
 	     * already pointing at the dir-separator that we know about.
 	     * The normalization code will actually start off directly
 	     * after that separator.
 	     */
 
-	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1);
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen);
 	}
 
 	/* Now we need to construct the new path object. */
@@ -2414,36 +2417,29 @@ SetFsPathFromAny(
      * Handle tilde substitutions, if needed.
      */
 
-    if (name[0] == '~') {
+    if (len && name[0] == '~') {
 	char *expandedUser;
 	Tcl_DString temp;
 	int split;
 	char separator = '/';
 
+	/*
+	 * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
+	 * split becomes value 1 for '~/...' as well as for '~'.
+	 */
 	split = FindSplitPos(name, separator);
-	if (split != len) {
-	    /*
-	     * We have multiple pieces '~user/foo/bar...'
-	     */
-
-	    name[split] = '\0';
-	}
 
 	/*
 	 * Do some tilde substitution.
 	 */
 
-	if (name[1] == '\0') {
+	if (split == 1) {
 	    /*
-	     * We have just '~'
+	     * We have just '~' (or '~/...')
 	     */
 
 	    const char *dir;
 	    Tcl_DString dirString;
-
-	    if (split != len) {
-		name[split] = separator;
-	    }
 
 	    dir = TclGetEnv("HOME", &dirString);
 	    if (dir == NULL) {
@@ -2462,22 +2458,24 @@ SetFsPathFromAny(
 	     * We have a user name '~user'
 	     */
 
+	    Tcl_DString userName;
+
+	    Tcl_DStringInit(&userName);
+	    Tcl_DStringAppend(&userName, name+1, split-1);
+	    expandedUser = Tcl_DStringValue(&userName);
+
 	    Tcl_DStringInit(&temp);
-	    if (TclpGetUserHome(name+1, &temp) == NULL) {
+	    if (TclpGetUserHome(expandedUser, &temp) == NULL) {
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "user \"", name+1,
+		    Tcl_AppendResult(interp, "user \"", expandedUser,
 			    "\" doesn't exist", NULL);
 		}
+		Tcl_DStringFree(&userName);
 		Tcl_DStringFree(&temp);
-		if (split != len) {
-		    name[split] = separator;
-		}
 		return TCL_ERROR;
 	    }
-	    if (split != len) {
-		name[split] = separator;
-	    }
+	    Tcl_DStringFree(&userName);
 	}
 
 	expandedUser = Tcl_DStringValue(&temp);
@@ -2515,14 +2513,18 @@ SetFsPathFromAny(
 
 		pair[0] = transPtr;
 		pair[1] = Tcl_NewStringObj(name+split+1, -1);
-		transPtr = TclJoinPath(2, pair);
-		TclDecrRefCount(pair[0]);
-		TclDecrRefCount(pair[1]);
+		transPtr = TclJoinPath(2, pair, 1);
+		if (transPtr != pair[0]) {
+		    TclDecrRefCount(pair[0]);
+		}
+		if (transPtr != pair[1]) {
+		    TclDecrRefCount(pair[1]);
+		}
 	    }
 	}
 	Tcl_DStringFree(&temp);
     } else {
-	transPtr = TclJoinPath(1, &pathPtr);
+	transPtr = TclJoinPath(1, &pathPtr, 1);
     }
 
     /*

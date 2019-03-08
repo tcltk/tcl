@@ -6142,6 +6142,8 @@ test io-47.6 {file events on shared files, deleting file events} {testfevent fil
     close $f
     set x
 } {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -6244,6 +6246,9 @@ test io-48.3 {testing readability conditions} {stdio unix nonBlockFiles openpipe
     close $f
     list $x $l
 } {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar
+
 test io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {fileevent} {
     file delete $path(test1)
     set f [open $path(test1) w]

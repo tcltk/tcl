@@ -113,7 +113,7 @@ typedef struct String {
 #define STRING_UALLOC(numChars)	\
 	((numChars) * sizeof(Tcl_UniChar))
 #define STRING_SIZE(ualloc) \
-    ((unsigned) ((ualloc) \
+    ((unsigned) ((ualloc != 0) \
 	? (sizeof(String) - sizeof(Tcl_UniChar) + (ualloc)) \
 	: sizeof(String)))
 #define stringCheckLimits(numChars) \
@@ -1938,6 +1938,10 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
+	    if (width < 0) {
+		msg = overflow;
+		goto errorMsg;
+	    }
 	    format = end;
 	    step = Tcl_UtfToUniChar(format, &ch);
 	} else if (ch == '*') {

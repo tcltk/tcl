@@ -535,7 +535,7 @@ test event-11.4 {Tcl_VwaitCmd procedure} {} {
     after 10; update; # On Mac make sure update won't take long
     after 100 {set x x-done}
     after 200 {set y y-done}
-    after 300 {set z z-done}
+    after 400 {set z z-done}
     after idle {set q q-done}
     set x before
     set y before

@@ -1516,7 +1516,6 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
 #ifndef NO_WIDE_TYPE
@@ -2263,7 +2262,7 @@ StringRplcCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *ustring;
-    int first, last, length;
+    int first, last, length, end;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
@@ -2271,20 +2270,33 @@ StringRplcCmd(
     }
 
     ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-    length--;
+    end = length - 1;
 
-    if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK){
+    if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
+	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK){
 	return TCL_ERROR;
     }
 
-    if ((last < first) || (last < 0) || (first > length)) {
+    /*
+     * The following test screens out most empty substrings as
+     * candidates for replacement. When they are detected, no
+     * replacement is done, and the result is the original string,
+     */
+    if ((last < 0) ||		/* Range ends before start of string */
+	    (first > end) ||	/* Range begins after end of string */
+	    (last < first)) {	/* Range begins after it starts */
+
+	/*
+	 * BUT!!! when (end < 0) -- an empty original string -- we can
+	 * have (first <= end < 0 <= last) and an empty string is permitted
+	 * to be replaced.
+	 */
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
 	Tcl_Obj *resultPtr;
 
 	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-	length--;
+	end = length-1;
 
 	if (first < 0) {
 	    first = 0;
@@ -2294,9 +2306,9 @@ StringRplcCmd(
 	if (objc == 5) {
 	    Tcl_AppendObjToObj(resultPtr, objv[4]);
 	}
-	if (last < length) {
+	if (last < end) {
 	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
-		    length - last);
+		    end - last);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
@@ -3128,8 +3140,7 @@ StringTrimCmd(
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
 
-    triml = TclTrimLeft(string1, length1, string2, length2);
-    trimr = TclTrimRight(string1 + triml, length1 - triml, string2, length2);
+    triml = TclTrim(string1, length1, string2, length2, &trimr);
 
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj(string1 + triml, length1 - triml - trimr));
@@ -3921,7 +3932,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }
@@ -3974,13 +3985,17 @@ Tcl_TimeRateObjCmd(
     register Tcl_Obj *objPtr;
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
-    Tcl_WideInt count = 0;	/* Holds repetition count */
-    Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL; 
+    Tcl_WideUInt count = 0;	/* Holds repetition count */
+    Tcl_WideInt  maxms  = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
-    Tcl_WideInt threshold = 1;	/* Current threshold for check time (faster
+    Tcl_WideUInt maxcnt = WIDE_MAX;
+				/* Maximal count of iterations. */
+    Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
-    Tcl_WideInt maxIterTm = 1;	/* Max time of some iteration as max threshold
+    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max threshold
 				 * additionally avoid divide to zero (never < 1) */
+    unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
+				 * growth of execution time. */
     register Tcl_WideInt start, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
@@ -4023,16 +4038,24 @@ Tcl_TimeRateObjCmd(
 	}
     }
 
-    if (i >= objc || i < objc-2) {
+    if (i >= objc || i < objc-3) {
 usage:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??");
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
-    if (i < objc) {
-	result = Tcl_GetWideIntFromObj(interp, objv[i], &maxms);
+    if (i < objc) {	/* max-time */
+	result = Tcl_GetWideIntFromObj(interp, objv[i++], &maxms);
 	if (result != TCL_OK) {
 	    return result;
+	}
+	if (i < objc) {	/* max-count*/
+	    Tcl_WideInt v;
+	    result = Tcl_GetWideIntFromObj(interp, objv[i], &v);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    maxcnt = (v > 0) ? v : 0;
 	}
     }
 
@@ -4040,7 +4063,7 @@ usage:
     if (calibrate) {
 
 	/* if no time specified for the calibration */
-	if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+	if (maxms == WIDE_MIN) {
 	    Tcl_Obj *clobjv[6];
 	    Tcl_WideInt maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
@@ -4070,7 +4093,7 @@ usage:
 	    clobjv[i++] = objPtr; 
 
 	    /* set last measurement overhead to max */
-	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+	    measureOverhead = (double)UWIDE_MAX;
 
 	    /* calibration cycle until it'll be preciser */
 	    maxms = -1000;
@@ -4104,14 +4127,14 @@ usage:
 	/* if time is negative - make current overhead more precise */
 	if (maxms > 0) {
 	    /* set last measurement overhead to max */
-	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+	    measureOverhead = (double)UWIDE_MAX;
 	} else {
 	    maxms = -maxms;
 	}
 
     }
 
-    if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+    if (maxms == WIDE_MIN) {
     	maxms = 1000;
     }
     if (overhead == -1) {
@@ -4144,6 +4167,7 @@ usage:
 #endif
 
     /* start measurement */
+    if (maxcnt > 0)
     while (1) {
     	/* eval single iteration */
     	count++;
@@ -4156,7 +4180,14 @@ usage:
 	    result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	}
 	if (result != TCL_OK) {
-	    goto done;
+	    /* allow break from measurement cycle (used for conditional stop) */
+	    if (result != TCL_BREAK) {
+		goto done;
+	    }
+	    /* force stop immediately */
+	    threshold = 1;
+	    maxcnt = 0;
+	    result = TCL_OK;
 	}
 	
 	/* don't check time up to threshold */
@@ -4169,12 +4200,12 @@ usage:
 	Tcl_GetTime(&now);
 	middle = now.sec; middle *= 1000000; middle += now.usec;
     #endif
-	if (middle >= stop) {
+	if (middle >= stop || count >= maxcnt) {
 	    break;
 	}
 
-	/* don't calculate threshold by few iterations, because sometimes
-	 * first iteration(s) can be too fast (cached, delayed clean up, etc) */
+	/* don't calculate threshold by few iterations, because sometimes first
+	 * iteration(s) can be too fast or slow (cached, delayed clean up, etc) */
 	if (count < 10) {
 	   threshold = 1; continue;
 	}
@@ -4183,11 +4214,30 @@ usage:
 	threshold = (middle - start) / count;
 	if (threshold > maxIterTm) {
 	    maxIterTm = threshold;
+	    /* interations seems to be longer */
+	    if (threshold > (maxIterTm * 2)) {
+		if ((factor *= 2) > 50) factor = 50;
+	    } else {
+		if (factor < 50) factor++;
+	    }
+	} else if (factor > 4) {
+	    /* interations seems to be shorter */
+	    if (threshold < (maxIterTm / 2)) {
+		if ((factor /= 2) < 4) factor = 4;
+	    } else {
+		factor--;
+	    }
 	}
-	/* as relation between remaining time and time since last check */
-	threshold = ((stop - middle) / maxIterTm) / 4;
+	/* as relation between remaining time and time since last check,
+	 * maximal some % of time (by factor), so avoid growing of the execution time
+	 * if iterations are not consistent, e. g. wax continuously on time) */
+	threshold = ((stop - middle) / maxIterTm) / factor + 1;
 	if (threshold > 100000) {	    /* fix for too large threshold */
 	    threshold = 100000;
+	}
+	/* consider max-count */
+	if (threshold > maxcnt - count) {
+	    threshold = maxcnt - count;
 	}
     }
 
@@ -4208,11 +4258,11 @@ usage:
 	    /* minimize influence of measurement overhead */
 	    if (overhead > 0) {
 		/* estimate the time of overhead (microsecs) */
-		Tcl_WideInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = overhead * count;
 		if (middle > curOverhead) {
 		    middle -= curOverhead;
 		} else {
-		    middle = 1;
+		    middle = 0;
 		}
 	    }
 	} else {
@@ -4241,7 +4291,7 @@ usage:
 	
 	/* calculate speed as rate (count) per sec */
 	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
-	if (count < (0x7FFFFFFFFFFFFFFFL / 1000000)) {
+	if (count < (WIDE_MAX / 1000000)) {
 	    val = (count * 1000000) / middle;
 	    if (val < 100000) {
 		if (val < 100)	{ fmt = "%.3f"; } else

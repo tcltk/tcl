@@ -387,7 +387,7 @@ TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc
 
-tcltest: $(TCLTEST)
+tcltest: binaries $(TCLTEST)
 
 binaries: @LIBRARIES@ $(TCLSH)
 
@@ -495,10 +495,10 @@ tclAppInit.${OBJEXT} : tclAppInit.c
 # The following objects should be built using the stub interfaces
 
 tclWinReg.${OBJEXT} : tclWinReg.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 tclWinDde.${OBJEXT} : tclWinDde.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES)  -DUNICODE -D_UNICODE -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -659,8 +659,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.2.tm;
-	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.8.tm;
+	@echo "Installing package tcltest 2.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.5.0.tm;
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
@@ -709,14 +709,14 @@ install-private-headers: libraries
 test: binaries $(TCLTEST)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLTEST) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "package ifneeded dde 1.3.3 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.2.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
+	-load "package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: binaries $(TCLTEST)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLTEST) $(TESTFLAGS) -load "package ifneeded dde 1.3.3 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.2.2 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
+	./$(TCLTEST) $(TESTFLAGS) -load "package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`

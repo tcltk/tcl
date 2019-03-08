@@ -1047,6 +1047,11 @@ TclpGetDate(
     time_t time;
 
     if (!useGMT) {
+#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#	undef timezone /* prevent conflict with timezone() function */
+	long timezone = 0;
+#endif
+
 	tzset();
 
 	/*
@@ -1075,6 +1080,10 @@ TclpGetDate(
 	if (*t >= LOCALTIME_VALIDITY_BOUNDARY) {
 	    return TclpLocaltime(t);
 	}
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+	_get_timezone(&timezone);
+#endif
 
 	time = *t - timezone;
 

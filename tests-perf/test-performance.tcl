@@ -75,7 +75,7 @@ proc _test_out_total {} {
   puts "Total $s:"
   lset _(m) 0 [format %.6f $wtm]
   lset _(m) 2 $wcnt
-  lset _(m) 4 [format %.3f [expr {$wcnt / (($nett ? $nett : ($tcnt * $_(reptime))) / 1000.0)}]]
+  lset _(m) 4 [format %.3f [expr {$wcnt / (($nett ? $nett : ($tcnt * [lindex $_(reptime) 0])) / 1000.0)}]]
   if {[llength $_(m)] > 6} {
     lset _(m) 6 [format %.3f $nett]
   }
@@ -96,10 +96,29 @@ proc _test_out_total {} {
   puts ""
 }
 
-proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
+proc _test_run {args} {
   upvar _ _
+  # parse args:
+  set _(out-result) 1
+  if {[lindex $args 0] eq "-no-result"} {
+    set _(out-result) 0
+    set args [lrange $args 1 end]
+  }
+  if {[llength $args] < 2 || [llength $args] > 3} {
+    return -code error "wrong # args: should be \"[lindex [info level [info level]] 0] ?-no-result? reptime lst ?outcmd?\""
+  }
+  set outcmd {puts $_(r)}
+  set args [lassign $args reptime lst]
+  if {[llength $args]} {
+    set outcmd [lindex $args 0]
+  }
+  # avoid output if only once:
+  if {[lindex $reptime 0] <= 1 || ([llength $reptime] > 1 && [lindex $reptime 1] == 1)} {
+    set _(out-result) 0
+  }
   array set _ [list itm {} reptime $reptime starttime [clock milliseconds]]
 
+  # process measurement:
   foreach _(c) [_test_get_commands $lst] {
     puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
     if {[regexp {^\s*\#} $_(c)]} continue
@@ -107,11 +126,15 @@ proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
       puts [if 1 [lindex $_(c) 1]]
       continue
     }
-    if {$reptime > 1} {; #if not once:
+    # if output result (and not once):
+    if {$_(out-result)} {
       set _(r) [if 1 $_(c)]
       if {$outcmd ne {}} $outcmd
+      if {[llength $_(reptime)] > 1} { # decrement max-count
+        lset _(reptime) 1 [expr {[lindex $_(reptime) 1] - 1}]
+      }
     }
-    puts [set _(m) [timerate $_(c) $reptime]]
+    puts [set _(m) [timerate $_(c) {*}$_(reptime)]]
     lappend _(itm) $_(m)
     puts ""
   }
