@@ -1462,7 +1462,7 @@ TclGetCompletionCodeFromObj(
 	"ok", "error", "return", "break", "continue", NULL
     };
 
-    if ((value->typePtr != &indexType)
+    if (!TclHasIntRep(value, &indexType)
 	    && TclGetIntFromObj(NULL, value, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
