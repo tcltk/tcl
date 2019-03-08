@@ -76,7 +76,7 @@ proc test-queue {{reptime {1000 10000}}} {
     # cancel forwards "after 0" / $howmuch timer-events in queue:
     setup {set i 0; timerate {set ev([incr i]) [after 0 {set foo bar}]} {*}$reptime}
     setup {set le $i; set i 0; list 1 .. $le; # cancel up to $howmuch events}
-    {after cancel $ev([incr i]); if {$i >= $howmuch} break}
+    {after cancel $ev([incr i]); if {$i >= $le} break}
     cleanup {update; unset -nocomplain ev}
     # cancel backwards "after 0" / $howmuch timer-events in queue:
     setup {set i 0; timerate {set ev([incr i]) [after 0 {set foo bar}]} {*}$reptime}
