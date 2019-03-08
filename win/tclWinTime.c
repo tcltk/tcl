@@ -701,8 +701,11 @@ NativeGetMicroseconds(
 
 		GetSystemInfo(&systemInfo);
 
-		if (TclWinCPUID(0, regs) == TCL_OK
-			&& regs[1] == 0x756e6547	/* "Genu" */
+		if ( systemInfo.dwNumberOfProcessors >= 2
+		  || (TclWinCPUID(0, regs) == TCL_OK
+		    && (
+		    	(
+			   regs[1] == 0x756e6547	/* "Genu" */
 			&& regs[3] == 0x49656e69	/* "ineI" */
 			&& regs[2] == 0x6c65746e	/* "ntel" */
 			&& TclWinCPUID(1, regs) == TCL_OK
@@ -710,8 +713,11 @@ NativeGetMicroseconds(
 			   || ((regs[0]&0x00000F00) == 0x600) ) /* or compatible (VM) */
 			&& ((regs[0] & 0x0FF00000)	/* Extended family (bits 20-27) */
 			|| (regs[3] & 0x10000000)))	/* Hyperthread (bit 28) */
-			|| (((regs[1]&0x00FF0000) >> 16) >= 2 /* CPU count */
-			    || systemInfo.dwNumberOfProcessors >= 2)) {
+			)
+			|| ((regs[1]&0x00FF0000) >> 16) >= 2 /* CPU count */
+		    )
+		  )
+		) {
 		    timeInfo.perfCounterAvailable = TRUE;
 		} else {
 		    timeInfo.perfCounterAvailable = FALSE;
