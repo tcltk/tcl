@@ -248,7 +248,7 @@ TclOO_Class_CreateNs(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName, *nsName;
-    int len;
+    size_t len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -744,7 +744,7 @@ TclOO_Object_VarName(
 	return TCL_ERROR;
     }
     argPtr = objv[objc-1];
-    arg = Tcl_GetString(argPtr);
+    arg = TclGetString(argPtr);
 
     /*
      * Convert the variable name to fully-qualified form if it wasn't already.
@@ -781,8 +781,8 @@ TclOO_Object_VarName(
 
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
-		    if (!strcmp(Tcl_GetString(pvPtr->variableObj),
-			    Tcl_GetString(argPtr))) {
+		    if (!strcmp(TclGetString(pvPtr->variableObj),
+			    TclGetString(argPtr))) {
 			argPtr = pvPtr->fullNameObj;
 			break;
 		    }
@@ -803,8 +803,8 @@ TclOO_Object_VarName(
 		}
 		if (isInstance) {
 		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
-			if (!strcmp(Tcl_GetString(pvPtr->variableObj),
-				Tcl_GetString(argPtr))) {
+			if (!strcmp(TclGetString(pvPtr->variableObj),
+				TclGetString(argPtr))) {
 			    argPtr = pvPtr->fullNameObj;
 			    break;
 			}

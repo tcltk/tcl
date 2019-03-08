@@ -108,8 +108,8 @@ into a state where the decompressor can recover from on corruption, or
 \fBTCL_ZLIB_FINALIZE\fR to ensure that the stream is finished and that any
 trailer demanded by the format is written.
 .AP size_t count in
-The maximum number of bytes to get from the stream, or (size_t)-1 to get all remaining
-bytes from the stream's buffers.
+The maximum number of bytes to get from the stream, or TCL_AUTO_LENGTH to get
+all remaining bytes from the stream's buffers.
 .AP Tcl_Obj *compDict in
 A byte array value that is the compression dictionary to use with the stream.
 Note that this is \fInot a Tcl dictionary\fR, and it is recommended that this

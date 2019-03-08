@@ -61,7 +61,7 @@ in the form of a Tcl_Obj value.
 .AP size_t length in
 The number of bytes to copy from \fImessage\fR when
 appending to the \fB\-errorinfo\fR return option.
-If (size_t)-1, all bytes up to the first null byte are used.
+If TCL_AUTO_LENGTH, all bytes up to the first null byte are used.
 .AP Tcl_Obj *errorObjPtr in
 The \fB\-errorcode\fR return option will be set to this value.
 .AP char *element in

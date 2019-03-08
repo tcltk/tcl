@@ -49,8 +49,8 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    int before,
-    int after,
+    size_t before,
+    size_t after,
     int *indexPtr)
 {
     Tcl_Obj *tmpObj = Tcl_NewObj();
@@ -607,7 +607,7 @@ TclCompileInfoCommandsCmd(
     if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	goto notCompilable;
     }
-    bytes = Tcl_GetString(objPtr);
+    bytes = TclGetString(objPtr);
 
     /*
      * We require that the argument start with "::" and not have any of "*\[?"
@@ -1039,7 +1039,7 @@ TclCompileLassignCmd(
      */
 
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(			TCL_INDEX_END,		envPtr);
+    TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 
     return TCL_OK;
 }
@@ -1090,8 +1090,8 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_BEFORE,
-	    &idx) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+	    TCL_INDEX_NONE, &idx) == TCL_OK) {
 	/*
 	 * The idxTokenPtr parsed as a valid index value and was
 	 * encoded as expected by INST_LIST_INDEX_IMM.
@@ -1244,7 +1244,7 @@ TclCompileListCmd(
 
     if (concat && numWords == 2) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			TCL_INDEX_END,	envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,	envPtr);
     }
     return TCL_OK;
 }
@@ -1319,8 +1319,8 @@ TclCompileLrangeCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
-	    &idx1) != TCL_OK) {
+    if ((TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
+	    &idx1) != TCL_OK) || (idx1 == (int)TCL_INDEX_NONE)) {
 	return TCL_ERROR;
     }
     /*
@@ -1329,7 +1329,7 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1409,7 +1409,7 @@ TclCompileLinsertCmd(
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 3) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
@@ -1419,10 +1419,10 @@ TclCompileLinsertCmd(
     }
     TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
 
-    if (idx == TCL_INDEX_START) {
+    if (idx == (int)TCL_INDEX_START) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == TCL_INDEX_END) {
+    } else if (idx == (int)TCL_INDEX_END) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
 	/*
@@ -1437,7 +1437,7 @@ TclCompileLinsertCmd(
 	 * differ in their interpretation of the "end" index.
 	 */
 
-	if (idx < TCL_INDEX_END) {
+	if (idx < (int)TCL_INDEX_END) {
 	    idx++;
 	}
 	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
@@ -1445,7 +1445,7 @@ TclCompileLinsertCmd(
 	TclEmitInt4(			idx - 1,		envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     }
@@ -1484,13 +1484,13 @@ TclCompileLreplaceCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1506,14 +1506,14 @@ TclCompileLreplaceCmd(
      * we must defer to direct evaluation.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
+    if (idx1 == (int)TCL_INDEX_NONE) {
+	suffixStart = (int)TCL_INDEX_NONE;
+    } else if (idx2 == (int)TCL_INDEX_NONE) {
 	suffixStart = idx1;
-    } else if (idx2 == TCL_INDEX_BEFORE) {
-	suffixStart = idx1;
-    } else if (idx2 == TCL_INDEX_END) {
-	suffixStart = TCL_INDEX_AFTER;
-    } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
-	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
+    } else if (idx2 == (int)TCL_INDEX_END) {
+	suffixStart = (int)TCL_INDEX_NONE;
+    } else if (((idx2 < (int)TCL_INDEX_END) && (idx1 <= (int)TCL_INDEX_END))
+	    || ((idx2 >= (int)TCL_INDEX_START) && (idx1 >= (int)TCL_INDEX_START))) {
 	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
     } else {
 	return TCL_ERROR;
@@ -1547,11 +1547,11 @@ TclCompileLreplaceCmd(
 	 * and canonicalization side effects.
 	 */
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
-    if (idx1 != TCL_INDEX_START) {
+    if (idx1 != (int)TCL_INDEX_START) {
 	/* Prefix may not be empty; generate bytecode to push it */
 	if (emptyPrefix) {
 	    TclEmitOpcode(	INST_DUP,			envPtr);
@@ -1571,7 +1571,7 @@ TclCompileLreplaceCmd(
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     }
 
-    if (suffixStart == TCL_INDEX_AFTER) {
+    if (suffixStart == (int)TCL_INDEX_NONE) {
 	TclEmitOpcode(		INST_POP,			envPtr);
 	if (emptyPrefix) {
 	    PushStringLiteral(envPtr, "");
@@ -1579,7 +1579,7 @@ TclCompileLreplaceCmd(
     } else {
 	/* Suffix may not be empty; generate bytecode to push it */
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, suffixStart, envPtr);
-	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
 	if (!emptyPrefix) {
 	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
 	}
@@ -2123,7 +2123,7 @@ TclCompileRegexpCmd(
 	    sawLast++;
 	    i++;
 	    break;
-	} else if ((len > 1) && (strncmp(str,"-nocase",(unsigned)len) == 0)) {
+	} else if ((len > 1) && (strncmp(str,"-nocase", len) == 0)) {
 	    nocase = 1;
 	} else {
 	    /*
@@ -2270,7 +2270,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, quantified, result = TCL_ERROR;
+    int exact, quantified, result = TCL_ERROR;
+    size_t len;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2297,8 +2298,8 @@ TclCompileRegsubCmd(
     if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	goto done;
     }
-    if (Tcl_GetString(patternObj)[0] == '-') {
-	if (strcmp(Tcl_GetString(patternObj), "--") != 0
+    if (TclGetString(patternObj)[0] == '-') {
+	if (strcmp(TclGetString(patternObj), "--") != 0
 		|| parsePtr->numWords == 5) {
 	    goto done;
 	}
@@ -2348,7 +2349,7 @@ TclCompileRegsubCmd(
 		 */
 
 		len = Tcl_DStringLength(&pattern) - 2;
-		if (len > 0) {
+		if (len + 2 > 2) {
 		    goto isSimpleGlob;
 		}
 
@@ -2363,7 +2364,7 @@ TclCompileRegsubCmd(
 	bytes++;
     }
   isSimpleGlob:
-    for (bytes = Tcl_GetString(replacementObj); *bytes; bytes++) {
+    for (bytes = TclGetString(replacementObj); *bytes; bytes++) {
 	switch (*bytes) {
 	case '\\': case '&':
 	    goto done;
@@ -2635,8 +2636,8 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    const char *bytes = TclGetString(msg);
-    size_t numBytes = msg->length;
+    size_t numBytes;
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
@@ -2863,7 +2864,8 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    int n = varTokenPtr->numComponents;
+    size_t len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

@@ -9,19 +9,20 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* two complement xor */
 int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
 {
-   int res = MP_OKAY, bits;
+   int res = MP_OKAY, bits, abits, bbits;
    int as = mp_isneg(a), bs = mp_isneg(b);
    mp_int *mx = NULL, _mx, acpy, bcpy;
 
    if ((as != MP_NO) || (bs != MP_NO)) {
-      bits = MAX(mp_count_bits(a), mp_count_bits(b));
+      abits = mp_count_bits(a);
+      bbits = mp_count_bits(b);
+      bits = MAX(abits, bbits);
       res = mp_init_set_int(&_mx, 1uL);
       if (res != MP_OKAY) {
          goto end;

@@ -421,6 +421,24 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} {
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
 } {{string 1} {string 0} 2}
+test string-4.17.$noComp {string first, corner case} {
+    run {string first a aaa 4294967295}
+} {-1}
+test string-4.18.$noComp {string first, corner case} {
+    run {string first a aaa -1}
+} {0}
+test string-4.19.$noComp {string first, corner case} {
+    run {string first a aaa end-5}
+} {0}
+test string-4.20.$noComp {string last, corner case} {
+    run {string last a aaa 4294967295}
+} {2}
+test string-4.21.$noComp {string last, corner case} {
+    run {string last a aaa -1}
+} {-1}
+test string-4.22.$noComp {string last, corner case} {
+    run {string last a aaa end-5}
+} {-1}
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -515,10 +533,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -2306,6 +2324,7 @@ test string-29.15.$noComp {string cat, efficiency} -setup {
     tcl::unsupported::representation [run {string cat $e $f $e $f [list x]}]
 } -match glob -result {*no string representation}
 }
+
 test string-30.1.1.$noComp {[Bug ba921a8d98]: string cat} {
     run {string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]}
 } hellohello
@@ -2313,8 +2332,80 @@ test string-30.1.2.$noComp {[Bug ba921a8d98]: inplace cat by subst (compiled to 
     run {set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"}
 } hellohello
 
-}
+test string-31.1.$noComp {string is dict} {
+    string is dict {a b c d}
+} 1
+test string-31.1a.$noComp {string is dict} {
+    string is dict {a b c}
+} 0
+test string-31.2.$noComp {string is dict} {
+    string is dict "a \{b c"
+} 0
+test string-31.3.$noComp {string is dict} {
+    string is dict {a {b c}d e}
+} 0
+test string-31.4.$noComp {string is dict} {
+    string is dict {}
+} 1
+test string-31.5.$noComp {string is dict} {
+    string is dict -strict {a b c d}
+} 1
+test string-31.5a.$noComp {string is dict} {
+    string is dict -strict {a b c}
+} 0
+test string-31.6.$noComp {string is dict} {
+    string is dict -strict "a \{b c"
+} 0
+test string-31.7.$noComp {string is dict} {
+    string is dict -strict {a {b c}d e}
+} 0
+test string-31.8.$noComp {string is dict} {
+    string is dict -strict {}
+} 1
+test string-31.9.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b c d}] $x
+} {1 {}}
+test string-31.9a.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b c}] $x
+} {0 -1}
+test string-31.10.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x "a \{b c d"] $x
+} {0 2}
+test string-31.10a.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x "a \{b c"] $x
+} {0 2}
+test string-31.11.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b {b c}d e}] $x
+} {0 4}
+test string-31.12.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x {}] $x
+} {1 {}}
+test string-31.13.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x {  {b c}d e}] $x
+} {0 2}
+test string-31.14.$noComp {string is dict} {
+    set x {}
+    list [string is dict -failindex x "\uabcd {b c}d e"] $x
+} {0 2}
+test string-31.15.$noComp {string is dict, valid dict} {
+    string is dict {a b c d e f}
+} 1
+test string-31.16.$noComp {string is dict, invalid dict} {
+    string is dict a
+} 0
+test string-31.17.$noComp {string is dict, valid dict packed in invalid dict} {
+    string is dict {{a b c d e f g h}}
+} 0
 
+};				# foreach noComp {0 1}
+
 # cleanup
 rename MemStress {}
 rename makeByteArray {}

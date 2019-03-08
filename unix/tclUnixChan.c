@@ -252,7 +252,7 @@ FileInputProc(
      * nonblocking, the read will never block.
      */
 
-    bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
+    bytesRead = read(fsPtr->fd, buf, toRead);
     if (bytesRead > -1) {
 	return bytesRead;
     }
@@ -299,7 +299,7 @@ FileOutputProc(
 
 	return 0;
     }
-    written = write(fsPtr->fd, buf, (size_t) toWrite);
+    written = write(fsPtr->fd, buf, toWrite);
     if (written > -1) {
 	return written;
     }
@@ -579,7 +579,7 @@ TtySetOptionProc(
     const char *value)		/* New value for option. */
 {
     FileState *fsPtr = instanceData;
-    unsigned int len, vlen;
+    size_t len, vlen;
     TtyAttrs tty;
     int argc;
     const char **argv;
@@ -806,7 +806,7 @@ TtyGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     FileState *fsPtr = instanceData;
-    unsigned int len;
+    size_t len;
     char buf[3*TCL_INTEGER_SPACE + 16];
     int valid = 0;		/* Flag if valid option parsed. */
 

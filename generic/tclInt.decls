@@ -154,7 +154,7 @@ declare 32 {
 #}
 declare 34 {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, int *indexPtr)
+	    size_t endValue, size_t *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {
@@ -1052,6 +1052,10 @@ declare 255 {
 declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+}
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 
 ##############################################################################

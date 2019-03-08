@@ -172,8 +172,8 @@ exec(
 {
     AllocVars(v);
     int st, backref;
-    size_t n;
-    size_t i;
+    int n;
+    int i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define LOCALDFAS	40
@@ -236,7 +236,7 @@ exec(
     v->stop = (chr *)string + len;
     v->err = 0;
     assert(v->g->ntree >= 0);
-    n = (size_t) v->g->ntree;
+    n = v->g->ntree;
     if (n <= LOCALDFAS)
 	v->subdfas = subdfas;
     else
@@ -278,7 +278,7 @@ exec(
     if (v->pmatch != pmatch && v->pmatch != mat) {
 	FREE(v->pmatch);
     }
-    n = (size_t) v->g->ntree;
+    n = v->g->ntree;
     for (i = 0; i < n; i++) {
 	if (v->subdfas[i] != NULL)
 	    freeDFA(v->subdfas[i]);
@@ -889,7 +889,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == -1) {
+    if (v->pmatch[n].rm_so == (size_t)-1) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;

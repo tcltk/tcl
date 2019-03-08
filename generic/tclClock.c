@@ -452,7 +452,7 @@ ClockGetdatefieldsObjCmd(
      * that it isn't.
      */
 
-    if (objv[1]->typePtr == &tclBignumType) {
+    if (TclHasIntRep(objv[1], &tclBignumType)) {
 	Tcl_SetObjResult(interp, literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
@@ -488,27 +488,27 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut(NULL, dict, literals[LIT_TZNAME], fields.tzName);
     Tcl_DecrRefCount(fields.tzName);
     Tcl_DictObjPut(NULL, dict, literals[LIT_TZOFFSET],
-	    Tcl_NewIntObj(fields.tzOffset));
+	    Tcl_NewWideIntObj(fields.tzOffset));
     Tcl_DictObjPut(NULL, dict, literals[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     Tcl_DictObjPut(NULL, dict, literals[LIT_GREGORIAN],
-	    Tcl_NewIntObj(fields.gregorian));
+	    Tcl_NewWideIntObj(fields.gregorian));
     Tcl_DictObjPut(NULL, dict, literals[LIT_ERA],
 	    literals[fields.era ? LIT_BCE : LIT_CE]);
     Tcl_DictObjPut(NULL, dict, literals[LIT_YEAR],
-	    Tcl_NewIntObj(fields.year));
+	    Tcl_NewWideIntObj(fields.year));
     Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFYEAR],
-	    Tcl_NewIntObj(fields.dayOfYear));
+	    Tcl_NewWideIntObj(fields.dayOfYear));
     Tcl_DictObjPut(NULL, dict, literals[LIT_MONTH],
-	    Tcl_NewIntObj(fields.month));
+	    Tcl_NewWideIntObj(fields.month));
     Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFMONTH],
-	    Tcl_NewIntObj(fields.dayOfMonth));
+	    Tcl_NewWideIntObj(fields.dayOfMonth));
     Tcl_DictObjPut(NULL, dict, literals[LIT_ISO8601YEAR],
-	    Tcl_NewIntObj(fields.iso8601Year));
+	    Tcl_NewWideIntObj(fields.iso8601Year));
     Tcl_DictObjPut(NULL, dict, literals[LIT_ISO8601WEEK],
-	    Tcl_NewIntObj(fields.iso8601Week));
+	    Tcl_NewWideIntObj(fields.iso8601Week));
     Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFWEEK],
-	    Tcl_NewIntObj(fields.dayOfWeek));
+	    Tcl_NewWideIntObj(fields.dayOfWeek));
     Tcl_SetObjResult(interp, dict);
 
     return TCL_OK;
@@ -628,7 +628,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	copied = 1;
     }
     status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     if (status == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
@@ -712,7 +712,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	copied = 1;
     }
     status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     if (status == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
@@ -1772,8 +1772,7 @@ ClockClicksObjCmd(
 #endif
 	break;
     case CLICKS_MICROS:
-	Tcl_GetTime(&now);
-	clicks = ((Tcl_WideInt) now.sec * 1000000) + now.usec;
+	clicks = TclpGetMicroseconds();
 	break;
     }
 
@@ -1843,15 +1842,11 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    Tcl_Time now;
-
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
     return TCL_OK;
 }
 
@@ -1922,7 +1917,7 @@ ClockParseformatargsObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
+		    TclGetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {

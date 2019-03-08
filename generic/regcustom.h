@@ -56,9 +56,6 @@
 #ifdef __REG_WIDE_EXEC
 #undef __REG_WIDE_EXEC
 #endif
-#ifdef __REG_REGOFF_T
-#undef __REG_REGOFF_T
-#endif
 #ifdef __REG_NOFRONT
 #undef __REG_NOFRONT
 #endif
@@ -67,7 +64,6 @@
 #endif
 /* Interface types */
 #define	__REG_WIDE_T	unsigned
-#define	__REG_REGOFF_T	long	/* Not really right, but good enough... */
 /* Names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec

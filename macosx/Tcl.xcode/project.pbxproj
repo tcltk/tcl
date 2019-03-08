@@ -870,7 +870,6 @@
 		F96D449608F272BA004A47F5 /* tclWinSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinSock.c; sourceTree = "<group>"; };
 		F96D449708F272BA004A47F5 /* tclWinTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTest.c; sourceTree = "<group>"; };
 		F96D449808F272BA004A47F5 /* tclWinThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinThrd.c; sourceTree = "<group>"; };
-		F96D449908F272BA004A47F5 /* tclWinThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclWinThrd.h; sourceTree = "<group>"; };
 		F96D449A08F272BA004A47F5 /* tclWinTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTime.c; sourceTree = "<group>"; };
 		F974D56C0FBE7D6300BF728B /* http11.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = http11.test; sourceTree = "<group>"; };
 		F974D56D0FBE7D6300BF728B /* httpd11.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = httpd11.tcl; sourceTree = "<group>"; };
@@ -1782,7 +1781,6 @@
 				F96D449608F272BA004A47F5 /* tclWinSock.c */,
 				F96D449708F272BA004A47F5 /* tclWinTest.c */,
 				F96D449808F272BA004A47F5 /* tclWinThrd.c */,
-				F96D449908F272BA004A47F5 /* tclWinThrd.h */,
 				F96D449A08F272BA004A47F5 /* tclWinTime.c */,
 			);
 			path = win;

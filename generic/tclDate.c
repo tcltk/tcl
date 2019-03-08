@@ -2744,7 +2744,7 @@ TclDatelex(
 
 int
 TclClockOldscanObjCmd(
-    ClientData clientData,	/* Unused */
+    void *clientData,	/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
     Tcl_Obj *const *objv)	/* Parameters */
@@ -2761,7 +2761,7 @@ TclClockOldscanObjCmd(
 	return TCL_ERROR;
     }
 
-    yyInput = Tcl_GetString( objv[1] );
+    yyInput = TclGetString(objv[1]);
     dateInfo.dateStart = yyInput;
 
     yyHaveDate = 0;
@@ -2848,16 +2848,16 @@ TclClockOldscanObjCmd(
     resultElement = Tcl_NewObj();
     if (yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyYear));
+		Tcl_NewIntObj(yyYear));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonth));
+		Tcl_NewIntObj(yyMonth));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyDay));
+		Tcl_NewIntObj(yyDay));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
     if (yyHaveTime) {
-	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj((int)
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(
 		ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian)));
     } else {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
@@ -2866,7 +2866,7 @@ TclClockOldscanObjCmd(
     resultElement = Tcl_NewObj();
     if (yyHaveZone) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) -yyTimezone));
+		Tcl_NewIntObj(-yyTimezone));
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(1 - yyDSTmode));
     }
@@ -2875,29 +2875,29 @@ TclClockOldscanObjCmd(
     resultElement = Tcl_NewObj();
     if (yyHaveRel) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyRelMonth));
+		Tcl_NewIntObj(yyRelMonth));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyRelDay));
+		Tcl_NewIntObj(yyRelDay));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyRelSeconds));
+		Tcl_NewIntObj(yyRelSeconds));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
     resultElement = Tcl_NewObj();
     if (yyHaveDay && !yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyDayOrdinal));
+		Tcl_NewIntObj(yyDayOrdinal));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyDayNumber));
+		Tcl_NewIntObj(yyDayNumber));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
     resultElement = Tcl_NewObj();
     if (yyHaveOrdinalMonth) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonthOrdinal));
+		Tcl_NewIntObj(yyMonthOrdinal));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonth));
+		Tcl_NewIntObj(yyMonth));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 

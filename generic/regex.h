@@ -89,9 +89,6 @@ extern "C" {
 #ifdef __REG_WIDE_EXEC
 #undef __REG_WIDE_EXEC
 #endif
-#ifdef __REG_REGOFF_T
-#undef __REG_REGOFF_T
-#endif
 #ifdef __REG_NOFRONT
 #undef __REG_NOFRONT
 #endif
@@ -100,7 +97,6 @@ extern "C" {
 #endif
 /* interface types */
 #define	__REG_WIDE_T	unsigned
-#define	__REG_REGOFF_T	long	/* not really right, but good enough... */
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
@@ -113,17 +109,6 @@ extern "C" {
 /*
  * interface types etc.
  */
-
-/*
- * regoff_t has to be large enough to hold either off_t or ssize_t, and must
- * be signed; it's only a guess that long is suitable, so we offer
- * <sys/types.h> an override.
- */
-#ifdef __REG_REGOFF_T
-typedef __REG_REGOFF_T regoff_t;
-#else
-typedef long regoff_t;
-#endif
 
 /*
  * other interface types
@@ -157,8 +142,8 @@ typedef struct {
 
 /* result reporting (may acquire more fields later) */
 typedef struct {
-    regoff_t rm_so;		/* start of substring */
-    regoff_t rm_eo;		/* end of substring */
+    size_t rm_so;		/* start of substring */
+    size_t rm_eo;		/* end of substring */
 } regmatch_t;
 
 /* supplementary control and reporting */
