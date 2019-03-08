@@ -2580,6 +2580,7 @@ MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
+MODULE_SCOPE size_t	TclFindUtfBarewordEnd(const char *src, size_t numBytes);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,

@@ -628,7 +628,7 @@ TclIsSpaceProc(
 /*
  *----------------------------------------------------------------------
  *
- * TclIsBareword--
+ * TclIsBareword --
  *
  *	Report whether byte is one that can be part of a "bareword".
  *	This concept is named in expression parsing, where it determines
@@ -664,6 +664,52 @@ TclIsBareword(
 	return 0;
     }
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFindBarewordEndUni --
+ *
+ *      Scan src to the end of a "bareword".
+ *      The set of chars that are accepted is alnum (UTF-8 compatible)
+ *      and underscore ('_').
+ *
+ * Results:
+ *      Returns length of word (equal offset in bytes to position after the
+ *	end of word, 0 if not found).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+TclFindUtfBarewordEnd(
+    const char *src,
+    size_t numBytes)
+{
+    size_t p = 0, l;
+    Tcl_UniChar ch;
+
+    while (p < numBytes) {
+	/* 0-9,A-Z,a-Z,_ */
+	if (TclIsBareword(src[p])) {
+	    p++;
+	    continue;
+	}
+	if (!(src[p] & 0x80) || numBytes <= 1) { /* single byte or end reached */
+	    break;
+	}
+	/* test unicode alnum (consider NTS-char) */
+	l = TclUtfToUniChar(src+p, &ch);
+	if (!Tcl_UniCharIsAlnum(ch) || p+l > numBytes) {
+	    break;
+	}
+	p += l;
+    }
+    return p;
 }
 
 /*
@@ -1470,10 +1516,12 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	while (numBytes) {
-	    if (TclIsBareword(*src)) {
-		src += 1;
-		numBytes -= 1;
-		continue;
+	    size_t wordlen = TclFindUtfBarewordEnd(src, numBytes);
+
+	    src += wordlen;
+	    numBytes -= wordlen;
+	    if (!numBytes) {
+		break;
 	    }
 	    if ((src[0] == ':') && (numBytes != 1) && (src[1] == ':')) {
 		src += 2;
