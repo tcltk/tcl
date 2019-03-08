@@ -2710,27 +2710,23 @@ Tcl_GetLongFromObj(
 	     */
 
 	    mp_int big;
+	    unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
+	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(unsigned long) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
-		unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
-		unsigned char *bytes = (unsigned char *) &scratch;
-
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
-		    while (numBytes-- > 0) {
+	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
+		}
+		if (big.sign) {
+		    if (value <= 1 + (unsigned long)LONG_MAX) {
+			*longPtr = - (long) value;
+			return TCL_OK;
 		    }
-		    if (big.sign) {
-			if (value <= 1 + (unsigned long)LONG_MAX) {
-			    *longPtr = - (long) value;
-			    return TCL_OK;
-			}
-		    } else {
-			if (value <= (unsigned long)ULONG_MAX) {
-			    *longPtr = (long) value;
-			    return TCL_OK;
-			}
+		} else {
+		    if (value <= (unsigned long)ULONG_MAX) {
+			*longPtr = (long) value;
+			return TCL_OK;
 		    }
 		}
 	    }
@@ -2952,29 +2948,25 @@ Tcl_GetWideIntFromObj(
 	     */
 
 	    mp_int big;
+	    Tcl_WideUInt value = 0;
+	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    Tcl_WideInt scratch;
+	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
-		     + DIGIT_BIT - 1) / DIGIT_BIT) {
-		Tcl_WideUInt value = 0;
-		unsigned long numBytes = sizeof(Tcl_WideInt);
-		Tcl_WideInt scratch;
-		unsigned char *bytes = (unsigned char *) &scratch;
-
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
-		    while (numBytes-- > 0) {
-			value = (value << CHAR_BIT) | *bytes++;
+	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
+		    value = (value << CHAR_BIT) | *bytes++;
+		}
+		if (big.sign) {
+		    if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
+			*wideIntPtr = - (Tcl_WideInt) value;
+			return TCL_OK;
 		    }
-		    if (big.sign) {
-			if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
-			    *wideIntPtr = - (Tcl_WideInt) value;
-			    return TCL_OK;
-			}
-		    } else {
-			if (value <= (Tcl_WideUInt)WIDE_MAX) {
-			    *wideIntPtr = (Tcl_WideInt) value;
-			    return TCL_OK;
-			}
+		} else {
+		    if (value <= (Tcl_WideUInt)WIDE_MAX) {
+			*wideIntPtr = (Tcl_WideInt) value;
+			return TCL_OK;
 		    }
 		}
 	    }
@@ -3411,33 +3403,30 @@ Tcl_SetBignumObj(
     Tcl_Obj *objPtr,		/* Object to set */
     mp_int *bignumValue)	/* Value to store */
 {
+    Tcl_WideUInt value = 0;
+    unsigned long numBytes = sizeof(Tcl_WideUInt);
+    Tcl_WideUInt scratch;
+    unsigned char *bytes = (unsigned char *) &scratch;
+
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
-	Tcl_WideUInt value = 0;
-	unsigned long numBytes = sizeof(Tcl_WideUInt);
-	Tcl_WideUInt scratch;
-	unsigned char *bytes = (unsigned char *) &scratch;
-
-	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
-	    goto tooLargeForWide;
-	}
-	while (numBytes-- > 0) {
-	    value = (value << CHAR_BIT) | *bytes++;
-	}
-	if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
-	    goto tooLargeForWide;
-	}
-	if (bignumValue->sign) {
-	    TclSetIntObj(objPtr, -(Tcl_WideInt)value);
-	} else {
-	    TclSetIntObj(objPtr, (Tcl_WideInt)value);
-	}
-	mp_clear(bignumValue);
-	return;
+    if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	goto tooLargeForWide;
     }
+    while (numBytes-- > 0) {
+	value = (value << CHAR_BIT) | *bytes++;
+    }
+    if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
+	goto tooLargeForWide;
+    }
+    if (bignumValue->sign) {
+	TclSetIntObj(objPtr, -(Tcl_WideInt)value);
+    } else {
+	TclSetIntObj(objPtr, (Tcl_WideInt)value);
+    }
+    mp_clear(bignumValue);
+    return;
   tooLargeForWide:
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);

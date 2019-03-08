@@ -441,11 +441,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
+    ((TclHasIntRep((objPtr), &tclIntType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    ((objPtr)->typePtr == &tclDoubleType)				\
+    TclHasIntRep((objPtr), &tclDoubleType)				\
 	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -5277,8 +5277,8 @@ TEBCresume(
 	 * both.
 	 */
 
-	if ((valuePtr->typePtr == &tclStringType)
-		|| (value2Ptr->typePtr == &tclStringType)) {
+	if (TclHasIntRep(valuePtr, &tclStringType)
+		|| TclHasIntRep(value2Ptr, &tclStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
 	    ustring1 = TclGetUnicodeFromObj(valuePtr, &slength);
@@ -6085,7 +6085,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (valuePtr->typePtr == &tclBooleanType) {
+	if (TclHasIntRep(valuePtr,  &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int result = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);

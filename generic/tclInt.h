@@ -2806,8 +2806,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_SHORTEST 		0x4
 				/* Use the shortest possible string */
-#define TCL_DD_STEELE   		0x5
-				/* Use the original Steele&White algorithm */
 #define TCL_DD_E_FORMAT 		0x2
 				/* Use a fixed-length string of digits,
 				 * suitable for E format*/
@@ -2823,10 +2821,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_CONVERSION_TYPE_MASK	0x3
 				/* Mask to isolate the conversion type */
-#define TCL_DD_STEELE0 			0x1
-				/* 'Steele&White' after masking */
-#define TCL_DD_SHORTEST0		0x0
-				/* 'Shortest possible' after masking */
 
 /*
  *----------------------------------------------------------------
@@ -3194,10 +3188,22 @@ MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 MODULE_SCOPE void	TclInitThreadStorage(void);
 MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
+
 #ifdef TCL_WIDE_CLICKS
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+MODULE_SCOPE double	TclpWideClickInMicrosec(void);
+#else
+#   ifdef _WIN32
+#	define TCL_WIDE_CLICKS 1
+MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
+MODULE_SCOPE double	TclpWideClickInMicrosec(void);
+#	define		TclpWideClicksToNanoseconds(clicks) \
+				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
+#   endif
 #endif
+MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
+
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
@@ -3466,6 +3472,9 @@ MODULE_SCOPE int	Tcl_TellObjCmd(void *clientData,
 MODULE_SCOPE int	Tcl_ThrowObjCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TimeObjCmd(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_TimeRateObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TraceObjCmd(void *clientData,
@@ -4576,7 +4585,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
 #define TclHasIntRep(objPtr, type) \
-	((objPtr)->typePtr == (type)) 
+	((objPtr)->typePtr == (type))
 #define TclFetchIntRep(objPtr, type) \
 	(TclHasIntRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
