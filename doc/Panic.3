@@ -88,6 +88,8 @@ the Tcl library, \fBTcl_Panic\fR is a public function and may be called
 by any extension or application that wishes to abort the process and
 have a panic message displayed the same way that panic messages from Tcl
 will be displayed.
+.PP
+This function can not be used in stub-enabled extensions.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

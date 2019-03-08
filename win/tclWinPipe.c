@@ -851,7 +851,7 @@ TclpCloseFile(
  * Results:
  *	Returns the process id for the child process. If the pid was not known
  *	by Tcl, either because the pid was not created by Tcl or the child
- *	process has already been reaped, (size_t)-1 is returned.
+ *	process has already been reaped, TCL_IO_FAILURE is returned.
  *
  * Side effects:
  *	None.
@@ -875,7 +875,7 @@ TclpGetPid(
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return (size_t)-1;
+    return TCL_IO_FAILURE;
 }
 
 /*
@@ -1519,9 +1519,9 @@ BuildCommandLine(
     Tcl_DString ds;
 
     /* characters to enclose in quotes if unpaired quote flag set */
-    const static char *specMetaChars = "&|^<>!()%";
-    /* characters to enclose in quotes in any case (regardless unpaired-flag) */
-    const static char *specMetaChars2 = "%";
+    static const char specMetaChars[] = "&|^<>!()%";
+    /* character to enclose in quotes in any case (regardless unpaired-flag) */
+    static const char specMetaChars2[] = "%";
 
     /* Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1554,16 +1554,13 @@ BuildCommandLine(
 	if (arg[0] == '\0') {
 	    quote = CL_QUOTE;
 	} else {
-	    int count;
-	    Tcl_UniChar ch;
 	    for (start = arg;
 		*start != '\0' &&
 		    (quote & (CL_ESCAPE|CL_QUOTE)) != (CL_ESCAPE|CL_QUOTE);
-		start += count
+		start++
 	    ) {
-		count = Tcl_UtfToUniChar(start, &ch);
-		if (count > 1) continue;
-		if (Tcl_UniCharIsSpace(ch)) {
+		if (*start & 0x80) continue;
+		if (TclIsSpaceProc(*start)) {
 		    quote |= CL_QUOTE; /* quote only */
 		    if (bspos) { /* if backslash found - escape & quote */
 			quote |= CL_ESCAPE;
@@ -1834,7 +1831,7 @@ TclGetAndDetachPids(
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
-		Tcl_NewWideIntObj((unsigned)
+		Tcl_NewWideIntObj(
 			TclpGetPid(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
@@ -2217,7 +2214,7 @@ PipeOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
@@ -2672,7 +2669,7 @@ Tcl_PidObjCmd(
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
@@ -3108,7 +3105,8 @@ TclpOpenTemporaryFile(
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
-    int length, counter, counter2;
+    size_t length;
+    int counter, counter2;
     Tcl_DString buf;
 
     if (!resultingNameObj) {
@@ -3122,15 +3120,16 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetString(basenameObj);
+	size_t length;
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
+	Tcl_WinUtfToTChar(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
     } else {
 	const TCHAR *baseStr = TEXT("TCL");
-	int length = 3 * sizeof(TCHAR);
+	length = 3 * sizeof(TCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;

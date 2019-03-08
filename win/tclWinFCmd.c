@@ -911,8 +911,8 @@ TclpObjCopyDirectory(
 	return TCL_ERROR;
     }
 
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
+    Tcl_WinUtfToTChar(TclGetString(normSrcPtr), -1, &srcString);
+    Tcl_WinUtfToTChar(TclGetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -984,7 +984,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
+	Tcl_WinUtfToTChar(TclGetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1524,8 +1524,8 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	const char *str = TclGetString(fileName);
-	size_t len = fileName->length;
+	size_t len;
+	const char *str = TclGetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1586,6 +1586,7 @@ ConvertFileNameFormat(
 {
     int pathc, i;
     Tcl_Obj *splitPath;
+    size_t length;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 
@@ -1593,7 +1594,7 @@ ConvertFileNameFormat(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not read \"%s\": no such file or directory",
-		    Tcl_GetString(fileName)));
+		    TclGetString(fileName)));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);
 	}
@@ -1613,8 +1614,8 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetString(elt);
-	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
+	pathv = TclGetStringFromObj(elt, &length);
+	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
@@ -1649,8 +1650,8 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = TclGetString(tempPath);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
+	    tempString = TclGetStringFromObj(tempPath, &length);
+	    nativeName = Tcl_WinUtfToTChar(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
@@ -1883,7 +1884,7 @@ CannotSetAttribute(
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
-	    tclpFileAttrStrings[objIndex], Tcl_GetString(fileName)));
+	    tclpFileAttrStrings[objIndex], TclGetString(fileName)));
     errno = EINVAL;
     Tcl_PosixError(interp);
     return TCL_ERROR;

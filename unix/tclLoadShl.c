@@ -57,7 +57,7 @@ TclpDlopen(
     shl_t handle;
     Tcl_LoadHandle newHandle;
     const char *native;
-    char *fileName = Tcl_GetString(pathPtr);
+    char *fileName = TclGetString(pathPtr);
 
     /*
      * The flags below used to be BIND_IMMEDIATE; they were changed at the

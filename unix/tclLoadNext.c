@@ -61,7 +61,7 @@ TclpDlopen(
 
     NXStream *errorStream = NXOpenMemory(0,0,NX_READWRITE);
 
-    fileName = Tcl_GetString(pathPtr);
+    fileName = TclGetString(pathPtr);
 
     /*
      * First try the full path the user gave us. This is particularly

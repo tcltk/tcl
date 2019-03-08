@@ -80,42 +80,6 @@ namespace eval tcl {
 
 namespace eval tcl::Pkg {}
 
-# Windows specific end of initialization
-
-if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
-    namespace eval tcl {
-	proc EnvTraceProc {lo n1 n2 op} {
-	    global env
-	    set x $env($n2)
-	    set env($lo) $x
-	    set env([string toupper $lo]) $x
-	}
-	proc InitWinEnv {} {
-	    global env tcl_platform
-	    foreach p [array names env] {
-		set u [string toupper $p]
-		if {$u ne $p} {
-		    switch -- $u {
-			COMSPEC -
-			PATH {
-			    set temp $env($p)
-			    unset env($p)
-			    set env($u) $temp
-			    trace add variable env($p) write \
-				    [namespace code [list EnvTraceProc $p]]
-			    trace add variable env($u) write \
-				    [namespace code [list EnvTraceProc $p]]
-			}
-		    }
-		}
-	    }
-	    if {![info exists env(COMSPEC)]} {
-		set env(COMSPEC) cmd.exe
-	    }
-	}
-	InitWinEnv
-    }
-}
 
 # Setup the unknown package handler
 
@@ -797,21 +761,4 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
-}
-set isafe [interp issafe]
-###
-# Package manifest for all Tcl packages included in the /library file system
-###
-set isafe [interp issafe]
-set dir [file dirname [info script]]
-foreach {safe package version file} {
-  0 http            2.9.0 {http http.tcl}
-  1 msgcat          1.7.0  {msgcat msgcat.tcl}
-  1 opt             0.4.7  {opt optparse.tcl}
-  0 platform        1.0.14 {platform platform.tcl}
-  0 platform::shell 1.1.4  {platform shell.tcl}
-  1 tcltest         2.4.1  {tcltest tcltest.tcl}
-} {
-  if {$isafe && !$safe} continue
-  package ifneeded $package $version  [list source [file join $dir {*}$file]]
 }

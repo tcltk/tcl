@@ -18,7 +18,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
 
 # Big test for correct ordering of data in [expr]
 

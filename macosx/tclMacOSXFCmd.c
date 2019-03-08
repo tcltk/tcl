@@ -577,7 +577,7 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (objPtr->typePtr != &tclOSTypeType) {
+    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.longValue;
@@ -639,9 +639,10 @@ SetOSTypeFromAny(
     int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    size_t length;
 
-    string = TclGetString(objPtr);
-    Tcl_UtfToExternalDString(encoding, string, objPtr->length, &ds);
+    string = TclGetStringFromObj(objPtr, &length);
+    Tcl_UtfToExternalDString(encoding, string, length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
@@ -692,24 +693,28 @@ UpdateStringOfOSType(
     register Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    char string[5];
+    const int size = TCL_UTF_MAX * 4;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.longValue;
-    Tcl_DString ds;
-    Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
-    unsigned len;
+    int written = 0;
+    Tcl_Encoding encoding;
+    char src[5];
 
-    string[0] = (char) (osType >> 24);
-    string[1] = (char) (osType >> 16);
-    string[2] = (char) (osType >>  8);
-    string[3] = (char) (osType);
-    string[4] = '\0';
-    Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
-    len = (unsigned) Tcl_DStringLength(&ds) + 1;
-    objPtr->bytes = Tcl_Alloc(len);
-    memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
-    objPtr->length = Tcl_DStringLength(&ds);
-    Tcl_DStringFree(&ds);
+    TclOOM(dst, size);
+
+    src[0] = (char) (osType >> 24);
+    src[1] = (char) (osType >> 16);
+    src[2] = (char) (osType >>  8);
+    src[3] = (char) (osType);
+    src[4] = '\0';
+
+    encoding = Tcl_GetEncoding(NULL, "macRoman");
+    Tcl_ExternalToUtf(NULL, encoding, src, -1, /* flags */ 0,
+	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
+	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
     Tcl_FreeEncoding(encoding);
+
+    (void)Tcl_InitStringRep(objPtr, NULL, written);
 }
 
 /*

@@ -537,8 +537,7 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
+    str = TclGetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
@@ -981,7 +980,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or (size_t)-1 if there is no such entry. The integer at *lengthPtr is
+ *	"name", or TCL_IO_FAILURE if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -1000,7 +999,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = (size_t)-1;
+    size_t i, result = TCL_IO_FAILURE;
     register const char *env, *p1, *p2;
     Tcl_DString envString;
 
