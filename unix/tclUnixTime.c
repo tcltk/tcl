@@ -725,7 +725,7 @@ TclpScaleUTime(
     Tcl_WideInt *usec)
 {
     /* Native scale is 1:1. */
-    if (tclScaleTimeProcPtr != NativeScaleTime) {
+    if (tclScaleTimeProcPtr == NativeScaleTime) {
 	return;
     } else {
 	Tcl_Time scTime;
