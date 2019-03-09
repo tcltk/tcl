@@ -662,6 +662,12 @@ Tcl_WaitForEvent(
 	}
 
 	/*
+	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
+	 * real-time.
+	 */
+	TclpScaleUTime(&waitTime);
+
+	/*
 	 * Note the time can be switched (time-jump), so use monotonic time here.
 	 */
 	endTime = TclpGetUTimeMonotonic() + waitTime;
@@ -680,11 +686,6 @@ Tcl_WaitForEvent(
     #endif
 
     repeat:
-	/*
-	* TIP #233 (Virtualized Time). Convert virtual domain delay to
-	* real-time.
-	*/
-	TclpScaleUTime(&waitTime);
 
 	/* No wait if timeout too small (because windows may wait too long) */
 	if (waitTime < (long)timerResolution.minDelay) {
@@ -845,6 +846,11 @@ TclpUSleep(
     long tolerance = 0;
     unsigned long actualResolution = 0;
 
+    /*
+     * TIP #233: Scale delay from virtual to real-time.
+     */
+    TclpScaleUTime(&usec);
+
     if (usec <= 9) { /* too short to start whole sleep process */
 	do {
 	    /* causes context switch only (shortest waiting) */
@@ -873,11 +879,6 @@ TclpUSleep(
 
     for (;;) {
 	
-	/*
-	 * TIP #233: Scale delay from virtual to real-time.
-	 */
-	TclpScaleUTime(&usec);
-
 	/* No wait if sleep time too small (because windows may wait too long) */
 	if (usec < (long)timerResolution.minDelay) {
 	    sleepTime = 0;

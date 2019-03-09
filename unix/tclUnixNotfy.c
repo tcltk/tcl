@@ -876,6 +876,12 @@ TclpUSleep(
     if (usec < 0) {
 	usec = 0;
     }
+
+    /*
+     * TIP #233: Scale from virtual time to real-time for select/usleep.
+     */
+    TclpScaleUTime(&usec);
+
     /*
      * The only trick here is that select appears to return early under some
      * conditions, so we have to check to make sure that the right amount of
@@ -891,11 +897,6 @@ TclpUSleep(
 
     while (1) {
 	
-	/*
-	 * TIP #233: Scale from virtual time to real-time for select/usleep.
-	 */
-	TclpScaleUTime(&usec);
-
 	if (usec >= TCL_TMR_MIN_DELAY) {
 
 	    struct timeval delay;
@@ -985,6 +986,8 @@ Tcl_WaitForEvent(
     if (timePtr != NULL) {
 
 	waitTime = TCL_TIME_TO_USEC(*timePtr);
+	/* TIP #233: Scale from virtual time to real-time  */
+	TclpScaleUTime(&waitTime);
 	/*
 	 * Note the time can be switched (time-jump), so use monotonic time here.
 	 */
@@ -1107,9 +1110,6 @@ Tcl_WaitForEvent(
 	    DWORD timeout;
 
 	    if (timePtr) {
-		/* TIP #233: Scale from virtual time to real-time  */
-		TclpScaleUTime(&waitTime);
-
 		timeout = waitTime / 1000;
 	    } else {
 		timeout = 0xFFFFFFFF;
@@ -1130,9 +1130,6 @@ Tcl_WaitForEvent(
 	else
 	if (timePtr) {
 	    struct timespec ptime;
-
-	    /* TIP #233: Scale from virtual time to real-time  */
-	    TclpScaleUTime(&waitTime);
 
 	    clock_gettime(tsdPtr->waitCVMono ? 
 		CLOCK_MONOTONIC : CLOCK_REALTIME, &ptime);
