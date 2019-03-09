@@ -1451,9 +1451,9 @@ OnOffWaitingList(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * TclpUSleep --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified time (in microseconds).
  *
  * Results:
  *	None.
@@ -1465,24 +1465,19 @@ OnOffWaitingList(
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+TclpUSleep(
+    Tcl_WideInt usec)	/* Time to sleep. */
 {
-    Tcl_Time vdelay;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (ms <= 0) {
-	return;
+    if (usec <= 0) { /* force one context switch */
+	usec = 0;
     }
 
     /*
      * TIP #233: Scale from virtual time to real-time.
      */
-
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
-    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
-
+    TclpScaleUTime(&usec);
 
     if (tsdPtr->runLoop) {
 	CFTimeInterval waitTime;
@@ -1490,7 +1485,7 @@ Tcl_Sleep(
 	CFAbsoluteTime nextTimerFire = 0, waitEnd, now;
 	SInt32 runLoopStatus;
 
-	waitTime = vdelay.sec + 1.0e-6 * vdelay.usec;
+	waitTime = (usec / 1000000) + 1.0e-6 * (usec % 1000000);
  	now = CFAbsoluteTimeGetCurrent();
 	waitEnd = now + waitTime;
 
@@ -1527,8 +1522,8 @@ Tcl_Sleep(
     } else {
 	struct timespec waitTime;
 
-	waitTime.tv_sec = vdelay.sec;
-	waitTime.tv_nsec = vdelay.usec * 1000;
+	waitTime.tv_sec = (usec / 1000000);
+	waitTime.tv_nsec = (usec % 1000000) * 1000;
 	while (nanosleep(&waitTime, &waitTime));
     }
 }
