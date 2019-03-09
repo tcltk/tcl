@@ -847,7 +847,8 @@ NotifierProc(
 
 #ifndef TCL_TMR_MIN_DELAY
 #   define TCL_TMR_MIN_DELAY 100
-#   define TCL_TMR_MIN_SLEEP 50
+#   define TCL_TMR_MIN_USLEEP 50
+#   define TCL_TMR_MIN_NSLEEP 1
 #   define TCL_TMR_OVERHEAD 50
 #endif
 
@@ -867,11 +868,16 @@ NotifierProc(
  *----------------------------------------------------------------------
  */
 
+static unsigned int tclMinDelay  = TCL_TMR_MIN_DELAY;
+static unsigned int tclMinUSleep = TCL_TMR_MIN_USLEEP;
+static unsigned int tclMinNSleep = TCL_TMR_MIN_NSLEEP;
+
 void
 TclpUSleep(
     Tcl_WideInt usec)	/* Time to sleep. */
 {
     Tcl_WideInt now, desired;
+    unsigned int *calibValue;
 
     if (usec < 0) {
 	usec = 0;
@@ -897,33 +903,48 @@ TclpUSleep(
 
     while (1) {
 	
-	if (usec >= TCL_TMR_MIN_DELAY) {
+	if (usec >= tclMinDelay) {
 
 	    struct timeval delay;
 
+	    calibValue = &tclMinDelay;
+	    usec -= (usec % tclMinDelay);
 	    delay.tv_sec  = usec / 1000000;
 	    delay.tv_usec = usec % 1000000;
 
 	    (void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
 
-	} else if (usec >= TCL_TMR_MIN_SLEEP) {
-	    usleep((useconds_t)(usec - TCL_TMR_MIN_SLEEP));
-	} else {
-	    /* nanosleep has the same minimal sleep interval as usleep */
-#if 0
+	} else if (usec >= tclMinUSleep) {
+	    calibValue = &tclMinUSleep;
+	    usec -= (usec % tclMinUSleep);
+	    usleep((useconds_t)usec);
+	} else if (usec >= tclMinNSleep) {
 	    struct timespec delay;
 
+	    calibValue = &tclMinNSleep;
+	    usec -= (usec % tclMinNSleep);
 	    delay.tv_sec  = usec / 1000000;
 	    delay.tv_nsec = (usec % 1000000) * 1000; /* usec to nsec */
 
 	    nanosleep(&delay, NULL);
+	} else {
+	    calibValue = NULL;
+#ifdef _POSIX_PRIORITY_SCHEDULING
+	    sched_yield(); /* yield the processor (force context switch). */
 #endif
 	}
 	
 	now = TclpGetUTimeMonotonic();
 
 	if ((usec = (desired - now)) <= 0 /* or tolerance */) {
+	    /*
+	     * Self calibration - sleep was too long, so adjust related value.
+	     */
+	    if (calibValue && (unsigned int)-usec > *calibValue) {
+		*calibValue = (*calibValue + (unsigned int)-usec) / 2;
+	    }
+	    /* end of sleep */
 	    break;
 	}
     }
