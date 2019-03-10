@@ -3120,7 +3120,6 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	size_t length;
 	const char *string = TclGetStringFromObj(basenameObj, &length);
 
 	Tcl_WinUtfToTChar(string, length, &buf);
