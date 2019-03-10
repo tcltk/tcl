@@ -471,123 +471,31 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 4
-    Tcl_UniChar ch = 0;
-    TCHAR *w, *wString;
-    const char *p, *end;
-    int oldLength;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
-#if TCL_UTF_MAX > 4
-
-    if (len < 0) {
-	len = strlen(string);
-    }
-
-    /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
-     * bytes.
-     */
-
-    oldLength = Tcl_DStringLength(dsPtr);
-
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((len + 1) * sizeof(TCHAR)));
-    wString = (TCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
-
-    w = wString;
-    p = string;
-    end = string + len - 4;
-    while (p < end) {
-	p += TclUtfToUniChar(p, &ch);
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    *w = '\0';
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + ((char *) w - (char *) wString));
-
-    return wString;
-#else
-    return Tcl_UtfToUniCharDString(string, len, dsPtr);
-#endif
+    return TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode. */
+    const WCHAR *string,	/* Source string in Unicode. */
     int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 4
-    const TCHAR *w, *wEnd;
-    char *p, *result;
-    int oldLength, blen = 1;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
     if (len < 0) {
-	len = wcslen((TCHAR *)string);
+	len = wcslen((WCHAR *)string);
     } else {
 	len /= 2;
     }
-#if TCL_UTF_MAX > 4
-    oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
-    result = Tcl_DStringValue(dsPtr) + oldLength;
-
-    p = result;
-    wEnd = (TCHAR *)string + len;
-    for (w = (TCHAR *)string; w < wEnd; ) {
-	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling high surrogates. */
-	    p += Tcl_UniCharToUtf(-1, p);
-	}
-	blen = Tcl_UniCharToUtf(*w, p);
-	p += blen;
-	if ((*w >= 0xD800) && (blen < 3)) {
-	    /* Indication that high surrogate is handled */
-	    blen = 0;
-	}
-	w++;
-    }
-    if (!blen) {
-	/* Special case for handling high surrogates. */
-	p += Tcl_UniCharToUtf(-1, p);
-    }
-    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
-
-    return result;
-#else
-    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
-#endif
+    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
 }
 
 /*

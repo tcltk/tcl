@@ -3119,15 +3119,15 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetString(basenameObj);
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
+	Tcl_WinUtfToTChar(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
     } else {
 	const TCHAR *baseStr = TEXT("TCL");
-	int length = 3 * sizeof(TCHAR);
+	length = 3 * sizeof(TCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;
