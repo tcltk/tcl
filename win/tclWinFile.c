@@ -1464,13 +1464,15 @@ TclpGetUserHome(
 	}
 	Tcl_DStringFree(&ds);
     } else {
-	wName = Tcl_WinUtfToTChar(domain + 1, -1, &ds);
+	Tcl_DStringInit(&ds);
+	wName = TclUtfToWCharDString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
-	wName = Tcl_WinUtfToTChar(name, nameLen, &ds);
+	Tcl_DStringInit(&ds);
+	wName = TclUtfToWCharDString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * user does not exists - if domain was not specified,
@@ -1488,14 +1490,14 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		Tcl_WinTCharToUtf((TCHAR *) wHomeDir, size * sizeof(WCHAR), bufferPtr);
+		TclWCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 		GetProfilesDirectoryW(buf, &size);
-		Tcl_WinTCharToUtf(buf, (size-1) * sizeof(WCHAR), bufferPtr);
+		TclWCharToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
@@ -2842,8 +2844,7 @@ TclWinVolumeRelativeNormalize(
 	 */
 
 	int cwdLen;
-	const char *drive =
-		TclGetStringFromObj(useThisCwd, &cwdLen);
+	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -2978,7 +2979,7 @@ TclNativeCreateNativeRep(
     WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    int len;
     WCHAR *wp;
 
     if (TclFSCwdIsNative()) {
@@ -3006,10 +3007,9 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetString(validPathPtr);
-    len = validPathPtr->length;
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
 
-    if (strlen(str)!=(unsigned int)len) {
+    if (strlen(str)!=(size_t)len) {
 	/* String contains NUL-bytes. This is invalid. */
 	goto done;
     }

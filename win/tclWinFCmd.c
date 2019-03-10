@@ -1524,8 +1524,8 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	const char *str = TclGetString(fileName);
-	size_t len = fileName->length;
+	int len;
+	const char *str = TclGetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1610,11 +1610,12 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
+	int length;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetString(elt);
-	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
+	pathv = TclGetStringFromObj(elt, &length);
+	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
@@ -1649,8 +1650,8 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = TclGetString(tempPath);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
+	    tempString = TclGetStringFromObj(tempPath, &length);
+	    nativeName = Tcl_WinUtfToTChar(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
