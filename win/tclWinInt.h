@@ -46,7 +46,7 @@ MODULE_SCOPE TclWinProcs tclWinProcs;
  */
 
 MODULE_SCOPE char	TclWinDriveLetterForVolMountPoint(
-			    const TCHAR *mountPoint);
+			    const WCHAR *mountPoint);
 MODULE_SCOPE void	TclWinEncodingsCleanup();
 MODULE_SCOPE void	TclWinInit(HINSTANCE hInst);
 MODULE_SCOPE TclFile	TclWinMakeFile(HANDLE handle);
@@ -56,7 +56,7 @@ MODULE_SCOPE Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
-MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const TCHAR *name,
+MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const WCHAR *name,
 			    DWORD access);
 MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
 			    const TCHAR *LinkCopy);

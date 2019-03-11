@@ -654,17 +654,15 @@ TtySetOptionProc(
      */
 
     if ((len > 1) && (strncmp(optionName, "-xchar", len) == 0)) {
-	Tcl_DString ds;
-
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	} else if (argc != 2) {
+	badXchar:
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", NULL);
+			" two elements with each a single 8-bit character", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
 	    Tcl_Free(argv);
 	    return TCL_ERROR;
@@ -672,13 +670,23 @@ TtySetOptionProc(
 
 	tcgetattr(fsPtr->fd, &iostate);
 
-	Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
-	iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
-	TclDStringClear(&ds);
+	iostate.c_cc[VSTART] = argv[0][0];
+	iostate.c_cc[VSTOP] = argv[1][0];
+	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
+	    Tcl_UniChar character = 0;
+	    int charLen;
 
-	Tcl_UtfToExternalDString(NULL, argv[1], -1, &ds);
-	iostate.c_cc[VSTOP] = *(const cc_t *) Tcl_DStringValue(&ds);
-	Tcl_DStringFree(&ds);
+	    charLen = Tcl_UtfToUniChar(argv[0], &character);
+	    if ((character > 0xFF) || argv[0][charLen]) {
+		goto badXchar;
+	    }
+	    iostate.c_cc[VSTART] = character;
+	    charLen = Tcl_UtfToUniChar(argv[1], &character);
+	    if ((character > 0xFF) || argv[1][charLen]) {
+		goto badXchar;
+	    }
+	    iostate.c_cc[VSTOP] = character;
+	}
 	Tcl_Free(argv);
 
 	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);

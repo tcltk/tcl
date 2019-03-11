@@ -234,12 +234,12 @@ static int		TableToUtfProc(ClientData clientData, const char *src,
 			    char *dst, int dstLen, int *srcReadPtr,
 			    int *dstWrotePtr, int *dstCharsPtr);
 static size_t		unilen(const char *src);
-static int		UnicodeToUtfProc(ClientData clientData,
+static int		UniCharToUtfProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
-static int		UtfToUnicodeProc(ClientData clientData,
+static int		UtfToUniCharProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
@@ -596,8 +596,8 @@ TclInitEncodingSubsystem(void)
     Tcl_CreateEncoding(&type);
 
     type.encodingName   = "unicode";
-    type.toUtfProc	= UnicodeToUtfProc;
-    type.fromUtfProc    = UtfToUnicodeProc;
+    type.toUtfProc	= UniCharToUtfProc;
+    type.fromUtfProc    = UtfToUniCharProc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.clientData	= NULL;
@@ -2339,7 +2339,7 @@ UtfToUtfProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UnicodeToUtfProc --
+ * UniCharToUtfProc --
  *
  *	Convert from Unicode to UTF-8.
  *
@@ -2353,7 +2353,7 @@ UtfToUtfProc(
  */
 
 static int
-UnicodeToUtfProc(
+UniCharToUtfProc(
     ClientData clientData,	/* Not used. */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
@@ -2429,7 +2429,7 @@ UnicodeToUtfProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UtfToUnicodeProc --
+ * UtfToUniCharProc --
  *
  *	Convert from UTF-8 to Unicode.
  *
@@ -2443,7 +2443,7 @@ UnicodeToUtfProc(
  */
 
 static int
-UtfToUnicodeProc(
+UtfToUniCharProc(
     ClientData clientData,	/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
