@@ -1348,7 +1348,7 @@ TeststringobjCmd(
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL);
+	    Tcl_GetUnicode(varPtr[varIndex]);
 	    break;
 	case 11:			/* appendself */
 	    if (objc != 4) {
