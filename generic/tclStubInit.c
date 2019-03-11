@@ -122,7 +122,7 @@ Tcl_WinUtfToTChar(
     if (!string) {
 	return NULL;
     }
-    return (char *)Tcl_UtfToWCharDString(string, len, dsPtr);
+    return (char *)TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
@@ -140,7 +140,7 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
-    return TclWCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
+    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)

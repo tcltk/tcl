@@ -82,7 +82,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR className[] = TEXT("TclSocket");
+static const WCHAR className[] = L"TclSocket";
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -363,7 +363,7 @@ InitializeHostName(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 

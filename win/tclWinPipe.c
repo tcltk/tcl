@@ -191,7 +191,7 @@ static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
-static int		TempFileName(TCHAR name[MAX_PATH]);
+static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 static void		PipeThreadActionProc(ClientData instanceData,
 			    int action);
@@ -463,10 +463,10 @@ TclWinMakeFile(
 
 static int
 TempFileName(
-    TCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
+    WCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
-    const TCHAR *prefix = TEXT("TCL");
+    const WCHAR *prefix = L"TCL";
     if (GetTempPath(MAX_PATH, name) != 0) {
 	if (GetTempFileName(name, prefix, 0, name) != 0) {
 	    return 1;
@@ -533,7 +533,7 @@ TclpOpenFile(
     HANDLE handle;
     DWORD accessMode, createMode, shareMode, flags;
     Tcl_DString ds;
-    const TCHAR *nativePath;
+    const WCHAR *nativePath;
 
     /*
      * Map the access bits to the NT access mode.
@@ -650,7 +650,7 @@ TclFile
 TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
-    TCHAR name[MAX_PATH];
+    WCHAR name[MAX_PATH];
     const char *native;
     Tcl_DString dstring;
     HANDLE handle;
@@ -744,7 +744,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    TCHAR fileName[MAX_PATH];
+    WCHAR fileName[MAX_PATH];
 
     if (TempFileName(fileName) == 0) {
 	return NULL;
@@ -936,7 +936,7 @@ TclpCreateProcess(
 				 * process. */
 {
     int result, applType, createFlags;
-    Tcl_DString cmdLine;	/* Complete command line (TCHAR). */
+    Tcl_DString cmdLine;	/* Complete command line (WCHAR). */
     STARTUPINFO startInfo;
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
@@ -1048,7 +1048,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdOutput = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
+	startInfo.hStdOutput = CreateFile(L"NUL:", GENERIC_WRITE, 0,
 		&secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, outputHandle, hProcess,
@@ -1068,7 +1068,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdError = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
+	startInfo.hStdError = CreateFile(L"NUL:", GENERIC_WRITE, 0,
 		&secAtts, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError,
@@ -1134,7 +1134,7 @@ TclpCreateProcess(
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
 
-    if (CreateProcess(NULL, (TCHAR *) Tcl_DStringValue(&cmdLine),
+    if (CreateProcess(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
 	    &procInfo) == 0) {
 	TclWinConvertError(GetLastError());
@@ -1260,14 +1260,14 @@ ApplicationType(
 {
     int applType, i, nameLen, found;
     HANDLE hFile;
-    TCHAR *rest;
+    WCHAR *rest;
     char *ext;
     char buf[2];
     DWORD attr, read;
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
-    const TCHAR *nativeName;
-    TCHAR nativeFullPath[MAX_PATH];
+    const WCHAR *nativeName;
+    WCHAR nativeFullPath[MAX_PATH];
     static const char extensions[][5] = {"", ".com", ".exe", ".bat", ".cmd"};
 
     /*
@@ -1512,7 +1512,7 @@ BuildCommandLine(
     int argc,			/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
-				 * command line (TCHAR). */
+				 * command line (WCHAR). */
 {
     const char *arg, *start, *special, *bspos;
     int quote = 0, i;
@@ -3101,7 +3101,7 @@ TclpOpenTemporaryFile(
     Tcl_Obj *extensionObj,
     Tcl_Obj *resultingNameObj)
 {
-    TCHAR name[MAX_PATH];
+    WCHAR name[MAX_PATH];
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
@@ -3118,7 +3118,7 @@ TclpOpenTemporaryFile(
     if (length == 0) {
 	goto gotError;
     }
-    namePtr += length * sizeof(TCHAR);
+    namePtr += length * sizeof(WCHAR);
     if (basenameObj) {
 	const char *string = TclGetStringFromObj(basenameObj, &length);
 
@@ -3127,8 +3127,8 @@ TclpOpenTemporaryFile(
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
     } else {
-	const TCHAR *baseStr = TEXT("TCL");
-	length = 3 * sizeof(TCHAR);
+	const WCHAR *baseStr = L"TCL";
+	length = 3 * sizeof(WCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;

@@ -52,15 +52,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   include <wspiapi.h>
 #endif
 
-#ifdef CHECK_UNICODE_CALLS
-#   define _UNICODE
-#   define UNICODE
-#   define __TCHAR_DEFINED
-    typedef float *_TCHAR;
-#   define _TCHAR_DEFINED
-    typedef float *TCHAR;
-#endif /* CHECK_UNICODE_CALLS */
-
 /*
  *  Pull in the typedef of TCHAR for windows.
  */
