@@ -2041,7 +2041,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
