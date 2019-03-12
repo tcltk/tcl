@@ -1465,14 +1465,14 @@ TclpGetUserHome(
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToUtf16DString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(name, nameLen, &ds);
+	wName = Tcl_UtfToUtf16DString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * user does not exists - if domain was not specified,
@@ -1490,14 +1490,14 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		TclWCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_Utf16ToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 		GetProfilesDirectoryW(buf, &size);
-		TclWCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_Utf16ToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }

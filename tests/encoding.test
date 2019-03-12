@@ -322,18 +322,29 @@ test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     set z
 } c080
 
-test encoding-16.1 {UnicodeToUtfProc} -body {
-    set val [encoding convertfrom unicode NN]
+test encoding-16.1 {Utf16ToUtfProc} -body {
+    set val [encoding convertfrom utf-16 NN]
     list $val [format %x [scan $val %c]]
 } -result "\u4e4e 4e4e"
-test encoding-16.2 {UnicodeToUtfProc} -body {
-    set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
+test encoding-16.2 {Utf16ToUtfProc} -body {
+    set val [encoding convertfrom utf-16 "\xd8\xd8\xdc\xdc"]
+    list $val [format %x [scan $val %c]]
+} -result "\U460dc 460dc"
+test encoding-16.3 {Ucs2ToUtfProc} -body {
+    set val [encoding convertfrom ucs-2 NN]
+    list $val [format %x [scan $val %c]]
+} -result "\u4e4e 4e4e"
+test encoding-16.4 {Ucs2ToUtfProc} -body {
+    set val [encoding convertfrom ucs-2 "\xd8\xd8\xdc\xdc"]
     list $val [format %x [scan $val %c]]
 } -result "\U460dc 460dc"
 
-test encoding-17.1 {UtfToUnicodeProc} -body {
-    encoding convertto unicode "\U460dc"
+test encoding-17.1 {UtfToUtf16Proc} -body {
+    encoding convertto utf-16 "\U460dc"
 } -result "\xd8\xd8\xdc\xdc"
+test encoding-17.2 {UtfToUcs2Proc} -body {
+    encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460dc"]
+} -result "\ufffd"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}

@@ -268,14 +268,14 @@ Tcl_UniCharToUtfDString(
 
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
 char *
-TclWCharToUtfDString(
-    const WCHAR *uniStr,	/* WCHAR string to convert to UTF-8. */
+Tcl_Utf16ToUtfDString(
+    const unsigned short *uniStr,	/* WCHAR string to convert to UTF-8. */
     int uniLength,		/* Length of WCHAR string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
-    const WCHAR *w, *wEnd;
+    const unsigned short *w, *wEnd;
     char *p, *string;
     int oldLength, len = 1;
 
@@ -636,8 +636,8 @@ Tcl_UtfToUniCharDString(
 }
 
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
-WCHAR *
-TclUtfToWCharDString(
+unsigned short *
+Tcl_UtfToUtf16DString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
     int length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */

@@ -240,12 +240,12 @@ test source-7.2 {source -encoding test} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
-    fconfigure $f -encoding unicode
+    fconfigure $f -encoding utf-16
     puts $f "set symbol(square-root) \u221A; set x correct"
     close $f
 } -body {
     set x unset
-    source -encoding unicode $sourcefile
+    source -encoding utf-16 $sourcefile
     set x
 } -cleanup {
     removeFile source.file

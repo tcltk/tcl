@@ -59,6 +59,24 @@
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
+#undef Tcl_GetUnicodeFromObj
+#undef Tcl_NewUnicodeObj
+
+static void uniCodePanic() {
+#if TCL_UTF_MAX <= 4
+    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX=6, but Tcl is compiled with -DTCL_UTF_MAX=4");
+#else
+    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX=4, but Tcl is compiled with -DTCL_UTF_MAX=6");
+#endif
+}
+#if TCL_UTF_MAX <= 4
+#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
+#else
+#   define Tcl_GetUtf16FromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
+#   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
+#   define Tcl_NewUtf16Obj (Tcl_Obj *(*)(const unsigned short *, int)) uniCodePanic
+#endif
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -244,7 +262,7 @@ Tcl_WinUtfToTChar(
     if (!string) {
 	return NULL;
     }
-    return (char *)TclUtfToWCharDString(string, len, dsPtr);
+    return (char *)Tcl_UtfToUtf16DString(string, len, dsPtr);
 }
 
 char *
@@ -262,7 +280,7 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
-    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
+    return Tcl_Utf16ToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -410,7 +428,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_SetExitProc 0
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
-#   define Tcl_GetUnicode 0
 #   define TclOldFreeObj 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
@@ -1345,7 +1362,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsPunct, /* 375 */
     Tcl_RegExpExecObj, /* 376 */
     Tcl_RegExpGetInfo, /* 377 */
-    Tcl_NewUnicodeObj, /* 378 */
+    Tcl_NewUtf16Obj, /* 378 */
     Tcl_SetUnicodeObj, /* 379 */
     Tcl_GetCharLength, /* 380 */
     Tcl_GetUniChar, /* 381 */
@@ -1401,7 +1418,7 @@ const TclStubs tclStubs = {
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
-    Tcl_GetUnicodeFromObj, /* 434 */
+    Tcl_GetUtf16FromObj, /* 434 */
     Tcl_GetMathFuncInfo, /* 435 */
     Tcl_ListMathFuncs, /* 436 */
     Tcl_SubstObj, /* 437 */
@@ -1611,6 +1628,8 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
+    Tcl_GetUnicodeFromObj, /* 644 */
+    Tcl_NewUnicodeObj, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */
