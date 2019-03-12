@@ -1339,7 +1339,7 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUtf16Obj(const unsigned short *unicode, int numChars)
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
@@ -1352,7 +1352,7 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {deprecated {No longer in use, changed to macro}} {
-    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
+    unsigned short *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
@@ -1542,7 +1542,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned short *Tcl_GetUtf16FromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2377,6 +2377,13 @@ declare 642 {
 
 declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
+declare 644 {
+    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+}
+declare 645 {
+    Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

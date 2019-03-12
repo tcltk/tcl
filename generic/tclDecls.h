@@ -1139,7 +1139,7 @@ EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
 /* 378 */
-EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
+EXTERN Tcl_Obj *	Tcl_NewUtf16Obj(const unsigned short *unicode,
 				int numChars);
 /* 379 */
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
@@ -1150,7 +1150,7 @@ EXTERN int		Tcl_GetCharLength(Tcl_Obj *objPtr);
 EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
 /* 382 */
 TCL_DEPRECATED("No longer in use, changed to macro")
-Tcl_UniChar *		Tcl_GetUnicode(Tcl_Obj *objPtr);
+unsigned short *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 /* 383 */
 EXTERN Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, int first, int last);
 /* 384 */
@@ -1295,8 +1295,7 @@ EXTERN int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length);
 /* 433 */
 EXTERN Tcl_ThreadId	Tcl_GetChannelThread(Tcl_Channel channel);
 /* 434 */
-EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
-				int *lengthPtr);
+EXTERN unsigned short *	 Tcl_GetUtf16FromObj(Tcl_Obj *objPtr, int *lengthPtr);
 /* 435 */
 TCL_DEPRECATED("")
 int			Tcl_GetMathFuncInfo(Tcl_Interp *interp,
@@ -1896,6 +1895,11 @@ EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
 EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
 /* 643 */
 EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
+/* 644 */
+EXTERN int *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
+				int *lengthPtr);
+/* 645 */
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const int *unicode, int numChars);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2309,11 +2313,11 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
+    Tcl_Obj * (*tcl_NewUtf16Obj) (const unsigned short *unicode, int numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") unsigned short * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
@@ -2365,7 +2369,7 @@ typedef struct TclStubs {
     char * (*tcl_AttemptDbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 431 */
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, int length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
-    Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
+    unsigned short * (*tcl_GetUtf16FromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
     TCL_DEPRECATED_API("") int (*tcl_GetMathFuncInfo) (Tcl_Interp *interp, const char *name, int *numArgsPtr, Tcl_ValueType **argTypesPtr, Tcl_MathProc **procPtr, ClientData *clientDataPtr); /* 435 */
     TCL_DEPRECATED_API("") Tcl_Obj * (*tcl_ListMathFuncs) (Tcl_Interp *interp, const char *pattern); /* 436 */
     Tcl_Obj * (*tcl_SubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 437 */
@@ -2575,6 +2579,8 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
+    int * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 644 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const int *unicode, int numChars); /* 645 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3361,8 +3367,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RegExpExecObj) /* 376 */
 #define Tcl_RegExpGetInfo \
 	(tclStubsPtr->tcl_RegExpGetInfo) /* 377 */
-#define Tcl_NewUnicodeObj \
-	(tclStubsPtr->tcl_NewUnicodeObj) /* 378 */
+#define Tcl_NewUtf16Obj \
+	(tclStubsPtr->tcl_NewUtf16Obj) /* 378 */
 #define Tcl_SetUnicodeObj \
 	(tclStubsPtr->tcl_SetUnicodeObj) /* 379 */
 #define Tcl_GetCharLength \
@@ -3473,8 +3479,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AttemptSetObjLength) /* 432 */
 #define Tcl_GetChannelThread \
 	(tclStubsPtr->tcl_GetChannelThread) /* 433 */
-#define Tcl_GetUnicodeFromObj \
-	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 434 */
+#define Tcl_GetUtf16FromObj \
+	(tclStubsPtr->tcl_GetUtf16FromObj) /* 434 */
 #define Tcl_GetMathFuncInfo \
 	(tclStubsPtr->tcl_GetMathFuncInfo) /* 435 */
 #define Tcl_ListMathFuncs \
@@ -3893,6 +3899,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
 	(tclStubsPtr->tcl_IsShared) /* 643 */
+#define Tcl_GetUnicodeFromObj \
+	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 644 */
+#define Tcl_NewUnicodeObj \
+	(tclStubsPtr->tcl_NewUnicodeObj) /* 645 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4073,6 +4083,13 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
 #undef Tcl_BackgroundError
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
+
+#if TCL_UTF_MAX <= 4
+#   undef Tcl_GetUnicodeFromObj
+#   define Tcl_GetUnicodeFromObj Tcl_GetUtf16FromObj
+#   undef Tcl_NewUnicodeObj
+#   define Tcl_NewUnicodeObj Tcl_NewUtf16Obj
+#endif
 
 /*
  * Deprecated Tcl procedures:

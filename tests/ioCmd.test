@@ -231,22 +231,22 @@ test iocmd-8.6 {fconfigure command} {
 test iocmd-8.7 {fconfigure command} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding unicode
+    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
     set x [fconfigure $f1]
     close $f1
     set x
-} {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
+} {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -translation lf}
 test iocmd-8.8 {fconfigure command} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding unicode
+		-eofchar {} -encoding utf-16
     set x ""
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
     close $f1
     set x
-} {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
+} {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -translation lf}}
 test iocmd-8.9 {fconfigure command} {
     file delete $path(test1)
     set f1 [open $path(test1) w]

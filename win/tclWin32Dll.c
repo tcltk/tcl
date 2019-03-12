@@ -475,7 +475,7 @@ Tcl_WinUtfToTChar(
     if (!string) {
 	return NULL;
     }
-    return TclUtfToWCharDString(string, len, dsPtr);
+    return (WCHAR *) Tcl_UtfToUtf16DString(string, len, dsPtr);
 }
 
 char *
@@ -495,7 +495,7 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
-    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
+    return Tcl_Utf16ToUtfDString(string, len, dsPtr);
 }
 
 /*

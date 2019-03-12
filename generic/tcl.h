@@ -2160,7 +2160,7 @@ typedef struct Tcl_EncodingType {
      * XXX: string rep that Tcl_UniChar represents.  Changing the size
      * XXX: of Tcl_UniChar is /not/ supported.
      */
-typedef unsigned int Tcl_UniChar;
+typedef int Tcl_UniChar;
 #else
 typedef unsigned short Tcl_UniChar;
 #endif

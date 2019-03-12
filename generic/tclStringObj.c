@@ -606,14 +606,14 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && (TCL_UTF_MAX<=4)
 #undef Tcl_GetUnicode
-Tcl_UniChar *
+unsigned short *
 Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
 {
-    return Tcl_GetUnicodeFromObj(objPtr, NULL);
+    return Tcl_GetUtf16FromObj(objPtr, NULL);
 }
 #endif /* TCL_NO_DEPRECATED */
 
