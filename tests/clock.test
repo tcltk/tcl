@@ -18899,6 +18899,14 @@ test clock-7.8 {Julian Day, precedence below seconds} {
 test clock-7.9 {Julian Day, two values} {
     clock scan {2440588 2440589} -format {%J %J} -gmt true
 } 86400
+test clock-7.10 {Calendar vs Astronomical Julian Day (without and with time fraction)} {
+    list \
+	[clock scan {2440588}   -format {%J}  -gmt true] \
+	[clock scan {2440588}   -format {%EJ} -gmt true] \
+	[clock scan {2440588}   -format {%Ej} -gmt true] \
+	[clock scan {2440588.5} -format {%EJ} -gmt true] \
+	[clock scan {2440588.5} -format {%Ej} -gmt true] \
+} {0 0 43200 43200 86400}
 
 
 test clock-7.11 {Astronomical JDN/JD} {
@@ -21376,12 +21384,22 @@ test clock-9.1 {seconds take precedence over ccyymmdd} {
     clock scan {0 20000101} -format {%s %Y%m%d} -gmt true
 } 0
 
-test clock-9.2 {Julian day takes precedence over ccyymmdd} {
-    clock scan {2440588 20000101} -format {%J %Y%m%d} -gmt true
-} 0
-test clock-9.2.1 {Astro julian day takes precedence over date-time} {
-    clock scan {2440587.5 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true
-} 0
+test clock-9.2 {Calendar julian day takes precedence over ccyymmdd} {
+    list \
+	[clock scan {2440588 20000101} -format {%J %Y%m%d} -gmt true] \
+	[clock scan {2440588 20000101} -format {%EJ %Y%m%d} -gmt true]
+} {0 0}
+test clock-9.2.1 {Calendar julian day (with time fraction) takes precedence over date-time} {
+    list \
+	[clock scan {2440588.0 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true] \
+	[clock scan {2440588.5 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true]
+    
+} {0 43200}
+test clock-9.3 {Astro julian day takes always precedence over date-time} {
+    list \
+	[clock scan {2440587.5 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true] \
+	[clock scan {2440588 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true]
+} {0 43200}
 
 # Test parsing of ccyyddd
 

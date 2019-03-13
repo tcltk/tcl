@@ -1584,7 +1584,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 }
 
 static int
-ClockScnToken_AstroJDN_Proc(ClockFmtScnCmdArgs *opts,
+ClockScnToken_JDN_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
     int minLen, maxLen;
@@ -1605,8 +1605,14 @@ ClockScnToken_AstroJDN_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_RETURN;
     };
     yyInput = p;
-    if (p >= end || *p++ != '.') { /* allow pure integer astronomical JDN */
-	goto done;
+    if (p >= end || *p++ != '.') { /* allow pure integer JDN */
+	/* by astronomical JD the seconds of day offs is 12 hours */
+	if (tok->map->offs) {
+	    goto done;
+	}
+	/* calendar JD */
+	yydate.julianDay = intJD;
+	return TCL_OK;
     }
     s = p;
     while (p < end && isdigit(UCHAR(*p))) {
@@ -1624,12 +1630,12 @@ done:
      * Note, astronomical JDN starts at noon in opposite to calendar julianday.
      */
 
-    fractJD = (SECONDS_PER_DAY/2)
+    fractJD = (int)tok->map->offs /* 0 for calendar or 43200 for astro JD */
 	+ (int)((Tcl_WideInt)SECONDS_PER_DAY * fractJD / fractJDDiv);
     if (fractJD > SECONDS_PER_DAY) {
 	fractJD %= SECONDS_PER_DAY;
 	intJD += 1;
-    }   
+    }
     yydate.secondOfDay = fractJD;
     yydate.julianDay = intJD;
 
@@ -1637,6 +1643,8 @@ done:
 	-210866803200L
 	+ ( SECONDS_PER_DAY * intJD )
 	+ ( fractJD );
+
+    info->flags |= CLF_POSIXSEC | CLF_SIGNED;
 
     return TCL_OK;
 }
@@ -1873,14 +1881,17 @@ static const char *ScnSTokenMapAliasIndex[2] = {
 };
 
 static const char *ScnETokenMapIndex =
-    "Ejys";
+    "EJjys";
 static ClockScanTokenMap ScnETokenMap[] = {
     /* %EE */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %EJ */
+    {CTOKT_PARSER, CLF_JULIANDAY, 0, 1, 0xffff, 0, /* calendar JDN starts at midnight */
+	ClockScnToken_JDN_Proc, NULL},
     /* %Ej */
-    {CTOKT_PARSER, CLF_JULIANDAY | CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, 0,
-	ClockScnToken_AstroJDN_Proc, NULL},
+    {CTOKT_PARSER, CLF_JULIANDAY, 0, 1, 0xffff, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
+	ClockScnToken_JDN_Proc, NULL},
     /* %Ey */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0, /* currently no capture, parse only token */
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
@@ -2385,6 +2396,7 @@ ClockScan(
     /*
      * Invalidate result
      */
+    flags |= info->flags;
 
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
