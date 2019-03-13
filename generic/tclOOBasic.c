@@ -605,7 +605,7 @@ TclOO_Object_Unknown(
 	Tcl_AppendToObj(errorMsg, " or ", -1);
     }
     Tcl_AppendToObj(errorMsg, methodNames[i], -1);
-    Tcl_Free(methodNames);
+    Tcl_Free((void *)methodNames);
     Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(objv[skip]), NULL);

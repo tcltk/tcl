@@ -4409,13 +4409,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    ? NULL : Tcl_GetString((objPtr)), \
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
-    (Tcl_GetUnicodeFromObj(objPtr, NULL), \
+    (Tcl_GetUnicodeFromObj((objPtr), NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj(objPtr, NULL))
+	    Tcl_GetUnicodeFromObj((objPtr), NULL))
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj(objPtr, NULL) ? \
+    (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
 	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : (*(lenPtr) = 0, NULL))
+	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : NULL)
 #endif
 
 /*

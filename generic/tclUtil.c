@@ -881,14 +881,14 @@ Tcl_SplitList(
 		&elSize, &literal);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    return result;
 	}
 	if (*element == 0) {
 	    break;
 	}
 	if (i >= size) {
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));

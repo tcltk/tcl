@@ -1566,7 +1566,7 @@ CompileDictEachCmd(
     }
     Tcl_DStringFree(&buffer);
     if (numVars != 2) {
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -1574,7 +1574,7 @@ CompileDictEachCmd(
     keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
     nameChars = strlen(argv[1]);
     valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
-    Tcl_Free(argv);
+    Tcl_Free((void *)argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);

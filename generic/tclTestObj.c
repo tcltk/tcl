@@ -625,7 +625,7 @@ TestindexobjCmd(
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
 	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
-    Tcl_Free(argv);
+    Tcl_Free((void *)argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
     }

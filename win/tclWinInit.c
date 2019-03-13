@@ -317,7 +317,7 @@ AppendEnvironment(
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	Tcl_Free(pathv);
+	Tcl_Free((void *)pathv);
     }
 }
 
