@@ -1584,6 +1584,64 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 }
 
 static int
+ClockScnToken_AstroJDN_Proc(ClockFmtScnCmdArgs *opts,
+    DateInfo *info, ClockScanToken *tok)
+{
+    int minLen, maxLen;
+    register const char *p = yyInput, *end; const char *s;
+    Tcl_WideInt intJD; int fractJD = 0, fractJDDiv = 1;
+
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    end = yyInput + maxLen;
+
+    /* currently positive astronomic dates only */
+    if (*p == '+') { p++; };
+    s = p;
+    while (p < end && isdigit(UCHAR(*p))) {
+	p++;
+    }
+    if ( _str2wideInt(&intJD, s, p, 1) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    yyInput = p;
+    if (p >= end || *p++ != '.') { /* allow pure integer astronomical JDN */
+	goto done;
+    }
+    s = p;
+    while (p < end && isdigit(UCHAR(*p))) {
+    	fractJDDiv *= 10;
+	p++;
+    }
+    if ( _str2int(&fractJD, s, p, 1) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    yyInput = p;
+
+done:
+    /* 
+     * Build a date from julian day (integer and fraction).
+     * Note, astronomical JDN starts at noon in opposite to calendar julianday.
+     */
+
+    fractJD = (SECONDS_PER_DAY/2)
+	+ (int)((Tcl_WideInt)SECONDS_PER_DAY * fractJD / fractJDDiv);
+    if (fractJD > SECONDS_PER_DAY) {
+	fractJD %= SECONDS_PER_DAY;
+	intJD += 1;
+    }   
+    yydate.secondOfDay = fractJD;
+    yydate.julianDay = intJD;
+
+    yydate.seconds =
+	-210866803200L
+	+ ( SECONDS_PER_DAY * intJD )
+	+ ( fractJD );
+
+    return TCL_OK;
+}
+
+static int
 ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
@@ -1815,11 +1873,14 @@ static const char *ScnSTokenMapAliasIndex[2] = {
 };
 
 static const char *ScnETokenMapIndex =
-    "Eys";
+    "Ejys";
 static ClockScanTokenMap ScnETokenMap[] = {
     /* %EE */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Ej */
+    {CTOKT_PARSER, CLF_JULIANDAY | CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, 0,
+	ClockScnToken_AstroJDN_Proc, NULL},
     /* %Ey */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0, /* currently no capture, parse only token */
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},

@@ -18900,6 +18900,72 @@ test clock-7.9 {Julian Day, two values} {
     clock scan {2440588 2440589} -format {%J %J} -gmt true
 } 86400
 
+
+test clock-7.11 {Astronomical JDN/JD} {
+    clock scan 0 -format %Ej -gmt true
+} -210866760000
+
+test clock-7.12 {Astronomical JDN/JD} {
+    clock format [clock scan 2440587.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "1970-01-01 00:00:00"
+
+test clock-7.13 {Astronomical JDN/JD} {
+    clock format [clock scan 2451544.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "2000-01-01 00:00:00"
+
+test clock-7.13.1 {Astronomical JDN/JD} {
+    clock format [clock scan 2488069.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "2100-01-01 00:00:00"
+
+test clock-7.14 {Astronomical JDN/JD} {
+    clock format [clock scan 5373483.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 00:00:00"
+
+test clock-7.14.1 {Astronomical JDN/JD} {
+    clock format [clock scan 5373484 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 12:00:00"
+test clock-7.14.2 {Astronomical JDN/JD} {
+    clock format [clock scan 5373484.49999 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 23:59:59"
+
+test clock-7.15 {Astronomical JDN/JD, bad} {
+    list [catch {
+	clock scan bogus -format %Ej
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+
+test clock-7.16 {Astronomical JDN/JD, overflow} {
+    list [catch {
+	clock scan 5373484.5 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 5373485 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 2147483648 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 2147483648.5 -format %Ej
+    } result] $result $errorCode
+} [lrepeat 4 1 {requested date too large to represent} {CLOCK dateTooLarge}]
+
+test clock-7.18 {Astronomical JDN/JD, same precedence as seconds (last wins} {
+    list [clock scan {2440588 86400} -format {%Ej %s} -gmt true] \
+	[clock scan {2440589 0} -format {%Ej %s} -gmt true] \
+	[clock scan {86400 2440588} -format {%s %Ej} -gmt true] \
+	[clock scan {0 2440589} -format {%s %Ej} -gmt true]
+} {86400 0 43200 129600}
+
+test clock-7.19 {Astronomical JDN/JD, two values} {
+    clock scan {2440588 2440589} -format {%Ej %Ej} -gmt true
+} 129600
+
 # BEGIN testcases8
 
 # Test parsing of ccyymmdd
@@ -21312,6 +21378,9 @@ test clock-9.1 {seconds take precedence over ccyymmdd} {
 
 test clock-9.2 {Julian day takes precedence over ccyymmdd} {
     clock scan {2440588 20000101} -format {%J %Y%m%d} -gmt true
+} 0
+test clock-9.2.1 {Astro julian day takes precedence over date-time} {
+    clock scan {2440587.5 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true
 } 0
 
 # Test parsing of ccyyddd

@@ -235,7 +235,8 @@ TclClockInit(
     data->yearOfCenturySwitch = ClockDefaultCenturySwitch;
     data->validMinYear = INT_MIN;
     data->validMaxYear = INT_MAX;
-    data->maxJulianDay = 5373484; /* corresponds 9999-12-31 23:59:59 per default */
+    /* corresponds max of JDN in sqlite - 9999-12-31 23:59:59 per default */
+    data->maxJDN = 5373484.499999994; 
 
     data->systemTimeZone = NULL;
     data->systemSetupTZData = NULL;
@@ -1120,17 +1121,17 @@ ClockConfigureObjCmd(
 	break;
 	case CLOCK_MAX_JDN:
 	    if (i < objc) {
-		Tcl_WideInt jd;
-		if (TclGetWideIntFromObj(interp, objv[i], &jd) != TCL_OK) {
+		double jd;
+		if (Tcl_GetDoubleFromObj(interp, objv[i], &jd) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		dataPtr->maxJulianDay = jd;
+		dataPtr->maxJDN = jd;
 		Tcl_SetObjResult(interp, objv[i]);
 		continue;
 	    }
 	    if (i+1 >= objc) {
 		Tcl_SetObjResult(interp,
-		    Tcl_NewWideIntObj(dataPtr->maxJulianDay));
+		    Tcl_NewDoubleObj(dataPtr->maxJDN));
 	    }
 	break;
 	case CLOCK_VALIDATE:
@@ -3719,8 +3720,10 @@ ClockScanCommit(
 
     /* some overflow checks */
     if (info->flags & CLF_JULIANDAY) {
-    	ClockClientData *dataPtr = opts->clientData;
-    	if (yydate.julianDay > dataPtr->maxJulianDay) {
+	ClockClientData *dataPtr = opts->clientData;
+	double curJDN = (double)yydate.julianDay
+	    + ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
+	if (curJDN > dataPtr->maxJDN) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 		"requested date too large to represent", -1));
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
