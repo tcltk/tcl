@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 2
+RULES_VERSION_MINOR = 3
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -475,6 +475,21 @@ MACHINE = AMD64
 MACHINE=$(ARCH)
 !endif
 
+#---------------------------------------------------------------
+# The PLATFORM_IDENTIFY macro matches the values returned by
+# the Tcl platform::identify command
+!if "$(MACHINE)" == "AMD64"
+PLATFORM_IDENTIFY = win32-x86_64
+!else
+PLATFORM_IDENTIFY = win32-ix86
+!endif
+
+# The MULTIPLATFORM macro controls whether binary extensions are installed
+# in platform-specific directories. Intended to be set/used by extensions.
+!ifndef MULTIPLATFORM_INSTALL
+MULTIPLATFORM_INSTALL = 0
+!endif
+
 #------------------------------------------------------------
 # Figure out the *host* architecture by reading the registry
 
@@ -739,6 +754,8 @@ TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
 !endif
 
+# Yes, it's weird that the "symbols" option controls DEBUG and
+# the "pdbs" option controls SYMBOLS. That's historical.
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
@@ -1226,8 +1243,13 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 !else # extension other than Tk
 
 PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
+!if $(MULTIPLATFORM_INSTALL)
+LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
+BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
+!else
 LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+!endif
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
 DEMO_INSTALL_DIR	= $(PRJ_INSTALL_DIR)\demos
@@ -1513,9 +1535,15 @@ DEFAULT_BUILD_TARGET = $(PROJECT)
 
 default-target: $(DEFAULT_BUILD_TARGET)
 
+!if $(MULTIPLATFORM_INSTALL)
+default-pkgindex:
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+!else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
 	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+!endif
 
 default-pkgindex-tea:
 	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
@@ -1525,15 +1553,26 @@ default-pkgindex-tea:
 @PKG_LIB_FILE@       $(PRJLIBNAME)
 <<
 
-
 default-install: default-install-binaries default-install-libraries
+!if $(SYMBOLS)
+default-install: default-install-pdbs
+!endif
 
+# Again to deal with historical brokenness, there is some confusion
+# in terminlogy. For extensions, the "install-binaries" was used to
+# locate target directory for *binary shared libraries* and thus
+# the appropriate macro is LIB_INSTALL_DIR since BIN_INSTALL_DIR is
+# for executables (exes). On the other hand the "install-libraries"
+# target is for *scripts* and should have been called "install-scripts".
 default-install-binaries: $(PRJLIB)
-	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
-	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
-	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+	@echo Installing binaries to '$(LIB_INSTALL_DIR)'
+	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
+	@$(CPY) $(PRJLIB) "$(LIB_INSTALL_DIR)" >NUL
 
-default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
+# Alias for default-install-scripts
+default-install-libraries: default-install-scripts
+
+default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
@@ -1543,6 +1582,11 @@ default-install-stubs:
 	@echo Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+
+default-install-pdbs:
+	@echo Installing PDBs to '$(LIB_INSTALL_DIR)'
+	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
 
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
