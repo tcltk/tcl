@@ -1721,7 +1721,7 @@ SerialSetOptionProc(
 			" two elements with each a single 8-bit character", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
 	}
 
@@ -1752,7 +1752,7 @@ SerialSetOptionProc(
 	    }
 	    dcb.XoffChar = (char) character;
 	}
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 
 	if (!SetCommState(infoPtr->handle, &dcb)) {
 	    goto setStateFailed;
@@ -1777,7 +1777,7 @@ SerialSetOptionProc(
 			"a list of signal,value pairs", value));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", NULL);
 	    }
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
 	}
 
@@ -1835,7 +1835,7 @@ SerialSetOptionProc(
 	    }
 	}
 
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	return result;
     }
 
@@ -1861,7 +1861,7 @@ SerialSetOptionProc(
 	    inSize  = atoi(argv[0]);
 	    outSize = atoi(argv[1]);
 	}
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 
 	if ((argc < 1) || (argc > 2) || (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {

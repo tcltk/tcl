@@ -2003,7 +2003,7 @@ LoadEscapeEncoding(
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	Tcl_DStringFree(&lineString);
     }
 

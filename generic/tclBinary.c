@@ -640,7 +640,7 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &tclByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = Tcl_Alloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);

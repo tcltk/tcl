@@ -1667,7 +1667,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1680,7 +1680,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1696,12 +1696,12 @@ TclGetOpenModeEx(
 			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
 			" or TRUNC", flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 	}
     }
 
-    Tcl_Free(modeArgv);
+    Tcl_Free((void *)modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
