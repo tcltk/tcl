@@ -1584,6 +1584,72 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 }
 
 static int
+ClockScnToken_JDN_Proc(ClockFmtScnCmdArgs *opts,
+    DateInfo *info, ClockScanToken *tok)
+{
+    int minLen, maxLen;
+    register const char *p = yyInput, *end; const char *s;
+    Tcl_WideInt intJD; int fractJD = 0, fractJDDiv = 1;
+
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    end = yyInput + maxLen;
+
+    /* currently positive astronomic dates only */
+    if (*p == '+' || *p == '-') { p++; };
+    s = p;
+    while (p < end && isdigit(UCHAR(*p))) {
+	p++;
+    }
+    if ( _str2wideInt(&intJD, s, p, (*yyInput != '-' ? 1 : -1)) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    yyInput = p;
+    if (p >= end || *p++ != '.') { /* allow pure integer JDN */
+	/* by astronomical JD the seconds of day offs is 12 hours */
+	if (tok->map->offs) {
+	    goto done;
+	}
+	/* calendar JD */
+	yydate.julianDay = intJD;
+	return TCL_OK;
+    }
+    s = p;
+    while (p < end && isdigit(UCHAR(*p))) {
+    	fractJDDiv *= 10;
+	p++;
+    }
+    if ( _str2int(&fractJD, s, p, 1) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    yyInput = p;
+
+done:
+    /* 
+     * Build a date from julian day (integer and fraction).
+     * Note, astronomical JDN starts at noon in opposite to calendar julianday.
+     */
+
+    fractJD = (int)tok->map->offs /* 0 for calendar or 43200 for astro JD */
+	+ (int)((Tcl_WideInt)SECONDS_PER_DAY * fractJD / fractJDDiv);
+    if (fractJD > SECONDS_PER_DAY) {
+	fractJD %= SECONDS_PER_DAY;
+	intJD += 1;
+    }
+    yydate.secondOfDay = fractJD;
+    yydate.julianDay = intJD;
+
+    yydate.seconds =
+	-210866803200L
+	+ ( SECONDS_PER_DAY * intJD )
+	+ ( fractJD );
+
+    info->flags |= CLF_POSIXSEC;
+
+    return TCL_OK;
+}
+
+static int
 ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
@@ -1772,7 +1838,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0,
 	ClockScnToken_amPmInd_Proc, NULL},
     /* %J */
-    {CTOKT_WIDE, CLF_JULIANDAY, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
+    {CTOKT_WIDE, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
 	NULL},
     /* %j */
     {CTOKT_INT, CLF_DAYOFYEAR, 0, 1, 3, TclOffset(DateInfo, date.dayOfYear),
@@ -1815,11 +1881,17 @@ static const char *ScnSTokenMapAliasIndex[2] = {
 };
 
 static const char *ScnETokenMapIndex =
-    "Eys";
+    "EJjys";
 static ClockScanTokenMap ScnETokenMap[] = {
     /* %EE */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %EJ */
+    {CTOKT_PARSER, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, 0, /* calendar JDN starts at midnight */
+	ClockScnToken_JDN_Proc, NULL},
+    /* %Ej */
+    {CTOKT_PARSER, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
+	ClockScnToken_JDN_Proc, NULL},
     /* %Ey */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0, /* currently no capture, parse only token */
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
@@ -2324,6 +2396,7 @@ ClockScan(
     /*
      * Invalidate result
      */
+    flags |= info->flags;
 
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
@@ -2592,6 +2665,67 @@ ClockFmtToken_WeekOfYear_Proc(
     return TCL_OK;
 }
 static int
+ClockFmtToken_JDN_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+ {
+    Tcl_WideInt intJD = dateFmt->date.julianDay;
+    int fractJD;
+
+    /* Convert to JDN parts (regarding start offset) and time fraction */
+    fractJD = dateFmt->date.secondOfDay 
+	- (int)tok->map->offs; /* 0 for calendar or 43200 for astro JD */
+    if (fractJD < 0) {
+    	intJD--;
+	fractJD += SECONDS_PER_DAY;
+    }
+    if (fractJD && intJD < 0) { /* avoid jump over 0, by negative JD's */
+	intJD++;
+	if (intJD == 0) {
+	    /* -0.0 / -0.9 has zero integer part, so append "-" extra */
+	    if (FrmResultAllocate(dateFmt, 1) != TCL_OK) { return TCL_ERROR; };
+	    *dateFmt->output++ = '-';
+	}
+	/* and inverse seconds of day, -0(75) -> -0.25 as float */
+	fractJD = SECONDS_PER_DAY - fractJD;
+    }
+
+    /* 21 is max width of (negative) wide-int (rather smaller, but anyway a time fraction below) */
+    if (FrmResultAllocate(dateFmt, 21) != TCL_OK) { return TCL_ERROR; };
+    dateFmt->output = _witoaw(dateFmt->output, intJD, '0', 1);
+    /* simplest cases .0 and .5 */
+    if (!fractJD || fractJD == (SECONDS_PER_DAY / 2)) {
+	/* point + 0 or 5 */
+	if (FrmResultAllocate(dateFmt, 1+1) != TCL_OK) { return TCL_ERROR; };
+	*dateFmt->output++ = '.';
+	*dateFmt->output++ = !fractJD ? '0' : '5';
+	*dateFmt->output = '\0';
+	return TCL_OK;
+    } else {
+	/* wrap the time fraction */
+	#define JDN_MAX_PRECISION 8
+	#define JDN_MAX_PRECBOUND 100000000 /* 10**JDN_MAX_PRECISION */
+	char *p;
+
+	/* to float (part after floating point, + 0.5 to round it up) */
+	fractJD = (int)(
+	    (double)fractJD * JDN_MAX_PRECBOUND / SECONDS_PER_DAY + 0.5
+	);
+	/* point + integer (as time fraction after floating point) */
+	if (FrmResultAllocate(dateFmt, 1+JDN_MAX_PRECISION) != TCL_OK) { return TCL_ERROR; };
+	*dateFmt->output++ = '.';
+	p = _itoaw(dateFmt->output, fractJD, '0', JDN_MAX_PRECISION);
+	/* remove trailing zero's */
+	dateFmt->output++;
+	while (p > dateFmt->output && *(p-1) == '0') {p--;}
+	*p = '\0';
+	dateFmt->output = p;
+    }
+    return TCL_OK;
+}
+static int
 ClockFmtToken_TimeZone_Proc(
     ClockFmtScnCmdArgs *opts,
     DateFormat *dateFmt,
@@ -2827,11 +2961,17 @@ static const char *FmtSTokenMapAliasIndex[2] = {
 };
 
 static const char *FmtETokenMapIndex =
-    "Eys";
+    "EJjys";
 static ClockFormatTokenMap FmtETokenMap[] = {
     /* %EE */
     {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_LocaleERA_Proc, NULL},
+    /* %EJ */
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, 0, /* calendar JDN starts at midnight */
+	ClockFmtToken_JDN_Proc, NULL},
+    /* %Ej */
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
+	ClockFmtToken_JDN_Proc, NULL},
     /* %Ey %EC */
     {CTOKT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
 	ClockFmtToken_LocaleERAYear_Proc, NULL},

@@ -15358,32 +15358,32 @@ test clock-4.96 { format time of day 23:59:59 } {
         -gmt true
 } {23 xxiii 11 xi 23 xxiii 11 xi 59 lix PM pm 11:59:59 pm 23:59 59 lix 23:59:59 23:59:59 xxiii h lix m lix s Thu Jan  1 23:59:59 GMT 1970}
 
-test clock-4.97.1 { format julian day } {
-    clock format 0 -format {%J} -gmt true
-} {2440588}
-test clock-4.97.2 { format julian day } {
-    clock format 43200 -format {%J} -gmt true
-} {2440588}
-test clock-4.97.3 { format julian day } {
-    clock format 86399 -format {%J} -gmt true
-} {2440588}
-test clock-4.97.4 { format julian day } {
-    clock format 86400 -format {%J} -gmt true
-} {2440589}
-test clock-4.97.5 { format julian day } {
-    clock format 129599 -format {%J} -gmt true
-} {2440589}
-test clock-4.97.6 { format julian day } {
-    clock format 129600 -format {%J} -gmt true
-} {2440589}
-test clock-4.97.7 { format julian day } {
+test clock-4.97.1 { format JDN/JD (calendar and astronomical) } {
+    clock format 0 -format {%J %EJ %Ej} -gmt true
+} {2440588 2440588.0 2440587.5}
+test clock-4.97.2 { format JDN/JD (calendar and astronomical) } {
+    clock format 43200 -format {%J %EJ %Ej} -gmt true
+} {2440588 2440588.5 2440588.0}
+test clock-4.97.3 { format JDN/JD (calendar and astronomical) } {
+    clock format 86399 -format {%J %EJ %Ej} -gmt true
+} {2440588 2440588.99998843 2440588.49998843}
+test clock-4.97.4 { format JDN/JD (calendar and astronomical) } {
+    clock format 86400 -format {%J %EJ %Ej} -gmt true
+} {2440589 2440589.0 2440588.5}
+test clock-4.97.5 { format JDN/JD (calendar and astronomical) } {
+    clock format 129599 -format {%J %EJ %Ej} -gmt true
+} {2440589 2440589.49998843 2440588.99998843}
+test clock-4.97.6 { format JDN/JD (calendar and astronomical) } {
+    clock format 129600 -format {%J %EJ %Ej} -gmt true
+} {2440589 2440589.5 2440589.0}
+test clock-4.97.7 { format JDN/JD (calendar and astronomical) } {
     set i 1548249092
     list \
-	[clock format $i -format {%J} -gmt true] \
-	[clock format [incr i] -format {%J} -gmt true] \
-	[clock format [incr i] -format {%J} -gmt true]
-} {2458507 2458507 2458507}
-test clock-4.97.8 { format julian day } {
+	[clock format $i -format {%J %EJ %Ej} -gmt true] \
+	[clock format [incr i] -format {%J %EJ %Ej} -gmt true] \
+	[clock format [incr i] -format {%J %EJ %Ej} -gmt true]
+} {{2458507 2458507.54967593 2458507.04967593} {2458507 2458507.5496875 2458507.0496875} {2458507 2458507.54969907 2458507.04969907}}
+test clock-4.97.8 { format JDN/JD (calendar and astronomical) } {
     set res {}
     foreach i {
 	-172800 -129600 -86400 -43200
@@ -15391,26 +15391,26 @@ test clock-4.97.8 { format julian day } {
 	86400 86401 108000 129600 172800
     } {
 	lappend res $i [clock format [expr -210866803200 - $i] \
-	    -format {%EE %Y-%m-%d %T -- %J} -gmt true]
+	    -format {%EE %Y-%m-%d %T -- %J %EJ %Ej} -gmt true]
     }
     set res
 } [list \
-   -172800 {B.C.E. 4713-01-03 00:00:00 -- 0000002} \
-   -129600 {B.C.E. 4713-01-02 12:00:00 -- 0000001} \
-    -86400 {B.C.E. 4713-01-02 00:00:00 -- 0000001} \
-    -43200 {B.C.E. 4713-01-01 12:00:00 -- 0000000} \
-        -1 {B.C.E. 4713-01-01 00:00:01 -- 0000000} \
-         0 {B.C.E. 4713-01-01 00:00:00 -- 0000000} \
-         1 {B.C.E. 4714-12-31 23:59:59 -- -000001} \
-     21600 {B.C.E. 4714-12-31 18:00:00 -- -000001} \
-     43199 {B.C.E. 4714-12-31 12:00:01 -- -000001} \
-     43200 {B.C.E. 4714-12-31 12:00:00 -- -000001} \
-     86399 {B.C.E. 4714-12-31 00:00:01 -- -000001} \
-     86400 {B.C.E. 4714-12-31 00:00:00 -- -000001} \
-     86401 {B.C.E. 4714-12-30 23:59:59 -- -000002} \
-    108000 {B.C.E. 4714-12-30 18:00:00 -- -000002} \
-    129600 {B.C.E. 4714-12-30 12:00:00 -- -000002} \
-    172800 {B.C.E. 4714-12-30 00:00:00 -- -000002} \
+   -172800 {B.C.E. 4713-01-03 00:00:00 -- 0000002 2.0 1.5} \
+   -129600 {B.C.E. 4713-01-02 12:00:00 -- 0000001 1.5 1.0} \
+    -86400 {B.C.E. 4713-01-02 00:00:00 -- 0000001 1.0 0.5} \
+    -43200 {B.C.E. 4713-01-01 12:00:00 -- 0000000 0.5 0.0} \
+        -1 {B.C.E. 4713-01-01 00:00:01 -- 0000000 0.00001157 -0.49998843} \
+         0 {B.C.E. 4713-01-01 00:00:00 -- 0000000 0.0 -0.5} \
+         1 {B.C.E. 4714-12-31 23:59:59 -- -000001 -0.00001157 -0.50001157} \
+     21600 {B.C.E. 4714-12-31 18:00:00 -- -000001 -0.25 -0.75} \
+     43199 {B.C.E. 4714-12-31 12:00:01 -- -000001 -0.49998843 -0.99998843} \
+     43200 {B.C.E. 4714-12-31 12:00:00 -- -000001 -0.5 -1.0} \
+     86399 {B.C.E. 4714-12-31 00:00:01 -- -000001 -0.99998843 -1.49998843} \
+     86400 {B.C.E. 4714-12-31 00:00:00 -- -000001 -1.0 -1.5} \
+     86401 {B.C.E. 4714-12-30 23:59:59 -- -000002 -1.00001157 -1.50001157} \
+    108000 {B.C.E. 4714-12-30 18:00:00 -- -000002 -1.25 -1.75} \
+    129600 {B.C.E. 4714-12-30 12:00:00 -- -000002 -1.5 -2.0} \
+    172800 {B.C.E. 4714-12-30 00:00:00 -- -000002 -2.0 -2.5} \
 ]
 test clock-4.97.9 { format JDN/JD (calendar and astronomical) } {
     set res {}
@@ -15420,19 +15420,19 @@ test clock-4.97.9 { format JDN/JD (calendar and astronomical) } {
 	43199 43200 43201 86400
     } {
 	lappend res $i [clock format [expr 653133196800 + $i] \
-	    -format {%Y-%m-%d %T -- %J} -gmt true]
+	    -format {%Y-%m-%d %T -- %J %EJ %Ej} -gmt true]
     }
     set res
 } [list \
-    -86400 {22666-12-19 00:00:00 -- 9999999} \
-    -43200 {22666-12-19 12:00:00 -- 9999999} \
-        -1 {22666-12-19 23:59:59 -- 9999999} \
-         0 {22666-12-20 00:00:00 -- 10000000} \
-         1 {22666-12-20 00:00:01 -- 10000000} \
-     43199 {22666-12-20 11:59:59 -- 10000000} \
-     43200 {22666-12-20 12:00:00 -- 10000000} \
-     43201 {22666-12-20 12:00:01 -- 10000000} \
-     86400 {22666-12-21 00:00:00 -- 10000001} \
+    -86400 {22666-12-19 00:00:00 -- 9999999 9999999.0 9999998.5} \
+    -43200 {22666-12-19 12:00:00 -- 9999999 9999999.5 9999999.0} \
+        -1 {22666-12-19 23:59:59 -- 9999999 9999999.99998843 9999999.49998843} \
+         0 {22666-12-20 00:00:00 -- 10000000 10000000.0 9999999.5} \
+         1 {22666-12-20 00:00:01 -- 10000000 10000000.00001157 9999999.50001157} \
+     43199 {22666-12-20 11:59:59 -- 10000000 10000000.49998843 9999999.99998843} \
+     43200 {22666-12-20 12:00:00 -- 10000000 10000000.5 10000000.0} \
+     43201 {22666-12-20 12:00:01 -- 10000000 10000000.50001157 10000000.00001157} \
+     86400 {22666-12-21 00:00:00 -- 10000001 10000001.0 10000000.5} \
 ]
 
 # END testcases4
@@ -18899,6 +18899,91 @@ test clock-7.8 {Julian Day, precedence below seconds} {
 test clock-7.9 {Julian Day, two values} {
     clock scan {2440588 2440589} -format {%J %J} -gmt true
 } 86400
+test clock-7.10 {Calendar vs Astronomical Julian Day (without and with time fraction)} {
+    list \
+	[clock scan {2440588}   -format {%J}  -gmt true] \
+	[clock scan {2440588}   -format {%EJ} -gmt true] \
+	[clock scan {2440588}   -format {%Ej} -gmt true] \
+	[clock scan {2440588.5} -format {%EJ} -gmt true] \
+	[clock scan {2440588.5} -format {%Ej} -gmt true] \
+} {0 0 43200 43200 86400}
+
+
+test clock-7.11 {Astronomical JDN/JD} {
+    clock scan 0 -format %Ej -gmt true
+} -210866760000
+
+test clock-7.12 {Astronomical JDN/JD} {
+    clock format [clock scan 2440587.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "1970-01-01 00:00:00"
+
+test clock-7.13 {Astronomical JDN/JD} {
+    clock format [clock scan 2451544.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "2000-01-01 00:00:00"
+
+test clock-7.13.1 {Astronomical JDN/JD} {
+    clock format [clock scan 2488069.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "2100-01-01 00:00:00"
+
+test clock-7.14 {Astronomical JDN/JD} {
+    clock format [clock scan 5373483.5 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 00:00:00"
+
+test clock-7.14.1 {Astronomical JDN/JD} {
+    clock format [clock scan 5373484 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 12:00:00"
+test clock-7.14.2 {Astronomical JDN/JD} {
+    clock format [clock scan 5373484.49999 -format %Ej -gmt true] \
+	-format "%Y-%m-%d %T" -gmt true
+} "9999-12-31 23:59:59"
+
+test clock-7.15 {Astronomical JDN/JD, bad} {
+    list [catch {
+	clock scan bogus -format %Ej
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+
+test clock-7.16 {Astronomical JDN/JD, overflow} {
+    list [catch {
+	clock scan 5373484.5 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 5373485 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 2147483648 -format %Ej
+    } result] $result $errorCode \
+    [catch {
+	clock scan 2147483648.5 -format %Ej
+    } result] $result $errorCode
+} [lrepeat 4 1 {requested date too large to represent} {CLOCK dateTooLarge}]
+
+test clock-7.18 {Astronomical JDN/JD, same precedence as seconds (last wins} {
+    list [clock scan {2440588 86400} -format {%Ej %s} -gmt true] \
+	[clock scan {2440589 0} -format {%Ej %s} -gmt true] \
+	[clock scan {86400 2440588} -format {%s %Ej} -gmt true] \
+	[clock scan {0 2440589} -format {%s %Ej} -gmt true]
+} {86400 0 43200 129600}
+
+test clock-7.19 {Astronomical JDN/JD, two values} {
+    clock scan {2440588 2440589} -format {%Ej %Ej} -gmt true
+} 129600
+
+test clock-7.20 {all JDN/JD are signed (and extended accept floats)} {
+    set res {}
+    foreach i {%J %EJ %Ej} {
+	lappend res [clock scan "-1" -format $i -gmt 1]
+    }
+    foreach i {%EJ %Ej} {
+	lappend res [clock scan "-1.5" -format $i -gmt 1]
+    }
+    set res
+} {-210866889600 -210866889600 -210866846400 -210866846400 -210866803200}
 
 # BEGIN testcases8
 
@@ -21310,9 +21395,22 @@ test clock-9.1 {seconds take precedence over ccyymmdd} {
     clock scan {0 20000101} -format {%s %Y%m%d} -gmt true
 } 0
 
-test clock-9.2 {Julian day takes precedence over ccyymmdd} {
-    clock scan {2440588 20000101} -format {%J %Y%m%d} -gmt true
-} 0
+test clock-9.2 {Calendar julian day takes precedence over ccyymmdd} {
+    list \
+	[clock scan {2440588 20000101} -format {%J %Y%m%d} -gmt true] \
+	[clock scan {2440588 20000101} -format {%EJ %Y%m%d} -gmt true]
+} {0 0}
+test clock-9.2.1 {Calendar julian day (with time fraction) takes precedence over date-time} {
+    list \
+	[clock scan {2440588.0 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true] \
+	[clock scan {2440588.5 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true]
+    
+} {0 43200}
+test clock-9.3 {Astro julian day takes always precedence over date-time} {
+    list \
+	[clock scan {2440587.5 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true] \
+	[clock scan {2440588 20000101 010203} -format {%Ej %Y%m%d %H%M%S} -gmt true]
+} {0 43200}
 
 # Test parsing of ccyyddd
 

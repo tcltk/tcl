@@ -398,8 +398,12 @@ preprocessed format string.  In order of preference:
 If the string contains a \fB%s\fR format group, representing
 seconds from the epoch, that group is used to determine the date.
 .IP [2]
-If the string contains a \fB%J\fR format group, representing
-the Julian Day Number, that group is used to determine the date.
+If the string contains a \fB%J\fR, \fB%EJ\fR or \fB%Ej\fR format groups,
+representing the Calendar or Astronomical Julian Day Number, that groups
+are used to determine the date.
+Note, that in case of \fB%EJ\fR or \fB%Ej\fR format groups, representing
+the Julian Date with time fraction, this groups may be used to determine
+the date and time.
 .IP [3]
 If the string contains a complete set of format groups specifying
 century, year, month, and day of month; century, year, and day of year;
@@ -550,6 +554,30 @@ abbreviation appropriate to the current locale, and uses it to fix
 whether \fB%Y\fR refers to years before or after Year 1 of the
 Common Era.
 .TP
+\fB%Ej\fR
+On output, produces a string of digits giving the Astronomical Julian Date or
+Astronomical Julian Day Number (JDN/JD). In opposite to calendar julian day
+\fB%J\fR, it starts the day at noon.
+On input, accepts a string of digits (or floating point with the time fraction)
+and interprets it as an Astronomical Julian Day Number (JDN/JD).
+The Astronomical Julian Date is a count of the number of calendar days
+that have elapsed since 1 January, 4713 BCE of the proleptic
+Julian calendar, which contains also the time fraktion (after floating point).
+The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440587.5.
+This value corresponds the julian day used in sqlite-database, and is the same
+as result of \fBselect julianday(:seconds, 'unixepoch')\fR.
+.TP
+\fB%EJ\fR
+On output, produces a string of digits giving the Calendar Julian Date.
+In opposite to julian day \fB%J\fR format group, it produces float number.
+In opposite to astronomical julian day \fB%Ej\fR group, it starts at midnight.
+On input, accepts a string of digits (or floating point with the time fraction)
+and interprets it as a Calendar Julian Day Number.
+The Calendar Julian Date is a count of the number of calendar days
+that have elapsed since 1 January, 4713 BCE of the proleptic
+Julian calendar, which contains also the time fraktion (after floating point).
+The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440588.
+.TP
 \fB%Es\fR
 This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses
 or formats local seconds (not the posix seconds).
@@ -605,7 +633,7 @@ On output, produces a three-digit number giving the day of the year
 (001-366).  On input, accepts such a number.
 .TP
 \fB%J\fR
-On output, produces a string of digits giving the Julian Day Number.
+On output, produces a string of digits giving the calendar Julian Day Number.
 On input, accepts a string of digits and interprets it as a Julian Day Number.
 The Julian Day Number is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
