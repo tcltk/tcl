@@ -1596,12 +1596,12 @@ ClockScnToken_JDN_Proc(ClockFmtScnCmdArgs *opts,
     end = yyInput + maxLen;
 
     /* currently positive astronomic dates only */
-    if (*p == '+') { p++; };
+    if (*p == '+' || *p == '-') { p++; };
     s = p;
     while (p < end && isdigit(UCHAR(*p))) {
 	p++;
     }
-    if ( _str2wideInt(&intJD, s, p, 1) != TCL_OK) {
+    if ( _str2wideInt(&intJD, s, p, (*yyInput != '-' ? 1 : -1)) != TCL_OK) {
 	return TCL_RETURN;
     };
     yyInput = p;
@@ -1644,7 +1644,7 @@ done:
 	+ ( SECONDS_PER_DAY * intJD )
 	+ ( fractJD );
 
-    info->flags |= CLF_POSIXSEC | CLF_SIGNED;
+    info->flags |= CLF_POSIXSEC;
 
     return TCL_OK;
 }
@@ -1838,7 +1838,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0,
 	ClockScnToken_amPmInd_Proc, NULL},
     /* %J */
-    {CTOKT_WIDE, CLF_JULIANDAY, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
+    {CTOKT_WIDE, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
 	NULL},
     /* %j */
     {CTOKT_INT, CLF_DAYOFYEAR, 0, 1, 3, TclOffset(DateInfo, date.dayOfYear),
@@ -1887,10 +1887,10 @@ static ClockScanTokenMap ScnETokenMap[] = {
     {CTOKT_PARSER, 0, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %EJ */
-    {CTOKT_PARSER, CLF_JULIANDAY, 0, 1, 0xffff, 0, /* calendar JDN starts at midnight */
+    {CTOKT_PARSER, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, 0, /* calendar JDN starts at midnight */
 	ClockScnToken_JDN_Proc, NULL},
     /* %Ej */
-    {CTOKT_PARSER, CLF_JULIANDAY, 0, 1, 0xffff, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
+    {CTOKT_PARSER, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
 	ClockScnToken_JDN_Proc, NULL},
     /* %Ey */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0, /* currently no capture, parse only token */

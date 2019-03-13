@@ -18974,6 +18974,17 @@ test clock-7.19 {Astronomical JDN/JD, two values} {
     clock scan {2440588 2440589} -format {%Ej %Ej} -gmt true
 } 129600
 
+test clock-7.20 {all JDN/JD are signed (and extended accept floats)} {
+    set res {}
+    foreach i {%J %EJ %Ej} {
+	lappend res [clock scan "-1" -format $i -gmt 1]
+    }
+    foreach i {%EJ %Ej} {
+	lappend res [clock scan "-1.5" -format $i -gmt 1]
+    }
+    set res
+} {-210866889600 -210866889600 -210866846400 -210866846400 -210866803200}
+
 # BEGIN testcases8
 
 # Test parsing of ccyymmdd
