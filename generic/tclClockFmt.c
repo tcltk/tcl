@@ -2665,6 +2665,67 @@ ClockFmtToken_WeekOfYear_Proc(
     return TCL_OK;
 }
 static int
+ClockFmtToken_JDN_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+ {
+    Tcl_WideInt intJD = dateFmt->date.julianDay;
+    int fractJD;
+
+    /* Convert to JDN parts (regarding start offset) and time fraction */
+    fractJD = dateFmt->date.secondOfDay 
+	- (int)tok->map->offs; /* 0 for calendar or 43200 for astro JD */
+    if (fractJD < 0) {
+    	intJD--;
+	fractJD += SECONDS_PER_DAY;
+    }
+    if (fractJD && intJD < 0) { /* avoid jump over 0, by negative JD's */
+	intJD++;
+	if (intJD == 0) {
+	    /* -0.0 / -0.9 has zero integer part, so append "-" extra */
+	    if (FrmResultAllocate(dateFmt, 1) != TCL_OK) { return TCL_ERROR; };
+	    *dateFmt->output++ = '-';
+	}
+	/* and inverse seconds of day, -0(75) -> -0.25 as float */
+	fractJD = SECONDS_PER_DAY - fractJD;
+    }
+
+    /* 21 is max width of (negative) wide-int (rather smaller, but anyway a time fraction below) */
+    if (FrmResultAllocate(dateFmt, 21) != TCL_OK) { return TCL_ERROR; };
+    dateFmt->output = _witoaw(dateFmt->output, intJD, '0', 1);
+    /* simplest cases .0 and .5 */
+    if (!fractJD || fractJD == (SECONDS_PER_DAY / 2)) {
+	/* point + 0 or 5 */
+	if (FrmResultAllocate(dateFmt, 1+1) != TCL_OK) { return TCL_ERROR; };
+	*dateFmt->output++ = '.';
+	*dateFmt->output++ = !fractJD ? '0' : '5';
+	*dateFmt->output = '\0';
+	return TCL_OK;
+    } else {
+	/* wrap the time fraction */
+	#define JDN_MAX_PRECISION 8
+	#define JDN_MAX_PRECBOUND 100000000 /* 10**JDN_MAX_PRECISION */
+	char *p;
+
+	/* to float (part after floating point, + 0.5 to round it up) */
+	fractJD = (int)(
+	    (double)fractJD * JDN_MAX_PRECBOUND / SECONDS_PER_DAY + 0.5
+	);
+	/* point + integer (as time fraction after floating point) */
+	if (FrmResultAllocate(dateFmt, 1+JDN_MAX_PRECISION) != TCL_OK) { return TCL_ERROR; };
+	*dateFmt->output++ = '.';
+	p = _itoaw(dateFmt->output, fractJD, '0', JDN_MAX_PRECISION);
+	/* remove trailing zero's */
+	dateFmt->output++;
+	while (p > dateFmt->output && *(p-1) == '0') {p--;}
+	*p = '\0';
+	dateFmt->output = p;
+    }
+    return TCL_OK;
+}
+static int
 ClockFmtToken_TimeZone_Proc(
     ClockFmtScnCmdArgs *opts,
     DateFormat *dateFmt,
@@ -2900,11 +2961,17 @@ static const char *FmtSTokenMapAliasIndex[2] = {
 };
 
 static const char *FmtETokenMapIndex =
-    "Eys";
+    "EJjys";
 static ClockFormatTokenMap FmtETokenMap[] = {
     /* %EE */
     {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_LocaleERA_Proc, NULL},
+    /* %EJ */
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, 0, /* calendar JDN starts at midnight */
+	ClockFmtToken_JDN_Proc, NULL},
+    /* %Ej */
+    {CFMTT_PROC, NULL, 0, 0, 0, 0, (SECONDS_PER_DAY/2), /* astro JDN starts at noon */
+	ClockFmtToken_JDN_Proc, NULL},
     /* %Ey %EC */
     {CTOKT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
 	ClockFmtToken_LocaleERAYear_Proc, NULL},
