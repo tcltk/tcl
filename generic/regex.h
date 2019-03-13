@@ -142,8 +142,8 @@ typedef struct {
 
 /* result reporting (may acquire more fields later) */
 typedef struct {
-    size_t rm_so;		/* start of substring */
-    size_t rm_eo;		/* end of substring */
+    long rm_so;		/* start of substring */
+    long rm_eo;		/* end of substring */
 } regmatch_t;
 
 /* supplementary control and reporting */
