@@ -3242,13 +3242,13 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
-MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
+MODULE_SCOPE int TclUtfToUtf16(const char *src, unsigned short *chPtr);
 MODULE_SCOPE char *	Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
 			    int uniLength, Tcl_DString *dsPtr);
 MODULE_SCOPE unsigned short * Tcl_UtfToUtf16DString(const char *src,
 			    int length, Tcl_DString *dsPtr);
 #else
-#   define TclUtfToWChar TclUtfToUniChar
+#   define TclUtfToUtf16 TclUtfToUniChar
 #   define Tcl_Utf16ToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToUtf16DString Tcl_UtfToUniCharDString
 #endif

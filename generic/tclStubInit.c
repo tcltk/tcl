@@ -280,7 +280,7 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
-    return Tcl_Utf16ToUtfDString((const WCHAR *)string, len, dsPtr);
+    return Tcl_Utf16ToUtfDString((const unsigned short *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -429,6 +429,17 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
 #   define TclOldFreeObj 0
+#   define TclBN_reverse 0
+#   define TclBN_fast_s_mp_mul_digs 0
+#   define TclBN_fast_s_mp_sqr 0
+#   define TclBN_mp_karatsuba_mul 0
+#   define TclBN_mp_karatsuba_sqr 0
+#   define TclBN_mp_toom_mul 0
+#   define TclBN_mp_toom_sqr 0
+#   define TclBN_s_mp_add 0
+#   define TclBN_s_mp_mul_digs 0
+#   define TclBN_s_mp_sqr 0
+#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld

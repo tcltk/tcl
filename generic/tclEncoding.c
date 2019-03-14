@@ -2672,7 +2672,10 @@ UtfToUcs2Proc(
 				 * output buffer. */
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
-    int result, numChars, len;
+    int result, numChars;
+#if TCL_UTF_MAX <= 4
+    int len;
+#endif
     Tcl_UniChar ch = 0;
 
     srcStart = src;
@@ -2700,11 +2703,18 @@ UtfToUcs2Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
+#if TCL_UTF_MAX <= 4
 	src += (len = TclUtfToUniChar(src, &ch));
 	if ((ch >= 0xD800) && (len < 3)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    ch = 0xFFFD;
 	}
+#else
+	src += TclUtfToUniChar(src, &ch);
+	if (ch > 0xFFFF) {
+	    ch = 0xFFFD;
+	}
+#endif
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by

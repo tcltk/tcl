@@ -269,9 +269,8 @@ Tcl_UniCharToUtfDString(
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
 char *
 Tcl_Utf16ToUtfDString(
-    const unsigned short *uniStr,	/* WCHAR string to convert to UTF-8. */
-    int uniLength,		/* Length of WCHAR string in Tcl_UniChars
-				 * (must be >= 0). */
+    const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
+    int uniLength,		/* Length of Utf-16 string (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -446,7 +445,7 @@ Tcl_UtfToUniChar(
 #else
 	    *chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    if ((*chPtr - 0x10000) <= 0xFFFFF) {
+	    if (((unsigned)(*chPtr) - 0x10000) <= 0xFFFFF) {
 		return 4;
 	    }
 #endif
@@ -464,12 +463,12 @@ Tcl_UtfToUniChar(
 
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
 int
-TclUtfToWChar(
+TclUtfToUtf16(
     const char *src,	/* The UTF-8 string. */
-    WCHAR *chPtr)/* Filled with the WCHAR represented by
+    unsigned short *chPtr)/* Filled with the Utf-16 representation of
 				 * the UTF-8 string. */
 {
-    WCHAR byte;
+    unsigned short byte;
 
     /*
      * Unroll 1 to 4 byte UTF-8 sequences.
@@ -542,7 +541,7 @@ TclUtfToWChar(
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
-	    WCHAR high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
+	    unsigned short high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high >= 0x400) {
 		/* out of range, < 0x10000 or > 0x10ffff */
@@ -645,7 +644,7 @@ Tcl_UtfToUtf16DString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    WCHAR ch = 0, *w, *wString;
+    unsigned short ch = 0, *w, *wString;
     const char *p, *end;
     int oldLength;
 
@@ -661,20 +660,20 @@ Tcl_UtfToUtf16DString(
     oldLength = Tcl_DStringLength(dsPtr);
 
     Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((length + 1) * sizeof(WCHAR)));
-    wString = (WCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
+	    oldLength + (int) ((length + 1) * sizeof(unsigned short)));
+    wString = (unsigned short *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;
     p = src;
     end = src + length - 4;
     while (p < end) {
-	p += TclUtfToWChar(p, &ch);
+	p += TclUtfToUtf16(p, &ch);
 	*w++ = ch;
     }
     end += 4;
     while (p < end) {
 	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToWChar(p, &ch);
+	    p += TclUtfToUtf16(p, &ch);
 	} else if (((UCHAR(*p)-0x80)) < 0x20) {
 	    ch = cp1252[UCHAR(*p++)-0x80];
 	} else {
