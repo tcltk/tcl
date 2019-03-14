@@ -397,7 +397,7 @@ Tcl_GetCharLength(
 				 * of. */
 {
     String *stringPtr;
-    size_t numChars;
+    size_t numChars = 0;
 
     /*
      * Quick, no-shimmer return for short string reps.
@@ -518,7 +518,7 @@ Tcl_GetUniChar(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	size_t length;
+	size_t length = 0;
 	unsigned char *bytes = TclGetByteArrayFromObj(objPtr, &length);
 	if (index >= length) {
 		return -1;
@@ -642,7 +642,7 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
-    size_t length;
+    size_t length = 0;
 
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
@@ -1238,7 +1238,7 @@ Tcl_AppendObjToObj(
     Tcl_Obj *appendObjPtr)	/* Object to append. */
 {
     String *stringPtr;
-    size_t length, numChars;
+    size_t length = 0, numChars;
     size_t appendNumChars = TCL_AUTO_LENGTH;
     const char *bytes;
 
@@ -1279,7 +1279,7 @@ Tcl_AppendObjToObj(
 	 * First, get the lengths.
 	 */
 
-	size_t lengthSrc;
+	size_t lengthSrc = 0;
 
 	(void) TclGetByteArrayFromObj(objPtr, &length);
 	(void) TclGetByteArrayFromObj(appendObjPtr, &lengthSrc);
@@ -1944,7 +1944,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
-	    char buf[4];
+	    char buf[TCL_UTF_MAX] = "";
 	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
@@ -2949,7 +2949,7 @@ TclStringCat(
 	 * Result will be pure byte array. Pre-size it
 	 */
 
-	size_t numBytes;
+	size_t numBytes = 0;
 	ov = objv;
 	oc = objc;
 	do {
@@ -3100,7 +3100,7 @@ TclStringCat(
 	 */
 
 	if (inPlace && !Tcl_IsShared(*objv)) {
-	    size_t start;
+	    size_t start = 0;
 
 	    objResultPtr = *objv++; objc--;
 	    (void)TclGetByteArrayFromObj(objResultPtr, &start);
@@ -3119,7 +3119,7 @@ TclStringCat(
 	     */
 
 	    if (TclIsPureByteArray(objPtr)) {
-		size_t more;
+		size_t more = 0;
 		unsigned char *src = TclGetByteArrayFromObj(objPtr, &more);
 		memcpy(dst, src, more);
 		dst += more;
@@ -3264,7 +3264,7 @@ TclStringCmp(
 {
     char *s1, *s2;
     int empty, match;
-    size_t length, s1len, s2len;
+    size_t length, s1len = 0, s2len = 0;
     memCmpFn_t memCmpFn;
 
     if ((reqlength == 0) || (value1Ptr == value2Ptr)) {
@@ -3445,7 +3445,7 @@ TclStringFirst(
     Tcl_Obj *haystack,
     size_t start)
 {
-    size_t lh, ln = Tcl_GetCharLength(needle);
+    size_t lh = 0, ln = Tcl_GetCharLength(needle);
 
     if (start == TCL_AUTO_LENGTH) {
 	start = 0;
@@ -3549,7 +3549,7 @@ TclStringLast(
     Tcl_Obj *haystack,
     size_t last)
 {
-    size_t lh, ln = Tcl_GetCharLength(needle);
+    size_t lh = 0, ln = Tcl_GetCharLength(needle);
 
     if (ln == 0) {
 	/*
@@ -3659,7 +3659,7 @@ TclStringReverse(
     int inPlace = flags & TCL_STRING_IN_PLACE;
 
     if (TclIsPureByteArray(objPtr)) {
-	size_t numBytes;
+	size_t numBytes = 0;
 	unsigned char *from = TclGetByteArrayFromObj(objPtr, &numBytes);
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
@@ -3808,7 +3808,7 @@ TclStringReplace(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	size_t numBytes;
+	size_t numBytes = 0;
 	unsigned char *bytes = TclGetByteArrayFromObj(objPtr, &numBytes);
 
 	if (insertPtr == NULL) {
@@ -3831,7 +3831,7 @@ TclStringReplace(
 	}
 
 	if (TclIsPureByteArray(insertPtr)) {
-	    size_t newBytes;
+	    size_t newBytes = 0;
 	    unsigned char *iBytes
 		    = TclGetByteArrayFromObj(insertPtr, &newBytes);
 

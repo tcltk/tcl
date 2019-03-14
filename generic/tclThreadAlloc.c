@@ -1082,7 +1082,7 @@ TclInitThreadAlloc(void)
     objLockPtr = TclpNewAllocMutex();
     for (i = 0; i < NBUCKETS; ++i) {
 	bucketInfo[i].blockSize = MINALLOC << i;
-	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
+	bucketInfo[i].maxBlocks = ((size_t)1) << (NBUCKETS - 1 - i);
 	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
 		1 << (NBUCKETS - 2 - i) : 1;
 	bucketInfo[i].lockPtr = TclpNewAllocMutex();

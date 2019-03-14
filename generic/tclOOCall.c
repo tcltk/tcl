@@ -635,7 +635,7 @@ SortMethodNames(
 	}
 	*stringsPtr = strings;
     } else {
-	Tcl_Free(strings);
+	Tcl_Free((void *)strings);
 	*stringsPtr = NULL;
     }
     return i;

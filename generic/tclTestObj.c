@@ -290,9 +290,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], mp_iseven(&bignumValue));
+	    Tcl_SetIntObj(varPtr[varIndex], !mp_get_bit(&bignumValue, 0));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iseven(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(!mp_get_bit(&bignumValue, 0)));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -625,7 +625,7 @@ TestindexobjCmd(
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
 	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
-    Tcl_Free(argv);
+    Tcl_Free((void *)argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
     }

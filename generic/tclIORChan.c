@@ -1260,7 +1260,7 @@ ReflectInput(
 {
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *toReadObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -3002,7 +3002,7 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    size_t bytec;			/* Number of returned bytes */
+	    size_t bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = TclGetByteArrayFromObj(resObj, &bytec);

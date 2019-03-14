@@ -3170,6 +3170,17 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
+#if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
+MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
+MODULE_SCOPE char *	TclWCharToUtfDString(const WCHAR *uniStr,
+			    int uniLength, Tcl_DString *dsPtr);
+MODULE_SCOPE WCHAR * TclUtfToWCharDString(const char *src,
+			    int length, Tcl_DString *dsPtr);
+#else
+#   define TclUtfToWChar TclUtfToUniChar
+#   define TclWCharToUtfDString Tcl_UniCharToUtfDString
+#   define TclUtfToWCharDString Tcl_UtfToUniCharDString
+#endif
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE size_t	TclUtfCount(int ch);
@@ -4398,13 +4409,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    ? NULL : Tcl_GetString((objPtr)), \
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
-    (Tcl_GetUnicodeFromObj(objPtr, NULL), \
+    (Tcl_GetUnicodeFromObj((objPtr), NULL), \
 	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj(objPtr, NULL))
+	    Tcl_GetUnicodeFromObj((objPtr), NULL))
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj(objPtr, NULL) ? \
+    (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
 	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : (*(lenPtr) = 0, NULL))
+	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : NULL)
 #endif
 
 /*

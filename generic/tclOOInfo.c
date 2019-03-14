@@ -612,7 +612,7 @@ InfoObjectMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free(names);
+	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
 	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
@@ -1366,7 +1366,7 @@ InfoClassMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free(names);
+	    Tcl_Free((void *)names);
 	}
     } else {
 	FOREACH_HASH_DECLS;
