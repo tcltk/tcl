@@ -96,7 +96,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(const TCHAR *nativeName);
+static int		NativeIsComPort(const WCHAR *nativeName);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -849,7 +849,7 @@ TclpOpenFileChannel(
     Tcl_Channel channel = 0;
     int channelPermissions = 0;
     DWORD accessMode = 0, createMode, shareMode, flags;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
@@ -1557,7 +1557,7 @@ FileGetType(
 
 static int
 NativeIsComPort(
-    const TCHAR *nativePath)	/* Path of file to access, native encoding. */
+    const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
     int i, len = wcslen(p);

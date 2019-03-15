@@ -290,9 +290,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], mp_iseven(&bignumValue));
+	    Tcl_SetIntObj(varPtr[varIndex], !mp_get_bit(&bignumValue, 0));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iseven(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(!mp_get_bit(&bignumValue, 0)));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -1348,7 +1348,7 @@ TeststringobjCmd(
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL);
+	    Tcl_GetUnicode(varPtr[varIndex]);
 	    break;
 	case 11:			/* appendself */
 	    if (objc != 4) {
