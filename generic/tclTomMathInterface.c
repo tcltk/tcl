@@ -93,38 +93,6 @@ TclBN_revision(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclInitBignumFromLong --
- *
- *	Allocate and initialize a 'bignum' from a native 'long'.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitBignumFromLong(
-    mp_int *a,
-    long v)
-{
-    if (mp_init_size(a, (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
-	Tcl_Panic("initialization failure in TclInitBignumFromLong");
-    }
-    if (v < (long)0) {
-	mp_set_long_long(a, (Tcl_WideUInt)(-(Tcl_WideInt)v));
-	mp_neg(a, a);
-    } else {
-	mp_set_long_long(a, (Tcl_WideUInt)v);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclInitBignumFromWideInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideInt
