@@ -943,7 +943,7 @@ Tcl_ScanObjCmd(
 		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
 		    if (code == TCL_OK) {
-			if (mp_isneg(&big)) {
+			if (big.sign != MP_ZPOS) {
 			    code = TCL_ERROR;
 			}
 			mp_clear(&big);

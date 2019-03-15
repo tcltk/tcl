@@ -57,6 +57,7 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
+#undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
@@ -102,8 +103,12 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
-
 #else
+#define TclBNInitBignumFromLong initBignumFromLong
+static void TclBNInitBignumFromLong(mp_int *a, long b)
+{
+    TclInitBignumFromWideInt(a, b);
+}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -154,7 +159,6 @@ TclWinGetPlatformId(void)
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
