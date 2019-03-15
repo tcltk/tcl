@@ -4521,7 +4521,7 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_isodd(&b)) {
+	    if (mp_get_bit(&b, 0)) {
 		if (b.sign == MP_ZPOS) {
 		    mp_add_d(&b, 1, &b);
 		} else {

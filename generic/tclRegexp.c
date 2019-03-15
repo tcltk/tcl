@@ -264,7 +264,7 @@ Tcl_RegExpRange(
 
     if (index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == (size_t)-1) {
+    } else if (regexpPtr->matches[index].rm_so == -1) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {

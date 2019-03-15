@@ -155,7 +155,7 @@ TclpInitPlatform(void)
     /*
      * Fill available functions depending on windows version
      */
-    handle = GetModuleHandle(TEXT("KERNEL32"));
+    handle = GetModuleHandle(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
@@ -188,6 +188,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
     const char *bytes;
+    size_t length;
 
     pathPtr = Tcl_NewObj();
 
@@ -223,9 +224,10 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, bytes, *lengthPtr + 1);
+    bytes = TclGetStringFromObj(pathPtr, &length);
+    *lengthPtr = length++;
+    *valuePtr = Tcl_Alloc(length);
+    memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -315,7 +317,7 @@ AppendEnvironment(
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	Tcl_Free(pathv);
+	Tcl_Free((void *)pathv);
     }
 }
 
@@ -467,14 +469,14 @@ TclpGetUserName(
     Tcl_DStringInit(bufferPtr);
 
     if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
-	TCHAR szUserName[UNLEN+1];
+	WCHAR szUserName[UNLEN+1];
 	DWORD cchUserNameLen = UNLEN;
 
 	if (!GetUserName(szUserName, &cchUserNameLen)) {
 	    return NULL;
 	}
 	cchUserNameLen--;
-	cchUserNameLen *= sizeof(TCHAR);
+	cchUserNameLen *= sizeof(WCHAR);
 	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
     }
     return Tcl_DStringValue(bufferPtr);
@@ -515,7 +517,7 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
+	HMODULE handle = GetModuleHandle(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);

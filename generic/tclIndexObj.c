@@ -138,7 +138,7 @@ GetIndexFromObjList(
 	     * An exact match is always chosen, so we can stop here.
 	     */
 
-	    Tcl_Free(tablePtr);
+	    Tcl_Free((void *)tablePtr);
 	    *indexPtr = t;
 	    return TCL_OK;
 	}
@@ -150,7 +150,7 @@ GetIndexFromObjList(
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
 	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
 
-    Tcl_Free(tablePtr);
+    Tcl_Free((void *)tablePtr);
 
     return result;
 }

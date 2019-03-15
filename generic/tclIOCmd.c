@@ -1165,7 +1165,7 @@ Tcl_OpenObjCmd(
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
-	Tcl_Free(cmdArgv);
+	Tcl_Free((void *)cmdArgv);
     }
     if (chan == NULL) {
 	return TCL_ERROR;

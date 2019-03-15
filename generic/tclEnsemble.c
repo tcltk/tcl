@@ -1645,7 +1645,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	Tcl_Free(nameParts);
+	Tcl_Free((void *)nameParts);
     }
     return ensemble;
 }

@@ -4188,7 +4188,7 @@ Tcl_WriteObj(
     Channel *chanPtr;
     ChannelState *statePtr;	/* State info for channel */
     const char *src;
-    size_t srcLen;
+    size_t srcLen = 0;
 
     statePtr = ((Channel *) chan)->state;
     chanPtr = statePtr->topChanPtr;
@@ -4408,7 +4408,7 @@ Write(
 	     * beginning of the next buffer.
 	     */
 
-	    saved = -SpaceLeft(bufPtr);
+	    saved = 1 + ~SpaceLeft(bufPtr);
 	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
@@ -4941,7 +4941,7 @@ TclGetsObjBinary(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    size_t rawLen, byteLen, oldLength;
+    size_t rawLen, byteLen = 0, oldLength;
     int eolChar;
     unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
 
@@ -7672,7 +7672,7 @@ Tcl_BadChannelOption(
 	Tcl_AppendPrintfToObj(errObj, "or -%s", argv[i]);
         Tcl_SetObjResult(interp, errObj);
 	Tcl_DStringFree(&ds);
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
     }
     Tcl_SetErrno(EINVAL);
     return TCL_ERROR;
@@ -8063,7 +8063,7 @@ Tcl_SetChannelOption(
                             "bad value for -eofchar: must be non-NUL ASCII"
                             " character", -1));
 		}
-		Tcl_Free(argv);
+		Tcl_Free((void *)argv);
 		return TCL_ERROR;
 	    }
 	    if (GotFlag(statePtr, TCL_READABLE)) {
@@ -8078,11 +8078,11 @@ Tcl_SetChannelOption(
 			"bad value for -eofchar: should be a list of zero,"
 			" one, or two elements", -1));
 	    }
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
 	}
 	if (argv != NULL) {
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	}
 
 	/*
@@ -8116,7 +8116,7 @@ Tcl_SetChannelOption(
 			"bad value for -translation: must be a one or two"
 			" element list", -1));
 	    }
-	    Tcl_Free(argv);
+	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
 	}
 
@@ -8146,7 +8146,7 @@ Tcl_SetChannelOption(
 			    "bad value for -translation: must be one of "
                             "auto, binary, cr, lf, crlf, or platform", -1));
 		}
-		Tcl_Free(argv);
+		Tcl_Free((void *)argv);
 		return TCL_ERROR;
 	    }
 
@@ -8196,11 +8196,11 @@ Tcl_SetChannelOption(
 			    "bad value for -translation: must be one of "
                             "auto, binary, cr, lf, crlf, or platform", -1));
 		}
-		Tcl_Free(argv);
+		Tcl_Free((void *)argv);
 		return TCL_ERROR;
 	    }
 	}
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	return TCL_OK;
     } else if (chanPtr->typePtr->setOptionProc != NULL) {
 	return chanPtr->typePtr->setOptionProc(chanPtr->instanceData, interp,
