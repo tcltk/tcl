@@ -93,7 +93,7 @@ TclBN_revision(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideInt --
+ * TclInitBignumFromWideInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideInt
  *
@@ -119,7 +119,7 @@ TclInitBignumFromWideInt(
 	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
 		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
 	}
-    if (v < (Tcl_WideInt)0) {
+    if (v < 0) {
 	TclBN_mp_set_long_long(a, (Tcl_WideUInt)(-v));
 	mp_neg(a, a);
     } else {
@@ -130,7 +130,7 @@ TclInitBignumFromWideInt(
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideUInt --
+ * TclInitBignumFromWideUInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
  *
