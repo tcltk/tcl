@@ -69,6 +69,19 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
+    - os: linux
+      dist: xenial
+      compiler: gcc-7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - gcc-multilib
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-m32
     - os: osx
       osx_image: xcode8
       env:
