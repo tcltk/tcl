@@ -5215,7 +5215,7 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[TCL_UTF_MAX] = "";
+	    char buf[4] = "";
 	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
@@ -7985,8 +7985,8 @@ ExecuteExtendedBinaryMathOp(
 
 		if (((wQuotient < (Tcl_WideInt) 0)
 			|| ((wQuotient == (Tcl_WideInt) 0)
-			&& ((w1 < (Tcl_WideInt)0 && w2 > (Tcl_WideInt)0)
-			|| (w1 > (Tcl_WideInt)0 && w2 < (Tcl_WideInt)0))))
+			&& ((w1 < 0 && w2 > 0)
+			|| (w1 > 0 && w2 < 0))))
 			&& (wQuotient * w2 != w1)) {
 		    wQuotient -= (Tcl_WideInt) 1;
 		}
@@ -8020,7 +8020,7 @@ ExecuteExtendedBinaryMathOp(
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
 	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	if ((bigRemainder.used != 0) && (bigRemainder.sign != big2.sign)) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
@@ -8042,11 +8042,11 @@ ExecuteExtendedBinaryMathOp(
 
 	switch (type2) {
 	case TCL_NUMBER_INT:
-	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
+	    invalid = (*((const Tcl_WideInt *)ptr2) < 0);
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = mp_isneg(&big2);
+	    invalid = big2.sign != MP_ZPOS;
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8063,7 +8063,7 @@ ExecuteExtendedBinaryMathOp(
 	 * Zero shifted any number of bits is still zero.
 	 */
 
-	if ((type1==TCL_NUMBER_INT) && (*((const Tcl_WideInt *)ptr1) == (Tcl_WideInt)0)) {
+	if ((type1==TCL_NUMBER_INT) && (*((const Tcl_WideInt *)ptr1) == 0)) {
 	    return constants[0];
 	}
 
@@ -8121,11 +8121,11 @@ ExecuteExtendedBinaryMathOp(
 
 		switch (type1) {
 		case TCL_NUMBER_INT:
-		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
+		    zero = (*(const Tcl_WideInt *)ptr1 > 0);
 		    break;
 		case TCL_NUMBER_BIG:
 		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
-		    zero = (!mp_isneg(&big1));
+		    zero = (big1.sign == MP_ZPOS);
 		    mp_clear(&big1);
 		    break;
 		default:
@@ -8146,7 +8146,7 @@ ExecuteExtendedBinaryMathOp(
 	    if (type1 == TCL_NUMBER_INT) {
 		w1 = *(const Tcl_WideInt *)ptr1;
 		if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
-		    if (w1 >= (Tcl_WideInt)0) {
+		    if (w1 >= 0) {
 			return constants[0];
 		    }
 		    WIDE_RESULT(-1);
@@ -8249,9 +8249,9 @@ ExecuteExtendedBinaryMathOp(
 	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
 	} else {
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = mp_isneg(&big2);
+	    negativeExponent = big2.sign != MP_ZPOS;
 	    mp_mod_2d(&big2, 1, &big2);
-	    oddExponent = !mp_iszero(&big2);
+	    oddExponent = big2.used != 0;
 	    mp_clear(&big2);
 	}
 
@@ -8568,7 +8568,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_mul(&big1, &big2, &bigResult);
 	    break;
 	case INST_DIV:
-	    if (mp_iszero(&big2)) {
+	    if (big2.used == 0) {
 		mp_clear(&big1);
 		mp_clear(&big2);
 		mp_clear(&bigResult);
@@ -8577,7 +8577,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_init(&bigRemainder);
 	    mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	    /* TODO: internals intrusion */
-	    if (!mp_iszero(&bigRemainder)
+	    if ((bigRemainder.used != 0)
 		    && (bigRemainder.sign != big2.sign)) {
 		/*
 		 * Convert to Tcl's integer division rules.
@@ -8724,7 +8724,7 @@ TclCompareTwoNumbers(
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_isneg(&big2)) {
+	    if (big2.sign != MP_ZPOS) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -8761,7 +8761,7 @@ TclCompareTwoNumbers(
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
-		if (mp_isneg(&big2)) {
+		if (big2.sign != MP_ZPOS) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;

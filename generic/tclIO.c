@@ -4705,7 +4705,7 @@ Tcl_GetsObj(
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[TCL_UTF_MAX];
+		    char tmp[4];
 		    int rawRead;
 
 		    bufPtr = gs.bufPtr;
@@ -6216,7 +6216,7 @@ ReadChars(
 		     * and do not encounter the eof char this time.
 		     */
 
-		    dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		    statePtr->flags = savedFlags;
 		    statePtr->inputEncodingFlags = savedIEFlags;
 		    statePtr->inputEncodingState = savedState;
@@ -6241,7 +6241,7 @@ ReadChars(
 		 * here in this call.
 		 */
 
-		dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		statePtr->flags = savedFlags;
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
@@ -6258,7 +6258,7 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[TCL_UTF_MAX + 1];
+		char buffer[5];
 		int read, decoded, count;
 
 		/*

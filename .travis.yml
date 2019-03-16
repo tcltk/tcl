@@ -80,7 +80,19 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
+    - os: linux
+      dist: xenial
+      compiler: gcc-7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
     - os: osx
       osx_image: xcode8
       env:
@@ -136,7 +148,23 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
+        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=4"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64
+            - gcc-multilib
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
         - NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
@@ -167,9 +195,23 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=4"
         - NO_DIRECT_TEST=1
-
+    - os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+        - NO_DIRECT_TEST=1
 before_install:
   - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}

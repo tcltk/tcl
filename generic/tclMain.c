@@ -59,9 +59,9 @@
  * encoding to UTF-8).
  */
 
-#if defined(UNICODE) && (TCL_UTF_MAX <= 4)
+#if defined(UNICODE) && (TCL_UTF_MAX == 3)
 #   define NewNativeObj Tcl_NewUnicodeObj
-#else /* !UNICODE || (TCL_UTF_MAX > 4) */
+#else /* !UNICODE || (TCL_UTF_MAX > 3) */
 static inline Tcl_Obj *
 NewNativeObj(
     TCHAR *string,
@@ -79,7 +79,7 @@ NewNativeObj(
 #endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE || (TCL_UTF_MAX > 4) */
+#endif /* !UNICODE || (TCL_UTF_MAX > 3) */
 
 /*
  * Declarations for various library functions and variables (don't want to

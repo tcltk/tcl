@@ -3060,7 +3060,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE void	TclInitBignumFromLong(mp_int *, long);
 MODULE_SCOPE void	TclInitBignumFromWideInt(mp_int *, Tcl_WideInt);
 MODULE_SCOPE void	TclInitBignumFromWideUInt(mp_int *, Tcl_WideUInt);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
@@ -3241,7 +3240,7 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
-#if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
+#if (TCL_UTF_MAX > 3) && (defined(__CYGWIN__) || defined(_WIN32))
 MODULE_SCOPE int TclUtfToUtf16(const char *src, unsigned short *chPtr);
 MODULE_SCOPE char *	Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
 			    int uniLength, Tcl_DString *dsPtr);
