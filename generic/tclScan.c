@@ -261,7 +261,7 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX+1] = "";
+    char buf[5] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -881,7 +881,7 @@ Tcl_ScanObjCmd(
 
 	    offset = TclUtfToUniChar(string, &sch);
 	    i = (int)sch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 3
 	    if ((sch >= 0xD800) && (offset < 3)) {
 		offset += TclUtfToUniChar(string+offset, &sch);
 		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
@@ -943,7 +943,7 @@ Tcl_ScanObjCmd(
 		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
 		    if (code == TCL_OK) {
-			if (mp_isneg(&big)) {
+			if (big.sign != MP_ZPOS) {
 			    code = TCL_ERROR;
 			}
 			mp_clear(&big);

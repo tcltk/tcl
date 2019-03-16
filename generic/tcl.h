@@ -2142,7 +2142,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		4
+#define TCL_UTF_MAX		3
 #endif
 
 /*
@@ -2150,7 +2150,7 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
     /*
      * unsigned int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
@@ -2339,10 +2339,10 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables. If TCL_UTF_MAX>4 use a different value.
+ * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF + (TCL_UTF_MAX>4))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware

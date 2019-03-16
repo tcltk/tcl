@@ -903,7 +903,7 @@ PrintSourceToObj(
 	    i += 2;
 	    continue;
 	default:
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
 	    if (ch > 0xffff) {
 		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
 		i += 10;

@@ -2066,7 +2066,7 @@ ParseLexeme(
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
-	    char utfBytes[TCL_UTF_MAX];
+	    char utfBytes[4];
 
 	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';

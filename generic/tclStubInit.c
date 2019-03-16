@@ -57,19 +57,20 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
+#undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_GetUnicodeFromObj
 #undef Tcl_NewUnicodeObj
 
 static void uniCodePanic() {
-#if TCL_UTF_MAX <= 4
-    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX=6, but Tcl is compiled with -DTCL_UTF_MAX=4");
+#if TCL_UTF_MAX == 3
+    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX>3, but Tcl is compiled with -DTCL_UTF_MAX==3");
 #else
-    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX=4, but Tcl is compiled with -DTCL_UTF_MAX=6");
+    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX==3, but Tcl is compiled with -DTCL_UTF_MAX>3");
 #endif
 }
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 3
 #   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
 #else
@@ -120,8 +121,12 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
-
 #else
+#define TclBNInitBignumFromLong initBignumFromLong
+static void TclBNInitBignumFromLong(mp_int *a, long b)
+{
+    TclInitBignumFromWideInt(a, b);
+}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -172,7 +177,6 @@ TclWinGetPlatformId(void)
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -1331,7 +1335,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    0, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1347,10 +1351,10 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_UniCharLen, /* 352 */
-    Tcl_UniCharNcmp, /* 353 */
-    Tcl_UniCharToUtfDString, /* 354 */
-    Tcl_UtfToUniCharDString, /* 355 */
+    0, /* 352 */
+    0, /* 353 */
+    0, /* 354 */
+    0, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     Tcl_EvalTokens, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1641,6 +1645,11 @@ const TclStubs tclStubs = {
     Tcl_IsShared, /* 643 */
     Tcl_GetUnicodeFromObj, /* 644 */
     Tcl_NewUnicodeObj, /* 645 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharLen, /* 647 */
+    Tcl_UniCharNcmp, /* 648 */
+    Tcl_UniCharToUtfDString, /* 649 */
+    Tcl_UtfToUniCharDString, /* 650 */
 };
 
 /* !END!: Do not edit above this line. */

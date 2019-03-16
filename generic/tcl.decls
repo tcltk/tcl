@@ -1197,9 +1197,9 @@ declare 334 {
 declare 335 {
     int Tcl_UtfToTitle(char *src)
 }
-declare 336 {
-    int Tcl_UtfToUniChar(const char *src, Tcl_UniChar *chPtr)
-}
+#declare 336 {
+#    int Tcl_UtfToUniChar(const char *src, Tcl_UniChar *chPtr)
+#}
 declare 337 {
     int Tcl_UtfToUpper(char *src)
 }
@@ -1245,21 +1245,21 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
-    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
-}
-declare 353 {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
-}
-declare 354 {
-    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
-	    int uniLength, Tcl_DString *dsPtr)
-}
-declare 355 {
-    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
-	    int length, Tcl_DString *dsPtr)
-}
+#declare 352 {
+#    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+#}
+#declare 353 {
+#    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+#	    unsigned long numChars)
+#}
+#declare 354 {
+#    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+#	    int uniLength, Tcl_DString *dsPtr)
+#}
+#declare 355 {
+#    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+#	    int length, Tcl_DString *dsPtr)
+#}
 declare 356 {
     Tcl_RegExp Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj,
 	    int flags)
@@ -2379,12 +2379,32 @@ declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
 }
 
+# TIP #???
 declare 644 {
     int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 645 {
     Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
 }
+declare 646 {
+    int Tcl_UtfToUniChar(const char *src, Tcl_UniChar *chPtr)
+}
+declare 647 {
+    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+}
+declare 648 {
+    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+	    unsigned long numChars)
+}
+declare 649 {
+    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+	    int uniLength, Tcl_DString *dsPtr)
+}
+declare 650 {
+    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+	    int length, Tcl_DString *dsPtr)
+}
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

@@ -530,7 +530,7 @@ TclParseNumber(
     int shift = 0;		/* Amount to shift when accumulating binary */
     int explicitOctal = 0;
 
-#define ALL_BITS	(~(Tcl_WideUInt)0)
+#define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /*
@@ -709,7 +709,7 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					(~(Tcl_WideUInt)0 >> shift)))) {
+					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    TclInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
@@ -826,7 +826,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
 			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -867,7 +867,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
 			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -1451,7 +1451,7 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1]) {
+		|| w > ((Tcl_WideUInt)-1-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.
@@ -4649,7 +4649,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (mp_isneg(a)) {
+    if (a->sign != MP_ZPOS) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4666,7 +4666,7 @@ TclCeil(
 		mp_int d;
 		mp_init(&d);
 		mp_div_2d(a, -shift, &b, &d);
-		exact = mp_iszero(&d);
+		exact = d.used == 0;
 		mp_clear(&d);
 	    } else {
 		mp_copy(a, &b);
@@ -4706,7 +4706,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (mp_isneg(a)) {
+    if (a->sign != MP_ZPOS) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
