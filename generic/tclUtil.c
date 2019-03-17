@@ -2302,7 +2302,7 @@ Tcl_StringCaseMatch(
 		    if (nocase) {
 			while (*str) {
 			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==(Tcl_UniChar)Tcl_UniCharToLower(ch1)) {
+			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
 			    str += charLen;

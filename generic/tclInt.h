@@ -3240,17 +3240,6 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
-#if (TCL_UTF_MAX > 3) && (defined(__CYGWIN__) || defined(_WIN32))
-MODULE_SCOPE int TclUtfToUtf16(const char *src, unsigned short *chPtr);
-MODULE_SCOPE char *	Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
-			    int uniLength, Tcl_DString *dsPtr);
-MODULE_SCOPE unsigned short * Tcl_UtfToUtf16DString(const char *src,
-			    int length, Tcl_DString *dsPtr);
-#else
-#   define TclUtfToUtf16 TclUtfToUniChar
-#   define Tcl_Utf16ToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToUtf16DString Tcl_UtfToUniCharDString
-#endif
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
