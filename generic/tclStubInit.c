@@ -62,6 +62,14 @@
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_GetUnicodeFromObj
 #undef Tcl_NewUnicodeObj
+#undef Tcl_SetUnicodeObj
+#undef Tcl_UniCharToUtfDString
+#undef Tcl_UtfToUniCharDString
+#undef Tcl_UtfToUniChar
+#undef Tcl_UniCharNcmp
+#undef Tcl_UniCharNcasecmp
+#undef Tcl_UniCharCaseMatch
+#undef Tcl_AppendUnicodeToObj
 
 static void uniCodePanic() {
 #if TCL_UTF_MAX == 3
@@ -70,13 +78,21 @@ static void uniCodePanic() {
     Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX==3, but Tcl is compiled with -DTCL_UTF_MAX>3");
 #endif
 }
+
 #if TCL_UTF_MAX == 3
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_GetUnicode 0
+#endif
 #   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *,const int *, int)) uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const int *, int)) uniCodePanic
 #else
-#   define Tcl_GetUtf16FromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
+#   define Tcl_GetUtf16FromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_NewUtf16Obj (Tcl_Obj *(*)(const unsigned short *, int)) uniCodePanic
+#   define Tcl_SetUtf16Obj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
+#   define Tcl_AppendUtf16ToObj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
 #endif
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -1335,7 +1351,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    0, /* 336 */
+    Tcl_UtfToUtf16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1351,10 +1367,10 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    0, /* 352 */
-    0, /* 353 */
-    0, /* 354 */
-    0, /* 355 */
+    Tcl_Utf16Len, /* 352 */
+    Tcl_Utf16Ncmp, /* 353 */
+    Tcl_Utf16ToUtfDString, /* 354 */
+    Tcl_UtfToUtf16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     Tcl_EvalTokens, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1378,12 +1394,12 @@ const TclStubs tclStubs = {
     Tcl_RegExpExecObj, /* 376 */
     Tcl_RegExpGetInfo, /* 377 */
     Tcl_NewUtf16Obj, /* 378 */
-    Tcl_SetUnicodeObj, /* 379 */
+    Tcl_SetUtf16Obj, /* 379 */
     Tcl_GetCharLength, /* 380 */
     Tcl_GetUniChar, /* 381 */
     Tcl_GetUnicode, /* 382 */
     Tcl_GetRange, /* 383 */
-    Tcl_AppendUnicodeToObj, /* 384 */
+    Tcl_AppendUtf16ToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
     Tcl_GetAllocMutex, /* 387 */
@@ -1418,8 +1434,8 @@ const TclStubs tclStubs = {
     Tcl_SpliceChannel, /* 416 */
     Tcl_ClearChannelHandlers, /* 417 */
     Tcl_IsChannelExisting, /* 418 */
-    Tcl_UniCharNcasecmp, /* 419 */
-    Tcl_UniCharCaseMatch, /* 420 */
+    Tcl_Utf16Ncasecmp, /* 419 */
+    Tcl_Utf16CaseMatch, /* 420 */
     Tcl_FindHashEntry, /* 421 */
     Tcl_CreateHashEntry, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
@@ -1648,8 +1664,12 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharLen, /* 647 */
     Tcl_UniCharNcmp, /* 648 */
-    Tcl_UniCharToUtfDString, /* 649 */
-    Tcl_UtfToUniCharDString, /* 650 */
+    Tcl_UniCharNcasecmp, /* 649 */
+    Tcl_UniCharToUtfDString, /* 650 */
+    Tcl_UtfToUniCharDString, /* 651 */
+    Tcl_UniCharCaseMatch, /* 652 */
+    Tcl_AppendUnicodeToObj, /* 653 */
+    Tcl_SetUnicodeObj, /* 654 */
 };
 
 /* !END!: Do not edit above this line. */
