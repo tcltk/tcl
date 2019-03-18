@@ -56,8 +56,8 @@ To measure very fast scripts as exact as posible the calibration process
 may be required.
 
 The \fI-calibrate\fR option is used to calibrate timerate, calculating the
-estimated overhead of the given script as the default overhead for future 
-invocations of the \fBtimerate\fR command. If the \fItime\fR parameter is not 
+estimated overhead of the given script as the default overhead for future
+invocations of the \fBtimerate\fR command. If the \fItime\fR parameter is not
 specified, the calibrate procedure runs for up to 10 seconds.
 .TP
 \fI-overhead double\fR

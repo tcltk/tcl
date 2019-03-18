@@ -4130,7 +4130,7 @@ test util-18.12 {Tcl_ObjPrintf} {testprint} {
 } {65537 65537}
 
 if {[catch {set ::tcl_precision $saved_precision}]} {
-    unset ::tcl_precision 
+    unset ::tcl_precision
 }
 
 # cleanup
