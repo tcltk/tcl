@@ -6812,7 +6812,7 @@ ExprIsqrtFunc(
 	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (mp_isneg(&big)) {
+	if (big.sign != MP_ZPOS) {
 	    mp_clear(&big);
 	    goto negarg;
 	}
@@ -7041,9 +7041,9 @@ ExprAbsFunc(
     if (type == TCL_NUMBER_INT) {
 	Tcl_WideInt l = *((const Tcl_WideInt *) ptr);
 
-	if (l > (Tcl_WideInt)0) {
+	if (l > 0) {
 	    goto unChanged;
-	} else if (l == (Tcl_WideInt)0) {
+	} else if (l == 0) {
 	    if (TclHasStringRep(objv[1])) {
 		size_t numBytes;
 		const char *bytes = TclGetStringFromObj(objv[1], &numBytes);
@@ -7086,7 +7086,7 @@ ExprAbsFunc(
     }
 
     if (type == TCL_NUMBER_BIG) {
-	if (mp_isneg((const mp_int *) ptr)) {
+	if (((const mp_int *) ptr)->sign != MP_ZPOS) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
 	    mp_neg(&big, &big);
