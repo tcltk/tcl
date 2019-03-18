@@ -184,7 +184,7 @@ TclpDlopen(
      */
 
     nativePath = Tcl_FSGetNativePath(pathPtr);
-    nativeFileName = Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr),
+    nativeFileName = Tcl_UtfToExternalDString(NULL, TclGetString(pathPtr),
 	    -1, &ds);
 
 #if TCL_DYLD_USE_DLFCN

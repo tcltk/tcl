@@ -9,8 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* get the lower unsigned long long of an mp_int, platform dependent */
@@ -37,3 +36,7 @@ Tcl_WideUInt mp_get_long_long(const mp_int *a)
    return res;
 }
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

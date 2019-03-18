@@ -1560,7 +1560,7 @@ ConvertTreeToTokens(
 		TclGrowParseTokenArray(parsePtr, toCopy);
 		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		memcpy(subExprTokenPtr, tokenPtr,
-			(size_t) toCopy * sizeof(Tcl_Token));
+			toCopy * sizeof(Tcl_Token));
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 		parsePtr->numTokens += toCopy;
 	    } else {
@@ -1577,7 +1577,7 @@ ConvertTreeToTokens(
 		subExprTokenPtr->numComponents++;
 		subExprTokenPtr++;
 		memcpy(subExprTokenPtr, tokenPtr,
-			(size_t) toCopy * sizeof(Tcl_Token));
+			toCopy * sizeof(Tcl_Token));
 		parsePtr->numTokens += toCopy + 1;
 	    }
 
@@ -2026,7 +2026,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (literal->typePtr == &tclDoubleType) {
+	    if (TclHasIntRep(literal, &tclDoubleType)) {
 		const char *p = start;
 
 		while (p < end) {
@@ -2260,7 +2260,7 @@ CompileExprTree(
 	    case FUNCTION: {
 		Tcl_DString cmdName;
 		const char *p;
-		int length;
+		size_t length;
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
@@ -2419,7 +2419,7 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		int length;
+		size_t length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
 		int index = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
@@ -2478,9 +2478,9 @@ CompileExprTree(
 
 		    if (TclHasStringRep(objPtr)) {
 			Tcl_Obj *tableValue;
-			int numBytes;
+			size_t numBytes;
 			const char *bytes
-				= Tcl_GetStringFromObj(objPtr, &numBytes);
+				= TclGetStringFromObj(objPtr, &numBytes);
 
 			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, index);

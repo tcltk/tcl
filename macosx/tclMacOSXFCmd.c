@@ -577,7 +577,7 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (objPtr->typePtr != &tclOSTypeType) {
+    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.longValue;
@@ -639,9 +639,10 @@ SetOSTypeFromAny(
     int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    size_t length;
 
-    string = TclGetString(objPtr);
-    Tcl_UtfToExternalDString(encoding, string, objPtr->length, &ds);
+    string = TclGetStringFromObj(objPtr, &length);
+    Tcl_UtfToExternalDString(encoding, string, length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {

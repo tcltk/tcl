@@ -173,7 +173,7 @@ const Tcl_ObjType tclDictType = {
 #define DictGetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
         const Tcl_ObjIntRep *irPtr;                                     \
-        irPtr = Tcl_FetchIntRep((objPtr), &tclDictType);                \
+        irPtr = TclFetchIntRep((objPtr), &tclDictType);                \
         (dictRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
 
@@ -541,13 +541,11 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -561,15 +559,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
@@ -617,7 +613,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (Tcl_FetchIntRep(objPtr, &tclListType)) {
+    if (TclHasIntRep(objPtr, &tclListType)) {
 	int objc, i;
 	Tcl_Obj **objv;
 
@@ -640,7 +636,7 @@ SetDictFromAny(
 		 * convert back.
 		 */
 
-		(void) Tcl_GetString(objPtr);
+		(void) TclGetString(objPtr);
 
 		TclDecrRefCount(discardedValue);
 	    }
@@ -648,7 +644,7 @@ SetDictFromAny(
 	    Tcl_IncrRefCount(objv[i+1]); /* Since hash now holds ref to it */
 	}
     } else {
-	int length;
+	size_t length;
 	const char *nextElem = TclGetStringFromObj(objPtr, &length);
 	const char *limit = (nextElem + length);
 
@@ -3236,7 +3232,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar(interp, Tcl_GetString(objv[i+1]), 0);
+	    Tcl_UnsetVar(interp, TclGetString(objv[i+1]), 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);

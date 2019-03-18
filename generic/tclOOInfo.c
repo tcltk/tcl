@@ -612,7 +612,7 @@ InfoObjectMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free(names);
+	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
 	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
@@ -816,7 +816,7 @@ InfoObjectVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	private = 1;
@@ -1366,7 +1366,7 @@ InfoClassMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free(names);
+	    Tcl_Free((void *)names);
 	}
     } else {
 	FOREACH_HASH_DECLS;
@@ -1595,7 +1595,7 @@ InfoClassVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	private = 1;

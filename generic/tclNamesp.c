@@ -165,7 +165,7 @@ static const Tcl_ObjType nsNameType = {
 #define NsNameGetIntRep(objPtr, nnPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &nsNameType);			\
+	irPtr = TclFetchIntRep((objPtr), &nsNameType);			\
 	(nnPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -1231,7 +1231,7 @@ TclTeardownNamespace(
 #else
     if (nsPtr->childTablePtr != NULL) {
 	while (nsPtr->childTablePtr->numEntries > 0) {
-	    int length = nsPtr->childTablePtr->numEntries;
+	    size_t length = nsPtr->childTablePtr->numEntries;
 	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
 		    sizeof(Namespace *) * length);
 
@@ -3049,7 +3049,7 @@ NamespaceChildrenCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	unsigned int length = strlen(nsPtr->fullName);
+	size_t length = strlen(nsPtr->fullName);
 
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
@@ -3129,7 +3129,7 @@ NamespaceCodeCmd(
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
     register const char *arg;
-    int length;
+    size_t length;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg");
@@ -3442,15 +3442,15 @@ NsEval_Callback(
     Tcl_Namespace *namespacePtr = data[0];
 
     if (result == TCL_ERROR) {
-	int length = strlen(namespacePtr->fullName);
-	int limit = 200;
+	size_t length = strlen(namespacePtr->fullName);
+	unsigned limit = 200;
 	int overflow = (length > limit);
 	char *cmd = data[1];
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
 		cmd,
-		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? limit : (unsigned)length), namespacePtr->fullName,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -3570,7 +3570,7 @@ NamespaceExportCmd(
      */
 
     firstArg = 1;
-    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
+    if (strcmp("-clear", TclGetString(objv[firstArg])) == 0) {
 	Tcl_Export(interp, NULL, "::", 1);
 	Tcl_ResetResult(interp);
 	firstArg++;
@@ -3581,7 +3581,7 @@ NamespaceExportCmd(
      */
 
     for (i = firstArg;  i < objc;  i++) {
-	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
+	int result = Tcl_Export(interp, NULL, TclGetString(objv[i]), 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4249,7 +4249,7 @@ NamespaceQualifiersCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register const char *name, *p;
-    int length;
+    size_t length;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -4713,7 +4713,7 @@ FreeNsNameInternalRep(
 
     NsNameGetIntRep(objPtr, resNamePtr);
     assert(resNamePtr != NULL);
-	
+
     /*
      * Decrement the reference count of the namespace. If there are no more
      * references, free it up.

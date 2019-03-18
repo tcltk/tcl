@@ -1259,7 +1259,7 @@ ReflectInput(
 {
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *toReadObj;
-    size_t bytec;			/* Number of returned bytes */
+    size_t bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -1957,7 +1957,7 @@ ReflectGetOption(
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
-	int len;
+	size_t len;
 	const char *str = TclGetStringFromObj(resObj, &len);
 
 	if (len) {
@@ -2330,7 +2330,7 @@ InvokeTclMethod(
 	     */
 
 	    if (result != TCL_ERROR) {
-		int cmdLen;
+		size_t cmdLen;
 		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -2998,7 +2998,7 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    size_t bytec;			/* Number of returned bytes */
+	    size_t bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
@@ -3194,7 +3194,7 @@ ForwardProc(
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
-		int len;
+		size_t len;
 		const char *str = TclGetStringFromObj(resObj, &len);
 
 		if (len) {

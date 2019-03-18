@@ -12,6 +12,8 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
+::tcltest::loadTestedCommands
+
 testConstraint notOSXtravis [apply {{} {
     upvar 1 env(TRAVIS_OSX_IMAGE) travis
     return [expr {![info exists travis] || ![string match xcode* $travis]}]

@@ -95,7 +95,7 @@ static const Tcl_ObjType ensembleCmdType = {
 #define ECRGetIntRep(objPtr, ecRepPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &ensembleCmdType);		\
+	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
 	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -1624,7 +1624,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
 		} else {
 		    /*
@@ -1645,7 +1645,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	Tcl_Free(nameParts);
+	Tcl_Free((void *)nameParts);
     }
     return ensemble;
 }
@@ -1811,8 +1811,7 @@ NsEnsembleImplementationCmdNR(
 	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetString(subObj);
-	stringLength = subObj->length;
+	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
@@ -2911,7 +2910,7 @@ TclCompileEnsemble(
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
     int len, result, flags = 0, i, depth = 1, invokeAnyway = 0;
     int ourResult = TCL_ERROR;
-    unsigned numBytes;
+    size_t numBytes;
     const char *word;
     DefineLineInformation;
 
@@ -2981,7 +2980,7 @@ TclCompileEnsemble(
 
     (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
     if (listObj != NULL) {
-	int sclen;
+	size_t sclen;
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
@@ -2990,7 +2989,7 @@ TclCompileEnsemble(
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = TclGetStringFromObj(elems[i], &sclen);
-	    if ((sclen == (int) numBytes) && !memcmp(word, str, numBytes)) {
+	    if ((sclen == numBytes) && !memcmp(word, str, numBytes)) {
 		/*
 		 * Exact match! Excellent!
 		 */
@@ -3037,7 +3036,7 @@ TclCompileEnsemble(
 	 * No map, so check the dictionary directly.
 	 */
 
-	TclNewStringObj(subcmdObj, word, (int) numBytes);
+	TclNewStringObj(subcmdObj, word, numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
 	    /*
@@ -3379,6 +3378,7 @@ CompileToInvokedCommand(
     Tcl_Obj *objPtr, **words;
     char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t length;
     DefineLineInformation;
 
     /*
@@ -3391,8 +3391,8 @@ CompileToInvokedCommand(
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
-	    bytes = TclGetString(words[i-1]);
-	    PushLiteral(envPtr, bytes, words[i-1]->length);
+	    bytes = TclGetStringFromObj(words[i-1], &length);
+	    PushLiteral(envPtr, bytes, length);
 	    continue;
 	}
 
@@ -3420,11 +3420,11 @@ CompileToInvokedCommand(
 
     objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = TclGetString(objPtr);
+    bytes = TclGetStringFromObj(objPtr, &length);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, objPtr->length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);

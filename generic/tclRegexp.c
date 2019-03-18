@@ -121,7 +121,7 @@ const Tcl_ObjType tclRegexpType = {
 #define RegexpGetIntRep(objPtr, rePtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclRegexpType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
 	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -264,7 +264,7 @@ Tcl_RegExpRange(
 
     if (index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so < 0) {
+    } else if (regexpPtr->matches[index].rm_so == -1) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -593,7 +593,7 @@ Tcl_GetRegExpFromObj(
 				 * expression. */
     int flags)			/* Regular expression compilation flags. */
 {
-    int length;
+    size_t length;
     TclRegexp *regexpPtr;
     const char *pattern;
 

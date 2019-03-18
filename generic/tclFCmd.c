@@ -1389,7 +1389,7 @@ TclFileTemporaryCmd(
 	TclNewObj(nameObj);
     }
     if (objc > 2) {
-	int length;
+	size_t length;
 	Tcl_Obj *templateObj = objv[2];
 	const char *string = TclGetStringFromObj(templateObj, &length);
 

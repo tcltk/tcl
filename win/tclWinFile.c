@@ -156,27 +156,27 @@ static void		FromCTime(time_t posixTime, FILETIME *fileTime);
  * Declarations for local functions defined in this file:
  */
 
-static int		NativeAccess(const TCHAR *path, int mode);
-static int		NativeDev(const TCHAR *path);
-static int		NativeStat(const TCHAR *path, Tcl_StatBuf *statPtr,
+static int		NativeAccess(const WCHAR *path, int mode);
+static int		NativeDev(const WCHAR *path);
+static int		NativeStat(const WCHAR *path, Tcl_StatBuf *statPtr,
 			    int checkLinks);
 static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
-static int		NativeIsExec(const TCHAR *path);
-static int		NativeReadReparse(const TCHAR *LinkDirectory,
+static int		NativeIsExec(const WCHAR *path);
+static int		NativeReadReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
-static int		NativeWriteReparse(const TCHAR *LinkDirectory,
+static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
-			    const TCHAR *nativeName, Tcl_GlobTypeData *types);
+			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
 static int		WinIsDrive(const char *name, size_t nameLen);
 static int		WinIsReserved(const char *path);
-static Tcl_Obj *	WinReadLink(const TCHAR *LinkSource);
-static Tcl_Obj *	WinReadLinkDirectory(const TCHAR *LinkDirectory);
-static int		WinLink(const TCHAR *LinkSource,
-			    const TCHAR *LinkTarget, int linkAction);
-static int		WinSymLinkDirectory(const TCHAR *LinkDirectory,
-			    const TCHAR *LinkTarget);
+static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
+static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
+static int		WinLink(const WCHAR *LinkSource,
+			    const WCHAR *LinkTarget, int linkAction);
+static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
+			    const WCHAR *LinkTarget);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
@@ -191,12 +191,12 @@ MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 static int
 WinLink(
-    const TCHAR *linkSourcePath,
-    const TCHAR *linkTargetPath,
+    const WCHAR *linkSourcePath,
+    const WCHAR *linkTargetPath,
     int linkAction)
 {
-    TCHAR tempFileName[MAX_PATH];
-    TCHAR *tempFilePart;
+    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFilePart;
     DWORD attr;
 
     /*
@@ -306,10 +306,10 @@ WinLink(
 
 static Tcl_Obj *
 WinReadLink(
-    const TCHAR *linkSourcePath)
+    const WCHAR *linkSourcePath)
 {
-    TCHAR tempFileName[MAX_PATH];
-    TCHAR *tempFilePart;
+    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFilePart;
     DWORD attr;
 
     /*
@@ -370,8 +370,8 @@ WinReadLink(
 
 static int
 WinSymLinkDirectory(
-    const TCHAR *linkDirPath,
-    const TCHAR *linkTargetPath)
+    const WCHAR *linkDirPath,
+    const WCHAR *linkTargetPath)
 {
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
@@ -442,8 +442,8 @@ WinSymLinkDirectory(
 
 int
 TclWinSymLinkCopyDirectory(
-    const TCHAR *linkOrigPath,	/* Existing junction - reparse point */
-    const TCHAR *linkCopyPath)	/* Will become a duplicate junction */
+    const WCHAR *linkOrigPath,	/* Existing junction - reparse point */
+    const WCHAR *linkCopyPath)	/* Will become a duplicate junction */
 {
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
@@ -473,7 +473,7 @@ TclWinSymLinkCopyDirectory(
 
 int
 TclWinSymLinkDelete(
-    const TCHAR *linkOrigPath,
+    const WCHAR *linkOrigPath,
     int linkOnly)
 {
     /*
@@ -538,7 +538,7 @@ TclWinSymLinkDelete(
 
 static Tcl_Obj *
 WinReadLinkDirectory(
-    const TCHAR *linkDirPath)
+    const WCHAR *linkDirPath)
 {
     int attr, len, offset;
     DUMMY_REPARSE_BUFFER dummy;
@@ -634,9 +634,9 @@ WinReadLinkDirectory(
 	    }
 	}
 
-	Tcl_WinTCharToUtf((const TCHAR *)
+	Tcl_WinTCharToUtf(
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
-		(int) reparseBuffer->MountPointReparseBuffer
+		reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength, &ds);
 
 	copy = Tcl_DStringValue(&ds)+offset;
@@ -673,7 +673,7 @@ WinReadLinkDirectory(
 
 static int
 NativeReadReparse(
-    const TCHAR *linkDirPath,	/* The junction to read */
+    const WCHAR *linkDirPath,	/* The junction to read */
     REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
     DWORD desiredAccess)
 {
@@ -729,7 +729,7 @@ NativeReadReparse(
 
 static int
 NativeWriteReparse(
-    const TCHAR *linkDirPath,
+    const WCHAR *linkDirPath,
     REPARSE_DATA_BUFFER *buffer)
 {
     HANDLE hFile;
@@ -893,7 +893,7 @@ TclpMatchInDirectory(
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    const TCHAR *native;
+    const WCHAR *native;
 
     if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
 	/*
@@ -913,7 +913,8 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = TclGetString(norm);
+	    size_t length = 0;
+	    const char *str = TclGetStringFromObj(norm, &length);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -923,7 +924,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,norm->length), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str, length), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -973,8 +974,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -1293,7 +1293,7 @@ NativeMatchType(
     int isDrive,		/* Is this a drive. */
     DWORD attr,			/* We already know the attributes for the
 				 * file. */
-    const TCHAR *nativeName,	/* Native path to check. */
+    const WCHAR *nativeName,	/* Native path to check. */
     Tcl_GlobTypeData *types)	/* Type description to match against. */
 {
     /*
@@ -1445,14 +1445,14 @@ TclpGetUserHome(
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = TclUtfToWCharDString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	wName = TclUtfToWCharDString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * user does not exists - if domain was not specified,
@@ -1470,19 +1470,19 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		Tcl_UniCharToUtfDString(wHomeDir, size, bufferPtr);
+		TclWCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 		GetProfilesDirectoryW(buf, &size);
-		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		TclWCharToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-	    /* be sure we returns normalized path */
+	    /* be sure we return normalized path */
 	    for (i = 0; i < size; ++i){
 		if (result[i] == '\\') result[i] = '/';
 	    }
@@ -1542,7 +1542,7 @@ TclpGetUserHome(
 
 static int
 NativeAccess(
-    const TCHAR *nativePath,	/* Path of file to access, native encoding. */
+    const WCHAR *nativePath,	/* Path of file to access, native encoding. */
     int mode)			/* Permission setting. */
 {
     DWORD attr;
@@ -1804,9 +1804,9 @@ NativeAccess(
 
 static int
 NativeIsExec(
-    const TCHAR *path)
+    const WCHAR *path)
 {
-    int len = _tcslen(path);
+    int len = wcslen(path);
 
     if (len < 5) {
 	return 0;
@@ -1817,11 +1817,11 @@ NativeIsExec(
     }
 
     path += len-3;
-    if ((_tcsicmp(path, TEXT("exe")) == 0)
-	    || (_tcsicmp(path, TEXT("com")) == 0)
-	    || (_tcsicmp(path, TEXT("cmd")) == 0)
-	    || (_tcsicmp(path, TEXT("cmd")) == 0)
-	    || (_tcsicmp(path, TEXT("bat")) == 0)) {
+    if ((wcsicmp(path, L"exe") == 0)
+	    || (wcsicmp(path, L"com") == 0)
+	    || (wcsicmp(path, L"cmd") == 0)
+	    || (wcsicmp(path, L"cmd") == 0)
+	    || (wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
     return 0;
@@ -1848,7 +1848,7 @@ TclpObjChdir(
     Tcl_Obj *pathPtr)	/* Path to new working directory. */
 {
     int result;
-    const TCHAR *nativePath;
+    const WCHAR *nativePath;
 
     nativePath = Tcl_FSGetNativePath(pathPtr);
 
@@ -1892,7 +1892,7 @@ TclpGetCwd(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
-    TCHAR buffer[MAX_PATH];
+    WCHAR buffer[MAX_PATH];
     char *p;
     WCHAR *native;
 
@@ -1915,7 +1915,7 @@ TclpGetCwd(
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
-    Tcl_WinTCharToUtf((TCHAR *) native, -1, bufferPtr);
+    Tcl_WinTCharToUtf(native, -1, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -1970,7 +1970,7 @@ TclpObjStat(
 
 static int
 NativeStat(
-    const TCHAR *nativePath,	/* Path of file to stat */
+    const WCHAR *nativePath,	/* Path of file to stat */
     Tcl_StatBuf *statPtr,	/* Filled with results of stat call. */
     int checkLinks)		/* If non-zero, behave like 'lstat' */
 {
@@ -2111,12 +2111,12 @@ NativeStat(
 
 static int
 NativeDev(
-    const TCHAR *nativePath)	/* Full path of file to stat */
+    const WCHAR *nativePath)	/* Full path of file to stat */
 {
     int dev;
     Tcl_DString ds;
-    TCHAR nativeFullPath[MAX_PATH];
-    TCHAR *nativePart;
+    WCHAR nativeFullPath[MAX_PATH];
+    WCHAR *nativePart;
     const char *fullPath;
 
     GetFullPathName(nativePath, MAX_PATH, nativeFullPath, &nativePart);
@@ -2125,7 +2125,7 @@ NativeDev(
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
 	DWORD dw;
-	const TCHAR *nativeVol;
+	const WCHAR *nativeVol;
 	Tcl_DString volString;
 
 	p = strchr(fullPath + 2, '\\');
@@ -2287,7 +2287,7 @@ ClientData
 TclpGetNativeCwd(
     ClientData clientData)
 {
-    TCHAR buffer[MAX_PATH];
+    WCHAR buffer[MAX_PATH];
 
     if (GetCurrentDirectory(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
@@ -2295,7 +2295,7 @@ TclpGetNativeCwd(
     }
 
     if (clientData != NULL) {
-	if (_tcscmp((const TCHAR*)clientData, buffer) == 0) {
+	if (wcscmp((const WCHAR*)clientData, buffer) == 0) {
 	    return clientData;
 	}
     }
@@ -2336,8 +2336,8 @@ TclpObjLink(
 {
     if (toPtr != NULL) {
 	int res;
-	const TCHAR *LinkTarget;
-	const TCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkTarget;
+	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
 	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
 	if (normalizedToPtr == NULL) {
@@ -2356,7 +2356,7 @@ TclpObjLink(
 	    return NULL;
 	}
     } else {
-	const TCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
 
 	if (LinkSource == NULL) {
 	    return NULL;
@@ -2390,7 +2390,7 @@ TclpFilesystemPathType(
 {
 #define VOL_BUF_SIZE 32
     int found;
-    TCHAR volType[VOL_BUF_SIZE];
+    WCHAR volType[VOL_BUF_SIZE];
     char *firstSeparator;
     const char *path;
     Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
@@ -2398,7 +2398,7 @@ TclpFilesystemPathType(
     if (normPath == NULL) {
 	return NULL;
     }
-    path = Tcl_GetString(normPath);
+    path = TclGetString(normPath);
     if (path == NULL) {
 	return NULL;
     }
@@ -2476,7 +2476,7 @@ TclpObjNormalizePath(
     Tcl_DString ds;		/* Some workspace. */
 
     Tcl_DStringInit(&dsNorm);
-    path = Tcl_GetString(pathPtr);
+    path = TclGetString(pathPtr);
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
@@ -2491,7 +2491,7 @@ TclpObjNormalizePath(
 	     */
 
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const TCHAR *nativePath = Tcl_WinUtfToTChar(path,
+	    const WCHAR *nativePath = Tcl_WinUtfToTChar(path,
 		    currentPathEndPosition - path, &ds);
 
 	    if (GetFileAttributesEx(nativePath,
@@ -2570,12 +2570,12 @@ TclpObjNormalizePath(
 		     * Convert link to forward slashes.
 		     */
 
-		    for (path = Tcl_GetString(to); *path != 0; path++) {
+		    for (path = TclGetString(to); *path != 0; path++) {
 			if (*path == '\\') {
 			    *path = '/';
 			}
 		    }
-		    path = Tcl_GetString(to);
+		    path = TclGetString(to);
 		    currentPathEndPosition = path + nextCheckpoint;
 		    if (temp != NULL) {
 			Tcl_DecrRefCount(temp);
@@ -2634,8 +2634,8 @@ TclpObjNormalizePath(
 
 		    Tcl_DStringAppend(&dsNorm, ((const char *)nativePath)
 			    + Tcl_DStringLength(&ds)
-			    - (dotLen * sizeof(TCHAR)),
-			    (int)(dotLen * sizeof(TCHAR)));
+			    - (dotLen * sizeof(WCHAR)),
+			    dotLen * sizeof(WCHAR));
 		} else {
 		    /*
 		     * Normal path.
@@ -2693,10 +2693,10 @@ TclpObjNormalizePath(
 
 	if (1) {
 	    WCHAR wpath[MAX_PATH];
-	    const TCHAR *nativePath =
+	    const WCHAR *nativePath =
 		    Tcl_WinUtfToTChar(path, lastValidPathEnd - path, &ds);
 	    DWORD wpathlen = GetLongPathNameProc(nativePath,
-		    (TCHAR *) wpath, MAX_PATH);
+		    (WCHAR *) wpath, MAX_PATH);
 
 	    /*
 	     * We have to make the drive letter uppercase.
@@ -2724,7 +2724,7 @@ TclpObjNormalizePath(
 	 * native encoding, so we have to convert it to Utf.
 	 */
 
-	Tcl_WinTCharToUtf((const TCHAR *) Tcl_DStringValue(&dsNorm),
+	Tcl_WinTCharToUtf((const WCHAR *) Tcl_DStringValue(&dsNorm),
 		Tcl_DStringLength(&dsNorm), &ds);
 	nextCheckpoint = Tcl_DStringLength(&ds);
 	if (*lastValidPathEnd != 0) {
@@ -2734,12 +2734,13 @@ TclpObjNormalizePath(
 
 	    char *path;
 	    Tcl_Obj *tmpPathPtr;
+	    size_t length;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = TclGetString(tmpPathPtr);
-	    Tcl_SetStringObj(pathPtr, path, tmpPathPtr->length);
+	    path = TclGetStringFromObj(tmpPathPtr, &length);
+	    Tcl_SetStringObj(pathPtr, path, length);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
 	    /*
@@ -2807,7 +2808,7 @@ TclWinVolumeRelativeNormalize(
 	 * current volume.
 	 */
 
-	const char *drive = Tcl_GetString(useThisCwd);
+	const char *drive = TclGetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
 	Tcl_AppendToObj(absolutePath, path, -1);
@@ -2822,8 +2823,8 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	const char *drive = TclGetString(useThisCwd);
-	size_t cwdLen = useThisCwd->length;
+	size_t cwdLen;
+	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -2896,10 +2897,10 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
-    int len;
+    size_t len;
     char *copy, *p;
 
-    Tcl_WinTCharToUtf((const TCHAR *) clientData, -1, &ds);
+    Tcl_WinTCharToUtf((const WCHAR *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
@@ -2986,10 +2987,9 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
 
-    if (strlen(str)!=(unsigned int)len) {
+    if (strlen(str) != len) {
 	/* String contains NUL-bytes. This is invalid. */
 	goto done;
     }
@@ -3092,7 +3092,7 @@ TclNativeDupInternalRep(
 	return NULL;
     }
 
-    len = sizeof(TCHAR) * (_tcslen((const TCHAR *) clientData) + 1);
+    len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
 
     copy = Tcl_Alloc(len);
     memcpy(copy, clientData, len);
@@ -3123,7 +3123,7 @@ TclpUtime(
 {
     int res = 0;
     HANDLE fileHandle;
-    const TCHAR *native;
+    const WCHAR *native;
     DWORD attr = 0;
     DWORD flags = FILE_ATTRIBUTE_NORMAL;
     FILETIME lastAccessTime, lastModTime;
@@ -3174,7 +3174,7 @@ int
 TclWinFileOwned(
     Tcl_Obj *pathPtr)		/* File whose ownership is to be checked */
 {
-    const TCHAR *native;
+    const WCHAR *native;
     PSID ownerSid = NULL;
     PSECURITY_DESCRIPTOR secd = NULL;
     HANDLE token;

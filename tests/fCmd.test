@@ -789,7 +789,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
 } -result {{tf3 tf4} 1 0}
 test fCmd-9.4.a {file rename: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {win testchmod} -body {
+} -constraints {win winXP testchmod} -body {
     file mkdir td1 td2
     testchmod 0o555 td2
     file rename td1 td3

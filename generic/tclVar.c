@@ -267,7 +267,7 @@ static const Tcl_ObjType localVarNameType = {
 #define LocalGetIntRep(objPtr, index, name)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &localVarNameType);		\
+	irPtr = TclFetchIntRep((objPtr), &localVarNameType);		\
 	(name) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
 	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : -1;	\
     } while (0)
@@ -292,7 +292,7 @@ static const Tcl_ObjType parsedVarNameType = {
 #define ParsedGetIntRep(objPtr, parsed, array, elem)			\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &parsedVarNameType);		\
+	irPtr = TclFetchIntRep((objPtr), &parsedVarNameType);		\
 	(parsed) = (irPtr != NULL);					\
 	(array) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
 	(elem) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
@@ -343,7 +343,7 @@ NotArrayError(
     Tcl_Interp *interp,
     Tcl_Obj *name)
 {
-    const char *nameStr = Tcl_GetString(name);
+    const char *nameStr = TclGetString(name);
 
     Tcl_SetObjResult(interp,
 	    Tcl_ObjPrintf("\"%s\" isn't an array", nameStr));
@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	int len;
+	size_t len;
 	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
@@ -840,7 +840,8 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, i, result, varLen;
+    int isNew, i, result;
+    size_t varLen;
     const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
@@ -970,7 +971,7 @@ TclLookupSimpleVar(
 	if (localCt > 0) {
 	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
 	    const char *localNameStr;
-	    int localLen;
+	    size_t localLen;
 
 	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
 		register Tcl_Obj *objPtr = *objPtrPtr;
@@ -3975,7 +3976,7 @@ ArraySetCmd(
      */
 
     arrayElemObj = objv[2];
-    if (arrayElemObj->typePtr == &tclDictType && arrayElemObj->bytes == NULL) {
+    if (TclHasIntRep(arrayElemObj, &tclDictType) && arrayElemObj->bytes == NULL) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
@@ -6394,7 +6395,7 @@ CompareVarKeys(
     Tcl_Obj *objPtr1 = (Tcl_Obj *)keyPtr;
     Tcl_Obj *objPtr2 = hPtr->key.objPtr;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.

@@ -178,8 +178,8 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 
 #define PACK_BIGNUM(bignum, objPtr) \
     if ((bignum).used > 0x7fff) {                                       \
-	mp_int *temp = Tcl_Alloc(sizeof(mp_int));                      \
-	*temp = bignum;                                                \
+	mp_int *temp = (void *) Tcl_Alloc(sizeof(mp_int));     \
+	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
     } else {                                                            \
@@ -1396,7 +1396,7 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = TCL_AUTO_LENGTH;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
@@ -1697,16 +1697,16 @@ Tcl_GetStringFromObj(
  *	This function is called in several configurations to provide all
  *	the tools needed to set an object's string representation. The
  *	function is determined by the arguments.
- *	
+ *
  *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes == -1)
  *	    Invalid call -- panic!
- *	
- *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
+ *
+ *	objPtr->bytes == NULL && bytes == NULL && numBytes != -1
  *	    Allocation only - allocate space for (numBytes+1) chars.
  *	    store in objPtr->bytes and return. Also sets
  *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
- *	
- *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
+ *
+ *	objPtr->bytes == NULL && bytes != NULL && numBytes != -1
  *	    Allocate and copy. bytes is assumed to point to chars to
  *	    copy into the string rep. objPtr->length = numBytes. Allocate
  *	    array of (numBytes + 1) chars. store in objPtr->bytes. Copy
@@ -1715,7 +1715,7 @@ Tcl_GetStringFromObj(
  *	    Caller must guarantee there are numBytes chars at bytes to
  *	    be copied.
  *
- *	objPtr->bytes != NULL && bytes == NULL && numBytes >= 0
+ *	objPtr->bytes != NULL && bytes == NULL && numBytes != -1
  *	    Truncate.  Set objPtr->length to numBytes and
  *	    objPr->bytes[numBytes] to NUL.  Caller has to guarantee
  *	    that a prior allocating call allocated enough bytes for
@@ -1880,13 +1880,7 @@ Tcl_FetchIntRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    /* If objPtr type doesn't match request, nothing can be fetched */
-    if (objPtr->typePtr != typePtr) {
-	return NULL;
-    }
-
-    /* Type match! objPtr IntRep is the one sought. */
-    return &(objPtr->internalRep);
+    return TclFetchIntRep(objPtr, typePtr);
 }
 
 /*
@@ -2547,6 +2541,7 @@ UpdateStringOfInt(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_NewLongObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2555,7 +2550,7 @@ Tcl_NewLongObj(
     register long longValue)	/* Long integer used to initialize the
 				 * new object. */
 {
-    return Tcl_DbNewLongObj(longValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(longValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2571,6 +2566,7 @@ Tcl_NewLongObj(
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2604,6 +2600,7 @@ Tcl_NewLongObj(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_DbNewLongObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2638,9 +2635,10 @@ Tcl_DbNewLongObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    return Tcl_NewLongObj(longValue);
+    return Tcl_NewWideIntObj(longValue);
 }
 #endif /* TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2713,27 +2711,23 @@ Tcl_GetLongFromObj(
 	     */
 
 	    mp_int big;
+	    unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
+	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(unsigned long) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
-		unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
-		unsigned char *bytes = (unsigned char *) &scratch;
-
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
-		    while (numBytes-- > 0) {
+	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
+		}
+		if (big.sign) {
+		    if (value <= 1 + (unsigned long)LONG_MAX) {
+			*longPtr = - (long) value;
+			return TCL_OK;
 		    }
-		    if (big.sign) {
-			if (value <= 1 + (unsigned long)LONG_MAX) {
-			    *longPtr = - (long) value;
-			    return TCL_OK;
-			}
-		    } else {
-			if (value <= (unsigned long)ULONG_MAX) {
-			    *longPtr = (long) value;
-			    return TCL_OK;
-			}
+		} else {
+		    if (value <= (unsigned long)ULONG_MAX) {
+			*longPtr = (long) value;
+			return TCL_OK;
 		    }
 		}
 	    }
@@ -2955,29 +2949,25 @@ Tcl_GetWideIntFromObj(
 	     */
 
 	    mp_int big;
+	    Tcl_WideUInt value = 0;
+	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    Tcl_WideInt scratch;
+	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
-		     + DIGIT_BIT - 1) / DIGIT_BIT) {
-		Tcl_WideUInt value = 0;
-		unsigned long numBytes = sizeof(Tcl_WideInt);
-		Tcl_WideInt scratch;
-		unsigned char *bytes = (unsigned char *) &scratch;
-
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
-		    while (numBytes-- > 0) {
-			value = (value << CHAR_BIT) | *bytes++;
+	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
+		    value = (value << CHAR_BIT) | *bytes++;
+		}
+		if (big.sign) {
+		    if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
+			*wideIntPtr = - (Tcl_WideInt) value;
+			return TCL_OK;
 		    }
-		    if (big.sign) {
-			if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
-			    *wideIntPtr = - (Tcl_WideInt) value;
-			    return TCL_OK;
-			}
-		    } else {
-			if (value <= (Tcl_WideUInt)WIDE_MAX) {
-			    *wideIntPtr = (Tcl_WideInt) value;
-			    return TCL_OK;
-			}
+		} else {
+		    if (value <= (Tcl_WideUInt)WIDE_MAX) {
+			*wideIntPtr = (Tcl_WideInt) value;
+			return TCL_OK;
 		    }
 		}
 	    }
@@ -3414,33 +3404,30 @@ Tcl_SetBignumObj(
     Tcl_Obj *objPtr,		/* Object to set */
     mp_int *bignumValue)	/* Value to store */
 {
+    Tcl_WideUInt value = 0;
+    unsigned long numBytes = sizeof(Tcl_WideUInt);
+    Tcl_WideUInt scratch;
+    unsigned char *bytes = (unsigned char *) &scratch;
+
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
-	Tcl_WideUInt value = 0;
-	unsigned long numBytes = sizeof(Tcl_WideUInt);
-	Tcl_WideUInt scratch;
-	unsigned char *bytes = (unsigned char *) &scratch;
-
-	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
-	    goto tooLargeForWide;
-	}
-	while (numBytes-- > 0) {
-	    value = (value << CHAR_BIT) | *bytes++;
-	}
-	if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
-	    goto tooLargeForWide;
-	}
-	if (bignumValue->sign) {
-	    TclSetIntObj(objPtr, -(Tcl_WideInt)value);
-	} else {
-	    TclSetIntObj(objPtr, (Tcl_WideInt)value);
-	}
-	mp_clear(bignumValue);
-	return;
+    if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	goto tooLargeForWide;
     }
+    while (numBytes-- > 0) {
+	value = (value << CHAR_BIT) | *bytes++;
+    }
+    if (value > ((Tcl_WideUInt)WIDE_MAX + bignumValue->sign)) {
+	goto tooLargeForWide;
+    }
+    if (bignumValue->sign) {
+	TclSetIntObj(objPtr, -(Tcl_WideInt)value);
+    } else {
+	TclSetIntObj(objPtr, (Tcl_WideInt)value);
+    }
+    mp_clear(bignumValue);
+    return;
   tooLargeForWide:
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);

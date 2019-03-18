@@ -174,43 +174,6 @@ declare 48 {
 declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
-
-# internal routines to libtommath - should not be called but must be
-# exported to accommodate the "tommath" extension
-
-declare 50 {
-    void TclBN_reverse(unsigned char *s, int len)
-}
-declare 51 {
-    int TclBN_fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
-}
-declare 52 {
-    int TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b)
-}
-declare 53 {
-    int TclBN_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c)
-}
-declare 54 {
-    int TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b)
-}
-declare 55 {
-    int TclBN_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
-}
-declare 56 {
-    int TclBN_mp_toom_sqr(const mp_int *a, mp_int *b)
-}
-declare 57 {
-    int TclBN_s_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
-}
-declare 58 {
-    int TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
-}
-declare 59 {
-    int TclBN_s_mp_sqr(const mp_int *a, mp_int *b)
-}
-declare 60 {
-    int TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
-}
 declare 61 {
     int TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 }
@@ -256,6 +219,24 @@ declare 71 {
 declare 72 {
     unsigned long TclBN_mp_get_int(const mp_int *a)
 }
+
+# Added in libtommath 1.1.0
+declare 73 {
+    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 74 {
+    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 75 {
+    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 76 {
+    int TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
+}
+declare 77 {
+    int TclBN_mp_get_bit(const mp_int *a, int b)
+}
+
 
 # Local Variables:
 # mode: tcl

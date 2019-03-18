@@ -296,9 +296,10 @@ declare 74 {
 declare 75 {
     int Tcl_AsyncReady(void)
 }
-declare 76 {
-    void Tcl_BackgroundError(Tcl_Interp *interp)
-}
+# Removed in 9.0
+#declare 76 {deprecated {No longer in use, changed to macro}} {
+#    void Tcl_BackgroundError(Tcl_Interp *interp)
+#}
 # Removed in 9.0:
 #declare 77 {deprecated {Use Tcl_UtfBackslash}} {
 #    char Tcl_Backslash(const char *src, int *readPtr)

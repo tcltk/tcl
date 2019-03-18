@@ -556,7 +556,7 @@ InstallPrivateVariableMapping(
 		privatePtr->variableObj = varv[i];
 		privatePtr->fullNameObj = Tcl_ObjPrintf(
 			PRIVATE_VARIABLE_PATTERN,
-			creationEpoch, Tcl_GetString(varv[i]));
+			creationEpoch, TclGetString(varv[i]));
 		Tcl_IncrRefCount(privatePtr->fullNameObj);
 	    } else {
 		Tcl_DecrRefCount(varv[i]);
@@ -689,7 +689,7 @@ TclOOUnknownDefinition(
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    int soughtLen;
+    size_t soughtLen;
     const char *soughtStr, *matchedStr = NULL;
 
     if (objc < 2) {
@@ -762,7 +762,7 @@ FindCommand(
     Tcl_Obj *stringObj,
     Tcl_Namespace *const namespacePtr)
 {
-    int length;
+    size_t length;
     const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
     register Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
@@ -981,16 +981,16 @@ GenerateErrorInfo(
 				 * an object, class or class-as-object that
 				 * was being configured. */
 {
-    int length;
+    size_t length;
     Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
     const char *objName = TclGetStringFromObj(realNameObj, &length);
-    int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
+    unsigned limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
-	    typeOfSubject, (overflow ? limit : length), objName,
+	    typeOfSubject, (overflow ? limit : (unsigned)length), objName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -1514,7 +1514,7 @@ TclOODefineConstructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    int bodyLength;
+    size_t bodyLength;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arguments body");
@@ -1605,7 +1605,7 @@ TclOODefineDefnNsObjCmd(
 		"may not modify the definition namespace of the root classes",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;	
+	return TCL_ERROR;
     }
 
     /*
@@ -1620,7 +1620,7 @@ TclOODefineDefnNsObjCmd(
 	    &kind) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (!Tcl_GetString(objv[objc - 1])[0]) {
+    if (!TclGetString(objv[objc - 1])[0]) {
 	nsNamePtr = NULL;
     } else {
 	nsPtr = GetNamespaceInOuterContext(interp, objv[objc - 1]);
@@ -1725,7 +1725,7 @@ TclOODefineDestructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    int bodyLength;
+    size_t bodyLength;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "body");
@@ -1971,7 +1971,7 @@ TclOODefineMethodObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
 	return TCL_ERROR;
     }
-    
+
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;

@@ -285,7 +285,7 @@ LinkTraceProc(
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    Tcl_TraceVar2(interp, Tcl_GetString(linkPtr->varName), NULL,
+	    Tcl_TraceVar2(interp, TclGetString(linkPtr->varName), NULL,
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
 	}
@@ -408,7 +408,7 @@ LinkTraceProc(
     case TCL_LINK_DOUBLE:
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(valueObj, &tclDoubleType);
+	    Tcl_ObjIntRep *irPtr = TclFetchIntRep(valueObj, &tclDoubleType);
 	    if (irPtr == NULL) {
 #endif
 		if (GetInvalidDoubleFromObj(valueObj, &linkPtr->lastValue.d) != TCL_OK) {
@@ -537,11 +537,10 @@ LinkTraceProc(
 	break;
 
     case TCL_LINK_STRING:
-	value = TclGetString(valueObj);
-	valueLength = valueObj->length + 1;
+	value = TclGetStringFromObj(valueObj, &valueLength);
 	pp = (char **) linkPtr->addr;
 
-	*pp = Tcl_Realloc(*pp, valueLength);
+	*pp = Tcl_Realloc(*pp, ++valueLength);
 	memcpy(*pp, value, valueLength);
 	break;
 
@@ -652,16 +651,16 @@ static Tcl_ObjType invalidRealType = {
 
 static int
 SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
-    const char *str;
-    const char *endPtr;
+    size_t length;
+    const char *str, *endPtr;
 
-    str = TclGetString(objPtr);
-    if ((objPtr->length == 1) && (str[0] == '.')){
+    str = TclGetStringFromObj(objPtr, &length);
+    if ((length == 1) && (str[0] == '.')){
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
 	return TCL_OK;
     }
-    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
+    if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
 	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/* If number is followed by [eE][+-]?, then it is an invalid
 	 * double, but it could be the start of a valid double. */
@@ -691,13 +690,14 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 int
 GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 {
-    const char *str = TclGetString(objPtr);
+    size_t length;
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
-    if ((objPtr->length == 0) ||
-	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
+    if ((length == 0) ||
+	    ((length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
-    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
+    } else if ((length == 1) && strchr("+-", str[0])) {
 	*intPtr = (str[0] == '+');
 	return TCL_OK;
     }
@@ -727,7 +727,7 @@ GetInvalidDoubleFromObj(Tcl_Obj *objPtr, double *doublePtr)
 {
     int intValue;
 
-    if (objPtr->typePtr == &invalidRealType) {
+    if (TclHasIntRep(objPtr, &invalidRealType)) {
 	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {

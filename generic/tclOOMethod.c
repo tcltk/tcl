@@ -993,7 +993,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int i, isNew, cacheIt, varLen, len;
+    int i, isNew, cacheIt;
+    size_t varLen, len;
     const char *match, *varName;
 
     /*
@@ -1119,8 +1120,8 @@ ProcedureMethodCompiledVarResolver(
      * which look like array accesses. Both will lead us astray.
      */
 
-    if (strstr(Tcl_GetString(variableObj), "::") != NULL ||
-	    Tcl_StringMatch(Tcl_GetString(variableObj), "*(*)")) {
+    if (strstr(TclGetString(variableObj), "::") != NULL ||
+	    Tcl_StringMatch(TclGetString(variableObj), "*(*)")) {
 	Tcl_DecrRefCount(variableObj);
 	return TCL_CONTINUE;
     }
@@ -1178,7 +1179,7 @@ RenderDeclarerName(
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
-	((len) > LIMIT ? LIMIT : ((int)len)), (str), ((len) > LIMIT ? "..." : "")
+	((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void
 MethodErrorHandler(
@@ -1220,7 +1221,7 @@ ConstructorErrorHandler(
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
-    int objectNameLen;
+    size_t objectNameLen;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1249,7 +1250,7 @@ DestructorErrorHandler(
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
-    int objectNameLen;
+    size_t objectNameLen;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1337,7 +1338,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
-    Tcl_GetString(bodyObj);
+    TclGetString(bodyObj);
     Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*

@@ -59,20 +59,27 @@
  * encoding to UTF-8).
  */
 
-#ifdef UNICODE
+#if defined(UNICODE) && (TCL_UTF_MAX <= 4)
 #   define NewNativeObj Tcl_NewUnicodeObj
-#else /* !UNICODE */
+#else /* !UNICODE || (TCL_UTF_MAX > 4) */
 static inline Tcl_Obj *
 NewNativeObj(
-    char *string,
-    int length)
+    TCHAR *string,
+    size_t length)
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+#ifdef UNICODE
+    if (length > 0) {
+	length *= sizeof(WCHAR);
+    }
+    Tcl_WinTCharToUtf(string, length, &ds);
+#else
+    Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
+#endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE */
+#endif /* !UNICODE || (TCL_UTF_MAX > 4) */
 
 /*
  * Declarations for various library functions and variables (don't want to
@@ -215,7 +222,7 @@ Tcl_GetStartupScript(
 	if (tsdPtr->encoding == NULL) {
 	    *encodingPtr = NULL;
 	} else {
-	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
+	    *encodingPtr = TclGetString(tsdPtr->encoding);
 	}
     }
     return tsdPtr->path;
@@ -343,7 +350,7 @@ Tcl_MainEx(
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2], -1);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3], -1),
-		    Tcl_GetString(value));
+		    TclGetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
@@ -467,7 +474,7 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    int length;
+	    size_t length;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -488,7 +495,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length < 0) {
+	    if (length == TCL_AUTO_LENGTH) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -753,7 +760,8 @@ StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
     int mask)			/* Not used. */
 {
-    int code, length;
+    int code;
+    size_t length;
     InteractiveState *isPtr = clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -765,7 +773,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length < 0) {
+    if (length == TCL_AUTO_LENGTH) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}

@@ -61,12 +61,12 @@ const Tcl_ObjType tclListType = {
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = Tcl_FetchIntRep((objPtr), &tclListType);		\
+	irPtr = TclFetchIntRep((objPtr), &tclListType);		\
 	(listRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    Tcl_FetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -536,9 +536,10 @@ Tcl_ListObjGetElements(
     ListGetIntRep(listPtr, listRepPtr);
 
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
@@ -659,9 +660,10 @@ Tcl_ListObjAppendElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
@@ -763,7 +765,7 @@ Tcl_ListObjAppendElement(
 	     * Old intrep to be freed, re-use refCounts.
 	     */
 
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
 	    Tcl_Free(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -833,9 +835,10 @@ Tcl_ListObjIndex(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
@@ -889,9 +892,10 @@ Tcl_ListObjLength(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *intPtr = 0;
 	    return TCL_OK;
@@ -966,9 +970,9 @@ Tcl_ListObjReplace(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int length;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (objc == 0) {
 		return TCL_OK;
@@ -1076,7 +1080,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1143,7 +1147,7 @@ Tcl_ListObjReplace(
 	     */
 
 	    if (first > 0) {
-		memcpy(elemPtrs, oldPtrs, (size_t) first * sizeof(Tcl_Obj *));
+		memcpy(elemPtrs, oldPtrs, first * sizeof(Tcl_Obj *));
 	    }
 
 	    /*
@@ -1229,7 +1233,7 @@ TclLindexList(
     Tcl_Obj *argPtr)		/* Index or index list. */
 {
 
-    int index;			/* Index into the list. */
+    size_t index;			/* Index into the list. */
     Tcl_Obj *indexListCopy;
     List *listRepPtr;
 
@@ -1241,7 +1245,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1315,7 +1319,8 @@ TclLindexFlat(
     Tcl_IncrRefCount(listPtr);
 
     for (i=0 ; i<indexCount && listPtr ; i++) {
-	int index, listLen = 0;
+	size_t index;
+	int listLen = 0;
 	Tcl_Obj **elemPtrs = NULL, *sublistCopy;
 
 	/*
@@ -1339,14 +1344,14 @@ TclLindexFlat(
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
-	    if (index<0 || index>=listLen) {
+	    if (index >= (size_t)listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
 		 * First check remaining indices for validity
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_NONE, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1398,7 +1403,7 @@ TclLsetList(
     int indexCount = 0;		/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
     Tcl_Obj *retValuePtr;	/* Pointer to the list to be returned. */
-    int index;			/* Current index in the list - discarded. */
+    size_t index;			/* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;
     List *listRepPtr;
 
@@ -1410,7 +1415,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, TCL_INDEX_START, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1496,7 +1501,8 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
-    int index, result, len;
+    size_t index;
+    int result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
     Tcl_ObjIntRep *irPtr;
 
@@ -1569,8 +1575,8 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index > elemCount
-		|| (valuePtr == NULL && index >= elemCount)) {
+	if (index > (size_t)elemCount
+		|| (valuePtr == NULL && index >= (size_t)elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1592,7 +1598,7 @@ TclLsetFlat(
 
 	if (--indexCount) {
 	    parentList = subListPtr;
-	    if (index == elemCount) {
+	    if (index == (size_t)elemCount) {
 		subListPtr = Tcl_NewObj();
 	    } else {
 		subListPtr = elemPtrs[index];
@@ -1610,7 +1616,7 @@ TclLsetFlat(
 	     * and store another copy.
 	     */
 
-	    if (index == elemCount) {
+	    if (index == (size_t)elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListPtr);
 	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListPtr);
@@ -1634,7 +1640,7 @@ TclLsetFlat(
 	     * them at that time.
 	     */
 
-	    irPtr = Tcl_FetchIntRep(parentList, &tclListType);
+	    irPtr = TclFetchIntRep(parentList, &tclListType);
 	    irPtr->twoPtrValue.ptr2 = chainPtr;
 	    chainPtr = parentList;
 	}
@@ -1655,10 +1661,10 @@ TclLsetFlat(
 	 * Clear away our intrep surgery mess.
 	 */
 
-	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
+	irPtr = TclFetchIntRep(objPtr, &tclListType);
 	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
-	
+
 	if (result == TCL_OK) {
 
 	    /*
@@ -1699,7 +1705,7 @@ TclLsetFlat(
     TclListObjLength(NULL, subListPtr, &len);
     if (valuePtr == NULL) {
 	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
-    } else if (index == len) {
+    } else if (index == (size_t)len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
@@ -1775,9 +1781,10 @@ TclListObjSetElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
-	int result, length;
+	int result;
+	size_t length;
 
-	(void) Tcl_GetStringFromObj(listPtr, &length);
+	(void) TclGetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1883,7 +1890,7 @@ TclListObjSetElement(
  *	a list object.
  *
  * Effect
- * 
+ *
  *	Frees listPtr's List* internal representation, if no longer shared.
  *	May decrement the ref counts of element objects, which may free them.
  *
@@ -1976,7 +1983,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && Tcl_FetchIntRep(objPtr, &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && TclHasIntRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
@@ -2011,7 +2018,8 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
-	int estCount, length;
+	int estCount;
+	size_t length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
 	/*
