@@ -2152,13 +2152,9 @@ typedef struct Tcl_EncodingType {
 
 #if TCL_UTF_MAX > 3
     /*
-     * unsigned int isn't 100% accurate as it should be a strict 4-byte value
-     * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
-     * value must be reflected correctly in regcustom.h and
-     * in tclEncoding.c.
-     * XXX: Tcl is currently UCS-2 and planning UTF-16 for the Unicode
-     * XXX: string rep that Tcl_UniChar represents.  Changing the size
-     * XXX: of Tcl_UniChar is /not/ supported.
+     * int isn't 100% accurate as it should be a strict 4-byte value
+     * (perhaps wchar_t). ILP64 systems may have troubles. The size of this
+     * value must be reflected correctly in regcustom.h.
      */
 typedef int Tcl_UniChar;
 #else
