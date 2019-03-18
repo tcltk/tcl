@@ -2381,44 +2381,44 @@ declare 643 {
 
 # TIP #???
 declare 644 {
-    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
-}
-declare 645 {
     Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
 }
+declare 645 {
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
+	    int numChars)
+}
 declare 646 {
-    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 647 {
-    int Tcl_UniCharLen(const int *uniStr)
-}
-declare 648 {
-    int Tcl_UniCharNcmp(const int *ucs, const int *uct,
-	    unsigned long numChars)
-}
-declare 649 {
-    int Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
-	    unsigned long numChars)
-}
-declare 650 {
-    char *Tcl_UniCharToUtfDString(const int *uniStr,
-	    int uniLength, Tcl_DString *dsPtr)
-}
-declare 651 {
-    int *Tcl_UtfToUniCharDString(const char *src,
-	    int length, Tcl_DString *dsPtr)
-}
-declare 652 {
-    int Tcl_UniCharCaseMatch(const int *uniStr,
-	    const int *uniPattern, int nocase)
-}
-declare 653 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
 	    int length)
 }
+declare 648 {
+    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+}
+declare 649 {
+    char *Tcl_UniCharToUtfDString(const int *uniStr,
+	    int uniLength, Tcl_DString *dsPtr)
+}
+declare 650 {
+    int *Tcl_UtfToUniCharDString(const char *src,
+	    int length, Tcl_DString *dsPtr)
+}
+declare 651 {
+    int Tcl_UniCharLen(const int *uniStr)
+}
+declare 652 {
+    int Tcl_UniCharNcmp(const int *ucs, const int *uct,
+	    unsigned long numChars)
+}
+declare 653 {
+    int Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
+	    unsigned long numChars)
+}
 declare 654 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
-	    int numChars)
+    int Tcl_UniCharCaseMatch(const int *uniStr,
+	    const int *uniPattern, int nocase)
 }
 
 

@@ -569,11 +569,16 @@ TclInitEncodingSubsystem(void)
     TableEncodingData *dataPtr;
     unsigned size;
     unsigned short i;
+    union {
+        char c;
+        short s;
+    } isLe;
 
     if (encodingsInitialized) {
 	return;
     }
 
+    isLe.s = 1;
     Tcl_MutexLock(&encodingMutex);
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
@@ -600,20 +605,32 @@ TclInitEncodingSubsystem(void)
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
 
-    type.encodingName   = "ucs-2";
     type.toUtfProc	= Utf16ToUtfProc;
     type.fromUtfProc    = UtfToUcs2Proc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
-    type.clientData	= NULL;
+    type.encodingName   = "ucs-2le";
+    type.clientData	= INT2PTR(1);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "ucs-2be";
+    type.clientData	= INT2PTR(0);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "ucs-2";
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
-    type.encodingName   = "utf-16";
     type.toUtfProc	= Utf16ToUtfProc;
     type.fromUtfProc    = UtfToUtf16Proc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
-    type.clientData	= NULL;
+    type.encodingName   = "utf-16le";
+    type.clientData	= INT2PTR(1);;
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-16be";
+    type.clientData	= INT2PTR(0);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-16";
+    type.clientData	= INT2PTR(isLe.c);;
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -2434,7 +2451,7 @@ UtfToUtfProc(
 
 static int
 Utf16ToUtfProc(
-    ClientData clientData,	/* Not used. */
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2486,12 +2503,15 @@ Utf16ToUtfProc(
 	    break;
 	}
 
+	if (clientData) {
+	    ch = (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	} else {
+	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
+	}
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
 	 */
-
-	ch = *(unsigned short *)src;
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
@@ -2524,8 +2544,7 @@ Utf16ToUtfProc(
 
 static int
 UtfToUtf16Proc(
-    ClientData clientData,	/* TableEncodingData that specifies
-				 * encoding. */
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2589,37 +2608,37 @@ UtfToUtf16Proc(
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
 	 */
 
-#ifdef WORDS_BIGENDIAN
+	if (clientData) {
 #if TCL_UTF_MAX > 3
-	if (*chPtr <= 0xFFFF) {
-	    *dst++ = (*chPtr >> 8);
-	    *dst++ = (*chPtr & 0xFF);
-	} else {
-	    *dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-	    *dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-	}
+	    if (*chPtr <= 0xFFFF) {
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = (*chPtr >> 8);
+	    } else {
+		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+	    }
 #else
-	*dst++ = (*chPtr >> 8);
-	*dst++ = (*chPtr & 0xFF);
-#endif
-#else
-#if TCL_UTF_MAX > 3
-	if (*chPtr <= 0xFFFF) {
 	    *dst++ = (*chPtr & 0xFF);
 	    *dst++ = (*chPtr >> 8);
+#endif
 	} else {
-	    *dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-	    *dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-	}
+#if TCL_UTF_MAX > 3
+	    if (*chPtr <= 0xFFFF) {
+		*dst++ = (*chPtr >> 8);
+		*dst++ = (*chPtr & 0xFF);
+	    } else {
+		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+	    }
 #else
-	*dst++ = (*chPtr & 0xFF);
-	*dst++ = (*chPtr >> 8);
+	    *dst++ = (*chPtr >> 8);
+	    *dst++ = (*chPtr & 0xFF);
 #endif
-#endif
+	}
     }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
@@ -2645,8 +2664,7 @@ UtfToUtf16Proc(
 
 static int
 UtfToUcs2Proc(
-    ClientData clientData,	/* TableEncodingData that specifies
-				 * encoding. */
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2721,13 +2739,13 @@ UtfToUcs2Proc(
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
 	 */
 
-#ifdef WORDS_BIGENDIAN
-	*dst++ = (ch >> 8);
-	*dst++ = (ch & 0xFF);
-#else
-	*dst++ = (ch & 0xFF);
-	*dst++ = (ch >> 8);
-#endif
+	if (clientData) {
+	    *dst++ = (ch & 0xFF);
+	    *dst++ = (ch >> 8);
+	} else {
+	    *dst++ = (ch >> 8);
+	    *dst++ = (ch & 0xFF);
+	}
     }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;

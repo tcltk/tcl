@@ -1897,35 +1897,35 @@ EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
 /* 643 */
 EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 /* 644 */
-EXTERN int *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
-				int *lengthPtr);
-/* 645 */
 EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const int *unicode, int numChars);
-/* 646 */
-EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
-/* 647 */
-EXTERN int		Tcl_UniCharLen(const int *uniStr);
-/* 648 */
-EXTERN int		Tcl_UniCharNcmp(const int *ucs, const int *uct,
-				unsigned long numChars);
-/* 649 */
-EXTERN int		Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
-				unsigned long numChars);
-/* 650 */
-EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
-				int uniLength, Tcl_DString *dsPtr);
-/* 651 */
-EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
-				Tcl_DString *dsPtr);
-/* 652 */
-EXTERN int		Tcl_UniCharCaseMatch(const int *uniStr,
-				const int *uniPattern, int nocase);
-/* 653 */
-EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
-				const int *unicode, int length);
-/* 654 */
+/* 645 */
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const int *unicode, int numChars);
+/* 646 */
+EXTERN int *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
+				int *lengthPtr);
+/* 647 */
+EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
+				const int *unicode, int length);
+/* 648 */
+EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
+/* 649 */
+EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
+				int uniLength, Tcl_DString *dsPtr);
+/* 650 */
+EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
+				Tcl_DString *dsPtr);
+/* 651 */
+EXTERN int		Tcl_UniCharLen(const int *uniStr);
+/* 652 */
+EXTERN int		Tcl_UniCharNcmp(const int *ucs, const int *uct,
+				unsigned long numChars);
+/* 653 */
+EXTERN int		Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
+				unsigned long numChars);
+/* 654 */
+EXTERN int		Tcl_UniCharCaseMatch(const int *uniStr,
+				const int *uniPattern, int nocase);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2605,17 +2605,17 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
-    int * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 644 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) (const int *unicode, int numChars); /* 645 */
-    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
-    int (*tcl_UniCharLen) (const int *uniStr); /* 647 */
-    int (*tcl_UniCharNcmp) (const int *ucs, const int *uct, unsigned long numChars); /* 648 */
-    int (*tcl_UniCharNcasecmp) (const int *ucs, const int *uct, unsigned long numChars); /* 649 */
-    char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 650 */
-    int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 651 */
-    int (*tcl_UniCharCaseMatch) (const int *uniStr, const int *uniPattern, int nocase); /* 652 */
-    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const int *unicode, int length); /* 653 */
-    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const int *unicode, int numChars); /* 654 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const int *unicode, int numChars); /* 644 */
+    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const int *unicode, int numChars); /* 645 */
+    int * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 646 */
+    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const int *unicode, int length); /* 647 */
+    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 648 */
+    char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 649 */
+    int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 650 */
+    int (*tcl_UniCharLen) (const int *uniStr); /* 651 */
+    int (*tcl_UniCharNcmp) (const int *ucs, const int *uct, unsigned long numChars); /* 652 */
+    int (*tcl_UniCharNcasecmp) (const int *ucs, const int *uct, unsigned long numChars); /* 653 */
+    int (*tcl_UniCharCaseMatch) (const int *uniStr, const int *uniPattern, int nocase); /* 654 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3934,28 +3934,28 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
 	(tclStubsPtr->tcl_IsShared) /* 643 */
-#define Tcl_GetUnicodeFromObj \
-	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 644 */
 #define Tcl_NewUnicodeObj \
-	(tclStubsPtr->tcl_NewUnicodeObj) /* 645 */
-#define Tcl_UtfToUniChar \
-	(tclStubsPtr->tcl_UtfToUniChar) /* 646 */
-#define Tcl_UniCharLen \
-	(tclStubsPtr->tcl_UniCharLen) /* 647 */
-#define Tcl_UniCharNcmp \
-	(tclStubsPtr->tcl_UniCharNcmp) /* 648 */
-#define Tcl_UniCharNcasecmp \
-	(tclStubsPtr->tcl_UniCharNcasecmp) /* 649 */
-#define Tcl_UniCharToUtfDString \
-	(tclStubsPtr->tcl_UniCharToUtfDString) /* 650 */
-#define Tcl_UtfToUniCharDString \
-	(tclStubsPtr->tcl_UtfToUniCharDString) /* 651 */
-#define Tcl_UniCharCaseMatch \
-	(tclStubsPtr->tcl_UniCharCaseMatch) /* 652 */
-#define Tcl_AppendUnicodeToObj \
-	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 653 */
+	(tclStubsPtr->tcl_NewUnicodeObj) /* 644 */
 #define Tcl_SetUnicodeObj \
-	(tclStubsPtr->tcl_SetUnicodeObj) /* 654 */
+	(tclStubsPtr->tcl_SetUnicodeObj) /* 645 */
+#define Tcl_GetUnicodeFromObj \
+	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 646 */
+#define Tcl_AppendUnicodeToObj \
+	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 647 */
+#define Tcl_UtfToUniChar \
+	(tclStubsPtr->tcl_UtfToUniChar) /* 648 */
+#define Tcl_UniCharToUtfDString \
+	(tclStubsPtr->tcl_UniCharToUtfDString) /* 649 */
+#define Tcl_UtfToUniCharDString \
+	(tclStubsPtr->tcl_UtfToUniCharDString) /* 650 */
+#define Tcl_UniCharLen \
+	(tclStubsPtr->tcl_UniCharLen) /* 651 */
+#define Tcl_UniCharNcmp \
+	(tclStubsPtr->tcl_UniCharNcmp) /* 652 */
+#define Tcl_UniCharNcasecmp \
+	(tclStubsPtr->tcl_UniCharNcasecmp) /* 653 */
+#define Tcl_UniCharCaseMatch \
+	(tclStubsPtr->tcl_UniCharCaseMatch) /* 654 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

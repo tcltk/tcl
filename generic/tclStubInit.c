@@ -80,15 +80,21 @@ static void uniCodePanic() {
 }
 
 #if TCL_UTF_MAX == 3
-#ifdef TCL_NO_DEPRECATED
-#   define Tcl_GetUnicode 0
-#endif
 #   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *,const int *, int)) uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const int *, int)) uniCodePanic
+#   define Tcl_SetUnicodeObj (void (*)(Tcl_Obj *,const int *, int)) uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void (*)(Tcl_Obj *, const int *, int)) uniCodePanic
+#   define Tcl_UtfToUniChar (int (*)(const char *, int *)) uniCodePanic
+#   define Tcl_UniCharToUtfDString (char *(*)(const int *, int, Tcl_DString *)) uniCodePanic
+#   define Tcl_UtfToUniCharDString (int *(*)(const char *, int, Tcl_DString *)) uniCodePanic
+#   define Tcl_UniCharCaseMatch (int (*)(const int *, const int *, int)) uniCodePanic
+#   define Tcl_UniCharLen (int (*)(const int *)) uniCodePanic
+#   define Tcl_UniCharNcmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
+#   define Tcl_UniCharNcasecmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
 #else
-#   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#	define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
+#   endif
 #   define Tcl_GetUtf16FromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
 #   define Tcl_NewUtf16Obj (Tcl_Obj *(*)(const unsigned short *, int)) uniCodePanic
 #   define Tcl_SetUtf16Obj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
@@ -137,6 +143,8 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
+#   define Tcl_GetUnicode 0
+
 #else
 #define TclBNInitBignumFromLong initBignumFromLong
 static void TclBNInitBignumFromLong(mp_int *a, long b)
@@ -341,10 +349,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
@@ -353,10 +357,25 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
 }
 #define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
-static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
+#if TCL_UTF_MAX > 3
+static int uniCharNcmp(const int *ucs, const int *uct, unsigned int n){
+   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_UniCharNcmp (int(*)(const int*,const int*,unsigned long))uniCharNcmp
+static int uniCharNcasecmp(const int *ucs, const int *uct, unsigned int n){
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const int*,const int*,unsigned long))uniCharNcasecmp
+#else
+static int utf16Ncmp(const unsigned short *ucs, const unsigned short *uct, unsigned int n){
+   return Tcl_Utf16Ncmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_Utf16Ncmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncmp
+static int utf16Ncasecmp(const unsigned short *ucs, const unsigned short *uct, unsigned int n){
+   return Tcl_Utf16Ncasecmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_Utf16Ncasecmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncasecmp
+#endif
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -1659,17 +1678,17 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
-    Tcl_GetUnicodeFromObj, /* 644 */
-    Tcl_NewUnicodeObj, /* 645 */
-    Tcl_UtfToUniChar, /* 646 */
-    Tcl_UniCharLen, /* 647 */
-    Tcl_UniCharNcmp, /* 648 */
-    Tcl_UniCharNcasecmp, /* 649 */
-    Tcl_UniCharToUtfDString, /* 650 */
-    Tcl_UtfToUniCharDString, /* 651 */
-    Tcl_UniCharCaseMatch, /* 652 */
-    Tcl_AppendUnicodeToObj, /* 653 */
-    Tcl_SetUnicodeObj, /* 654 */
+    Tcl_NewUnicodeObj, /* 644 */
+    Tcl_SetUnicodeObj, /* 645 */
+    Tcl_GetUnicodeFromObj, /* 646 */
+    Tcl_AppendUnicodeToObj, /* 647 */
+    Tcl_UtfToUniChar, /* 648 */
+    Tcl_UniCharToUtfDString, /* 649 */
+    Tcl_UtfToUniCharDString, /* 650 */
+    Tcl_UniCharLen, /* 651 */
+    Tcl_UniCharNcmp, /* 652 */
+    Tcl_UniCharNcasecmp, /* 653 */
+    Tcl_UniCharCaseMatch, /* 654 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -223,7 +223,7 @@ three:
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharToUtfDString
+#if TCL_UTF_MAX > 3
 char *
 Tcl_UniCharToUtfDString(
     const int *uniStr,	/* Unicode string to convert to UTF-8. */
@@ -253,6 +253,7 @@ Tcl_UniCharToUtfDString(
 
     return string;
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 char *
 Tcl_Utf16ToUtfDString(
@@ -337,7 +338,7 @@ static const unsigned short cp1252[32] = {
    0x2DC, 0x2122, 0x0161, 0x203A, 0x0153,   0x9D, 0x017E, 0x0178
 };
 
-#undef Tcl_UtfToUniChar
+#if TCL_UTF_MAX > 3
 int
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
@@ -421,6 +422,7 @@ Tcl_UtfToUniChar(
     *chPtr = byte;
     return 1;
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 int
 Tcl_UtfToUtf16(
@@ -540,7 +542,7 @@ Tcl_UtfToUtf16(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UtfToUniCharDString
+#if TCL_UTF_MAX > 3
 int *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
@@ -593,6 +595,7 @@ Tcl_UtfToUniCharDString(
 
     return wString;
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 unsigned short *
 Tcl_UtfToUtf16DString(
@@ -1636,7 +1639,7 @@ Tcl_UniCharToTitle(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharLen
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharLen(
     const int *uniStr)	/* Unicode string to find length of. */
@@ -1649,6 +1652,7 @@ Tcl_UniCharLen(
     }
     return len;
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 int
 Tcl_Utf16Len(
@@ -1680,7 +1684,7 @@ Tcl_Utf16Len(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharNcmp
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharNcmp(
     const int *ucs,	/* Unicode string to compare to uct. */
@@ -1707,6 +1711,7 @@ Tcl_UniCharNcmp(
     return 0;
 #endif /* WORDS_BIGENDIAN */
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 int
 Tcl_Utf16Ncmp(
@@ -1753,7 +1758,7 @@ Tcl_Utf16Ncmp(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharNcasecmp
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharNcasecmp(
     const int *ucs,	/* Unicode string to compare to uct. */
@@ -1772,6 +1777,8 @@ Tcl_UniCharNcasecmp(
     }
     return 0;
 }
+#endif /* TCL_UTF_MAX > 3 */
+
 int
 Tcl_Utf16Ncasecmp(
     const unsigned short *ucs,	/* Utf16 string to compare to uct. */
@@ -2123,7 +2130,7 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharCaseMatch
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharCaseMatch(
     const int *uniStr,	/* Unicode String. */
@@ -2290,6 +2297,7 @@ Tcl_UniCharCaseMatch(
 	uniPattern++;
     }
 }
+#endif /* TCL_UTF_MAX > 3 */
 
 int
 Tcl_Utf16CaseMatch(
