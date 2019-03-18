@@ -446,7 +446,7 @@ Tcl_UtfToUniChar(
 #else
 	    *chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    if ((*chPtr - 0x10000) <= 0xFFFFF) {
+	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
 		return 4;
 	    }
 #endif
