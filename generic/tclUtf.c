@@ -620,9 +620,7 @@ Tcl_UtfToUniCharDString(
     }
     end += 4;
     while (p < end) {
-	if (((unsigned)(UCHAR(*p)-0x80)) < 0x20) {
-	    ch = cp1252[UCHAR(*p++)-0x80];
-	} else if (Tcl_UtfCharComplete(p, end-p)) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
 	    p += TclUtfToUniChar(p, &ch);
 	} else {
 	    ch = UCHAR(*p++);
@@ -674,10 +672,8 @@ TclUtfToWCharDString(
     }
     end += 4;
     while (p < end) {
-	if (((unsigned)(UCHAR(*p)-0x80)) < 0x20) {
-	    ch = cp1252[UCHAR(*p++)-0x80];
-	} else if (Tcl_UtfCharComplete(p, end-p)) {
-		    p += TclUtfToWChar(p, &ch);
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToWChar(p, &ch);
 	} else {
 	    ch = UCHAR(*p++);
 	}
