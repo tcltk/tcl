@@ -282,7 +282,7 @@ test util-5.17 {Tcl_StringMatch: UTF-8} {
 test util-5.18 {Tcl_StringMatch: UTF-8} testbytestring {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance: wrong answer would match on UTF trail byte of \u4e4f
-    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\u008fc]
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\x8fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);

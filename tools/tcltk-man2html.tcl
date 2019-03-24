@@ -31,6 +31,38 @@ set ::CSSFILE "docs.css"
 ##
 source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
 
+proc findversion {top name useversion} {
+    set upper [string toupper $name]
+    foreach top1 [list $top $top/..] sub {{} generic} {
+	foreach dirname [
+	    glob -nocomplain -tails -type d -directory $top1 *] {
+
+	    set tclh [join [list $top1 $dirname {*}$sub $name.h] /]
+	    if {[file exists $tclh]} {
+		set chan [open $tclh]
+		set data [read $chan]
+		close $chan
+		# backslash isn't required in front of quote, but it keeps syntax
+		# highlighting straight in some editors
+		if {[regexp -lineanchor \
+		    [string map [list @name@ $upper] \
+			{^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+		    $data -> major minor]} {
+			# to do
+			#     use glob matching instead of string matching or add
+			#     brace handling to [string matcch]
+			if {$useversion eq {} || [string match $useversion $major.$minor]} {
+			    set top [file dirname [file dirname $tclh]]
+			    set prefix [file dirname $top]
+			    return [list $prefix [file tail $top] $major $minor]
+			}
+		}
+	    }
+	}
+    }
+    return
+}
+
 proc parse_command_line {} {
     global argv Version
 
@@ -44,7 +76,9 @@ proc parse_command_line {} {
     set tcldir {}
     set webdir ../html
     set build_tcl 0
+    set opt_build_tcl 0
     set build_tk 0
+    set opt_build_tk 0
     set verbose 0
     # Default search version is a glob pattern
     set useversion {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}
@@ -93,10 +127,12 @@ proc parse_command_line {} {
 
 	    --tcl {
 		set build_tcl 1
+		set opt_build_tcl 1
 	    }
 
 	    --tk {
 		set build_tk 1
+		set opt_build_tk 1
 	    }
 
 	    --verbose=* {
@@ -117,20 +153,19 @@ proc parse_command_line {} {
 
     if {$build_tcl} {
 	# Find Tcl.
-	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir tcl$useversion]] end]
-	if {$tcldir eq ""} {
+	lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
+	if {$tcldir eq {} && $opt_build_tcl} {
 	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tcl source directory $tcldir"
+	puts "using Tcl source directory $tcltkdir $tcldir"
     }
+
 
     if {$build_tk} {
 	# Find Tk.
-	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir tk$useversion]] end]
-	if {$tkdir eq ""} {
+	lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	if {$tkdir eq {} && $opt_build_tk} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	    exit 1
 	}
@@ -143,7 +178,7 @@ proc parse_command_line {} {
     global overall_title
     set overall_title ""
     if {$build_tcl} {
-	append overall_title "[capitalize $tcldir]"
+	append overall_title "Tcl $major.$minor"
     }
     if {$build_tcl && $build_tk} {
 	append overall_title "/"
