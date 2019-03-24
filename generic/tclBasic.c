@@ -2444,7 +2444,6 @@ Tcl_CreateCommand(
  * Side effects:
  *	If a command named "cmdName" already exists for interp, it is
  *	first deleted.  Then the new command is created from the arguments.
- *	[***] (See below for exception).
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
