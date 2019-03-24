@@ -2302,13 +2302,10 @@ html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
-# You'd better have these programs or you will have problems creating Makefile
-# from Makefile.in in the first place...
-HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
-		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
+		--tcl --useversion=$(MAJOR_VERSION).$(MINOR_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
+		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
 # The list of all the targets that do not correspond to real files. This stops
