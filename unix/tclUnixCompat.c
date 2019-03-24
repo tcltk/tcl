@@ -8,6 +8,8 @@
  */
 
 #include "tclInt.h"
+#include <pwd.h>
+#include <grp.h>
 #include <errno.h>
 #include <string.h>
 

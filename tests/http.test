@@ -600,7 +600,7 @@ test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -setup {
 	lmap item $l2 {if {$item in $l1} continue; set item}
     }
 } -body {
-    set before [lsort [chan names]]
+    set before [chan names]
     set token [http::geturl $url -headers {X-Connection keep-alive}]
     http::cleanup $token
     update
