@@ -792,7 +792,7 @@ TclParseBackslash(
     Tcl_UniChar unichar = 0;
     int result;
     size_t count;
-    char buf[TCL_UTF_MAX] = "";
+    char buf[4] = "";
 
     if (numBytes == 0) {
 	if (readPtr != NULL) {
@@ -2153,7 +2153,7 @@ TclSubstTokens(
 	Tcl_Obj *appendObj = NULL;
 	const char *append = NULL;
 	int appendByteLength = 0;
-	char utfCharBytes[TCL_UTF_MAX] = "";
+	char utfCharBytes[4] = "";
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:

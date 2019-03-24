@@ -1725,7 +1725,7 @@ TclWordKnownAtCompileTime(
 
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
-		char utfBuf[TCL_UTF_MAX] = "";
+		char utfBuf[4] = "";
 		size_t length = TclParseBackslash(tokenPtr->start,
 			tokenPtr->size, NULL, utfBuf);
 
@@ -2339,7 +2339,7 @@ TclCompileTokens(
 {
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
-    char buffer[TCL_UTF_MAX] = "";
+    char buffer[4] = "";
     int i, numObjsToConcat, adjust;
     size_t length;
     unsigned char *entryCodeNext = envPtr->codeNext;
