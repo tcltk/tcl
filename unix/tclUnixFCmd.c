@@ -41,8 +41,6 @@
  */
 
 #include "tclInt.h"
-#include <utime.h>
-#include <grp.h>
 #ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
