@@ -237,6 +237,13 @@ declare 66 {
 declare 67 {
     int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 }
+declare 70 {
+    int TclBN_mp_set_long(mp_int *a, unsigned long i)
+}
+declare 77 {
+    int TclBN_mp_get_bit(const mp_int *a, int b)
+}
+
 
 # Local Variables:
 # mode: tcl

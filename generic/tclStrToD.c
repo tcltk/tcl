@@ -3162,7 +3162,7 @@ ShouldBankerRoundUpPowD(
     int isodd)			/* 1 if the digit is odd, 0 if even. */
 {
     int i;
-    static const mp_digit topbit = 1 << (DIGIT_BIT - 1);
+    static const mp_digit topbit = ((mp_digit)1) << (DIGIT_BIT - 1);
 
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
 	return 0;
@@ -4631,7 +4631,7 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_isodd(&b)) {
+	    if (mp_get_bit(&b, 0)) {
 		if (b.sign == MP_ZPOS) {
 		    mp_add_d(&b, 1, &b);
 		} else {
@@ -4720,7 +4720,7 @@ TclCeil(
 		mp_int d;
 		mp_init(&d);
 		mp_div_2d(a, -shift, &b, &d);
-		exact = mp_iszero(&d);
+		exact = d.used == 0;
 		mp_clear(&d);
 	    } else {
 		mp_copy(a, &b);

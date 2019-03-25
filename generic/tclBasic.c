@@ -7252,7 +7252,7 @@ ExprIsqrtFunc(
 	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (SIGN(&big) == MP_NEG) {
+	if (big.sign) {
 	    mp_clear(&big);
 	    goto negarg;
 	}

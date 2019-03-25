@@ -854,6 +854,16 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
+    0, /* 68 */
+    0, /* 69 */
+    TclBN_mp_set_long, /* 70 */
+    0, /* 71 */
+    0, /* 72 */
+    0, /* 73 */
+    0, /* 74 */
+    0, /* 75 */
+    0, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {

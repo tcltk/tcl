@@ -74,6 +74,7 @@
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_get_bit TclBN_mp_get_bit
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -97,6 +98,7 @@
 #define mp_rshd TclBN_mp_rshd
 #define mp_set TclBN_mp_set
 #define mp_set_int TclBN_mp_set_int
+#define mp_set_long TclBN_mp_set_long
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
@@ -307,6 +309,18 @@ EXTERN void		TclBNInitBignumFromWideUInt(mp_int *bignum,
 /* 67 */
 EXTERN int		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 				mp_int *c, int fast);
+/* Slot 68 is reserved */
+/* Slot 69 is reserved */
+/* 70 */
+EXTERN int		TclBN_mp_set_long(mp_int *a, unsigned long i);
+/* Slot 71 is reserved */
+/* Slot 72 is reserved */
+/* Slot 73 is reserved */
+/* Slot 74 is reserved */
+/* Slot 75 is reserved */
+/* Slot 76 is reserved */
+/* 77 */
+EXTERN int		TclBN_mp_get_bit(const mp_int *a, int b);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -380,6 +394,16 @@ typedef struct TclTomMathStubs {
     void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
     void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     int (*tclBN_mp_expt_d_ex) (const mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
+    void (*reserved68)(void);
+    void (*reserved69)(void);
+    int (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
+    void (*reserved71)(void);
+    void (*reserved72)(void);
+    void (*reserved73)(void);
+    void (*reserved74)(void);
+    void (*reserved75)(void);
+    void (*reserved76)(void);
+    int (*tclBN_mp_get_bit) (const mp_int *a, int b); /* 77 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -530,6 +554,18 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
 #define TclBN_mp_expt_d_ex \
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
+/* Slot 68 is reserved */
+/* Slot 69 is reserved */
+#define TclBN_mp_set_long \
+	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
+/* Slot 71 is reserved */
+/* Slot 72 is reserved */
+/* Slot 73 is reserved */
+/* Slot 74 is reserved */
+/* Slot 75 is reserved */
+/* Slot 76 is reserved */
+#define TclBN_mp_get_bit \
+	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
