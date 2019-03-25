@@ -335,6 +335,7 @@ TOMMATH_OBJS = \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
 	bn_mp_expt_d_ex.${OBJEXT} \
+	bn_mp_get_bit.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
@@ -359,6 +360,7 @@ TOMMATH_OBJS = \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
 	bn_mp_set_int.${OBJEXT} \
+	bn_mp_set_long.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sqrt.${OBJEXT} \

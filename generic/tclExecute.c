@@ -8367,7 +8367,7 @@ ExecuteExtendedBinaryMathOp(
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
 	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	if ((bigRemainder.used) != 0 && (bigRemainder.sign != big2.sign)) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
@@ -8768,7 +8768,7 @@ ExecuteExtendedBinaryMathOp(
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
 	    mp_mod_2d(&big2, 1, &big2);
-	    oddExponent = !mp_iszero(&big2);
+	    oddExponent = big2.used != 0;
 	    mp_clear(&big2);
 	    break;
 	}
@@ -9249,7 +9249,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_mul(&big1, &big2, &bigResult);
 	    break;
 	case INST_DIV:
-	    if (mp_iszero(&big2)) {
+	    if (big2.used == 0) {
 		mp_clear(&big1);
 		mp_clear(&big2);
 		mp_clear(&bigResult);
@@ -9258,7 +9258,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_init(&bigRemainder);
 	    mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	    /* TODO: internals intrusion */
-	    if (!mp_iszero(&bigRemainder)
+	    if (bigRemainder.used != 0
 		    && (bigRemainder.sign != big2.sign)) {
 		/*
 		 * Convert to Tcl's integer division rules.

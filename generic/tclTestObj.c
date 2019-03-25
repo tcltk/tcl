@@ -290,9 +290,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], mp_iseven(&bignumValue));
+	    Tcl_SetIntObj(varPtr[varIndex], !mp_get_bit(&bignumValue, 0));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iseven(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(!mp_get_bit(&bignumValue, 0)));
 	}
 	mp_clear(&bignumValue);
 	break;
