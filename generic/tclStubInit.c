@@ -938,7 +938,7 @@ const TclStubs tclStubs = {
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
     0, /* 244 */
-    Tcl_StringMatch, /* 245 */
+    0, /* 245 */
     0, /* 246 */
     0, /* 247 */
     Tcl_TraceVar2, /* 248 */
