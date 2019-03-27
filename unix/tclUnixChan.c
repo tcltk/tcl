@@ -979,6 +979,7 @@ TtyGetOptionProc(
     unsigned int len;
     char buf[3*TCL_INTEGER_SPACE + 16];
     int valid = 0;		/* Flag if valid option parsed. */
+    struct termios iostate;
 
     if (optionName == NULL) {
 	len = 0;
@@ -1018,10 +1019,15 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, "-inputmode");
     }
     if (len==0 || (len>1 && strncmp(optionName, "-inputmode", len)==0)) {
-	struct termios iostate;
-
 	valid = 1;
-	tcgetattr(fsPtr->fileState.fd, &iostate);
+	if (tcgetattr(fsPtr->fileState.fd, &iostate) < 0) {
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read serial terminal control state: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
 	if (iostate.c_lflag & ICANON) {
 	    if (iostate.c_lflag & ECHO) {
 		Tcl_DStringAppendElement(dsPtr, "normal");
@@ -1058,7 +1064,6 @@ TtyGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
-	struct termios iostate;
 	Tcl_DString ds;
 
 	valid = 1;
