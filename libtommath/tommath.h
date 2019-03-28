@@ -50,21 +50,18 @@ typedef unsigned long long Tcl_WideUInt;
 /* some default configurations.
  *
  * A "mp_digit" must be able to hold DIGIT_BIT + 1 bits
- * A "mp_word" must be able to hold 2*DIGIT_BIT + 1 bits
  *
  * At the very least a mp_digit must be able to hold 7 bits
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
 typedef unsigned char        mp_digit;
-typedef unsigned short       mp_word;
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
 typedef unsigned short       mp_digit;
-typedef unsigned int         mp_word;
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
@@ -72,14 +69,12 @@ typedef unsigned int         mp_word;
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
 typedef unsigned long long   mp_digit;
-typedef unsigned long        mp_word __attribute__((mode(TI)));
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
 typedef unsigned int         mp_digit;
-typedef unsigned long long   mp_word;
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */

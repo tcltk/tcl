@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
 

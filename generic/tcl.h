@@ -2202,10 +2202,6 @@ typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
 
 typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
-typedef unsigned int mp_digit;
-#define MP_DIGIT_DECLARED
-typedef unsigned TCL_WIDE_INT_TYPE mp_word;
-#define MP_WORD_DECLARED
 
 /*
  *----------------------------------------------------------------------------
