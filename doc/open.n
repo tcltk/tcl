@@ -166,8 +166,9 @@ is opened and initialized in a platform-dependent manner.  Acceptable
 values for the \fIfileName\fR to use to open a serial port are described in
 the PORTABILITY ISSUES section.
 .PP
-The \fBfconfigure\fR command can be used to query and set additional
-configuration options specific to serial ports (where supported):
+The \fBchan configure\fR and \fBfconfigure\fR commands can be used to query
+and set additional configuration options specific to serial ports (where
+supported):
 .TP
 \fB\-mode\fR \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
 .
@@ -249,6 +250,69 @@ handshake characters. Normally the operating system default should be
 DC1 (0x11) and DC3 (0x13) representing the ASCII standard
 XON and XOFF characters.
 .TP
+\fB\-closemode\fR \fIcloseMode\fR
+.VS "8.7, TIP 160"
+(Windows and Unix). This option is used to query or change the close mode of
+the serial channel, which defines how pending output in operating system
+buffers is handled when the channel is closed. The following values for
+\fIcloseMode\fR are supported:
+.RS
+.TP
+\fBdefault\fR
+.
+indicates that a system default operation should be used; all serial channels
+default to this.
+.TP
+\fBdiscard\fR
+.
+indicates that the contents of the OS buffers should be discarded.  Note that
+this is \fInot recommended\fR when writing to a POSIX terminal, as it can
+interact unexpectedly with handling of \fBstderr\fR.
+.TP
+\fBdrain\fR
+.
+indicates that Tcl should wait when closing the channel until all output has
+been consumed. This may slow down \fBclose\fR noticeably.
+.RE
+.VE "8.7, TIP 160"
+.TP
+\fB\-inputmode\fR \fIinputMode\fR
+.VS "8.7, TIP 160"
+(Unix only; Windows has the equivalent option on console channels). This
+option is used to query or change the input mode of the serial channel under
+the assumption that it is talking to a termina, which controls how interactive
+input from users is handled. The following values for \fIinputMode\fR are
+supported:
+.RS
+.TP
+\fBnormal\fR
+.
+indicates that normal line-oriented input should be used, with standard
+terminal editing capabilities enabled.
+.TP
+\fBpassword\fR
+.
+indicates that non-echoing input should be used, with standard terminal
+editing capabilitied enabled but no writing of typed characters to the
+terminal (except for newlines). Some terminals may indicate this specially.
+.TP
+\fBraw\fR
+.
+indicates that all keyboard input should be given directly to Tcl with the
+terminal doing no processing at all. It does not echo the keys, leaving it up
+to the Tcl script to interpret what to do.
+.TP
+\fBreset\fR (set only)
+.
+indicates that the terminal should be reset to what state it was in when the
+terminal was opened.
+.PP
+Note that setting this option (technically, anything that changes the terminal
+state from its initial value \fIvia this option\fR) will cause the channel to
+turn on an automatic reset of the terminal when the channel is closed.
+.RE
+.VE "8.7, TIP 160"
+.TP
 \fB\-pollinterval\fR \fImsec\fR
 .
 (Windows only). This option is used to set the maximum time between
@@ -275,7 +339,7 @@ In case of a serial communication error, \fBread\fR or \fBputs\fR
 returns a general Tcl file I/O error.
 \fBfconfigure\fR \fB\-lasterror\fR can be called to get a list of error details.
 See below for an explanation of the various error codes.
-.SH "SERIAL PORT SIGNALS"
+.SS "SERIAL PORT SIGNALS"
 .PP
 RS-232 is the most commonly used standard electrical interface for serial
 communications. A negative voltage (-3V..-12V) define a mark (on=1) bit and
@@ -316,7 +380,7 @@ milliseconds.  Normally a receive or transmit data signal stays at the mark
 (on=1) voltage until the next character is transferred. A BREAK is sometimes
 used to reset the communications line or change the operating mode of
 communications hardware.
-.SH "ERROR CODES (Windows only)"
+.SS "ERROR CODES (Windows only)"
 .PP
 A lot of different errors may occur during serial read operations or during
 event polling in background. The external device may have been switched
@@ -359,7 +423,7 @@ may cause this error.
 \fBBREAK\fR
 .
 A BREAK condition has been detected by your UART (see above).
-.SH "PORTABILITY ISSUES"
+.SS "PORTABILITY ISSUES"
 .TP
 \fBWindows \fR
 .
@@ -408,7 +472,49 @@ input, but is redirected from a file, then the above problem does not occur.
 See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for
 additional information not specific to command pipelines about executing
 applications on the various platforms
-.SH "EXAMPLE"
+.SH "CONSOLE CHANNELS"
+.VS "8.7, TIP 160"
+On Windows only, console channels (usually \fBstdin\fR or \fBstdout\fR)
+support the following option:
+.TP
+\fB\-inputmode\fR \fIinputMode\fR
+.
+This option is used to query or change the input mode of the console channel,
+which controls how interactive input from users is handled. The following
+values for \fIinputMode\fR are supported:
+.RS
+.TP
+\fBnormal\fR
+.
+indicates that normal line-oriented input should be used, with standard
+console editing capabilities enabled.
+.TP
+\fBpassword\fR
+.
+indicates that non-echoing input should be used, with standard console
+editing capabilitied enabled but no writing of typed characters to the
+terminal (except for newlines).
+.TP
+\fBraw\fR
+.
+indicates that all keyboard input should be given directly to Tcl with the
+console doing no processing at all. It does not echo the keys, leaving it up
+to the Tcl script to interpret what to do.
+.TP
+\fBreset\fR (set only)
+.
+indicates that the console should be reset to what state it was in when the
+console channel was opened.
+.PP
+Note that setting this option (technically, anything that changes the console
+state from its default \fIvia this option\fR) will cause the channel to turn
+on an automatic reset of the console when the channel is closed.
+.RE
+.PP
+Note that the equivalent option exists on Unix, but is on the serial channel
+type.
+.VE "8.7, TIP 160"
+.SH "EXAMPLES"
 .PP
 Open a command pipeline and catch any errors:
 .PP
@@ -419,6 +525,22 @@ if {[catch {close $fl} err]} {
     puts "ls command failed: $err"
 }
 .CE
+.PP
+.VS "8.7, TIP 160"
+Read a password securely from the user (assuming that the script is being run
+interactively):
+.PP
+.CS
+chan configure stdin \fB-inputmode password\fR
+try {
+    chan puts -nonewline "Password: "
+    chan flush stdout
+    set thePassword [chan gets stdin]
+} finally {
+    chan configure stdin \fB-inputmode reset\fR
+}
+.CE
+.VE "8.7, TIP 160"
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
 puts(n), exec(n), pid(n), fopen(3)
