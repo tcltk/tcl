@@ -27,18 +27,8 @@ int mp_get_bit(const mp_int *a, int b)
 
    limb = b / DIGIT_BIT;
 
-   /*
-    * Zero is a special value with the member "used" set to zero.
-    * Needs to be tested before the check for the upper boundary
-    * otherwise (limb >= a->used) would be true for a = 0
-    */
-
-   if (mp_iszero(a) != MP_NO) {
-      return MP_NO;
-   }
-
    if (limb >= a->used) {
-      return MP_VAL;
+      return MP_NO;
    }
 
    bit = (mp_digit)(1) << (b % DIGIT_BIT);

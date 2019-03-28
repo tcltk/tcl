@@ -311,7 +311,6 @@ GENERIC_OBJS = \
 	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
-	bncore.${OBJEXT} \
 	bn_reverse.${OBJEXT} \
 	bn_fast_s_mp_mul_digs.${OBJEXT} \
 	bn_fast_s_mp_sqr.${OBJEXT} \

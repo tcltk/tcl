@@ -36,20 +36,12 @@
 #define TclBNRealloc(x,s) ((void*)ckrealloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (ckfree((char*)(x)))
-/* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-/* unused - no macro */
 
 #define XMALLOC(x) TclBNAlloc(x)
 #define XFREE(x) TclBNFree(x)
 #define XREALLOC(x,n) TclBNRealloc(x,n)
-#define XCALLOC(n,x) TclBNCalloc(n,x)
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
-
-#define KARATSUBA_MUL_CUTOFF TclBNKaratsubaMulCutoff
-#define KARATSUBA_SQR_CUTOFF TclBNKaratsubaSqrCutoff
-#define TOOM_MUL_CUTOFF TclBNToomMulCutoff
-#define TOOM_SQR_CUTOFF TclBNToomSqrCutoff
 
 #define bn_reverse TclBN_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
