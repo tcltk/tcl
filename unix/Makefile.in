@@ -315,7 +315,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
 
-TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
+TOMMATH_OBJS = bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
         bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
@@ -482,7 +482,6 @@ STUB_SRCS = \
 	$(GENERIC_DIR)/tclOOStubLib.c
 
 TOMMATH_SRCS = \
-	$(TOMMATH_DIR)/bncore.c \
 	$(TOMMATH_DIR)/bn_reverse.c \
 	$(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c \
 	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
@@ -1355,9 +1354,6 @@ tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 
 tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
-
-bncore.o: $(TOMMATH_DIR)/bncore.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
 
 bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
