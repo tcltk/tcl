@@ -864,7 +864,7 @@ declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
-declare 245 {
+declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
 declare 246 {deprecated {}} {

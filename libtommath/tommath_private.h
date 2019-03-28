@@ -42,14 +42,21 @@ extern "C" {
 #   define XMALLOC   malloc
 #   define XFREE     free
 #   define XREALLOC  realloc
-#   define XCALLOC   calloc
 #elif 0
 /* prototypes for our heap functions */
 extern void *XMALLOC(size_t n);
 extern void *XREALLOC(void *p, size_t n);
-extern void *XCALLOC(size_t n, size_t s);
 extern void XFREE(void *p);
 #endif
+
+/* you'll have to tune these... */
+#define KARATSUBA_MUL_CUTOFF 80      /* Min. number of digits before Karatsuba multiplication is used. */
+#define KARATSUBA_SQR_CUTOFF 120     /* Min. number of digits before Karatsuba squaring is used. */
+#define TOOM_MUL_CUTOFF      350     /* no optimal values of these are known yet so set em high */
+#define TOOM_SQR_CUTOFF      400
+
+/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
+#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* lowlevel functions, do not call! */
 int s_mp_add(const mp_int *a, const mp_int *b, mp_int *c);

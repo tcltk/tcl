@@ -468,6 +468,8 @@ static int utf16Ncasecmp(const unsigned short *ucs, const unsigned short *uct, u
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
 #   define TclOldFreeObj 0
+#   undef Tcl_StringMatch
+#   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
 #   define TclBN_fast_s_mp_mul_digs 0
 #   define TclBN_fast_s_mp_sqr 0
