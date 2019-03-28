@@ -20,6 +20,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
+#include "tclTomMath.h"
 #include "tclOO.h"
 #include <math.h>
 

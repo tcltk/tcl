@@ -7,13 +7,11 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef BN_H_
 #define BN_H_
 
-#include "tclTomMathDecls.h"
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
 #endif
@@ -30,7 +28,12 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(NEVER)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+    defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+    defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
+    defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
+    defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
+    defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
 #   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
 #      if defined(__GNUC__)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
@@ -45,57 +48,31 @@ extern "C" {
 /* some default configurations.
  *
  * A "mp_digit" must be able to hold DIGIT_BIT + 1 bits
- * A "mp_word" must be able to hold 2*DIGIT_BIT + 1 bits
  *
  * At the very least a mp_digit must be able to hold 7 bits
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned char        mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-typedef unsigned short       mp_word;
-#define MP_WORD_DECLARED
-#endif
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned short       mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-typedef unsigned int         mp_word;
-#define MP_WORD_DECLARED
-#endif
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned long long   mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-typedef unsigned long        mp_word __attribute__((mode(TI)));
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned int         mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-typedef unsigned long long   mp_word;
-#define MP_WORD_DECLARED
-#endif
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */
@@ -150,9 +127,6 @@ typedef int           mp_err;
 #      define MP_PREC 8         /* default digits of precision */
 #   endif
 #endif
-
-/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -803,6 +777,8 @@ int mp_fwrite(const mp_int *a, int radix, FILE *stream);
 #define mp_tooctal(M, S)   mp_toradix((M), (S), 8)
 #define mp_todecimal(M, S) mp_toradix((M), (S), 10)
 #define mp_tohex(M, S)     mp_toradix((M), (S), 16)
+
+#include "tclTomMathDecls.h"
 
 #ifdef __cplusplus
 }

@@ -49,6 +49,15 @@ extern void *XREALLOC(void *p, size_t n);
 extern void XFREE(void *p);
 #endif
 
+#if defined(MP_64BIT)
+/* for GCC only on supported platforms */
+typedef unsigned long        mp_word __attribute__((mode(TI)));
+#elif _WIN32
+typedef __int64              mp_word;
+#else
+typedef unsigned long long   mp_word;
+#endif
+
 /* you'll have to tune these... */
 #define KARATSUBA_MUL_CUTOFF 80      /* Min. number of digits before Karatsuba multiplication is used. */
 #define KARATSUBA_SQR_CUTOFF 120     /* Min. number of digits before Karatsuba squaring is used. */
