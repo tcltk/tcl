@@ -49,11 +49,15 @@ extern void *XREALLOC(void *p, size_t n);
 extern void XFREE(void *p);
 #endif
 
-#if defined(MP_64BIT)
+#if defined(MP_8BIT)
+typedef unsigned short       mp_word;
+#elif defined(MP_16BIT)
+typedef unsigned int         mp_word;
+#elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
 typedef unsigned long        mp_word __attribute__((mode(TI)));
 #elif _WIN32
-typedef __int64              mp_word;
+typedef unsigned __int64     mp_word;
 #else
 typedef unsigned long long   mp_word;
 #endif
