@@ -1119,11 +1119,37 @@ TtyGetOptionProc(
     }
 #endif /* TIOCMGET */
 
+#if defined(TIOCGWINSZ)
+    /*
+     * Get option -winsize
+     * Option is readonly and returned by [fconfigure chan -winsize] but not
+     * returned by [fconfigure chan] without explicit option name.
+     */
+
+    if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
+	struct winsize ws;
+
+	valid = 1;
+	if (ioctl(fsPtr->fileState.fd, TIOCGWINSZ, &ws) < 0) {
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read terminal size: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	sprintf(buf, "%d", ws.ws_col);
+	Tcl_DStringAppendElement(dsPtr, buf);	
+	sprintf(buf, "%d", ws.ws_row);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+#endif /* TIOCGWINSZ */
+
     if (valid) {
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName,
-		"closemode inputmode mode queue ttystatus xchar");
+		"closemode inputmode mode queue ttystatus winsize xchar");
 }
 
 static const struct {int baud; speed_t speed;} speeds[] = {
