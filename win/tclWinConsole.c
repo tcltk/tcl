@@ -1530,7 +1530,7 @@ ConsoleSetOptionProc(
     if (infoPtr->flags & CONSOLE_READ_OPS) {
 	return Tcl_BadChannelOption(interp, optionName, "inputmode");
     } else {
-	return Tcl_BadChannelOption(interp, optionName, "inputmode");
+	return Tcl_BadChannelOption(interp, optionName, "");
     }
 }
 
@@ -1605,11 +1605,38 @@ ConsoleGetOptionProc(
 	}
     }
 
+    /*
+     * Get option -winsize
+     * Option is readonly and returned by [fconfigure chan -winsize] but not
+     * returned by [fconfigure chan] without explicit option name.
+     */
+
+    if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
+	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+
+	valid = 1;
+	if (!GetConsoleScreenBufferInfo(infoPtr->handle, &consoleInfo)) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read console size: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	sprintf(buf, "%d",
+		consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
+	Tcl_DStringAppendElement(dsPtr, buf);	
+	sprintf(buf, "%d",
+		consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+
     if (valid) {
 	return TCL_OK;
     }
     if (infoPtr->flags & CONSOLE_READ_OPS) {
-	return Tcl_BadChannelOption(interp, optionName, "inputmode");
+	return Tcl_BadChannelOption(interp, optionName, "inputmode winsize");
     } else {
 	return Tcl_BadChannelOption(interp, optionName, "");
     }

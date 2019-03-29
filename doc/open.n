@@ -311,6 +311,12 @@ Note that setting this option (technically, anything that changes the terminal
 state from its initial value \fIvia this option\fR) will cause the channel to
 turn on an automatic reset of the terminal when the channel is closed.
 .RE
+.TP
+\fB\-winsize\fR
+.
+(Unix only; Windows has the equivalent option on console channels). This
+option is query only. It retrieves a two-element list with the the current
+width and height of the terminal.
 .VE "8.7, TIP 160"
 .TP
 \fB\-pollinterval\fR \fImsec\fR
@@ -475,7 +481,7 @@ applications on the various platforms
 .SH "CONSOLE CHANNELS"
 .VS "8.7, TIP 160"
 On Windows only, console channels (usually \fBstdin\fR or \fBstdout\fR)
-support the following option:
+support the following options:
 .TP
 \fB\-inputmode\fR \fIinputMode\fR
 .
@@ -510,8 +516,14 @@ Note that setting this option (technically, anything that changes the console
 state from its default \fIvia this option\fR) will cause the channel to turn
 on an automatic reset of the console when the channel is closed.
 .RE
+.TP
+\fB\-winsize\fR
+.
+This option is query only.
+It retrieves a two-element list with the the current width and height of the
+console that this channel is talking to.
 .PP
-Note that the equivalent option exists on Unix, but is on the serial channel
+Note that the equivalent options exist on Unix, but are on the serial channel
 type.
 .VE "8.7, TIP 160"
 .SH "EXAMPLES"
