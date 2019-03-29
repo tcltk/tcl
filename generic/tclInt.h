@@ -4936,7 +4936,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #   define TclNewWideIntObjFromSize(value) \
 	Tcl_NewWideIntObj(TclWideIntFromSize(value))
 #else
-#   define TclWideIntFromSize(value)	(value)
+#   define TclWideIntFromSize(value)	((Tcl_WideInt)(value))
 #   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
 #endif
 
