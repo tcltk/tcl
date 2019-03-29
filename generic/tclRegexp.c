@@ -264,7 +264,7 @@ Tcl_RegExpRange(
 
     if (index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == -1) {
+    } else if (regexpPtr->matches[index].rm_so == (size_t)-1) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -365,17 +365,17 @@ TclRegExpRangeUniChar(
 				 * > 0 means give the range of a matching
 				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    int *startPtr,		/* Store address of first character in
+    size_t *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    int *endPtr)		/* Store address of character just after last
+    size_t *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && index == TCL_AUTO_LENGTH) {
+    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (index > regexpPtr->re.re_nsub) {
+    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
 	*startPtr = -1;
 	*endPtr = -1;
     } else {
@@ -677,7 +677,7 @@ TclRegAbout(
 
     resultObj = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
+	    TclNewWideIntObjFromSize(regexpPtr->re.re_nsub));
 
     /*
      * Now append a list of all the bit-flags set for the RE.

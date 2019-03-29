@@ -337,9 +337,9 @@ defined as follows:
 .PP
 .CS
 typedef struct Tcl_RegExpInfo {
-    int \fInsubs\fR;
+    size_t \fInsubs\fR;
     Tcl_RegExpIndices *\fImatches\fR;
-    long \fIextendStart\fR;
+    size_t \fIextendStart\fR;
 } \fBTcl_RegExpInfo\fR;
 .CE
 .PP
@@ -355,8 +355,8 @@ follows:
 .PP
 .CS
 typedef struct Tcl_RegExpIndices {
-    long \fIstart\fR;
-    long \fIend\fR;
+    size_t \fIstart\fR;
+    size_t \fIend\fR;
 } \fBTcl_RegExpIndices\fR;
 .CE
 .PP

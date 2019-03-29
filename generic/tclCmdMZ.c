@@ -127,9 +127,9 @@ Tcl_RegexpObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t offset;
+    size_t offset, stringLength, matchLength;
     int i, indices, match, about, all, doinline, numMatchesSaved;
-    int cflags, eflags, stringLength, matchLength;
+    int cflags, eflags;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -309,7 +309,7 @@ Tcl_RegexpObjCmd(
 
 	if (offset == TCL_INDEX_START) {
 	    eflags = 0;
-	} else if (offset + 1 > (size_t)stringLength + 1) {
+	} else if (offset + 1 > stringLength + 1) {
 	    eflags = TCL_REG_NOTBOL;
 	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
 	    eflags = 0;
@@ -373,7 +373,7 @@ Tcl_RegexpObjCmd(
 		 * area. (Scriptics Bug 4391/SF Bug #219232)
 		 */
 
-		if (i <= info.nsubs && info.matches[i].start >= 0) {
+		if (i <= (int)info.nsubs && info.matches[i].start != TCL_INDEX_NONE) {
 		    start = offset + info.matches[i].start;
 		    end = offset + info.matches[i].end;
 
@@ -395,7 +395,7 @@ Tcl_RegexpObjCmd(
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
-		if (i <= info.nsubs) {
+		if (i <= (int)info.nsubs) {
 		    newPtr = Tcl_GetRange(objPtr,
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
@@ -445,7 +445,7 @@ Tcl_RegexpObjCmd(
 	    offset++;
 	}
 	all++;
-	if (offset + 1 >= (size_t)stringLength + 1) {
+	if (offset + 1 >= stringLength + 1) {
 	    break;
 	}
     }
@@ -783,7 +783,7 @@ Tcl_RegsubObjCmd(
 	    args = Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
 
-	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+	    for (idx = 0 ; idx <= (int)info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
@@ -807,7 +807,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    result = Tcl_EvalObjv(interp, numArgs, args, 0);
-	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+	    for (idx = 0 ; idx <= (int)info.nsubs ; idx++) {
 		TclDecrRefCount(args[idx + numParts]);
 	    }
 	    Tcl_Free(args);
@@ -887,7 +887,7 @@ Tcl_RegsubObjCmd(
 			wsrc - wfirstChar);
 	    }
 
-	    if (idx <= info.nsubs) {
+	    if (idx <= (int)info.nsubs) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
@@ -3734,13 +3734,13 @@ TclNRSwitchObjCmd(
 	    TclNewObj(indicesObj);
 	}
 
-	for (j=0 ; j<=info.nsubs ; j++) {
+	for (j=0 ; j<=(int)info.nsubs ; j++) {
 	    if (indexVarObj != NULL) {
 		Tcl_Obj *rangeObjAry[2];
 
-		if (info.matches[j].end > 0) {
-		    rangeObjAry[0] = Tcl_NewWideIntObj(info.matches[j].start);
-		    rangeObjAry[1] = Tcl_NewWideIntObj(info.matches[j].end-1);
+		if (info.matches[j].end + 1 > 1) {
+		    rangeObjAry[0] = TclNewWideIntObjFromSize(info.matches[j].start);
+		    rangeObjAry[1] = TclNewWideIntObjFromSize(info.matches[j].end-1);
 		} else {
 		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewWideIntObj(-1);
 		}
