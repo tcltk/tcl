@@ -3765,7 +3765,8 @@ TestregexpObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, ii, indices, stringLength, match, about;
+    int i, indices, stringLength, match, about;
+    size_t ii;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     const char *string;
@@ -3922,11 +3923,11 @@ TestregexpObjCmd(
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
-	ii = ((cflags&REG_EXPECT) && i == objc-1) ? -1 : i;
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (size_t)i;
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
-	    if (ii == -1) {
+	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 	    } else if (ii > info.nsubs) {
 		start = -1;
@@ -3950,7 +3951,7 @@ TestregexpObjCmd(
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
-	    if (ii == -1) {
+	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
 	    } else if (ii > info.nsubs) {
