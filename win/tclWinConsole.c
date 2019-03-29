@@ -1463,6 +1463,7 @@ ConsoleSetOptionProc(
 {
     ConsoleInfo *infoPtr = instanceData;
     int len = strlen(optionName);
+    int vlen = strlen(value);
 
     /*
      * Option -inputmode normal|password|raw
