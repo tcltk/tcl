@@ -127,9 +127,8 @@ Tcl_RegexpObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t offset, stringLength, matchLength;
+    size_t offset, stringLength, matchLength, cflags, eflags;
     int i, indices, match, about, all, doinline, numMatchesSaved;
-    int cflags, eflags;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -365,7 +364,7 @@ Tcl_RegexpObjCmd(
 	    Tcl_Obj *newPtr;
 
 	    if (indices) {
-		int start, end;
+		size_t start, end;
 		Tcl_Obj *objs[2];
 
 		/*
@@ -382,16 +381,16 @@ Tcl_RegexpObjCmd(
 		     * match instead of the first character after the match.
 		     */
 
-		    if ((size_t)end + 1 >= offset + 1) {
+		    if (end + 1 >= offset + 1) {
 			end--;
 		    }
 		} else {
-		    start = -1;
-		    end = -1;
+		    start = TCL_INDEX_NONE;
+		    end = TCL_INDEX_NONE;
 		}
 
-		objs[0] = Tcl_NewWideIntObj(start);
-		objs[1] = Tcl_NewWideIntObj(end);
+		objs[0] = TclNewWideIntObjFromSize(start);
+		objs[1] = TclNewWideIntObjFromSize(end);
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
@@ -488,9 +487,9 @@ Tcl_RegsubObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int idx, result, cflags, all, numMatches;
-    size_t wlen, wsublen = 0, offset;
-    int start, end, subStart, subEnd, match, command, numParts;
+    int result, cflags, all, match, command, numParts;
+    size_t idx, wlen, wsublen = 0, offset, numMatches;
+    size_t start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
@@ -513,7 +512,7 @@ Tcl_RegsubObjCmd(
     command = 0;
     resultPtr = NULL;
 
-    for (idx = 1; idx < objc; idx++) {
+    for (idx = 1; idx < (size_t)objc; idx++) {
 	const char *name;
 	int index;
 
@@ -549,7 +548,7 @@ Tcl_RegsubObjCmd(
 	    break;
 	case REGSUB_START: {
 	    size_t temp;
-	    if (++idx >= objc) {
+	    if (++idx >= (size_t)objc) {
 		goto endOfForLoop;
 	    }
 	    if (TclGetIntForIndexM(interp, objv[idx], TCL_INDEX_START, &temp) != TCL_OK) {
@@ -569,7 +568,7 @@ Tcl_RegsubObjCmd(
     }
 
   endOfForLoop:
-    if (objc-idx < 3 || objc-idx > 4) {
+    if ((size_t)objc < idx + 3 || (size_t)objc > idx + 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option ...? exp string subSpec ?varName?");
     optionError:
@@ -783,7 +782,7 @@ Tcl_RegsubObjCmd(
 	    args = Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
 
-	    for (idx = 0 ; idx <= (int)info.nsubs ; idx++) {
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
@@ -807,7 +806,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    result = Tcl_EvalObjv(interp, numArgs, args, 0);
-	    for (idx = 0 ; idx <= (int)info.nsubs ; idx++) {
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		TclDecrRefCount(args[idx + numParts]);
 	    }
 	    Tcl_Free(args);
@@ -887,7 +886,7 @@ Tcl_RegsubObjCmd(
 			wsrc - wfirstChar);
 	    }
 
-	    if (idx <= (int)info.nsubs) {
+	    if (idx <= info.nsubs) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
@@ -1269,7 +1268,7 @@ Tcl_SplitObjCmd(
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
 	const char *element, *p, *splitEnd;
-	int splitLen;
+	size_t splitLen;
 	Tcl_UniChar splitChar = 0;
 
 	/*
@@ -1925,8 +1924,7 @@ StringMapCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t length1, length2;
-    int mapElemc, index;
+    size_t length1, length2,  mapElemc, index;
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
@@ -1967,8 +1965,8 @@ StringMapCmd(
 	 * sure. This shortens this code quite a bit.
 	 */
 
-	Tcl_DictObjSize(interp, objv[objc-2], &mapElemc);
-	if (mapElemc == 0) {
+	Tcl_DictObjSize(interp, objv[objc-2], &i);
+	if (i == 0) {
 	    /*
 	     * Empty charMap, just return whatever string was given.
 	     */
@@ -1977,7 +1975,7 @@ StringMapCmd(
 	    return TCL_OK;
 	}
 
-	mapElemc *= 2;
+	mapElemc = 2 * i;
 	mapWithDict = 1;
 
 	/*
@@ -1988,15 +1986,17 @@ StringMapCmd(
 	mapElemv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
-	for (i=2 ; i<mapElemc ; i+=2) {
-	    Tcl_DictObjNext(&search, mapElemv+i, mapElemv+i+1, &done);
+	for (index=2 ; index<mapElemc ; index+=2) {
+	    Tcl_DictObjNext(&search, mapElemv+index, mapElemv+index+1, &done);
 	}
 	Tcl_DictObjDone(&search);
     } else {
-	if (TclListObjGetElements(interp, objv[objc-2], &mapElemc,
+	int i;
+	if (TclListObjGetElements(interp, objv[objc-2], &i,
 		&mapElemv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	mapElemc = i;
 	if (mapElemc == 0) {
 	    /*
 	     * empty charMap, just return whatever string was given.
@@ -3425,9 +3425,9 @@ TclNRSwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i,j, index, mode, foundmode, splitObjs, numMatchesSaved;
+    int i, index, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase;
-    size_t patternLength;
+    size_t patternLength, j;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
@@ -3734,7 +3734,7 @@ TclNRSwitchObjCmd(
 	    TclNewObj(indicesObj);
 	}
 
-	for (j=0 ; j<=(int)info.nsubs ; j++) {
+	for (j=0 ; j<=info.nsubs ; j++) {
 	    if (indexVarObj != NULL) {
 		Tcl_Obj *rangeObjAry[2];
 
@@ -3857,7 +3857,7 @@ TclNRSwitchObjCmd(
     }
 
     for (j = i + 1; ; j += 2) {
-	if (j >= objc) {
+	if (j >= (size_t)objc) {
 	    /*
 	     * This shouldn't happen since we've checked that the last body is
 	     * not a continuation...
