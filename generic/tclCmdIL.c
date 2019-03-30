@@ -2743,8 +2743,12 @@ Tcl_LremoveObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, idxc;
-    list_index_t listLen, *idxv, prevIdx;
+    list_index_t listLen, *idxv, prevIdx, first, num;
     Tcl_Obj *listObj;
+
+    /*
+     * Parse the arguments.
+     */
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?index ...?");
@@ -2780,13 +2784,14 @@ Tcl_LremoveObjCmd(
     }
 
     /*
-     * Make our working copy, then do the actual removes piecemeal. It would
-     * be more efficient to do range coalescing; contributions accepted!
+     * Make our working copy, then do the actual removes piecemeal.
      */
 
     if (Tcl_IsShared(listObj)) {
 	listObj = TclListObjCopy(NULL, listObj);
     }
+    num = 0;
+    first = listLen;
     for (i = 0, prevIdx = -1 ; i < idxc ; i++) {
 	list_index_t idx = idxv[i];
 
@@ -2803,12 +2808,29 @@ Tcl_LremoveObjCmd(
 	}
 
 	/*
-	 * Note that this operation can't fail now; we know we have a list and
-	 * we're only ever contracting that list.
+	 * Coalesce adjacent removes to reduce the number of copies.
 	 */
 
-	(void) Tcl_ListObjReplace(interp, listObj, idx, 1, 0, NULL);
-	listLen--;
+	if (num == 0) {
+	    num = 1;
+	    first = idx;
+	} else if (idx + 1 == first) {
+	    num++;
+	    first = idx;
+	} else {
+	    /*
+	     * Note that this operation can't fail now; we know we have a list
+	     * and we're only ever contracting that list.
+	     */
+
+	    (void) Tcl_ListObjReplace(interp, listObj, first, num, 0, NULL);
+	    listLen -= num;
+	    num = 1;
+	    first = idx;
+	}
+    }
+    if (num != 0) {
+	(void) Tcl_ListObjReplace(interp, listObj, first, num, 0, NULL);
     }
     ckfree(idxv);
     Tcl_SetObjResult(interp, listObj);
