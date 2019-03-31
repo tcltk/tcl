@@ -3906,6 +3906,9 @@ MODULE_SCOPE int	TclCompileBasic0To2ArgCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileBasic1To3ArgCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileBasic2To4ArgCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileBasicMin0ArgCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);

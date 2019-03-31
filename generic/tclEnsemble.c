@@ -3664,6 +3664,28 @@ TclCompileBasic1To3ArgCmd(
 }
 
 int
+TclCompileBasic2To4ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 5) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
 TclCompileBasicMin0ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command

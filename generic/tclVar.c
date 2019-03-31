@@ -4495,6 +4495,105 @@ ArrayUnsetCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * ArrayValueCmd --
+ *
+ *	This object-based function is invoked to process the "array value" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result object.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+ArrayValueCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Var *varPtr, *varPtr2;
+    Tcl_Obj *varNameObj, *elemNameObj, *valueObj, *initObj, *actualValue;
+    int isArray, doInit = 0;
+
+    switch (objc) {
+    case 3:
+	varNameObj = objv[1];
+	elemNameObj = objv[2];
+	valueObj = NULL;
+	initObj = NULL;
+	break;
+    case 4:
+	varNameObj = objv[1];
+	elemNameObj = objv[2];
+	valueObj = objv[3];
+	initObj = NULL;
+	break;
+    case 5:
+	varNameObj = objv[1];
+	elemNameObj = objv[2];
+	valueObj = objv[3];
+	initObj = objv[4];
+	break;
+    default:
+	Tcl_WrongNumArgs(interp, 1, objv, "arrayName elementName ?value? ?init?");
+	return TCL_ERROR;
+    }
+
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
+	return TCL_ERROR;
+    }
+    if (!isArray) {
+	return NotArrayError(interp, varNameObj);
+    }
+    if (initObj && Tcl_GetBooleanFromObj(interp, initObj, &doInit) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    varPtr2 = VarHashFindVar(varPtr->value.tablePtr, elemNameObj);
+    if (varPtr2 == NULL || TclIsVarUndefined(varPtr2)) {
+	/*
+	 * Do we need to initialise the element?
+	 */
+
+	if (!doInit) {
+	    if (valueObj != NULL) {
+		Tcl_SetObjResult(interp, valueObj);
+	    }
+	    return TCL_OK;
+	}
+
+	/*
+	 * doInit must be true and that can only happen with enough arguments
+	 * that valueObj must have been assigned *something*.
+	 */
+
+	actualValue = TclPtrSetVarIdx(interp, varPtr2, varPtr,
+		varNameObj, elemNameObj, valueObj, TCL_LEAVE_ERR_MSG, -1);
+    } else {
+	actualValue = TclPtrGetVarIdx(interp, varPtr2, varPtr,
+		varNameObj, elemNameObj, TCL_LEAVE_ERR_MSG, -1);
+    }
+
+    /*
+     * Check for trace trickery. If an error happened, let it flow through.
+     */
+    
+    if (actualValue == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, actualValue);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclInitArrayCmd --
  *
  *	This creates the ensemble for the "array" command.
@@ -4527,6 +4626,7 @@ TclInitArrayCmd(
 	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, 0},
+	{"value",	ArrayValueCmd,		TclCompileBasic2To4ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
