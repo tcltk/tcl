@@ -1517,7 +1517,7 @@ Tcl_ZlibStreamGet(
 
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
 	    itemPtr = TclGetByteArrayFromObj(itemObj, &itemLen);
-	    if (itemLen-zshPtr->outPos >= (size_t)(count-dataPos)) {
+	    if (itemLen-zshPtr->outPos + dataPos >= count) {
 		size_t len = count - dataPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);
@@ -3930,7 +3930,7 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-    return Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
+    return Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
 }
 
 /*

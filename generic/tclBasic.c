@@ -2444,7 +2444,6 @@ Tcl_CreateCommand(
  * Side effects:
  *	If a command named "cmdName" already exists for interp, it is
  *	first deleted.  Then the new command is created from the arguments.
- *	[***] (See below for exception).
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
@@ -4837,7 +4836,8 @@ TclEvalEx(
     Tcl_Obj **objv, **objvSpace;
     int *expand, *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int commandLength, bytesLeft, expandRequested, code = TCL_OK;
+    int bytesLeft, expandRequested, code = TCL_OK;
+    size_t commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);

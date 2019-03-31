@@ -308,19 +308,6 @@ TclpAlloc(
     register int bucket;
     size_t size;
 
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if (reqSize > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
-
     GETCACHE(cachePtr);
 
     /*
@@ -449,19 +436,6 @@ TclpRealloc(
     if (ptr == NULL) {
 	return TclpAlloc(reqSize);
     }
-
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if ((reqSize) > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
 
     GETCACHE(cachePtr);
 

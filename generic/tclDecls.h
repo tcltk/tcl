@@ -677,8 +677,7 @@ TCLAPI int		Tcl_SplitList(Tcl_Interp *interp,
 TCLAPI void		Tcl_SplitPath(const char *path, int *argcPtr,
 				const char ***argvPtr);
 /* Slot 244 is reserved */
-/* 245 */
-TCLAPI int		Tcl_StringMatch(const char *str, const char *pattern);
+/* Slot 245 is reserved */
 /* Slot 246 is reserved */
 /* Slot 247 is reserved */
 /* 248 */
@@ -2020,7 +2019,7 @@ typedef struct TclStubs {
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
     void (*reserved244)(void);
-    int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
+    void (*reserved245)(void);
     void (*reserved246)(void);
     void (*reserved247)(void);
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, void *clientData); /* 248 */
@@ -2914,8 +2913,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SplitPath \
 	(tclStubsPtr->tcl_SplitPath) /* 243 */
 /* Slot 244 is reserved */
-#define Tcl_StringMatch \
-	(tclStubsPtr->tcl_StringMatch) /* 245 */
+/* Slot 245 is reserved */
 /* Slot 246 is reserved */
 /* Slot 247 is reserved */
 #define Tcl_TraceVar2 \
@@ -3832,6 +3830,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
 #define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
+#define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
 /*
  * Deprecated Tcl procedures:

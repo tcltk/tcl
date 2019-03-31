@@ -468,7 +468,7 @@ TraceExecutionObjCmd(
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &commandLength);
-	length = (size_t) commandLength;
+	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = Tcl_Alloc(
 		    TclOffset(TraceCommandInfo, command) + 1 + length);
@@ -522,7 +522,7 @@ TraceExecutionObjCmd(
 			&& ((tcmdPtr->flags & (TCL_TRACE_ANY_EXEC |
 				TCL_TRACE_RENAME | TCL_TRACE_DELETE)) == flags)
 			&& (strncmp(command, tcmdPtr->command,
-				(size_t) length) == 0)) {
+				length) == 0)) {
 		    flags |= TCL_TRACE_DELETE;
 		    if (flags & (TCL_TRACE_ENTER_DURING_EXEC |
 			    TCL_TRACE_LEAVE_DURING_EXEC)) {
@@ -705,7 +705,7 @@ TraceCommandObjCmd(
 	}
 
 	command = TclGetStringFromObj(objv[5], &commandLength);
-	length = (size_t) commandLength;
+	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = Tcl_Alloc(
 		    TclOffset(TraceCommandInfo, command) + 1 + length);
@@ -747,7 +747,7 @@ TraceCommandObjCmd(
 
 		if ((tcmdPtr->length == length) && (tcmdPtr->flags == flags)
 			&& (strncmp(command, tcmdPtr->command,
-				(size_t) length) == 0)) {
+				length) == 0)) {
 		    Tcl_UntraceCommand(interp, name, flags | TCL_TRACE_DELETE,
 			    TraceCommandProc, clientData);
 		    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
@@ -908,7 +908,7 @@ TraceVariableObjCmd(
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &commandLength);
-	length = (size_t) commandLength;
+	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = Tcl_Alloc(
 		    TclOffset(CombinedTraceVarInfo, traceCmdInfo.command)
@@ -950,7 +950,7 @@ TraceVariableObjCmd(
 #endif
 						)==flags)
 			&& (strncmp(command, tvarPtr->command,
-				(size_t) length) == 0)) {
+				length) == 0)) {
 		    Tcl_UntraceVar2(interp, name, NULL,
 			    flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 			    TraceVarProc, clientData);

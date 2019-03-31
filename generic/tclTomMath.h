@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -110,9 +110,6 @@ typedef unsigned long long   mp_word;
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef unsigned long mp_min_u32;
-#else
-typedef mp_digit mp_min_u32;
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -141,14 +138,6 @@ typedef mp_digit mp_min_u32;
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
 typedef int           mp_err;
-
-/* you'll have to tune these... */
-#if defined(BUILD_tcl) || !defined(_WIN32)
-MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
-       KARATSUBA_SQR_CUTOFF,
-       TOOM_MUL_CUTOFF,
-       TOOM_SQR_CUTOFF;
-#endif
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
@@ -229,8 +218,8 @@ int mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (!mp_get_bit((a),0))
+#define mp_isodd(a)  mp_get_bit((a),0)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
