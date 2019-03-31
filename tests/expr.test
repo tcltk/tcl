@@ -7087,7 +7087,7 @@ test expr-47.11 {isqrt of zero} {
     expr {isqrt(0)}
 } 0
 
-test expr-47.12 {isqrt of various sizes of integer} {
+test expr-47.12 {isqrt of various sizes of integer} -constraints knownBug -body {
     set faults 0
     set trouble {}
     for {set i 0} {$faults < 10 && $i <= 1024} {incr i} {
@@ -7114,9 +7114,9 @@ test expr-47.12 {isqrt of various sizes of integer} {
 	}
     }
     set trouble
-} {}
+} -result {}
 
-test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
+test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} -constraints knownBug -body {
     set trouble {}
     set faults 0
     for {set i 0} {$i < 29 && $faults < 10} {incr i} {
@@ -7134,7 +7134,7 @@ test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
 	}
     }
     set trouble
-} {}
+} -result {}
 
 test expr-48.1 {Bug 1770224} {
     expr {-0x8000000000000001 >> 0x8000000000000000}
