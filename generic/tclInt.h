@@ -4117,7 +4117,6 @@ MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((size_t)-2)
-#define TCL_INDEX_NONE          ((size_t)-1) /* Index out of range or END+1 */
 #define TCL_INDEX_START         ((size_t)0)
 
 /*

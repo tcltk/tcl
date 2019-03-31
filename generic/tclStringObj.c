@@ -1404,7 +1404,7 @@ AppendUnicodeToUnicodeRep(
     numChars = stringPtr->numChars + appendNumChars;
 
     if (numChars > stringPtr->maxChars) {
-	size_t offset = TCL_AUTO_LENGTH;
+	size_t index = TCL_INDEX_NONE;
 
 	/*
 	 * Protect against case where unicode points into the existing
@@ -1414,7 +1414,7 @@ AppendUnicodeToUnicodeRep(
 
 	if (unicode && unicode >= stringPtr->unicode
 		&& unicode <= stringPtr->unicode + stringPtr->maxChars) {
-	    offset = unicode - stringPtr->unicode;
+	    index = unicode - stringPtr->unicode;
 	}
 
 	GrowUnicodeBuffer(objPtr, numChars);
@@ -1424,8 +1424,8 @@ AppendUnicodeToUnicodeRep(
 	 * Relocate unicode if needed; see above.
 	 */
 
-	if (offset != TCL_AUTO_LENGTH) {
-	    unicode = stringPtr->unicode + offset;
+	if (index != TCL_INDEX_NONE) {
+	    unicode = stringPtr->unicode + index;
 	}
     }
 
