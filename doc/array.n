@@ -25,6 +25,7 @@ out by the command.
 The legal \fIoptions\fR (which may be abbreviated) are:
 .TP
 \fBarray anymore \fIarrayName searchId\fR
+.
 Returns 1 if there are any more elements left to be processed
 in an array search, 0 if all elements have already been
 returned.
@@ -37,7 +38,7 @@ with an empty name, since the return value from
 has been completed.
 .TP
 \fBarray default \fIsubcommand arrayName args...\fR
-.VS TIP508
+.VS "8.7, TIP508"
 Manages the default value of the array. Arrays initially have no default
 value, but this command allows you to set one; the default value will be
 returned when reading from an element of the array \fIarrayName\fR if the read
@@ -48,42 +49,43 @@ relation to non-existing array elements.
 .PP
 The \fIsubcommand\fR argument controls what exact operation will be performed
 on the default value of \fIarrayName\fR. Supported \fIsubcommand\fRs are:
-.VE TIP508
+.VE "8.7, TIP508"
 .TP
 \fBarray default exists \fIarrayName\fR
-.VS TIP508
+.VS "8.7, TIP508"
 This returns a boolean value indicating whether a default value has been set
 for the array \fIarrayName\fR. Returns a false value if \fIarrayName\fR does
 not exist. Raises an error if \fIarrayName\fR is an existing variable that is
 not an array.
-.VE TIP508
+.VE "8.7, TIP508"
 .TP
 \fBarray default get \fIarrayName\fR
-.VS TIP508
+.VS "8.7, TIP508"
 This returns the current default value for the array \fIarrayName\fR.  Raises
 an error if \fIarrayName\fR is an existing variable that is not an array, or
 if \fIarrayName\fR is an array without a default value.
-.VE TIP508
+.VE "8.7, TIP508"
 .TP
 \fBarray default set \fIarrayName value\fR
-.VS TIP508
+.VS "8.7, TIP508"
 This sets the default value for the array \fIarrayName\fR to \fIvalue\fR.
 Returns the empty string. Raises an error if \fIarrayName\fR is an existing
 variable that is not an array, or if \fIarrayName\fR is an illegal name for an
 array. If \fIarrayName\fR does not currently exist, it is created as an empty
 array as well as having its default value set.
-.VE TIP508
+.VE "8.7, TIP508"
 .TP
 \fBarray default unset \fIarrayName\fR
-.VS TIP508
+.VS "8.7, TIP508"
 This removes the default value for the array \fIarrayName\fR and returns the
 empty string. Does nothing if \fIarrayName\fR does not have a default
 value. Raises an error if \fIarrayName\fR is an existing variable that is not
 an array.
-.VE TIP508
+.VE "8.7, TIP508"
 .RE
 .TP
 \fBarray donesearch \fIarrayName searchId\fR
+.
 This command terminates an array search and destroys all the
 state associated with that search.  \fISearchId\fR indicates
 which search on \fIarrayName\fR to destroy, and must have
@@ -91,10 +93,12 @@ been the return value from a previous invocation of
 \fBarray startsearch\fR.  Returns an empty string.
 .TP
 \fBarray exists \fIarrayName\fR
+.
 Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
 .TP
 \fBarray for {\fIkeyVariable valueVariable\fB} \fIarrayName body\fP
+.VS "8.7, TIP421"
 The first argument is a two element list of variable names for the
 key and value of each entry in the array.  The second argument is the
 array name to iterate over.  The third argument is the body to execute
@@ -102,8 +106,10 @@ for each key and value returned.
 The ordering of the returned keys is undefined.
 If an array element is deleted or a new array element is inserted during
 the \fIarray for\fP process, the command will terminate with an error.
+.VE "8.7, TIP421"
 .TP
 \fBarray get \fIarrayName\fR ?\fIpattern\fR?
+.
 Returns a list containing pairs of elements.  The first
 element in each pair is the name of an element in \fIarrayName\fR
 and the second element of each pair is the value of the
@@ -120,6 +126,7 @@ returned are those that exist both before and after the call to
 \fBarray get\fR.
 .TP
 \fBarray names \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
+.
 Returns a list containing the names of all of the elements in
 the array that match \fIpattern\fR.  \fIMode\fR may be one of
 \fB\-exact\fR, \fB\-glob\fR, or \fB\-regexp\fR.  If specified, \fImode\fR
@@ -134,6 +141,7 @@ in the array, or if \fIarrayName\fR is not the name of an array
 variable, then an empty string is returned.
 .TP
 \fBarray nextelement \fIarrayName searchId\fR
+.
 Returns the name of the next element in \fIarrayName\fR, or
 an empty string if all elements of \fIarrayName\fR have
 already been returned in this search.  The \fIsearchId\fR
@@ -145,6 +153,7 @@ then all searches are automatically terminated just as if
 \fBarray nextelement\fR operations to fail for those searches.
 .TP
 \fBarray set \fIarrayName list\fR
+.
 Sets the values of one or more elements in \fIarrayName\fR.
 \fIlist\fR must have a form like that returned by \fBarray get\fR,
 consisting of an even number of elements.
@@ -156,11 +165,13 @@ and \fIlist\fR is empty,
 \fIarrayName\fR is created with an empty array value.
 .TP
 \fBarray size \fIarrayName\fR
+.
 Returns a decimal string giving the number of elements in the
 array.
 If \fIarrayName\fR is not the name of an array then 0 is returned.
 .TP
 \fBarray startsearch \fIarrayName\fR
+.
 This command initializes an element-by-element search through the
 array given by \fIarrayName\fR, such that invocations of the
 \fBarray nextelement\fR command will return the names of the
@@ -177,18 +188,31 @@ over all but very large arrays.  See the examples below for how to do
 this.
 .TP
 \fBarray statistics \fIarrayName\fR
+.
 Returns statistics about the distribution of data within the hashtable
 that represents the array.  This information includes the number of
 entries in the table, the number of buckets, and the utilization of
 the buckets.
 .TP
 \fBarray unset \fIarrayName\fR ?\fIpattern\fR?
+.
 Unsets all of the elements in the array that match \fIpattern\fR (using the
 matching rules of \fBstring match\fR).  If \fIarrayName\fR is not the name
 of an array variable or there are no matching elements in the array, no
 error will be raised.  If \fIpattern\fR is omitted and \fIarrayName\fR is
 an array variable, then the command unsets the entire array.
 The command always returns an empty string.
+.TP
+\fBarray value \fIarrayName elementName\fR ?\fIdefaultValue\fR? ?\IsaveInit\fR?
+.VS "8.7, TIP224"
+Reads the element called \fIelementName\fR of the array called
+\fIarrayName\fR and returns the value it contains. If the element does not
+exist, returns \fIdefaultValue\fR instead (this defaults to the empty
+string), ignoring the array-level default set with \fBarray default\fR.  If
+\fIsaveInit\fR is specified, it must be a boolean value; if it is present and
+true, and the element was not present in the array, the \fIdefaultValue\fR is
+written to the element as well as being returned.
+.VE "8.7, TIP224"
 .SH EXAMPLES
 .CS
 \fBarray set\fR colorcount {
