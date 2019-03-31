@@ -4558,7 +4558,8 @@ ArrayValueCmd(
     varPtr2 = VarHashFindVar(varPtr->value.tablePtr, elemNameObj);
     if (varPtr2 == NULL || TclIsVarUndefined(varPtr2)) {
 	/*
-	 * Do we need to initialise the element?
+	 * Do we need to initialise the element? If not, non-existence is a
+	 * trivial problem.
 	 */
 
 	if (!doInit) {
@@ -4571,8 +4572,18 @@ ArrayValueCmd(
 	/*
 	 * doInit must be true and that can only happen with enough arguments
 	 * that valueObj must have been assigned *something*.
+	 *
+	 * But it is possible that the array element totally doesn't exist
+	 * right now; if so, we need to instantiate it so we can set it.
 	 */
 
+	if (varPtr2 == NULL) {
+	    varPtr2 = TclLookupArrayElement(interp, varNameObj, elemNameObj,
+		    TCL_LEAVE_ERR_MSG, "set", 0, 1, varPtr, -1);
+	    if (varPtr2 == NULL) {
+		return TCL_ERROR;
+	    }
+	}
 	actualValue = TclPtrSetVarIdx(interp, varPtr2, varPtr,
 		varNameObj, elemNameObj, valueObj, TCL_LEAVE_ERR_MSG, -1);
     } else {

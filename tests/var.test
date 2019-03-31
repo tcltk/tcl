@@ -1479,6 +1479,102 @@ test var-24.24 {array default unset: errors} -setup {
 } -returnCodes error -cleanup {
     unset -nocomplain ary
 } -result * -match glob
+
+test var-25.1 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array value
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {wrong # args: should be "array value arrayName elementName ?value? ?init?"}
+test var-25.2 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array value ary
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {wrong # args: should be "array value arrayName elementName ?value? ?init?"}
+test var-25.3 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array value ary key a b c
+} -returnCodes error -cleanup {
+    unset -nocomplain ary
+} -result {wrong # args: should be "array value arrayName elementName ?value? ?init?"}
+test var-25.4 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    set ary "not an array"
+    array value ary key
+} -cleanup {
+    unset -nocomplain ary
+} -returnCodes error -result {"ary" isn't an array}
+test var-25.5 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array value ary key abc def
+} -cleanup {
+    unset -nocomplain ary
+} -returnCodes error -result {"ary" isn't an array}
+test var-25.6 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array value ary key abc def
+} -cleanup {
+    unset -nocomplain ary
+} -returnCodes error -result {expected boolean value but got "def"}
+test var-25.7 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array value ary key
+} -cleanup {
+    unset -nocomplain ary
+} -result {}
+test var-25.8 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array default set ary xyz
+    array value ary key
+} -cleanup {
+    unset -nocomplain ary
+} -result {}
+test var-25.9 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array value ary key abc
+} -cleanup {
+    unset -nocomplain ary
+} -result abc
+test var-25.10 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array default set ary xyz
+    list [array value ary key abc] $ary(key)
+} -cleanup {
+    unset -nocomplain ary
+} -result {abc xyz}
+test var-25.11 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    list [array value ary key abc true] $ary(key)
+} -cleanup {
+    unset -nocomplain ary
+} -result {abc abc}
+test var-25.12 {array value} -setup {
+    unset -nocomplain ary
+} -body {
+    array set ary {}
+    array default set ary xyz
+    list [array value ary key abc true] $ary(key)
+} -cleanup {
+    unset -nocomplain ary
+} -result {abc abc}
 
 catch {namespace delete ns}
 catch {unset arr}
