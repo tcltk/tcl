@@ -4000,7 +4000,7 @@ TestregexpXflags(
     int *eflagsPtr)		/* exec flags word */
 {
     size_t i;
-	int cflags, eflags;
+    int cflags, eflags;
 
     cflags = *cflagsPtr;
     eflags = *eflagsPtr;
