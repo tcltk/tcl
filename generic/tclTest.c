@@ -52,6 +52,7 @@ DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 static Tcl_DString delString;
 static Tcl_Interp *delInterp;
+static const Tcl_ObjType *properByteArrayType;
 
 /*
  * One of the following structures exists for each asynchronous handler
@@ -552,8 +553,7 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_Obj *listPtr;
-    Tcl_Obj **objv;
+    Tcl_Obj **objv, *objPtr;
     int objc, index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
@@ -574,6 +574,11 @@ Tcltest_Init(
     if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+
+    objPtr = Tcl_NewStringObj("abc", 3);
+    (void)Tcl_GetByteArrayFromObj(objPtr, &index);
+    properByteArrayType = objPtr->typePtr;
+    Tcl_DecrRefCount(objPtr);
 
     /*
      * Create additional commands and math functions for testing Tcl.
@@ -740,9 +745,9 @@ Tcltest_Init(
      * Check for special options used in ../tests/main.test
      */
 
-    listPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
-    if (listPtr != NULL) {
-	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+    objPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
+    if (objPtr != NULL) {
+	if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
@@ -5013,7 +5018,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n;
+    int n = 0;
     const char *p;
 
     if (objc != 2) {
@@ -5021,6 +5026,10 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
     p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
+    if ((p == NULL) || !Tcl_FetchIntRep(objv[1], properByteArrayType)) {
+	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
     return TCL_OK;
 }
