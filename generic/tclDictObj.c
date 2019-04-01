@@ -1658,7 +1658,7 @@ DictGetWithDefaultCmd(
     int numKeys;
 
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key value");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key default");
 	return TCL_ERROR;
     }
 
@@ -1668,7 +1668,8 @@ DictGetWithDefaultCmd(
 
     dictPtr = objv[1];
     keyPath = &objv[2];
-    numKeys = objc - 4;
+    numKeys = objc - 4;		/* Number of keys in keyPath; there's always
+				 * one extra key afterwards too. */
     keyPtr = objv[objc - 2];
     defaultPtr = objv[objc - 1];
 
@@ -1677,9 +1678,11 @@ DictGetWithDefaultCmd(
      */
 
     dictPtr = TclTraceDictPath(interp, dictPtr, numKeys, keyPath,
-	    DICT_PATH_READ);
+	    DICT_PATH_EXISTS);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
+    } else if (dictPtr == DICT_PATH_NON_EXISTENT) {
+	Tcl_SetObjResult(interp, defaultPtr);
     } else if (Tcl_DictObjGet(interp, dictPtr, keyPtr, &valuePtr) != TCL_OK) {
 	return TCL_ERROR;
     } else if (valuePtr == NULL) {
