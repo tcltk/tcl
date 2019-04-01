@@ -96,6 +96,10 @@
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
 #define mp_sub_d TclBN_mp_sub_d
+#define mp_tc_and TclBN_mp_tc_and
+#define mp_tc_div_2d TclBN_mp_tc_div_2d
+#define mp_tc_or TclBN_mp_tc_or
+#define mp_tc_xor TclBN_mp_tc_xor
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
@@ -307,10 +311,17 @@ EXTERN int		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 EXTERN int		TclBN_mp_set_long(mp_int *a, unsigned long i);
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
-/* Slot 73 is reserved */
-/* Slot 74 is reserved */
-/* Slot 75 is reserved */
-/* Slot 76 is reserved */
+/* 73 */
+EXTERN int		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 74 */
+EXTERN int		TclBN_mp_tc_or(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 75 */
+EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 76 */
+EXTERN int		TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
 /* 77 */
 EXTERN int		TclBN_mp_get_bit(const mp_int *a, int b);
 
@@ -391,10 +402,10 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
     void (*reserved71)(void);
     void (*reserved72)(void);
-    void (*reserved73)(void);
-    void (*reserved74)(void);
-    void (*reserved75)(void);
-    void (*reserved76)(void);
+    int (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
+    int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
+    int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
+    int (*tclBN_mp_tc_div_2d) (const mp_int *a, int b, mp_int *c); /* 76 */
     int (*tclBN_mp_get_bit) (const mp_int *a, int b); /* 77 */
 } TclTomMathStubs;
 
@@ -552,10 +563,14 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
-/* Slot 73 is reserved */
-/* Slot 74 is reserved */
-/* Slot 75 is reserved */
-/* Slot 76 is reserved */
+#define TclBN_mp_tc_and \
+	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
+#define TclBN_mp_tc_or \
+	(tclTomMathStubsPtr->tclBN_mp_tc_or) /* 74 */
+#define TclBN_mp_tc_xor \
+	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
+#define TclBN_mp_tc_div_2d \
+	(tclTomMathStubsPtr->tclBN_mp_tc_div_2d) /* 76 */
 #define TclBN_mp_get_bit \
 	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
 
