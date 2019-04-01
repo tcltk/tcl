@@ -859,10 +859,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_long, /* 70 */
     0, /* 71 */
     0, /* 72 */
-    0, /* 73 */
-    0, /* 74 */
-    0, /* 75 */
-    0, /* 76 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_tc_div_2d, /* 76 */
     TclBN_mp_get_bit, /* 77 */
 };
 

@@ -305,6 +305,10 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_tc_and.obj \
+	$(TMP_DIR)\bn_mp_tc_div_2d.obj \
+	$(TMP_DIR)\bn_mp_tc_or.obj \
+	$(TMP_DIR)\bn_mp_tc_xor.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \
