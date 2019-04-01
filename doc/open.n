@@ -280,7 +280,7 @@ been consumed. This may slow down \fBclose\fR noticeably.
 .VS "8.7, TIP 160"
 (Unix only; Windows has the equivalent option on console channels). This
 option is used to query or change the input mode of the serial channel under
-the assumption that it is talking to a termina, which controls how interactive
+the assumption that it is talking to a terminal, which controls how interactive
 input from users is handled. The following values for \fIinputMode\fR are
 supported:
 .RS
@@ -293,7 +293,7 @@ terminal editing capabilities enabled.
 \fBpassword\fR
 .
 indicates that non-echoing input should be used, with standard terminal
-editing capabilitied enabled but no writing of typed characters to the
+editing capabilities enabled but no writing of typed characters to the
 terminal (except for newlines). Some terminals may indicate this specially.
 .TP
 \fBraw\fR
