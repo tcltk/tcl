@@ -889,9 +889,10 @@ declare 243 {
 #    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
 #	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 #}
-declare 245 {
-    int Tcl_StringMatch(const char *str, const char *pattern)
-}
+# Removed in 9.0 (stub entry only)
+#declare 245 {
+#    int Tcl_StringMatch(const char *str, const char *pattern)
+#}
 # Removed in 9.0:
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)

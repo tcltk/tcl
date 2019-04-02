@@ -189,6 +189,12 @@ test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
 test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
     expr {"\u4e216" eq "[testbytestring \xe4\xb8\xa1]6"}
 } 1
+test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} testbytestring {
+    expr {"\U1e2165" eq "[testbytestring \xf0\x9e\x88\x96]5"}
+} 1
+test utf-10.6 {Tcl_UtfBackslash: stops after 6 hex chars} testbytestring {
+    expr {"\U10e2165" eq "[testbytestring \xf4\x8e\x88\x96]5"}
+} 1
 proc bsCheck {char num} {
     global errNum
     test utf-10.$errNum {backslash substitution} {

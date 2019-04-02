@@ -67,9 +67,7 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    4,4,4,4,4,4,4,4,
-    1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
 
 /*
@@ -447,14 +445,14 @@ Tcl_UtfToUniChar(
 #else
 	    *chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    if ((*chPtr - 0x10000) <= 0xFFFFF) {
+	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
 		return 4;
 	    }
 #endif
 	}
 
 	/*
-	 * A four-byte-character lead-byte not followed by two trail-bytes
+	 * A four-byte-character lead-byte not followed by three trail-bytes
 	 * represents itself.
 	 */
     }
@@ -622,8 +620,6 @@ Tcl_UtfToUniCharDString(
     while (p < end) {
 	if (Tcl_UtfCharComplete(p, end-p)) {
 	    p += TclUtfToUniChar(p, &ch);
-	} else if (((UCHAR(*p)-0x80)) < 0x20) {
-	    ch = cp1252[UCHAR(*p++)-0x80];
 	} else {
 	    ch = UCHAR(*p++);
 	}
@@ -676,8 +672,6 @@ TclUtfToWCharDString(
     while (p < end) {
 	if (Tcl_UtfCharComplete(p, end-p)) {
 	    p += TclUtfToWChar(p, &ch);
-	} else if (((UCHAR(*p)-0x80)) < 0x20) {
-	    ch = cp1252[UCHAR(*p++)-0x80];
 	} else {
 	    ch = UCHAR(*p++);
 	}

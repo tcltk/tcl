@@ -2125,33 +2125,6 @@ Tcl_ConcatObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_StringMatch --
- *
- *	See if a particular string matches a particular pattern.
- *
- * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
- *	matching operation permits the following special characters in the
- *	pattern: *?\[] (see the manual entry for details on what these mean).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_StringMatch(
-    const char *str,		/* String. */
-    const char *pattern)	/* Pattern, which may contain special
-				 * characters. */
-{
-    return Tcl_StringCaseMatch(str, pattern, 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_StringCaseMatch --
  *
  *	See if a particular string matches a particular pattern. Allows case
