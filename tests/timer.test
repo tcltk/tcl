@@ -205,11 +205,11 @@ test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
 } {before after}
 test timer-6.5 {Tcl_AfterCmd procedure, ms argument} {
     set x before
-    after 300 set x after
+    after 400 set x after
     after 200
     update
     set y $x
-    after 200
+    after 400
     update
     list $y $x
 } {before after}

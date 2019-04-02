@@ -15,6 +15,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testpurebytesobj [llength [info commands testpurebytesobj]]
+
 
 test lrange-1.1 {range of list elements} {
     lrange {a b c d} 1 2
@@ -107,6 +113,36 @@ test lrange-3.5 {compiled with calculated indices, start out of range (negative)
 test lrange-3.6 {compiled with calculated indices, end out of range (after end)} {
     list [lrange {a b c} 1 end+1] [lrange {a b c} 1+0 2+1] [lrange {a b c} 1 end+1] [lrange {a b c} end-1 3+1]
 } [lrepeat 4 {b c}]
+
+test lrange-3.7a {compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} {
+    list [lrange { } 0 1] [lrange [format %c 32] 0 1] [lrange [set a { }] 0 1] \
+	 [lrange { } 0-1 end+1] [lrange [format %c 32] 0-1 end+1] [lrange $a 0-1 end+1]
+} [lrepeat 6 {}]
+test lrange-3.7b {not compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} {
+    set cmd lrange
+    list [$cmd { } 0 1] [$cmd [format %c 32] 0 1] [$cmd [set a { }] 0 1] \
+	 [$cmd { } 0-1 end+1] [$cmd [format %c 32] 0-1 end+1] [$cmd $a 0-1 end+1]
+} [lrepeat 6 {}]
+# following 4 tests could cause a segfault on empty non-lists with tclEmptyStringRep
+# (as before the fix [58c46e74b931d3a1]):
+test lrange-3.7a.2 {compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} {
+    list [lrange {} 0 1] [lrange [lindex a -1] 0 1] [lrange [set a {}] 0 1] \
+	 [lrange {} 0-1 end+1] [lrange [lindex a -1] 0-1 end+1] [lrange $a 0-1 end+1]
+} [lrepeat 6 {}]
+test lrange-3.7b.2 {not compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} {
+    set cmd lrange
+    list [$cmd {} 0 1] [$cmd [lindex a -1] 0 1] [$cmd [set a {}] 0 1] \
+	 [$cmd {} 0-1 end+1] [$cmd [lindex a -1] 0-1 end+1] [$cmd $a 0-1 end+1]
+} [lrepeat 6 {}]
+test lrange-3.7c.2 {compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} {
+    list [lrange [testpurebytesobj] 0 1] [lrange [testpurebytesobj { }] 0 1] [lrange [set a [testpurebytesobj {}]] 0 1] \
+	 [lrange [testpurebytesobj] 0-1 end+1] [lrange [testpurebytesobj { }] 0-1 end+1] [lrange $a 0-1 end+1]
+} [lrepeat 6 {}]
+test lrange-3.7d.2 {not compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} {
+    set cmd lrange
+    list [$cmd [testpurebytesobj] 0 1] [$cmd [testpurebytesobj { }] 0 1] [$cmd [set a [testpurebytesobj {}]] 0 1] \
+	 [$cmd [testpurebytesobj] 0-1 end+1] [$cmd [testpurebytesobj { }] 0-1 end+1] [$cmd $a 0-1 end+1]
+} [lrepeat 6 {}]
 
 
 # cleanup

@@ -34,6 +34,9 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
 
@@ -201,9 +204,6 @@
 
 /* Is 'struct dirent64' in <sys/types.h>? */
 #undef HAVE_STRUCT_DIRENT64
-
-/* Is 'DIR64' in <sys/types.h>? */
-#undef HAVE_DIR64
 
 /* Define to 1 if the system has the type `struct in6_addr'. */
 #undef HAVE_STRUCT_IN6_ADDR
@@ -504,9 +504,6 @@
 
 /* Define as int if socklen_t is not available */
 #undef socklen_t
-
-/* Do we want to use the strtod() in compat? */
-#undef strtod
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t

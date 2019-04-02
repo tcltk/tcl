@@ -33,10 +33,6 @@ static int platformId;		/* Running under NT, or 95/98? */
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding = NULL;
-#endif
-
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
@@ -201,8 +197,6 @@ TclWinInit(
     if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
 	Tcl_Panic("Windows 9x is not a supported platform");
     }
-
-    TclWinResetInterfaces();
 }
 
 /*
@@ -282,10 +276,6 @@ TclWinNoBackslash(
 void
 TclpSetInterfaces(void)
 {
-#if TCL_UTF_MAX < 4
-    TclWinResetInterfaces();
-    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-#endif
 }
 
 /*
@@ -312,8 +302,6 @@ void
 TclWinEncodingsCleanup(void)
 {
     MountPointMap *dlIter, *dlIter2;
-
-    TclWinResetInterfaces();
 
     /*
      * Clean up the mount point map.
@@ -348,12 +336,6 @@ TclWinEncodingsCleanup(void)
 void
 TclWinResetInterfaces(void)
 {
-#if TCL_UTF_MAX < 4
-    if (winTCharEncoding != NULL) {
-	Tcl_FreeEncoding(winTCharEncoding);
-	winTCharEncoding = NULL;
-    }
-#endif
 }
 
 /*
@@ -578,21 +560,67 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 3
-    TCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
+#if TCL_UTF_MAX > 4
+    Tcl_UniChar ch = 0;
+    TCHAR *w, *wString;
+    const char *p, *end;
+    int oldLength;
+#endif
 
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (TCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return wp;
+    if (!string) {
+	return NULL;
+    }
+#if TCL_UTF_MAX > 4
+
+    if (len < 0) {
+	len = strlen(string);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + (int) ((len + 1) * sizeof(TCHAR)));
+    wString = (TCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    p = string;
+    end = string + len - 4;
+    while (p < end) {
+	p += TclUtfToUniChar(p, &ch);
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    end += 4;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + ((char *) w - (char *) wString));
+
+    return wString;
 #else
-    return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
+    return Tcl_UtfToUniCharDString(string, len, dsPtr);
 #endif
 }
 
@@ -604,25 +632,50 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 3
-    char *p;
-    int size;
+#if TCL_UTF_MAX > 4
+    const TCHAR *w, *wEnd;
+    char *p, *result;
+    int oldLength, blen = 1;
+#endif
 
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((TCHAR *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+#if TCL_UTF_MAX > 4
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
+    result = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = result;
+    wEnd = (TCHAR *)string + len;
+    for (w = (TCHAR *)string; w < wEnd; ) {
+	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling high surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	blen = Tcl_UniCharToUtf(*w, p);
+	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
+	w++;
+    }
+    if (!blen) {
+	/* Special case for handling high surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
+
+    return result;
 #else
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    (const char *) string, len, dsPtr);
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 #endif
 }
 

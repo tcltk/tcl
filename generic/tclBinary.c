@@ -1211,7 +1211,7 @@ BinaryFormatCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1581,7 +1581,7 @@ BinaryScanCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[TCL_UTF_MAX + 1] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -2395,7 +2395,7 @@ BinaryDecodeHex(
 
 	    c = *data++;
 	    if (!isxdigit((int) c)) {
-		if (strict || !isspace(c)) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badChar;
 		}
 		i--;
@@ -2742,7 +2742,7 @@ BinaryDecodeUu(
 	if (lineLen < 0) {
 	    c = *data++;
 	    if (c < 32 || c > 96) {
-		if (strict || !isspace(c)) {
+		if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 		i--;
@@ -2760,7 +2760,7 @@ BinaryDecodeUu(
 		d[i] = c = *data++;
 		if (c < 32 || c > 96) {
 		    if (strict) {
-			if (!isspace(c)) {
+			if (!TclIsSpaceProc(c)) {
 			    goto badUu;
 			} else if (c == '\n') {
 			    goto shortUu;
@@ -2804,7 +2804,7 @@ BinaryDecodeUu(
 		} else if (c >= 32 && c <= 96) {
 		    data--;
 		    break;
-		} else if (strict || !isspace(c)) {
+		} else if (strict || !TclIsSpaceProc(c)) {
 		    goto badUu;
 		}
 	    } while (data < dataend);
@@ -2914,6 +2914,11 @@ BinaryDecode64(
 	    } else if (i > 1) {
 		c = '=';
 	    } else {
+		if (strict && i <= 1) {
+		    /* single resp. unfulfilled char (each 4th next single char)
+		     * is rather bad64 error case in strict mode */
+		    goto bad64;
+		}
 		cut += 3;
 		break;
 	    }
@@ -2929,7 +2934,7 @@ BinaryDecode64(
 		if (c == '=' && i > 1) {
 		     value <<= 6;
 		     cut++;
-		} else if (!strict && isspace(c)) {
+		} else if (!strict && TclIsSpaceProc(c)) {
 		     i--;
 		} else {
 		    goto bad64;
@@ -2944,10 +2949,12 @@ BinaryDecode64(
 		value = (value << 6) | 0x3e;
 	    } else if (c == '/') {
 		value = (value << 6) | 0x3f;
-	    } else if (c == '=') {
+	    } else if (c == '=' && (
+		!strict || i > 1) /* "=" and "a=" is rather bad64 error case in strict mode */
+	    ) {
 		value <<= 6;
-		cut++;
-	    } else if (strict || !isspace(c)) {
+		if (i) cut++;
+	    } else if (strict || !TclIsSpaceProc(c)) {
 		goto bad64;
 	    } else {
 		i--;
@@ -2968,7 +2975,7 @@ BinaryDecode64(
 		goto bad64;
 	    }
 	    for (; data < dataend; data++) {
-		if (!isspace(*data)) {
+		if (!TclIsSpaceProc(*data)) {
 		    goto bad64;
 		}
 	    }

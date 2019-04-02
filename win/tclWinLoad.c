@@ -89,7 +89,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-        /* 
+        /*
          * Remember the first error on load attempt to be used if the
          * second load attempt below also fails.
         */

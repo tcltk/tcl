@@ -89,81 +89,6 @@ TclBN_revision(void)
 {
     return TCLTOMMATH_REVISION;
 }
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNAlloc --
- *
- *	Allocate memory for libtommath.
- *
- * Results:
- *	Returns a pointer to the allocated block.
- *
- * This procedure is a wrapper around Tcl_Alloc, needed because of a
- * mismatched type signature between Tcl_Alloc and malloc.
- *
- *----------------------------------------------------------------------
- */
-
-extern void *
-TclBNAlloc(
-    size_t x)
-{
-    return (void *) ckalloc((unsigned int) x);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNRealloc --
- *
- *	Change the size of an allocated block of memory in libtommath
- *
- * Results:
- *	Returns a pointer to the allocated block.
- *
- * This procedure is a wrapper around Tcl_Realloc, needed because of a
- * mismatched type signature between Tcl_Realloc and realloc.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-TclBNRealloc(
-    void *p,
-    size_t s)
-{
-    return (void *) ckrealloc((char *) p, (unsigned int) s);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNFree --
- *
- *	Free allocated memory in libtommath.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Memory is freed.
- *
- * This function is simply a wrapper around Tcl_Free, needed in libtommath
- * because of a type mismatch between free and Tcl_Free.
- *
- *----------------------------------------------------------------------
- */
-
-extern void
-TclBNFree(
-    void *p)
-{
-    ckree((char *) p);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -219,7 +144,7 @@ TclBNInitBignumFromLong(
     p = a->dp;
     while (v) {
 	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= MP_DIGIT_BIT;
+	v >>= DIGIT_BIT;
     }
     a->used = p - a->dp;
 }
@@ -287,7 +212,7 @@ TclBNInitBignumFromWideUInt(
 	Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
     }
 
-    a->sign = MP_ZPOS;
+    a->sign = 0;
 
     /*
      * Store the magnitude in the bignum.
@@ -296,7 +221,7 @@ TclBNInitBignumFromWideUInt(
     p = a->dp;
     while (v) {
 	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= MP_DIGIT_BIT;
+	v >>= DIGIT_BIT;
     }
     a->used = p - a->dp;
 }

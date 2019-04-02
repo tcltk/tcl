@@ -1512,10 +1512,10 @@ QuoteCmdLinePart(
 	QuoteCmdLineBackslash(dsPtr, start, *bspos, NULL);
 	start = *bspos;
     }
-    /* 
-     * escape all special chars enclosed in quotes like `"..."`, note that here we 
+    /*
+     * escape all special chars enclosed in quotes like `"..."`, note that here we
      * don't must escape `\` (with `\`), because it's outside of the main quotes,
-     * so `\` remains `\`, but important - not at end of part, because results as 
+     * so `\` remains `\`, but important - not at end of part, because results as
      * before the quote,  so `%\%\` should be escaped as `"%\%"\\`).
      */
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
@@ -1553,9 +1553,9 @@ BuildCommandLine(
     Tcl_DString ds;
 
     /* characters to enclose in quotes if unpaired quote flag set */
-    const static char *specMetaChars = "&|^<>!()%";
-    /* characters to enclose in quotes in any case (regardless unpaired-flag) */
-    const static char *specMetaChars2 = "%";
+    static const char specMetaChars[] = "&|^<>!()%";
+    /* character to enclose in quotes in any case (regardless unpaired-flag) */
+    static const char specMetaChars2[] = "%";
 
     /* Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1588,16 +1588,13 @@ BuildCommandLine(
 	if (arg[0] == '\0') {
 	    quote = CL_QUOTE;
 	} else {
-	    int count;
-	    Tcl_UniChar ch;
 	    for (start = arg;
 		*start != '\0' &&
 		    (quote & (CL_ESCAPE|CL_QUOTE)) != (CL_ESCAPE|CL_QUOTE);
-		start += count
+		start++
 	    ) {
-		count = Tcl_UtfToUniChar(start, &ch);
-		if (count > 1) continue;
-		if (Tcl_UniCharIsSpace(ch)) {
+		if (*start & 0x80) continue;
+		if (TclIsSpaceProc(*start)) {
 		    quote |= CL_QUOTE; /* quote only */
 		    if (bspos) { /* if backslash found - escape & quote */
 			quote |= CL_ESCAPE;
@@ -1670,7 +1667,7 @@ BuildCommandLine(
 		special++;
 	    }
 	    /* rest of argument (and escape backslashes before closing main quote) */
-	    QuoteCmdLineBackslash(&ds, start, special, 
+	    QuoteCmdLineBackslash(&ds, start, special,
 	    	(quote & CL_QUOTE) ? bspos : NULL);
 	}
 	if (quote & CL_QUOTE) {

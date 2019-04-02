@@ -251,7 +251,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
@@ -274,6 +273,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
+	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
@@ -298,11 +299,16 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_int.obj \
+	$(TMP_DIR)\bn_mp_set_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_tc_and.obj \
+	$(TMP_DIR)\bn_mp_tc_div_2d.obj \
+	$(TMP_DIR)\bn_mp_tc_or.obj \
+	$(TMP_DIR)\bn_mp_tc_xor.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \
@@ -378,14 +384,17 @@ dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 install:    install-binaries install-libraries install-docs install-pkgs
+!if $(SYMBOLS)
+install:    install-pdbs
+!endif
 setup:      default-setup
 
 test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.0 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.2 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.1 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.3 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
 runtest: setup $(TCLTEST) dlls $(CAT32)
@@ -911,6 +920,11 @@ install-msgs:
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+
+install-pdbs:
+	@echo Installing debug symbols
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
+# "emacs font-lock highlighting fix
 
 #---------------------------------------------------------------------
 # Clean up

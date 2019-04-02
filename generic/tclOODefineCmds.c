@@ -1083,6 +1083,8 @@ TclOODefineClassObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
+    Foundation *fPtr = TclOOGetFoundation(interp);
+    int wasClass, willBeClass;
 
     /*
      * Parse the context to get the object to operate on.
@@ -1118,11 +1120,19 @@ TclOODefineClassObjCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-
+    if (oPtr == clsPtr->thisPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"may not change classes into an instance of themselves", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    }
 
     /*
      * Set the object's class.
      */
+
+    wasClass = (oPtr->classPtr != NULL);
+    willBeClass = (TclOOIsReachable(fPtr->classCls, clsPtr));
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
@@ -1130,6 +1140,28 @@ TclOODefineClassObjCmd(
 	oPtr->selfCls = clsPtr;
 	AddRef(oPtr->selfCls->thisPtr);
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
+
+	/*
+	 * Create or delete the class guts if necessary.
+	 */
+
+	if (wasClass && !willBeClass) {
+	    /*
+	     * This is the most global of all epochs. Bump it! No cache can be
+	     * trusted!
+	     */
+
+	    TclOORemoveFromMixins(oPtr->classPtr, oPtr);
+	    oPtr->fPtr->epoch++;
+	    oPtr->flags |= DONT_DELETE;
+	    TclOODeleteDescendants(interp, oPtr);
+	    oPtr->flags &= ~DONT_DELETE;
+	    TclOOReleaseClassContents(interp, oPtr);
+		ckfree(oPtr->classPtr);
+		oPtr->classPtr = NULL;
+	} else if (!wasClass && willBeClass) {
+	    TclOOAllocClass(interp, oPtr);
+	}
 
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);

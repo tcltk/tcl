@@ -369,12 +369,12 @@ Tcl_ServiceModeHook(
 /*
  *----------------------------------------------------------------------
  *
- * TclAsyncInNotifier --
+ * TclAsyncNotifier --
  *
  *	This procedure is a no-op on Windows.
  *
  * Result:
- *	Always false.
+ *	Always true.
  *
  * Side effetcs:
  *	None.
@@ -382,11 +382,13 @@ Tcl_ServiceModeHook(
  */
 
 int
-TclAsyncInNotifier(
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    Tcl_ThreadId threadId,	/* Target thread. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
-    return 0;
+    return 1;
 }
 
 /*
@@ -629,31 +631,6 @@ Tcl_Sleep(
 	    --sleepTime;
 	}
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpSigProcMask --
- *
- *	This routine is a no-op on Windows.
- *
- * Result:
- *	Always EINVAL.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclpSigProcMask(
-    int how,
-    const void *set,
-    void *oldset)
-{
-    return EINVAL;
 }
 
 /*

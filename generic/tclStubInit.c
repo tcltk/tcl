@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -106,10 +110,6 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
 
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
-
 static int
 TclpIsAtty(int fd)
 {
@@ -188,24 +188,67 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
+#if TCL_UTF_MAX > 4
+    Tcl_UniChar ch = 0;
+    wchar_t *w, *wString;
+    const char *p, *end;
+    int oldLength;
+#endif
 
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
+    if (!string) {
+	return NULL;
     }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
+#if TCL_UTF_MAX > 4
+
+    if (len < 0) {
+	len = strlen(string);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + (int) ((len + 1) * sizeof(wchar_t)));
+    wString = (wchar_t *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    p = string;
+    end = string + len - 4;
+    while (p < end) {
+	p += TclUtfToUniChar(p, &ch);
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    end += 4;
+    while (p < end) {
+	if (Tcl_UtfCharComplete(p, end-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	} else {
+	    ch = UCHAR(*p++);
+	}
+	if (ch > 0xFFFF) {
+	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
+	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
+	} else {
+	    *w++ = ch;
+	}
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    oldLength + ((char *) w - (char *) wString));
+
+    return (char *)wString;
+#else
+    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
 #endif
 }
 
@@ -215,28 +258,50 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
-    char *p;
-    int size;
+#if TCL_UTF_MAX > 4
+    const wchar_t *w, *wEnd;
+    char *p, *result;
+    int oldLength, blen = 1;
+#endif
 
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
+#if TCL_UTF_MAX > 4
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
+    result = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = result;
+    wEnd = (wchar_t *)string + len;
+    for (w = (wchar_t *)string; w < wEnd; ) {
+	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling high surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	blen = Tcl_UniCharToUtf(*w, p);
+	p += blen;
+	if ((*w >= 0xD800) && (blen < 3)) {
+	    /* Indication that high surrogate is handled */
+	    blen = 0;
+	}
+	w++;
     }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
+    if (!blen) {
+	/* Special case for handling high surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
+
+    return result;
+#else
+    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
 #endif
 }
 
@@ -794,6 +859,17 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromLong, /* 64 */
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
+    TclBN_mp_expt_d_ex, /* 67 */
+    0, /* 68 */
+    0, /* 69 */
+    TclBN_mp_set_long, /* 70 */
+    0, /* 71 */
+    0, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {

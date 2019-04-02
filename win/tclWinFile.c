@@ -549,6 +549,11 @@ TclWinSymLinkDelete(
  *--------------------------------------------------------------------
  */
 
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 static Tcl_Obj *
 WinReadLinkDirectory(
     const TCHAR *linkDirPath)
@@ -666,6 +671,10 @@ WinReadLinkDirectory(
     Tcl_SetErrno(EINVAL);
     return NULL;
 }
+
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic pop
+#endif
 
 /*
  *--------------------------------------------------------------------
@@ -1469,9 +1478,9 @@ TclpGetUserHome(
     domain = Tcl_UtfFindFirst(name, '@');
     if (domain == NULL) {
 	const char *ptr;
-	
+
 	/* no domain - first, check it's the current user */
-	if ( (ptr = TclpGetUserName(&ds)) != NULL 
+	if ( (ptr = TclpGetUserName(&ds)) != NULL
 	  && strcasecmp(name, ptr) == 0
 	) {
 	    /* try safest and fastest way to get current user home */
@@ -1494,7 +1503,7 @@ TclpGetUserHome(
 	Tcl_DStringInit(&ds);
 	wName = (WCHAR *) Tcl_WinUtfToTChar(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
-	    /* 
+	    /*
 	     * user does not exists - if domain was not specified,
 	     * try again using current domain.
 	     */
@@ -1609,7 +1618,7 @@ NativeAccess(
 	return 0;
     }
 
-    /* 
+    /*
      * If it's not a directory (assume file), do several fast checks:
      */
     if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
@@ -2040,7 +2049,7 @@ NativeStat(
      */
 
     fileHandle = CreateFile(nativePath, GENERIC_READ,
-	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 	    NULL, OPEN_EXISTING,
 	    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
