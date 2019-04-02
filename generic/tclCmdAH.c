@@ -795,7 +795,7 @@ Tcl_ExitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int value;
+    Tcl_WideInt value;
 
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
@@ -804,10 +804,10 @@ Tcl_ExitObjCmd(
 
     if (objc == 1) {
 	value = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+    } else if (TclGetWideBitsFromObj(interp, objv[1], &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_Exit(value);
+    Tcl_Exit((int)value);
     /*NOTREACHED*/
     return TCL_OK;		/* Better not ever reach this! */
 }
