@@ -8734,7 +8734,9 @@ ExecuteExtendedBinaryMathOp(
 	switch (type2) {
 	case TCL_NUMBER_LONG:
 	    l2 = *((const long *) ptr2);
+#ifndef TCL_WIDE_INT_IS_LONG
     pwrLongExpon:
+#endif
 	    if (l2 == 0) {
 		/*
 		 * Anything to the zero power is 1.
@@ -8776,7 +8778,9 @@ ExecuteExtendedBinaryMathOp(
 	switch (type1) {
 	case TCL_NUMBER_LONG:
 	    l1 = *((const long *)ptr1);
+#ifndef TCL_WIDE_INT_IS_LONG
     pwrLongBase:
+#endif
 	    switch (l1) {
 	    case 0:
 		/*
