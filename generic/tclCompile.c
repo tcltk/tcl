@@ -678,7 +678,7 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    size_t numWords, int line, int *clNext, int **lines,
+			    int numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -3239,7 +3239,7 @@ EnterCmdWordData(
     int srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
     const char *cmd,
-    size_t numWords,
+    int numWords,
     int line,
     int *clNext,
     int **wlines,
@@ -3247,8 +3247,7 @@ EnterCmdWordData(
 {
     ECL *ePtr;
     const char *last;
-    size_t wordIdx;
-    int wordLine, *wwlines, *wordNext;
+    int wordIdx, wordLine, *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
