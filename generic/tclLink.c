@@ -29,7 +29,7 @@ typedef struct Link {
 				 * needed during trace callbacks, since the
 				 * actual variable may be aliased at that time
 				 * via upvar. */
-    char *addr;			/* Location of C variable. */
+    void *addr;			/* Location of C variable. */
     int bytes;			/* Size of C variable array. This is 0 when
 				 * single variables, and >0 used for array
 				 * variables. */
@@ -137,7 +137,7 @@ int
 Tcl_LinkVar(
     Tcl_Interp *interp,		/* Interpreter in which varName exists. */
     const char *varName,	/* Name of a global variable in interp. */
-    char *addr,			/* Address of a C variable to be linked to
+    void *addr,			/* Address of a C variable to be linked to
 				 * varName. */
     int type)			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
