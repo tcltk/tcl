@@ -20,6 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testlink [llength [info commands testlink]]
+testConstraint testlinkarray [llength [info commands testlinkarray]]
 
 foreach i {int real bool string} {
     unset -nocomplain $i
@@ -88,7 +89,7 @@ test link-2.5 {writing bad values into variables} -setup {
     testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set wide gorp} msg] $msg $bool
-} -result {1 {can't set "wide": variable must have integer value} 1}
+} -result {1 {can't set "wide": variable must have wide integer value} 1}
 test link-2.6 {writing C variables from Tcl} -constraints {testlink} -setup {
     testlink delete
 } -body {
@@ -363,7 +364,7 @@ test link-7.7 {access to linked variables via upvar} -setup {
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink set -4 16.3 1 {} 778899 {} {} {} {} {} {} {} {} {}
     list [catch x msg] $msg $wide
-} -result {1 {can't set "y": variable must have integer value} 778899}
+} -result {1 {can't set "y": variable must have wide integer value} 778899}
 
 test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
     proc x args {
@@ -398,6 +399,456 @@ test link-8.3 {Tcl_UpdateLinkedVar procedure, read-only variable} {testlink} {
 	testlink update 47 {} {} {} {} {} {} {} {} {} {} {} {} {}
     } msg] $msg $int
 } {0 {} 47}
+
+test link-9.1 {linkarray usage messages} {
+    set mylist [list]
+    catch {testlinkarray} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray update} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray remove} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray create} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray create xx 1 my} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {testlinkarray create char* 0 my} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    join $mylist "\n"
+} {wrong # args: should be "testlinkarray option args"
+bad option "x": must be update, remove, or create
+
+
+wrong # args: should be "testlinkarray create ?-readonly? type size name ?address?"
+bad type "xx": must be char, uchar, short, ushort, int, uint, long, ulong, wide, uwide, float, double, string, char*, or binary
+wrong array size given}
+
+test link-10.1 {linkarray char*} {
+    set mylist [list]
+    testlinkarray create char* 1 ::my(var)
+    lappend mylist [set ::my(var) ""]
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create char* 4 ::my(var)
+    set ::my(var) x
+    catch {set ::my(var) xyzz} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r char* 4 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {
+can't set "::my(var)": wrong size of char* value
+can't set "::my(var)": wrong size of char* value
+can't set "::my(var)": linked variable is read-only}
+
+test link-11.1 {linkarray char} {
+    set mylist [list]
+    testlinkarray create char 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1234} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create char 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r char 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have char value
+120
+can't set "::my(var)": variable must have char value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-12.1 {linkarray unsigned char} {
+    set mylist [list]
+    testlinkarray create uchar 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1234} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) -1} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create uchar 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r uchar 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have unsigned char value
+120
+can't set "::my(var)": variable must have unsigned char value
+can't set "::my(var)": variable must have unsigned char value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-13.1 {linkarray short} {
+    set mylist [list]
+    testlinkarray create short 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 123456} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create short 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r short 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have short value
+120
+can't set "::my(var)": variable must have short value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-14.1 {linkarray unsigned short} {
+    set mylist [list]
+    testlinkarray create ushort 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 123456} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) -1} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create ushort 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r ushort 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have unsigned short value
+120
+can't set "::my(var)": variable must have unsigned short value
+can't set "::my(var)": variable must have unsigned short value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-15.1 {linkarray int} {
+    set mylist [list]
+    testlinkarray create int 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e3} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create int 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r int 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have integer value
+120
+can't set "::my(var)": variable must have integer value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-16.1 {linkarray unsigned int} {
+    set mylist [list]
+    testlinkarray create uint 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e33} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) -1} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create uint 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r uint 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have unsigned int value
+120
+can't set "::my(var)": variable must have unsigned int value
+can't set "::my(var)": variable must have unsigned int value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-17.1 {linkarray long} {
+    set mylist [list]
+    testlinkarray create long 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e33} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create long 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r long 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have long value
+120
+can't set "::my(var)": variable must have long value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-18.1 {linkarray unsigned long} {
+    set mylist [list]
+    testlinkarray create ulong 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e33} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) -1} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create ulong 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r ulong 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have unsigned long value
+120
+can't set "::my(var)": variable must have unsigned long value
+can't set "::my(var)": variable must have unsigned long value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-19.1 {linkarray wide} {
+    set mylist [list]
+    testlinkarray create wide 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e33} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create wide 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r wide 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have wide integer value
+120
+can't set "::my(var)": variable must have wide integer value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-20.1 {linkarray unsigned wide} {
+    set mylist [list]
+    testlinkarray create uwide 1 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist [set ::my(var) 120]
+    catch {set ::my(var) 1e33} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) -1} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    testlinkarray create uwide 4 ::my(var)
+    catch {set ::my(var) {1 2 3}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) {1 2 3 4}
+    lappend mylist $my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r uwide 2 ::my(var)
+    catch {set ::my(var) {1 2}} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": variable must have unsigned wide int value
+120
+can't set "::my(var)": variable must have unsigned wide int value
+can't set "::my(var)": variable must have unsigned wide int value
+can't set "::my(var)": wrong dimension
+1 2 3 4
+can't set "::my(var)": linked variable is read-only}
+
+test link-21.1 {linkarray string} {
+    set mylist [list]
+    testlinkarray create string 1 ::my(var)
+    lappend mylist [set ::my(var) ""]
+    lappend mylist [set ::my(var) "xyz"]
+    lappend mylist $::my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r string 4 ::my(var)
+    catch {set ::my(var) x} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {
+xyz
+xyz
+can't set "::my(var)": linked variable is read-only}
+
+test link-22.1 {linkarray binary} {
+    set mylist [list]
+    testlinkarray create binary 1 ::my(var)
+    set ::my(var) x
+    catch {set ::my(var) xy} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    lappend mylist $::my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create binary 4 ::my(var)
+    catch {set ::my(var) abc} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    catch {set ::my(var) abcde} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    set ::my(var) abcd
+    lappend mylist $::my(var)
+    testlinkarray remove ::my(var)
+    testlinkarray create -r binary 4 ::my(var)
+    catch {set ::my(var) xyzv} my(msg)
+    lappend mylist $my(msg)
+    unset my(msg)
+    testlinkarray remove ::my(var)
+    unset my
+    join $mylist "\n"
+} {can't set "::my(var)": wrong size of binary value
+x
+can't set "::my(var)": wrong size of binary value
+can't set "::my(var)": wrong size of binary value
+abcd
+can't set "::my(var)": linked variable is read-only}
 
 catch {testlink set 0 0 0 - 0 0 0 0 0 0 0 0 0 0}
 catch {testlink delete}
