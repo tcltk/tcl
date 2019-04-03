@@ -423,6 +423,7 @@ GenerateHeader(
     Tcl_Obj *value;
     int len, result = TCL_ERROR;
     size_t length;
+    Tcl_WideInt wideValue;
     const char *valueStr;
     Tcl_Encoding latin1enc;
     static const char *const types[] = {
@@ -486,10 +487,11 @@ GenerateHeader(
 
     if (GetValue(interp, dictObj, "time", &value) != TCL_OK) {
 	goto error;
-    } else if (value != NULL && Tcl_GetLongFromObj(interp, value,
-	    (long *) &headerPtr->header.time) != TCL_OK) {
+    } else if (value != NULL && Tcl_GetWideIntFromObj(interp, value,
+	    &wideValue) != TCL_OK) {
 	goto error;
     }
+    headerPtr->header.time = wideValue;
 
     if (GetValue(interp, dictObj, "type", &value) != TCL_OK) {
 	goto error;
@@ -1517,7 +1519,7 @@ Tcl_ZlibStreamGet(
 
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
 	    itemPtr = TclGetByteArrayFromObj(itemObj, &itemLen);
-	    if (itemLen-zshPtr->outPos >= (size_t)(count-dataPos)) {
+	    if (itemLen-zshPtr->outPos + dataPos >= count) {
 		size_t len = count - dataPos;
 
 		memcpy(dataPtr + dataPos, itemPtr + zshPtr->outPos, len);

@@ -1066,7 +1066,7 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
-	    int instLen = parsePtr->commandSize;
+	    size_t instLen = parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 
 	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
