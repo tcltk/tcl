@@ -1445,7 +1445,7 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[TCL_UTF_MAX] = "";
+	    char buf[4] = "";
 
 	    length = Tcl_UniCharToUtf(ch, buf);
 	    if ((ch >= 0xD800) && (length < 3)) {
@@ -4373,6 +4373,11 @@ usage:
 	middle *= TclpWideClickInMicrosec();
     #endif
 
+	if (!count) { /* no iterations - avoid divide by zero */
+	    objs[0] = objs[2] = objs[4] = Tcl_NewWideIntObj(0);
+	    goto retRes;
+	}
+
 	/* if not calibrate */
 	if (!calibrate) {
 	    /* minimize influence of measurement overhead */
@@ -4425,9 +4430,14 @@ usage:
 	    objs[4] = Tcl_NewWideIntObj((count / middle) * 1000000);
 	}
 
+    retRes:
 	/* estimated net execution time (in millisecs) */
 	if (!calibrate) {
-	    objs[6] = Tcl_ObjPrintf("%.3f", (double)middle / 1000);
+	    if (middle >= 1) {
+		objs[6] = Tcl_ObjPrintf("%.3f", (double)middle / 1000);
+	    } else {
+		objs[6] = Tcl_NewWideIntObj(0);
+	    }
 	    TclNewLiteralStringObj(objs[7], "nett-ms");
 	}
 

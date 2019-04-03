@@ -416,6 +416,8 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
 #   define TclOldFreeObj 0
+#   undef Tcl_StringMatch
+#   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
 #   define TclBN_fast_s_mp_mul_digs 0
 #   define TclBN_fast_s_mp_sqr 0

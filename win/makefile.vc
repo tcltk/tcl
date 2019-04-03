@@ -252,7 +252,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \

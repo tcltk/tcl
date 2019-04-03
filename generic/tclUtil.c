@@ -1654,7 +1654,7 @@ Tcl_Backslash(
     int *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
 {
-    char buf[TCL_UTF_MAX] = "";
+    char buf[4] = "";
     Tcl_UniChar ch = 0;
 
     Tcl_UtfBackslash(src, readPtr, buf);
@@ -2186,6 +2186,7 @@ Tcl_ConcatObj(
     return resPtr;
 }
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  *----------------------------------------------------------------------
  *
@@ -2204,6 +2205,7 @@ Tcl_ConcatObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_StringMatch
 int
 Tcl_StringMatch(
     const char *str,		/* String. */
@@ -2212,7 +2214,7 @@ Tcl_StringMatch(
 {
     return Tcl_StringCaseMatch(str, pattern, 0);
 }
-
+#endif /* TCL_NO_DEPRECATED */
 /*
  *----------------------------------------------------------------------
  *
@@ -3446,7 +3448,7 @@ TclPrecTraceProc(
     int flags)			/* Information about what happened. */
 {
     Tcl_Obj *value;
-    int prec;
+    Tcl_WideInt prec;
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
@@ -3486,11 +3488,11 @@ TclPrecTraceProc(
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
-	    || Tcl_GetIntFromObj(NULL, value, &prec) != TCL_OK
+	    || Tcl_GetWideIntFromObj(NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
 	return (char *) "improper value for precision";
     }
-    *precisionPtr = prec;
+    *precisionPtr = (int)prec;
     return NULL;
 }
 #endif /* !TCL_NO_DEPRECATED)*/

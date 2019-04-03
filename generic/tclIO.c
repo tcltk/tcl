@@ -6216,7 +6216,7 @@ ReadChars(
 		     * and do not encounter the eof char this time.
 		     */
 
-		    dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		    statePtr->flags = savedFlags;
 		    statePtr->inputEncodingFlags = savedIEFlags;
 		    statePtr->inputEncodingState = savedState;
@@ -6241,7 +6241,7 @@ ReadChars(
 		 * here in this call.
 		 */
 
-		dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		statePtr->flags = savedFlags;
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
@@ -6334,7 +6334,7 @@ ReadChars(
 	     * bytes demanded by the Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - 1 + TCL_UTF_MAX - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - dst + (TCL_UTF_MAX - 1);
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
