@@ -672,9 +672,10 @@ can't set "::my(var)": wrong dimension
 1 2 3 4
 can't set "::my(var)": linked variable is read-only}
 
-test link-18.1 {linkarray unsigned long} -setup {
+test link-18.1 {linkarray unsigned long} -constraints knownBug -setup {
     set mylist [list]
 } -body {
+    # Implementation needs to use bignums on 64-bit platforms
     testlinkarray create ulong 1 ::my(var)
     catch {set ::my(var) x} msg
     lappend mylist $msg
@@ -735,9 +736,10 @@ can't set "::my(var)": wrong dimension
 1 2 3 4
 can't set "::my(var)": linked variable is read-only}
 
-test link-20.1 {linkarray unsigned wide} -setup {
+test link-20.1 {linkarray unsigned wide} -constraints knownBug -setup {
     set mylist [list]
 } -body {
+    # Implementation needs to use bignums
     testlinkarray create uwide 1 ::my(var)
     catch {set ::my(var) x} msg
     lappend mylist $msg
