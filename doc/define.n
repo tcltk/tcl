@@ -52,7 +52,7 @@ the \fBmethod\fR definition, below.
 .RS
 .PP
 Class methods can be called on either the class itself or on the instances of
-that class. When they are called, the current object (see the \fBself\R and
+that class. When they are called, the current object (see the \fBsel\fR and
 \fBmy\fR commands) is the class on which they are called or the class of the
 instance on which they are called, depending on whether they are called on the
 class or an instance of the class, respectively. If called on a subclass or

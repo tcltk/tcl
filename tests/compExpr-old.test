@@ -588,6 +588,7 @@ test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
 test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
+
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}
     set a(VALUE) ff15

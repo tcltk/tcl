@@ -29,10 +29,8 @@
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
-#undef Tcl_NewBooleanObj
 #undef Tcl_NewByteArrayObj
 #undef Tcl_NewDoubleObj
-#undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
 #undef Tcl_DbNewLongObj
@@ -41,15 +39,9 @@
 #undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-#undef Tcl_Panic
-#undef Tcl_FindExecutable
 #undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
-#undef TclSockMinimumBuffers
-#undef Tcl_SetIntObj
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
@@ -946,7 +938,7 @@ const TclStubs tclStubs = {
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
     0, /* 244 */
-    Tcl_StringMatch, /* 245 */
+    0, /* 245 */
     0, /* 246 */
     0, /* 247 */
     Tcl_TraceVar2, /* 248 */

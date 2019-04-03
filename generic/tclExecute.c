@@ -5006,7 +5006,7 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[TCL_UTF_MAX] = "";
+	    char buf[4] = "";
 	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
@@ -8030,7 +8030,11 @@ ExecuteExtendedBinaryMathOp(
 
     overflowExpon:
 	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	if (big2.used > 1) {
+	if ((big2.used > 1)
+#if DIGIT_BIT > 28
+		|| ((big2.used == 1) && (big2.dp[0] >= (1<<28)))
+#endif
+	) {
 	    mp_clear(&big2);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));

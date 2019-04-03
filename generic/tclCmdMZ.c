@@ -1447,7 +1447,7 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[TCL_UTF_MAX] = "";
+	    char buf[4] = "";
 
 	    end = Tcl_UniCharToUtf(ch, buf);
 	    if ((ch >= 0xD800) && (end < 3)) {
