@@ -2379,6 +2379,12 @@ declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
 }
 
+# TIP#312 New Tcl_LinkArray() function
+declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, int size)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
