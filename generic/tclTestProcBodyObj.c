@@ -340,7 +340,7 @@ ProcBodyTestCheckObjCmd(
     }
 
     version = Tcl_PkgPresent(interp, packageName, packageVersion, 1);
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 	    strcmp(version, packageVersion) == 0));
     return TCL_OK;
 }
