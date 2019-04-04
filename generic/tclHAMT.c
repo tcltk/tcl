@@ -17,6 +17,11 @@
 
 #if defined(HAVE_INTRIN_H)
 #    include <intrin.h>
+#ifdef _WIN64
+#    pragma intrinsic(_BitScanForward64)
+#else
+#    pragma intrinsic(_BitScanForward)
+#endif
 #endif
 
 /*
@@ -484,8 +489,10 @@ static inline int
 NumBits(
     size_t value)
 {
-#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)))
         return __builtin_popcountll((long long)value);
+#elif defined(_MSC_VER)
+        return __popcnt(value);
 #else
 #error  NumBits not implemented!
 #endif
@@ -510,8 +517,16 @@ static inline int
 LSB(
     size_t value)
 {
-#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)))
     return __builtin_ctzll(value);
+#elif defined(_MSC_VER) && defined(_WIN64)
+    unsigned long r = 64;
+    _BitScanForward64(&r, value);
+    return r;
+#elif defined(_MSC_VER)
+    unsigned long r = 32;
+    _BitScanForward(&r, value);
+    return r;
 #else
 #error  LSB not implemented!
 #endif
@@ -1124,8 +1139,8 @@ ArrayMap AMMergeContents(
     int *identicalPtr,
     Collision *scratchPtr)
 {
-    ArrayMap new, am;
-    KVList l;
+    ArrayMap new, am = NULL;
+    KVList l = NULL;
     int numList, numSubnode, goodOneSlots = 0, goodTwoSlots = 0;
     int identical = 1;
     size_t size = 0;

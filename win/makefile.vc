@@ -158,6 +158,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
 	$(TMP_DIR)\tclBinary.obj \
+	$(TMP_DIR)\tclBrodnik.obj \
 	$(TMP_DIR)\tclCkalloc.obj \
 	$(TMP_DIR)\tclClock.obj \
 	$(TMP_DIR)\tclCmdAH.obj \
@@ -181,6 +182,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclFileName.obj \
 	$(TMP_DIR)\tclGet.obj \
 	$(TMP_DIR)\tclHash.obj \
+	$(TMP_DIR)\tclHAMT.obj \
+	$(TMP_DIR)\tclHAMTObj.obj \
 	$(TMP_DIR)\tclHistory.obj \
 	$(TMP_DIR)\tclIndexObj.obj \
 	$(TMP_DIR)\tclInterp.obj \

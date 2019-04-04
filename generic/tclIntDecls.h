@@ -583,6 +583,8 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 				const char *pkgName,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
+/* 258 */
+EXTERN int		TclMSB(size_t n);
 
 typedef struct TclIntStubs {
     int magic;
@@ -846,6 +848,7 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
+    int (*tclMSB) (size_t n); /* 258 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1263,6 +1266,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticPackage \
 	(tclIntStubsPtr->tclStaticPackage) /* 257 */
+#define TclMSB \
+	(tclIntStubsPtr->tclMSB) /* 258 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

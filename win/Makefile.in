@@ -279,6 +279,7 @@ GENERIC_OBJS = \
 	tclAsync.$(OBJEXT) \
 	tclBasic.$(OBJEXT) \
 	tclBinary.$(OBJEXT) \
+	tclBrodnik.$(OBJEXT) \
 	tclCkalloc.$(OBJEXT) \
 	tclClock.$(OBJEXT) \
 	tclCmdAH.$(OBJEXT) \
@@ -301,6 +302,8 @@ GENERIC_OBJS = \
 	tclFCmd.$(OBJEXT) \
 	tclFileName.$(OBJEXT) \
 	tclGet.$(OBJEXT) \
+	tclHAMT.$(OBJEXT) \
+	tclHAMTObj.$(OBJEXT) \
 	tclHash.$(OBJEXT) \
 	tclHistory.$(OBJEXT) \
 	tclIndexObj.$(OBJEXT) \

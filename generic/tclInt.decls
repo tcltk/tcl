@@ -1057,6 +1057,9 @@ declare 257 {
     void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
+declare 258 {
+    int	TclMSB(size_t n)
+}
 
 ##############################################################################
 
