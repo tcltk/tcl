@@ -15,6 +15,7 @@
  */
 
 #include "tclInt.h"
+#include "tommath.h"
 #include <math.h>
 
 /*
@@ -458,6 +459,45 @@ GetWide(
 }
 
 static inline int
+GetUWide(
+    Tcl_Obj *objPtr,
+    Tcl_WideUInt *uwidePtr)
+{
+    Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
+    ClientData clientData;
+    int type;
+
+    if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
+	if (type == TCL_NUMBER_BIG) {
+	    mp_int num;
+	    Tcl_WideUInt scratch, value = 0;
+	    unsigned long numBytes = sizeof(Tcl_WideUInt);
+	    unsigned char *bytes = (unsigned char *) &scratch;
+
+	    Tcl_GetBignumFromObj(NULL, objPtr, &num);
+	    if (num.sign) {
+		return 1;
+	    }
+	    if (mp_to_unsigned_bin_n(&num, bytes, &numBytes) != MP_OKAY) {
+		return 1;
+	    }
+	    while (numBytes-- > 0) {
+		value = (value << CHAR_BIT) | *bytes++;
+	    }
+	    *uwidePtr = value;
+	    return 0;
+	} else {
+	    if (Tcl_GetWideIntFromObj(NULL, objPtr, widePtr) == TCL_OK
+		    && (*widePtr >= 0)) {
+		return 0;
+	    }
+	}
+    }
+
+    return (GetInvalidWideFromObj(objPtr, widePtr) != TCL_OK);
+}
+
+static inline int
 GetDouble(
     Tcl_Obj *objPtr,
     double *dblPtr)
@@ -475,6 +515,29 @@ GetDouble(
 #endif
 	return GetInvalidDoubleFromObj(objPtr, dblPtr) != TCL_OK;
     }
+}
+
+static inline int
+EqualDouble(
+    double a,
+    double b)
+{
+    return (a == b)
+#ifdef ACCEPT_NAN
+	|| (TclIsNaN(a) && TclIsNaN(b))
+#endif
+	;
+}
+
+static inline int
+IsSpecial(
+    double a)
+{
+    return TclIsInfinite(a)
+#ifdef ACCEPT_NAN
+	|| TclIsNaN(a)
+#endif
+	;
 }
 
 /*
@@ -514,6 +577,7 @@ LinkTraceProc(
     Tcl_Obj *valueObj;
     int valueInt;
     Tcl_WideInt valueWide;
+    Tcl_WideUInt valueUWide;
     double valueDouble;
     int objc;
     Tcl_Obj **objv;
@@ -569,8 +633,7 @@ LinkTraceProc(
 		changed = (LinkedVar(int) != linkPtr->lastValue.i);
 		break;
 	    case TCL_LINK_DOUBLE:
-		/* FIXME: handle NaN */
-		changed = (LinkedVar(double) != linkPtr->lastValue.d);
+		changed = !EqualDouble(LinkedVar(double), linkPtr->lastValue.d);
 		break;
 	    case TCL_LINK_WIDE_INT:
 		changed = (LinkedVar(Tcl_WideInt) != linkPtr->lastValue.w);
@@ -602,8 +665,7 @@ LinkTraceProc(
 		break;
 #endif
 	    case TCL_LINK_FLOAT:
-		/* FIXME: handle NaN */
-		changed = (LinkedVar(float) != linkPtr->lastValue.f);
+		changed = !EqualDouble(LinkedVar(float), linkPtr->lastValue.f);
 		break;
 	    case TCL_LINK_STRING:
 	    case TCL_LINK_CHARS:
@@ -942,50 +1004,46 @@ LinkTraceProc(
     case TCL_LINK_ULONG:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
-		if (GetWide(objv[i], &valueWide)
-			|| !InRange(0, valueWide, ULONG_MAX)) {
+		if (GetUWide(objv[i], &valueUWide)
+			|| !InRange(0, valueUWide, ULONG_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
 			    "variable array must have unsigned long value";
 		}
-		linkPtr->lastValue.ulPtr[i] = (unsigned long) valueWide;
+		linkPtr->lastValue.ulPtr[i] = (unsigned long) valueUWide;
 	    }
 	} else {
-	    if (GetWide(valueObj, &valueWide)
-		    || !InRange(0, valueWide, ULONG_MAX)) {
+	    if (GetUWide(valueObj, &valueUWide)
+		    || !InRange(0, valueUWide, ULONG_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned long value";
 	    }
 	    LinkedVar(unsigned long) = linkPtr->lastValue.ul =
-		    (unsigned long) valueWide;
+		    (unsigned long) valueUWide;
 	}
 	break;
 #endif
 
     case TCL_LINK_WIDE_UINT:
-	/*
-	 * FIXME: represent as a bignum.
-	 */
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
-		if (GetWide(objv[i], &valueWide)) {
+		if (GetUWide(objv[i], &valueUWide)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
 			    "variable array must have unsigned wide int value";
 		}
-		linkPtr->lastValue.uwPtr[i] = (Tcl_WideUInt) valueWide;
+		linkPtr->lastValue.uwPtr[i] = valueUWide;
 	    }
 	} else {
-	    if (GetWide(valueObj, &valueWide)) {
+	    if (GetUWide(valueObj, &valueUWide)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned wide int value";
 	    }
-	    LinkedVar(Tcl_WideUInt) = linkPtr->lastValue.uw =
-		    (Tcl_WideUInt) valueWide;
+	    LinkedVar(Tcl_WideUInt) = linkPtr->lastValue.uw = valueUWide;
 	}
 	break;
 
@@ -993,9 +1051,8 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetDouble(objv[i], &valueDouble)
-			&& !InRange(FLT_MIN, valueDouble, FLT_MAX)
-		        && !TclIsInfinite(valueDouble)
-			&& !TclIsNaN(valueDouble)) {
+			&& !InRange(FLT_MIN, fabs(valueDouble), FLT_MAX)
+		        && !IsSpecial(valueDouble)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *) "variable array must have float value";
@@ -1004,8 +1061,8 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetDouble(valueObj, &valueDouble)
-		    && !InRange(FLT_MIN, valueDouble, FLT_MAX)
-		    && !TclIsInfinite(valueDouble) && !TclIsNaN(valueDouble)) {
+		    && !InRange(FLT_MIN, fabs(valueDouble), FLT_MAX)
+		    && !IsSpecial(valueDouble)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have float value";
@@ -1210,9 +1267,6 @@ ObjValue(
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
     case TCL_LINK_WIDE_UINT:
-	/*
-	 * FIXME: represent as a bignum.
-	 */
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
