@@ -9,6 +9,7 @@
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 2008 Rene Zaumseil
+ * Copyright (c) 2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -98,10 +99,22 @@ static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 static void		LinkFree(Link *linkPtr);
 static int		GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr);
-static int		GetInvalidWideFromObj(Tcl_Obj *objPtr,
-			    Tcl_WideInt *widePtr);
 static int		GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
 			    double *doublePtr);
+static int		SetInvalidRealFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+
+/*
+ * A marker type used to flag weirdnesses so we can pass them around right.
+ */
+
+static Tcl_ObjType invalidRealType = {
+    "invalidReal",			/* name */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
+    NULL,				/* updateStringProc */
+    NULL				/* setFromAnyProc */
+};
 
 /*
  * Convenience macro for accessing the value of the C variable pointed to by a
@@ -440,6 +453,17 @@ Tcl_UpdateLinkedVar(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetInt, GetWide, GetUWide, GetDouble, EqualDouble, IsSpecial --
+ *
+ *	Helper functions for LinkTraceProc and ObjValue. These are all
+ *	factored out here to make those functions simpler.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline int
 GetInt(
     Tcl_Obj *objPtr,
@@ -454,8 +478,15 @@ GetWide(
     Tcl_Obj *objPtr,
     Tcl_WideInt *widePtr)
 {
-    return (Tcl_GetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK
-	    && GetInvalidWideFromObj(objPtr, widePtr) != TCL_OK);
+    if (Tcl_GetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK) {
+	int intValue;
+
+	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
+	    return 1;
+	}
+	*widePtr = intValue;
+    }
+    return 0;
 }
 
 static inline int
@@ -465,7 +496,7 @@ GetUWide(
 {
     Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
     ClientData clientData;
-    int type;
+    int type, intValue;
 
     if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
 	if (type == TCL_NUMBER_INT) {
@@ -509,7 +540,11 @@ GetUWide(
      * Evil edge case fallback.
      */
 
-    return (GetInvalidWideFromObj(objPtr, widePtr) != TCL_OK);
+    if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
+	return 1;
+    }
+    *uwidePtr = intValue;
+    return 0;
 }
 
 static inline int
@@ -527,7 +562,7 @@ GetDouble(
 	    *dblPtr = irPtr->doubleValue;
 	    return 0;
 	}
-#endif
+#endif /* ACCEPT_NAN */
 	return GetInvalidDoubleFromObj(objPtr, dblPtr) != TCL_OK;
     }
 }
@@ -540,7 +575,7 @@ EqualDouble(
     return (a == b)
 #ifdef ACCEPT_NAN
 	|| (TclIsNaN(a) && TclIsNaN(b))
-#endif
+#endif /* ACCEPT_NAN */
 	;
 }
 
@@ -551,8 +586,106 @@ IsSpecial(
     return TclIsInfinite(a)
 #ifdef ACCEPT_NAN
 	|| TclIsNaN(a)
-#endif
+#endif /* ACCEPT_NAN */
 	;
+}
+
+/*
+ * Mark an object as holding a weird double.
+ */
+
+static int
+SetInvalidRealFromAny(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
+{
+    const char *str;
+    const char *endPtr;
+
+    str = TclGetString(objPtr);
+    if ((objPtr->length == 1) && (str[0] == '.')) {
+	objPtr->typePtr = &invalidRealType;
+	objPtr->internalRep.doubleValue = 0.0;
+	return TCL_OK;
+    }
+    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
+	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
+	/*
+	 * If number is followed by [eE][+-]?, then it is an invalid
+	 * double, but it could be the start of a valid double.
+	 */
+
+	if (*endPtr == 'e' || *endPtr == 'E') {
+	    ++endPtr;
+	    if (*endPtr == '+' || *endPtr == '-') {
+		++endPtr;
+	    }
+	    if (*endPtr == 0) {
+		double doubleValue = 0.0;
+
+		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
+		TclFreeIntRep(objPtr);
+		objPtr->typePtr = &invalidRealType;
+		objPtr->internalRep.doubleValue = doubleValue;
+		return TCL_OK;
+	    }
+	}
+    }
+    return TCL_ERROR;
+}
+
+/*
+ * This function checks for integer representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
+ * (upperand lowercase). See bug [39f6304c2e].
+ */
+
+static int
+GetInvalidIntFromObj(
+    Tcl_Obj *objPtr,
+    int *intPtr)
+{
+    const char *str = TclGetString(objPtr);
+
+    if ((objPtr->length == 0) || ((objPtr->length == 2) && (str[0] == '0')
+	    && strchr("xXbBoOdD", str[1]))) {
+	*intPtr = 0;
+	return TCL_OK;
+    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
+	*intPtr = (str[0] == '+');
+	return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
+/*
+ * This function checks for double representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
+ * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
+ */
+
+static int
+GetInvalidDoubleFromObj(
+    Tcl_Obj *objPtr,
+    double *doublePtr)
+{
+    int intValue;
+
+    if (TclHasIntRep(objPtr, &invalidRealType)) {
+	goto gotdouble;
+    }
+    if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
+	*doublePtr = (double) intValue;
+	return TCL_OK;
+    }
+    if (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK) {
+    gotdouble:
+	*doublePtr = objPtr->internalRep.doubleValue;
+	return TCL_OK;
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -1332,110 +1465,6 @@ ObjValue(
 	TclNewLiteralStringObj(resultObj, "??");
 	return resultObj;
     }
-}
-
-static int SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-
-static Tcl_ObjType invalidRealType = {
-    "invalidReal",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL				/* setFromAnyProc */
-};
-
-static int
-SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
-    const char *str;
-    const char *endPtr;
-
-    str = TclGetString(objPtr);
-    if ((objPtr->length == 1) && (str[0] == '.')){
-	objPtr->typePtr = &invalidRealType;
-	objPtr->internalRep.doubleValue = 0.0;
-	return TCL_OK;
-    }
-    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
-	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
-	/* If number is followed by [eE][+-]?, then it is an invalid
-	 * double, but it could be the start of a valid double. */
-	if (*endPtr == 'e' || *endPtr == 'E') {
-	    ++endPtr;
-	    if (*endPtr == '+' || *endPtr == '-') ++endPtr;
-	    if (*endPtr == 0) {
-		double doubleValue = 0.0;
-		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &invalidRealType;
-		objPtr->internalRep.doubleValue = doubleValue;
-		return TCL_OK;
-	    }
-	}
-    }
-    return TCL_ERROR;
-}
-
-
-/*
- * This function checks for integer representations, which are valid
- * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
- * (upperand lowercase). See bug [39f6304c2e].
- */
-
-int
-GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
-{
-    const char *str = TclGetString(objPtr);
-
-    if ((objPtr->length == 0) ||
-	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
-	*intPtr = 0;
-	return TCL_OK;
-    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
-	*intPtr = (str[0] == '+');
-	return TCL_OK;
-    }
-    return TCL_ERROR;
-}
-
-int
-GetInvalidWideFromObj(Tcl_Obj *objPtr, Tcl_WideInt *widePtr)
-{
-    int intValue;
-
-    if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    *widePtr = intValue;
-    return TCL_OK;
-}
-
-/*
- * This function checks for double representations, which are valid
- * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
- * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
- */
-
-int
-GetInvalidDoubleFromObj(Tcl_Obj *objPtr, double *doublePtr)
-{
-    int intValue;
-
-    if (TclHasIntRep(objPtr, &invalidRealType)) {
-	goto gotdouble;
-    }
-    if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
-	*doublePtr = (double) intValue;
-	return TCL_OK;
-    }
-    if (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK) {
-    gotdouble:
-	*doublePtr = objPtr->internalRep.doubleValue;
-	return TCL_OK;
-    }
-    return TCL_ERROR;
 }
 
 /*
