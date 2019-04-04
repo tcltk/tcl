@@ -708,8 +708,7 @@ test link-18.1 {linkarray unsigned long} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned * value} 120 {can't set "::my(var)": variable must have unsigned * value}}
-test link-18.2 {linkarray unsigned long} -constraints knownBug -body {
-    # BUG: Implementation needs to use bignums on 64-bit platforms
+test link-18.2 {linkarray unsigned long} -body {
     testlinkarray create ulong 1 ::my(var)
     set ::my(var) 120
     catch {set ::my(var) -1} msg
@@ -786,10 +785,7 @@ test link-20.1 {linkarray unsigned wide} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned wide int value} 120 {can't set "::my(var)": variable must have unsigned wide int value}}
-test link-20.2 {linkarray unsigned wide} -constraints knownBug -setup {
-    set mylist [list]
-} -body {
-    # BUG: Implementation needs to use bignums
+test link-20.2 {linkarray unsigned wide} -body {
     testlinkarray create uwide 1 ::my(var)
     set ::my(var) 120
     catch {set ::my(var) -1} msg
