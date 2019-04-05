@@ -1,5 +1,5 @@
 #include "tommath_private.h"
-#ifdef BN_MP_SQRT_C
+#ifndef BN_MP_SQRT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
  * LibTomMath is a library that provides multiple-precision
