@@ -346,6 +346,7 @@ TOMMATH_OBJS = bn_reverse.o bn_fast_s_mp_mul_digs.o \
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
 	tclOOStubLib.o \
+	tclCreateInterpWithStubs.o \
 	${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
@@ -486,6 +487,7 @@ OO_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
+	$(GENERIC_DIR)/tclCreateInterpWithStubs.c \
 	$(GENERIC_DIR)/tclTomMathStubLib.c \
 	$(GENERIC_DIR)/tclOOStubLib.c
 
@@ -1831,6 +1833,9 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
+
+tclCreateInterpWithStubs.o: $(GENERIC_DIR)/tclCreateInterpWithStubs.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclCreateInterpWithStubs.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c

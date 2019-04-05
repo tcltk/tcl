@@ -2400,6 +2400,12 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifndef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif
+
+/*
+ * Public function Tcl_CreateInterpWithStubs (TIP #531), not accessed via stubs table.
+ */
+Tcl_Interp * Tcl_CreateInterpWithStubs(const char *version, int exact);
+
 
 /*
  *----------------------------------------------------------------------------
