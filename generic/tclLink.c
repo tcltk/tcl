@@ -503,7 +503,7 @@ GetUWide(
 	    *widePtr = *((const Tcl_WideInt *) clientData);
 	    return (*widePtr < 0);
 	} else if (type == TCL_NUMBER_BIG) {
-	    mp_int num;
+	    mp_int *numPtr = clientData;
 	    Tcl_WideUInt value = 0;
 	    union {
 		Tcl_WideUInt value;
@@ -512,15 +512,13 @@ GetUWide(
 	    unsigned long numBytes = sizeof(Tcl_WideUInt);
 	    unsigned char *bytes = scratch.bytes;
 
-	    Tcl_GetBignumFromObj(NULL, objPtr, &num);
-	    if (num.sign || (MP_OKAY != mp_to_unsigned_bin_n(&num, bytes,
-		    &numBytes))) {
+	    if (numPtr->sign || (MP_OKAY != mp_to_unsigned_bin_n(numPtr,
+		    bytes, &numBytes))) {
 		/*
 		 * If the sign bit is set (a negative value) or if the value
 		 * can't possibly fit in the bits of an unsigned wide, there's
 		 * no point in doing further conversion.
 		 */
-		mp_clear(&num);
 		return 1;
 	    }
 #ifdef WORDS_BIGENDIAN
@@ -528,10 +526,12 @@ GetUWide(
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
 #else /* !WORDS_BIGENDIAN */
+	    /*
+	     * Little-endian can read the value directly.
+	     */
 	    value = scratch.value;
 #endif /* WORDS_BIGENDIAN */
 	    *uwidePtr = value;
-	    mp_clear(&num);
 	    return 0;
 	}
     }
