@@ -781,10 +781,11 @@ test link-20.1 {linkarray unsigned wide} -setup {
     lappend mylist [set ::my(var) 120]
     catch {set ::my(var) 1e33} msg
     lappend mylist $msg
+    lappend mylist [set ::my(var) 0xbabed00dbabed00d]
 } -cleanup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
-} -result {{can't set "::my(var)": variable must have unsigned wide int value} 120 {can't set "::my(var)": variable must have unsigned wide int value}}
+} -result {{can't set "::my(var)": variable must have unsigned wide int value} 120 {can't set "::my(var)": variable must have unsigned wide int value} 0xbabed00dbabed00d}
 test link-20.2 {linkarray unsigned wide} -body {
     testlinkarray create uwide 1 ::my(var)
     set ::my(var) 120
