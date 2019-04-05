@@ -37,9 +37,10 @@
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (ckfree((char*)(x)))
 
-#define XMALLOC(x) TclBNAlloc(x)
-#define XFREE(x) TclBNFree(x)
-#define XREALLOC(x,n) TclBNRealloc(x,n)
+#define XMALLOC(size)                   TclBNAlloc(size)
+#define XFREE(mem, size)                TclBNFree(mem)
+#define XREALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
+
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
