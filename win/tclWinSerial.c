@@ -1394,7 +1394,7 @@ SerialWriterThread(
 HANDLE
 TclWinSerialOpen(
     HANDLE handle,
-    const TCHAR *name,
+    const WCHAR *name,
     DWORD access)
 {
     SerialInit();
@@ -1621,7 +1621,7 @@ SerialSetOptionProc(
     BOOL result, flag;
     size_t len, vlen;
     Tcl_DString ds;
-    const TCHAR *native;
+    const WCHAR *native;
     int argc;
     const char **argv;
 
@@ -1770,7 +1770,7 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single character", -1));
+			" two elements with each a single 8-bit character", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
 	    ckfree(argv);
@@ -1794,12 +1794,12 @@ SerialSetOptionProc(
 	    int charLen;
 
 	    charLen = Tcl_UtfToUniChar(argv[0], &character);
-	    if (argv[0][charLen]) {
+	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XonChar = (char) character;
 	    charLen = Tcl_UtfToUniChar(argv[1], &character);
-	    if (argv[1][charLen]) {
+	    if ((character > 0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XoffChar = (char) character;
@@ -2151,7 +2151,7 @@ SerialGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len) == 0)) {
-	char buf[4];
+	char buf[TCL_UTF_MAX];
 	valid = 1;
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
@@ -2162,9 +2162,9 @@ SerialGetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	sprintf(buf, "%c", dcb.XonChar);
+	buf[Tcl_UniCharToUtf(UCHAR(dcb.XonChar), buf)] = '\0';
 	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%c", dcb.XoffChar);
+	buf[Tcl_UniCharToUtf(UCHAR(dcb.XoffChar), buf)] = '\0';
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {

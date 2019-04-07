@@ -786,7 +786,7 @@ Tcl_ListObjAppendElement(
 	     * Old intrep to be freed, re-use refCounts.
 	     */
 
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
 	    ckfree(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -1164,7 +1164,7 @@ Tcl_ListObjReplace(
 	     */
 
 	    if (first > 0) {
-		memcpy(elemPtrs, oldPtrs, (size_t) first * sizeof(Tcl_Obj *));
+		memcpy(elemPtrs, oldPtrs, first * sizeof(Tcl_Obj *));
 	    }
 
 	    /*
@@ -1997,7 +1997,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && (objPtr->typePtr == &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && TclHasIntRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
