@@ -192,7 +192,7 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewBooleanObj(
+	*attributePtrPtr = Tcl_NewWideIntObj(
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
@@ -580,7 +580,7 @@ GetOSTypeFromObj(
     if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
-    *osTypePtr = (OSType) objPtr->internalRep.longValue;
+    *osTypePtr = (OSType) objPtr->internalRep.wideValue;
     return result;
 }
 
@@ -609,7 +609,7 @@ NewOSTypeObj(
 
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
-    objPtr->internalRep.longValue = (long) osType;
+    objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
     objPtr->typePtr = &tclOSTypeType;
     return objPtr;
 }
@@ -660,7 +660,7 @@ SetOSTypeFromAny(
 		 (OSType) bytes[2] <<  8 |
 		 (OSType) bytes[3];
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.longValue = (long) osType;
+	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
     }
     Tcl_DStringFree(&ds);
@@ -694,7 +694,7 @@ UpdateStringOfOSType(
 {
     const int size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
-    OSType osType = (OSType) objPtr->internalRep.longValue;
+    OSType osType = (OSType) objPtr->internalRep.wideValue;
     int written = 0;
     Tcl_Encoding encoding;
     char src[5];
