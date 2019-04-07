@@ -2121,7 +2121,7 @@ TclCompileRegexpCmd(
 	    sawLast++;
 	    i++;
 	    break;
-	} else if ((len > 1) && (strncmp(str,"-nocase",(unsigned)len) == 0)) {
+	} else if ((len > 1) && (strncmp(str, "-nocase", len) == 0)) {
 	    nocase = 1;
 	} else {
 	    /*

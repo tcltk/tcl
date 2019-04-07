@@ -631,7 +631,7 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    qsort((void *) strings, i, sizeof(char *), CmpStr);
 	}
 	*stringsPtr = strings;
     } else {

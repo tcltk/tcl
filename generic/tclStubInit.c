@@ -57,6 +57,8 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
+#undef TclBNInitBignumFromLong
+#undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -101,8 +103,12 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
-
 #else
+#define TclBNInitBignumFromLong initBignumFromLong
+static void TclBNInitBignumFromLong(mp_int *a, long b)
+{
+    TclInitBignumFromWideInt(a, b);
+}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -153,7 +159,6 @@ TclWinGetPlatformId(void)
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -239,68 +244,11 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 4
-    Tcl_UniChar ch = 0;
-    wchar_t *w, *wString;
-    const char *p, *end;
-    int oldLength;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
-#if TCL_UTF_MAX > 4
-
-    if (len < 0) {
-	len = strlen(string);
-    }
-
-    /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
-     * bytes.
-     */
-
-    oldLength = Tcl_DStringLength(dsPtr);
-
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((len + 1) * sizeof(wchar_t)));
-    wString = (wchar_t *) (Tcl_DStringValue(dsPtr) + oldLength);
-
-    w = wString;
-    p = string;
-    end = string + len - 4;
-    while (p < end) {
-	p += TclUtfToUniChar(p, &ch);
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    *w = '\0';
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + ((char *) w - (char *) wString));
-
-    return (char *)wString;
-#else
-    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
-#endif
+    return (char *)TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
@@ -309,12 +257,6 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 4
-    const wchar_t *w, *wEnd;
-    char *p, *result;
-    int oldLength, blen = 1;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
@@ -324,32 +266,7 @@ Tcl_WinTCharToUtf(
     } else {
 	len /= 2;
     }
-#if TCL_UTF_MAX > 4
-    oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
-    result = Tcl_DStringValue(dsPtr) + oldLength;
-
-    p = result;
-    wEnd = (wchar_t *)string + len;
-    for (w = (wchar_t *)string; w < wEnd; ) {
-	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling upper surrogates. */
-	    p += Tcl_UniCharToUtf(-1, p);
-	}
-	blen = Tcl_UniCharToUtf(*w, p);
-	p += blen;
-	w++;
-    }
-    if (!blen) {
-	/* Special case for handling upper surrogates. */
-	p += Tcl_UniCharToUtf(-1, p);
-    }
-    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
-
-    return result;
-#else
-    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
-#endif
+    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -499,6 +416,19 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
 #   define TclOldFreeObj 0
+#   undef Tcl_StringMatch
+#   define Tcl_StringMatch 0
+#   define TclBN_reverse 0
+#   define TclBN_fast_s_mp_mul_digs 0
+#   define TclBN_fast_s_mp_sqr 0
+#   define TclBN_mp_karatsuba_mul 0
+#   define TclBN_mp_karatsuba_sqr 0
+#   define TclBN_mp_toom_mul 0
+#   define TclBN_mp_toom_sqr 0
+#   define TclBN_s_mp_add 0
+#   define TclBN_s_mp_mul_digs 0
+#   define TclBN_s_mp_sqr 0
+#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -1018,6 +948,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {

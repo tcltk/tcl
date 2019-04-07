@@ -598,7 +598,7 @@ Tcl_SplitPath(
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = TclGetStringFromObj(eltPtr, &len);
-	memcpy(p, str, (size_t) len+1);
+	memcpy(p, str, len+1);
 	p += len+1;
     }
 
@@ -2548,21 +2548,21 @@ unsigned
 Tcl_GetFSDeviceFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_dev;
+    return statPtr->st_dev;
 }
 
 unsigned
 Tcl_GetFSInodeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_ino;
+    return statPtr->st_ino;
 }
 
 unsigned
 Tcl_GetModeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_mode;
+    return statPtr->st_mode;
 }
 
 int
@@ -2639,7 +2639,7 @@ Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    return (unsigned) statPtr->st_blksize;
+    return statPtr->st_blksize;
 #else
     /*
      * Not a great guess, but will do...

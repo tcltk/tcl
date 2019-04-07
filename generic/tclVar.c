@@ -4122,7 +4122,7 @@ ArraySetCmd(
      */
 
     arrayElemObj = objv[2];
-    if (arrayElemObj->typePtr == &tclDictType && arrayElemObj->bytes == NULL) {
+    if (TclHasIntRep(arrayElemObj, &tclDictType) && arrayElemObj->bytes == NULL) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;

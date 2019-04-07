@@ -2748,7 +2748,6 @@ MODULE_SCOPE ClientData tclTimeClientData;
 MODULE_SCOPE const Tcl_ObjType tclBignumType;
 MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
-MODULE_SCOPE const Tcl_ObjType tclPureByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
@@ -2877,8 +2876,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_SHORTEST 		0x4
 				/* Use the shortest possible string */
-#define TCL_DD_STEELE   		0x5
-				/* Use the original Steele&White algorithm */
 #define TCL_DD_E_FORMAT 		0x2
 				/* Use a fixed-length string of digits,
 				 * suitable for E format*/
@@ -2894,10 +2891,6 @@ struct Tcl_LoadHandle_ {
 
 #define TCL_DD_CONVERSION_TYPE_MASK	0x3
 				/* Mask to isolate the conversion type */
-#define TCL_DD_STEELE0 			0x1
-				/* 'Steele&White' after masking */
-#define TCL_DD_SHORTEST0		0x0
-				/* 'Shortest possible' after masking */
 
 /*
  *----------------------------------------------------------------
@@ -3067,7 +3060,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE void	TclInitBignumFromLong(mp_int *, long);
 MODULE_SCOPE void	TclInitBignumFromWideInt(mp_int *, Tcl_WideInt);
 MODULE_SCOPE void	TclInitBignumFromWideUInt(mp_int *, Tcl_WideUInt);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
@@ -3248,6 +3240,17 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
+#if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
+MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
+MODULE_SCOPE char *	TclWCharToUtfDString(const WCHAR *uniStr,
+			    int uniLength, Tcl_DString *dsPtr);
+MODULE_SCOPE WCHAR * TclUtfToWCharDString(const char *src,
+			    int length, Tcl_DString *dsPtr);
+#else
+#   define TclUtfToWChar TclUtfToUniChar
+#   define TclWCharToUtfDString Tcl_UniCharToUtfDString
+#   define TclUtfToWCharDString Tcl_UtfToUniCharDString
+#endif
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
@@ -3266,10 +3269,22 @@ MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 MODULE_SCOPE void	TclInitThreadStorage(void);
 MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
+
 #ifdef TCL_WIDE_CLICKS
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+MODULE_SCOPE double	TclpWideClickInMicrosec(void);
+#else
+#   ifdef _WIN32
+#	define TCL_WIDE_CLICKS 1
+MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
+MODULE_SCOPE double	TclpWideClickInMicrosec(void);
+#	define		TclpWideClicksToNanoseconds(clicks) \
+				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
+#   endif
 #endif
+MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
+
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
@@ -3543,6 +3558,9 @@ MODULE_SCOPE int	Tcl_TellObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ThrowObjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TimeObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_TimeRateObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TraceObjCmd(ClientData clientData,
@@ -4421,8 +4439,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (unsigned) (len)); \
+	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4542,19 +4560,19 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
 	    newPtr = (Tcl_Token *) attemptckrealloc((char *) oldPtr,	\
-		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
+		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		if (allocated > TCL_MAX_TOKENS) {			\
 		    allocated = TCL_MAX_TOKENS;				\
 		}							\
 		newPtr = (Tcl_Token *) ckrealloc((char *) oldPtr,	\
-			(unsigned int) (allocated * sizeof(Tcl_Token))); \
+			allocated * sizeof(Tcl_Token)); \
 	    }								\
 	    (available) = allocated;					\
 	    if (oldPtr == NULL) {					\
 		memcpy(newPtr, staticPtr,				\
-			(size_t) ((used) * sizeof(Tcl_Token)));		\
+			(used) * sizeof(Tcl_Token));		\
 	    }								\
 	    (tokenPtr) = newPtr;					\
 	}								\
@@ -4621,12 +4639,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
-#define TclIsPureByteArray(objPtr) \
-	((objPtr)->typePtr==&tclPureByteArrayType)
+MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+#define TclHasIntRep(objPtr, type) \
+	((objPtr)->typePtr == (type))
 #define TclFetchIntRep(objPtr, type) \
-	(((objPtr)->typePtr == type) ? &((objPtr)->internalRep) : NULL)
+	(TclHasIntRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
 
 /*

@@ -680,11 +680,11 @@ ConsoleInputProc(
 	 */
 
 	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = bufSize;
 	    infoPtr->offset += bufSize;
 	} else {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
 	    /*
@@ -791,7 +791,7 @@ ConsoleOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(threadInfo->readyEvent);
 	TclPipeThreadSignal(&threadInfo->TI);
@@ -1562,6 +1562,7 @@ ConsoleGetOptionProc(
     ConsoleInfo *infoPtr = instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
     unsigned int len;
+    char buf[TCL_INTEGER_SPACE];
 
     if (optionName == NULL) {
 	len = 0;
@@ -1626,7 +1627,7 @@ ConsoleGetOptionProc(
 	}
 	sprintf(buf, "%d",
 		consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
-	Tcl_DStringAppendElement(dsPtr, buf);	
+	Tcl_DStringAppendElement(dsPtr, buf);
 	sprintf(buf, "%d",
 		consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
 	Tcl_DStringAppendElement(dsPtr, buf);
