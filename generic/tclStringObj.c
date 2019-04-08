@@ -3864,7 +3864,8 @@ TclStringReverse(
  *
  * TclStringReplace --
  *
- *	Implements the inner engine of the [string replace] command.
+ *	Implements the inner engine of the [string replace] and
+ *	[string insert] commands.
  *
  *	The result is a concatenation of a prefix from objPtr, characters
  *	0 through first-1, the insertPtr string value, and a suffix from
