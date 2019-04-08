@@ -2027,7 +2027,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (literal->typePtr == &tclDoubleType) {
+	    if (TclHasIntRep(literal, &tclDoubleType)) {
 		const char *p = start;
 
 		while (p < end) {
@@ -2066,9 +2066,9 @@ ParseLexeme(
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
-	    char utfBytes[TCL_UTF_MAX];
+	    char utfBytes[4];
 
-	    memcpy(utfBytes, start, (size_t) numBytes);
+	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
 	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}

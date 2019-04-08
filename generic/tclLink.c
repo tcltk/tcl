@@ -735,7 +735,7 @@ GetInvalidDoubleFromObj(Tcl_Obj *objPtr, double *doublePtr)
 {
     int intValue;
 
-    if (objPtr->typePtr == &invalidRealType) {
+    if (TclHasIntRep(objPtr, &invalidRealType)) {
 	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {

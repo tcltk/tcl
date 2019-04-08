@@ -7,8 +7,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef BN_H_
 #define BN_H_
@@ -25,7 +24,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -110,9 +109,6 @@ typedef unsigned long long   mp_word;
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef unsigned long mp_min_u32;
-#else
-typedef mp_digit mp_min_u32;
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -131,6 +127,7 @@ typedef mp_digit mp_min_u32;
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
+#define MP_ITER       -4  /* Max. iterations reached */
 
 #define MP_YES        1   /* yes response */
 #define MP_NO         0   /* no response */
@@ -141,14 +138,6 @@ typedef mp_digit mp_min_u32;
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
 typedef int           mp_err;
-
-/* you'll have to tune these... */
-#if defined(BUILD_tcl) || !defined(_WIN32)
-MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
-       KARATSUBA_SQR_CUTOFF,
-       TOOM_MUL_CUTOFF,
-       TOOM_SQR_CUTOFF;
-#endif
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
@@ -229,8 +218,8 @@ int mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (!mp_get_bit((a),0))
+#define mp_isodd(a)  mp_get_bit((a),0)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -357,15 +346,20 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 /*
 int mp_rand(mp_int *a, int digits);
 */
+/* makes a pseudo-random small int of a given size */
+/*
+int mp_rand_digit(mp_digit *r);
+*/
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
-/* as last resort we will fall back to libtomcrypt's rng_get_bytes()
- * in case you don't use libtomcrypt or use it w/o rng_get_bytes()
- * you have to implement it somewhere else, as it's required */
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
 extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
 extern void (*ltm_rng_callback)(void);
 #endif
@@ -702,10 +696,17 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 int mp_prime_rabin_miller_trials(int size);
 */
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */
