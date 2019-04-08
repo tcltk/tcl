@@ -1815,7 +1815,7 @@ NsEnsembleImplementationCmdNR(
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
-		    (unsigned) stringLength);
+		    stringLength);
 
 	    if (cmp == 0) {
 		if (fullName != NULL) {
@@ -2769,7 +2769,7 @@ BuildEnsembleConfig(
 	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
-	qsort(ensemblePtr->subcommandArrayPtr, (unsigned) hash->numEntries,
+	qsort(ensemblePtr->subcommandArrayPtr, hash->numEntries,
 		sizeof(char *), NsEnsembleStringOrder);
     }
 }

@@ -4,29 +4,29 @@ language: c
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: clang
       env:
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: clang
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc
       env:
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc-4.9
       addons:
         apt:
@@ -37,7 +37,7 @@ matrix:
       env:
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc-5
       addons:
         apt:
@@ -48,7 +48,7 @@ matrix:
       env:
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc-6
       addons:
         apt:
@@ -59,7 +59,7 @@ matrix:
       env:
         - BUILD_DIR=unix
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc-7
       addons:
         apt:
@@ -69,6 +69,42 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
+    - os: linux
+      dist: xenial
+      compiler: gcc-7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+    - os: linux
+      dist: xenial
+      compiler: gcc-7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - os: linux
+      dist: xenial
+      compiler: gcc-7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
     - os: osx
       osx_image: xcode8
       env:
@@ -84,7 +120,7 @@ matrix:
         - BUILD_DIR=macosx
         - NO_DIRECT_CONFIGURE=1
     - os: osx
-      osx_image: xcode10
+      osx_image: xcode10.2
       env:
         - BUILD_DIR=macosx
         - NO_DIRECT_CONFIGURE=1
@@ -95,7 +131,7 @@ matrix:
 ### ... so proxy with a Mingw cross-compile
 # Test with mingw-w64 (32 bit)
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: i686-w64-mingw32-gcc
       addons:
         apt:
@@ -110,9 +146,57 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
         - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64
+            - gcc-multilib
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64
+            - gcc-multilib
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64
+            - gcc-multilib
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
+        - NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: x86_64-w64-mingw32-gcc
       addons:
         apt:
@@ -126,7 +210,51 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
         - NO_DIRECT_TEST=1
-
+    - os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+        - NO_DIRECT_TEST=1
 before_install:
   - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}

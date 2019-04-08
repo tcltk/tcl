@@ -791,7 +791,7 @@ TclParseBackslash(
     Tcl_UniChar unichar = 0;
     int result;
     int count;
-    char buf[TCL_UTF_MAX];
+    char buf[4] = "";
 
     if (numBytes == 0) {
 	if (readPtr != NULL) {
@@ -926,7 +926,7 @@ TclParseBackslash(
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
-	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
+	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
 	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}
@@ -939,9 +939,9 @@ TclParseBackslash(
 	*readPtr = count;
     }
     count = Tcl_UniCharToUtf(result, dst);
-    if (!count) {
-	/* Special case for handling upper surrogates. */
-	count = Tcl_UniCharToUtf(-1, dst);
+    if ((result >= 0xD800) && (count < 3)) {
+	/* Special case for handling high surrogates. */
+	count += Tcl_UniCharToUtf(-1, dst + count);
     }
     return count;
 }
@@ -2151,7 +2151,7 @@ TclSubstTokens(
 	Tcl_Obj *appendObj = NULL;
 	const char *append = NULL;
 	int appendByteLength = 0;
-	char utfCharBytes[TCL_UTF_MAX];
+	char utfCharBytes[4] = "";
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
