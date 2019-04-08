@@ -417,11 +417,10 @@ test cmdMZ-try-1.0 {
 
 } -body {
     ::apply {{} {
-	eval {
-	    try {
-		lindex 5
-	    } on ok res {} 
-	}
+	set cmd try
+	$cmd {
+	    lindex 5
+	} on ok res {} 
 	set res
     }} 
 } -result 5
