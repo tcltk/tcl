@@ -722,7 +722,7 @@ TclObjLookupVarEx(
 	Tcl_Obj *cachedNamePtr = localName(varFramePtr, index);
 
 	if (part1Ptr == cachedNamePtr) {
-	    cachedNamePtr = NULL;
+	    LocalSetIntRep(part1Ptr, index, NULL);
 	} else {
 	    /*
 	     * [80304238ac] Trickiness here.  We will store and incr the
@@ -735,6 +735,14 @@ TclObjLookupVarEx(
 	     * cachedNamePtr and leave it as string only.  This is
 	     * radical and destructive, so a better idea would be welcome.
 	     */
+
+	    /* 
+	     * Firstly set cached local var reference (avoid free before set,
+	     * see [45b9faf103f2])
+	     */
+	    LocalSetIntRep(part1Ptr, index, cachedNamePtr);
+
+	    /* Then wipe it */
 	    TclFreeIntRep(cachedNamePtr);
 
 	    /*
@@ -744,7 +752,6 @@ TclObjLookupVarEx(
 	     */
 	    LocalSetIntRep(cachedNamePtr, index, NULL);
 	}
-	LocalSetIntRep(part1Ptr, index, cachedNamePtr);
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
