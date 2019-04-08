@@ -15,11 +15,11 @@
 #if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559)
 int mp_set_double(mp_int *a, double b)
 {
-   uint64_t frac;
+   Tcl_WideUInt frac;
    int exp, res;
    union {
       double   dbl;
-      uint64_t bits;
+      Tcl_WideUInt bits;
    } cast;
    cast.dbl = b;
 

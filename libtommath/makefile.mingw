@@ -11,7 +11,7 @@
 
 #The following can be overridden from command line e.g. make -f makefile.mingw CC=gcc ARFLAGS=rcs
 PREFIX    = c:\mingw
-CC        = gcc
+CC        = i686-w64-mingw32-gcc
 AR        = ar
 ARFLAGS   = r
 RANLIB    = ranlib
@@ -21,7 +21,7 @@ LDFLAGS   =
 
 #Compilation flags
 LTM_CFLAGS  = -I. $(CFLAGS)
-LTM_LDFLAGS = $(LDFLAGS)
+LTM_LDFLAGS = $(LDFLAGS) -static-libgcc
 
 #Libraries to be created
 LIBMAIN_S =libtommath.a
@@ -54,7 +54,7 @@ bn_mp_sub_d.o bn_mp_submod.o bn_mp_tc_and.o bn_mp_tc_div_2d.o bn_mp_tc_or.o bn_m
 bn_mp_to_signed_bin.o bn_mp_to_signed_bin_n.o bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix.o bn_mp_toradix_n.o bn_mp_unsigned_bin_size.o bn_mp_xor.o \
 bn_mp_zero.o bn_prime_tab.o bn_reverse.o bn_s_mp_add.o bn_s_mp_exptmod.o bn_s_mp_mul_digs.o \
-bn_s_mp_mul_high_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o bncore.o
+bn_s_mp_mul_high_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 HEADERS_PUB=tommath.h tommath_class.h tommath_superclass.h
 

@@ -10,7 +10,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 #ifdef __CYGWIN__
 #   include <wchar.h>
@@ -60,6 +60,98 @@
 #undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
+
+#define TclBN_mp_add mp_add
+#define TclBN_mp_add_d mp_add_d
+#define TclBN_mp_and mp_and
+#define TclBN_mp_clamp mp_clamp
+#define TclBN_mp_clear mp_clear
+#define TclBN_mp_clear_multi mp_clear_multi
+#define TclBN_mp_cmp mp_cmp
+#define TclBN_mp_cmp_d mp_cmp_d
+#define TclBN_mp_cmp_mag mp_cmp_mag
+#define TclBN_mp_cnt_lsb mp_cnt_lsb
+#define TclBN_mp_copy mp_copy
+#define TclBN_mp_count_bits mp_count_bits
+#define TclBN_mp_div mp_div
+#define TclBN_mp_div_2 mp_div_2
+#define TclBN_mp_div_2d mp_div_2d
+#define TclBN_mp_div_3 mp_div_3
+#define TclBN_mp_div_d mp_div_d
+#define TclBN_mp_exch mp_exch
+#define TclBN_mp_expt_d mp_expt_d
+#define TclBN_mp_expt_d_ex mp_expt_d_ex
+#define TclBN_mp_get_bit mp_get_bit
+#define TclBN_mp_get_int mp_get_int
+#define TclBN_mp_get_long mp_get_long
+#define TclBN_mp_get_long_long mp_get_long_long
+#define TclBN_mp_grow mp_grow
+#define TclBN_mp_init mp_init
+#define TclBN_mp_init_copy mp_init_copy
+#define TclBN_mp_init_multi mp_init_multi
+#define TclBN_mp_init_set mp_init_set
+#define TclBN_mp_init_set_int mp_init_set_int
+#define TclBN_mp_init_size mp_init_size
+#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
+#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
+#define TclBN_mp_lshd mp_lshd
+#define TclBN_mp_mod mp_mod
+#define TclBN_mp_mod_2d mp_mod_2d
+#define TclBN_mp_mul mp_mul
+#define TclBN_mp_mul_2 mp_mul_2
+#define TclBN_mp_mul_2d mp_mul_2d
+#define TclBN_mp_mul_d mp_mul_d
+#define TclBN_mp_neg mp_neg
+#define TclBN_mp_or mp_or
+#define TclBN_mp_radix_size mp_radix_size
+#define TclBN_mp_read_radix mp_read_radix
+#define TclBN_mp_rshd mp_rshd
+#define TclBN_mp_set mp_set
+#define TclBN_mp_set_int mp_set_int
+#define TclBN_mp_set_long mp_set_long
+#define TclBN_mp_set_long_long mp_set_long_long
+#define TclBN_mp_shrink mp_shrink
+#define TclBN_mp_sqr mp_sqr
+#define TclBN_mp_sqrt mp_sqrt
+#define TclBN_mp_sub mp_sub
+#define TclBN_mp_sub_d mp_sub_d
+#define TclBN_mp_tc_and mp_tc_and
+#define TclBN_mp_tc_div_2d mp_tc_div_2d
+#define TclBN_mp_tc_or mp_tc_or
+#define TclBN_mp_tc_xor mp_tc_xor
+#define TclBN_mp_to_unsigned_bin mp_to_unsigned_bin
+#define TclBN_mp_to_unsigned_bin_n mp_to_unsigned_bin_n
+#define TclBN_mp_toom_mul mp_toom_mul
+#define TclBN_mp_toom_sqr mp_toom_sqr
+#define TclBN_mp_toradix_n mp_toradix_n
+#define TclBN_mp_unsigned_bin_size mp_unsigned_bin_size
+#define TclBN_mp_xor mp_xor
+#define TclBN_mp_zero mp_zero
+#define TclBN_reverse bn_reverse
+#define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
+#define TclBN_fast_s_mp_sqr fast_s_mp_sqr
+#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
+#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
+#define TclBN_mp_toom_mul mp_toom_mul
+#define TclBN_mp_toom_sqr mp_toom_sqr
+#define TclBN_s_mp_add s_mp_add
+#define TclBN_s_mp_mul_digs s_mp_mul_digs
+#define TclBN_s_mp_sqr s_mp_sqr
+#define TclBN_s_mp_sub s_mp_sub
+#define TclBN_mp_init_set_int mp_init_set_int
+#define TclBN_mp_set_int mp_set_int
+#define TclBN_mp_cnt_lsb mp_cnt_lsb
+#define TclBN_mp_expt_d_ex mp_expt_d_ex
+#define TclBN_mp_set_long_long mp_set_long_long
+#define TclBN_mp_get_long_long mp_get_long_long
+#define TclBN_mp_set_long mp_set_long
+#define TclBN_mp_get_long mp_get_long
+#define TclBN_mp_get_int mp_get_int
+#define TclBN_mp_tc_and mp_tc_and
+#define TclBN_mp_tc_or mp_tc_or
+#define TclBN_mp_tc_xor mp_tc_xor
+#define TclBN_mp_tc_div_2d mp_tc_div_2d
+#define TclBN_mp_get_bit mp_get_bit
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
