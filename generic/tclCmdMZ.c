@@ -4812,18 +4812,24 @@ TryPostBody(
 		Tcl_Obj *varName;
 
 		Tcl_ListObjIndex(NULL, info[3], 0, &varName);
+		Tcl_IncrRefCount(varName);
 		if (Tcl_ObjSetVar2(interp, varName, NULL, resultObj,
 			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(varName);
 		    Tcl_DecrRefCount(resultObj);
 		    goto handlerFailed;
 		}
+		Tcl_DecrRefCount(varName);
 		Tcl_DecrRefCount(resultObj);
 		if (dummy > 1) {
 		    Tcl_ListObjIndex(NULL, info[3], 1, &varName);
+		    Tcl_IncrRefCount(varName);
 		    if (Tcl_ObjSetVar2(interp, varName, NULL, options,
 			    TCL_LEAVE_ERR_MSG) == NULL) {
+			Tcl_DecrRefCount(varName);
 			goto handlerFailed;
 		    }
+		    Tcl_DecrRefCount(varName);
 		}
 	    } else {
 		/*
