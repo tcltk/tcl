@@ -710,8 +710,11 @@ ZIP_PROG
 TCLSH_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
+TOMMATH_OBJS
 ZLIB_OBJS
+TOMMATH_LIBS
 ZLIB_LIBS
+TOMMATH_DLL_FILE
 ZLIB_DLL_FILE
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
@@ -753,6 +756,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -830,6 +834,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1082,6 +1087,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1219,7 +1233,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1372,6 +1386,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -4561,8 +4576,9 @@ case ${host_alias} in
 esac
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib/libtommath; note that this is mostly done in the
+#	makefile now as we just assume that the platform hasn't got usable
+#   z.lib/tommath.lib
 #------------------------------------------------------------------------
 
 if test "${enable_shared+set}" = "set"; then :
@@ -4579,16 +4595,25 @@ if test "$tcl_ok" = "yes"; then :
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
+  TOMMATH_DLL_FILE=\${TOMMATH_DLL_FILE}
+
   if test "$do64bit" != "no"; then :
+
+
+$as_echo "#define MD_64BIT 1" >>confdefs.h
 
     if test "$GCC" == "yes"; then :
 
       ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
 
+      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
+
 
 else
 
       ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
+
+      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
 
 
 fi
@@ -4597,12 +4622,16 @@ else
 
     ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win32/zdll.lib
 
+    TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win32/tommath.lib
+
 
 fi
 
 else
 
   ZLIB_OBJS=\${ZLIB_OBJS}
+
+  TOMMATH_OBJS=\${TOMMATH_OBJS}
 
 
 fi

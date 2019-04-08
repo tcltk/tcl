@@ -41,82 +41,108 @@
 #define XFREE(mem, size)                TclBNFree(mem)
 #define XREALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
 
-
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
-#define bn_reverse TclBN_reverse
-#define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
-#define fast_s_mp_sqr TclBN_fast_s_mp_sqr
-#define mp_add TclBN_mp_add
-#define mp_add_d TclBN_mp_add_d
-#define mp_and TclBN_mp_and
-#define mp_clamp TclBN_mp_clamp
-#define mp_clear TclBN_mp_clear
-#define mp_clear_multi TclBN_mp_clear_multi
-#define mp_cmp TclBN_mp_cmp
-#define mp_cmp_d TclBN_mp_cmp_d
-#define mp_cmp_mag TclBN_mp_cmp_mag
-#define mp_cnt_lsb TclBN_mp_cnt_lsb
-#define mp_copy TclBN_mp_copy
-#define mp_count_bits TclBN_mp_count_bits
-#define mp_div TclBN_mp_div
-#define mp_div_2 TclBN_mp_div_2
-#define mp_div_2d TclBN_mp_div_2d
-#define mp_div_3 TclBN_mp_div_3
-#define mp_div_d TclBN_mp_div_d
-#define mp_exch TclBN_mp_exch
-#define mp_expt_d TclBN_mp_expt_d
-#define mp_expt_d_ex TclBN_mp_expt_d_ex
-#define mp_get_bit TclBN_mp_get_bit
-#define mp_get_int TclBN_mp_get_int
-#define mp_get_long TclBN_mp_get_long
-#define mp_get_long_long TclBN_mp_get_long_long
-#define mp_grow TclBN_mp_grow
-#define mp_init TclBN_mp_init
-#define mp_init_copy TclBN_mp_init_copy
-#define mp_init_multi TclBN_mp_init_multi
-#define mp_init_set TclBN_mp_init_set
-#define mp_init_set_int TclBN_mp_init_set_int
-#define mp_init_size TclBN_mp_init_size
-#define mp_karatsuba_mul TclBN_mp_karatsuba_mul
-#define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
-#define mp_lshd TclBN_mp_lshd
-#define mp_mod TclBN_mp_mod
-#define mp_mod_2d TclBN_mp_mod_2d
-#define mp_mul TclBN_mp_mul
-#define mp_mul_2 TclBN_mp_mul_2
-#define mp_mul_2d TclBN_mp_mul_2d
-#define mp_mul_d TclBN_mp_mul_d
-#define mp_neg TclBN_mp_neg
-#define mp_or TclBN_mp_or
-#define mp_radix_size TclBN_mp_radix_size
-#define mp_read_radix TclBN_mp_read_radix
-#define mp_rshd TclBN_mp_rshd
-#define mp_set TclBN_mp_set
-#define mp_set_int TclBN_mp_set_int
-#define mp_set_long TclBN_mp_set_long
-#define mp_set_long_long TclBN_mp_set_long_long
-#define mp_shrink TclBN_mp_shrink
-#define mp_sqr TclBN_mp_sqr
-#define mp_sqrt TclBN_mp_sqrt
-#define mp_sub TclBN_mp_sub
-#define mp_sub_d TclBN_mp_sub_d
-#define mp_tc_and TclBN_mp_tc_and
-#define mp_tc_div_2d TclBN_mp_tc_div_2d
-#define mp_tc_or TclBN_mp_tc_or
-#define mp_tc_xor TclBN_mp_tc_xor
-#define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
-#define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
-#define mp_toom_mul TclBN_mp_toom_mul
-#define mp_toom_sqr TclBN_mp_toom_sqr
-#define mp_toradix_n TclBN_mp_toradix_n
-#define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
-#define mp_xor TclBN_mp_xor
-#define mp_zero TclBN_mp_zero
-#define s_mp_add TclBN_s_mp_add
-#define s_mp_mul_digs TclBN_s_mp_mul_digs
-#define s_mp_sqr TclBN_s_mp_sqr
-#define s_mp_sub TclBN_s_mp_sub
+MODULE_SCOPE int mp_add(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_add_d(const mp_int *a, mp_digit b,
+				mp_int *c);
+MODULE_SCOPE int mp_and(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE void mp_clamp(mp_int *a);
+MODULE_SCOPE void mp_clear(mp_int *a);
+MODULE_SCOPE void mp_clear_multi(mp_int *a, ...);
+MODULE_SCOPE int mp_cmp(const mp_int *a, const mp_int *b);
+MODULE_SCOPE int mp_cmp_d(const mp_int *a, mp_digit b);
+MODULE_SCOPE int mp_cmp_mag(const mp_int *a, const mp_int *b);
+MODULE_SCOPE int mp_copy(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_count_bits(const mp_int *a);
+MODULE_SCOPE int mp_div(const mp_int *a, const mp_int *b,
+				mp_int *q, mp_int *r);
+MODULE_SCOPE int mp_div_d(const mp_int *a, mp_digit b,
+				mp_int *q, mp_digit *r);
+MODULE_SCOPE int mp_div_2(const mp_int *a, mp_int *q);
+MODULE_SCOPE int mp_div_2d(const mp_int *a, int b, mp_int *q,
+				mp_int *r);
+MODULE_SCOPE int mp_div_3(const mp_int *a, mp_int *q,
+				mp_digit *r);
+MODULE_SCOPE void mp_exch(mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_expt_d(const mp_int *a, mp_digit b,
+				mp_int *c);
+MODULE_SCOPE int mp_grow(mp_int *a, int size);
+MODULE_SCOPE int mp_init(mp_int *a);
+MODULE_SCOPE int mp_init_copy(mp_int *a, const mp_int *b);
+MODULE_SCOPE int mp_init_multi(mp_int *a, ...);
+MODULE_SCOPE int mp_init_set(mp_int *a, mp_digit b);
+MODULE_SCOPE int mp_init_size(mp_int *a, int size);
+MODULE_SCOPE int mp_lshd(mp_int *a, int shift);
+MODULE_SCOPE int mp_mod(const mp_int *a, const mp_int *b,
+				mp_int *r);
+MODULE_SCOPE int mp_mod_2d(const mp_int *a, int b, mp_int *r);
+MODULE_SCOPE int mp_mul(const mp_int *a, const mp_int *b,
+				mp_int *p);
+MODULE_SCOPE int mp_mul_d(const mp_int *a, mp_digit b,
+				mp_int *p);
+MODULE_SCOPE int mp_mul_2(const mp_int *a, mp_int *p);
+MODULE_SCOPE int mp_mul_2d(const mp_int *a, int d, mp_int *p);
+MODULE_SCOPE int mp_neg(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_or(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_radix_size(const mp_int *a, int radix,
+				int *size);
+MODULE_SCOPE int mp_read_radix(mp_int *a, const char *str,
+				int radix);
+MODULE_SCOPE void mp_rshd(mp_int *a, int shift);
+MODULE_SCOPE int mp_shrink(mp_int *a);
+MODULE_SCOPE void mp_set(mp_int *a, mp_digit b);
+MODULE_SCOPE int mp_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_sqrt(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_sub(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_sub_d(const mp_int *a, mp_digit b,
+				mp_int *c);
+MODULE_SCOPE int mp_to_unsigned_bin(const mp_int *a,
+				unsigned char *b);
+MODULE_SCOPE int mp_to_unsigned_bin_n(const mp_int *a,
+				unsigned char *b, unsigned long *outlen);
+MODULE_SCOPE int mp_toradix_n(const mp_int *a, char *str,
+				int radix, int maxlen);
+MODULE_SCOPE int mp_unsigned_bin_size(const mp_int *a);
+MODULE_SCOPE int mp_xor(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE void mp_zero(mp_int *a);
+MODULE_SCOPE void bn_reverse(unsigned char *s, int len);
+MODULE_SCOPE int fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+MODULE_SCOPE int fast_s_mp_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE int mp_karatsuba_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE int mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE int mp_toom_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE int s_mp_add(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE int s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+MODULE_SCOPE int s_mp_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE  int s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE int mp_init_set_int(mp_int *a, unsigned long i);
+MODULE_SCOPE int mp_set_int(mp_int *a, unsigned long i);
+MODULE_SCOPE int mp_cnt_lsb(const mp_int *a);
+MODULE_SCOPE int mp_expt_d_ex(const mp_int *a, mp_digit b,
+				mp_int *c, int fast);
+MODULE_SCOPE int mp_set_long_long(mp_int *a, Tcl_WideUInt i);
+MODULE_SCOPE Tcl_WideUInt	mp_get_long_long(const mp_int *a);
+MODULE_SCOPE int mp_set_long(mp_int *a, unsigned long i);
+MODULE_SCOPE unsigned long	mp_get_long(const mp_int *a);
+MODULE_SCOPE unsigned long	mp_get_int(const mp_int *a);
+MODULE_SCOPE int mp_tc_and(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_tc_or(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_tc_xor(const mp_int *a, const mp_int *b,
+				mp_int *c);
+MODULE_SCOPE int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+MODULE_SCOPE int mp_get_bit(const mp_int *a, int b);
 
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl

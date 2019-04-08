@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
@@ -34,7 +34,7 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
 #      if defined(__GNUC__)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
@@ -65,8 +65,11 @@ typedef unsigned short       mp_digit;
 #      error You must not define DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
-/* for GCC only on supported platforms */
+#   ifdef _WIN32
+typedef unsigned __int64     mp_digit;
+#   else
 typedef unsigned long long   mp_digit;
+#   endif
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
@@ -89,9 +92,7 @@ typedef unsigned int         mp_digit;
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
 #endif
 
-#define MP_DIGIT_BIT     DIGIT_BIT
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
-#define MP_DIGIT_MAX     MP_MASK
 
 /* equalities */
 #define MP_LT        -1   /* less than */

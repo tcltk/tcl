@@ -26,11 +26,11 @@ Tcl_WideUInt mp_get_long_long(const mp_int *a)
    i = MIN(a->used, (((CHAR_BIT * (int)sizeof(Tcl_WideUInt)) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
 
    /* get most significant digit of result */
-   res = (unsigned long long)a->dp[i];
+   res = (Tcl_WideUInt)a->dp[i];
 
 #if DIGIT_BIT < 64
    while (--i >= 0) {
-      res = (res << DIGIT_BIT) | (unsigned long long)a->dp[i];
+      res = (res << DIGIT_BIT) | (Tcl_WideUInt)a->dp[i];
    }
 #endif
    return res;
