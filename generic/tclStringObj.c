@@ -3912,7 +3912,7 @@ TclStringReplace(
 
     /*
      * The caller very likely had to call Tcl_GetCharLength() or similar
-     * to be able to process index values.  This means it is like that
+     * to be able to process index values.  This means it is likely that
      * objPtr is either a proper "bytearray" or a "string" or else it has
      * a known and short string rep.
      */
