@@ -409,6 +409,23 @@ test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
 	[expr {[lindex $m1 6] <= 0.001}]
 } {1 1 1 1}
 
+test cmdMZ-try-1.0 {
+
+    fix for issue 45b9faf103f2
+
+    [try] interaction with local variable names produces segmentation violation
+
+} -body {
+    ::apply {{} {
+	set cmd try
+	$cmd {
+	    lindex 5
+	} on ok res {} 
+	set res
+    }} 
+} -result 5
+
+
 # The tests for Tcl_WhileObjCmd are in while.test
 
 # cleanup
