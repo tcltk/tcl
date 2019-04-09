@@ -420,9 +420,9 @@ test cmdMZ-try-1.0 {
 	set cmd try
 	$cmd {
 	    lindex 5
-	} on ok res {} 
+	} on ok res {}
 	set res
-    }} 
+    }}
 } -result 5
 
 

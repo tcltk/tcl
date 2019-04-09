@@ -102,6 +102,7 @@ WIN_DIR			= $(TOP_DIR)/win
 COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
+MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 
 # Converts a POSIX path to a Windows native path.
@@ -117,6 +118,7 @@ WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
 ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
+MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 
 # Fully qualify library path so that `make test`
@@ -642,7 +644,7 @@ tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
 	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
-	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip  @DEPARG@ $(CC_OBJNAME)
+	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.
@@ -700,49 +702,49 @@ tclWinPanic.${OBJEXT}: tclWinPanic.c
 # Minizip implementation
 #--------------------------------------------------------------------------
 adler32.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/adler32.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/adler32.c
 
 compress.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/compress.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/compress.c
 
 crc32.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/crc32.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/crc32.c
 
 deflate.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/deflate.c
 
 ioapi.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -DIOAPI_NO_64 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+	$(HOST_CC) -o $@ -DIOAPI_NO_64 -DUSE_FILE32API -I$(ZLIB_DIR_NATIVE) -I$(MINIZIP_DIR_NATIVE) -c $(MINIZIP_DIR_NATIVE)/ioapi.c
 
 iowin32.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -I$(MINIZIP_DIR_NATIVE) -c $(MINIZIP_DIR_NATIVE)/iowin32.c
 
 infback.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/infback.c
 
 inffast.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inffast.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/inffast.c
 
 inflate.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inflate.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/inflate.c
 
 inftrees.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inftrees.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/inftrees.c
 
 trees.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/trees.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/trees.c
 
 uncompr.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/uncompr.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/uncompr.c
 
 zip.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/zip.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -I$(MINIZIP_DIR_NATIVE) -c $(MINIZIP_DIR_NATIVE)/zip.c
 
 zutil.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -c $(ZLIB_DIR_NATIVE)/zutil.c
 
 minizip.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -DIOAPI_NO_64 -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR_NATIVE) -DIOAPI_NO_64 -DUSE_FILE32API -I$(MINIZIP_DIR_NATIVE) -c $(MINIZIP_DIR_NATIVE)/minizip.c
 
 minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 	$(HOST_CC) -o $@ $(MINIZIP_OBJS)

@@ -92,8 +92,6 @@
 #define TclBN_mp_init_set mp_init_set
 #define TclBN_mp_init_set_int mp_init_set_int
 #define TclBN_mp_init_size mp_init_size
-#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
-#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
 #define TclBN_mp_lshd mp_lshd
 #define TclBN_mp_mod mp_mod
 #define TclBN_mp_mod_2d mp_mod_2d
@@ -121,23 +119,10 @@
 #define TclBN_mp_tc_xor mp_tc_xor
 #define TclBN_mp_to_unsigned_bin mp_to_unsigned_bin
 #define TclBN_mp_to_unsigned_bin_n mp_to_unsigned_bin_n
-#define TclBN_mp_toom_mul mp_toom_mul
-#define TclBN_mp_toom_sqr mp_toom_sqr
 #define TclBN_mp_toradix_n mp_toradix_n
 #define TclBN_mp_unsigned_bin_size mp_unsigned_bin_size
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
-#define TclBN_reverse bn_reverse
-#define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
-#define TclBN_fast_s_mp_sqr fast_s_mp_sqr
-#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
-#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
-#define TclBN_mp_toom_mul mp_toom_mul
-#define TclBN_mp_toom_sqr mp_toom_sqr
-#define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_mul_digs s_mp_mul_digs
-#define TclBN_s_mp_sqr s_mp_sqr
-#define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_init_set_int mp_init_set_int
 #define TclBN_mp_set_int mp_set_int
 #define TclBN_mp_cnt_lsb mp_cnt_lsb
@@ -152,6 +137,32 @@
 #define TclBN_mp_tc_xor mp_tc_xor
 #define TclBN_mp_tc_div_2d mp_tc_div_2d
 #define TclBN_mp_get_bit mp_get_bit
+
+#if !defined(TCL_NO_DEPRECATED) && (!defined(_WIN32) || defined(STATIC_BUILD))
+#define TclBN_reverse bn_reverse
+#define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
+#define TclBN_fast_s_mp_sqr fast_s_mp_sqr
+#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
+#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
+#define TclBN_mp_toom_mul mp_toom_mul
+#define TclBN_mp_toom_sqr mp_toom_sqr
+#define TclBN_s_mp_add s_mp_add
+#define TclBN_s_mp_mul_digs s_mp_mul_digs
+#define TclBN_s_mp_sqr s_mp_sqr
+#define TclBN_s_mp_sub s_mp_sub
+#else
+#define TclBN_reverse 0
+#define TclBN_fast_s_mp_mul_digs 0
+#define TclBN_fast_s_mp_sqr 0
+#define TclBN_mp_karatsuba_mul 0
+#define TclBN_mp_karatsuba_sqr 0
+#define TclBN_mp_toom_mul 0
+#define TclBN_mp_toom_sqr 0
+#define TclBN_s_mp_add 0
+#define TclBN_s_mp_mul_digs 0
+#define TclBN_s_mp_sqr 0
+#define TclBN_s_mp_sub 0
+#endif
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -510,17 +521,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclOldFreeObj 0
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
-#   define TclBN_reverse 0
-#   define TclBN_fast_s_mp_mul_digs 0
-#   define TclBN_fast_s_mp_sqr 0
-#   define TclBN_mp_karatsuba_mul 0
-#   define TclBN_mp_karatsuba_sqr 0
-#   define TclBN_mp_toom_mul 0
-#   define TclBN_mp_toom_sqr 0
-#   define TclBN_s_mp_add 0
-#   define TclBN_s_mp_mul_digs 0
-#   define TclBN_s_mp_sqr 0
-#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld

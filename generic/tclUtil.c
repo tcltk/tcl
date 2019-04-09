@@ -15,7 +15,7 @@
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 
 /*
