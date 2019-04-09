@@ -24,6 +24,10 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::temporaryDirectory
     namespace import ::tcltest::test
 
+    if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
+	namespace import ::tcl::unsupported::timerate
+    }
+
 # Tcl_PwdObjCmd
 
 test cmdMZ-1.1 {Tcl_PwdObjCmd} {
