@@ -736,7 +736,7 @@ TclObjLookupVarEx(
 	     * radical and destructive, so a better idea would be welcome.
 	     */
 
-	    /* 
+	    /*
 	     * Firstly set cached local var reference (avoid free before set,
 	     * see [45b9faf103f2])
 	     */
