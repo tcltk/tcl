@@ -631,6 +631,156 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#if defined(USE_TCL_STUBS)
+#define mp_add \
+	(tclTomMathStubsPtr->tclBN_mp_add) /* 2 */
+#define mp_add_d \
+	(tclTomMathStubsPtr->tclBN_mp_add_d) /* 3 */
+#define mp_and \
+	(tclTomMathStubsPtr->tclBN_mp_and) /* 4 */
+#define mp_clamp \
+	(tclTomMathStubsPtr->tclBN_mp_clamp) /* 5 */
+#define mp_clear \
+	(tclTomMathStubsPtr->tclBN_mp_clear) /* 6 */
+#define mp_clear_multi \
+	(tclTomMathStubsPtr->tclBN_mp_clear_multi) /* 7 */
+#define mp_cmp \
+	(tclTomMathStubsPtr->tclBN_mp_cmp) /* 8 */
+#define mp_cmp_d \
+	(tclTomMathStubsPtr->tclBN_mp_cmp_d) /* 9 */
+#define mp_cmp_mag \
+	(tclTomMathStubsPtr->tclBN_mp_cmp_mag) /* 10 */
+#define mp_copy \
+	(tclTomMathStubsPtr->tclBN_mp_copy) /* 11 */
+#define mp_count_bits \
+	(tclTomMathStubsPtr->tclBN_mp_count_bits) /* 12 */
+#define mp_div \
+	(tclTomMathStubsPtr->tclBN_mp_div) /* 13 */
+#define mp_div_d \
+	(tclTomMathStubsPtr->tclBN_mp_div_d) /* 14 */
+#define mp_div_2 \
+	(tclTomMathStubsPtr->tclBN_mp_div_2) /* 15 */
+#define mp_div_2d \
+	(tclTomMathStubsPtr->tclBN_mp_div_2d) /* 16 */
+#define mp_div_3 \
+	(tclTomMathStubsPtr->tclBN_mp_div_3) /* 17 */
+#define mp_exch \
+	(tclTomMathStubsPtr->tclBN_mp_exch) /* 18 */
+#define mp_expt_d \
+	(tclTomMathStubsPtr->tclBN_mp_expt_d) /* 19 */
+#define mp_grow \
+	(tclTomMathStubsPtr->tclBN_mp_grow) /* 20 */
+#define mp_init \
+	(tclTomMathStubsPtr->tclBN_mp_init) /* 21 */
+#define mp_init_copy \
+	(tclTomMathStubsPtr->tclBN_mp_init_copy) /* 22 */
+#define mp_init_multi \
+	(tclTomMathStubsPtr->tclBN_mp_init_multi) /* 23 */
+#define mp_init_set \
+	(tclTomMathStubsPtr->tclBN_mp_init_set) /* 24 */
+#define mp_init_size \
+	(tclTomMathStubsPtr->tclBN_mp_init_size) /* 25 */
+#define mp_lshd \
+	(tclTomMathStubsPtr->tclBN_mp_lshd) /* 26 */
+#define mp_mod \
+	(tclTomMathStubsPtr->tclBN_mp_mod) /* 27 */
+#define mp_mod_2d \
+	(tclTomMathStubsPtr->tclBN_mp_mod_2d) /* 28 */
+#define mp_mul \
+	(tclTomMathStubsPtr->tclBN_mp_mul) /* 29 */
+#define mp_mul_d \
+	(tclTomMathStubsPtr->tclBN_mp_mul_d) /* 30 */
+#define mp_mul_2 \
+	(tclTomMathStubsPtr->tclBN_mp_mul_2) /* 31 */
+#define mp_mul_2d \
+	(tclTomMathStubsPtr->tclBN_mp_mul_2d) /* 32 */
+#define mp_neg \
+	(tclTomMathStubsPtr->tclBN_mp_neg) /* 33 */
+#define mp_or \
+	(tclTomMathStubsPtr->tclBN_mp_or) /* 34 */
+#define mp_radix_size \
+	(tclTomMathStubsPtr->tclBN_mp_radix_size) /* 35 */
+#define mp_read_radix \
+	(tclTomMathStubsPtr->tclBN_mp_read_radix) /* 36 */
+#define mp_rshd \
+	(tclTomMathStubsPtr->tclBN_mp_rshd) /* 37 */
+#define mp_shrink \
+	(tclTomMathStubsPtr->tclBN_mp_shrink) /* 38 */
+#define mp_set \
+	(tclTomMathStubsPtr->tclBN_mp_set) /* 39 */
+#define mp_sqr \
+	(tclTomMathStubsPtr->tclBN_mp_sqr) /* 40 */
+#define mp_sqrt \
+	(tclTomMathStubsPtr->tclBN_mp_sqrt) /* 41 */
+#define mp_sub \
+	(tclTomMathStubsPtr->tclBN_mp_sub) /* 42 */
+#define mp_sub_d \
+	(tclTomMathStubsPtr->tclBN_mp_sub_d) /* 43 */
+#define mp_to_unsigned_bin \
+	(tclTomMathStubsPtr->tclBN_mp_to_unsigned_bin) /* 44 */
+#define mp_to_unsigned_bin_n \
+	(tclTomMathStubsPtr->tclBN_mp_to_unsigned_bin_n) /* 45 */
+#define mp_toradix_n \
+	(tclTomMathStubsPtr->tclBN_mp_toradix_n) /* 46 */
+#define mp_unsigned_bin_size \
+	(tclTomMathStubsPtr->tclBN_mp_unsigned_bin_size) /* 47 */
+#define mp_xor \
+	(tclTomMathStubsPtr->tclBN_mp_xor) /* 48 */
+#define mp_zero \
+	(tclTomMathStubsPtr->tclBN_mp_zero) /* 49 */
+#define TclBN_reverse \
+	(tclTomMathStubsPtr->tclBN_reverse) /* 50 */
+#define TclBN_fast_s_mp_mul_digs \
+	(tclTomMathStubsPtr->tclBN_fast_s_mp_mul_digs) /* 51 */
+#define TclBN_fast_s_mp_sqr \
+	(tclTomMathStubsPtr->tclBN_fast_s_mp_sqr) /* 52 */
+#define mp_karatsuba_mul \
+	(tclTomMathStubsPtr->tclBN_mp_karatsuba_mul) /* 53 */
+#define mp_karatsuba_sqr \
+	(tclTomMathStubsPtr->tclBN_mp_karatsuba_sqr) /* 54 */
+#define mp_toom_mul \
+	(tclTomMathStubsPtr->tclBN_mp_toom_mul) /* 55 */
+#define mp_toom_sqr \
+	(tclTomMathStubsPtr->tclBN_mp_toom_sqr) /* 56 */
+#define TclBN_s_mp_add \
+	(tclTomMathStubsPtr->tclBN_s_mp_add) /* 57 */
+#define TclBN_s_mp_mul_digs \
+	(tclTomMathStubsPtr->tclBN_s_mp_mul_digs) /* 58 */
+#define TclBN_s_mp_sqr \
+	(tclTomMathStubsPtr->tclBN_s_mp_sqr) /* 59 */
+#define TclBN_s_mp_sub \
+	(tclTomMathStubsPtr->tclBN_s_mp_sub) /* 60 */
+#define mp_init_set_int \
+	(tclTomMathStubsPtr->tclBN_mp_init_set_int) /* 61 */
+#define mp_set_int \
+	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
+#define mp_cnt_lsb \
+	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
+#define mp_expt_d_ex \
+	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
+#define mp_set_long_long \
+	(tclTomMathStubsPtr->tclBN_mp_set_long_long) /* 68 */
+#define mp_get_long_long \
+	(tclTomMathStubsPtr->tclBN_mp_get_long_long) /* 69 */
+#define mp_set_long \
+	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
+#define mp_get_long \
+	(tclTomMathStubsPtr->tclBN_mp_get_long) /* 71 */
+#define mp_get_int \
+	(tclTomMathStubsPtr->tclBN_mp_get_int) /* 72 */
+#define mp_tc_and \
+	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
+#define mp_tc_or \
+	(tclTomMathStubsPtr->tclBN_mp_tc_or) /* 74 */
+#define mp_tc_xor \
+	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
+#define mp_tc_div_2d \
+	(tclTomMathStubsPtr->tclBN_mp_tc_div_2d) /* 76 */
+#define mp_get_bit \
+	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
+#endif /* defined(USE_TCL_STUBS) */
+
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 

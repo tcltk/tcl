@@ -227,7 +227,6 @@ SRC_DIR			= @srcdir@
 TOP_DIR			= @TCL_SRC_DIR@
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
-TOMMATH_DIR		= $(TOP_DIR)/libtommath
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
@@ -240,6 +239,8 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
 ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
+TOMMATH_DIR		= $(TOP_DIR)/libtommath
+TOMMATH_INCLUDE		= @TOMMATH_INCLUDE@
 
 CC			= @CC@
 OBJEXT			= @OBJEXT@
@@ -367,7 +368,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
+OBJS = ${TCL_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -626,8 +627,8 @@ ZLIB_SRCS = \
 # won't compile on the current machine, and they will cause problems for
 # things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
+SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
 
 ###
 # Tip 430 - ZipFS Modifications

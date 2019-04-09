@@ -175,13 +175,13 @@ AC_CHECK_HEADER([tommath.h],[
   AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
   libtommath_ok=no])
 AS_IF([test $libtommath_ok = yes], [
-  AC_SEARCH_LIBS([mp_add],[tommath],[],[
+  AC_SEARCH_LIBS([mp_get_bit],[tommath],[],[
     libtommath_ok=no
   ])])
 AS_IF([test $libtommath_ok = no], [
-  AC_SUBST(LIBTOMMATH_OBJS,[\${LIBTOMMATH_OBJS}])
-  AC_SUBST(LIBTOMMATH_SRCS,[\${LIBTOMMATH_SRCS}])
-  AC_SUBST(LIBTOMMATH_INCLUDE,[-I\${LIBTOMMATH_DIR}])
+  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  AC_SUBST(TOMMATH_SRCS,[\${TOMMATH_SRCS}])
+  AC_SUBST(TOMMATH_INCLUDE,[-I\${TOMMATH_DIR}])
 ])
 
 #--------------------------------------------------------------------

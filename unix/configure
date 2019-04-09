@@ -705,9 +705,9 @@ TCL_LIBS
 LIBOBJS
 AR
 RANLIB
-LIBTOMMATH_INCLUDE
-LIBTOMMATH_SRCS
-LIBTOMMATH_OBJS
+TOMMATH_INCLUDE
+TOMMATH_SRCS
+TOMMATH_OBJS
 ZLIB_INCLUDE
 ZLIB_SRCS
 ZLIB_OBJS
@@ -4695,9 +4695,9 @@ fi
 
 if test $libtommath_ok = yes; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_add" >&5
-$as_echo_n "checking for library containing mp_add... " >&6; }
-if ${ac_cv_search_mp_add+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_get_bit" >&5
+$as_echo_n "checking for library containing mp_get_bit... " >&6; }
+if ${ac_cv_search_mp_get_bit+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -4710,11 +4710,11 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char mp_add ();
+char mp_get_bit ();
 int
 main ()
 {
-return mp_add ();
+return mp_get_bit ();
   ;
   return 0;
 }
@@ -4727,25 +4727,25 @@ for ac_lib in '' tommath; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_mp_add=$ac_res
+  ac_cv_search_mp_get_bit=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if ${ac_cv_search_mp_add+:} false; then :
+  if ${ac_cv_search_mp_get_bit+:} false; then :
   break
 fi
 done
-if ${ac_cv_search_mp_add+:} false; then :
+if ${ac_cv_search_mp_get_bit+:} false; then :
 
 else
-  ac_cv_search_mp_add=no
+  ac_cv_search_mp_get_bit=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_add" >&5
-$as_echo "$ac_cv_search_mp_add" >&6; }
-ac_res=$ac_cv_search_mp_add
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_get_bit" >&5
+$as_echo "$ac_cv_search_mp_get_bit" >&6; }
+ac_res=$ac_cv_search_mp_get_bit
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
@@ -4758,11 +4758,11 @@ fi
 fi
 if test $libtommath_ok = no; then :
 
-  LIBTOMMATH_OBJS=\${LIBTOMMATH_OBJS}
+  TOMMATH_OBJS=\${TOMMATH_OBJS}
 
-  LIBTOMMATH_SRCS=\${LIBTOMMATH_SRCS}
+  TOMMATH_SRCS=\${TOMMATH_SRCS}
 
-  LIBTOMMATH_INCLUDE=-I\${LIBTOMMATH_DIR}
+  TOMMATH_INCLUDE=-I\${TOMMATH_DIR}
 
 
 fi

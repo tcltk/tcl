@@ -4,6 +4,11 @@ compat/zlib/win64/zdll.lib
 compat/zlib/win64/zlib1.dll
 compat/zlib/win64/libz.dll.a
 compat/zlib/zlib.3.pdf
+libtommath/win32/tommath.lib
+libtommath/win32/libtommath.dll
+libtommath/win64/tommath.lib
+libtommath/win64/libtommath.dll
+libtommath/win64/libtommath.dll.a
 *.bmp
 *.gif
 *.png
