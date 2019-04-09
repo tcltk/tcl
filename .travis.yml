@@ -110,6 +110,22 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
         - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - gcc-mingw-w64
+            - gcc-multilib
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
+        - NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
       dist: xenial
@@ -125,6 +141,21 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+        - NO_DIRECT_TEST=1
+    - os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
         - NO_DIRECT_TEST=1
 
 before_install:
