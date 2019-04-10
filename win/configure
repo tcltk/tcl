@@ -4597,10 +4597,13 @@ if test "$tcl_ok" = "yes"; then :
 
   TOMMATH_DLL_FILE=\${TOMMATH_DLL_FILE}
 
+
+$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
   if test "$do64bit" != "no"; then :
 
 
-$as_echo "#define MD_64BIT 1" >>confdefs.h
+$as_echo "#define MP_64BIT 1" >>confdefs.h
 
     if test "$GCC" == "yes"; then :
 

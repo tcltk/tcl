@@ -138,19 +138,7 @@
 #define TclBN_mp_tc_div_2d mp_tc_div_2d
 #define TclBN_mp_get_bit mp_get_bit
 
-#if !defined(TCL_NO_DEPRECATED) && (!defined(_WIN32) || defined(STATIC_BUILD))
-#define TclBN_reverse bn_reverse
-#define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
-#define TclBN_fast_s_mp_sqr fast_s_mp_sqr
-#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
-#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
-#define TclBN_mp_toom_mul mp_toom_mul
-#define TclBN_mp_toom_sqr mp_toom_sqr
-#define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_mul_digs s_mp_mul_digs
-#define TclBN_s_mp_sqr s_mp_sqr
-#define TclBN_s_mp_sub s_mp_sub
-#else
+#if defined(TCL_NO_DEPRECATED) || defined(TCL_WITH_EXTERNAL_TOMMATH)
 #define TclBN_reverse 0
 #define TclBN_fast_s_mp_mul_digs 0
 #define TclBN_fast_s_mp_sqr 0
@@ -162,6 +150,18 @@
 #define TclBN_s_mp_mul_digs 0
 #define TclBN_s_mp_sqr 0
 #define TclBN_s_mp_sub 0
+#else
+#define TclBN_reverse bn_reverse
+#define TclBN_fast_s_mp_mul_digs fast_s_mp_mul_digs
+#define TclBN_fast_s_mp_sqr fast_s_mp_sqr
+#define TclBN_mp_karatsuba_mul mp_karatsuba_mul
+#define TclBN_mp_karatsuba_sqr mp_karatsuba_sqr
+#define TclBN_mp_toom_mul mp_toom_mul
+#define TclBN_mp_toom_sqr mp_toom_sqr
+#define TclBN_s_mp_add s_mp_add
+#define TclBN_s_mp_mul_digs s_mp_mul_digs
+#define TclBN_s_mp_sqr s_mp_sqr
+#define TclBN_s_mp_sub s_mp_sub
 #endif
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */

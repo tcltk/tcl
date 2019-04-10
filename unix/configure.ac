@@ -178,7 +178,9 @@ AS_IF([test $libtommath_ok = yes], [
   AC_SEARCH_LIBS([mp_get_bit],[tommath],[],[
     libtommath_ok=no
   ])])
-AS_IF([test $libtommath_ok = no], [
+AS_IF([test $libtommath_ok = yes], [
+  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
+], [
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
   AC_SUBST(TOMMATH_SRCS,[\${TOMMATH_SRCS}])
   AC_SUBST(TOMMATH_INCLUDE,[-I\${TOMMATH_DIR}])
