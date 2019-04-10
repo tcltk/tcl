@@ -4756,7 +4756,13 @@ else
 fi
 
 fi
-if test $libtommath_ok = no; then :
+if test $libtommath_ok = yes; then :
+
+
+$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
+
+else
 
   TOMMATH_OBJS=\${TOMMATH_OBJS}
 
