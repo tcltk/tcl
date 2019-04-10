@@ -80,7 +80,7 @@ int mp_prime_strong_lucas_selfridge(const mp_int *a, int *result)
    /* CZ TODO: choose better variable names! */
    mp_int Dz, gcd, Np1, Uz, Vz, U2mz, V2mz, Qmz, Q2mz, Qkdz, T1z, T2z, T3z, T4z, Q2kdz;
    /* CZ TODO: Some of them need the full 32 bit, hence the (temporary) exclusion of MP_8BIT */
-   int32_t D, Ds, J, sign, P, Q, r, s, u, Nbits;
+   int D, Ds, J, sign, P, Q, r, s, u, Nbits;
    int e;
    int isset, oddness;
 
