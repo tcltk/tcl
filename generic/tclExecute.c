@@ -6032,7 +6032,7 @@ TEBCresume(
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
 	    int i;
 
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
+	    if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -6040,7 +6040,7 @@ TEBCresume(
 	    /* value is between WIDE_MIN and WIDE_MAX */
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    int i;
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
+	    if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
 		type1 = TCL_NUMBER_LONG;
 	    }
 #endif
@@ -6049,7 +6049,7 @@ TEBCresume(
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    Tcl_WideInt w;
 
-	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
+	    if (TclGetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
@@ -8984,22 +8984,18 @@ ExecuteExtendedBinaryMathOp(
 #endif
 
     overflowExpon:
-	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	if ((big2.used > 1)
-#if DIGIT_BIT > 28
-		    || ((big2.used == 1) && (big2.dp[0] >= (1<<28)))
-#endif
-	) {
-	    mp_clear(&big2);
+
+	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
+		|| (value2Ptr->typePtr != &tclIntType)
+		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	mp_init(&bigResult);
-	mp_expt_d(&big1, big2.dp[0], &bigResult);
+	mp_expt_d(&big1, w2, &bigResult);
 	mp_clear(&big1);
-	mp_clear(&big2);
 	BIG_RESULT(&bigResult);
     }
 
