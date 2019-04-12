@@ -316,6 +316,14 @@ test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
 # The tests for Tcl_SubstObjCmd are in subst.test
 # The tests for Tcl_SwitchObjCmd are in switch.test
 
+# todo: rewrite this if monotonic clock is provided resp. command "after" 
+# gets microsecond accuracy (RFE [fdfbd5e10] gets merged):
+proc _nrt_sleep {msec} {
+    set usec [expr {$msec * 1000}]
+    set stime [clock microseconds]
+    while {abs([clock microseconds] - $stime) < $usec} {after 0}
+}
+
 test cmdMZ-5.1 {Tcl_TimeObjCmd: basic format of command} -body {
     time
 } -returnCodes error -result {wrong # args: should be "time command ?count?"}
@@ -332,7 +340,7 @@ test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
     time {format 1}
 } -match regexp -result {^\d+ microseconds per iteration}
 test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} {
-    expr {[lindex [time {after 2}] 0] < [lindex [time {after 1000}] 0]}
+    expr {[lindex [time {_nrt_sleep 1}] 0] < [lindex [time {_nrt_sleep 20}] 0]}
 } 1
 test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
     list [catch {time {error foo}} msg] $msg $::errorInfo
@@ -367,18 +375,18 @@ test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 nett-ms$} [timerate {} 0 0]
 } 1
 test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} {
-    set m1 [timerate {after 0} 20]
-    set m2 [timerate {after 1} 20]
+    set m1 [timerate {_nrt_sleep 0} 20]
+    set m2 [timerate {_nrt_sleep 0.2} 20]
     list \
 	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
 	[expr {[lindex $m1 0] < 100}] \
-	[expr {[lindex $m2 0] >= 500}] \
+	[expr {[lindex $m2 0] > 100}] \
 	[expr {[lindex $m1 2] > 1000}] \
-	[expr {[lindex $m2 2] <= 50}] \
-	[expr {[lindex $m1 4] > 10000}] \
-	[expr {[lindex $m2 4] < 10000}] \
-	[expr {[lindex $m1 6] > 10 && [lindex $m1 6] < 50}] \
-	[expr {[lindex $m2 6] > 10 && [lindex $m2 6] < 50}]
+	[expr {[lindex $m2 2] < 1000}] \
+	[expr {[lindex $m1 4] > 50000}] \
+	[expr {[lindex $m2 4] < 50000}] \
+	[expr {[lindex $m1 6] > 10 && [lindex $m1 6] < 100}] \
+	[expr {[lindex $m2 6] > 10 && [lindex $m2 6] < 100}]
 } [lrepeat 9 1]
 test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
     list [catch {timerate {error foo} 1} msg] $msg $::errorInfo
@@ -397,11 +405,11 @@ test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
 } {1 1 1 1}
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
-    set m2 [timerate {after 20} 1 5];	# max-time wins
+    set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
     list [lindex $m1 2] [lindex $m2 2]
 } {5 1}
 test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
-    set m1 [timerate -overhead 1e6 {after 10} 100 1]
+    set m1 [timerate -overhead 1e6 {_nrt_sleep 10} 100 1]
     list \
 	[expr {[lindex $m1 0] == 0.0}] \
 	[expr {[lindex $m1 2] == 1}] \
@@ -420,9 +428,9 @@ test cmdMZ-try-1.0 {
 	set cmd try
 	$cmd {
 	    lindex 5
-	} on ok res {} 
+	} on ok res {}
 	set res
-    }} 
+    }}
 } -result 5
 
 
