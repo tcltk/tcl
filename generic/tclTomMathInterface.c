@@ -111,7 +111,7 @@ TclInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
 {
-	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
+	if (mp_init(a) != MP_OKAY) {
 		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
 	}
     if (v < 0) {
@@ -143,7 +143,7 @@ TclInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */
 {
-	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
+	if (mp_init(a) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in TclInitBignumFromWideUInt");
 	}
 	mp_set_long_long(a, v);
