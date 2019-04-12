@@ -212,7 +212,7 @@ procedures nested in statically defined procedures, and literal eval scripts in
 files or statically defined procedures, its type is \fBsource\fR and its
 location is the absolute line number in the script.  Otherwise, its type is
 \fBproc\fR and its location is its line number within the body of the
-procedure. 
+procedure.
 .PP
 In contrast, procedure definitions and \fBeval\fR within a dynamically
 \fBeval\fRuated environment count line numbers relative to the start of
@@ -300,7 +300,7 @@ described \fBOBJECT INTROSPECTION\fR below.
 .TP
 \fBinfo patchlevel\fR
 .
-Returns the value of the global variable \fBtcl_patchLevel\fR, in which the 
+Returns the value of the global variable \fBtcl_patchLevel\fR, in which the
 exact version of the Tcl library initially stored.
 .TP
 \fBinfo procs \fR?\fIpattern\fR?
