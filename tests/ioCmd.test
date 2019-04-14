@@ -206,78 +206,90 @@ test iocmd-7.5 {close command} -setup {
     close $chan
 } -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
 
-test iocmd-8.1 {fconfigure command} {
-    list [catch {fconfigure} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
-test iocmd-8.2 {fconfigure command} {
-    list [catch {fconfigure a b c d e f} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
-test iocmd-8.3 {fconfigure command} {
-    list [catch {fconfigure a b} msg] $msg
-} {1 {can not find channel named "a"}}
-test iocmd-8.4 {fconfigure command} {
+proc expectedOpts {got extra} {
+    set basicOpts {
+	-blocking -buffering -buffersize -encoding -eofchar -translation
+    }
+    set opts [list {*}$basicOpts {*}$extra]
+    lset opts end [string cat "or " [lindex $opts end]]
+    return [format {bad option "%s": should be one of %s} $got [join $opts ", "]]
+}
+test iocmd-8.1 {fconfigure command} -returnCodes error -body {
+    fconfigure
+} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+test iocmd-8.2 {fconfigure command} -returnCodes error -body {
+    fconfigure a b c d e f
+} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+test iocmd-8.3 {fconfigure command} -returnCodes error -body {
+    fconfigure a b
+} -result {can not find channel named "a"}
+test iocmd-8.4 {fconfigure command} -setup {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    set x [list [catch {fconfigure $f1 froboz} msg] $msg]
+} -body {
+    fconfigure $f1 froboz
+} -returnCodes error -cleanup {
     close $f1
-    set x
-} {1 {bad option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.5 {fconfigure command} {
-    list [catch {fconfigure stdin -buffering froboz} msg] $msg
-} {1 {bad value for -buffering: must be one of full, line, or none}}
-test iocmd-8.6 {fconfigure command} {
-    list [catch {fconfigure stdin -translation froboz} msg] $msg
-} {1 {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}}
-test iocmd-8.7 {fconfigure command} {
+} -result [expectedOpts "froboz" {}]
+test iocmd-8.5 {fconfigure command} -returnCodes error -body {
+    fconfigure stdin -buffering froboz
+} -result {bad value for -buffering: must be one of full, line, or none}
+test iocmd-8.6 {fconfigure command} -returnCodes error -body {
+    fconfigure stdin -translation froboz
+} -result {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}
+test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
+} -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -eofchar {} -encoding unicode
-    set x [fconfigure $f1]
-    close $f1
-    set x
-} {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
-test iocmd-8.8 {fconfigure command} {
+    fconfigure $f1
+} -cleanup {
+    catch {close $f1}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
+test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
+    set x {}
+} -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
 		-eofchar {} -encoding unicode
-    set x ""
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
-    close $f1
-    set x
-} {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
-test iocmd-8.9 {fconfigure command} {
+} -cleanup {
+    catch {close $f1}
+} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
+test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
+} -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
 		-eofchar {} -encoding binary
-    set x [fconfigure $f1]
-    close $f1
-    set x
-} {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
-test iocmd-8.10 {fconfigure command} {
-    list [catch {fconfigure a b} msg] $msg
-} {1 {can not find channel named "a"}}
+    fconfigure $f1
+} -cleanup {
+    catch {close $f1}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
+test iocmd-8.10 {fconfigure command} -returnCodes error -body {
+    fconfigure a b
+} -result {can not find channel named "a"}
 set path(fconfigure.dummy) [makeFile {} fconfigure.dummy]
-test iocmd-8.11 {fconfigure command} {
+test iocmd-8.11 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.12 {fconfigure command} {
+    fconfigure $chan -froboz blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-froboz" {}]
+test iocmd-8.12 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.13 {fconfigure command} {
+    fconfigure $chan -b blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-b" {}]
+test iocmd-8.13 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+    fconfigure $chan -buffer blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-buffer" {}]
 removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
@@ -294,7 +306,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -connecting, -peername, or -sockname}
+} -returnCodes error -result [expectedOpts "-blah" {-connecting -peername -sockname}]
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
@@ -337,7 +349,7 @@ test iocmd-8.18 {fconfigure command / unix tty channel} -constraints {nonPortabl
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}
+} -returnCodes error -result [expectedOpts "-blah" {-closemode -inputmode -mode -queue -ttystatus -xchar}]
 test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable win} -setup {
     set tty ""
 } -body {
@@ -348,7 +360,13 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
+} -returnCodes error -result [expectedOpts "-blah" {-closemode -mode -handshake -pollinterval -sysbuffer -timeout -ttycontrol -xchar}]
+test iocmd-8.20 {fconfigure command / win console channel} -constraints {nonPortable win} -setup {
+    # I don't know how else to open the console, but this is non-portable
+    set console stdin
+} -body {
+    fconfigure $console -blah blih
+} -returnCodes error -result [expectedOpts "-blah" {-inputmode}]
 # TODO: Test parsing of serial channel options (nonPortable, since requires an
 # open channel to work with).
 

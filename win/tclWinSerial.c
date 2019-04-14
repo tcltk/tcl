@@ -44,6 +44,15 @@ TCL_DECLARE_MUTEX(serialMutex)
 #define SERIAL_ERROR	(1<<4)
 
 /*
+ * Bit masks used for noting whether to drain or discard output on close. They
+ * are disjoint from each other; at most one may be set at a time.
+ */
+
+#define SERIAL_CLOSE_DRAIN   (1<<6)	/* Drain all output on close. */
+#define SERIAL_CLOSE_DISCARD (1<<7)	/* Discard all output on close. */
+#define SERIAL_CLOSE_MASK    (3<<6)	/* Both two bits above. */
+
+/*
  * Default time to block between checking status on the serial port.
  */
 
@@ -604,7 +613,6 @@ SerialCloseProc(
     serialPtr->validMask &= ~TCL_READABLE;
 
     if (serialPtr->writeThread) {
-
     	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
 
 	CloseHandle(serialPtr->osWrite.hEvent);
@@ -1278,7 +1286,7 @@ SerialWriterThread(
 	    /* exit */
 	    break;
 	}
-	infoPtr = (SerialInfo *)pipeTI->clientData;
+	infoPtr = (SerialInfo *) pipeTI->clientData;
 
 	buf = infoPtr->writeBuf;
 	toWrite = infoPtr->toWrite;
@@ -1342,7 +1350,25 @@ SerialWriterThread(
 	Tcl_MutexUnlock(&serialMutex);
     }
 
-    /* Worker exit, so inform the main thread or free TI-structure (if owned) */
+    /*
+     * We're about to close, so do any drain or discard required.
+     */
+
+    if (infoPtr) {
+	switch (infoPtr->flags & SERIAL_CLOSE_MASK) {
+	case SERIAL_CLOSE_DRAIN:
+	    FlushFileBuffers(infoPtr->handle);
+	    break;
+	case SERIAL_CLOSE_DISCARD:
+	    PurgeComm(infoPtr->handle, PURGE_TXABORT | PURGE_TXCLEAR);
+	    break;
+	}
+    }
+
+    /*
+     * Worker exit, so inform the main thread or free TI-structure (if owned).
+     */
+
     TclPipeThreadExit(&pipeTI);
 
     return 0;
@@ -1608,6 +1634,32 @@ SerialSetOptionProc(
 
     len = strlen(optionName);
     vlen = strlen(value);
+
+    /*
+     * Option -closemode drain|discard|default
+     */
+
+    if ((len > 2) && (strncmp(optionName, "-closemode", len) == 0)) {
+	if (Tcl_UtfNcasecmp(value, "DEFAULT", vlen) == 0) {
+	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
+	} else if (Tcl_UtfNcasecmp(value, "DRAIN", vlen) == 0) {
+	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
+	    infoPtr->flags |= SERIAL_CLOSE_DRAIN;
+	} else if (Tcl_UtfNcasecmp(value, "DISCARD", vlen) == 0) {
+	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
+	    infoPtr->flags |= SERIAL_CLOSE_DISCARD;
+	} else {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad mode \"%s\" for -closemode: must be"
+			" default, discard, or drain", value));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
 
     /*
      * Option -mode baud,parity,databits,stopbits
@@ -1938,7 +1990,8 @@ SerialSetOptionProc(
     }
 
     return Tcl_BadChannelOption(interp, optionName,
-	    "mode handshake pollinterval sysbuffer timeout ttycontrol xchar");
+	    "closemode mode handshake pollinterval sysbuffer timeout "
+	    "ttycontrol xchar");
 
   getStateFailed:
     if (interp != NULL) {
@@ -1996,6 +2049,27 @@ SerialGetOptionProc(
 	len = 0;
     } else {
 	len = strlen(optionName);
+    }
+
+    /*
+     * Get option -closemode
+     */
+
+    if (len == 0) {
+	Tcl_DStringAppendElement(dsPtr, "-closemode");
+    }
+    if (len==0 || (len>1 && strncmp(optionName, "-closemode", len)==0)) {
+	switch (infoPtr->flags & SERIAL_CLOSE_MASK) {
+	case SERIAL_CLOSE_DRAIN:
+	    Tcl_DStringAppendElement(dsPtr, "drain");
+	    break;
+	case SERIAL_CLOSE_DISCARD:
+	    Tcl_DStringAppendElement(dsPtr, "discard");
+	    break;
+	default:
+	    Tcl_DStringAppendElement(dsPtr, "default");
+	    break;
+	}
     }
 
     /*
@@ -2174,7 +2248,8 @@ SerialGetOptionProc(
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName,
-	    "mode pollinterval lasterror queue sysbuffer ttystatus xchar");
+	    "closemode mode pollinterval lasterror queue sysbuffer ttystatus "
+	    "xchar");
 }
 
 /*
