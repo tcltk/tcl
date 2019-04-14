@@ -667,7 +667,7 @@ declare 186 {
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
-    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr,
+    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type)
 }
 
@@ -2377,6 +2377,12 @@ declare 642 {
 
 declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
+# TIP#312 New Tcl_LinkArray() function
+declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, int size)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
