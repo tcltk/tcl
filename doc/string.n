@@ -89,9 +89,9 @@ length of the string then this command returns an empty string.
 .RE
 .TP
 \fBstring insert \fIstring index insertString\fR
-.
+.VS "TIP 504"
 Returns a copy of \fIstring\fR with \fIinsertString\fR inserted at the
-\fIindex\fR'th character.  \fIindex\fR may be specified as described in the
+\fIindex\fR'th character.  The \fIindex\fR may be specified as described in the
 \fBSTRING INDICES\fR section.
 .RS
 .PP
@@ -104,6 +104,7 @@ If \fIindex\fR is at or before the start of \fIstring\fR (e.g., \fIindex\fR is
 or after the end of \fIstring\fR (e.g., \fIindex\fR is \fBend\fR),
 \fIinsertString\fR is appended to \fIstring\fR.
 .RE
+.VE "TIP 504"
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 .
@@ -291,7 +292,9 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR. An index of 0 refers to the first
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
+character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
 as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
 it is treated as if it were zero, and if \fIlast\fR is greater than or
@@ -301,13 +304,16 @@ string is returned.
 .TP
 \fBstring repeat \fIstring count\fR
 .
-Returns \fIstring\fR repeated \fIcount\fR number of times.
+Returns a string consisting of \fIstring\fR concatenated with itself
+\fIcount\fR times. If \fIcount\fR is 0, the empty string will be
+returned.
 .TP
 \fBstring replace \fIstring first last\fR ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR.  An index of 0 refers to the
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR).  An index of 0 refers to the
 first character of the string.  \fIFirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.  If \fInewstring\fR is
 specified, then it is placed in the removed character range.  If
