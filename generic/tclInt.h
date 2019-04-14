@@ -3471,6 +3471,9 @@ MODULE_SCOPE int	Tcl_LpopObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LrangeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LremoveObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LrepeatObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
