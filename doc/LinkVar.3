@@ -34,6 +34,11 @@ Also used by \fBTcl_LinkVar\fR to return error messages.
 Name of global variable.
 .AP void *addr in
 Address of C variable that is to be linked to \fIvarName\fR.
+.sp
+.VS "TIP 312"
+In \fBTcl_LinkArray\fR, may be NULL to tell Tcl to create the storage
+for the array in the variable.
+.VE "TIP 312"
 .AP int type in
 Type of C variable for \fBTcl_LinkVar\fR or type of array element for
 \fBTcl_LinkArray\fR.  Must be one of \fBTCL_LINK_INT\fR,
@@ -48,9 +53,7 @@ used.
 .sp
 .VS "TIP 312"
 In \fBTcl_LinkArray\fR, the additional linked types \fBTCL_LINK_CHARS\fR and
-\fBTCL_LINK_BYTES\fR may be used.  \fBTCL_LINK_ALLOC\fR may also be OR'ed in
-to tell Tcl to manage the storage for the array in the variable (that is, the
-C variable is technically a pointer to an array, not the array itself).
+\fBTCL_LINK_BYTES\fR may be used.
 .VE "TIP 312"
 .sp
 All the above for both functions may be
@@ -77,9 +80,8 @@ contains an error message.
 .VS "TIP 312"
 \fBTcl_LinkArray\fR is similar, but for arrays of fixed size (given by
 the \fIsize\fR argument). When asked to allocate the backing C array
-storage (via the \fBTCL_LINK_ALLOC\fR bit), it writes the address that
-it allocated to the Tcl interpreter result in addition to storing the
-location of the array in the C variable pointed to by \fIaddr\fR.
+storage (via the \fIaddr\fR argument being NULL), it writes the
+address that it allocated to the Tcl interpreter result.
 .VE "TIP 312"
 .PP
 The \fItype\fR argument specifies the type of the C variable,

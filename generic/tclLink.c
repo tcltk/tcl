@@ -235,8 +235,7 @@ Tcl_LinkArray(
 				 * will be allocated and returned as the
 				 * interpreter result. */
     int type,			/* Type of C variable: TCL_LINK_INT, etc. Also
-				 * may have TCL_LINK_READ_ONLY and
-				 * TCL_LINK_ALLOC OR'ed in. */
+				 * may have TCL_LINK_READ_ONLY OR'ed in. */
     int size)			/* Size of C variable array, >1 if array */
 {
     Tcl_Obj *objPtr;
