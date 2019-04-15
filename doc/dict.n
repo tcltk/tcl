@@ -120,6 +120,8 @@ It is an error to attempt to retrieve a value for a key that is not
 present in the dictionary.
 .RE
 .TP
+\fBdict getdef \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
+.TP
 \fBdict getwithdefault \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
 .VS "8.7, TIP342"
 This behaves the same as \fBdict get\fR (with at least one \fIkey\fR
@@ -129,7 +131,8 @@ error because the \fIkey\fR (or one of the \fIkey\fRs on the key path)
 is absent, it returns the \fIdefault\fR argument instead.
 .RS
 .PP
-Note that there must always be at least one \fIkey\fR provided.
+Note that there must always be at least one \fIkey\fR provided, and that
+\fBdict getdef\fR and \fBdict getwithdefault\fR are aliases for each other.
 .RE
 .VE "8.7, TIP342"
 .TP

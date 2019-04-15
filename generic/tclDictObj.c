@@ -34,9 +34,8 @@ static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictGetWithDefaultCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
+static int		DictGetDefCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
@@ -92,7 +91,8 @@ static const EnsembleImplMap implementationMap[] = {
     {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
     {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
-    {"getwithdefault",	DictGetWithDefaultCmd,	NULL, NULL, NULL, 0 },
+    {"getdef",	DictGetDefCmd,	NULL, NULL, NULL, 0 },
+    {"getwithdefault",	DictGetDefCmd,	NULL, NULL, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
     {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -1631,11 +1631,11 @@ DictGetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * DictGetWithDefaultCmd --
+ * DictGetDefCmd --
  *
- *	This function implements the "dict getwithdefault" Tcl command. See
- *	the user documentation for details on what it does, and TIP#342 for
- *	the formal specification.
+ *	This function implements the "dict getdef" and "dict getwithdefault"
+ *	Tcl commands. See the user documentation for details on what it does,
+ *	and TIP#342 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1647,7 +1647,7 @@ DictGetCmd(
  */
 
 static int
-DictGetWithDefaultCmd(
+DictGetDefCmd(
     ClientData dummy,
     Tcl_Interp *interp,
     int objc,
