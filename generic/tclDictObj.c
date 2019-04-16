@@ -34,6 +34,8 @@ static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
+static int		DictGetDefCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
@@ -89,6 +91,8 @@ static const EnsembleImplMap implementationMap[] = {
     {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
     {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
+    {"getdef",	DictGetDefCmd,	NULL, NULL, NULL, 0 },
+    {"getwithdefault",	DictGetDefCmd,	NULL, NULL, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
     {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -1621,6 +1625,71 @@ DictGetCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictGetDefCmd --
+ *
+ *	This function implements the "dict getdef" and "dict getwithdefault"
+ *	Tcl commands. See the user documentation for details on what it does,
+ *	and TIP#342 for the formal specification.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DictGetDefCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *dictPtr, *keyPtr, *valuePtr, *defaultPtr;
+    Tcl_Obj *const *keyPath;
+    int numKeys;
+
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key default");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Give the bits of arguments names for clarity.
+     */
+
+    dictPtr = objv[1];
+    keyPath = &objv[2];
+    numKeys = objc - 4;		/* Number of keys in keyPath; there's always
+				 * one extra key afterwards too. */
+    keyPtr = objv[objc - 2];
+    defaultPtr = objv[objc - 1];
+
+    /*
+     * Implement the getting-with-default operation.
+     */
+
+    dictPtr = TclTraceDictPath(interp, dictPtr, numKeys, keyPath,
+	    DICT_PATH_EXISTS);
+    if (dictPtr == NULL) {
+	return TCL_ERROR;
+    } else if (dictPtr == DICT_PATH_NON_EXISTENT) {
+	Tcl_SetObjResult(interp, defaultPtr);
+    } else if (Tcl_DictObjGet(interp, dictPtr, keyPtr, &valuePtr) != TCL_OK) {
+	return TCL_ERROR;
+    } else if (valuePtr == NULL) {
+	Tcl_SetObjResult(interp, defaultPtr);
+    } else {
+	Tcl_SetObjResult(interp, valuePtr);
+    }
     return TCL_OK;
 }
 

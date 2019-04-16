@@ -2047,6 +2047,62 @@ test dict-25.1 {compiled dict update with low-refcount values [Bug d553228d9f]} 
 	dict update item item item two two {}
     }}
 } {}
+
+test dict-26.1 {dict getdef command} -body {
+    dict getdef {a b} a c
+} -result b
+test dict-26.2 {dict getdef command} -body {
+    dict getdef {a b} b c
+} -result c
+test dict-26.3 {dict getdef command} -body {
+    dict getdef {a {b c}} a b d
+} -result c
+test dict-26.4 {dict getdef command} -body {
+    dict getdef {a {b c}} a c d
+} -result d
+test dict-26.5 {dict getdef command} -body {
+    dict getdef {a {b c}} b c d
+} -result d
+test dict-26.6 {dict getdef command} -returnCodes error -body {
+    dict getdef {a {b c d}} a b d
+} -result {missing value to go with key}
+test dict-26.7 {dict getdef command} -returnCodes error -body {
+    dict getdef
+} -result {wrong # args: should be "dict getdef dictionary ?key ...? key default"}
+test dict-26.8 {dict getdef command} -returnCodes error -body {
+    dict getdef {}
+} -result {wrong # args: should be "dict getdef dictionary ?key ...? key default"}
+test dict-26.9 {dict getdef command} -returnCodes error -body {
+    dict getdef {} {}
+} -result {wrong # args: should be "dict getdef dictionary ?key ...? key default"}
+
+test dict-27.1 {dict getwithdefault command} -body {
+    dict getwithdefault {a b} a c
+} -result b
+test dict-27.2 {dict getwithdefault command} -body {
+    dict getwithdefault {a b} b c
+} -result c
+test dict-27.3 {dict getwithdefault command} -body {
+    dict getwithdefault {a {b c}} a b d
+} -result c
+test dict-27.4 {dict getwithdefault command} -body {
+    dict getwithdefault {a {b c}} a c d
+} -result d
+test dict-27.5 {dict getwithdefault command} -body {
+    dict getwithdefault {a {b c}} b c d
+} -result d
+test dict-27.6 {dict getwithdefault command} -returnCodes error -body {
+    dict getwithdefault {a {b c d}} a b d
+} -result {missing value to go with key}
+test dict-27.7 {dict getwithdefault command} -returnCodes error -body {
+    dict getwithdefault
+} -result {wrong # args: should be "dict getwithdefault dictionary ?key ...? key default"}
+test dict-27.8 {dict getwithdefault command} -returnCodes error -body {
+    dict getwithdefault {}
+} -result {wrong # args: should be "dict getwithdefault dictionary ?key ...? key default"}
+test dict-27.9 {dict getwithdefault command} -returnCodes error -body {
+    dict getwithdefault {} {}
+} -result {wrong # args: should be "dict getwithdefault dictionary ?key ...? key default"}
 
 # cleanup
 ::tcltest::cleanupTests
