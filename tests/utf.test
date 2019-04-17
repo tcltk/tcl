@@ -161,7 +161,7 @@ test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
 test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
     string index \ud842 0
 } "\ud842"
-test utf-8.5 {Tcl_UniCharAtIndex: low surrogate} {
+test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
     string index \udc42 0
 } "\udc42"
 
@@ -192,7 +192,7 @@ test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
 test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} testbytestring {
     expr {"\U1e2165" eq "[testbytestring \xf0\x9e\x88\x96]5"}
 } 1
-test utf-10.6 {Tcl_UtfBackslash: stops after 6 hex chars} testbytestring {
+test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} testbytestring {
     expr {"\U10e2165" eq "[testbytestring \xf4\x8e\x88\x96]5"}
 } 1
 proc bsCheck {char num} {
@@ -203,7 +203,7 @@ proc bsCheck {char num} {
     } $num
     incr errNum
 }
-set errNum 6
+set errNum 8
 bsCheck \b	8
 bsCheck \e	101
 bsCheck \f	12
