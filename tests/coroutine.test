@@ -626,19 +626,31 @@ test coroutine-7.5 {return codes} {
     }
     set result
 } {0 1 2 3 4 5}
-test coroutine-7.6 {Early yield crashes} {
-    proc foo args {}
-    trace add execution foo enter {catch yield}
-    coroutine demo foo
-    rename foo {}
-} {}
-test coroutine-7.7 {Bug 2486550} -setup {
-    interp hide {} yield
+test coroutine-7.6 {Early yield crashes} -setup {
+    set i [interp create]
 } -body {
-    coroutine demo interp invokehidden {} yield ok
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	proc foo args {}
+	trace add execution foo enter {catch yield}
+	coroutine demo foo
+	rename foo {}
+	return ok
+    }
 } -cleanup {
-    demo
-    interp expose {} yield
+    interp delete $i
+} -result ok
+test coroutine-7.7 {Bug 2486550} -setup {
+    set i [interp create]
+    $i hide yield
+} -body {
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	coroutine demo interp invokehidden {} yield ok
+    }
+} -cleanup {
+    $i eval demo
+    interp delete $i
 } -result ok
 test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
     namespace eval cotest {}
@@ -780,8 +792,6 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     interp delete slave
     set result
 } -result {inject-executed}
-
-
 
 # cleanup
 unset lambda
