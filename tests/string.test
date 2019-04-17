@@ -2415,75 +2415,75 @@ test string-31.25.$noComp {string insert, neither byte array nor Unicode} {
     run {tcl::string::insert [makeList a b c] 1 zzzzzz}
 } {azzzzzz b c}
 
-test string-31.1.$noComp {string is dict} {
+test string-32.1.$noComp {string is dict} {
     string is dict {a b c d}
 } 1
-test string-31.1a.$noComp {string is dict} {
+test string-32.1a.$noComp {string is dict} {
     string is dict {a b c}
 } 0
-test string-31.2.$noComp {string is dict} {
+test string-32.2.$noComp {string is dict} {
     string is dict "a \{b c"
 } 0
-test string-31.3.$noComp {string is dict} {
+test string-32.3.$noComp {string is dict} {
     string is dict {a {b c}d e}
 } 0
-test string-31.4.$noComp {string is dict} {
+test string-32.4.$noComp {string is dict} {
     string is dict {}
 } 1
-test string-31.5.$noComp {string is dict} {
+test string-32.5.$noComp {string is dict} {
     string is dict -strict {a b c d}
 } 1
-test string-31.5a.$noComp {string is dict} {
+test string-32.5a.$noComp {string is dict} {
     string is dict -strict {a b c}
 } 0
-test string-31.6.$noComp {string is dict} {
+test string-32.6.$noComp {string is dict} {
     string is dict -strict "a \{b c"
 } 0
-test string-31.7.$noComp {string is dict} {
+test string-32.7.$noComp {string is dict} {
     string is dict -strict {a {b c}d e}
 } 0
-test string-31.8.$noComp {string is dict} {
+test string-32.8.$noComp {string is dict} {
     string is dict -strict {}
 } 1
-test string-31.9.$noComp {string is dict} {
+test string-32.9.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b c d}] $x
 } {1 {}}
-test string-31.9a.$noComp {string is dict} {
+test string-32.9a.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b c}] $x
 } {0 -1}
-test string-31.10.$noComp {string is dict} {
+test string-32.10.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "a \{b c d"] $x
 } {0 2}
-test string-31.10a.$noComp {string is dict} {
+test string-32.10a.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "a \{b c"] $x
 } {0 2}
-test string-31.11.$noComp {string is dict} {
+test string-32.11.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b {b c}d e}] $x
 } {0 4}
-test string-31.12.$noComp {string is dict} {
+test string-32.12.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {}] $x
 } {1 {}}
-test string-31.13.$noComp {string is dict} {
+test string-32.13.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {  {b c}d e}] $x
 } {0 2}
-test string-31.14.$noComp {string is dict} {
+test string-32.14.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "\uabcd {b c}d e"] $x
 } {0 2}
-test string-31.15.$noComp {string is dict, valid dict} {
+test string-32.15.$noComp {string is dict, valid dict} {
     string is dict {a b c d e f}
 } 1
-test string-31.16.$noComp {string is dict, invalid dict} {
+test string-32.16.$noComp {string is dict, invalid dict} {
     string is dict a
 } 0
-test string-31.17.$noComp {string is dict, valid dict packed in invalid dict} {
+test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
     string is dict {{a b c d e f g h}}
 } 0
 
