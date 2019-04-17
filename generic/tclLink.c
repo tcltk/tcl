@@ -345,6 +345,17 @@ Tcl_LinkArray(
     }
 
     /*
+     * Initialize allocated space.
+     */
+
+    if (linkPtr->flags & LINK_ALLOC_ADDR) {
+	memset(linkPtr->addr, 0, linkPtr->bytes);
+    }
+    if (linkPtr->flags & LINK_ALLOC_LAST) {
+	memset(linkPtr->lastValue.aryPtr, 0, linkPtr->bytes);
+    }
+
+    /*
      * Set common structure values.
      */
 
