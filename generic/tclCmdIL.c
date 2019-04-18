@@ -4318,7 +4318,7 @@ Tcl_LsortObjCmd(
 
     elementArray = ckalloc(length * sizeof(SortElement));
 
-    for (i=0; i < length; i++){
+    for (i=0; i < length; i++) {
 	idx = groupSize * i + groupOffset;
 	if (indexc) {
 	    /*
