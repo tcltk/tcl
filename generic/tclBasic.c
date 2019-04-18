@@ -4925,7 +4925,7 @@ TEOV_Error(
     int objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
 
-    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)){
+    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	/*
 	 * If there was an error, a command string will be needed for the
 	 * error log: get it out of the itemPtr. The details depend on the
@@ -5134,7 +5134,7 @@ TEOV_RunLeaveTraces(
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
+	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}

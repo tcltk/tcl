@@ -8348,7 +8348,7 @@ ExecuteExtendedBinaryMathOp(
 	     * Reduce small powers of 2 to shifts.
 	     */
 
-	    if ((Tcl_WideUInt)w2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
+	    if ((Tcl_WideUInt) w2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
 		WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
 	    }
 	    goto overflowExpon;

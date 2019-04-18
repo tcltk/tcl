@@ -2010,7 +2010,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && TclHasIntRep(objv[objc-2], &tclDictType)){
+	    && TclHasIntRep(objv[objc-2], &tclDictType)) {
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -2424,15 +2424,16 @@ StringRplcCmd(
     end = length - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK){
+	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     /*
-     * The following test screens out most empty substrings as
-     * candidates for replacement. When they are detected, no
-     * replacement is done, and the result is the original string,
+     * The following test screens out most empty substrings as candidates for
+     * replacement. When they are detected, no replacement is done, and the
+     * result is the original string.
      */
+
     if ((last < 0) ||		/* Range ends before start of string */
 	    (first > end) ||	/* Range begins after end of string */
 	    (last < first)) {	/* Range begins after it starts */
@@ -2442,6 +2443,7 @@ StringRplcCmd(
 	 * have (first <= end < 0 <= last) and an empty string is permitted
 	 * to be replaced.
 	 */
+
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
 	Tcl_Obj *resultPtr;
@@ -3623,7 +3625,7 @@ TclNRSwitchObjCmd(
 	Tcl_Obj **listv;
 
 	blist = objv[0];
-	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK){
+	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
