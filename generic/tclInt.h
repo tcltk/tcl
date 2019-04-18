@@ -3648,6 +3648,9 @@ MODULE_SCOPE int	TclCompileDictForCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileDictGetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictGetWithDefaultCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictIncrCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);

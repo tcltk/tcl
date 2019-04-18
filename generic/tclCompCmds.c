@@ -1177,6 +1177,38 @@ TclCompileDictGetCmd(
 }
 
 int
+TclCompileDictGetWithDefaultCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int i;
+    DefineLineInformation;	/* TIP #280 */
+
+    /*
+     * There must be at least three arguments after the command.
+     */
+
+    /* TODO: Consider support for compiling expanded args. */
+    if (parsePtr->numWords < 4) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt4(INST_DICT_GET_DEF, parsePtr->numWords-3, envPtr);
+    TclAdjustStackDepth(-2, envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileDictExistsCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
