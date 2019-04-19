@@ -2707,6 +2707,142 @@ Tcl_LrangeObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_LremoveObjCmd --
+ *
+ *	This procedure is invoked to process the "lremove" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef int list_index_t;
+
+static int
+LremoveIndexCompare(
+    const void *el1Ptr,
+    const void *el2Ptr)
+{
+    list_index_t idx1 = *((const list_index_t *) el1Ptr);
+    list_index_t idx2 = *((const list_index_t *) el2Ptr);
+
+    /*
+     * This will put the larger element first.
+     */
+
+    return (idx1 < idx2) ? 1 : (idx1 > idx2) ? -1 : 0;
+}
+
+int
+Tcl_LremoveObjCmd(
+    ClientData notUsed,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int i, idxc;
+    list_index_t listLen, *idxv, prevIdx, first, num;
+    Tcl_Obj *listObj;
+
+    /*
+     * Parse the arguments.
+     */
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list ?index ...?");
+	return TCL_ERROR;
+    }
+
+    listObj = objv[1];
+    if (TclListObjLength(interp, listObj, &listLen) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    idxc = objc - 2;
+    if (idxc == 0) {
+	Tcl_SetObjResult(interp, listObj);
+	return TCL_OK;
+    }
+    idxv = Tcl_Alloc((objc - 2) * sizeof(list_index_t));
+    for (i = 2; i < objc; i++) {
+	if (TclGetIntForIndexM(interp, objv[i], /*endValue*/ listLen - 1,
+		&idxv[i - 2]) != TCL_OK) {
+	    Tcl_Free(idxv);
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Sort the indices, large to small so that when we remove an index we
+     * don't change the indices still to be processed.
+     */
+
+    if (idxc > 1) {
+	qsort(idxv, idxc, sizeof(list_index_t), LremoveIndexCompare);
+    }
+
+    /*
+     * Make our working copy, then do the actual removes piecemeal.
+     */
+
+    if (Tcl_IsShared(listObj)) {
+	listObj = TclListObjCopy(NULL, listObj);
+    }
+    num = 0;
+    first = listLen;
+    for (i = 0, prevIdx = -1 ; i < idxc ; i++) {
+	list_index_t idx = idxv[i];
+
+	/*
+	 * Repeated index and sanity check.
+	 */
+
+	if (idx == prevIdx) {
+	    continue;
+	}
+	prevIdx = idx;
+	if (idx < 0 || idx >= listLen) {
+	    continue;
+	}
+
+	/*
+	 * Coalesce adjacent removes to reduce the number of copies.
+	 */
+
+	if (num == 0) {
+	    num = 1;
+	    first = idx;
+	} else if (idx + 1 == first) {
+	    num++;
+	    first = idx;
+	} else {
+	    /*
+	     * Note that this operation can't fail now; we know we have a list
+	     * and we're only ever contracting that list.
+	     */
+
+	    (void) Tcl_ListObjReplace(interp, listObj, first, num, 0, NULL);
+	    listLen -= num;
+	    num = 1;
+	    first = idx;
+	}
+    }
+    if (num != 0) {
+	(void) Tcl_ListObjReplace(interp, listObj, first, num, 0, NULL);
+    }
+    Tcl_Free(idxv);
+    Tcl_SetObjResult(interp, listObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_LrepeatObjCmd --
  *
  *	This procedure is invoked to process the "lrepeat" Tcl command. See
@@ -4189,7 +4325,7 @@ Tcl_LsortObjCmd(
 
     elementArray = Tcl_Alloc(length * sizeof(SortElement));
 
-    for (i=0; i < length; i++){
+    for (i=0; i < length; i++) {
 	idx = groupSize * i + groupOffset;
 	if (indexc) {
 	    /*

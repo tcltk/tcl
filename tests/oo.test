@@ -2549,7 +2549,7 @@ test oo-16.17 {OO: object introspection: creationid #500} -body {
 test oo-16.18 {OO: object introspection: creationid #500} -body {
     info object creationid
 } -returnCodes error -result {wrong # args: should be "info object creationid objName"}
-test oo-16.18 {OO: object introspection: creationid #500} -body {
+test oo-16.18.1 {OO: object introspection: creationid #500} -body {
     info object creationid oo::object gorp
 } -returnCodes error -result {wrong # args: should be "info object creationid objName"}
 test oo-16.19 {OO: object introspection: creationid #500} -setup {
@@ -4095,7 +4095,7 @@ test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
 }] -result {0 {} {g h i a b c} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {g h i a b c}}}
-test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+test oo-32.7 {TIP 516: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
     list [info level] [sampleSlot -remove c a] \
