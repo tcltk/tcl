@@ -1484,8 +1484,8 @@ StringInsertCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
 {
-    int length;			/* String length */
-    int index;			/* Insert index */
+    size_t length;		/* String length */
+    size_t index;		/* Insert index */
     Tcl_Obj *outObj;		/* Output object */
 
     if (objc != 4) {
@@ -1498,8 +1498,8 @@ StringInsertCmd(
 	return TCL_ERROR;
     }
 
-    if (index < 0) {
-	index = 0;
+    if (index == TCL_INDEX_NONE) {
+	index = TCL_INDEX_START;
     }
     if (index > length) {
 	index = length;
