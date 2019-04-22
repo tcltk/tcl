@@ -1711,6 +1711,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1772,8 +1773,10 @@ TclZipfs_MountBuffer(
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    ckfree(zf);
+    return result;
 }
 
 /*
