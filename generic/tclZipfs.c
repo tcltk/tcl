@@ -1768,6 +1768,7 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
+    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
