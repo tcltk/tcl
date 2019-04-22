@@ -1911,7 +1911,7 @@ ZipFSMountBufferObjCmd(
     unsigned char *data;
     int length;
 
-    if (objc > 4) {
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
 	return TCL_ERROR;
     }
