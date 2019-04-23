@@ -1705,6 +1705,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1762,11 +1763,14 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
+    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    ckfree(zf);
+    return result;
 }
 
 /*
@@ -1905,7 +1909,7 @@ ZipFSMountBufferObjCmd(
     unsigned char *data;
     size_t length = 0;
 
-    if (objc > 4) {
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
 	return TCL_ERROR;
     }
