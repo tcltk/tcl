@@ -932,12 +932,16 @@ TclChanPostEventObjCmd(
     if (rcPtr->owner == rcPtr->thread) {
 #endif
 	if (events & TCL_READABLE) {
+	    if (rcPtr->readTimer == NULL) {
 		rcPtr->readTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 			TimerRunRead, rcPtr);
+	    }
 	}
 	if (events & TCL_WRITABLE) {
+	    if (rcPtr->writeTimer == NULL) {
 		rcPtr->writeTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 			TimerRunWrite, rcPtr);
+	    }
 	}
 #if TCL_THREADS
     } else {
@@ -991,7 +995,7 @@ TimerRunRead(
     ClientData clientData)
 {
     ReflectedChannel *rcPtr = clientData;
-    rcPtr->readTimer = 0;
+    rcPtr->readTimer = NULL;
     Tcl_NotifyChannel(rcPtr->chan, TCL_READABLE);
 }
 
@@ -1000,7 +1004,7 @@ TimerRunWrite(
     ClientData clientData)
 {
     ReflectedChannel *rcPtr = clientData;
-    rcPtr->writeTimer = 0;
+    rcPtr->writeTimer = NULL;
     Tcl_NotifyChannel(rcPtr->chan, TCL_WRITABLE);
 }
 
