@@ -682,7 +682,8 @@ NativeReadReparse(
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = CreateFile(linkDirPath, desiredAccess, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+    hFile = CreateFile(linkDirPath, desiredAccess, FILE_SHARE_READ, NULL,
+	    OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -844,7 +845,7 @@ tclWinDebugPanic(
 #endif
     abort();
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1461,11 +1462,16 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-	/* no domain - firstly check it's the current user */
-	if ( (ptr = TclpGetUserName(&ds)) != NULL
-	  && strcasecmp(name, ptr) == 0
-	) {
-	    /* try safest and fastest way to get current user home */
+	/*
+	 * No domain. Firstly check it's the current user
+	 */
+
+	ptr = TclpGetUserName(&ds);
+	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
+	    /*
+	     * Try safest and fastest way to get current user home
+	     */
+
 	    ptr = TclGetEnv("HOME", &ds);
 	    if (ptr != NULL) {
 		Tcl_JoinPath(1, &ptr, bufferPtr);
@@ -1486,18 +1492,28 @@ TclpGetUserHome(
 	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
-	     * user does not exists - if domain was not specified,
-	     * try again using current domain.
+	     * User does not exist; if domain was not specified, try again
+	     * using current domain.
 	     */
+
 	    rc = 1;
-	    if (domain != NULL) break;
-	    /* get current domain */
+	    if (domain != NULL) {
+		break;
+	    }
+
+	    /*
+	     * Get current domain
+	     */
+
 	    rc = NetGetDCName(NULL, NULL, (LPBYTE *) &wDomain);
-	    if (rc != 0) break;
+	    if (rc != 0) {
+		break;
+	    }
 	    domain = INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
 	    DWORD i, size = MAX_PATH;
+
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
@@ -1507,15 +1523,22 @@ TclpGetUserHome(
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
+
 		GetProfilesDirectoryW(buf, &size);
 		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-	    /* be sure we returns normalized path */
-	    for (i = 0; i < size; ++i){
-		if (result[i] == '\\') result[i] = '/';
+
+	    /*
+	     * Be sure we returns normalized path
+	     */
+
+	    for (i = 0; i < size; ++i) {
+		if (result[i] == '\\') {
+		    result[i] = '/';
+		}
 	    }
 	    NetApiBufferFree((void *) uiPtr);
 	}
@@ -1603,48 +1626,72 @@ NativeAccess(
     /*
      * If it's not a directory (assume file), do several fast checks:
      */
+
     if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
 	 * If the attributes say this is not writable at all.  The file is a
 	 * regular file (i.e., not a directory), then the file is not
-	 * writable, full stop.	 For directories, the read-only bit is
+	 * writable, full stop.  For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
 	 * directory access from the attrib data.  However, if we have the
-	 * advanced 'getFileSecurityProc', then more robust ACL checks
-	 * will be done below.
+	 * advanced 'getFileSecurityProc', then more robust ACL checks will be
+	 * done below.
 	 */
+
 	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
 
-	/* If doesn't have the correct extension, it can't be executable */
+	/*
+	 * If doesn't have the correct extension, it can't be executable
+	 */
+
 	if ((mode & X_OK) && !NativeIsExec(nativePath)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
-	/* Special case for read/write/executable check on file */
+
+	/*
+	 * Special case for read/write/executable check on file
+	 */
+
 	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
 	    DWORD mask = 0;
 	    HANDLE hFile;
-	    if (mode & R_OK) { mask |= GENERIC_READ;  }
-	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
-	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
+
+	    if (mode & R_OK) {
+		mask |= GENERIC_READ;
+	    }
+	    if (mode & W_OK) {
+		mask |= GENERIC_WRITE;
+	    }
+	    if (mode & X_OK) {
+		mask |= GENERIC_EXECUTE;
+	    }
 
 	    hFile = CreateFile(nativePath, mask,
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
+		    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		    NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
 	    if (hFile != INVALID_HANDLE_VALUE) {
 		CloseHandle(hFile);
 		return 0;
 	    }
-	    /* fast exit if access was denied */
+
+	    /*
+	     * Fast exit if access was denied
+	     */
+
 	    if (GetLastError() == ERROR_ACCESS_DENIED) {
 		Tcl_SetErrno(EACCES);
 		return -1;
 	    }
 	}
-	/* We cannnot verify the access fast, check it below using security info. */
+
+	/*
+	 * We cannnot verify the access fast, check it below using security
+	 * info.
+	 */
     }
 
     /*
@@ -2021,13 +2068,12 @@ NativeStat(
      * 'getFileAttributesExProc', and if that isn't available, then on even
      * simpler routines.
      *
-     * Special consideration must be given to Windows hardcoded names
-     * like CON, NULL, COM1, LPT1 etc. For these, we still need to
-     * do the CreateFile as some may not exist (e.g. there is no CON
-     * in wish by default). However the subsequent GetFileInformationByHandle
-     * will fail. We do a WinIsReserved to see if it is one of the special
-     * names, and if successful, mock up a BY_HANDLE_FILE_INFORMATION
-     * structure.
+     * Special consideration must be given to Windows hardcoded names like
+     * CON, NULL, COM1, LPT1 etc. For these, we still need to do the
+     * CreateFile as some may not exist (e.g. there is no CON in wish by
+     * default). However the subsequent GetFileInformationByHandle will
+     * fail. We do a WinIsReserved to see if it is one of the special names,
+     * and if successful, mock up a BY_HANDLE_FILE_INFORMATION structure.
      */
 
     fileHandle = CreateFile(nativePath, GENERIC_READ,
@@ -2045,7 +2091,11 @@ NativeStat(
                 Tcl_SetErrno(ENOENT);
                 return -1;
             }
-            /* Mock up the expected structure */
+
+            /*
+	     * Mock up the expected structure
+	     */
+
             memset(&data, 0, sizeof(data));
             statPtr->st_atime = 0;
             statPtr->st_mtime = 0;
@@ -2328,7 +2378,7 @@ TclpGetNativeCwd(
     }
 
     if (clientData != NULL) {
-	if (_tcscmp((const TCHAR*)clientData, buffer) == 0) {
+	if (_tcscmp((const TCHAR *) clientData, buffer) == 0) {
 	    return clientData;
 	}
     }
@@ -2556,10 +2606,12 @@ TclpObjNormalizePath(
 				(int)(sizeof(WCHAR) * len));
 			lastValidPathEnd = currentPathEndPosition;
 		    } else if (nextCheckpoint == 0) {
-			/* Path starts with a drive designation
-			 * that's not actually on the system.
-			 * We still must normalize up past the
-			 * first separator.  [Bug 3603434] */
+			/*
+			 * Path starts with a drive designation that's not
+			 * actually on the system. We still must normalize up
+			 * past the first separator. [Bug 3603434]
+			 */
+
 			currentPathEndPosition++;
 		    }
 		}
@@ -2574,11 +2626,10 @@ TclpObjNormalizePath(
 	     */
 
 	    /*
-	     * Check for symlinks, except at last component of path (we
-	     * don't follow final symlinks). Also a drive (C:/) for
-	     * example, may sometimes have the reparse flag set for some
-	     * reason I don't understand. We therefore don't perform this
-	     * check for drives.
+	     * Check for symlinks, except at last component of path (we don't
+	     * follow final symlinks). Also a drive (C:/) for example, may
+	     * sometimes have the reparse flag set for some reason I don't
+	     * understand. We therefore don't perform this check for drives.
 	     */
 
 	    if (cur != 0 && !isDrive &&
@@ -2587,8 +2638,8 @@ TclpObjNormalizePath(
 
 		if (to != NULL) {
 		    /*
-		     * Read the reparse point ok. Now, reparse points need
-		     * not be normalized, otherwise we could use:
+		     * Read the reparse point ok. Now, reparse points need not
+		     * be normalized, otherwise we could use:
 		     *
 		     * Tcl_GetStringFromObj(to, &pathLen);
 		     * nextCheckpoint = pathLen;
@@ -2628,9 +2679,9 @@ TclpObjNormalizePath(
 
 #ifndef TclNORM_LONG_PATH
 	    /*
-	     * Now we convert the tail of the current path to its 'long
-	     * form', and append it to 'dsNorm' which holds the current
-	     * normalized path
+	     * Now we convert the tail of the current path to its 'long form',
+	     * and append it to 'dsNorm' which holds the current normalized
+	     * path
 	     */
 
 	    if (isDrive) {
@@ -2659,10 +2710,10 @@ TclpObjNormalizePath(
 		    int dotLen = currentPathEndPosition-lastValidPathEnd;
 
 		    /*
-		     * Path is just dots. We shouldn't really ever see a
-		     * path like that. However, to be nice we at least
-		     * don't mangle the path - we just add the dots as a
-		     * path segment and continue.
+		     * Path is just dots. We shouldn't really ever see a path
+		     * like that. However, to be nice we at least don't mangle
+		     * the path - we just add the dots as a path segment and
+		     * continue.
 		     */
 
 		    Tcl_DStringAppend(&dsNorm, ((const char *)nativePath)
@@ -2680,8 +2731,7 @@ TclpObjNormalizePath(
 		    handle = FindFirstFileW((WCHAR *) nativePath, &fData);
 		    if (handle == INVALID_HANDLE_VALUE) {
 			/*
-			 * This is usually the '/' in 'c:/' at end of
-			 * string.
+			 * This is usually the '/' in 'c:/' at end of string.
 			 */
 
 			Tcl_DStringAppend(&dsNorm, (const char *) L"/",
@@ -2711,8 +2761,8 @@ TclpObjNormalizePath(
 	    }
 
 	    /*
-	     * If we get here, we've got past one directory delimiter, so
-	     * we know it is no longer a drive.
+	     * If we get here, we've got past one directory delimiter, so we
+	     * know it is no longer a drive.
 	     */
 
 	    isDrive = 0;
@@ -3007,7 +3057,11 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
-	/* refCount of validPathPtr was already incremented in Tcl_FSGetTranslatedPath */
+
+	/*
+	 * refCount of validPathPtr was already incremented in
+	 * Tcl_FSGetTranslatedPath
+	 */
     } else {
 	/*
 	 * Make sure the normalized path is set.
@@ -3017,73 +3071,101 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
-	/* validPathPtr returned from Tcl_FSGetNormalizedPath is owned by Tcl, so incr refCount here */
+
+	/*
+	 * validPathPtr returned from Tcl_FSGetNormalizedPath is owned by Tcl,
+	 * so incr refCount here
+	 */
+
 	Tcl_IncrRefCount(validPathPtr);
     }
 
     str = Tcl_GetString(validPathPtr);
     len = validPathPtr->length;
 
-    if (strlen(str)!=(unsigned int)len) {
-	/* String contains NUL-bytes. This is invalid. */
+    if (strlen(str) != (unsigned int) len) {
+	/*
+	 * String contains NUL-bytes. This is invalid.
+	 */
+
 	goto done;
     }
-    /* For a reserved device, strip a possible postfix ':' */
+
+    /*
+     * For a reserved device, strip a possible postfix ':'
+     */
+
     len = WinIsReserved(str);
     if (len == 0) {
-	/* Let MultiByteToWideChar check for other invalid sequences, like
-	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
+	/*
+	 * Let MultiByteToWideChar check for other invalid sequences, like
+	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames
+	 */
+
 	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
 	if (len==0) {
 	    goto done;
 	}
     }
-    /* Overallocate 6 chars, making some room for extended paths */
-    wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
+
+    /*
+     * Overallocate 6 chars, making some room for extended paths
+     */
+
+    wp = nativePathPtr = ckalloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
       goto done;
     }
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
+	    len + 1);
+
     /*
-    ** If path starts with "//?/" or "\\?\" (extended path), translate
-    ** any slashes to backslashes but leave the '?' intact
-    */
-    if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
-	    && str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+     * If path starts with "//?/" or "\\?\" (extended path), translate any
+     * slashes to backslashes but leave the '?' intact
+     */
+
+    if ((str[0] == '\\' || str[0] == '/') && (str[1] == '\\' || str[1] == '/')
+	    && str[2] == '?' && (str[3] == '\\' || str[3] == '/')) {
 	wp[0] = wp[1] = wp[3] = '\\';
 	str += 4;
 	wp += 4;
     }
+
     /*
-    ** If there is no "\\?\" prefix but there is a drive or UNC
-    ** path prefix and the path is larger than MAX_PATH chars,
-    ** no Win32 API function can handle that unless it is
-    ** prefixed with the extended path prefix. See:
-    ** <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
-    **/
-    if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
-	    && str[1]==':') {
-	if (wp==nativePathPtr && len>MAX_PATH && (str[2]=='\\' || str[2]=='/')) {
-	    memmove(wp+4, wp, len*sizeof(WCHAR));
-	    memcpy(wp, L"\\\\?\\", 4*sizeof(WCHAR));
+     * If there is no "\\?\" prefix but there is a drive or UNC path prefix
+     * and the path is larger than MAX_PATH chars, no Win32 API function can
+     * handle that unless it is prefixed with the extended path prefix. See:
+     * <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
+     */
+
+    if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
+	    && str[1] == ':') {
+	if (wp == nativePathPtr && len > MAX_PATH
+		&& (str[2] == '\\' || str[2] == '/')) {
+	    memmove(wp + 4, wp, len * sizeof(WCHAR));
+	    memcpy(wp, L"\\\\?\\", 4 * sizeof(WCHAR));
 	    wp += 4;
 	}
+
 	/*
-	 ** If (remainder of) path starts with "<drive>:",
-	 ** leave the ':' intact.
+	 * If (remainder of) path starts with "<drive>:", leave the ':'
+	 * intact.
 	 */
+
 	wp += 2;
-    } else if (wp==nativePathPtr && len>MAX_PATH
-	    && (str[0]=='\\' || str[0]=='/')
-	    && (str[1]=='\\' || str[1]=='/') && str[2]!='?') {
-	memmove(wp+6, wp, len*sizeof(WCHAR));
-	memcpy(wp, L"\\\\?\\UNC", 7*sizeof(WCHAR));
+    } else if (wp == nativePathPtr && len > MAX_PATH
+	    && (str[0] == '\\' || str[0] == '/')
+	    && (str[1] == '\\' || str[1] == '/') && str[2] != '?') {
+	memmove(wp + 6, wp, len * sizeof(WCHAR));
+	memcpy(wp, L"\\\\?\\UNC", 7 * sizeof(WCHAR));
 	wp += 7;
     }
+
     /*
-    ** In the remainder of the path, translate invalid characters to
-    ** characters in the Unicode private use area.
-    */
+     * In the remainder of the path, translate invalid characters to
+     * characters in the Unicode private use area.
+     */
+
     while (*wp != '\0') {
 	if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
 	    *wp |= 0xF000;
@@ -3094,7 +3176,6 @@ TclNativeCreateNativeRep(
     }
 
   done:
-
     TclDecrRefCount(validPathPtr);
     return nativePathPtr;
 }
@@ -3220,21 +3301,28 @@ TclWinFileOwned(
     native = Tcl_FSGetNativePath(pathPtr);
 
     if (GetNamedSecurityInfo((LPTSTR) native, SE_FILE_OBJECT,
-                             OWNER_SECURITY_INFORMATION, &ownerSid,
-                             NULL, NULL, NULL, &secd) != ERROR_SUCCESS) {
-        /* Either not a file, or we do not have access to it in which
-           case we are in all likelihood not the owner */
+	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
+	    &secd) != ERROR_SUCCESS) {
+        /*
+	 * Either not a file, or we do not have access to it in which case we
+	 * are in all likelihood not the owner.
+	 */
+
         return 0;
     }
 
     /*
-     * Getting the current process SID is a multi-step process.
-     * We make the assumption that if a call fails, this process is
-     * so underprivileged it could not possibly own anything. Normally
-     * a process can *always* look up its own token.
+     * Getting the current process SID is a multi-step process.  We make the
+     * assumption that if a call fails, this process is so underprivileged it
+     * could not possibly own anything. Normally a process can *always* look
+     * up its own token.
      */
+
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-        /* Find out how big the buffer needs to be */
+        /*
+	 * Find out how big the buffer needs to be.
+	 */
+
         bufsz = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
         if (bufsz) {
@@ -3246,15 +3334,20 @@ TclWinFileOwned(
         CloseHandle(token);
     }
 
-    /* Free allocations and be done */
-    if (secd)
+    /*
+     * Free allocations and be done.
+     */
+
+    if (secd) {
         LocalFree(secd);            /* Also frees ownerSid */
-    if (buf)
+    }
+    if (buf) {
         ckfree(buf);
+    }
 
     return (owned != 0);        /* Convert non-0 to 1 */
 }
-
+
 /*
  * Local Variables:
  * mode: c
