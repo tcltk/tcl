@@ -639,7 +639,10 @@ TclAppendBytesToByteArray(
 		"TclAppendBytesToByteArray");
     }
     if (len == 0) {
-	/* Append zero bytes is a no-op. */
+	/*
+	 * Append zero bytes is a no-op.
+	 */
+
 	return;
     }
     if (objPtr->typePtr != &tclByteArrayType) {

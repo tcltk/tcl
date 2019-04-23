@@ -110,7 +110,11 @@ TclOODeleteContext(
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
 	TclStackFree(oPtr->fPtr->interp, contextPtr);
-	/* Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore */
+
+	/*
+	 * Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore
+	 */
+
 	TclOODecrRefCount(oPtr);
     }
 }
@@ -265,7 +269,7 @@ TclOOInvokeContext(
     if (contextPtr->index == 0) {
 	int i;
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -343,7 +347,7 @@ FinalizeMethodRefs(
     CallContext *contextPtr = data[0];
     int i;
 
-    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -568,7 +572,10 @@ TclOOGetSortedClassMethodList(
     return i;
 }
 
-/* Comparator for GetSortedMethodList */
+/*
+ * Comparator for GetSortedMethodList
+ */
+
 static int
 CmpStr(
     const void *ptr1,
@@ -577,7 +584,7 @@ CmpStr(
     const char **strPtr1 = (const char **) ptr1;
     const char **strPtr2 = (const char **) ptr2;
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1)+1);
+    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
 }
 
 /*
@@ -824,7 +831,7 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+    for (i = cbPtr->filterLength ; i < callPtr->numChain ; i++) {
 	if (callPtr->chain[i].mPtr == mPtr &&
 		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
@@ -836,8 +843,8 @@ AddMethodToCallChain(
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<callPtr->numChain ; i++) {
-		callPtr->chain[i] = callPtr->chain[i+1];
+	    for (; i + 1 < callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i + 1];
 	    }
 	    callPtr->chain[i].mPtr = mPtr;
 	    callPtr->chain[i].isFilter = (doneFilters != NULL);
@@ -854,7 +861,7 @@ AddMethodToCallChain(
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
 	callPtr->chain =
-		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain+1));
+		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
@@ -1172,7 +1179,11 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
-    /* Corresponding TclOODecrRefCount() in TclOODeleteContext */ 
+
+    /*
+     * Corresponding TclOODecrRefCount() in TclOODeleteContext
+     */
+
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
@@ -1528,7 +1539,7 @@ TclOORenderCallChain(
      */
 
     objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i=0 ; i<callPtr->numChain ; i++) {
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] = miPtr->isFilter
