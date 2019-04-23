@@ -4135,11 +4135,12 @@ Tcl_TimeObjCmd(
  *
  *	This object-based procedure is invoked to process the "timerate" Tcl
  *	command.
+ *
  *	This is similar to command "time", except the execution limited by
  *	given time (in milliseconds) instead of repetition count.
  *
  * Example:
- *	timerate {after 5} 1000 ; # equivalent for `time {after 5} [expr 1000/5]`
+ *	timerate {after 5} 1000; # equivalent to: time {after 5} [expr 1000/5]
  *
  * Results:
  *	A standard Tcl object result.
@@ -4157,39 +4158,40 @@ Tcl_TimeRateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static double measureOverhead = 0; /* global measure-overhead */
+    static double measureOverhead = 0;
+				/* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
     register Tcl_Obj *objPtr;
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideUInt count = 0;	/* Holds repetition count */
-    Tcl_WideInt  maxms  = WIDE_MIN;
+    Tcl_WideInt maxms = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
     Tcl_WideUInt maxcnt = WIDE_MAX;
 				/* Maximal count of iterations. */
     Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
-    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max threshold
-				 * additionally avoid divide to zero (never < 1) */
+    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max
+				 * threshold, additionally avoiding divide to
+				 * zero (i.e., never < 1) */
     unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
 				 * growth of execution time. */
     register Tcl_WideInt start, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
-#endif
-
+#endif /* !TCL_WIDE_CLICKS */
     static const char *const options[] = {
 	"-direct",	"-overhead",	"-calibrate",	"--",	NULL
     };
     enum options {
 	TMRT_EV_DIRECT,	TMRT_OVERHEAD,	TMRT_CALIBRATE,	TMRT_LAST
     };
-
     NRE_callback *rootPtr;
-    ByteCode	 *codePtr = NULL;
+    ByteCode *codePtr = NULL;
 
     for (i = 1; i < objc - 1; i++) {
-    	int index;
+	int index;
+
 	if (Tcl_GetIndexFromObj(NULL, objv[i], options, "option", TCL_EXACT,
 		&index) != TCL_OK) {
 	    break;
@@ -4216,9 +4218,11 @@ Tcl_TimeRateObjCmd(
 	}
     }
 
-    if (i >= objc || i < objc-3) {
-usage:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??");
+    if (i >= objc || i < objc - 3) {
+    usage:
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-direct? ?-calibrate? ?-overhead double? "
+		"command ?time ?max-count??");
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
@@ -4229,6 +4233,7 @@ usage:
 	}
 	if (i < objc) {	/* max-count*/
 	    Tcl_WideInt v;
+
 	    result = Tcl_GetWideIntFromObj(interp, objv[i], &v);
 	    if (result != TCL_OK) {
 		return result;
@@ -4237,10 +4242,15 @@ usage:
 	}
     }
 
-    /* if calibrate */
-    if (calibrate) {
+    /*
+     * If we are doing calibration.
+     */
 
-	/* if no time specified for the calibration */
+    if (calibrate) {
+	/*
+	 * If no time specified for the calibration.
+	 */
+
 	if (maxms == WIDE_MIN) {
 	    Tcl_Obj *clobjv[6];
 	    Tcl_WideInt maxCalTime = 5000;
@@ -4249,18 +4259,24 @@ usage:
 	    clobjv[0] = objv[0];
 	    i = 1;
 	    if (direct) {
-	    	clobjv[i++] = direct;
+		clobjv[i++] = direct;
 	    }
 	    clobjv[i++] = objPtr;
 
-	    /* reset last measurement overhead */
-	    measureOverhead = (double)0;
+	    /*
+	     * Reset last measurement overhead.
+	     */
 
-	    /* self-call with 100 milliseconds to warm-up,
-	     * before entering the calibration cycle */
+	    measureOverhead = (double) 0;
+
+	    /*
+	     * Self-call with 100 milliseconds to warm-up, before entering the
+	     * calibration cycle.
+	     */
+
 	    TclNewIntObj(clobjv[i], 100);
 	    Tcl_IncrRefCount(clobjv[i]);
-	    result = Tcl_TimeRateObjCmd(dummy, interp, i+1, clobjv);
+	    result = Tcl_TimeRateObjCmd(NULL, interp, i + 1, clobjv);
 	    Tcl_DecrRefCount(clobjv[i]);
 	    if (result != TCL_OK) {
 		return result;
@@ -4270,59 +4286,86 @@ usage:
 	    clobjv[i++] = calibrate;
 	    clobjv[i++] = objPtr;
 
-	    /* set last measurement overhead to max */
-	    measureOverhead = (double)UWIDE_MAX;
+	    /*
+	     * Set last measurement overhead to max.
+	     */
 
-	    /* calibration cycle until it'll be preciser */
+	    measureOverhead = (double) UWIDE_MAX;
+
+	    /*
+	     * Run the calibration cycle until it is more precise.
+	     */
+
 	    maxms = -1000;
 	    do {
 		lastMeasureOverhead = measureOverhead;
-		TclNewIntObj(clobjv[i], (int)maxms);
+		TclNewIntObj(clobjv[i], (int) maxms);
 		Tcl_IncrRefCount(clobjv[i]);
-		result = Tcl_TimeRateObjCmd(dummy, interp, i+1, clobjv);
+		result = Tcl_TimeRateObjCmd(NULL, interp, i + 1, clobjv);
 		Tcl_DecrRefCount(clobjv[i]);
 		if (result != TCL_OK) {
 		    return result;
 		}
 		maxCalTime += maxms;
-		/* increase maxms for preciser calibration */
-		maxms -= (-maxms / 4);
-		/* as long as new value more as 0.05% better */
-	    } while ( (measureOverhead >= lastMeasureOverhead
+
+		/*
+		 * Increase maxms for more precise calibration.
+		 */
+
+		maxms -= -maxms / 4;
+
+		/*
+		 * As long as new value more as 0.05% better
+		 */
+	    } while ((measureOverhead >= lastMeasureOverhead
 		    || measureOverhead / lastMeasureOverhead <= 0.9995)
-		    && maxCalTime > 0
-	    );
+		    && maxCalTime > 0);
 
 	    return result;
 	}
 	if (maxms == 0) {
-	    /* reset last measurement overhead */
+	    /*
+	     * Reset last measurement overhead
+	     */
+
 	    measureOverhead = 0;
 	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	    return TCL_OK;
 	}
 
-	/* if time is negative - make current overhead more precise */
+	/*
+	 * If time is negative, make current overhead more precise.
+	 */
+
 	if (maxms > 0) {
-	    /* set last measurement overhead to max */
-	    measureOverhead = (double)UWIDE_MAX;
+	    /*
+	     * Set last measurement overhead to max.
+	     */
+
+	    measureOverhead = (double) UWIDE_MAX;
 	} else {
 	    maxms = -maxms;
 	}
-
     }
 
     if (maxms == WIDE_MIN) {
-    	maxms = 1000;
+	maxms = 1000;
     }
     if (overhead == -1) {
 	overhead = measureOverhead;
     }
 
-    /* be sure that resetting of result will not smudge the further measurement */
+    /*
+     * Ensure that resetting of result will not smudge the further
+     * measurement.
+     */
+
     Tcl_ResetResult(interp);
 
-    /* compile object */
+    /*
+     * Compile object if needed.
+     */
+
     if (!direct) {
 	if (TclInterpReady(interp) != TCL_OK) {
 	    return TCL_ERROR;
@@ -4331,158 +4374,258 @@ usage:
 	TclPreserveByteCode(codePtr);
     }
 
-    /* get start and stop time */
+    /*
+     * Get start and stop time.
+     */
+
 #ifdef TCL_WIDE_CLICKS
     start = middle = TclpGetWideClicks();
-    /* time to stop execution (in wide clicks) */
+
+    /*
+     * Time to stop execution (in wide clicks).
+     */
+
     stop = start + (maxms * 1000 / TclpWideClickInMicrosec());
 #else
     Tcl_GetTime(&now);
-    start = now.sec; start *= 1000000; start += now.usec;
+    start = now.sec;
+    start *= 1000000;
+    start += now.usec;
     middle = start;
-    /* time to stop execution (in microsecs) */
+
+    /*
+     * Time to stop execution (in microsecs).
+     */
+
     stop = start + maxms * 1000;
-#endif
+#endif /* TCL_WIDE_CLICKS */
 
-    /* start measurement */
-    if (maxcnt > 0)
-    while (1) {
-    	/* eval single iteration */
-    	count++;
+    /*
+     * Start measurement.
+     */
 
-	if (!direct) {
-	    /* precompiled */
-	    rootPtr = TOP_CB(interp);
-	    result = TclNRExecuteByteCode(interp, codePtr);
-	    result = TclNRRunCallbacks(interp, result, rootPtr);
-	} else {
-	    /* eval */
-	    result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
-	}
-	if (result != TCL_OK) {
-	    /* allow break from measurement cycle (used for conditional stop) */
-	    if (result != TCL_BREAK) {
-		goto done;
+    if (maxcnt > 0) {
+	while (1) {
+	    /*
+	     * Evaluate a single iteration.
+	     */
+
+	    count++;
+	    if (!direct) {		/* precompiled */
+		rootPtr = TOP_CB(interp);
+		result = TclNRExecuteByteCode(interp, codePtr);
+		result = TclNRRunCallbacks(interp, result, rootPtr);
+	    } else {			/* eval */
+		result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	    }
-	    /* force stop immediately */
-	    threshold = 1;
-	    maxcnt = 0;
-	    result = TCL_OK;
-	}
+	    if (result != TCL_OK) {
+		/*
+		 * Allow break from measurement cycle (used for conditional
+		 * stop).
+		 */
 
-	/* don't check time up to threshold */
-	if (--threshold > 0) continue;
+		if (result != TCL_BREAK) {
+		    goto done;
+		}
 
-	/* check stop time reached, estimate new threshold */
-    #ifdef TCL_WIDE_CLICKS
-	middle = TclpGetWideClicks();
-    #else
-	Tcl_GetTime(&now);
-	middle = now.sec; middle *= 1000000; middle += now.usec;
-    #endif
-	if (middle >= stop || count >= maxcnt) {
-	    break;
-	}
+		/*
+		 * Force stop immediately.
+		 */
 
-	/* don't calculate threshold by few iterations, because sometimes first
-	 * iteration(s) can be too fast or slow (cached, delayed clean up, etc) */
-	if (count < 10) {
-	   threshold = 1; continue;
-	}
-
-	/* average iteration time in microsecs */
-	threshold = (middle - start) / count;
-	if (threshold > maxIterTm) {
-	    maxIterTm = threshold;
-	    /* interations seems to be longer */
-	    if (threshold > (maxIterTm * 2)) {
-		if ((factor *= 2) > 50) factor = 50;
-	    } else {
-		if (factor < 50) factor++;
+		threshold = 1;
+		maxcnt = 0;
+		result = TCL_OK;
 	    }
-	} else if (factor > 4) {
-	    /* interations seems to be shorter */
-	    if (threshold < (maxIterTm / 2)) {
-		if ((factor /= 2) < 4) factor = 4;
-	    } else {
-		factor--;
+
+	    /*
+	     * Don't check time up to threshold.
+	     */
+
+	    if (--threshold > 0) {
+		continue;
 	    }
-	}
-	/* as relation between remaining time and time since last check,
-	 * maximal some % of time (by factor), so avoid growing of the execution time
-	 * if iterations are not consistent, e. g. wax continuously on time) */
-	threshold = ((stop - middle) / maxIterTm) / factor + 1;
-	if (threshold > 100000) {	    /* fix for too large threshold */
-	    threshold = 100000;
-	}
-	/* consider max-count */
-	if (threshold > maxcnt - count) {
-	    threshold = maxcnt - count;
+
+	    /*
+	     * Check stop time reached, estimate new threshold.
+	     */
+
+#ifdef TCL_WIDE_CLICKS
+	    middle = TclpGetWideClicks();
+#else
+	    Tcl_GetTime(&now);
+	    middle = now.sec;
+	    middle *= 1000000;
+	    middle += now.usec;
+#endif /* TCL_WIDE_CLICKS */
+
+	    if (middle >= stop || count >= maxcnt) {
+		break;
+	    }
+
+	    /*
+	     * Don't calculate threshold by few iterations, because sometimes
+	     * first iteration(s) can be too fast or slow (cached, delayed
+	     * clean up, etc).
+	     */
+
+	    if (count < 10) {
+		threshold = 1;
+		continue;
+	    }
+
+	    /*
+	     * Average iteration time in microsecs.
+	     */
+
+	    threshold = (middle - start) / count;
+	    if (threshold > maxIterTm) {
+		maxIterTm = threshold;
+
+		/*
+		 * Iterations seem to be longer.
+		 */
+
+		if (threshold > maxIterTm * 2) {
+		    factor *= 2;
+		    if (factor > 50) {
+			factor = 50;
+		    }
+		} else {
+		    if (factor < 50) {
+			factor++;
+		    }
+		}
+	    } else if (factor > 4) {
+		/*
+		 * Iterations seem to be shorter.
+		 */
+
+		if (threshold < (maxIterTm / 2)) {
+		    factor /= 2;
+		    if (factor < 4) {
+			factor = 4;
+		    }
+		} else {
+		    factor--;
+		}
+	    }
+
+	    /*
+	     * As relation between remaining time and time since last check,
+	     * maximal some % of time (by factor), so avoid growing of the
+	     * execution time if iterations are not consistent, e.g. was
+	     * continuously on time).
+	     */
+
+	    threshold = ((stop - middle) / maxIterTm) / factor + 1;
+	    if (threshold > 100000) {	/* fix for too large threshold */
+		threshold = 100000;
+	    }
+
+	    /*
+	     * Consider max-count
+	     */
+
+	    if (threshold > maxcnt - count) {
+		threshold = maxcnt - count;
+	    }
 	}
     }
 
     {
 	Tcl_Obj *objarr[8], **objs = objarr;
 	Tcl_WideInt val;
-	const char *fmt;
+	int digits;
 
-	middle -= start;		     /* execution time in microsecs */
+	middle -= start;		/* execution time in microsecs */
 
-    #ifdef TCL_WIDE_CLICKS
-	/* convert execution time in wide clicks to microsecs */
+#ifdef TCL_WIDE_CLICKS
+	/*
+	 * convert execution time in wide clicks to microsecs.
+	 */
+
 	middle *= TclpWideClickInMicrosec();
-    #endif
+#endif /* TCL_WIDE_CLICKS */
 
-	if (!count) { /* no iterations - avoid divide by zero */
+	if (!count) {		/* no iterations - avoid divide by zero */
 	    objs[0] = objs[2] = objs[4] = Tcl_NewWideIntObj(0);
 	    goto retRes;
 	}
 
-	/* if not calibrate */
+	/*
+	 * If not calibrating...
+	 */
+
 	if (!calibrate) {
-	    /* minimize influence of measurement overhead */
+	    /*
+	     * Minimize influence of measurement overhead.
+	     */
+
 	    if (overhead > 0) {
-		/* estimate the time of overhead (microsecs) */
+		/*
+		 * Estimate the time of overhead (microsecs).
+		 */
+
 		Tcl_WideUInt curOverhead = overhead * count;
-		if (middle > (Tcl_WideInt)curOverhead) {
+
+		if (middle > (Tcl_WideInt) curOverhead) {
 		    middle -= curOverhead;
 		} else {
 		    middle = 0;
 		}
 	    }
 	} else {
-	    /* calibration - obtaining new measurement overhead */
-	    if (measureOverhead > (double)middle / count) {
-		measureOverhead = (double)middle / count;
+	    /*
+	     * Calibration: obtaining new measurement overhead.
+	     */
+
+	    if (measureOverhead > ((double) middle) / count) {
+		measureOverhead = ((double) middle) / count;
 	    }
 	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}
 
-	val = middle / count;		     /* microsecs per iteration */
+	val = middle / count;		/* microsecs per iteration */
 	if (val >= 1000000) {
 	    objs[0] = Tcl_NewWideIntObj(val);
 	} else {
-	    if (val < 10)    { fmt = "%.6f"; } else
-	    if (val < 100)   { fmt = "%.4f"; } else
-	    if (val < 1000)  { fmt = "%.3f"; } else
-	    if (val < 10000) { fmt = "%.2f"; } else
-			     { fmt = "%.1f"; };
-	    objs[0] = Tcl_ObjPrintf(fmt, ((double)middle)/count);
+	    if (val < 10) {
+		digits = 6;
+	    } else if (val < 100) {
+		digits = 4;
+	    } else if (val < 1000) {
+		digits = 3;
+	    } else if (val < 10000) {
+		digits = 2;
+	    } else {
+		digits = 1;
+	    }
+	    objs[0] = Tcl_ObjPrintf("%.*f", digits, ((double) middle)/count);
 	}
 
 	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
 
-	/* calculate speed as rate (count) per sec */
-	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
+	/*
+	 * Calculate speed as rate (count) per sec
+	 */
+
+	if (!middle) {
+	    middle++;			/* Avoid divide by zero. */
+	}
 	if (count < (WIDE_MAX / 1000000)) {
 	    val = (count * 1000000) / middle;
 	    if (val < 100000) {
-		if (val < 100)	{ fmt = "%.3f"; } else
-		if (val < 1000) { fmt = "%.2f"; } else
-				{ fmt = "%.1f"; };
-		objs[4] = Tcl_ObjPrintf(fmt, ((double)(count * 1000000)) / middle);
+		if (val < 100) {
+		    digits = 3;
+		} else if (val < 1000) {
+		    digits = 2;
+		} else {
+		    digits = 1;
+		}
+		objs[4] = Tcl_ObjPrintf("%.*f",
+			digits, ((double) (count * 1000000)) / middle);
 	    } else {
 		objs[4] = Tcl_NewWideIntObj(val);
 	    }
@@ -4491,7 +4634,10 @@ usage:
 	}
 
     retRes:
-	/* estimated net execution time (in millisecs) */
+	/*
+	 * Estimated net execution time (in millisecs).
+	 */
+
 	if (!calibrate) {
 	    if (middle >= 1) {
 		objs[6] = Tcl_ObjPrintf("%.3f", (double)middle / 1000);
@@ -4502,9 +4648,9 @@ usage:
 	}
 
 	/*
-	* Construct the result as a list because many programs have always parsed
-	* as such (extracting the first element, typically).
-	*/
+	 * Construct the result as a list because many programs have always
+	 * parsed as such (extracting the first element, typically).
+	 */
 
 	TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#"); /* mics/# */
 	TclNewLiteralStringObj(objs[3], "#");
@@ -4512,12 +4658,10 @@ usage:
 	Tcl_SetObjResult(interp, Tcl_NewListObj(8, objarr));
     }
 
-done:
-
+  done:
     if (codePtr != NULL) {
 	TclReleaseByteCode(codePtr);
     }
-
     return result;
 }
 
