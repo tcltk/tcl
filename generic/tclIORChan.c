@@ -54,6 +54,8 @@ static int		ReflectGetOption(ClientData clientData,
 static int		ReflectSetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *newValue);
+static void     TimerRunRead(ClientData clientData);
+static void     TimerRunWrite(ClientData clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection. This is
@@ -112,6 +114,17 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
+    Tcl_TimerToken readTimer;   /* 
+				   A token for the timer that is scheduled in
+				   order to call Tcl_NotifyChannel when the
+				   channel is readable 
+			        */
+    Tcl_TimerToken writeTimer;  /* 
+				   A token for the timer that is scheduled in
+				   order to call Tcl_NotifyChannel when the
+				   channel is writable 
+			        */
+
     /*
      * Note regarding the usage of timers.
      *
@@ -121,11 +134,9 @@ typedef struct {
      *
      * See 'rechan', 'memchan', etc.
      *
-     * Here this is _not_ required. Interest in events is posted to the Tcl
-     * level via 'watch'. And posting of events is possible from the Tcl level
-     * as well, via 'chan postevent'. This means that the generation of all
-     * events, fake or not, timer based or not, is completely in the hands of
-     * the Tcl level. Therefore no timer here.
+     * A timer is used here as well in order to ensure at least on pass through
+     * the event loop when a channel becomes ready. See issues 67a5eabbd3d1 and
+     * ef28eb1f1516.
      */
 } ReflectedChannel;
 
@@ -920,7 +931,14 @@ TclChanPostEventObjCmd(
 #if TCL_THREADS
     if (rcPtr->owner == rcPtr->thread) {
 #endif
-        Tcl_NotifyChannel(chan, events);
+	if (events & TCL_READABLE) {
+		rcPtr->readTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+			TimerRunRead, rcPtr);
+	}
+	if (events & TCL_WRITABLE) {
+		rcPtr->writeTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+			TimerRunWrite, rcPtr);
+	}
 #if TCL_THREADS
     } else {
         ReflectEvent *ev = ckalloc(sizeof(ReflectEvent));
@@ -966,6 +984,24 @@ TclChanPostEventObjCmd(
 
 #undef CHAN
 #undef EVENT
+}
+
+static void
+TimerRunRead(
+    ClientData clientData)
+{
+    ReflectedChannel *rcPtr = clientData;
+    rcPtr->readTimer = 0;
+    Tcl_NotifyChannel(rcPtr->chan, TCL_READABLE);
+}
+
+static void
+TimerRunWrite(
+    ClientData clientData)
+{
+    ReflectedChannel *rcPtr = clientData;
+    rcPtr->writeTimer = 0;
+    Tcl_NotifyChannel(rcPtr->chan, TCL_WRITABLE);
 }
 
 /*
@@ -1160,6 +1196,12 @@ ReflectClose(
 	if (tctPtr && tctPtr != &tclRChannelType) {
 	    ckfree(tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
+	if (rcPtr->readTimer != NULL) {
+	    Tcl_DeleteTimerHandler(rcPtr->readTimer);
+	}
+	if (rcPtr->writeTimer != NULL) {
+	    Tcl_DeleteTimerHandler(rcPtr->writeTimer);
 	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	return EOK;
@@ -2131,6 +2173,8 @@ NewReflectedChannel(
     rcPtr->chan = NULL;
     rcPtr->interp = interp;
     rcPtr->dead = 0;
+    rcPtr->readTimer = 0;
+    rcPtr->writeTimer = 0;
 #if TCL_THREADS
     rcPtr->thread = Tcl_GetCurrentThread();
 #endif
