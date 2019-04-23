@@ -158,6 +158,7 @@ static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
+static Tcl_ObjCmdProc CoroTypeObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -845,8 +846,11 @@ Tcl_CreateInterp(void)
             TclNRAssembleObjCmd, NULL, NULL);
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
+    /* Coroutine monkeybusiness */
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
+            CoroTypeObjCmd, NULL, NULL);
 
     /* Create an unsupported command for timerate */
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::timerate",
@@ -8897,6 +8901,75 @@ TclNREvalList(
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CoroTypeObjCmd --
+ *
+ *      Implementation of [::tcl::unsupported::corotype] command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CoroTypeObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Look up the coroutine.
+     */
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only get coroutine type of a coroutine", -1));
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objv[1]), NULL);
+        return TCL_ERROR;
+    }
+
+    /*
+     * An active coroutine is "active". Can't tell what it might do in the
+     * future.
+     */
+
+    corPtr = cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("active", -1));
+        return TCL_OK;
+    }
+
+    /*
+     * Inactive coroutines are classified by the (effective) command used to
+     * suspend them, which matters when you're injecting a probe.
+     */
+
+    switch (corPtr->nargs) {
+    case COROUTINE_ARGUMENTS_SINGLE_OPTIONAL:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("yield", -1));
+        return TCL_OK;
+    case COROUTINE_ARGUMENTS_ARBITRARY:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("yieldto", -1));
+        return TCL_OK;
+    default:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "unknown coroutine type", -1));
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BAD_TYPE", NULL);
+        return TCL_ERROR;
+    }
 }
 
 /*
