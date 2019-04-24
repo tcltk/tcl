@@ -1276,6 +1276,12 @@ ReflectClose(
 	ckfree(tctPtr);
 	((Channel *)rcPtr->chan)->typePtr = NULL;
     }
+    if (rcPtr->readTimer != NULL) {
+	Tcl_DeleteTimerHandler(rcPtr->readTimer);
+    }
+    if (rcPtr->writeTimer != NULL) {
+	Tcl_DeleteTimerHandler(rcPtr->writeTimer);
+    }
     Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
