@@ -381,6 +381,7 @@ static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
@@ -1629,6 +1630,8 @@ TclZipfs_Mount(
 {
     ZipFile *zf;
 
+fprintf(stdout, "MOUNT CALLED\n"); fflush(stdout);
+
     ReadLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
@@ -1671,16 +1674,20 @@ TclZipfs_Mount(
 	}
     }
     zf = attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
+fprintf(stdout, "ALLOC %p\n", zf); fflush(stdout);
     if (!zf) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
 	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", NULL);
 	}
+fprintf(stdout, "MOUNT FAIL A\n"); fflush(stdout);
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+fprintf(stdout, "MOUNT FAIL B\n"); fflush(stdout);
 	return TCL_ERROR;
     }
+fprintf(stdout, "MOUNT END\n"); fflush(stdout);
     return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
 }
 
@@ -1806,8 +1813,11 @@ TclZipfs_Unmount(
     Tcl_DString dsm;
     int ret = TCL_OK, unmounted = 0;
 
+fprintf(stdout, "UNMOUNT CALLED\n"); fflush(stdout);
     WriteLock();
+fprintf(stdout, "A\n"); fflush(stdout);
     if (!ZipFS.initialized) {
+fprintf(stdout, "NOT INIT\n"); fflush(stdout);
 	goto done;
     }
 
@@ -1816,19 +1826,24 @@ TclZipfs_Unmount(
      * But an absolute name is needed as mount point here.
      */
 
+fprintf(stdout, "B\n"); fflush(stdout);
     Tcl_DStringInit(&dsm);
     mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
 
+fprintf(stdout, "C\n"); fflush(stdout);
     hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mountPoint);
     /* don't report no-such-mount as an error */
     if (!hPtr) {
+fprintf(stdout, "D\n"); fflush(stdout);
 	goto done;
     }
 
+fprintf(stdout, "E\n"); fflush(stdout);
     zf = Tcl_GetHashValue(hPtr);
     if (zf->numOpen > 0) {
 	ZIPFS_ERROR(interp, "filesystem is busy");
 	ret = TCL_ERROR;
+fprintf(stdout, "BUSY\n"); fflush(stdout);
 	goto done;
     }
     Tcl_DeleteHashEntry(hPtr);
@@ -1844,6 +1859,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
+fprintf(stdout, "FREE %p\n", zf); fflush(stdout);
     ckfree(zf);
     unmounted = 1;
   done:
@@ -4837,6 +4853,18 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 
+static void
+ZipfsExitHandler(
+    ClientData clientData)
+{
+    char *mountpoint = (char *)clientData;
+
+fprintf(stdout, "UNMOUNT\n"); fflush(stdout);
+    if (TCL_OK != TclZipfs_Unmount(NULL, mountpoint)) {
+	Tcl_Panic("tried to unmount busy filesystem");
+    }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4859,18 +4887,25 @@ TclZipfs_AppHook(
 {
     char *archive;
 
+fprintf(stdout, "HOOK CALLED\n"); fflush(stdout);
     Tcl_FindExecutable((*argvPtr)[0]);
+fprintf(stdout, "FOUND\n"); fflush(stdout);
     archive = (char *) Tcl_GetNameOfExecutable();
+fprintf(stdout, "NAME: '%s'\n", archive); fflush(stdout);
     TclZipfs_Init(NULL);
+fprintf(stdout, "INIT\n"); fflush(stdout);
 
     /*
      * Look for init.tcl in one of the locations mounted later in this
      * function.
      */
+fprintf(stdout, "START\n"); fflush(stdout);
 
     if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
 	int found;
 	Tcl_Obj *vfsInitScript;
+
+fprintf(stdout, "MOUNTED\n"); fflush(stdout);
 
 	TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	Tcl_IncrRefCount(vfsInitScript);
@@ -4960,6 +4995,9 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
+fprintf(stdout, "HANDLE\n"); fflush(stdout);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)ZIPFS_APP_MOUNT);
+fprintf(stdout, "END\n"); fflush(stdout);
     return TCL_OK;
 }
 
