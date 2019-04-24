@@ -2584,7 +2584,7 @@ Tcl_LpopObjCmd(
 				/* Argument objects. */
 {
     int listLen, result;
-    Tcl_Obj *elemPtr;
+    Tcl_Obj *elemPtr, *stored;
     Tcl_Obj *listPtr, **elemPtrs;
 
     if (objc < 2) {
@@ -2622,6 +2622,7 @@ Tcl_LpopObjCmd(
 
     /*
      * Second, remove the element.
+     * TclLsetFlat adds a ref count which is handled.
      */
 
     if (objc == 2) {
@@ -2632,6 +2633,7 @@ Tcl_LpopObjCmd(
 	if (result != TCL_OK) {
 	    return result;
 	}
+	Tcl_IncrRefCount(listPtr);
     } else {
 	listPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
 
@@ -2640,8 +2642,9 @@ Tcl_LpopObjCmd(
 	}
     }
 
-    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
-    if (listPtr == NULL) {
+    stored = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(listPtr);
+    if (stored == NULL) {
 	return TCL_ERROR;
     }
 
