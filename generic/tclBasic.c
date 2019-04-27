@@ -9210,8 +9210,6 @@ TclNRCoroInjectObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    int numLevels, unused;
-    int *stackLevel = &unused;
 
     /*
      * Usage more or less like tailcall:
