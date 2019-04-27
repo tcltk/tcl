@@ -171,8 +171,13 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
-static Tcl_ObjCmdProc NRCoroInjectObjCmd;
+static Tcl_ObjCmdProc NRInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
+
+static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
+static Tcl_ObjCmdProc TclNRCoroProbeObjCmd;
+static Tcl_NRPostProc InjectHandler;
+static Tcl_NRPostProc InjectHandlerPostCall;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -242,6 +247,8 @@ static const CmdInfo builtInCmds[] = {
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
     {"concat",		Tcl_ConcatObjCmd,	TclCompileConcatCmd,	NULL,	CMD_IS_SAFE},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
+    {"coroinject",	NULL,			NULL,                   TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
+    {"coroprobe",	NULL,			NULL,                   TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	CMD_IS_SAFE},
     {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	CMD_IS_SAFE},
     {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	CMD_IS_SAFE},
@@ -974,7 +981,7 @@ Tcl_CreateInterp(void)
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
-	    NRCoroInjectObjCmd, NULL, NULL);
+	    NRInjectObjCmd, NULL, NULL);
 
     /* Export unsupported commands */
     nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
@@ -9186,7 +9193,219 @@ TclNREvalList(
 /*
  *----------------------------------------------------------------------
  *
- * NRCoroInjectObjCmd --
+ * TclNRCoroInjectObjCmd, TclNRCoroProbeObjCmd --
+ *
+ *      Implementation of [coroinject] and [coroprobe] commands.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclNRCoroInjectObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
+    int numLevels, unused;
+    int *stackLevel = &unused;
+
+    /*
+     * Usage more or less like tailcall:
+     *   coroinject coroName cmd ?arg1 arg2 ...?
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
+	return TCL_ERROR;
+    }
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a command into a coroutine", -1));
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objv[1]), NULL);
+        return TCL_ERROR;
+    }
+
+    corPtr = cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a command into a suspended coroutine", -1));
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
+        return TCL_ERROR;
+    }
+
+    /*
+     * Add the callback to the coro's execEnv, so that it is the first thing
+     * to happen when the coro is resumed.
+     */
+
+    iPtr->execEnvPtr = corPtr->eePtr;
+    TclNRAddCallback(interp, InjectHandler, corPtr,
+            Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), NULL);
+    iPtr->execEnvPtr = savedEEPtr;
+
+    return TCL_OK;
+}
+
+static int
+TclNRCoroProbeObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
+    int numLevels, unused;
+    int *stackLevel = &unused;
+
+    /*
+     * Usage more or less like tailcall:
+     *   coroprobe coroName cmd ?arg1 arg2 ...?
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
+	return TCL_ERROR;
+    }
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a probe command into a coroutine", -1));
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objv[1]), NULL);
+        return TCL_ERROR;
+    }
+
+    corPtr = cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a probe command into a suspended coroutine",
+                -1));
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
+        return TCL_ERROR;
+    }
+
+    /*
+     * Add the callback to the coro's execEnv, so that it is the first thing
+     * to happen when the coro is resumed.
+     */
+
+    iPtr->execEnvPtr = corPtr->eePtr;
+    TclNRAddCallback(interp, InjectHandler, corPtr,
+            Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), corPtr);
+    iPtr->execEnvPtr = savedEEPtr;
+
+    /*
+     * Now we transfer control to the coroutine to run our probe. TRICKY STUFF
+     * copied from the [yield] implementation.
+     *
+     * Push the callback to restore the caller's context on yield back.
+     */
+
+    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr,
+            NULL, NULL, NULL);
+
+    /*
+     * Record the stackLevel at which the resume is happening, then swap
+     * the interp's environment to make it suitable to run this coroutine.
+     */
+
+    corPtr->stackLevel = stackLevel;
+    numLevels = corPtr->auxNumLevels;
+    corPtr->auxNumLevels = iPtr->numLevels;
+
+    /*
+     * Do the actual stack swap.
+     */
+
+    SAVE_CONTEXT(corPtr->caller);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    RESTORE_CONTEXT(corPtr->running);
+    iPtr->execEnvPtr = corPtr->eePtr;
+    iPtr->numLevels += numLevels;
+    return TCL_OK;
+}
+
+static int
+InjectHandler(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Tcl_Obj *listPtr = data[1];
+    int nargs = PTR2INT(data[2]);
+    ClientData isProbe = data[3];
+    int objc;
+    Tcl_Obj **objv;
+
+    if (!isProbe) {
+        if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
+            Tcl_ListObjAppendElement(NULL, listPtr,
+                    Tcl_NewStringObj("yield", -1));
+        } else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
+            Tcl_ListObjAppendElement(NULL, listPtr,
+                    Tcl_NewStringObj("yieldto", -1));
+        } else {
+            /*
+             * I don't think this is reachable...
+             */
+
+            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewIntObj(nargs));
+        }
+        Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
+    }
+    Tcl_IncrRefCount(listPtr);
+    TclMarkTailcall(interp);
+    TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
+            INT2PTR(nargs), isProbe);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    return TclNREvalObjv(interp, objc, objv, 0, NULL);
+}
+
+static int
+InjectHandlerPostCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Tcl_Obj *listPtr = data[1];
+    int nargs = PTR2INT(data[2]);
+    ClientData isProbe = data[3];
+    int numLevels;
+
+    Tcl_DecrRefCount(listPtr);
+    if (isProbe) {
+        /*
+         * If we were doing a probe, splice ourselves back out of the stack
+         * cleanly here. General injection should instead just look after
+         * itself.
+         */
+
+        corPtr->nargs = nargs;
+        corPtr->stackLevel = NULL;
+        numLevels = iPtr->numLevels;
+        iPtr->numLevels = corPtr->auxNumLevels;
+        corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
+        iPtr->execEnvPtr = corPtr->callerEEPtr;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NRInjectObjCmd --
  *
  *      Implementation of [::tcl::unsupported::inject] command.
  *
@@ -9194,7 +9413,7 @@ TclNREvalList(
  */
 
 static int
-NRCoroInjectObjCmd(
+NRInjectObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
