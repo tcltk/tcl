@@ -792,6 +792,113 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     interp delete slave
     set result
 } -result {inject-executed}
+
+test coroutine-9.1 {coroprobe with yield} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    list [coroprobe demo set i] [demo] [coroprobe demo set i] [demo]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2 {}}
+test coroutine-9.2 {coroprobe with yieldto} -body {
+    coroutine demo apply {{} { lmap i {1 2} {yieldto string cat} }}
+    list [coroprobe demo set i] [demo a b] [coroprobe demo set i] [demo c d]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2 {{a b} {c d}}}
+test coroutine-9.3 {coroprobe errors} -setup {
+    catch {rename demo {}}
+} -body {
+    coroprobe demo set i
+} -returnCodes error -result {can only inject a probe command into a coroutine}
+test coroutine-9.4 {coroprobe errors} -body {
+    proc demo {} { foreach i {1 2} yield }
+    coroprobe demo set i
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {can only inject a probe command into a coroutine}
+test coroutine-9.5 {coroprobe errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroprobe coroName cmd ?arg1 arg2 ...?"}
+test coroutine-9.6 {coroprobe errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe demo
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroprobe coroName cmd ?arg1 arg2 ...?"}
+test coroutine-9.7 {coroprobe errors in probe command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe demo set
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "set varName ?newValue?"}
+test coroutine-9.8 {coroprobe errors in probe command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    list [catch {coroprobe demo set}] [demo] [coroprobe demo set i]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2}
+
+test coroutine-10.1 {coroinject with yield} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} yield }}
+    coroinject demo apply {{op val} {lappend ::result $op $val}}
+    list $result [demo x] [demo y] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {{yield x} y} {yield x}}
+test coroutine-10.2 {coroinject stacking} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} yield }}
+    coroinject demo apply {{op val} {lappend ::result $op $val A;return $val}}
+    coroinject demo apply {{op val} {lappend ::result $op $val B;return $val}}
+    list $result [demo x] [demo y] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {x y} {yield x B yield x A}}
+test coroutine-10.3 {coroinject with yieldto} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} {yieldto string cat} }}
+    coroinject demo apply {{op val} {lappend ::result $op $val;return $val}}
+    list $result [demo x mp] [demo y le] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {{x mp} {y le}} {yieldto {x mp}}}
+test coroutine-10.4 {coroinject errors} -setup {
+    catch {rename demo {}}
+} -body {
+    coroinject demo set i
+} -returnCodes error -result {can only inject a command into a coroutine}
+test coroutine-10.5 {coroinject errors} -body {
+    proc demo {} { foreach i {1 2} yield }
+    coroinject demo set i
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {can only inject a command into a coroutine}
+test coroutine-10.6 {coroinject errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroinject coroName cmd ?arg1 arg2 ...?"}
+test coroutine-10.7 {coroinject errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject demo
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroinject coroName cmd ?arg1 arg2 ...?"}
+test coroutine-10.8 {coroinject errors in injected command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject demo apply {args {error "ERR: $args"}}
+    list [catch demo msg] $msg [catch demo msg] $msg
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {ERR: yield {}} 1 {invalid command name "demo"}}
 
 # cleanup
 unset lambda
