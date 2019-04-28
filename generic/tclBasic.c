@@ -9200,6 +9200,27 @@ TclNREvalList(
  *----------------------------------------------------------------------
  */
 
+static inline CoroutineData *
+GetCoroutineFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    const char *errMsg)
+{
+    /*
+     * How to get a coroutine from its handle.
+     */
+
+    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
+
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objPtr), NULL);
+        return NULL;
+    }
+    return cmdPtr->objClientData;
+}
+
 static int
 TclNRCoroInjectObjCmd(
     ClientData clientData,
@@ -9207,7 +9228,6 @@ TclNRCoroInjectObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Command *cmdPtr;
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
 
@@ -9221,16 +9241,11 @@ TclNRCoroInjectObjCmd(
 	return TCL_ERROR;
     }
 
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "can only inject a command into a coroutine", -1));
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
-                TclGetString(objv[1]), NULL);
+    corPtr = GetCoroutineFromObj(interp, objv[1],
+            "can only inject a command into a coroutine");
+    if (!corPtr) {
         return TCL_ERROR;
     }
-
-    corPtr = cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a command into a suspended coroutine", -1));
@@ -9258,7 +9273,6 @@ TclNRCoroProbeObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Command *cmdPtr;
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     int numLevels, unused;
@@ -9274,16 +9288,11 @@ TclNRCoroProbeObjCmd(
 	return TCL_ERROR;
     }
 
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "can only inject a probe command into a coroutine", -1));
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
-                TclGetString(objv[1]), NULL);
+    corPtr = GetCoroutineFromObj(interp, objv[1],
+            "can only inject a probe command into a coroutine");
+    if (!corPtr) {
         return TCL_ERROR;
     }
-
-    corPtr = cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a probe command into a suspended coroutine",
@@ -9303,8 +9312,8 @@ TclNRCoroProbeObjCmd(
     iPtr->execEnvPtr = savedEEPtr;
 
     /*
-     * Now we transfer control to the coroutine to run our probe. TRICKY STUFF
-     * copied from the [yield] implementation.
+     * Now we immediately transfer control to the coroutine to run our probe.
+     * TRICKY STUFF copied from the [yield] implementation.
      *
      * Push the callback to restore the caller's context on yield back.
      */
@@ -9332,6 +9341,27 @@ TclNRCoroProbeObjCmd(
     iPtr->numLevels += numLevels;
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InjectHandler, InjectHandlerPostProc --
+ *
+ *      Part of the implementation of [coroinject] and [coroprobe]. These are
+ *      run inside the context of the coroutine being injected/probed into.
+ *
+ *      InjectHandler runs a script (possibly adding arguments) in the context
+ *      of the coroutine. The script is specified as a one-shot list (with
+ *      reference count equal to 1) in data[1]. This function also arranges
+ *      for InjectHandlerPostProc to be the part that runs after the script
+ *      completes.
+ *
+ *      InjectHandlerPostProc cleans up after InjectHandler (deleting the
+ *      list) and, for the [coroprobe] command *only*, yields back to the
+ *      caller context (i.e., where [coroprobe] was run).
+ *s
+ *----------------------------------------------------------------------
+ */
 
 static int
 InjectHandler(
@@ -9347,6 +9377,10 @@ InjectHandler(
     Tcl_Obj **objv;
 
     if (!isProbe) {
+        /*
+         * If this is [coroinject], add the extra arguments now.
+         */
+
         if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
             Tcl_ListObjAppendElement(NULL, listPtr,
                     Tcl_NewStringObj("yield", -1));
@@ -9362,6 +9396,11 @@ InjectHandler(
         }
         Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
+
+    /*
+     * Call the user's script; we're in the right place.
+     */
+
     Tcl_IncrRefCount(listPtr);
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
@@ -9382,14 +9421,20 @@ InjectHandlerPostCall(
     ClientData isProbe = data[3];
     int numLevels;
 
-    Tcl_DecrRefCount(listPtr);
-    if (isProbe) {
-        /*
-         * If we were doing a probe, splice ourselves back out of the stack
-         * cleanly here. General injection should instead just look after
-         * itself.
-         */
+    /*
+     * Delete the command words for what we just executed.
+     */
 
+    Tcl_DecrRefCount(listPtr);
+
+    /*
+     * If we were doing a probe, splice ourselves back out of the stack
+     * cleanly here. General injection should instead just look after itself.
+     *
+     * Code from guts of [yield] implementation.
+     */
+
+    if (isProbe) {
         corPtr->nargs = nargs;
         corPtr->stackLevel = NULL;
         numLevels = iPtr->numLevels;
@@ -9417,7 +9462,6 @@ NRInjectObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Command *cmdPtr;
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
 
@@ -9431,16 +9475,11 @@ NRInjectObjCmd(
 	return TCL_ERROR;
     }
 
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "can only inject a command into a coroutine", -1));
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
-                TclGetString(objv[1]), NULL);
+    corPtr = GetCoroutineFromObj(interp, objv[1],
+            "can only inject a command into a coroutine");
+    if (!corPtr) {
         return TCL_ERROR;
     }
-
-    corPtr = cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a command into a suspended coroutine", -1));
