@@ -840,6 +840,22 @@ test coroutine-9.8 {coroprobe errors in probe command} -body {
 } -cleanup {
     catch {rename demo {}}
 } -result {1 {} 2}
+test coroutine-9.9 {coroprobe: advanced features} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	coroutine demo apply {{} {
+	    set f [info level],[info frame]
+	    foreach i {1 2} yield
+	}}
+	coroprobe demo apply {{} {
+	    upvar 1 f f
+	    list [info coroutine] [info level] [info frame] $f
+	}}
+    }
+} -cleanup {
+    interp delete $i
+} -result {::demo 2 3 1,2}
 
 test coroutine-10.1 {coroinject with yield} -setup {
     set result {}
@@ -899,6 +915,28 @@ test coroutine-10.8 {coroinject errors in injected command} -body {
 } -cleanup {
     catch {rename demo {}}
 } -result {1 {ERR: yield {}} 1 {invalid command name "demo"}}
+test coroutine-10.9 {coroinject: advanced features} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	coroutine demo apply {{} {
+	    set l [info level]
+	    set f [info frame]
+	    lmap i {1 2} yield
+	}}
+	coroinject demo apply {{arg op val} {
+	    global result
+	    upvar 1 f f l l
+	    lappend result [info coroutine] $arg $op $val
+	    lappend result [info level] $l [info frame] $f
+	    lappend result [yield $arg]
+	    return [string toupper $val]
+	}} grill
+	list [demo ABC] [demo pqr] [demo def] $result
+    }
+} -cleanup {
+    interp delete $i
+} -result {grill {} {ABC def} {::demo grill yield ABC 2 1 3 2 pqr}}
 
 # cleanup
 unset lambda
