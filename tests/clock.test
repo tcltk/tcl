@@ -27,6 +27,132 @@ if {[testConstraint win]} {
 
 package require msgcat 1.4
 
+proc _init_test_TZ_facilities {} {
+  ## get offset of given refTZ for base in realTZ:
+  proc _get_tz_offs {base realTZ {refTZ {}}} {
+    set l [set tzl [llength $::tcl::clock::TZData($realTZ)]]
+    set i [expr {$l / 2}]
+    while {[incr cnt] < 100} {
+      set tzr [lindex $::tcl::clock::TZData($realTZ) $i]
+      if {$base >= [lindex $tzr 0]} {
+        if {$l-$i <= 1 || $base < [lindex $::tcl::clock::TZData($realTZ) $i+1 0]} {
+          if {$refTZ eq {} || $refTZ eq [lindex $tzr end]} {
+            return [lindex $tzr 1]
+          }
+          while {$i > 0 && $refTZ ne [lindex [set tzr [lindex $::tcl::clock::TZData($realTZ) [incr i -1]]] end]} {
+          }
+          if {$refTZ eq [lindex $tzr end]} {
+            return [lindex $tzr 1]
+          }
+          while {$i < $tzl && $refTZ ne [lindex [set tzr [lindex $::tcl::clock::TZData($realTZ) [incr i]]] end]} {
+          }
+          if {$refTZ eq [lindex $tzr end]} {
+            return [lindex $tzr 1]
+          }
+          return -code error "unexpected: TZ $refTZ could not be found in $realTZ"
+        }
+        set i [expr {$i + ($l - $i) / 2}]
+      } else {
+        set l $i
+        set i [expr {$l / 2}]
+      }
+    }
+    return -code error "unexpected: too many iterations searching TZ for $base in $realTZ"
+  }
+  
+  ## test given base using scan arguments from lst, where first element contains the arguments
+  ## with time zone for reference (success) scan, and other elements should contain TZ 
+  ## in the input string (to compare offsets related to reference TZ):
+  proc _test_scans {base lst {debug 0}} {
+    set res {}
+    set inTZ [lindex $lst 0 end]
+    set i 0
+    foreach a $lst {
+      set v [clock scan {*}$a -base $base]
+      set tz [lindex $a 0 end]; # TZ or just refernce time
+      # save reference time:
+      set valid 1
+      if {!$i} {
+        set refv $v
+        set refTZ [clock format $refv -format %Z -timezone $inTZ]
+      } else {
+        if {$tz eq $refTZ} {
+          set zoffs 0
+          if {$v != $refv} {
+            set valid 0
+          }
+        } else {
+          set zoffs [expr { [_get_tz_offs $refv $inTZ $refTZ] - [_get_tz_offs $refv $inTZ $tz] }]
+          if {$v != $refv + $zoffs} {
+            set valid 0
+          }
+        }
+      }
+      incr i
+      if {$debug} {
+        puts $tz:\t$v\t[clock format $v -timezone $inTZ -locale en]\t\#\ $a
+      }
+      if {!$valid} {
+        set errmsg "** ERR ** invalid result for $tz in $inTZ -- $v != $refv + $zoffs,\
+         diff: [expr {$v - [set e [expr {$refv + $zoffs}]]}], using:\n\
+         \[clock scan $a -base $base\]\n\
+         got\t$v\t[clock format $v -timezone $inTZ -locale en]\n\
+         expec.\t$e\t[clock format $e -timezone $inTZ -locale en]\n********
+        "
+        if {$debug} {
+          puts $errmsg
+          lappend res "FAILED: $v != $e"
+        } else {
+          lappend res $errmsg
+        }
+      }
+    }
+    return $res
+  }
+  
+  ## test several time zones from inTZ for each base from inBases,
+  ## returns OK on success or an error messages for the failed cases.
+  proc _test_scan_time_wTZ {inTZ inBases {debug 0}} {
+    set res {}
+    set defTZs {:GMT :America/New_York :Europe/Berlin}
+    set cnt 0
+    foreach tz $inTZ {
+      foreach base $inBases {
+        set tzlst {}
+        foreach i {0 6} {
+          set tz2 [clock format [clock scan "01/01/2019 +$i months" -timezone $tz] -format "%Z" -timezone $tz]
+          if {$tz2 ni $tzlst} {lappend tzlst $tz2}
+        }
+        set testlst [list [list "10:00" -format "%H:%M" -timezone $tz]]
+        # add free-scan and format-scan to cover the same input string (TZ in input should have higher precedence):
+        foreach tz2 $tzlst {
+          # with default = current TZ:
+          lappend testlst [list "10:00 $tz2" -format "%H:%M %Z"]
+          lappend testlst [list "10:00 $tz2"]
+          # with default = GMT:
+          lappend testlst [list "10:00 $tz2" -format "%H:%M %Z" -gmt 1]
+          lappend testlst [list "10:00 $tz2" -gmt 1]
+          # with other TZ as default:
+          foreach tz $defTZs {
+            lappend testlst [list "10:00 $tz2" -format "%H:%M %Z" -timezone $tz]
+            lappend testlst [list "10:00 $tz2" -timezone $tz]
+          }
+        }
+        incr cnt [llength $testlst]
+        set errmsg [_test_scans $base $testlst $debug]
+        if {[llength $errmsg]} {
+          lappend res {*}$errmsg
+        }
+        if {$debug} { puts " ------------------------- " }
+      }
+    }
+    if {[llength $res]} {
+      return "[if {!$debug} {join $res \n}]\n[llength $res] of $cnt scan tests FAILED."
+    }
+    return OK
+  }
+}
+
 testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
@@ -35811,6 +35937,15 @@ test clock-34.52 {more than one ordinal month} {*}{
     -returnCodes error
     -result {unable to convert date-time string "next January next March": more than one ordinal month in string}
 }
+
+test clock-34.60 {scan/freescan: time with zone / dst check} -setup {
+    _init_test_TZ_facilities
+} -body {
+    _test_scan_time_wTZ \
+	{:GMT :America/New_York :Europe/Berlin} \
+	{1556240400 1556254800 1556290000 1548457200} \
+	[::tcltest::IsVerbose debug]
+} -result OK
 
 
 

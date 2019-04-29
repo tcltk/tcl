@@ -621,6 +621,7 @@ namespace eval tcltest {
 	    l line
 	    m msec
 	    u usec
+	    d debug
 	}
 	set levelRegexp "^([join [dict values $levelMap] |])\$"
 	if {[llength $level] == 1} {
