@@ -997,6 +997,7 @@ ZipFSFindTOC(
 	if (interp) {
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "END_SIG", NULL);
 	}
+fprintf(stdout, "TOC FAIL 1\n"); fflush(stdout);
 	goto error;
     }
     zf->numFiles = ZipReadShort(p + ZIP_CENTRAL_ENTS_OFFS);
@@ -1009,6 +1010,7 @@ ZipFSFindTOC(
 	if (interp) {
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "EMPTY", NULL);
 	}
+fprintf(stdout, "TOC FAIL 2\n"); fflush(stdout);
 	goto error;
     }
     q = zf->data + ZipReadInt(p + ZIP_CENTRAL_DIRSTART_OFFS);
@@ -1023,6 +1025,7 @@ ZipFSFindTOC(
 	if (interp) {
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "NO_DIR", NULL);
 	}
+fprintf(stdout, "TOC FAIL 3\n"); fflush(stdout);
 	goto error;
     }
     zf->baseOffset = zf->passOffset = p - q;
@@ -1036,6 +1039,7 @@ ZipFSFindTOC(
 	    if (interp) {
 		Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "HDR_LEN", NULL);
 	    }
+fprintf(stdout, "TOC FAIL 4\n"); fflush(stdout);
 	    goto error;
 	}
 	if (ZipReadInt(q) != ZIP_CENTRAL_HEADER_SIG) {
@@ -1043,6 +1047,7 @@ ZipFSFindTOC(
 	    if (interp) {
 		Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "HDR_SIG", NULL);
 	    }
+fprintf(stdout, "TOC FAIL 5\n"); fflush(stdout);
 	    goto error;
 	}
 	pathlen = ZipReadShort(q + ZIP_CENTRAL_PATHLEN_OFFS);
@@ -1113,6 +1118,7 @@ ZipFSOpenArchive(
     zf->passBuf[0] = 0;
     zf->chan = Tcl_OpenFileChannel(interp, zipname, "rb", 0);
     if (!zf->chan) {
+fprintf(stdout, "OA FAIL 1\n"); fflush(stdout);
 	return TCL_ERROR;
     }
     if (Tcl_GetChannelHandle(zf->chan, TCL_READABLE, &handle) != TCL_OK) {
@@ -1189,10 +1195,12 @@ ZipFSOpenArchive(
 	}
 #endif /* _WIN32 */
     }
+fprintf(stdout, "OA END\n"); fflush(stdout);
     return ZipFSFindTOC(interp, needZip, zf);
 
   error:
     ZipFSCloseArchive(interp, zf);
+fprintf(stdout, "OA FAIL 2\n"); fflush(stdout);
     return TCL_ERROR;
 }
 
@@ -1685,10 +1693,18 @@ fprintf(stdout, "MOUNT FAIL A\n"); fflush(stdout);
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
 fprintf(stdout, "MOUNT FAIL B\n"); fflush(stdout);
+	ckfree(zf);
+	return TCL_ERROR;
+    }
+    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
+	    != TCL_OK) {
+fprintf(stdout, "MOUNT FAIL C\n"); fflush(stdout);
+	ckfree(zf);
 	return TCL_ERROR;
     }
 fprintf(stdout, "MOUNT END\n"); fflush(stdout);
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)mountPoint);
+    return TCL_OK;
 }
 
 /*
@@ -4907,6 +4923,8 @@ fprintf(stdout, "START\n"); fflush(stdout);
 
 fprintf(stdout, "MOUNTED\n"); fflush(stdout);
 
+//	Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)ZIPFS_APP_MOUNT);
+
 	TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	Tcl_IncrRefCount(vfsInitScript);
 	if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
@@ -4968,6 +4986,8 @@ fprintf(stdout, "MOUNTED\n"); fflush(stdout);
 	    int found;
 	    Tcl_Obj *vfsInitScript;
 
+//	    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)ZIPFS_APP_MOUNT);
+
 	    TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	    Tcl_IncrRefCount(vfsInitScript);
 	    if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
@@ -4995,8 +5015,6 @@ fprintf(stdout, "MOUNTED\n"); fflush(stdout);
 #endif /* _WIN32 */
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
-fprintf(stdout, "HANDLE\n"); fflush(stdout);
-    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)ZIPFS_APP_MOUNT);
 fprintf(stdout, "END\n"); fflush(stdout);
     return TCL_OK;
 }
