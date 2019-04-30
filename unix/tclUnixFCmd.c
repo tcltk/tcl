@@ -2314,7 +2314,9 @@ TclpCreateTemporaryDirectory(
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
     }
 
-    TclDStringAppendLiteral(&template, "/");
+    if (Tcl_DStringValue(&template)[Tcl_DStringLength(&template) - 1] != '/') {
+	TclDStringAppendLiteral(&template, "/");
+    }
 
     if (basenameObj) {
 	string = TclGetString(basenameObj);

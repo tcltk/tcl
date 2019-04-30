@@ -1981,6 +1981,7 @@ TclpCreateTemporaryDirectory(
 {
     Tcl_DString base, name;	/* Contains WCHARs */
     int baseLen;
+    DWORD error;
 
     /*
      * Build the path in writable memory from the user-supplied pieces and
@@ -1993,8 +1994,8 @@ TclpCreateTemporaryDirectory(
 	    goto useSystemTemp;
 	}
 	Tcl_WinUtfToTChar(Tcl_GetString(dirObj), -1, &base);
-	if (dirObj->bytes[dirObj->length - 1] != '/') {
-	    TclUtfToWCharDString("/", -1, &base);
+	if (dirObj->bytes[dirObj->length - 1] != '\\') {
+	    TclUtfToWCharDString("\\", -1, &base);
 	}
     } else {
     useSystemTemp:
@@ -2022,9 +2023,10 @@ TclpCreateTemporaryDirectory(
     TclUtfToWCharDString("_", -1, &base);
 
     /*
-     * Now we keep on trying random suffixes until we get one that works. Note
-     * that SUFFIX_LENGTH is longer than on Unix because we expect to be not
-     * on a case-sensitive filesystem.
+     * Now we keep on trying random suffixes until we get one that works
+     * (i.e., that doesn't trigger the ERROR_ALREADY_EXISTS error). Note that
+     * SUFFIX_LENGTH is longer than on Unix because we expect to be not on a
+     * case-sensitive filesystem.
      */
 
     baseLen = Tcl_DStringLength(&base);
@@ -2039,13 +2041,26 @@ TclpCreateTemporaryDirectory(
 	 * Put a random suffix on the end.
 	 */
 
+	error = ERROR_SUCCESS;
 	tempbuf[SUFFIX_LENGTH] = '\0';
 	for (i = 0 ; i < SUFFIX_LENGTH; i++) {
 	    tempbuf[i] = randChars[(int) (rand() * numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
 	TclUtfToWCharDString(tempbuf, -1, &base);
-    } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL));
+    } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL)
+	    && (error = GetLastError()) == ERROR_ALREADY_EXISTS);
+
+    /*
+     * Check for other errors. The big ones are ERROR_PATH_NOT_FOUND and
+     * ERROR_ACCESS_DENIED.
+     */
+
+    if (error != ERROR_SUCCESS) {
+	TclWinConvertError(error);
+	Tcl_DStringFree(&base);
+	return NULL;
+    }
 
     /*
      * We actually made the directory, so we're done! Report what we made back

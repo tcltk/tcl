@@ -2967,6 +2967,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    ClientData clientData);
