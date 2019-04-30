@@ -2330,7 +2330,7 @@ TclpCreateTemporaryDirectory(
 	TclDStringAppendLiteral(&template, DEFAULT_TEMP_DIR_PREFIX);
     }
 
-    TclDStringAppendLiteral(&template, ".XXXXXX");
+    TclDStringAppendLiteral(&template, "_XXXXXX");
 
     /*
      * Make the temporary directory.
