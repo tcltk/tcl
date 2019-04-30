@@ -1957,6 +1957,107 @@ TclpObjListVolumes(void)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclpCreateTemporaryDirectory --
+ *
+ *	Creates a temporary directory, possibly based on the supplied bits and
+ *	pieces of template supplied in the arguments.
+ *
+ * Results:
+ *	An object (refcount 0) containing the name of the newly-created
+ *	directory, or NULL on failure.
+ *
+ * Side effects:
+ *	Accesses the native filesystem. Makes a directory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclpCreateTemporaryDirectory(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj)
+{
+    Tcl_DString base, name;	/* Contains WCHARs */
+    int baseLen;
+
+    /*
+     * Build the path in writable memory from the user-supplied pieces and
+     * some defaults. First, the parent temporary directory.
+     */
+
+    if (dirObj) {
+	Tcl_GetString(dirObj);
+	if (dirObj->length < 1) {
+	    goto useSystemTemp;
+	}
+	Tcl_WinUtfToTChar(Tcl_GetString(dirObj), -1, &base);
+	if (dirObj->bytes[dirObj->length - 1] != '/') {
+	    TclUtfToWCharDString("/", -1, &base);
+	}
+    } else {
+    useSystemTemp:
+	WCHAR tempBuf[MAX_PATH + 1];
+	DWORD len = GetTempPathW(MAX_PATH, tempBuf);
+
+	Tcl_DStringInit(&base);
+	Tcl_DStringAppend(&base, (char *) tempBuf, len * sizeof(WCHAR));
+    }
+
+    /*
+     * Next, the base of the directory name.
+     */
+
+#define DEFAULT_TEMP_DIR_PREFIX	"tcl"
+#define SUFFIX_LENGTH	8
+
+    if (basenameObj) {
+	Tcl_WinUtfToTChar(Tcl_GetString(basenameObj), -1, &name);
+	TclDStringAppendDString(&base, &name);
+	Tcl_DStringFree(&name);
+    } else {
+	TclUtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
+    }
+    TclUtfToWCharDString("_", -1, &base);
+
+    /*
+     * Now we keep on trying random suffixes until we get one that works. Note
+     * that SUFFIX_LENGTH is longer than on Unix because we expect to be not
+     * on a case-sensitive filesystem.
+     */
+
+    baseLen = Tcl_DStringLength(&base);
+    do {
+	char tempbuf[SUFFIX_LENGTH + 1];
+	int i;
+	static const char randChars[] =
+	    "QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
+	static const int numRandChars = sizeof(randChars) - 1;
+
+	/*
+	 * Put a random suffix on the end.
+	 */
+
+	tempbuf[SUFFIX_LENGTH] = '\0';
+	for (i = 0 ; i < SUFFIX_LENGTH; i++) {
+	    tempbuf[i] = randChars[(int) (rand() * numRandChars)];
+	}
+	Tcl_DStringSetLength(&base, baseLen);
+	TclUtfToWCharDString(tempbuf, -1, &base);
+    } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL));
+
+    /*
+     * We actually made the directory, so we're done! Report what we made back
+     * as a (clean) Tcl_Obj.
+     */
+
+    Tcl_WinTCharToUtf((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
+    Tcl_DStringFree(&base);
+    return TclDStringToObj(&name);
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
