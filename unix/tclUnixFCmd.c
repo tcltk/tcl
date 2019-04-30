@@ -2298,7 +2298,6 @@ TclpCreateTemporaryDirectory(
 {
     Tcl_DString template, tmp;
     const char *string;
-    Tcl_Obj *resultingNameObj;
 
 #define DEFAULT_TEMP_DIR_PREFIX	"tcl"
 
