@@ -930,6 +930,17 @@ proc onfinal {} {
     if {[lindex $hargs 0] ne "finalize"} {return}
     return -code return ""
 }
+
+proc onwatch {} {
+    upvar args hargs
+    lassign $hargs watch chan eventspec
+    if {$watch ne "watch"} return
+    foreach spec $eventspec {
+	chan postevent $chan $spec
+    }
+    return
+}
+
 }
 
 # Set everything up in the main thread.
@@ -2002,28 +2013,29 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c readable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    set tock {}
+    note [fileevent $c readable {lappend res TOCK; set tock 1}]
+    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c r]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* read} {} {} TOCK {watch rc* {}}}
 test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c writable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    note [fileevent $c writable {lappend res TOCK; set tock 1}]
+    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c w]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* write} {} {} TOCK {watch rc* {}}}
 test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     proc foo {args} {oninit; onfinal; track; return}
     proc dummy args { return }
@@ -2036,6 +2048,31 @@ test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     rename foo   {}
     rename dummy {}
 } -returnCodes error -result {can not find reflected channel named "rc*"}
+test iocmd-31.9 {
+    chan postevent
+    
+    call to current coroutine
+
+    see 67a5eabbd3d1
+} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onwatch; onfinal; track; return}
+    set c [chan create {r w} foo]
+    after 0 [list ::apply [list c {
+	coroutine c1 ::apply [list c {
+	    chan event $c readable [list [info coroutine]]
+	    yield
+	    set ::done READING
+	} [namespace current]] $c
+    } [namespace current]] $c]
+    set stop [after 10000 {set done TIMEOUT}]
+    vwait ::done
+    catch {after cancel $stop}
+    lappend res $done
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* read} READING {watch rc* {}}}
 
 # --- === *** ###########################
 # 'Pull the rug' tests. Create channel in a interpreter A, move to
