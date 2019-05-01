@@ -365,6 +365,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"file", "size"},
     {"file", "stat"},
     {"file", "tail"},
+    {"file", "tempdir"},
     {"file", "tempfile"},
     {"file", "type"},
     {"file", "volumes"},
