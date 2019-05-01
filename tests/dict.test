@@ -2128,7 +2128,7 @@ test dict-27.8 {dict getwithdefault command} -returnCodes error -body {
 test dict-27.9 {dict getwithdefault command} -returnCodes error -body {
     dict getwithdefault {} {}
 } -result {wrong # args: should be "dict getwithdefault dictionary ?key ...? key default"}
-test dict-26.10 {dict getdef command} -returnCodes error -body {
+test dict-27.10 {dict getdef command} -returnCodes error -body {
     dict getwithdefault {a b c} d e
 } -result {missing value to go with key}
 test dict-27.11 {dict getwithdefault command} -body {
@@ -2149,7 +2149,7 @@ test dict-27.15 {dict getwithdefault command} -body {
 test dict-27.16 {dict getwithdefault command} -returnCodes error -body {
     $dict getwithdefault {a {b c d}} a b d
 } -result {missing value to go with key}
-test dict-26.17 {dict getdef command} -returnCodes error -body {
+test dict-27.17 {dict getdef command} -returnCodes error -body {
     $dict getwithdefault {a b c} d e
 } -result {missing value to go with key}
 
