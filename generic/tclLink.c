@@ -27,6 +27,7 @@
 
 typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
+    Tcl_Namespace *nsPtr;	/* Namespace containing Tcl variable */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the
 				 * actual variable may be aliased at that time
@@ -170,6 +171,7 @@ Tcl_LinkVar(
 
     linkPtr = ckalloc(sizeof(Link));
     linkPtr->interp = interp;
+    linkPtr->nsPtr = NULL;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
@@ -196,6 +198,11 @@ Tcl_LinkVar(
 	LinkFree(linkPtr);
 	return TCL_ERROR;
     }
+
+    TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
+	    &(linkPtr->nsPtr),
+
+
     code = Tcl_TraceVar2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, linkPtr);
@@ -362,6 +369,8 @@ Tcl_LinkArray(
     linkPtr->interp = interp;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
+
+
     objPtr = ObjValue(linkPtr);
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
@@ -1497,6 +1506,9 @@ static void
 LinkFree(
     Link *linkPtr)		/* Structure describing linked variable. */
 {
+    if (linkPtr->nsPtr) {
+	TclNsDecrRefCount((Namespace *)(linkPtr->nsPtr));
+    }
     if (linkPtr->flags & LINK_ALLOC_ADDR) {
 	ckfree(linkPtr->addr);
     }
