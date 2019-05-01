@@ -4893,7 +4893,6 @@ TclZipfs_AppHook(
 	int found;
 	Tcl_Obj *vfsInitScript;
 
-
 	TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	Tcl_IncrRefCount(vfsInitScript);
 	if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
