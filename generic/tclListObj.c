@@ -1092,7 +1092,7 @@ Tcl_ListObjReplace(
 	Tcl_Obj **oldPtrs = elemPtrs;
 	int newMax;
 
-	if (needGrow){
+	if (needGrow) {
 	    newMax = 2 * numRequired;
 	} else {
 	    newMax = listRepPtr->maxElemCount;

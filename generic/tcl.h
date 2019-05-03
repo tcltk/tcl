@@ -902,6 +902,8 @@ typedef struct Tcl_DString {
 #endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
+#define TCL_LINK_CHARS		15
+#define TCL_LINK_BINARY		16
 #define TCL_LINK_READ_ONLY	0x80
 
 /*

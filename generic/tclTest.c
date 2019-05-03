@@ -52,6 +52,7 @@ DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 static Tcl_DString delString;
 static Tcl_Interp *delInterp;
+static const Tcl_ObjType *properByteArrayType;
 
 /*
  * One of the following structures exists for each asynchronous handler
@@ -307,6 +308,8 @@ static int		TestinterpdeleteCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestlinkCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestlinkarrayCmd(void *dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 static int		TestlocaleCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -552,8 +555,7 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_Obj *listPtr;
-    Tcl_Obj **objv;
+    Tcl_Obj **objv, *objPtr;
     int objc, index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
@@ -574,6 +576,11 @@ Tcltest_Init(
     if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+
+    objPtr = Tcl_NewStringObj("abc", 3);
+    (void)Tcl_GetByteArrayFromObj(objPtr, &index);
+    properByteArrayType = objPtr->typePtr;
+    Tcl_DecrRefCount(objPtr);
 
     /*
      * Create additional commands and math functions for testing Tcl.
@@ -660,6 +667,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testinterpdelete", TestinterpdeleteCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
@@ -740,9 +748,9 @@ Tcltest_Init(
      * Check for special options used in ../tests/main.test
      */
 
-    listPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
-    if (listPtr != NULL) {
-	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+    objPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
+    if (objPtr != NULL) {
+	if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
@@ -3279,6 +3287,127 @@ TestlinkCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestlinkarrayCmd --
+ *
+ *      This function is invoked to process the "testlinkarray" Tcl command.
+ *      It is used to test the 'Tcl_LinkArray' function.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates, deletes, and invokes variable links.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestlinkarrayCmd(
+    ClientData dummy,           /* Not used. */
+    Tcl_Interp *interp,         /* Current interpreter. */
+    int objc,                   /* Number of arguments. */
+    Tcl_Obj *const objv[])      /* Argument objects. */
+{
+    static const char *LinkOption[] = {
+        "update", "remove", "create", NULL
+    };
+    enum LinkOption { LINK_UPDATE, LINK_REMOVE, LINK_CREATE };
+    static const char *LinkType[] = {
+	"char", "uchar", "short", "ushort", "int", "uint", "long", "ulong",
+	"wide", "uwide", "float", "double", "string", "char*", "binary", NULL
+    };
+    /* all values after TCL_LINK_CHARS_ARRAY are used as arrays (see below) */
+    static int LinkTypes[] = {
+	TCL_LINK_CHAR, TCL_LINK_UCHAR,
+	TCL_LINK_SHORT, TCL_LINK_USHORT, TCL_LINK_INT, TCL_LINK_UINT,
+	TCL_LINK_LONG, TCL_LINK_ULONG, TCL_LINK_WIDE_INT, TCL_LINK_WIDE_UINT,
+	TCL_LINK_FLOAT, TCL_LINK_DOUBLE, TCL_LINK_STRING, TCL_LINK_CHARS,
+	TCL_LINK_BINARY
+    };
+    int optionIndex, typeIndex, readonly, i, size, length;
+    char *name, *arg;
+    long addr;                  /* Wrong on Windows, but that's MS's fault for
+                                 * not supporting <stdint.h> correctly. They
+                                 * can suffer the warnings; the rest of us
+                                 * shouldn't have to! */
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option args");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], LinkOption, "option", 0,
+	    &optionIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch ((enum LinkOption) optionIndex) {
+    case LINK_UPDATE:
+	for (i=2; i<objc; i++) {
+	    Tcl_UpdateLinkedVar(interp, Tcl_GetString(objv[i]));
+	}
+	return TCL_OK;
+    case LINK_REMOVE:
+	for (i=2; i<objc; i++) {
+	    Tcl_UnlinkVar(interp, Tcl_GetString(objv[i]));
+	}
+	return TCL_OK;
+    case LINK_CREATE:
+	if (objc < 4) {
+	    goto wrongArgs;
+	}
+	readonly = 0;
+	i = 2;
+
+	/*
+	 * test on switch -r...
+	 */
+
+	arg = Tcl_GetStringFromObj(objv[i], &length);
+	if (length < 2) {
+	    goto wrongArgs;
+	}
+	if (arg[0] == '-') {
+	    if (arg[1] != 'r') {
+		goto wrongArgs;
+	    }
+	    readonly = TCL_LINK_READ_ONLY;
+	    i++;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[i++], LinkType, "type", 0,
+ 		&typeIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("wrong size value", -1));
+	    return TCL_ERROR;
+	}
+	name = Tcl_GetString(objv[i++]);
+
+	/*
+	 * If no address is given request one in the underlying function
+	 */
+
+	if (i < objc) {
+	    if (Tcl_GetLongFromObj(interp, objv[i], &addr) == TCL_ERROR) {
+ 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"wrong address value", -1));
+		return TCL_ERROR;
+	    }
+	} else {
+	    addr = 0;
+	}
+	return Tcl_LinkArray(interp, name, (void *) addr,
+		LinkTypes[typeIndex] | readonly, size);
+    }
+    return TCL_OK;
+
+  wrongArgs:
+    Tcl_WrongNumArgs(interp, 2, objv, "?-readonly? type size name ?address?");
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestlocaleCmd --
  *
  *	This procedure implements the "testlocale" command.  It is used
@@ -5013,7 +5142,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n;
+    int n = 0;
     const char *p;
 
     if (objc != 2) {
@@ -5021,6 +5150,10 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
     p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
+    if ((p == NULL) || !Tcl_FetchIntRep(objv[1], properByteArrayType)) {
+	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
     return TCL_OK;
 }

@@ -641,6 +641,14 @@ InstructionDesc const tclInstructionTable[] = {
 	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
 	 * Stack: ... => ... time */
 
+    {"dictGetDef",	  5,	INT_MIN,   1,	{OPERAND_UINT4}},
+	/* The top word is the default, the next op4 words (min 1) are a key
+	 * path into the dictionary just below the keys on the stack, and all
+	 * those values are replaced by the value read out of that key-path
+	 * (like [dict get]) except if there is no such key, when instead the
+	 * default is pushed instead.
+	 * Stack:  ... dict key1 ... keyN default => ... value */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -678,7 +686,7 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    size_t numWords, int line, int *clNext, int **lines,
+			    int numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -3239,7 +3247,7 @@ EnterCmdWordData(
     int srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
     const char *cmd,
-    size_t numWords,
+    int numWords,
     int line,
     int *clNext,
     int **wlines,
@@ -3247,8 +3255,7 @@ EnterCmdWordData(
 {
     ECL *ePtr;
     const char *last;
-    size_t wordIdx;
-    int wordLine, *wwlines, *wordNext;
+    int wordIdx, wordLine, *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*

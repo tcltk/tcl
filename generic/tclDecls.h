@@ -533,7 +533,7 @@ TCLAPI char *		Tcl_JoinPath(int argc, const char *const *argv,
 				Tcl_DString *resultPtr);
 /* 187 */
 TCLAPI int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
-				char *addr, int type);
+				void *addr, int type);
 /* Slot 188 is reserved */
 /* 189 */
 TCLAPI Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
@@ -1737,6 +1737,10 @@ TCLAPI void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
 TCLAPI void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
 /* 643 */
 TCLAPI int		Tcl_IsShared(Tcl_Obj *objPtr);
+/* 644 */
+TCLAPI int		Tcl_LinkArray(Tcl_Interp *interp,
+				const char *varName, void *addr, int type,
+				int size);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1961,7 +1965,7 @@ typedef struct TclStubs {
     int (*tcl_InterpDeleted) (Tcl_Interp *interp); /* 184 */
     int (*tcl_IsSafe) (Tcl_Interp *interp); /* 185 */
     char * (*tcl_JoinPath) (int argc, const char *const *argv, Tcl_DString *resultPtr); /* 186 */
-    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, char *addr, int type); /* 187 */
+    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
     int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
@@ -2418,6 +2422,7 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
+    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3682,6 +3687,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
 	(tclStubsPtr->tcl_IsShared) /* 643 */
+#define Tcl_LinkArray \
+	(tclStubsPtr->tcl_LinkArray) /* 644 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
