@@ -50,6 +50,12 @@ struct DeclaredSlot {
 		    resolver, NULL, NULL}}
 
 /*
+ * A [string match] pattern used to determine if a method should be exported.
+ */
+
+#define PUBLIC_PATTERN		"[a-z]*"
+
+/*
  * Forward declarations.
  */
 
@@ -278,7 +284,7 @@ TclOOObjectSetFilters(
 	} else {
 	    filtersList = Tcl_Realloc(oPtr->filters.list, size);
 	}
-	for (i=0 ; i<numFilters ; i++) {
+	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -337,7 +343,7 @@ TclOOClassSetFilters(
 	} else {
 	    filtersList = Tcl_Realloc(classPtr->filters.list, size);
 	}
-	for (i=0 ; i<numFilters ; i++) {
+	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -400,7 +406,11 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
-		/* For the new copy created by memcpy */
+
+		/*
+		 * For the new copy created by memcpy().
+		 */
+
 		AddRef(mixinPtr->thisPtr);
 	    }
 	}
@@ -452,7 +462,11 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
-	    /* For the new copy created by memcpy */
+
+	    /*
+	     * For the new copy created by memcpy.
+	     */
+
 	    AddRef(mixinPtr->thisPtr);
 	}
     }
@@ -724,15 +738,16 @@ TclOOUnknownDefinition(
 	 * Got one match, and only one match!
 	 */
 
-	Tcl_Obj **newObjv = TclStackAlloc(interp, sizeof(Tcl_Obj*)*(objc-1));
+	Tcl_Obj **newObjv =
+		TclStackAlloc(interp, sizeof(Tcl_Obj*) * (objc - 1));
 	int result;
 
 	newObjv[0] = Tcl_NewStringObj(matchedStr, -1);
 	Tcl_IncrRefCount(newObjv[0]);
 	if (objc > 2) {
-	    memcpy(newObjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+	    memcpy(newObjv + 1, objv + 2, sizeof(Tcl_Obj *) * (objc - 2));
 	}
-	result = Tcl_EvalObjv(interp, objc-1, newObjv, 0);
+	result = Tcl_EvalObjv(interp, objc - 1, newObjv, 0);
 	Tcl_DecrRefCount(newObjv[0]);
 	TclStackFree(interp, newObjv);
 	return result;
@@ -1039,17 +1054,20 @@ MagicDefinitionInvoke(
     obj2Ptr = Tcl_NewObj();
     cmd = FindCommand(interp, objv[cmdIndex], nsPtr);
     if (cmd == NULL) {
-	/* punt this case! */
+	/*
+	 * Punt this case!
+	 */
+
 	Tcl_AppendObjToObj(obj2Ptr, objv[cmdIndex]);
     } else {
 	Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
     }
     Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
     /* TODO: overflow? */
-    Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-offset, objv+offset);
+    Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc - offset, objv + offset);
     Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
-    result = Tcl_EvalObjv(interp, objc-cmdIndex, objs, TCL_EVAL_INVOKE);
+    result = Tcl_EvalObjv(interp, objc - cmdIndex, objs, TCL_EVAL_INVOKE);
     if (isRoot) {
 	TclResetRewriteEnsemble(interp, 1);
     }
@@ -1685,7 +1703,7 @@ TclOODefineDeleteMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    for (i=1 ; i<objc ; i++) {
+    for (i = 1; i < objc; i++) {
 	/*
 	 * Delete the method structure from the appropriate hash table.
 	 */
@@ -1811,7 +1829,7 @@ TclOODefineExportObjCmd(
 	return TCL_ERROR;
     }
 
-    for (i=1 ; i<objc ; i++) {
+    for (i = 1; i < objc; i++) {
 	/*
 	 * Exporting is done by adding the PUBLIC_METHOD flag to the method
 	 * record. If there is no such method in this object or class (i.e.
@@ -1904,7 +1922,7 @@ TclOODefineForwardObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
-    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
+    isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 	    ? PUBLIC_METHOD : 0;
     if (IsPrivateDefine(interp)) {
 	isPublic = TRUE_PRIVATE_METHOD;
@@ -1914,7 +1932,7 @@ TclOODefineForwardObjCmd(
      * Create the method structure.
      */
 
-    prefixObj = Tcl_NewListObj(objc-2, objv+2);
+    prefixObj = Tcl_NewListObj(objc - 2, objv + 2);
     if (isInstanceForward) {
 	mPtr = TclOONewForwardInstanceMethod(interp, oPtr, isPublic, objv[1],
 		prefixObj);
@@ -2002,7 +2020,7 @@ TclOODefineMethodObjCmd(
 	if (IsPrivateDefine(interp)) {
 	    isPublic = TRUE_PRIVATE_METHOD;
 	} else {
-	    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
+	    isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 		    ? PUBLIC_METHOD : 0;
 	}
     }
@@ -2124,7 +2142,7 @@ TclOODefineUnexportObjCmd(
 	return TCL_ERROR;
     }
 
-    for (i=1 ; i<objc ; i++) {
+    for (i = 1; i < objc; i++) {
 	/*
 	 * Unexporting is done by removing the PUBLIC_METHOD flag from the
 	 * method record. If there is no such method in this object or class
@@ -2340,7 +2358,7 @@ ClassFilterSet(
     int filterc;
     Tcl_Obj **filterv;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2424,7 +2442,7 @@ ClassMixinSet(
     Tcl_Obj **mixinv;
     Class **mixins;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2445,7 +2463,7 @@ ClassMixinSet(
 
     mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
-    for (i=0 ; i<mixinc ; i++) {
+    for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
@@ -2529,7 +2547,7 @@ ClassSuperSet(
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"superclassList");
 	return TCL_ERROR;
@@ -2576,14 +2594,14 @@ ClassSuperSet(
 	superc = 1;
 	AddRef(superclasses[0]->thisPtr);
     } else {
-	for (i=0 ; i<superc ; i++) {
+	for (i = 0; i < superc; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
 		i--;
 		goto failedAfterAlloc;
 	    }
-	    for (j=0 ; j<i ; j++) {
+	    for (j = 0; j < i; j++) {
 		if (superclasses[j] == superclasses[i]) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "class should only be a direct superclass once",
@@ -2705,7 +2723,7 @@ ClassVarsSet(
     Tcl_Obj **varv;
     int i;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2724,7 +2742,7 @@ ClassVarsSet(
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<varc ; i++) {
+    for (i = 0; i < varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
@@ -2803,7 +2821,7 @@ ObjFilterSet(
     int filterc;
     Tcl_Obj **filterv;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2877,7 +2895,7 @@ ObjMixinSet(
     Class **mixins;
     int i;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2892,7 +2910,7 @@ ObjMixinSet(
 
     mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
-    for (i=0 ; i<mixinc ; i++) {
+    for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
@@ -2967,7 +2985,7 @@ ObjVarsSet(
     int varc, i;
     Tcl_Obj **varv;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"variableList");
 	return TCL_ERROR;
@@ -2980,7 +2998,7 @@ ObjVarsSet(
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<varc ; i++) {
+    for (i = 0; i < varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
