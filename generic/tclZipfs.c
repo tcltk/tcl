@@ -381,6 +381,7 @@ static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
@@ -1280,6 +1281,7 @@ ZipFSCatalogFilesystem(
 
     *zf = *zf0;
     zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
     zf->name = Tcl_Alloc(zf->nameLength + 1);
@@ -1673,9 +1675,16 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+	ckfree(zf);
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
+	    != TCL_OK) {
+	ckfree(zf);
+	return TCL_ERROR;
+    }
+    ckfree(zf);
+    return TCL_OK;
 }
 
 /*
@@ -1838,6 +1847,7 @@ TclZipfs_Unmount(
 	Tcl_Free(z);
     }
     ZipFSCloseArchive(interp, zf);
+    Tcl_DeleteExitHandler(ZipfsExitHandler, (ClientData)zf);
     Tcl_Free(zf);
     unmounted = 1;
   done:
@@ -4821,6 +4831,17 @@ ZipfsAppHookFindTclInit(
     }
 
     return TCL_ERROR;
+}
+
+static void
+ZipfsExitHandler(
+    ClientData clientData)
+{
+    ZipFile *zf = (ZipFile *)clientData;
+
+    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
+	Tcl_Panic("tried to unmount busy filesystem");
+    }
 }
 
 /*
