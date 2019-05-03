@@ -27,7 +27,7 @@
 
 typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
-    Tcl_Namespace *nsPtr;	/* Namespace containing Tcl variable */
+    Namespace *nsPtr;		/* Namespace containing Tcl variable */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the
 				 * actual variable may be aliased at that time
@@ -159,6 +159,8 @@ Tcl_LinkVar(
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
+    Namespace *dummy;
+    const char *name;
     int code;
 
     linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
@@ -200,8 +202,8 @@ Tcl_LinkVar(
     }
 
     TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
-	    &(linkPtr->nsPtr),
-
+	    &(linkPtr->nsPtr), &dummy, &dummy, &name);
+    linkPtr->nsPtr->refCount++;
 
     code = Tcl_TraceVar2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
@@ -247,6 +249,8 @@ Tcl_LinkArray(
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
+    Namespace *dummy;
+    const char *name;
     int code;
 
     if (size < 1) {
@@ -370,6 +374,9 @@ Tcl_LinkArray(
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
 
+    TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
+	    &(linkPtr->nsPtr), &dummy, &dummy, &name);
+    linkPtr->nsPtr->refCount++;
 
     objPtr = ObjValue(linkPtr);
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
@@ -756,7 +763,7 @@ LinkTraceProc(
      */
 
     if (flags & TCL_TRACE_UNSETS) {
-	if (Tcl_InterpDeleted(interp)) {
+	if (Tcl_InterpDeleted(interp) || TclNamespaceDeleted(linkPtr->nsPtr)) {
 	    Tcl_DecrRefCount(linkPtr->varName);
 	    LinkFree(linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
@@ -1507,7 +1514,7 @@ LinkFree(
     Link *linkPtr)		/* Structure describing linked variable. */
 {
     if (linkPtr->nsPtr) {
-	TclNsDecrRefCount((Namespace *)(linkPtr->nsPtr));
+	TclNsDecrRefCount(linkPtr->nsPtr);
     }
     if (linkPtr->flags & LINK_ALLOC_ADDR) {
 	ckfree(linkPtr->addr);
