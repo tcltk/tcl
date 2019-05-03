@@ -1089,9 +1089,9 @@ Tcl_DeleteNamespace(
 
 int
 TclNamespaceDeleted(
-    Tcl_Namespace *nsPtr)
+    Namespace *nsPtr)
 {
-    return (((Namespace *) nsPtr)->flags & NS_DYING) ? 1 : 0;
+    return (nsPtr->flags & NS_DYING) ? 1 : 0;
 }
 
 /*
