@@ -8515,7 +8515,7 @@ UpdateInterest(
 	}
     }
 
-    if (statePtr->timer == NULL
+    if (!statePtr->timer
 	&& mask & TCL_WRITABLE
 	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 
@@ -8555,7 +8555,9 @@ ChannelTimerProc(
     Tcl_Preserve(statePtr);
     statePtr->timer = NULL;
     if (statePtr->interestMask & TCL_WRITABLE
-	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	) {
 	/*
 	 * Restart the timer in case a channel handler reenters the event loop
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
