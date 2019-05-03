@@ -1338,6 +1338,7 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
+    Tcl_LinkArray, /* 644 */
 };
 
 /* !END!: Do not edit above this line. */

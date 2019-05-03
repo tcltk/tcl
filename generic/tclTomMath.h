@@ -7,8 +7,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef BN_H_
 #define BN_H_
@@ -128,6 +127,7 @@ typedef unsigned long long   mp_word;
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
+#define MP_ITER       -4  /* Max. iterations reached */
 
 #define MP_YES        1   /* yes response */
 #define MP_NO         0   /* no response */
@@ -346,15 +346,20 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 /*
 int mp_rand(mp_int *a, int digits);
 */
+/* makes a pseudo-random small int of a given size */
+/*
+int mp_rand_digit(mp_digit *r);
+*/
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
-/* as last resort we will fall back to libtomcrypt's rng_get_bytes()
- * in case you don't use libtomcrypt or use it w/o rng_get_bytes()
- * you have to implement it somewhere else, as it's required */
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
 extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
 extern void (*ltm_rng_callback)(void);
 #endif
@@ -691,10 +696,17 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 int mp_prime_rabin_miller_trials(int size);
 */
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */

@@ -332,6 +332,9 @@ test process-7.3 {child killed} -constraints {win} -body {
     tcl::process autopurge 1
 }
 
+removeFile $path(exit)
+removeFile $path(sleep)
+
 rename wait_for_file {}
 rename signal_exit {}
 ::tcltest::cleanupTests
