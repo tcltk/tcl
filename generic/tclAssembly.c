@@ -145,6 +145,8 @@ typedef enum TalInstType {
 				 * 1 */
     ASSEM_DICT_GET,		/* 'dict get' and related - consumes N+1
 				 * operands, produces 1, N > 0 */
+    ASSEM_DICT_GET_DEF,		/* 'dict getwithdefault' - consumes N+2
+				 * operands, produces 1, N > 0 */
     ASSEM_DICT_SET,		/* specifies key count and LVT index, consumes
 				 * N+1 operands, produces 1, N > 0 */
     ASSEM_DICT_UNSET,		/* specifies key count and LVT index, consumes
@@ -362,6 +364,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"dictExists",	ASSEM_DICT_GET, INST_DICT_EXISTS,	INT_MIN,1},
     {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
+    {"dictGetDef",	ASSEM_DICT_GET_DEF, INST_DICT_GET_DEF,	INT_MIN,1},
     {"dictIncrImm",	ASSEM_SINT4_LVT4,
 					INST_DICT_INCR_IMM,	1,	1},
     {"dictLappend",	ASSEM_LVT4,	INST_DICT_LAPPEND,	2,	1},
@@ -617,10 +620,14 @@ BBUpdateStackReqs(
 
     if (consumed == INT_MIN) {
 	/*
-	 * The instruction is variadic; it consumes 'count' operands.
+	 * The instruction is variadic; it consumes 'count' operands, or
+	 * 'count+1' for ASSEM_DICT_GET_DEF.
 	 */
 
 	consumed = count;
+	if (TalInstructionTable[tblIdx].instType == ASSEM_DICT_GET_DEF) {
+	    consumed++;
+	}
     }
     if (produced < 0) {
 	/*
@@ -1394,6 +1401,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_DICT_GET:
+    case ASSEM_DICT_GET_DEF:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;

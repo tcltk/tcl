@@ -30,19 +30,18 @@
 
 /* Define custom memory allocation for libtommath */
 
+
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
 #define TclBNAlloc(s) ((void*)Tcl_Alloc((size_t)(s)))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
 #define TclBNRealloc(x,s) ((void*)Tcl_Realloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (Tcl_Free((char*)(x)))
-/* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-/* unused - no macro */
 
-#define XMALLOC(x) TclBNAlloc(x)
-#define XFREE(x) TclBNFree(x)
-#define XREALLOC(x,n) TclBNRealloc(x,n)
-#define XCALLOC(n,x) TclBNCalloc(n,x)
+#define XMALLOC(size)                   TclBNAlloc(size)
+#define XFREE(mem, size)                TclBNFree(mem)
+#define XREALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
+
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 

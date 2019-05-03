@@ -191,17 +191,6 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 		| ((bignum).alloc << 15) | ((bignum).used));            \
     }
 
-#define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.twoPtrValue.ptr2 == INT2PTR(-1)) { \
-	(bignum) = *((mp_int *) ((objPtr)->internalRep.twoPtrValue.ptr1)); \
-    } else {                                                            \
-	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;          \
-	(bignum).sign = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 30; \
-	(bignum).alloc =                                                \
-		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7fff; \
-	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7fff; \
-    }
-
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -2329,7 +2318,7 @@ Tcl_GetDoubleFromObj(
 	if (objPtr->typePtr == &tclBignumType) {
 	    mp_int big;
 
-	    UNPACK_BIGNUM(objPtr, big);
+	    TclUnpackBignum(objPtr, big);
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
@@ -2713,7 +2702,7 @@ Tcl_GetLongFromObj(
 	    unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
-	    UNPACK_BIGNUM(objPtr, big);
+	    TclUnpackBignum(objPtr, big);
 	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
 		while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
@@ -2953,7 +2942,7 @@ Tcl_GetWideIntFromObj(
 	    Tcl_WideInt scratch;
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
-	    UNPACK_BIGNUM(objPtr, big);
+	    TclUnpackBignum(objPtr, big);
 	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
 		while (numBytes-- > 0) {
 		    value = (value << CHAR_BIT) | *bytes++;
@@ -3067,7 +3056,7 @@ FreeBignum(
 {
     mp_int toFree;		/* Bignum to free */
 
-    UNPACK_BIGNUM(objPtr, toFree);
+    TclUnpackBignum(objPtr, toFree);
     mp_clear(&toFree);
     if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr2) < 0) {
 	Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
@@ -3100,7 +3089,7 @@ DupBignum(
     mp_int bignumCopy;
 
     copyPtr->typePtr = &tclBignumType;
-    UNPACK_BIGNUM(srcPtr, bignumVal);
+    TclUnpackBignum(srcPtr, bignumVal);
     if (mp_init_copy(&bignumCopy, &bignumVal) != MP_OKAY) {
 	Tcl_Panic("initialization failure in DupBignum");
     }
@@ -3135,7 +3124,7 @@ UpdateStringOfBignum(
     int size;
     char *stringVal;
 
-    UNPACK_BIGNUM(objPtr, bignumVal);
+    TclUnpackBignum(objPtr, bignumVal);
     if (MP_OKAY != mp_radix_size(&bignumVal, 10, &size)) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
@@ -3274,10 +3263,10 @@ GetBignumFromObj(
 	    if (copy || Tcl_IsShared(objPtr)) {
 		mp_int temp;
 
-		UNPACK_BIGNUM(objPtr, temp);
+		TclUnpackBignum(objPtr, temp);
 		mp_init_copy(bignumValue, &temp);
 	    } else {
-		UNPACK_BIGNUM(objPtr, *bignumValue);
+		TclUnpackBignum(objPtr, *bignumValue);
 		/* Optimized TclFreeIntRep */
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
@@ -3517,7 +3506,7 @@ TclGetNumberFromObj(
 	    static Tcl_ThreadDataKey bignumKey;
 	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey, sizeof(mp_int));
 
-	    UNPACK_BIGNUM(objPtr, *bigPtr);
+	    TclUnpackBignum(objPtr, *bigPtr);
 	    *typePtr = TCL_NUMBER_BIG;
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;

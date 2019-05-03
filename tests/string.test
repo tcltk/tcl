@@ -73,7 +73,7 @@ if {$noComp} {
 
 test string-1.1.$noComp {error conditions} {
     list [catch {run {string gorp a b}} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1800,7 +1800,7 @@ test string-20.1.$noComp {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2.$noComp {string trimright errors} {
     list [catch {run {string trimg a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1859,7 +1859,7 @@ test string-21.14.$noComp {string wordend, unicode} {
 
 test string-22.1.$noComp {string wordstart} {
     list [catch {run {string word a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} {
     list [catch {run {string wordstart a}} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -2332,75 +2332,158 @@ test string-30.1.2.$noComp {[Bug ba921a8d98]: inplace cat by subst (compiled to 
     run {set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"}
 } hellohello
 
-test string-31.1.$noComp {string is dict} {
+# Note: string-31.* tests use [tcl::string::insert] rather than [string insert]
+# to dodge ticket [3397978fff] which would cause all arguments to be shared,
+# thereby preventing the optimizations from being tested.
+test string-31.1.$noComp {string insert, start of string} {
+    run {tcl::string::insert 0123 0 _}
+} _0123
+test string-31.2.$noComp {string insert, middle of string} {
+    run {tcl::string::insert 0123 2 _}
+} 01_23
+test string-31.3.$noComp {string insert, end of string} {
+    run {tcl::string::insert 0123 4 _}
+} 0123_
+test string-31.4.$noComp {string insert, start of string, end-relative} {
+    run {tcl::string::insert 0123 end-4 _}
+} _0123
+test string-31.5.$noComp {string insert, middle of string, end-relative} {
+    run {tcl::string::insert 0123 end-2 _}
+} 01_23
+test string-31.6.$noComp {string insert, end of string, end-relative} {
+    run {tcl::string::insert 0123 end _}
+} 0123_
+test string-31.7.$noComp {string insert, empty target string} {
+    run {tcl::string::insert {} 0 _}
+} _
+test string-31.8.$noComp {string insert, empty insert string} {
+    run {tcl::string::insert 0123 0 {}}
+} 0123
+test string-31.9.$noComp {string insert, empty strings} {
+    run {tcl::string::insert {} 0 {}}
+} {}
+test string-31.10.$noComp {string insert, negative index} {
+    run {tcl::string::insert 0123 -1 _}
+} _0123
+test string-31.11.$noComp {string insert, index beyond end} {
+    run {tcl::string::insert 0123 5 _}
+} 0123_
+test string-31.12.$noComp {string insert, start of string, pure byte array} {
+    run {tcl::string::insert [makeByteArray 0123] 0 [makeByteArray _]}
+} _0123
+test string-31.13.$noComp {string insert, middle of string, pure byte array} {
+    run {tcl::string::insert [makeByteArray 0123] 2 [makeByteArray _]}
+} 01_23
+test string-31.14.$noComp {string insert, end of string, pure byte array} {
+    run {tcl::string::insert [makeByteArray 0123] 4 [makeByteArray _]}
+} 0123_
+test string-31.15.$noComp {string insert, pure byte array, neither shared} {
+    run {tcl::string::insert [makeByteArray 0123] 2 [makeByteArray _]}
+} 01_23
+test string-31.16.$noComp {string insert, pure byte array, first shared} {
+    run {tcl::string::insert [makeShared [makeByteArray 0123]] 2\
+            [makeByteArray _]}
+} 01_23
+test string-31.17.$noComp {string insert, pure byte array, second shared} {
+    run {tcl::string::insert [makeByteArray 0123] 2\
+            [makeShared [makeByteArray _]]}
+} 01_23
+test string-31.18.$noComp {string insert, pure byte array, both shared} {
+    run {tcl::string::insert [makeShared [makeByteArray 0123]] 2\
+            [makeShared [makeByteArray _]]}
+} 01_23
+test string-31.19.$noComp {string insert, start of string, pure Unicode} {
+    run {tcl::string::insert [makeUnicode 0123] 0 [makeUnicode _]}
+} _0123
+test string-31.20.$noComp {string insert, middle of string, pure Unicode} {
+    run {tcl::string::insert [makeUnicode 0123] 2 [makeUnicode _]}
+} 01_23
+test string-31.21.$noComp {string insert, end of string, pure Unicode} {
+    run {tcl::string::insert [makeUnicode 0123] 4 [makeUnicode _]}
+} 0123_
+test string-31.22.$noComp {string insert, str start, pure Uni, first shared} {
+    run {tcl::string::insert [makeShared [makeUnicode 0123]] 0 [makeUnicode _]}
+} _0123
+test string-31.23.$noComp {string insert, string mid, pure Uni, 2nd shared} {
+    run {tcl::string::insert [makeUnicode 0123] 2 [makeShared [makeUnicode _]]}
+} 01_23
+test string-31.24.$noComp {string insert, string end, pure Uni, both shared} {
+    run {tcl::string::insert [makeShared [makeUnicode 0123]] 4\
+            [makeShared [makeUnicode _]]}
+} 0123_
+test string-31.25.$noComp {string insert, neither byte array nor Unicode} {
+    run {tcl::string::insert [makeList a b c] 1 zzzzzz}
+} {azzzzzz b c}
+
+test string-32.1.$noComp {string is dict} {
     string is dict {a b c d}
 } 1
-test string-31.1a.$noComp {string is dict} {
+test string-32.1a.$noComp {string is dict} {
     string is dict {a b c}
 } 0
-test string-31.2.$noComp {string is dict} {
+test string-32.2.$noComp {string is dict} {
     string is dict "a \{b c"
 } 0
-test string-31.3.$noComp {string is dict} {
+test string-32.3.$noComp {string is dict} {
     string is dict {a {b c}d e}
 } 0
-test string-31.4.$noComp {string is dict} {
+test string-32.4.$noComp {string is dict} {
     string is dict {}
 } 1
-test string-31.5.$noComp {string is dict} {
+test string-32.5.$noComp {string is dict} {
     string is dict -strict {a b c d}
 } 1
-test string-31.5a.$noComp {string is dict} {
+test string-32.5a.$noComp {string is dict} {
     string is dict -strict {a b c}
 } 0
-test string-31.6.$noComp {string is dict} {
+test string-32.6.$noComp {string is dict} {
     string is dict -strict "a \{b c"
 } 0
-test string-31.7.$noComp {string is dict} {
+test string-32.7.$noComp {string is dict} {
     string is dict -strict {a {b c}d e}
 } 0
-test string-31.8.$noComp {string is dict} {
+test string-32.8.$noComp {string is dict} {
     string is dict -strict {}
 } 1
-test string-31.9.$noComp {string is dict} {
+test string-32.9.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b c d}] $x
 } {1 {}}
-test string-31.9a.$noComp {string is dict} {
+test string-32.9a.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b c}] $x
 } {0 -1}
-test string-31.10.$noComp {string is dict} {
+test string-32.10.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "a \{b c d"] $x
 } {0 2}
-test string-31.10a.$noComp {string is dict} {
+test string-32.10a.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "a \{b c"] $x
 } {0 2}
-test string-31.11.$noComp {string is dict} {
+test string-32.11.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {a b {b c}d e}] $x
 } {0 4}
-test string-31.12.$noComp {string is dict} {
+test string-32.12.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {}] $x
 } {1 {}}
-test string-31.13.$noComp {string is dict} {
+test string-32.13.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x {  {b c}d e}] $x
 } {0 2}
-test string-31.14.$noComp {string is dict} {
+test string-32.14.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "\uabcd {b c}d e"] $x
 } {0 2}
-test string-31.15.$noComp {string is dict, valid dict} {
+test string-32.15.$noComp {string is dict, valid dict} {
     string is dict {a b c d e f}
 } 1
-test string-31.16.$noComp {string is dict, invalid dict} {
+test string-32.16.$noComp {string is dict, invalid dict} {
     string is dict a
 } 0
-test string-31.17.$noComp {string is dict, valid dict packed in invalid dict} {
+test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
     string is dict {{a b c d e f g h}}
 } 0
 
