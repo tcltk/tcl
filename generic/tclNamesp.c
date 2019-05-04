@@ -1060,6 +1060,13 @@ Tcl_DeleteNamespace(
 	}
     }
 }
+
+int
+TclNamespaceDeleted(
+    Namespace *nsPtr)
+{
+    return (nsPtr->flags & NS_DYING) ? 1 : 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1235,6 +1242,33 @@ NamespaceFree(
     ckfree(nsPtr->fullName);
 
     ckfree((char *) nsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNsDecrRefCount --
+ *
+ *      Drops a reference to a namespace and frees it if the namespace has
+ *      been deleted and the last reference has just been dropped.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclNsDecrRefCount(
+    Namespace *nsPtr)
+{
+    nsPtr->refCount--;
+    if ((nsPtr->refCount == 0) && (nsPtr->flags & NS_DEAD)) {
+        NamespaceFree(nsPtr);
+    }
 }
 
 /*
