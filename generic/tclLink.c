@@ -23,6 +23,7 @@
 
 typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
+    Namespace *nsPtr;		/* Namespace containing Tcl variable */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the
 				 * actual variable may be aliased at that time
@@ -114,6 +115,8 @@ Tcl_LinkVar(
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
+    Namespace *dummy;
+    const char *name;
     int code;
 
     linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
@@ -126,6 +129,7 @@ Tcl_LinkVar(
 
     linkPtr = (Link *) ckalloc(sizeof(Link));
     linkPtr->interp = interp;
+    linkPtr->nsPtr = NULL;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
@@ -142,11 +146,17 @@ Tcl_LinkVar(
 	ckfree((char *) linkPtr);
 	return TCL_ERROR;
     }
+
+    TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
+	    &(linkPtr->nsPtr), &dummy, &dummy, &name);
+    linkPtr->nsPtr->refCount++;
+
     code = Tcl_TraceVar(interp, varName, TCL_GLOBAL_ONLY|TCL_TRACE_READS
 	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc,
 	    (ClientData) linkPtr);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
+	TclNsDecrRefCount(linkPtr->nsPtr);
 	ckfree((char *) linkPtr);
     }
     return code;
@@ -186,6 +196,9 @@ Tcl_UnlinkVar(
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, (ClientData) linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
+    if (linkPtr->nsPtr) {
+	TclNsDecrRefCount(linkPtr->nsPtr);
+    }
     ckfree((char *) linkPtr);
 }
 
@@ -279,8 +292,11 @@ LinkTraceProc(
      */
 
     if (flags & TCL_TRACE_UNSETS) {
-	if (Tcl_InterpDeleted(interp)) {
+	if (Tcl_InterpDeleted(interp) || TclNamespaceDeleted(linkPtr->nsPtr)) {
 	    Tcl_DecrRefCount(linkPtr->varName);
+	    if (linkPtr->nsPtr) {
+		TclNsDecrRefCount(linkPtr->nsPtr);
+	    }
 	    ckfree((char *) linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
