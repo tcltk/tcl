@@ -972,8 +972,10 @@ AsyncHandlerProc(
 
     Tcl_MutexLock(&asyncTestMutex);
     for (asyncPtr = firstHandler; asyncPtr != NULL;
-         asyncPtr = asyncPtr->nextPtr) {
-        if (asyncPtr->id == id) break;
+            asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) {
+            break;
+        }
     }
     Tcl_MutexUnlock(&asyncTestMutex);
 
