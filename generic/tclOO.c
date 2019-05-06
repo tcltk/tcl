@@ -346,14 +346,14 @@ InitFoundation(
      */
 
     Tcl_DStringInit(&buffer);
-    for (i=0 ; defineCmds[i].name ; i++) {
+    for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
-    for (i=0 ; objdefCmds[i].name ; i++) {
+    for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
@@ -373,10 +373,10 @@ InitFoundation(
      * Basic method declarations for the core classes.
      */
 
-    for (i=0 ; objMethods[i].name ; i++) {
+    for (i = 0 ; objMethods[i].name ; i++) {
 	TclOONewBasicMethod(interp, fPtr->objectCls, &objMethods[i]);
     }
-    for (i=0 ; clsMethods[i].name ; i++) {
+    for (i = 0 ; clsMethods[i].name ; i++) {
 	TclOONewBasicMethod(interp, fPtr->classCls, &clsMethods[i]);
     }
 
@@ -388,7 +388,7 @@ InitFoundation(
 
     TclNewLiteralStringObj(namePtr, "new");
     Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
-	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
+	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
     fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
 	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
@@ -667,10 +667,8 @@ AllocObject(
 	Tcl_ResetResult(interp);
     }
 
-
   configNamespace:
-
-    ((Namespace *)oPtr->namespacePtr)->refCount++;
+    ((Namespace *) oPtr->namespacePtr)->refCount++;
 
     /*
      * Make the namespace know about the helper commands. This grants access
@@ -874,10 +872,14 @@ TclOODeleteDescendants(
 
     if (clsPtr->mixinSubs.num > 0) {
 	while (clsPtr->mixinSubs.num > 0) {
-	    mixinSubclassPtr = clsPtr->mixinSubs.list[clsPtr->mixinSubs.num-1];
-	    /* This condition also covers the case where mixinSubclassPtr ==
+	    mixinSubclassPtr =
+		    clsPtr->mixinSubs.list[clsPtr->mixinSubs.num - 1];
+
+	    /*
+	     * This condition also covers the case where mixinSubclassPtr ==
 	     * clsPtr
 	     */
+
 	    if (!Deleted(mixinSubclassPtr->thisPtr)
 		    && !(mixinSubclassPtr->thisPtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp,
@@ -897,7 +899,7 @@ TclOODeleteDescendants(
 
     if (clsPtr->subclasses.num > 0) {
 	while (clsPtr->subclasses.num > 0) {
-	    subclassPtr = clsPtr->subclasses.list[clsPtr->subclasses.num-1];
+	    subclassPtr = clsPtr->subclasses.list[clsPtr->subclasses.num - 1];
 	    if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)
 		    && !(subclassPtr->thisPtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp,
@@ -918,7 +920,8 @@ TclOODeleteDescendants(
 
     if (clsPtr->instances.num > 0) {
 	while (clsPtr->instances.num > 0) {
-	    instancePtr = clsPtr->instances.list[clsPtr->instances.num-1];
+	    instancePtr = clsPtr->instances.list[clsPtr->instances.num - 1];
+
 	    /*
 	     * This condition also covers the case where instancePtr == oPtr
 	     */
@@ -1119,8 +1122,8 @@ ObjectNamespaceDeleted(
 
     if (Deleted(oPtr)) {
 	/*
-	 * TODO: Can ObjectNamespaceDeleted ever be called twice? If not, this
-	 * guard could be removed.
+	 * TODO:  Can ObjectNamespaceDeleted ever be called twice?  If not,
+	 * this guard could be removed.
 	 */
 
 	return;
@@ -1134,7 +1137,10 @@ ObjectNamespaceDeleted(
 
     oPtr->flags |= OBJECT_DELETED;
 
-    /* Let the dominoes fall */
+    /*
+     * Let the dominoes fall!
+     */
+
     if (oPtr->classPtr) {
 	TclOODeleteDescendants(interp, oPtr);
     }
@@ -1150,8 +1156,8 @@ ObjectNamespaceDeleted(
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL, NULL, NULL);
 	int result;
-
 	Tcl_InterpState state;
+
 	oPtr->flags |= DESTRUCTOR_CALLED;
 
 	if (contextPtr != NULL) {
@@ -1170,12 +1176,12 @@ ObjectNamespaceDeleted(
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
-     * Also delete the command that refers to the object at this point (if
-     * it still exists) because otherwise its pointer to the object
-     * points into freed memory.
+     * Also delete the command that refers to the object at this point (if it
+     * still exists) because otherwise its pointer to the object points into
+     * freed memory.
      */
 
-    if (((Command *)oPtr->command)->flags && CMD_IS_DELETED) {
+    if (((Command *) oPtr->command)->flags && CMD_IS_DELETED) {
 	/*
 	 * Something has already started the command deletion process. We can
 	 * go ahead and clean up the the namespace,
@@ -1201,10 +1207,7 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    /*
-     * TODO: Should this be protected with a * !IsRoot() condition?
-     */
-
+    /* TODO: Should this be protected with a !IsRoot() condition? */
     TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
     if (oPtr->mixins.num > 0) {
@@ -1765,7 +1768,6 @@ TclNRNewObjectInstance(
     TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
-
 
 Object *
 TclNewObjectInstanceCommon(
@@ -1780,7 +1782,6 @@ TclNewObjectInstanceCommon(
     const char *simpleName = NULL;
     Namespace *nsPtr = NULL, *dummy;
     Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    int isNew;
 
     if (nameStr) {
 	TclGetNamespaceForQualName(interp, nameStr, inNsPtr,
@@ -1790,21 +1791,14 @@ TclNewObjectInstanceCommon(
 	 * Disallow creation of an object over an existing command.
 	 */
 
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, simpleName, &isNew);
-	if (!isNew) {
+	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
+	if (hPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't create object \"%s\": command already exists with"
 		    " that name", nameStr));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
 	    return NULL;
 	}
-
-	/*
-	 * We could make a hash entry! Don't actually want to do that here so
-	 * nuke it immediately because we'll create it properly soon.
-	 */
-
-	Tcl_DeleteHashEntry(hPtr);
     }
 
     /*
@@ -1837,8 +1831,6 @@ TclNewObjectInstanceCommon(
     return oPtr;
 }
 
-
-
 static int
 FinalizeAlloc(
     ClientData data[],
@@ -1974,7 +1966,11 @@ Tcl_CopyObjectInstance(
 	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOOAddToInstances(o2Ptr, mixinPtr);
 	}
-	/* For the reference just created in DUPLICATE */
+
+	/*
+	 * For the reference just created in DUPLICATE.
+	 */
+
 	AddRef(mixinPtr->thisPtr);
     }
 
@@ -2012,6 +2008,7 @@ Tcl_CopyObjectInstance(
 
     o2Ptr->flags = oPtr->flags & ~(
 	    OBJECT_DELETED | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING);
+
     /*
      * Copy the object's metadata.
      */
@@ -2075,9 +2072,11 @@ Tcl_CopyObjectInstance(
 	FOREACH(superPtr, cls2Ptr->superclasses) {
 	    TclOOAddToSubclasses(cls2Ptr, superPtr);
 
-	    /* For the new item in cls2Ptr->superclasses that memcpy just
-	     * created
+	    /*
+	     * For the new item in cls2Ptr->superclasses that memcpy just
+	     * created.
 	     */
+
 	    AddRef(superPtr->thisPtr);
 	}
 
@@ -2121,7 +2120,11 @@ Tcl_CopyObjectInstance(
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
 	    TclOOAddToMixinSubs(cls2Ptr, mixinPtr);
-	    /* For the copy just created in DUPLICATE */
+
+	    /*
+	     * For the copy just created in DUPLICATE.
+	     */
+
 	    AddRef(mixinPtr->thisPtr);
 	}
 
@@ -2783,7 +2786,7 @@ Tcl_ObjectContextInvokeNext(
     int savedSkip = contextPtr->skip;
     int result;
 
-    if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
+    if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*
 	 * We're at the end of the chain; generate an error message unless the
 	 * interpreter is being torn down, in which case we might be getting
@@ -2852,7 +2855,7 @@ TclNRObjectContextInvokeNext(
 {
     register CallContext *contextPtr = (CallContext *) context;
 
-    if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
+    if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*
 	 * We're at the end of the chain; generate an error message unless the
 	 * interpreter is being torn down, in which case we might be getting
