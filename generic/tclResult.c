@@ -210,32 +210,6 @@ Tcl_DiscardInterpState(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringResult --
- *
- *	Returns an interpreter's result value as a string.
- *
- * Results:
- *	The interpreter's result as a string.
- *
- * Side effects:
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
- *
- *----------------------------------------------------------------------
- */
-
-const char *
-Tcl_GetStringResult(
-    register Tcl_Interp *interp)/* Interpreter whose result to return. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    return TclGetString(iPtr->objResultPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetObjResult --
  *
  *	Arrange for objPtr to be an interpreter's result value.
