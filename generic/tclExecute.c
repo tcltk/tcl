@@ -8226,6 +8226,7 @@ FinalizeOONextFilter(
  *
  * Helpers to calculate small powers of integers whose result is long or wide.
  */
+#if (LONG_MAX == 0x7fffffff)
 static inline long
 LongPwrSmallExpon(long l1, long exponent) {
 
@@ -8261,6 +8262,7 @@ LongPwrSmallExpon(long l1, long exponent) {
     }
     return lResult;    
 }
+#endif
 static inline Tcl_WideInt
 WidePwrSmallExpon(Tcl_WideInt w1, long exponent) {
 
