@@ -2724,15 +2724,13 @@ Tcl_LrangeObjCmd(
  *----------------------------------------------------------------------
  */
 
-typedef int list_index_t;
-
 static int
 LremoveIndexCompare(
     const void *el1Ptr,
     const void *el2Ptr)
 {
-    list_index_t idx1 = *((const list_index_t *) el1Ptr);
-    list_index_t idx2 = *((const list_index_t *) el2Ptr);
+    size_t idx1 = *((const size_t *) el1Ptr);
+    size_t idx2 = *((const size_t *) el2Ptr);
 
     /*
      * This will put the larger element first.
@@ -2748,8 +2746,8 @@ Tcl_LremoveObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, idxc;
-    list_index_t listLen, *idxv, prevIdx, first, num;
+    int i, idxc, listLen, prevIdx, first, num;
+    size_t *idxv;
     Tcl_Obj *listObj;
 
     /*
@@ -2771,7 +2769,7 @@ Tcl_LremoveObjCmd(
 	Tcl_SetObjResult(interp, listObj);
 	return TCL_OK;
     }
-    idxv = Tcl_Alloc((objc - 2) * sizeof(list_index_t));
+    idxv = Tcl_Alloc((objc - 2) * sizeof(size_t));
     for (i = 2; i < objc; i++) {
 	if (TclGetIntForIndexM(interp, objv[i], /*endValue*/ listLen - 1,
 		&idxv[i - 2]) != TCL_OK) {
@@ -2786,7 +2784,7 @@ Tcl_LremoveObjCmd(
      */
 
     if (idxc > 1) {
-	qsort(idxv, idxc, sizeof(list_index_t), LremoveIndexCompare);
+	qsort(idxv, idxc, sizeof(size_t), LremoveIndexCompare);
     }
 
     /*
@@ -2799,7 +2797,7 @@ Tcl_LremoveObjCmd(
     num = 0;
     first = listLen;
     for (i = 0, prevIdx = -1 ; i < idxc ; i++) {
-	list_index_t idx = idxv[i];
+	int idx = idxv[i];
 
 	/*
 	 * Repeated index and sanity check.

@@ -503,8 +503,7 @@ TCLAPI Tcl_Interp *	Tcl_GetSlave(Tcl_Interp *interp,
 				const char *slaveName);
 /* 173 */
 TCLAPI Tcl_Channel	Tcl_GetStdChannel(int type);
-/* 174 */
-TCLAPI const char *	Tcl_GetStringResult(Tcl_Interp *interp);
+/* Slot 174 is reserved */
 /* Slot 175 is reserved */
 /* 176 */
 TCLAPI const char *	Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
@@ -1952,7 +1951,7 @@ typedef struct TclStubs {
     int (*tcl_GetServiceMode) (void); /* 171 */
     Tcl_Interp * (*tcl_GetSlave) (Tcl_Interp *interp, const char *slaveName); /* 172 */
     Tcl_Channel (*tcl_GetStdChannel) (int type); /* 173 */
-    const char * (*tcl_GetStringResult) (Tcl_Interp *interp); /* 174 */
+    void (*reserved174)(void);
     void (*reserved175)(void);
     const char * (*tcl_GetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 176 */
     void (*reserved177)(void);
@@ -2785,8 +2784,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetSlave) /* 172 */
 #define Tcl_GetStdChannel \
 	(tclStubsPtr->tcl_GetStdChannel) /* 173 */
-#define Tcl_GetStringResult \
-	(tclStubsPtr->tcl_GetStringResult) /* 174 */
+/* Slot 174 is reserved */
 /* Slot 175 is reserved */
 #define Tcl_GetVar2 \
 	(tclStubsPtr->tcl_GetVar2) /* 176 */
@@ -3696,11 +3694,9 @@ extern const TclStubs *tclStubsPtr;
 
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
-#   undef Tcl_GetStringResult
 #   undef Tcl_Init
 #   undef Tcl_ObjSetVar2
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
@@ -3754,6 +3750,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_EvalEx(interp, objPtr, -1, 0)
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+#define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
 	    *(statePtr) = Tcl_GetObjResult(interp); \

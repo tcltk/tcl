@@ -641,9 +641,10 @@ declare 172 {
 declare 173 {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
-declare 174 {
-    const char *Tcl_GetStringResult(Tcl_Interp *interp)
-}
+# Removed in 9.0, replaced by macro.
+#declare 174 {
+#    const char *Tcl_GetStringResult(Tcl_Interp *interp)
+#}
 # Removed in 9.0, replaced by macro.
 #declare 175 {deprecated {No longer in use, changed to macro}} {
 #    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,

@@ -1675,15 +1675,15 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
-	ckfree(zf);
+	Tcl_Free(zf);
 	return TCL_ERROR;
     }
     if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
 	    != TCL_OK) {
-	ckfree(zf);
+	Tcl_Free(zf);
 	return TCL_ERROR;
     }
-    ckfree(zf);
+    Tcl_Free(zf);
     return TCL_OK;
 }
 
@@ -1778,7 +1778,7 @@ TclZipfs_MountBuffer(
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
-    ckfree(zf);
+    Tcl_Free(zf);
     return result;
 }
 
