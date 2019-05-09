@@ -2050,7 +2050,7 @@ test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
 } -returnCodes error -result {can not find reflected channel named "rc*"}
 test iocmd-31.9 {
     chan postevent
-    
+
     call to current coroutine
 
     see 67a5eabbd3d1
