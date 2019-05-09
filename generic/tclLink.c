@@ -392,8 +392,6 @@ Tcl_LinkArray(
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
 	LinkFree(linkPtr);
-    } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) linkPtr->addr));
     }
     return code;
 }
