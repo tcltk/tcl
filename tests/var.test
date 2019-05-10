@@ -1479,6 +1479,24 @@ test var-24.24 {array default unset: errors} -setup {
 } -returnCodes error -cleanup {
     unset -nocomplain ary
 } -result * -match glob
+
+test var-25.1 {corner cases of int-hash optimizations (TIP 534} -setup {
+    unset -nocomplain v
+} -body {
+    foreach i {
+	0
+	0x7fffffff -0x7fffffff
+	0x7fffffffffffffff -0x7fffffffffffffff
+	0x7ffffffffffffffffffffffffffffff -0x7ffffffffffffffffffffffffffffff
+    } {
+	# check integer hash is equal string hash for values from [$i-5 .. $i+5]:
+	set i [expr {$i - 5}]
+	time { set v([incr i]) 1; set v([string trim "$i "]); unset v($i) } 10
+    }
+    array size v
+} -cleanup {
+    unset -nocomplain v
+} -result 0
 
 catch {namespace delete ns}
 catch {unset arr}
