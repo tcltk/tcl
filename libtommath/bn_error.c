@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_ERROR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 static const struct {
@@ -27,10 +24,10 @@ static const struct {
 /* return a char * string for a given code */
 const char *mp_error_to_string(int code)
 {
-   int x;
+   size_t x;
 
    /* scan the lookup table for the given message */
-   for (x = 0; x < (int)(sizeof(msgs) / sizeof(msgs[0])); x++) {
+   for (x = 0; x < (sizeof(msgs) / sizeof(msgs[0])); x++) {
       if (msgs[x].code == code) {
          return msgs[x].msg;
       }

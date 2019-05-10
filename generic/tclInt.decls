@@ -114,7 +114,7 @@ declare 23 {
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    int TclFormatInt(char *buffer, long n)
+    int TclFormatInt(char *buffer, Tcl_WideInt n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
@@ -1024,6 +1024,10 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
 
 ##############################################################################
 
@@ -1075,7 +1079,7 @@ declare 9 win {
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
@@ -1212,7 +1216,7 @@ declare 9 unix {
 # Added in 8.4:
 
 declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs

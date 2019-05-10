@@ -256,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && defined(TCL_THREADS) && \
+#if defined(__APPLE__) && TCL_THREADS && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*
@@ -369,13 +369,13 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = opendir(dst);			/* INTL: Native. */
+	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
@@ -385,11 +385,11 @@ DoRenameFile(
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			closedir(dirPtr);
+			TclOSclosedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		closedir(dirPtr);
+		TclOSclosedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -965,7 +965,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    TclDIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -990,7 +990,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = opendir(source);				/* INTL: Native. */
+    dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -1002,7 +1002,7 @@ TraverseUnixTree(
     result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	closedir(dirPtr);
+	TclOSclosedir(dirPtr);
 	return result;
     }
 
@@ -1052,11 +1052,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    rewinddir(dirPtr);
+	    TclOSrewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    closedir(dirPtr);
+    TclOSclosedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added
@@ -1369,7 +1369,7 @@ GetGroupAttribute(
     groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	const char *utf;
@@ -1423,7 +1423,7 @@ GetOwnerAttribute(
     pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 
@@ -1499,11 +1499,11 @@ SetGroupAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New group for file. */
 {
-    long gid;
+    Tcl_WideInt gid;
     int result;
     const char *native;
 
-    if (Tcl_GetLongFromObj(NULL, attributePtr, &gid) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
@@ -1565,11 +1565,11 @@ SetOwnerAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New owner for file. */
 {
-    long uid;
+    Tcl_WideInt uid;
     int result;
     const char *native;
 
-    if (Tcl_GetLongFromObj(NULL, attributePtr, &uid) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
@@ -1631,7 +1631,7 @@ SetPermissionsAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
-    long mode;
+    Tcl_WideInt mode;
     mode_t newMode;
     int result = TCL_ERROR;
     const char *native;
@@ -1650,11 +1650,11 @@ SetPermissionsAttribute(
 
 	TclNewLiteralStringObj(modeObj, "0o");
 	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
-	result = Tcl_GetLongFromObj(NULL, modeObj, &mode);
+	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
     if (result == TCL_OK
-	    || Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+	    || Tcl_GetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
@@ -2302,7 +2302,8 @@ winPathFromObj(
 }
 
 static const int attributeArray[] = {
-    0x20, 0, 2, 0, 0, 1, 4};
+    0x20, 0, 2, 0, 0, 1, 4
+};
 
 /*
  *----------------------------------------------------------------------
@@ -2339,8 +2340,8 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj((fileAttributes&attributeArray[objIndex])!=0);
-
+    *attributePtrPtr = Tcl_NewWideIntObj(
+	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
 
@@ -2397,7 +2398,7 @@ SetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-	ckfree(winPath);
+    ckfree(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -2439,8 +2440,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
-
+    *attributePtrPtr = Tcl_NewWideIntObj((statBuf.st_flags & UF_IMMUTABLE) != 0);
     return TCL_OK;
 }
 

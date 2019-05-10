@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_MONTGOMERY_CALC_NORMALIZATION_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /*
@@ -33,7 +30,7 @@ int mp_montgomery_calc_normalization(mp_int *a, const mp_int *b)
          return res;
       }
    } else {
-      mp_set(a, 1);
+      mp_set(a, 1uL);
       bits = 1;
    }
 

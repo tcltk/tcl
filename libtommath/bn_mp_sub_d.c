@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_SUB_D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* single digit subtraction */
@@ -67,13 +64,13 @@ int mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 
       /* subtract first digit */
       *tmpc    = *tmpa++ - b;
-      mu       = *tmpc >> ((sizeof(mp_digit) * CHAR_BIT) - 1);
+      mu       = *tmpc >> ((sizeof(mp_digit) * (size_t)CHAR_BIT) - 1u);
       *tmpc++ &= MP_MASK;
 
       /* handle rest of the digits */
       for (ix = 1; ix < a->used; ix++) {
          *tmpc    = *tmpa++ - mu;
-         mu       = *tmpc >> ((sizeof(mp_digit) * CHAR_BIT) - 1);
+         mu       = *tmpc >> ((sizeof(mp_digit) * (size_t)CHAR_BIT) - 1u);
          *tmpc++ &= MP_MASK;
       }
    }

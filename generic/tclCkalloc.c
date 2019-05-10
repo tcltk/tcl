@@ -156,7 +156,7 @@ TclInitDbCkalloc(void)
     if (!ckallocInit) {
 	ckallocInit = 1;
 	ckallocMutexPtr = Tcl_GetAllocMutex();
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 	/* Silence compiler warning */
 	(void)ckallocMutexPtr;
 #endif
@@ -187,15 +187,15 @@ TclDumpMemoryInfo(
 	    "total mallocs             %10u\n"
 	    "total frees               %10u\n"
 	    "current packets allocated %10u\n"
-	    "current bytes allocated   %10" TCL_LL_MODIFIER "u\n"
+	    "current bytes allocated   %10" TCL_Z_MODIFIER "u\n"
 	    "maximum packets allocated %10u\n"
-	    "maximum bytes allocated   %10" TCL_LL_MODIFIER "u\n",
+	    "maximum bytes allocated   %10" TCL_Z_MODIFIER "u\n",
 	    total_mallocs,
 	    total_frees,
 	    current_malloc_packets,
-	    (Tcl_WideInt)current_bytes_malloced,
+	    current_bytes_malloced,
 	    maximum_malloc_packets,
-	    (Tcl_WideInt)maximum_bytes_malloced);
+	    maximum_bytes_malloced);
     if (flags == 0) {
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
@@ -254,7 +254,7 @@ ValidateMemory(
 	fprintf(stderr, "low guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
-	fprintf(stderr, "%" TCL_LL_MODIFIER "d bytes allocated at (%s %d)\n", (Tcl_WideInt) memHeaderP->length,
+	fprintf(stderr, "%" TCL_Z_MODIFIER "u bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
 	Tcl_Panic("Memory validation failure");
     }
@@ -276,8 +276,8 @@ ValidateMemory(
 	fprintf(stderr, "high guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
-	fprintf(stderr, "%" TCL_LL_MODIFIER "d bytes allocated at (%s %d)\n",
-		(Tcl_WideInt)memHeaderP->length, memHeaderP->file,
+	fprintf(stderr, "%" TCL_Z_MODIFIER "u bytes allocated at (%s %d)\n",
+		memHeaderP->length, memHeaderP->file,
 		memHeaderP->line);
 	Tcl_Panic("Memory validation failure");
     }
@@ -359,9 +359,9 @@ Tcl_DumpActiveMemory(
     Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
 	address = &memScanP->body[0];
-	fprintf(fileP, "%p - %p  %" TCL_LL_MODIFIER "d @ %s %d %s",
+	fprintf(fileP, "%p - %p  %" TCL_Z_MODIFIER "u @ %s %d %s",
 		address, address + memScanP->length - 1,
-		(Tcl_WideInt)memScanP->length, memScanP->file, memScanP->line,
+		memScanP->length, memScanP->file, memScanP->line,
 		(memScanP->tagPtr == NULL) ? "" : memScanP->tagPtr->string);
 	(void) fputc('\n', fileP);
     }
@@ -405,7 +405,7 @@ Tcl_DbCkalloc(
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE -sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size +
+	result = (struct mem_header *) TclpAlloc(size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -495,7 +495,7 @@ Tcl_AttemptDbCkalloc(
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size +
+	result = (struct mem_header *) TclpAlloc(size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -611,8 +611,8 @@ Tcl_DbCkfree(
     memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
-	fprintf(stderr, "ckfree %p %" TCL_LL_MODIFIER "d %s %d\n",
-		memp->body, (Tcl_WideInt) memp->length, file, line);
+	fprintf(stderr, "ckfree %p %" TCL_Z_MODIFIER "u %s %d\n",
+		memp->body, memp->length, file, line);
     }
 
     if (validate_memory) {
@@ -691,7 +691,7 @@ Tcl_DbCkrealloc(
 	copySize = memp->length;
     }
     newPtr = Tcl_DbCkalloc(size, file, line);
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
@@ -725,7 +725,7 @@ Tcl_AttemptDbCkrealloc(
     if (newPtr == NULL) {
 	return NULL;
     }
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
@@ -859,12 +859,12 @@ MemoryCmd(
     }
     if (strcmp(argv[1],"info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER"d\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER "d\n",
+		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER"u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
-		"current bytes allocated", (Tcl_WideInt)current_bytes_malloced,
+		"current bytes allocated", current_bytes_malloced,
 		"maximum packets allocated", maximum_malloc_packets,
-		"maximum bytes allocated", (Tcl_WideInt)maximum_bytes_malloced));
+		"maximum bytes allocated", maximum_bytes_malloced));
 	return TCL_OK;
     }
     if (strcmp(argv[1], "init") == 0) {

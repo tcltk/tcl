@@ -221,12 +221,12 @@ test unixFCmd-2.5 {TclpCopyFile: copy attributes} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
     close [open tf1 a]
-    file attributes tf1 -permissions 0472
+    file attributes tf1 -permissions 0o472
     file copy tf1 tf2
     file attributes tf2 -permissions
 } -cleanup {
     cleanup
-} -result 00472 ;# i.e. perms field of [exec ls -l tf2] is -r--rwx-w-
+} -result 0o472 ;# i.e. perms field of [exec ls -l tf2] is -r--rwx-w-
 
 test unixFCmd-3.1 {CopyFile not done} {emptyTest unix notRoot} {
 } {}
@@ -375,11 +375,11 @@ proc permcheck {testnum permList expected} {
       set result
     } $expected
 }
-permcheck unixFCmd-17.5   rwxrwxrwx	00777
-permcheck unixFCmd-17.6   r--r---w-	00442
-permcheck unixFCmd-17.7   {0 u+rwx,g+r u-w o+rwx} {00000 00740 00540 00547}
-permcheck unixFCmd-17.11  --x--x--x	00111
-permcheck unixFCmd-17.12  {0 a+rwx} {00000 00777}
+permcheck unixFCmd-17.5   rwxrwxrwx	0o777
+permcheck unixFCmd-17.6   r--r---w-	0o442
+permcheck unixFCmd-17.7   {0 u+rwx,g+r u-w o+rwx} {00000 0o740 0o540 0o547}
+permcheck unixFCmd-17.11  --x--x--x	0o111
+permcheck unixFCmd-17.12  {0 a+rwx} {00000 0o777}
 file delete -force -- foo.test
 
 test unixFCmd-18.1 {Unix pwd} -constraints {unix notRoot nonPortable} -setup {

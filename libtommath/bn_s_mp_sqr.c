@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_S_MP_SQR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* low level squaring, b = a*a, HAC pp.596-597, Algorithm 14.16 */
@@ -38,10 +35,10 @@ int s_mp_sqr(const mp_int *a, mp_int *b)
           ((mp_word)a->dp[ix] * (mp_word)a->dp[ix]);
 
       /* store lower part in result */
-      t.dp[ix+ix] = (mp_digit)(r & ((mp_word)MP_MASK));
+      t.dp[ix+ix] = (mp_digit)(r & (mp_word)MP_MASK);
 
       /* get the carry */
-      u           = (mp_digit)(r >> ((mp_word)DIGIT_BIT));
+      u           = (mp_digit)(r >> (mp_word)DIGIT_BIT);
 
       /* left hand side of A[ix] * A[iy] */
       tmpx        = a->dp[ix];
@@ -51,24 +48,24 @@ int s_mp_sqr(const mp_int *a, mp_int *b)
 
       for (iy = ix + 1; iy < pa; iy++) {
          /* first calculate the product */
-         r       = ((mp_word)tmpx) * ((mp_word)a->dp[iy]);
+         r       = (mp_word)tmpx * (mp_word)a->dp[iy];
 
          /* now calculate the double precision result, note we use
           * addition instead of *2 since it's easier to optimize
           */
-         r       = ((mp_word) *tmpt) + r + r + ((mp_word) u);
+         r       = (mp_word)*tmpt + r + r + (mp_word)u;
 
          /* store lower part */
-         *tmpt++ = (mp_digit)(r & ((mp_word) MP_MASK));
+         *tmpt++ = (mp_digit)(r & (mp_word)MP_MASK);
 
          /* get carry */
-         u       = (mp_digit)(r >> ((mp_word) DIGIT_BIT));
+         u       = (mp_digit)(r >> (mp_word)DIGIT_BIT);
       }
       /* propagate upwards */
-      while (u != ((mp_digit) 0)) {
-         r       = ((mp_word) *tmpt) + ((mp_word) u);
-         *tmpt++ = (mp_digit)(r & ((mp_word) MP_MASK));
-         u       = (mp_digit)(r >> ((mp_word) DIGIT_BIT));
+      while (u != 0uL) {
+         r       = (mp_word)*tmpt + (mp_word)u;
+         *tmpt++ = (mp_digit)(r & (mp_word)MP_MASK);
+         u       = (mp_digit)(r >> (mp_word)DIGIT_BIT);
       }
    }
 

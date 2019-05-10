@@ -7,10 +7,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://math.libtomcrypt.com
+ * SPDX-License-Identifier: Unlicense
  */
 #ifndef BN_H_
 #define BN_H_
@@ -26,10 +23,21 @@
 extern "C" {
 #endif
 
+/* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#   define MP_32BIT
+#endif
+
 /* detect 64-bit mode if possible */
-#if defined(NEVER)  /* 128-bit ints fail in too many places */
+#if defined(NEVER)
 #   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      define MP_64BIT
+#      if defined(__GNUC__)
+/* we support 128bit integers only via: __attribute__((mode(TI))) */
+#         define MP_64BIT
+#      else
+/* otherwise we fall back to MP_32BIT even on 64bit platforms */
+#         define MP_32BIT
+#      endif
 #   endif
 #endif
 
@@ -43,11 +51,11 @@ extern "C" {
  */
 #ifdef MP_8BIT
 #ifndef MP_DIGIT_DECLARED
-typedef uint8_t              mp_digit;
+typedef unsigned char        mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #ifndef MP_WORD_DECLARED
-typedef uint16_t             mp_word;
+typedef unsigned short       mp_word;
 #define MP_WORD_DECLARED
 #endif
 #   define MP_SIZEOF_MP_DIGIT 1
@@ -56,11 +64,11 @@ typedef uint16_t             mp_word;
 #   endif
 #elif defined(MP_16BIT)
 #ifndef MP_DIGIT_DECLARED
-typedef uint16_t             mp_digit;
+typedef unsigned short       mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #ifndef MP_WORD_DECLARED
-typedef uint32_t             mp_word;
+typedef unsigned int         mp_word;
 #define MP_WORD_DECLARED
 #endif
 #   define MP_SIZEOF_MP_DIGIT 2
@@ -70,36 +78,21 @@ typedef uint32_t             mp_word;
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
 #ifndef MP_DIGIT_DECLARED
-typedef uint64_t mp_digit;
+typedef unsigned long long   mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
-#   if defined(_WIN32)
-#ifndef MP_WORD_DECLARED
-typedef unsigned __int128    mp_word;
-#define MP_WORD_DECLARED
-#endif
-#   elif defined(__GNUC__)
 typedef unsigned long        mp_word __attribute__((mode(TI)));
-#   else
-/* it seems you have a problem
- * but we assume you can somewhere define your own uint128_t */
-#ifndef MP_WORD_DECLARED
-typedef uint128_t            mp_word;
-#define MP_WORD_DECLARED
-#endif
-#   endif
-
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
 #ifndef MP_DIGIT_DECLARED
-typedef uint32_t             mp_digit;
+typedef unsigned int         mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #ifndef MP_WORD_DECLARED
-typedef uint64_t             mp_word;
+typedef unsigned long long   mp_word;
 #define MP_WORD_DECLARED
 #endif
 
@@ -116,21 +109,6 @@ typedef uint64_t             mp_word;
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
 #   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef uint_least32_t mp_min_u32;
-#else
-typedef mp_digit mp_min_u32;
-#endif
-
-/* use arc4random on platforms that support it */
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-#   define MP_GEN_RANDOM()    arc4random()
-#   define MP_GEN_RANDOM_MAX  0xffffffff
-#endif
-
-/* use rand() as fall-back if there's no better rand function */
-#ifndef MP_GEN_RANDOM
-#   define MP_GEN_RANDOM()    rand()
-#   define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -149,6 +127,7 @@ typedef mp_digit mp_min_u32;
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
+#define MP_ITER       -4  /* Max. iterations reached */
 
 #define MP_YES        1   /* yes response */
 #define MP_NO         0   /* no response */
@@ -159,14 +138,6 @@ typedef mp_digit mp_min_u32;
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
 typedef int           mp_err;
-
-/* you'll have to tune these... */
-#if defined(BUILD_tcl) || !defined(_WIN32)
-MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
-       KARATSUBA_SQR_CUTOFF,
-       TOOM_MUL_CUTOFF,
-       TOOM_SQR_CUTOFF;
-#endif
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
@@ -181,7 +152,7 @@ MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1 << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
+#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -247,8 +218,8 @@ int mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (!mp_get_bit((a),0))
+#define mp_isodd(a)  mp_get_bit((a),0)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -375,10 +346,23 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 /*
 int mp_rand(mp_int *a, int digits);
 */
+/* makes a pseudo-random small int of a given size */
+/*
+int mp_rand_digit(mp_digit *r);
+*/
+
+#ifdef MP_PRNG_ENABLE_LTM_RNG
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
+extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
+extern void (*ltm_rng_callback)(void);
+#endif
 
 /* ---> binary operations <--- */
 /* c = a XOR b  */
@@ -396,7 +380,32 @@ int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
+/* c = a XOR b (two complement) */
+/*
+int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c);
+*/
+
+/* c = a OR b (two complement) */
+/*
+int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
+*/
+
+/* c = a AND b (two complement) */
+/*
+int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
+*/
+
+/* right shift (two complement) */
+/*
+int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+*/
+
 /* ---> Basic arithmetic <--- */
+
+/* b = ~a */
+/*
+int mp_complement(const mp_int *a, mp_int *b);
+*/
 
 /* b = -a */
 /*
@@ -553,7 +562,7 @@ int mp_sqrt(const mp_int *arg, mp_int *ret);
 
 /* special sqrt (mod prime) */
 /*
-int mp_sqrtmod_prime(const mp_int *arg, const mp_int *prime, mp_int *ret);
+int mp_sqrtmod_prime(const mp_int *n, const mp_int *prime, mp_int *ret);
 */
 
 /* is number a square? */
@@ -573,16 +582,16 @@ int mp_reduce_setup(mp_int *a, const mp_int *b);
 
 /* Barrett Reduction, computes a (mod b) with a precomputed value c
  *
- * Assumes that 0 < a <= b*b, note if 0 > a > -(b*b) then you can merely
- * compute the reduction as -1 * mp_reduce(mp_abs(a)) [pseudo code].
+ * Assumes that 0 < x <= m*m, note if 0 > x > -(m*m) then you can merely
+ * compute the reduction as -1 * mp_reduce(mp_abs(x)) [pseudo code].
  */
 /*
-int mp_reduce(mp_int *a, const mp_int *b, const mp_int *c);
+int mp_reduce(mp_int *x, const mp_int *m, const mp_int *mu);
 */
 
 /* setups the montgomery reduction */
 /*
-int mp_montgomery_setup(const mp_int *a, mp_digit *mp);
+int mp_montgomery_setup(const mp_int *n, mp_digit *rho);
 */
 
 /* computes a = B**n mod b without division or multiplication useful for
@@ -594,7 +603,7 @@ int mp_montgomery_calc_normalization(mp_int *a, const mp_int *b);
 
 /* computes x/R == x (mod N) via Montgomery Reduction */
 /*
-int mp_montgomery_reduce(mp_int *a, const mp_int *m, mp_digit mp);
+int mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho);
 */
 
 /* returns 1 if a is a valid DR modulus */
@@ -607,9 +616,9 @@ int mp_dr_is_modulus(const mp_int *a);
 void mp_dr_setup(const mp_int *a, mp_digit *d);
 */
 
-/* reduces a modulo b using the Diminished Radix method */
+/* reduces a modulo n using the Diminished Radix method */
 /*
-int mp_dr_reduce(mp_int *a, const mp_int *b, mp_digit mp);
+int mp_dr_reduce(mp_int *x, const mp_int *n, mp_digit k);
 */
 
 /* returns true if a can be reduced with mp_reduce_2k */
@@ -642,9 +651,9 @@ int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d);
 int mp_reduce_2k_l(mp_int *a, const mp_int *n, const mp_int *d);
 */
 
-/* d = a**b (mod c) */
+/* Y = G**X (mod P) */
 /*
-int mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
+int mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y);
 */
 
 /* ---> Primes <--- */
@@ -687,10 +696,17 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 int mp_prime_rabin_miller_trials(int size);
 */
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */

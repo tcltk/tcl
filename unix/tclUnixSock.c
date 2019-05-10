@@ -241,7 +241,7 @@ InitializeHostName(
 	    if (dot != NULL) {
 		char *node = ckalloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
 		ckfree(node);
@@ -252,9 +252,6 @@ InitializeHostName(
         } else {
 	    native = u.nodename;
         }
-    }
-    if (native == NULL) {
-	native = &tclEmptyString;
     }
 #else /* !NO_UNAME */
     /*
@@ -284,9 +281,15 @@ InitializeHostName(
 #endif /* NO_UNAME */
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    *lengthPtr = strlen(native);
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, native, *lengthPtr + 1);
+    if (native) {
+	*lengthPtr = strlen(native);
+	*valuePtr = ckalloc(*lengthPtr + 1);
+	memcpy(*valuePtr, native, *lengthPtr + 1);
+    } else {
+	*lengthPtr = 0;
+	*valuePtr = ckalloc(1);
+	*valuePtr[0] = '\0';
+    }
 }
 
 /*
@@ -1124,7 +1127,7 @@ TcpGetHandleProc(
  * TcpAsyncCallback --
  *
  *	Called by the event handler that TcpConnect sets up internally for
- *	[socket -async] to get notified when the asyncronous connection
+ *	[socket -async] to get notified when the asynchronous connection
  *	attempt has succeeded or failed.
  *
  * ----------------------------------------------------------------------
@@ -1157,7 +1160,7 @@ TcpAsyncCallback(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1165,7 +1168,7 @@ TcpAsyncCallback(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  * ----------------------------------------------------------------------
  */

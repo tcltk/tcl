@@ -7,7 +7,7 @@
 .BS
 '\"  Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc \- report fatal error and abort
+Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc, Tcl_ConsolePanic \- report fatal error and abort
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,6 +20,9 @@ void
 .sp
 void
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
+.sp
+void
+\fBTcl_ConsolePanic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_PanicProc *panicProc
@@ -54,6 +57,14 @@ message is sent to the debugger in stead. If the windows executable
 does not have a stderr channel (e.g. \fBwish.exe\fR), then a
 system dialog box is used to display the panic message.
 .PP
+If your application doesn't use \fBTcl_Main\fR or \fBTk_Main\fR
+and you want to implicitly use the stderr channel of your
+application's C runtime (in stead of the stderr channel of the
+C runtime used by Tcl), you can call \fBTcl_SetPanicProc\fR
+with \fBTcl_ConsolePanic\fR as its argument. On platforms which
+only have one C runtime (almost all platforms except Windows)
+\fBTcl_ConsolePanic\fR is equivalent to NULL.
+.PP
 \fBTcl_SetPanicProc\fR may be used to modify the behavior of
 \fBTcl_Panic\fR.  The \fIpanicProc\fR argument should match the
 type \fBTcl_PanicProc\fR:
@@ -82,7 +93,11 @@ have a panic message displayed the same way that panic messages from Tcl
 will be displayed.
 .PP
 \fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
-taking a variable number of arguments it takes an argument list.
+taking a variable number of arguments it takes an argument list. This
+function is deprecated and will be removed in Tcl 9.0.
+.PP
+This function can not be used in stub-enabled extensions. Its symbol
+entry in the stub table is deprecated and it will be removed in Tcl 9.0.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

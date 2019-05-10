@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_FAST_S_MP_SQR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* the jist of squaring...
@@ -70,22 +67,22 @@ int fast_s_mp_sqr(const mp_int *a, mp_int *b)
 
       /* execute loop */
       for (iz = 0; iz < iy; iz++) {
-         _W += ((mp_word)*tmpx++)*((mp_word)*tmpy--);
+         _W += (mp_word)*tmpx++ * (mp_word)*tmpy--;
       }
 
       /* double the inner product and add carry */
       _W = _W + _W + W1;
 
       /* even columns have the square term in them */
-      if ((ix&1) == 0) {
-         _W += ((mp_word)a->dp[ix>>1])*((mp_word)a->dp[ix>>1]);
+      if (((unsigned)ix & 1u) == 0u) {
+         _W += (mp_word)a->dp[ix>>1] * (mp_word)a->dp[ix>>1];
       }
 
       /* store it */
-      W[ix] = (mp_digit)(_W & MP_MASK);
+      W[ix] = _W & MP_MASK;
 
       /* make next carry */
-      W1 = _W >> ((mp_word)DIGIT_BIT);
+      W1 = _W >> (mp_word)DIGIT_BIT;
    }
 
    /* setup dest */

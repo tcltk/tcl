@@ -13,13 +13,13 @@ Tcl_UniCharToUpper, Tcl_UniCharToLower, Tcl_UniCharToTitle, Tcl_UtfToUpper, Tcl_
 .nf
 \fB#include <tcl.h>\fR
 .sp
-Tcl_UniChar
+int
 \fBTcl_UniCharToUpper\fR(\fIch\fR)
 .sp
-Tcl_UniChar
+int
 \fBTcl_UniCharToLower\fR(\fIch\fR)
 .sp
-Tcl_UniChar
+int
 \fBTcl_UniCharToTitle\fR(\fIch\fR)
 .sp
 int
@@ -77,12 +77,6 @@ turns each character in the string into its lower-case equivalent.
 \fBTcl_UtfToTitle\fR is the same as \fBTcl_UtfToUpper\fR except it
 turns the first character in the string into its title-case equivalent
 and all following characters into their lower-case equivalents.
-
-.SH BUGS
-.PP
-At this time, the case conversions are only defined for the ISO8859-1
-characters.  Unicode characters above 0x00ff are not modified by these
-routines.
 
 .SH KEYWORDS
 utf, unicode, toupper, tolower, totitle, case

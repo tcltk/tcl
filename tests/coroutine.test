@@ -626,19 +626,31 @@ test coroutine-7.5 {return codes} {
     }
     set result
 } {0 1 2 3 4 5}
-test coroutine-7.6 {Early yield crashes} {
-    proc foo args {}
-    trace add execution foo enter {catch yield}
-    coroutine demo foo
-    rename foo {}
-} {}
-test coroutine-7.7 {Bug 2486550} -setup {
-    interp hide {} yield
+test coroutine-7.6 {Early yield crashes} -setup {
+    set i [interp create]
 } -body {
-    coroutine demo interp invokehidden {} yield ok
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	proc foo args {}
+	trace add execution foo enter {catch yield}
+	coroutine demo foo
+	rename foo {}
+	return ok
+    }
 } -cleanup {
-    demo
-    interp expose {} yield
+    interp delete $i
+} -result ok
+test coroutine-7.7 {Bug 2486550} -setup {
+    set i [interp create]
+    $i hide yield
+} -body {
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	coroutine demo interp invokehidden {} yield ok
+    }
+} -cleanup {
+    $i eval demo
+    interp delete $i
 } -result ok
 test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
     namespace eval cotest {}
@@ -739,6 +751,8 @@ test coroutine-7.12 {coro floor above street level #3008307} -body {
     }
     boom   ; # does not crash: the coro floor is a good insulator
     list
+} -cleanup {
+    rename boom {}; rename cc {}; rename c {}
 } -result {}
 
 test coroutine-8.0.0 {coro inject executed} -body {
@@ -779,7 +793,80 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     set result
 } -result {inject-executed}
 
+test coroutine-9.1 {coro type} {
+    coroutine demo eval {
+	yield
+	yield "PHASE 1"
+	yieldto string cat "PHASE 2"
+	::tcl::unsupported::corotype [info coroutine]
+    }
+    list [demo] [::tcl::unsupported::corotype demo] \
+	[demo] [::tcl::unsupported::corotype demo] [demo]
+} {{PHASE 1} yield {PHASE 2} yieldto active}
+test coroutine-9.2 {coro type} -setup {
+    catch {rename nosuchcommand ""}
+} -returnCodes error -body {
+    ::tcl::unsupported::corotype nosuchcommand
+} -result {can only get coroutine type of a coroutine}
+test coroutine-9.3 {coro type} -returnCodes error -body {
+    proc notacoroutine {} {}
+    ::tcl::unsupported::corotype notacoroutine
+} -returnCodes error -cleanup {
+    rename notacoroutine {}
+} -result {can only get coroutine type of a coroutine}
 
+test coroutine-10.1 {coroutine general introspection} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	# Make the introspection code
+	namespace path tcl::unsupported
+	proc probe {type var} {
+	    upvar 1 $var v
+	    set f [info frame]
+	    incr f -1
+	    set result [list $v [dict get [info frame $f] proc]]
+	    if {$type eq "yield"} {
+		tailcall yield $result
+	    } else {
+		tailcall yieldto string cat $result
+	    }
+	}
+	proc pokecoro {c var} {
+	    inject $c probe [corotype $c] $var
+	    $c
+	}
+
+	# Coroutine implementations
+	proc cbody1 {} {
+	    set val [info coroutine]
+	    set accum {}
+	    while {[set val [yield $val]] ne ""} {
+		lappend accum $val
+		set val ok
+	    }
+	    return $accum
+	}
+	proc cbody2 {} {
+	    set val [info coroutine]
+	    set accum {}
+	    while {[llength [set val [yieldto string cat $val]]]} {
+		lappend accum {*}$val
+		set val ok
+	    }
+	    return $accum
+	}
+
+	# Make the coroutines
+	coroutine c1 cbody1
+	coroutine c2 cbody2
+	list [c1 abc] [c2 1 2 3] [pokecoro c1 accum] [pokecoro c2 accum] \
+	    [c1 def] [c2 4 5 6] [pokecoro c1 accum] [pokecoro c2 accum] \
+	    [c1] [c2]
+    }
+} -cleanup {
+    interp delete $i
+} -result {ok ok {abc ::cbody1} {{1 2 3} ::cbody2} ok ok {{abc def} ::cbody1} {{1 2 3 4 5 6} ::cbody2} {abc def} {1 2 3 4 5 6}}
 
 # cleanup
 unset lambda

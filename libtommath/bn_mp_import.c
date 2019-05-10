@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_IMPORT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* based on gmp's mpz_import.
@@ -34,27 +31,27 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size,
       } lint;
       lint.i = 0x01020304;
 
-      endian = (lint.c[0] == 4) ? -1 : 1;
+      endian = (lint.c[0] == '\x04') ? -1 : 1;
    }
 
-   odd_nails = (nails % 8);
+   odd_nails = (nails % 8u);
    odd_nail_mask = 0xff;
    for (i = 0; i < odd_nails; ++i) {
-      odd_nail_mask ^= (1 << (7 - i));
+      odd_nail_mask ^= (unsigned char)(1u << (7u - i));
    }
-   nail_bytes = nails / 8;
+   nail_bytes = nails / 8u;
 
    for (i = 0; i < count; ++i) {
       for (j = 0; j < (size - nail_bytes); ++j) {
          unsigned char byte = *((unsigned char *)op +
-                                (((order == 1) ? i : ((count - 1) - i)) * size) +
-                                ((endian == 1) ? (j + nail_bytes) : (((size - 1) - j) - nail_bytes)));
+                                (((order == 1) ? i : ((count - 1u) - i)) * size) +
+                                ((endian == 1) ? (j + nail_bytes) : (((size - 1u) - j) - nail_bytes)));
 
-         if ((result = mp_mul_2d(rop, ((j == 0) ? (8 - odd_nails) : 8), rop)) != MP_OKAY) {
+         if ((result = mp_mul_2d(rop, (j == 0u) ? (int)(8u - odd_nails) : 8, rop)) != MP_OKAY) {
             return result;
          }
 
-         rop->dp[0] |= (j == 0) ? (byte & odd_nail_mask) : byte;
+         rop->dp[0] |= (j == 0u) ? (mp_digit)(byte & odd_nail_mask) : (mp_digit)byte;
          rop->used  += 1;
       }
    }

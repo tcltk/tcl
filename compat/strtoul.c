@@ -74,7 +74,7 @@ strtoul(
      */
 
     p = string;
-    while (isspace(UCHAR(*p))) {
+    while (TclIsSpaceProc(*p)) {
 	p += 1;
     }
     if (*p == '-') {

@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_MUL_D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* multiply by a digit */
@@ -50,10 +47,10 @@ int mp_mul_d(const mp_int *a, mp_digit b, mp_int *c)
       r       = (mp_word)u + ((mp_word)*tmpa++ * (mp_word)b);
 
       /* mask off higher bits to get a single digit */
-      *tmpc++ = (mp_digit)(r & ((mp_word)MP_MASK));
+      *tmpc++ = (mp_digit)(r & (mp_word)MP_MASK);
 
       /* send carry into next iteration */
-      u       = (mp_digit)(r >> ((mp_word)DIGIT_BIT));
+      u       = (mp_digit)(r >> (mp_word)DIGIT_BIT);
    }
 
    /* store final carry [if any] and increment ix offset  */

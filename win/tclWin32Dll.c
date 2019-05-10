@@ -46,8 +46,8 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    TCHAR *volumeName;		/* Native wide string volume name. */
-    TCHAR driveLetter;		/* Drive letter corresponding to the volume
+    WCHAR *volumeName;		/* Native wide string volume name. */
+    WCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
 				/* Pointer to next structure in list, or
@@ -286,11 +286,11 @@ TclWinEncodingsCleanup(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    const TCHAR *mountPoint)
+    const WCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
-    TCHAR Target[55];		/* Target of mount at mount point */
-    TCHAR drive[4] = TEXT("A:\\");
+    WCHAR Target[55];		/* Target of mount at mount point */
+    WCHAR drive[4] = TEXT("A:\\");
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -301,14 +301,14 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
 	     * mount points on the fly.
 	     */
 
-	    drive[0] = (TCHAR) dlIter->driveLetter;
+	    drive[0] = (WCHAR) dlIter->driveLetter;
 
 	    /*
 	     * Try to read the volume mount point and see where it points.
@@ -316,7 +316,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    if (GetVolumeNameForVolumeMountPoint(drive,
 		    Target, 55) != 0) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
@@ -379,7 +379,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
@@ -400,7 +400,7 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
 	    return (char) dlIter->driveLetter;
 	}
@@ -447,7 +447,7 @@ TclWinDriveLetterForVolMountPoint(
  *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
  *		Tcl_FreeEncoding(encoding);
  *
- *	By convention, in Windows a TCHAR is a Unicode character. If you plan
+ *	By convention, in Windows a WCHAR is a Unicode character. If you plan
  *	on targeting a Unicode interface when running on Windows, these
  *	functions should be used. If you plan on targetting a "char" oriented
  *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
@@ -463,7 +463,7 @@ TclWinDriveLetterForVolMountPoint(
  *---------------------------------------------------------------------------
  */
 
-TCHAR *
+WCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
     int len,			/* Source string length in bytes, or -1 for
@@ -471,42 +471,31 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    TCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (TCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return wp;
+    if (!string) {
+	return NULL;
+    }
+    return TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode. */
+    const WCHAR *string,	/* Source string in Unicode. */
     int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((WCHAR *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
 }
 
 /*
@@ -536,7 +525,7 @@ TclWinCPUID(
 
 #if defined(HAVE_INTRIN_H) && defined(_WIN64)
 
-    __cpuid(regsPtr, index);
+    __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
 #elif defined(__GNUC__)

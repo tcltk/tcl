@@ -12,6 +12,10 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __CYGWIN__
+#   include <wchar.h>
+#endif
+
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
 #pragma GCC dependency "tclInt.decls"
@@ -31,22 +35,31 @@
 #undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
+#undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
+#undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetExitProc
+#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef Tcl_SetLongObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
+#undef TclStaticPackage
+#undef TclBNInitBignumFromLong
+#undef Tcl_BackgroundError
+#define TclStaticPackage Tcl_StaticPackage
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -84,7 +97,18 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_CreateMathFunc 0
 #   define Tcl_GetMathFuncInfo 0
 #   define Tcl_ListMathFuncs 0
+#   define Tcl_SetIntObj 0
+#   define Tcl_SetLongObj 0
+#   define Tcl_NewIntObj 0
+#   define Tcl_NewLongObj 0
+#   define Tcl_DbNewLongObj 0
+#   define Tcl_BackgroundError 0
 #else
+#define TclBNInitBignumFromLong initBignumFromLong
+static void TclBNInitBignumFromLong(mp_int *a, long b)
+{
+    TclInitBignumFromWideInt(a, b);
+}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -135,7 +159,6 @@ TclWinGetPlatformId(void)
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -221,17 +244,11 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
-    WCHAR *wp;
-    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
-
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
-    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, 2*size);
-    wp[size] = 0;
-    return (char *)wp;
+    if (!string) {
+	return NULL;
+    }
+    return (char *)TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
@@ -240,21 +257,16 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-    char *p;
-    int size;
-
-    if (len > 0) {
+    Tcl_DStringInit(dsPtr);
+    if (!string) {
+	return NULL;
+    }
+    if (len < 0) {
+	len = wcslen((wchar_t *)string);
+    } else {
 	len /= 2;
     }
-    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringSetLength(dsPtr, size+1);
-    p = (char *)Tcl_DStringValue(dsPtr);
-    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
-    Tcl_DStringSetLength(dsPtr, size);
-    p[size] = 0;
-    return p;
+    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -263,33 +275,11 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))dbNewLongObj)
-static Tcl_Obj *dbNewLongObj(
-    int intValue,
-    const char *file,
-    int line
-) {
-#ifdef TCL_MEM_DEBUG
-    register Tcl_Obj *objPtr;
-
-    TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = (long) intValue;
-    objPtr->typePtr = &tclIntType;
-    return objPtr;
-#else
-    return Tcl_NewIntObj(intValue);
-#endif
-}
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetIntFromObj
-#define Tcl_NewLongObj (Tcl_Obj*(*)(long))Tcl_NewIntObj
-#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))Tcl_SetIntObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -305,7 +295,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -333,10 +323,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
 #define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
-static int formatInt(char *buffer, int n){
-   return TclFormatInt(buffer, (long)n);
-}
-#define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -382,6 +368,8 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
+#   undef Tcl_GetStringResult
+#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -425,6 +413,24 @@ static int formatInt(char *buffer, int n){
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   define Tcl_SetExitProc 0
+#   define Tcl_SetPanicProc 0
+#   define Tcl_FindExecutable 0
+#   define Tcl_GetUnicode 0
+#   define TclOldFreeObj 0
+#   undef Tcl_StringMatch
+#   define Tcl_StringMatch 0
+#   define TclBN_reverse 0
+#   define TclBN_fast_s_mp_mul_digs 0
+#   define TclBN_fast_s_mp_sqr 0
+#   define TclBN_mp_karatsuba_mul 0
+#   define TclBN_mp_karatsuba_sqr 0
+#   define TclBN_mp_toom_mul 0
+#   define TclBN_mp_toom_sqr 0
+#   define TclBN_s_mp_add 0
+#   define TclBN_s_mp_mul_digs 0
+#   define TclBN_s_mp_sqr 0
+#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -445,6 +451,7 @@ static int formatInt(char *buffer, int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define TclOldFreeObj TclFreeObj
 
 static int
 seekOld(
@@ -452,20 +459,14 @@ seekOld(
     int offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Seek(chan, offset, mode);
 }
 
 static int
 tellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
+    return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -477,6 +478,15 @@ tellOld(
 
 MODULE_SCOPE const TclStubs tclStubs;
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
+
+#ifdef __GNUC__
+/*
+ * The rest of this file shouldn't warn about deprecated functions; they're
+ * there because we intend them to be so and know that this file is OK to
+ * touch those fields.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -740,6 +750,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    TclStaticPackage, /* 257 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -934,6 +945,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_long_long, /* 69 */
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
+    TclBN_mp_get_int, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -991,7 +1008,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    TclFreeObj, /* 30 */
+    TclOldFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */
@@ -1601,6 +1618,19 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    TclZipfs_Mount, /* 632 */
+    TclZipfs_Unmount, /* 633 */
+    TclZipfs_TclLibrary, /* 634 */
+    TclZipfs_MountBuffer, /* 635 */
+    Tcl_FreeIntRep, /* 636 */
+    Tcl_InitStringRep, /* 637 */
+    Tcl_FetchIntRep, /* 638 */
+    Tcl_StoreIntRep, /* 639 */
+    Tcl_HasStringRep, /* 640 */
+    Tcl_IncrRefCount, /* 641 */
+    Tcl_DecrRefCount, /* 642 */
+    Tcl_IsShared, /* 643 */
+    Tcl_LinkArray, /* 644 */
 };
 
 /* !END!: Do not edit above this line. */

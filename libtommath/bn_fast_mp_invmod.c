@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_FAST_MP_INVMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* computes the modular inverse via binary extended euclidean algorithm,
@@ -46,6 +43,12 @@ int fast_mp_invmod(const mp_int *a, const mp_int *b, mp_int *c)
       goto LBL_ERR;
    }
 
+   /* if one of x,y is zero return an error! */
+   if ((mp_iszero(&x) == MP_YES) || (mp_iszero(&y) == MP_YES)) {
+      res = MP_VAL;
+      goto LBL_ERR;
+   }
+
    /* 3. u=x, v=y, A=1, B=0, C=0,D=1 */
    if ((res = mp_copy(&x, &u)) != MP_OKAY) {
       goto LBL_ERR;
@@ -53,7 +56,7 @@ int fast_mp_invmod(const mp_int *a, const mp_int *b, mp_int *c)
    if ((res = mp_copy(&y, &v)) != MP_OKAY) {
       goto LBL_ERR;
    }
-   mp_set(&D, 1);
+   mp_set(&D, 1uL);
 
 top:
    /* 4.  while u is even do */
@@ -122,7 +125,7 @@ top:
    /* now a = C, b = D, gcd == g*v */
 
    /* if v != 1 then there is no inverse */
-   if (mp_cmp_d(&v, 1) != MP_EQ) {
+   if (mp_cmp_d(&v, 1uL) != MP_EQ) {
       res = MP_VAL;
       goto LBL_ERR;
    }
@@ -134,6 +137,14 @@ top:
          goto LBL_ERR;
       }
    }
+
+   /* too big */
+   while (mp_cmp_mag(&D, b) != MP_LT) {
+      if ((res = mp_sub(&D, b, &D)) != MP_OKAY) {
+         goto LBL_ERR;
+      }
+   }
+
    mp_exch(&D, c);
    c->sign = neg;
    res = MP_OKAY;

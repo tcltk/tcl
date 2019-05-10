@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_EXPTMOD_FAST_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* computes Y == G**X mod P, HAC pp.616, Algorithm 14.85
@@ -39,7 +36,7 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
     * one of many reduction algorithms without modding the guts of
     * the code with if statements everywhere.
     */
-   int (*redux)(mp_int *,const mp_int *,mp_digit);
+   int (*redux)(mp_int *x, const mp_int *n, mp_digit rho);
 
    /* find window size */
    x = mp_count_bits(X);
@@ -96,7 +93,7 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
 
       /* automatically pick the comba one if available (saves quite a few calls/ifs) */
 #ifdef BN_FAST_MP_MONTGOMERY_REDUCE_C
-      if ((((P->used * 2) + 1) < MP_WARRAY) &&
+      if ((((P->used * 2) + 1) < (int)MP_WARRAY) &&
           (P->used < (1 << ((CHAR_BIT * sizeof(mp_word)) - (2 * DIGIT_BIT))))) {
          redux = fast_mp_montgomery_reduce;
       } else
@@ -160,22 +157,22 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
       goto LBL_RES;
 #endif
    } else {
-      mp_set(&res, 1);
+      mp_set(&res, 1uL);
       if ((err = mp_mod(G, P, &M[1])) != MP_OKAY) {
          goto LBL_RES;
       }
    }
 
    /* compute the value at M[1<<(winsize-1)] by squaring M[1] (winsize-1) times */
-   if ((err = mp_copy(&M[1], &M[1 << (winsize - 1)])) != MP_OKAY) {
+   if ((err = mp_copy(&M[1], &M[(size_t)1 << (winsize - 1)])) != MP_OKAY) {
       goto LBL_RES;
    }
 
    for (x = 0; x < (winsize - 1); x++) {
-      if ((err = mp_sqr(&M[1 << (winsize - 1)], &M[1 << (winsize - 1)])) != MP_OKAY) {
+      if ((err = mp_sqr(&M[(size_t)1 << (winsize - 1)], &M[(size_t)1 << (winsize - 1)])) != MP_OKAY) {
          goto LBL_RES;
       }
-      if ((err = redux(&M[1 << (winsize - 1)], P, mp)) != MP_OKAY) {
+      if ((err = redux(&M[(size_t)1 << (winsize - 1)], P, mp)) != MP_OKAY) {
          goto LBL_RES;
       }
    }

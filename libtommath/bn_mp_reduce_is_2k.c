@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_REDUCE_IS_2K_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* determines if mp_reduce_2k can be used */
@@ -32,7 +29,7 @@ int mp_reduce_is_2k(const mp_int *a)
 
       /* Test every bit from the second digit up, must be 1 */
       for (ix = DIGIT_BIT; ix < iy; ix++) {
-         if ((a->dp[iw] & iz) == 0) {
+         if ((a->dp[iw] & iz) == 0u) {
             return MP_NO;
          }
          iz <<= 1;

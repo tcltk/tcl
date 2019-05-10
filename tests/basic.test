@@ -670,7 +670,7 @@ proc l3 {} {
 }
 
 # Do all tests once byte compiled and once with direct string evaluation
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+foreach noComp {0 1} {
 
 if $noComp {
     interp alias {} run {} testevalex
@@ -893,21 +893,17 @@ test basic-48.16.$noComp {expansion: testing for leaks} -setup {
 	rename stress {}
 } -result 0
 
-test basic-48.17.$noComp {expansion: object safety} -setup {
-        set old_precision $::tcl_precision
-        set ::tcl_precision 4
-    } -constraints $constraints -body {
+test basic-48.17.$noComp {expansion: object safety} -constraints $constraints -body {
             set third [expr {1.0/3.0}]
             set l [list $third $third]
             set x [run {list $third {*}$l $third}]
-	    set res [list]
+            set res [list]
             foreach t $x {
                 lappend res [expr {$t * 3.0}]
             }
             set res
     } -cleanup {
-        set ::tcl_precision $old_precision
-        unset old_precision res t l x third
+        unset res t l x third
 } -result {1.0 1.0 1.0 1.0}
 
 test basic-48.18.$noComp {expansion: list semantics} -constraints $constraints -body {
@@ -961,6 +957,24 @@ test basic-48.23.$noComp {expansion: handle return codes} -constraints $constrai
     } -cleanup {
 	unset res t
 } -result {0 10 1 Hejsan}
+
+test basic-48.24.$noComp {expansion: empty not canonical list, regression test, bug [cc1e91552c]} -constraints $constraints -setup {
+    unset -nocomplain a
+} -body {
+    run {list [list {*}{ }] [list {*}[format %c 32]] [list {*}[set a { }]]}
+} -result [lrepeat 3 {}] -cleanup {unset -nocomplain a}
+
+test basic-48.25.$noComp {Bug cc191552c: expansion: empty non-canonical list} -setup {
+    unset -nocomplain ::CRLF
+    set ::CRLF "\r\n"
+} -body {
+    # Force variant that turned up in Bug 2c154a40be as that's externally
+    # noticeable in an important downstream project.
+    run {scan [list {*}$::CRLF]x %c%c%c}
+} -cleanup {
+    unset -nocomplain ::CRLF
+} -result {120 {} {}}
+
 
 } ;# End of noComp loop
 

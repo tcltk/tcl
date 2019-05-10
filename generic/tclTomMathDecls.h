@@ -36,20 +36,13 @@
 #define TclBNRealloc(x,s) ((void*)ckrealloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (ckfree((char*)(x)))
-/* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-/* unused - no macro */
 
-#define XMALLOC(x) TclBNAlloc(x)
-#define XFREE(x) TclBNFree(x)
-#define XREALLOC(x,n) TclBNRealloc(x,n)
-#define XCALLOC(n,x) TclBNCalloc(n,x)
+#define XMALLOC(size)                   TclBNAlloc(size)
+#define XFREE(mem, size)                TclBNFree(mem)
+#define XREALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
+
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
-
-#define KARATSUBA_MUL_CUTOFF TclBNKaratsubaMulCutoff
-#define KARATSUBA_SQR_CUTOFF TclBNKaratsubaSqrCutoff
-#define TOOM_MUL_CUTOFF TclBNToomMulCutoff
-#define TOOM_SQR_CUTOFF TclBNToomSqrCutoff
 
 #define bn_reverse TclBN_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
@@ -74,6 +67,7 @@
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_get_bit TclBN_mp_get_bit
 #define mp_get_int TclBN_mp_get_int
 #define mp_get_long TclBN_mp_get_long
 #define mp_get_long_long TclBN_mp_get_long_long
@@ -98,7 +92,6 @@
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
-#define mp_s_rmap TclBNMpSRmap
 #define mp_set TclBN_mp_set
 #define mp_set_int TclBN_mp_set_int
 #define mp_set_long TclBN_mp_set_long
@@ -108,6 +101,10 @@
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
 #define mp_sub_d TclBN_mp_sub_d
+#define mp_tc_and TclBN_mp_tc_and
+#define mp_tc_div_2d TclBN_mp_tc_div_2d
+#define mp_tc_or TclBN_mp_tc_or
+#define mp_tc_xor TclBN_mp_tc_xor
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
@@ -269,32 +266,43 @@ EXTERN int		TclBN_mp_xor(const mp_int *a, const mp_int *b,
 /* 49 */
 EXTERN void		TclBN_mp_zero(mp_int *a);
 /* 50 */
-EXTERN void		TclBN_reverse(unsigned char *s, int len);
+TCL_DEPRECATED("is private function in libtommath")
+void			TclBN_reverse(unsigned char *s, int len);
 /* 51 */
-EXTERN int		TclBN_fast_s_mp_mul_digs(const mp_int *a,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_fast_s_mp_mul_digs(const mp_int *a,
 				const mp_int *b, mp_int *c, int digs);
 /* 52 */
-EXTERN int		TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b);
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b);
 /* 53 */
-EXTERN int		TclBN_mp_karatsuba_mul(const mp_int *a,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_mp_karatsuba_mul(const mp_int *a,
 				const mp_int *b, mp_int *c);
 /* 54 */
-EXTERN int		TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b);
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b);
 /* 55 */
-EXTERN int		TclBN_mp_toom_mul(const mp_int *a, const mp_int *b,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_mp_toom_mul(const mp_int *a, const mp_int *b,
 				mp_int *c);
 /* 56 */
-EXTERN int		TclBN_mp_toom_sqr(const mp_int *a, mp_int *b);
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_mp_toom_sqr(const mp_int *a, mp_int *b);
 /* 57 */
-EXTERN int		TclBN_s_mp_add(const mp_int *a, const mp_int *b,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_s_mp_add(const mp_int *a, const mp_int *b,
 				mp_int *c);
 /* 58 */
-EXTERN int		TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b,
 				mp_int *c, int digs);
 /* 59 */
-EXTERN int		TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
 /* 60 */
-EXTERN int		TclBN_s_mp_sub(const mp_int *a, const mp_int *b,
+TCL_DEPRECATED("is private function in libtommath")
+int			TclBN_s_mp_sub(const mp_int *a, const mp_int *b,
 				mp_int *c);
 /* 61 */
 EXTERN int		TclBN_mp_init_set_int(mp_int *a, unsigned long i);
@@ -324,6 +332,21 @@ EXTERN Tcl_WideUInt	TclBN_mp_get_long_long(const mp_int *a);
 EXTERN int		TclBN_mp_set_long(mp_int *a, unsigned long i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_long(const mp_int *a);
+/* 72 */
+EXTERN unsigned long	TclBN_mp_get_int(const mp_int *a);
+/* 73 */
+EXTERN int		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 74 */
+EXTERN int		TclBN_mp_tc_or(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 75 */
+EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
+				mp_int *c);
+/* 76 */
+EXTERN int		TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+/* 77 */
+EXTERN int		TclBN_mp_get_bit(const mp_int *a, int b);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -379,17 +402,17 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_unsigned_bin_size) (const mp_int *a); /* 47 */
     int (*tclBN_mp_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 48 */
     void (*tclBN_mp_zero) (mp_int *a); /* 49 */
-    void (*tclBN_reverse) (unsigned char *s, int len); /* 50 */
-    int (*tclBN_fast_s_mp_mul_digs) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 51 */
-    int (*tclBN_fast_s_mp_sqr) (const mp_int *a, mp_int *b); /* 52 */
-    int (*tclBN_mp_karatsuba_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 53 */
-    int (*tclBN_mp_karatsuba_sqr) (const mp_int *a, mp_int *b); /* 54 */
-    int (*tclBN_mp_toom_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 55 */
-    int (*tclBN_mp_toom_sqr) (const mp_int *a, mp_int *b); /* 56 */
-    int (*tclBN_s_mp_add) (const mp_int *a, const mp_int *b, mp_int *c); /* 57 */
-    int (*tclBN_s_mp_mul_digs) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 58 */
-    int (*tclBN_s_mp_sqr) (const mp_int *a, mp_int *b); /* 59 */
-    int (*tclBN_s_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c); /* 60 */
+    TCL_DEPRECATED_API("is private function in libtommath") void (*tclBN_reverse) (unsigned char *s, int len); /* 50 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_fast_s_mp_mul_digs) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 51 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_fast_s_mp_sqr) (const mp_int *a, mp_int *b); /* 52 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_mp_karatsuba_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 53 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_mp_karatsuba_sqr) (const mp_int *a, mp_int *b); /* 54 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_mp_toom_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 55 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_mp_toom_sqr) (const mp_int *a, mp_int *b); /* 56 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_s_mp_add) (const mp_int *a, const mp_int *b, mp_int *c); /* 57 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_s_mp_mul_digs) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 58 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_s_mp_sqr) (const mp_int *a, mp_int *b); /* 59 */
+    TCL_DEPRECATED_API("is private function in libtommath") int (*tclBN_s_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c); /* 60 */
     int (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
@@ -401,6 +424,12 @@ typedef struct TclTomMathStubs {
     Tcl_WideUInt (*tclBN_mp_get_long_long) (const mp_int *a); /* 69 */
     int (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
     unsigned long (*tclBN_mp_get_long) (const mp_int *a); /* 71 */
+    unsigned long (*tclBN_mp_get_int) (const mp_int *a); /* 72 */
+    int (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
+    int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
+    int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
+    int (*tclBN_mp_tc_div_2d) (const mp_int *a, int b, mp_int *c); /* 76 */
+    int (*tclBN_mp_get_bit) (const mp_int *a, int b); /* 77 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -559,6 +588,18 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
 #define TclBN_mp_get_long \
 	(tclTomMathStubsPtr->tclBN_mp_get_long) /* 71 */
+#define TclBN_mp_get_int \
+	(tclTomMathStubsPtr->tclBN_mp_get_int) /* 72 */
+#define TclBN_mp_tc_and \
+	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
+#define TclBN_mp_tc_or \
+	(tclTomMathStubsPtr->tclBN_mp_tc_or) /* 74 */
+#define TclBN_mp_tc_xor \
+	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
+#define TclBN_mp_tc_div_2d \
+	(tclTomMathStubsPtr->tclBN_mp_tc_div_2d) /* 76 */
+#define TclBN_mp_get_bit \
+	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

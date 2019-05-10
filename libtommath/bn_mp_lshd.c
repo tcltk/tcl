@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_LSHD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* shift left a certain amount of digits */
@@ -22,6 +19,10 @@ int mp_lshd(mp_int *a, int b)
 
    /* if its less than zero return */
    if (b <= 0) {
+      return MP_OKAY;
+   }
+   /* no need to shift 0 around */
+   if (mp_iszero(a) == MP_YES) {
       return MP_OKAY;
    }
 

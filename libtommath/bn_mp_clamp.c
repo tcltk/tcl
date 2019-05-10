@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_CLAMP_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* trim unused digits
@@ -27,7 +24,7 @@ void mp_clamp(mp_int *a)
    /* decrease used while the most significant digit is
     * zero.
     */
-   while ((a->used > 0) && (a->dp[a->used - 1] == 0)) {
+   while ((a->used > 0) && (a->dp[a->used - 1] == 0u)) {
       --(a->used);
    }
 

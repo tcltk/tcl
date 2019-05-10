@@ -178,37 +178,37 @@ declare 49 {
 # internal routines to libtommath - should not be called but must be
 # exported to accommodate the "tommath" extension
 
-declare 50 {
+declare 50 {deprecated {is private function in libtommath}} {
     void TclBN_reverse(unsigned char *s, int len)
 }
-declare 51 {
+declare 51 {deprecated {is private function in libtommath}} {
     int TclBN_fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 }
-declare 52 {
+declare 52 {deprecated {is private function in libtommath}} {
     int TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b)
 }
-declare 53 {
+declare 53 {deprecated {is private function in libtommath}} {
     int TclBN_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 54 {
+declare 54 {deprecated {is private function in libtommath}} {
     int TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b)
 }
-declare 55 {
+declare 55 {deprecated {is private function in libtommath}} {
     int TclBN_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 56 {
+declare 56 {deprecated {is private function in libtommath}} {
     int TclBN_mp_toom_sqr(const mp_int *a, mp_int *b)
 }
-declare 57 {
+declare 57 {deprecated {is private function in libtommath}} {
     int TclBN_s_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 58 {
+declare 58 {deprecated {is private function in libtommath}} {
     int TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 }
-declare 59 {
+declare 59 {deprecated {is private function in libtommath}} {
     int TclBN_s_mp_sqr(const mp_int *a, mp_int *b)
 }
-declare 60 {
+declare 60 {deprecated {is private function in libtommath}} {
     int TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 61 {
@@ -250,6 +250,27 @@ declare 70 {
 declare 71 {
     unsigned long TclBN_mp_get_long(const mp_int *a)
 }
+declare 72 {
+    unsigned long TclBN_mp_get_int(const mp_int *a)
+}
+
+# Added in libtommath 1.1.0
+declare 73 {
+    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 74 {
+    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 75 {
+    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
+}
+declare 76 {
+    int TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
+}
+declare 77 {
+    int TclBN_mp_get_bit(const mp_int *a, int b)
+}
+
 
 # Local Variables:
 # mode: tcl

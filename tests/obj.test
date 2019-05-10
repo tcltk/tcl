@@ -20,8 +20,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
-testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
-testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
     set r 1
@@ -30,7 +30,6 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
 	bytecode
 	cmdName
 	dict
-	end-offset
 	regexp
 	string
     } {
@@ -51,15 +50,6 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 12 12 bytearray 3}
-
-test obj-3.1 {Tcl_ConvertToType error} testobj {
-    list [testdoubleobj set 1 12.34] \
-	[catch {testobj convert 1 end-offset} msg] \
-	 $msg
-} {12.34 1 {bad index "12.34": must be end?[+-]integer?}}
-test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
-    list [testobj newobj 1] [catch {testobj convert 1 end-offset} msg] $msg
-} {{} 1 {bad index "": must be end?[+-]integer?}}
 
 test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
     set result ""
@@ -486,11 +476,11 @@ test obj-26.1 {UpdateStringOfInt} testobj {
     lappend result [testintobj get 1]       ;# must update string rep
 } {512 5120 5120}
 
-test obj-27.1 {Tcl_NewLongObj} testobj {
+test obj-27.1 {Tcl_NewWideObj} testobj {
     set result ""
     lappend result [testobj freeallvars]
-    testintobj setmaxlong 1
-    lappend result [testintobj ismaxlong 1]
+    testintobj setmax 1
+    lappend result [testintobj ismax 1]
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 1 int 1}
@@ -499,7 +489,7 @@ test obj-28.1 {Tcl_SetLongObj, existing "empty string" object} testobj {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testobj newobj 1]
-    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testintobj setint 1 77]  ;# makes existing obj int
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} {} 77 int 2}
@@ -507,32 +497,32 @@ test obj-28.2 {Tcl_SetLongObj, existing non-"empty string" object} testobj {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testdoubleobj set 1 12.34]
-    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testintobj setint 1 77]  ;# makes existing obj int
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 12.34 77 int 2}
 
-test obj-29.1 {Tcl_GetLongFromObj, existing long integer object} testobj {
+test obj-29.1 {Tcl_GetWideIntFromObj, existing int object} testobj {
     set result ""
-    lappend result [testintobj setlong 1 22]
-    lappend result [testintobj mult10 1]   ;# gets existing long int rep
+    lappend result [testintobj setint 1 22]
+    lappend result [testintobj mult10 1]   ;# gets existingint rep
 } {22 220}
-test obj-29.2 {Tcl_GetLongFromObj, convert to long} testobj {
+test obj-29.2 {Tcl_GetWideIntFromObj, convert to int} testobj {
     set result ""
-    lappend result [testintobj setlong 1 477]
+    lappend result [testintobj setint 1 477]
     lappend result [testintobj div10 1]    ;# must convert to bool
     lappend result [testobj type 1]
 } {477 47 int}
-test obj-29.3 {Tcl_GetLongFromObj, error converting to long integer} testobj {
+test obj-29.3 {Tcl_GetWideIntFromObj, error converting to int} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]
-    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result [catch {testintobj ismax 1} msg] ;# cvts to long int
     lappend result $msg
 } {abc 1 {expected integer but got "abc"}}
-test obj-29.4 {Tcl_GetLongFromObj, error converting from "empty string"} testobj {
+test obj-29.4 {Tcl_GetWideIntFromObj, error converting from "empty string"} testobj {
     set result ""
     lappend result [testobj newobj 1]
-    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result [catch {testintobj ismax 1} msg] ;# cvts to long int
     lappend result $msg
 } {{} 1 {expected integer but got ""}}
 
@@ -550,44 +540,6 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 int 3 2}
 
-
-test obj-31.1 {regenerate string rep of "end"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end
-test obj-31.2 {regenerate string rep of "end-1"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end-0x1
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end-1
-test obj-31.3 {regenerate string rep of "end--1"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end--0x1
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--1
-test obj-31.4 {regenerate string rep of "end-bigInteger"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end-0x7fffffff
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end-2147483647
-test obj-31.5 {regenerate string rep of "end--bigInteger"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end--0x7fffffff
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--2147483647
-test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj longIs32bit} {
-    testobj freeallvars
-    teststringobj set 1 end--0x80000000
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--2147483648
-
 test obj-32.1 {freeing very large object trees} {
     set x {}
     for {set i 0} {$i<100000} {incr i} {
@@ -596,34 +548,34 @@ test obj-32.1 {freeing very large object trees} {
     unset x
 } {}
 
-test obj-33.1 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.1 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x 0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 2147483648}
-test obj-33.2 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.2 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x 0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 4294967295}
 test obj-33.3 {integer overflow on input} {
     set x 0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
-} {0 4294967296}
-test obj-33.4 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+} {1 4294967296}
+test obj-33.4 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x -0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483648}
-test obj-33.5 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.5 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x -0x8000; append x 0001
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483649}
-test obj-33.6 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+test obj-33.6 {integer overflow on input} {longIs32bit wideIs64bit} {
     set x -0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 -4294967295}
 test obj-33.7 {integer overflow on input} {
     set x -0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
-} {0 -4294967296}
+} {1 -4294967296}
 
 test obj-34.1 {mp_iseven} testobj {
     set result ""

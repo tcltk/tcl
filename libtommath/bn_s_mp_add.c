@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_S_MP_ADD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* low level addition, based on HAC pp.594, Algorithm 14.7 */
@@ -67,7 +64,7 @@ int s_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
          *tmpc = *tmpa++ + *tmpb++ + u;
 
          /* U = carry bit of T[i] */
-         u = *tmpc >> ((mp_digit)DIGIT_BIT);
+         u = *tmpc >> (mp_digit)DIGIT_BIT;
 
          /* take away carry bit from T[i] */
          *tmpc++ &= MP_MASK;
@@ -82,7 +79,7 @@ int s_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
             *tmpc = x->dp[i] + u;
 
             /* U = carry bit of T[i] */
-            u = *tmpc >> ((mp_digit)DIGIT_BIT);
+            u = *tmpc >> (mp_digit)DIGIT_BIT;
 
             /* take away carry bit from T[i] */
             *tmpc++ &= MP_MASK;

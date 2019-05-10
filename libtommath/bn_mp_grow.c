@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_GROW_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* grow as required */
@@ -32,7 +29,9 @@ int mp_grow(mp_int *a, int size)
        * in case the operation failed we don't want
        * to overwrite the dp member of a.
        */
-      tmp = OPT_CAST(mp_digit) XREALLOC(a->dp, sizeof(mp_digit) * size);
+      tmp = (mp_digit *) XREALLOC(a->dp,
+                                  (size_t)a->alloc * sizeof (mp_digit),
+                                  (size_t)size * sizeof(mp_digit));
       if (tmp == NULL) {
          /* reallocation failed but "a" is still valid [can be freed] */
          return MP_MEM;

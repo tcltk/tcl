@@ -83,7 +83,7 @@ HTML_INSTALL_DIR	= $(INSTALL_ROOT)$(HTML_DIR)
 CONFIG_INSTALL_DIR	= $(INSTALL_ROOT)$(libdir)
 
 # Directory in which to install bundled packages:
-PACKAGE_DIR             = @PACKAGE_DIR@
+PACKAGE_DIR		= @PACKAGE_DIR@
 
 # Package search path.
 TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
@@ -151,8 +151,8 @@ SHELL			= @MAKEFILE_SHELL@
 # around; better to use the install-sh script that comes with the
 # distribution, which is slower but guaranteed to work.
 
-INSTALL_STRIP_PROGRAM   = -s
-INSTALL_STRIP_LIBRARY   = -S -x
+INSTALL_STRIP_PROGRAM	= -s
+INSTALL_STRIP_LIBRARY	= -S -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -242,11 +242,13 @@ ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
+OBJEXT			= @OBJEXT@
+
 #CC			= purify -best-effort @CC@ -DPURIFY
 
 # Flags to be passed to installManPage to control how the manpages should be
 # installed (symlinks, compression, package name suffix).
-MAN_FLAGS               = @MAN_FLAGS@
+MAN_FLAGS		= @MAN_FLAGS@
 
 # If non-empty, install the timezone files that are included with Tcl,
 # otherwise use the ones that ship with the OS.
@@ -259,10 +261,13 @@ INSTALL_TZDATA		= @INSTALL_TZDATA@
 #--------------------------------------------------------------------------
 
 GDB			= gdb
+LLDB			= lldb
 TRACE			= strace
 TRACE_OPTS		=
 VALGRIND		= valgrind
-VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+VALGRINDARGS		= --tool=memcheck --num-callers=24 \
+	--leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
@@ -270,8 +275,9 @@ VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-ch
 #--------------------------------------------------------------------------
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
-${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
+	-I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
+	${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
+	@EXTRA_CC_SWITCHES@
 
 CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS}
 
@@ -280,7 +286,7 @@ APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
+	${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
 TCLSH_OBJS = tclAppInit.o
 
@@ -303,37 +309,39 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
-	tclPreserve.o tclProc.o tclRegexp.o \
+	tclPreserve.o tclProc.o tclProcess.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
-	tclTomMathInterface.o
+	tclTomMathInterface.o tclZipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
 
-TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
+TOMMATH_OBJS = bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
-        bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
-        bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
+	bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
+	bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
-	bn_mp_div_2d.o bn_mp_div_3.o \
-        bn_mp_exch.o bn_mp_expt_d.o bn_mp_expt_d_ex.o bn_mp_get_int.o bn_mp_get_long.o bn_mp_get_long_long.o bn_mp_grow.o bn_mp_init.o \
+	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o \
+	bn_mp_expt_d.o bn_mp_expt_d_ex.o bn_mp_get_bit.o bn_mp_get_int.o \
+	bn_mp_get_long.o bn_mp_get_long_long.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_set_int.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
-        bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
-        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
+	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
+	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
-        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_int.o \
+	bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_int.o \
 	bn_mp_set_long.o bn_mp_set_long_long.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
-        bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
+	bn_mp_tc_and.o bn_mp_tc_div_2d.o bn_mp_tc_or.o bn_mp_tc_xor.o \
+	bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
-        bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
+	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
@@ -444,6 +452,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclPosixStr.c \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
+	$(GENERIC_DIR)/tclProcess.c \
 	$(GENERIC_DIR)/tclRegexp.c \
 	$(GENERIC_DIR)/tclResolve.c \
 	$(GENERIC_DIR)/tclResult.c \
@@ -463,7 +472,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
-	$(GENERIC_DIR)/tclZlib.c
+	$(GENERIC_DIR)/tclZlib.c \
+	$(GENERIC_DIR)/tclZipfs.c
 
 OO_SRCS = \
 	$(GENERIC_DIR)/tclOO.c \
@@ -480,7 +490,6 @@ STUB_SRCS = \
 	$(GENERIC_DIR)/tclOOStubLib.c
 
 TOMMATH_SRCS = \
-	$(TOMMATH_DIR)/bncore.c \
 	$(TOMMATH_DIR)/bn_reverse.c \
 	$(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c \
 	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
@@ -538,6 +547,10 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_sqrt.c \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
+	$(TOMMATH_DIR)/bn_mp_tc_and.c \
+	$(TOMMATH_DIR)/bn_mp_tc_div_2d.c \
+	$(TOMMATH_DIR)/bn_mp_tc_or.c \
+	$(TOMMATH_DIR)/bn_mp_tc_xor.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c \
 	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
@@ -616,6 +629,44 @@ ZLIB_SRCS = \
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
+###
+# Tip 430 - ZipFS Modifications
+###
+
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_ROOT		= libtcl.vfs
+TCL_VFS_PATH		= ${TCL_VFS_ROOT}/tcl_library
+
+HOST_CC			= @CC_FOR_BUILD@
+HOST_EXEEXT		= @EXEEXT_FOR_BUILD@
+HOST_OBJEXT		= @OBJEXT_FOR_BUILD@
+ZIPFS_BUILD		= @ZIPFS_BUILD@
+NATIVE_ZIP		= @ZIP_PROG@
+ZIP_PROG_OPTIONS	= @ZIP_PROG_OPTIONS@
+ZIP_PROG_VFSSEARCH	= @ZIP_PROG_VFSSEARCH@
+SHARED_BUILD		= @SHARED_BUILD@
+INSTALL_LIBRARIES	= @INSTALL_LIBRARIES@
+INSTALL_MSGS		= @INSTALL_MSGS@
+
+# Minizip
+MINIZIP_OBJS = \
+	adler32.$(HOST_OBJEXT) \
+	compress.$(HOST_OBJEXT) \
+	crc32.$(HOST_OBJEXT) \
+	deflate.$(HOST_OBJEXT) \
+	infback.$(HOST_OBJEXT) \
+	inffast.$(HOST_OBJEXT) \
+	inflate.$(HOST_OBJEXT) \
+	inftrees.$(HOST_OBJEXT) \
+	ioapi.$(HOST_OBJEXT) \
+	trees.$(HOST_OBJEXT) \
+	uncompr.$(HOST_OBJEXT) \
+	zip.$(HOST_OBJEXT) \
+	zutil.$(HOST_OBJEXT) \
+	minizip.$(HOST_OBJEXT)
+
+ZIP_INSTALL_OBJS	= @ZIP_INSTALL_OBJS@
+
 #--------------------------------------------------------------------------
 # Start of rules
 #--------------------------------------------------------------------------
@@ -628,15 +679,41 @@ libraries:
 
 doc:
 
+tclzipfile: ${TCL_ZIP_FILE}
+
+${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
+	@rm -rf ${TCL_VFS_ROOT}
+	@mkdir -p ${TCL_VFS_PATH}
+	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
+	@( \
+	  ln -s $(TOP_DIR)/library/* ${TCL_VFS_PATH}/ && \
+	  ln ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl \
+	) || ( \
+	  cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
+	  cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	)
+	@find ${TCL_VFS_ROOT} -type d -empty -delete
+	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
+	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
+	  cd ${TCL_VFS_ROOT} && \
+	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
+	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
+	  cd ..)
+
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
-${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
+${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	rm -f $@
 	@MAKE_LIB@
+	@if test "${ZIPFS_BUILD}" = "1" ; then \
+		cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
+		${NATIVE_ZIP} -A ${LIB_FILE} \
+		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
+	@if [ "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
+	    ( cd ${TOP_DIR}/win; ${MAKE} winextensions ); \
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
@@ -666,13 +743,14 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 
 clean: clean-packages
 	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
-	cd dltest ; $(MAKE) clean
+		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
+		minizip${HOST_EXEEXT} *.${HOST_OBJEXT} *.zip *.vfs
+	(cd dltest ; $(MAKE) clean)
 
 distclean: distclean-packages clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
 		tclConfig.h *.plist Tcl.framework tcl.pc
-	cd dltest ; $(MAKE) distclean
+	(cd dltest ; $(MAKE) distclean)
 
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
@@ -727,7 +805,14 @@ gdb-test: ${TCLTEST_EXE}
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	rm gdb.run
+	@rm gdb.run
+
+lldb-test: ${TCLTEST_EXE}
+	@echo "settings set target.env-vars @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > lldb.run
+	@echo "settings set target.env-vars TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> lldb.run
+	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl \
+		$(TESTFLAGS) -singleproc 1
+	@rm lldb.run
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
@@ -761,7 +846,9 @@ gdb: ${TCL_EXE}
 	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind $(TESTFLAGS)
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
+		$(TESTFLAGS)
 
 valgrindshell: ${TCL_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
@@ -776,7 +863,7 @@ trace-test: ${TCLTEST_EXE}
 # Installation rules
 #--------------------------------------------------------------------------
 
-INSTALL_BASE_TARGETS = install-binaries install-libraries install-msgs $(INSTALL_TZDATA)
+INSTALL_BASE_TARGETS = install-binaries $(INSTALL_LIBRARIES) $(INSTALL_MSGS) $(INSTALL_TZDATA)
 INSTALL_DOC_TARGETS = install-doc
 INSTALL_PACKAGE_TARGETS = install-packages
 INSTALL_DEV_TARGETS = install-headers
@@ -788,19 +875,16 @@ install: $(INSTALL_TARGETS)
 
 install-strip:
 	$(MAKE) $(INSTALL_TARGETS) \
-		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
-		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
+		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}"
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
-		"$(CONFIG_INSTALL_DIR)"; \
-	    do \
+		"$(CONFIG_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
@@ -820,70 +904,77 @@ install-binaries: binaries
 	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
 	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
 
-install-libraries: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)"; \
-	    do \
+install-libraries-zipfs-shared: libraries
+	@for i in "$(SCRIPT_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
-	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
-	    do \
+	    fi; \
+	done
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
+	@for i in $(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
+	done
+
+install-libraries-zipfs-static: install-libraries-zipfs-shared
+	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+
+MODULE_INSTALL_DIR=$(SCRIPT_INSTALL_DIR)/..
+
+install-libraries: libraries
+	@for i in "$(SCRIPT_INSTALL_DIR)" ; do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+	    fi; \
+	done
+	@for i in opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6 ../tcl8/8.7 ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
-		else true; \
-		fi; \
-	    done;
-	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/";
+	    fi; \
+	done
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex \
-		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; \
-	    do \
+		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
-	    done;
-	@echo "Installing package http1.0 files to $(SCRIPT_INSTALL_DIR)/http1.0/";
-	@for i in $(TOP_DIR)/library/http1.0/*.tcl ; \
-	    do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
-	    done;
-	@echo "Installing package http 2.8.12 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.12.tm;
-	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
-	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
-	    do \
+	done
+	@echo "Installing package http 2.9.0 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.6/http-2.9.0.tm
+	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
+	@for i in $(TOP_DIR)/library/opt/*.tcl ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
-	    done;
-	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.4.1.tm;
-
-	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
-	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
-
-	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
+	done
+	@echo "Installing package msgcat 1.7.0 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.7/msgcat-1.7.0.tm
+	@echo "Installing package tcltest 2.5.0 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.5/tcltest-2.5.0.tm
+	@echo "Installing package platform 1.0.14 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.4/platform-1.0.14.tm
+	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
+		"$(MODULE_INSTALL_DIR)"/tcl8/8.4/platform/shell-1.1.4.tm
+	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
-	done;
-	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ]; then \
+	done
+	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
 	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
 	fi
 
 install-tzdata:
-	@for i in tzdata; \
-	    do \
+	@for i in tzdata ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing time zone files to $(SCRIPT_INSTALL_DIR)/tzdata/"
 	@for i in $(TOP_DIR)/library/tzdata/* ; do \
 	    if [ -d $$i ] ; then \
@@ -907,86 +998,80 @@ install-tzdata:
 	    else \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/tzdata; \
 	    fi; \
-	done;
+	done
 
 install-msgs:
-	@for i in msgs; \
-	    do \
+	@for i in msgs ; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing message catalog files to $(SCRIPT_INSTALL_DIR)/msgs/"
 	@for i in $(TOP_DIR)/library/msgs/*.msg ; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
-	done;
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
+	done
 
 install-doc: doc
-	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)" ; \
-	    do \
+	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
-	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/";
-	@for i in $(TOP_DIR)/doc/*.1; do \
+	    fi; \
+	done
+	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/"
+	@for i in $(TOP_DIR)/doc/*.1 ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN1_INSTALL_DIR)"; \
 	done
-
-	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/";
-	@for i in $(TOP_DIR)/doc/*.3; do \
+	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/"
+	@for i in $(TOP_DIR)/doc/*.3 ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN3_INSTALL_DIR)"; \
 	done
-
 	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/";
-	@for i in $(TOP_DIR)/doc/*.n; do \
+	@for i in $(TOP_DIR)/doc/*.n ; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
 	done
 
+# Public headers that define Tcl's API
+TCL_PUBLIC_HEADERS = $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
+	$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
+	$(GENERIC_DIR)/tclPlatDecls.h $(GENERIC_DIR)/tclTomMath.h \
+	$(GENERIC_DIR)/tclTomMathDecls.h
+# Private headers that define Tcl's internal API
+TCL_PRIVATE_HEADERS = $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
+	$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
+	$(GENERIC_DIR)/tclOOInt.h $(GENERIC_DIR)/tclOOIntDecls.h \
+	$(UNIX_DIR)/tclUnixPort.h
+# Any other headers you find in the Tcl sources are purely part of Tcl's
+# implementation, and aren't to be installed.
+
 install-headers:
-	@for i in "$(INCLUDE_INSTALL_DIR)"; \
-	    do \
+	@for i in "$(INCLUDE_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h \
-		$(GENERIC_DIR)/tclTomMath.h \
-		$(GENERIC_DIR)/tclTomMathDecls.h ; \
-	    do \
+	@for i in $(TCL_PUBLIC_HEADERS) ; do \
 	    $(INSTALL_DATA) $$i "$(INCLUDE_INSTALL_DIR)"; \
-	    done;
+	done
 
 # Optional target to install private headers
 install-private-headers:
-	@for i in "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    do \
+	@for i in "$(PRIVATE_INCLUDE_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
-		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
-		$(GENERIC_DIR)/tclOOInt.h $(GENERIC_DIR)/tclOOIntDecls.h \
-		$(UNIX_DIR)/tclUnixPort.h; \
-	    do \
+	@for i in $(TCL_PRIVATE_HEADERS) ; do \
 	    $(INSTALL_DATA) $$i "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    done;
-	@if test -f tclConfig.h; then\
+	done
+	@if test -f tclConfig.h ; then \
 	    $(INSTALL_DATA) tclConfig.h "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    fi;
+	fi
 
 #--------------------------------------------------------------------------
 # Rules for how to compile C files
@@ -1005,42 +1090,45 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
-	fi;
+	fi
 	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f tclTestInit.o
+	@rm -f tclTestInit.o
 	mv tclAppInit.o tclTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
-	fi;
+	fi
 
 xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
-	fi;
+	fi
 	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST -DTCL_XT_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f xtTestInit.o
+	@rm -f xtTestInit.o
 	mv tclAppInit.o xtTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
-	fi;
+	fi
 
 # Object files used on all Unix systems:
 
-REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
-		$(GENERIC_DIR)/regcustom.h
-TCLREHDRS=$(GENERIC_DIR)/tclRegexp.h
-COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
-FSHDR=$(GENERIC_DIR)/tclFileSystem.h
-IOHDR=$(GENERIC_DIR)/tclIO.h
-MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
-PARSEHDR=$(GENERIC_DIR)/tclParse.h
-NREHDR=$(GENERIC_DIR)/tclInt.h
-TRIMHDR=$(GENERIC_DIR)/tclStringTrim.h
+REGHDRS		= $(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
+	$(GENERIC_DIR)/regcustom.h
+TCLREHDRS	= $(GENERIC_DIR)/tclRegexp.h
+COMPILEHDR	= $(GENERIC_DIR)/tclCompile.h
+FSHDR		= $(GENERIC_DIR)/tclFileSystem.h
+IOHDR		= $(GENERIC_DIR)/tclIO.h
+MATHHDRS	= $(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
+PARSEHDR	= $(GENERIC_DIR)/tclParse.h
+NREHDR		= $(GENERIC_DIR)/tclInt.h
+TRIMHDR		= $(GENERIC_DIR)/tclStringTrim.h
+
+TCL_LOCATIONS	= -DTCL_LIBRARY="\"${TCL_LIBRARY}\"" \
+	-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\""
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1224,7 +1312,7 @@ tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
 
-tclOO.o: $(GENERIC_DIR)/tclOO.c
+tclOO.o: $(GENERIC_DIR)/tclOO.c $(GENERIC_DIR)/tclOOScript.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
 
 tclOOBasic.o: $(GENERIC_DIR)/tclOOBasic.c
@@ -1269,19 +1357,19 @@ tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 # prefix/exec_prefix but all the different paths individually.
 
 tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
-	$(CC) -c $(CC_SWITCHES)					\
+	$(CC) -c $(CC_SWITCHES) \
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR)\"" \
-		\
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
-		\
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
@@ -1292,6 +1380,9 @@ tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 
 tclProc.o: $(GENERIC_DIR)/tclProc.c $(COMPILEHDR) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
+
+tclProcess.o: $(GENERIC_DIR)/tclProcess.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProcess.c
 
 tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c $(TCLREHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclRegexp.c
@@ -1329,6 +1420,15 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
+tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip \
+		$(GENERIC_DIR)/tclZipfs.c
+
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
@@ -1358,9 +1458,6 @@ tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 
 tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
-
-bncore.o: $(TOMMATH_DIR)/bncore.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
 
 bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
@@ -1430,6 +1527,9 @@ bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c $(MATHHDRS)
 
 bn_mp_expt_d_ex.o: $(TOMMATH_DIR)/bn_mp_expt_d_ex.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d_ex.c
+
+bn_mp_get_bit.o: $(TOMMATH_DIR)/bn_mp_get_bit.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_get_bit.c
 
 bn_mp_get_int.o: $(TOMMATH_DIR)/bn_mp_get_int.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_get_int.c
@@ -1533,6 +1633,18 @@ bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c $(MATHHDRS)
 bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
 
+bn_mp_tc_and.o: $(TOMMATH_DIR)/bn_mp_tc_and.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_and.c
+
+bn_mp_tc_div_2d.o: $(TOMMATH_DIR)/bn_mp_tc_div_2d.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_div_2d.c
+
+bn_mp_tc_or.o: $(TOMMATH_DIR)/bn_mp_tc_or.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_or.c
+
+bn_mp_tc_xor.o: $(TOMMATH_DIR)/bn_mp_tc_xor.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_tc_xor.c
+
 bn_mp_to_unsigned_bin.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c
 
@@ -1605,7 +1717,6 @@ tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
 tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
 
-TCL_LOCATIONS=-DTCL_LIBRARY="\"${TCL_LIBRARY}\"" -DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\""
 tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 	$(CC) -c $(CC_SWITCHES) $(TCL_LOCATIONS) $(UNIX_DIR)/tclUnixInit.c
 
@@ -1662,9 +1773,6 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 # relocatable.
 #--------------------------------------------------------------------------
 
-fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
-
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
@@ -1679,9 +1787,6 @@ strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
-
-strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
@@ -1737,6 +1842,57 @@ tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 	$(CC) -c $(CC_SWITCHES) $<
 
 #--------------------------------------------------------------------------
+# Minizip implementation
+#--------------------------------------------------------------------------
+adler32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/adler32.c
+
+compress.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/compress.c
+
+crc32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/crc32.c
+
+deflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
+
+ioapi.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -DIOAPI_NO_64 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/ioapi.c
+
+infback.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c
+
+inffast.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inffast.c
+
+inflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inflate.c
+
+inftrees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inftrees.c
+
+trees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/trees.c
+
+uncompr.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/uncompr.c
+
+zip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/zip.c
+
+zutil.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
+
+minizip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -DIOAPI_NO_64 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/minizip.c
+
+minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
+	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
+
+#--------------------------------------------------------------------------
 # Bundled Package targets
 #--------------------------------------------------------------------------
 
@@ -1749,94 +1905,94 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 configure-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    if [ -x $$i/configure ]; then \
-	      pkg=`basename $$i`; \
-	      echo "Configuring package '$$pkg'"; \
-	      mkdir -p $(PKG_DIR)/$$pkg; \
-	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-		( cd $(PKG_DIR)/$$pkg; \
-		  $$i/configure --with-tcl=../.. \
-		      --with-tclinclude=$(GENERIC_DIR) \
-		      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-		      --enable-shared --enable-threads; ) || exit $$?; \
-	      fi; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		if [ -x $$i/configure ] ; then \
+		    pkg=`basename $$i`; \
+		    echo "Configuring package '$$pkg'"; \
+		    mkdir -p $(PKG_DIR)/$$pkg; \
+		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+			( cd $(PKG_DIR)/$$pkg; \
+			  $$i/configure --with-tcl=../.. \
+			      --with-tclinclude=$(GENERIC_DIR) \
+			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+			      --enable-shared; ) || exit $$?; \
+		    fi; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 packages: configure-packages ${STUB_LIB_FILE}
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Building package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 install-packages: packages
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Installing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
-		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Installing package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
+			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 test-packages: ${TCLTEST_EXE} packages
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo "Testing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
-		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
-		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
-		  "TCLLIBPATH=../../pkgs" test \
-		  "TCLSH_PROG=../../${TCLTEST_EXE}"; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Testing package '$$pkg'"; \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
+			  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
+			  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
+			  "TCLLIBPATH=../../pkgs" test \
+			  "TCLSH_PROG=../../${TCLTEST_EXE}"; ) \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 clean-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 distclean-packages:
-	@for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+	@for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+		fi; \
+		rm -rf $(PKG_DIR)/$$pkg; \
 	    fi; \
-	    rm -rf $(PKG_DIR)/$$pkg; \
-	  fi; \
 	done; \
 	rm -rf $(PKG_DIR)
 
 dist-packages: configure-packages
 	@rm -rf $(DISTROOT)/pkgs; \
 	mkdir -p $(DISTROOT)/pkgs; \
-	for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ]; then \
-	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
-		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+	for i in $(PKGS_DIR)/* ; do \
+	    if [ -d $$i ] ; then \
+		pkg=`basename $$i`; \
+		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
+			  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+		fi; \
 	    fi; \
-	  fi; \
 	done
 
 #--------------------------------------------------------------------------
@@ -1851,9 +2007,9 @@ dist-packages: configure-packages
 
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
-	--no-lines \
-	--name-prefix=TclDate \
-	$(GENERIC_DIR)/tclGetDate.y
+		--no-lines \
+		--name-prefix=TclDate \
+		$(GENERIC_DIR)/tclGetDate.y
 
 #	yacc -l $(GENERIC_DIR)/tclGetDate.y
 #	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
@@ -1889,12 +2045,21 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
+$(GENERIC_DIR)/tclOOScript.h: $(GENERIC_DIR)/tclOOScript.tcl
+	@echo "Warning: tclOOScript.h may be out of date."
+	@echo "Developers may want to run \"make genscript\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
+
 genstubs:
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
+
+genscript:
+	$(NATIVE_TCLSH) $(TOOL_DIR)/makeHeader.tcl \
+		$(GENERIC_DIR)/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
 
 #
 # Target to check that all exported functions have an entry in the stubs
@@ -1904,14 +2069,16 @@ genstubs:
 checkstubs: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) \
 		| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
-		| sort -n`; do \
-		match=0; \
-		for j in $(TCL_DECLS); do \
-		    if [ `grep -c "$$i *(" $$j` -gt 0 ]; then \
-			match=1; \
-		    fi; \
-		done; \
-		if [ $$match -eq 0 ]; then echo $$i; fi \
+		| sort -n` ; do \
+	    match=0; \
+	    for j in $(TCL_DECLS) ; do \
+		if [ `grep -c "$$i *(" $$j` -gt 0 ] ; then \
+		    match=1; \
+		fi; \
+	    done; \
+	    if [ $$match -eq 0 ] ; then \
+		echo $$i; \
+	    fi; \
 	done
 
 #
@@ -1921,14 +2088,16 @@ checkstubs: $(TCL_LIB_FILE)
 
 checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
-		| grep -v 'Cmd$$' | sort -n`; do \
-		match=0; \
-		for j in $(TOP_DIR)/doc/*.3; do \
-		    if [ `grep '\-' $$j | grep -c $$i` -gt 0 ]; then \
-			match=1; \
-		    fi; \
-		done; \
-		if [ $$match -eq 0 ]; then echo $$i; fi \
+		| grep -v 'Cmd$$' | sort -n` ; do \
+	    match=0; \
+	    for j in $(TOP_DIR)/doc/*.3 ; do \
+		if [ `grep '\-' $$j | grep -c $$i` -gt 0 ] ; then \
+		    match=1; \
+		fi; \
+	    done; \
+	    if [ $$match -eq 0 ] ; then \
+		echo $$i; \
+	    fi; \
 	done
 
 #
@@ -1957,14 +2126,14 @@ checkexports: $(TCL_LIB_FILE)
 #
 
 rpm: all
-	rm -f THIS.TCL.SPEC
+	-@rm -f THIS.TCL.SPEC
 	echo "%define _builddir `pwd`" > THIS.TCL.SPEC
 	echo "%define _rpmdir `pwd`/RPMS" >> THIS.TCL.SPEC
 	cat tcl.spec >> THIS.TCL.SPEC
 	mkdir -p RPMS/i386
 	rpmbuild -bb THIS.TCL.SPEC
 	mv RPMS/i386/*.rpm .
-	rm -rf RPMS THIS.TCL.SPEC
+	-rm -rf RPMS THIS.TCL.SPEC
 
 #
 # Target to create a proper Tcl distribution from information in the master
@@ -1976,6 +2145,8 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
+BUILTIN_PACKAGE_LIST = http opt msgcat reg dde tcltest platform
+
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
 	cd $(UNIX_DIR); autoconf
@@ -2010,11 +2181,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http1.0 http opt msgcat reg dde tcltest platform; \
-	    do \
-		mkdir $(DISTDIR)/library/$$i ;\
-		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
-	    done;
+	for i in $(BUILTIN_PACKAGE_LIST) ; do \
+	    mkdir $(DISTDIR)/library/$$i;\
+	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
+	done
 	@mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	@mkdir $(DISTDIR)/library/msgs
@@ -2083,14 +2253,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/pkgs
 	cp $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	cp $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
-	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
+	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null` ; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
-	cd $(DISTROOT); tar cf $(DISTNAME)-src.tar $(DISTNAME); \
-		gzip -9 $(DISTNAME)-src.tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
+	( cd $(DISTROOT); \
+		tar cf $(DISTNAME)-src.tar $(DISTNAME); \
+		gzip -9 $(DISTNAME)-src.tar; \
+		zip -qr8 $(ZIPNAME) $(DISTNAME) )
 
 #--------------------------------------------------------------------------
 # This target creates the HTML folder for Tcl & Tk and places it in
@@ -2119,13 +2291,10 @@ html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
-# You'd better have these programs or you will have problems creating Makefile
-# from Makefile.in in the first place...
-HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
-		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
+		--tcl --useversion=$(MAJOR_VERSION).$(MINOR_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
+		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
 # The list of all the targets that do not correspond to real files. This stops
@@ -2142,6 +2311,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
+.PHONY: install-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.

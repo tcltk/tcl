@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_FAST_MP_MONTGOMERY_REDUCE_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* computes xR**-1 == x (mod N) via Montgomery Reduction
@@ -27,6 +24,10 @@ int fast_mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
 {
    int     ix, res, olduse;
    mp_word W[MP_WARRAY];
+
+   if (x->used > (int)MP_WARRAY) {
+      return MP_VAL;
+   }
 
    /* get old used count */
    olduse = x->used;
@@ -73,7 +74,7 @@ int fast_mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
        * that W[ix-1] have  the carry cleared (see after the inner loop)
        */
       mp_digit mu;
-      mu = (mp_digit)(((W[ix] & MP_MASK) * rho) & MP_MASK);
+      mu = ((W[ix] & MP_MASK) * rho) & MP_MASK;
 
       /* a = a + mu * m * b**i
        *
@@ -102,12 +103,12 @@ int fast_mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
 
          /* inner loop */
          for (iy = 0; iy < n->used; iy++) {
-            *_W++ += ((mp_word)mu) * ((mp_word)*tmpn++);
+            *_W++ += (mp_word)mu * (mp_word)*tmpn++;
          }
       }
 
       /* now fix carry for next digit, W[ix+1] */
-      W[ix + 1] += W[ix] >> ((mp_word) DIGIT_BIT);
+      W[ix + 1] += W[ix] >> (mp_word)DIGIT_BIT;
    }
 
    /* now we have to propagate the carries and
@@ -127,7 +128,7 @@ int fast_mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
       _W = W + ++ix;
 
       for (; ix <= ((n->used * 2) + 1); ix++) {
-         *_W++ += *_W1++ >> ((mp_word) DIGIT_BIT);
+         *_W++ += *_W1++ >> (mp_word)DIGIT_BIT;
       }
 
       /* copy out, A = A/b**n
@@ -144,7 +145,7 @@ int fast_mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
       _W = W + n->used;
 
       for (ix = 0; ix < (n->used + 1); ix++) {
-         *tmpx++ = (mp_digit)(*_W++ & ((mp_word) MP_MASK));
+         *tmpx++ = *_W++ & (mp_word)MP_MASK;
       }
 
       /* zero oldused digits, if the input a was larger than

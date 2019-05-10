@@ -897,7 +897,7 @@ TclDatelex(
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
-	while (isspace(UCHAR(*yyInput))) {
+	while (TclIsSpaceProc(UCHAR(*yyInput))) {
 	    yyInput++;
 	}
 
@@ -960,7 +960,7 @@ TclDatelex(
 
 int
 TclClockOldscanObjCmd(
-    ClientData clientData,	/* Unused */
+    void *clientData,	/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
     Tcl_Obj *const *objv)	/* Parameters */

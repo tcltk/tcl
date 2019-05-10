@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_DIV_2_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* b = a/2 */
@@ -42,7 +39,7 @@ int mp_div_2(const mp_int *a, mp_int *b)
       r = 0;
       for (x = b->used - 1; x >= 0; x--) {
          /* get the carry for the next iteration */
-         rr = *tmpa & 1;
+         rr = *tmpa & 1u;
 
          /* shift the current digit, add in carry and store */
          *tmpb-- = (*tmpa-- >> 1) | (r << (DIGIT_BIT - 1));

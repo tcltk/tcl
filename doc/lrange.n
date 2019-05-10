@@ -72,7 +72,11 @@ elements to
 .CE
 .SH "SEE ALSO"
 list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lset(n), lreplace(n), lsort(n),
+lset(n), lremove(n), lreplace(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, range, sublist
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

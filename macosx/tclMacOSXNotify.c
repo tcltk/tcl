@@ -31,6 +31,9 @@
  */
 
 #if defined(HAVE_LIBKERN_OSATOMIC_H) && defined(HAVE_OSSPINLOCKLOCK)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wunused-function"
 /*
  * Use OSSpinLock API where available (Tiger or later).
  */
@@ -42,14 +45,17 @@
  * Support for weakly importing spinlock API.
  */
 #define WEAK_IMPORT_SPINLOCKLOCK
+
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
 #define VOLATILE volatile
 #else
 #define VOLATILE
 #endif /* MAC_OS_X_VERSION_MAX_ALLOWED >= 1050 */
+
 #ifndef bool
 #define bool int
 #endif
+
 extern void		OSSpinLockLock(VOLATILE OSSpinLock *lock)
 			    WEAK_IMPORT_ATTRIBUTE;
 extern void		OSSpinLockUnlock(VOLATILE OSSpinLock *lock)
@@ -77,13 +83,54 @@ SpinLockLockInit(void)
 	Tcl_Panic("SpinLockLockInit: no spinlock API available");
     }
 }
-#define SpinLockLock(p) 	lockLock(p)
-#define SpinLockUnlock(p)	lockUnlock(p)
-#define SpinLockTry(p)		lockTry(p)
-#else
-#define SpinLockLock(p) 	OSSpinLockLock(p)
-#define SpinLockUnlock(p)	OSSpinLockUnlock(p)
-#define SpinLockTry(p)		OSSpinLockTry(p)
+
+/*
+ * Wrappers so that we get warnings in just one small part of this file.
+ */
+
+static inline void
+SpinLockLock(
+    VOLATILE OSSpinLock *lock)
+{
+    lockLock(lock);
+}
+static inline void
+SpinLockUnlock(
+    VOLATILE OSSpinLock *lock)
+{
+    lockUnlock(lock);
+}
+static inline bool
+SpinLockTry(
+    VOLATILE OSSpinLock *lock)
+{
+    return lockTry(lock);
+}
+
+#else /* !HAVE_WEAK_IMPORT */
+
+/*
+ * Wrappers so that we get warnings in just one small part of this file.
+ */
+
+static inline void
+SpinLockLock(
+    OSSpinLock *lock)
+{
+    OSSpinLockLock(lock);
+}
+static inline void
+SpinLockUnlock(
+    OSSpinLock *lock)
+{
+    OSSpinLockUnlock(lock);
+}
+static inline bool
+SpinLockTry(
+    OSSpinLock *lock)
+{
+    return OSSpinLockTry(lock);
+}
 #endif /* HAVE_WEAK_IMPORT */
 #define SPINLOCK_INIT		OS_SPINLOCK_INIT
 
@@ -93,14 +140,37 @@ SpinLockLockInit(void)
  */
 
 typedef uint32_t OSSpinLock;
-extern void		_spin_lock(OSSpinLock *lock);
-extern void		_spin_unlock(OSSpinLock *lock);
-extern int		_spin_lock_try(OSSpinLock *lock);
-#define SpinLockLock(p) 	_spin_lock(p)
-#define SpinLockUnlock(p)	_spin_unlock(p)
-#define SpinLockTry(p)		_spin_lock_try(p)
+
+static inline void
+SpinLockLock(
+    OSSpinLock *lock)
+{
+    extern void _spin_lock(OSSpinLock *lock);
+
+    _spin_lock(lock);
+}
+
+static inline void
+SpinLockUnlock(
+    OSSpinLock *lock)
+{
+    extern void _spin_unlock(OSSpinLock *lock);
+
+    _spin_unlock(lock);
+}
+
+static inline int
+SpinLockTry(
+    OSSpinLock *lock)
+{
+    extern int _spin_lock_try(OSSpinLock *lock);
+
+    return _spin_lock_try(lock);
+}
+
 #define SPINLOCK_INIT		0
 
+#pragma GCC diagnostic pop
 #endif /* HAVE_LIBKERN_OSATOMIC_H && HAVE_OSSPINLOCKLOCK */
 
 /*
@@ -1411,7 +1481,10 @@ UpdateWaitingListAndServiceEvents(
 		(tsdPtr->runLoopNestingLevel > 1
 			|| !tsdPtr->runLoopRunning)) {
 	    tsdPtr->runLoopServicingEvents = 1;
-            /* This call seems to simply force event processing through and prevents hangups that have long been observed with Tk-Cocoa.  */
+            /*
+	     * This call seems to simply force event processing through and
+	     * prevents hangups that have long been observed with Tk-Cocoa.
+	     */
 	    Tcl_ServiceAll();
 	    tsdPtr->runLoopServicingEvents = 0;
 	}

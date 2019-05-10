@@ -100,7 +100,7 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 typedef struct {
     Tcl_ThreadCreateProc *proc;	/* Main() function of the thread */
     ClientData clientData;	/* The one argument to Main() */
@@ -139,6 +139,8 @@ static void		FinalizeThread(int quick);
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef Tcl_BackgroundError
 void
 Tcl_BackgroundError(
     Tcl_Interp *interp)		/* Interpreter in which an error has
@@ -146,6 +148,7 @@ Tcl_BackgroundError(
 {
     Tcl_BackgroundException(interp, TCL_ERROR);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 void
 Tcl_BackgroundException(
@@ -1043,7 +1046,7 @@ TclInitSubsystems(void)
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
 	    TclInitThreadAlloc();	/* Setup thread allocator caches */
 #endif
 #ifdef TCL_MEM_DEBUG
@@ -1220,7 +1223,7 @@ Tcl_Finalize(void)
      * Close down the thread-specific object allocator.
      */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
     TclFinalizeThreadAlloc();
 #endif
 
@@ -1538,7 +1541,7 @@ Tcl_UpdateObjCmd(
     return TCL_OK;
 }
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -1601,7 +1604,7 @@ Tcl_CreateThread(
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     ThreadClientData *cdPtr = ckalloc(sizeof(ThreadClientData));
     int result;
 

@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_READ_UNSIGNED_BIN_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* reads a unsigned char array, assumes the msb is stored first [big endian] */
@@ -41,7 +38,7 @@ int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c)
       a->used += 1;
 #else
       a->dp[0] = (*b & MP_MASK);
-      a->dp[1] |= ((*b++ >> 7U) & 1);
+      a->dp[1] |= ((*b++ >> 7) & 1u);
       a->used += 2;
 #endif
    }

@@ -40,19 +40,13 @@ typedef struct TclWinProcs {
 
 MODULE_SCOPE TclWinProcs tclWinProcs;
 
-#ifdef _WIN64
-#         define TCL_I_MODIFIER        "I"
-#else
-#         define TCL_I_MODIFIER        ""
-#endif
-
 /*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */
 
 MODULE_SCOPE char	TclWinDriveLetterForVolMountPoint(
-			    const TCHAR *mountPoint);
+			    const WCHAR *mountPoint);
 MODULE_SCOPE void	TclWinEncodingsCleanup();
 MODULE_SCOPE void	TclWinInit(HINSTANCE hInst);
 MODULE_SCOPE TclFile	TclWinMakeFile(HANDLE handle);
@@ -62,20 +56,15 @@ MODULE_SCOPE Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
-MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const TCHAR *name,
+MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const WCHAR *name,
 			    DWORD access);
 MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
 			    const TCHAR *LinkCopy);
 MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR *LinkOriginal,
 			    int linkOnly);
 MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-MODULE_SCOPE void	TclWinFreeAllocCache(void);
-MODULE_SCOPE void	TclFreeAllocCache(void *);
-MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
-MODULE_SCOPE void *	TclpGetAllocCache(void);
-MODULE_SCOPE void	TclpSetAllocCache(void *);
-#endif /* TCL_THREADS */
+
+MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
 
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT

@@ -31,6 +31,9 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
 
@@ -385,16 +388,13 @@
 /* What is the default extension for shared libraries? */
 #undef TCL_SHLIB_EXT
 
-/* Are we building with threads enabled? */
-#undef TCL_THREADS
-
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
 
 /* Does this platform have wide high-resolution clicks? */
 #undef TCL_WIDE_CLICKS
 
-/* Are wide integers to be implemented with C 'long's? */
+/* Do Tcl_WideInt, 'long' and 'long long' all have the same size (64-bit) ? */
 #undef TCL_WIDE_INT_IS_LONG
 
 /* What type should be used to define wide integers? */
@@ -483,9 +483,6 @@
 
 /* Define as int if socklen_t is not available */
 #undef socklen_t
-
-/* Do we want to use the strtod() in compat? */
-#undef strtod
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t

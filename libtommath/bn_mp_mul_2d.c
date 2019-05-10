@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_MUL_2D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* shift left by a certain bit count */
@@ -28,14 +25,14 @@ int mp_mul_2d(const mp_int *a, int b, mp_int *c)
       }
    }
 
-   if (c->alloc < (int)(c->used + (b / DIGIT_BIT) + 1)) {
+   if (c->alloc < (c->used + (b / DIGIT_BIT) + 1)) {
       if ((res = mp_grow(c, c->used + (b / DIGIT_BIT) + 1)) != MP_OKAY) {
          return res;
       }
    }
 
    /* shift by as many digits in the bit count */
-   if (b >= (int)DIGIT_BIT) {
+   if (b >= DIGIT_BIT) {
       if ((res = mp_lshd(c, b / DIGIT_BIT)) != MP_OKAY) {
          return res;
       }
@@ -43,15 +40,15 @@ int mp_mul_2d(const mp_int *a, int b, mp_int *c)
 
    /* shift any bit count < DIGIT_BIT */
    d = (mp_digit)(b % DIGIT_BIT);
-   if (d != 0) {
+   if (d != 0u) {
       mp_digit *tmpc, shift, mask, r, rr;
       int x;
 
       /* bitmask for carries */
-      mask = (((mp_digit)1) << d) - 1;
+      mask = ((mp_digit)1 << d) - (mp_digit)1;
 
       /* shift for msbs */
-      shift = DIGIT_BIT - d;
+      shift = (mp_digit)DIGIT_BIT - d;
 
       /* alias */
       tmpc = c->dp;
@@ -71,7 +68,7 @@ int mp_mul_2d(const mp_int *a, int b, mp_int *c)
       }
 
       /* set final carry */
-      if (r != 0) {
+      if (r != 0u) {
          c->dp[(c->used)++] = r;
       }
    }

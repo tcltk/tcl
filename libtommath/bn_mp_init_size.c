@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_INIT_SIZE_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* init an mp_init for a given size */
@@ -24,7 +21,7 @@ int mp_init_size(mp_int *a, int size)
    size += (MP_PREC * 2) - (size % MP_PREC);
 
    /* alloc mem */
-   a->dp = OPT_CAST(mp_digit) XMALLOC(sizeof(mp_digit) * size);
+   a->dp = (mp_digit *) XMALLOC((size_t)size * sizeof(mp_digit));
    if (a->dp == NULL) {
       return MP_MEM;
    }

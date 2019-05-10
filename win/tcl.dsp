@@ -204,10 +204,6 @@ SOURCE=..\compat\tclErrno.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\unistd.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\waitpid.c
 # End Source File
 # End Group
@@ -1264,6 +1260,10 @@ SOURCE=..\generic\tclProc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclProcess.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclRegexp.c
 # End Source File
 # Begin Source File
@@ -1521,6 +1521,10 @@ SOURCE=.\tclWinLoad.c
 # Begin Source File
 
 SOURCE=.\tclWinNotify.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\tclWinPanic.c
 # End Source File
 # Begin Source File
 

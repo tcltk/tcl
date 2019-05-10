@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_READ_SIGNED_BIN_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* read signed bin, big endian, first byte is 0==positive or 1==negative */
@@ -26,7 +23,7 @@ int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c)
    }
 
    /* first byte is 0 for positive, non-zero for negative */
-   if (b[0] == 0) {
+   if (b[0] == (unsigned char)0) {
       a->sign = MP_ZPOS;
    } else {
       a->sign = MP_NEG;

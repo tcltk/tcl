@@ -96,7 +96,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(const TCHAR *nativeName);
+static int		NativeIsComPort(const WCHAR *nativeName);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -554,8 +554,8 @@ FileWideSeekProc(
 	moveMethod = FILE_END;
     }
 
-    newPosHigh = Tcl_WideAsLong(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
+    newPosHigh = (LONG)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)offset,
 	    &newPosHigh, moveMethod);
     if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -567,7 +567,7 @@ FileWideSeekProc(
 	}
     }
     return (((Tcl_WideInt)((unsigned)newPos))
-	    | (Tcl_LongAsWide(newPosHigh) << 32));
+	    | ((Tcl_WideInt)newPosHigh << 32));
 }
 
 /*
@@ -613,8 +613,8 @@ FileTruncateProc(
      * Move to where we want to truncate
      */
 
-    newPosHigh = Tcl_WideAsLong(length >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
+    newPosHigh = (LONG)(length >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)length,
 	    &newPosHigh, FILE_BEGIN);
     if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -849,7 +849,7 @@ TclpOpenFileChannel(
     Tcl_Channel channel = 0;
     int channelPermissions = 0;
     DWORD accessMode = 0, createMode, shareMode, flags;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
@@ -1379,7 +1379,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
@@ -1557,7 +1557,7 @@ FileGetType(
 
 static int
 NativeIsComPort(
-    const TCHAR *nativePath)	/* Path of file to access, native encoding. */
+    const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
     int i, len = wcslen(p);

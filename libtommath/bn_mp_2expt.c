@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_2EXPT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* computes a = 2**b
@@ -36,7 +33,7 @@ int mp_2expt(mp_int *a, int b)
    a->used = (b / DIGIT_BIT) + 1;
 
    /* put the single bit in its place */
-   a->dp[b / DIGIT_BIT] = ((mp_digit)1) << (b % DIGIT_BIT);
+   a->dp[b / DIGIT_BIT] = (mp_digit)1 << (mp_digit)(b % DIGIT_BIT);
 
    return MP_OKAY;
 }

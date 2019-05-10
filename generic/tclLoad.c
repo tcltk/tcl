@@ -405,7 +405,7 @@ Tcl_LoadObjCmd(
 	len = strlen(fullFileName) + 1;
 	pkgPtr->fileName	   = ckalloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
-	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
+	len = Tcl_DStringLength(&pkgName) + 1;
 	pkgPtr->packageName	   = ckalloc(len);
 	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
@@ -470,6 +470,19 @@ Tcl_LoadObjCmd(
      */
 
     if (code != TCL_OK) {
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+	Interp *iPtr = (Interp *) target;
+	if (iPtr->result && *(iPtr->result) && !iPtr->freeProc) {
+	    /*
+	     * A call to Tcl_InitStubs() determined the caller extension and
+	     * this interp are incompatible in their stubs mechanisms, and
+	     * recorded the error in the oldest legacy place we have to do so.
+	     */
+	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->result, -1));
+	    iPtr->result =  &tclEmptyString;
+	    iPtr->freeProc = NULL;
+	}
+#endif /* defined(TCL_NO_DEPRECATED) */
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }

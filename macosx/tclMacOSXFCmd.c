@@ -192,7 +192,7 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewBooleanObj(
+	*attributePtrPtr = Tcl_NewWideIntObj(
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
@@ -577,10 +577,10 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (objPtr->typePtr != &tclOSTypeType) {
+    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
-    *osTypePtr = (OSType) objPtr->internalRep.longValue;
+    *osTypePtr = (OSType) objPtr->internalRep.wideValue;
     return result;
 }
 
@@ -609,7 +609,7 @@ NewOSTypeObj(
 
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
-    objPtr->internalRep.longValue = (long) osType;
+    objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
     objPtr->typePtr = &tclOSTypeType;
     return objPtr;
 }
@@ -654,13 +654,13 @@ SetOSTypeFromAny(
 	OSType osType;
 	char bytes[4] = {'\0','\0','\0','\0'};
 
-	memcpy(bytes, Tcl_DStringValue(&ds), (size_t)Tcl_DStringLength(&ds));
+	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
 		 (OSType) bytes[3];
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.longValue = (long) osType;
+	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
     }
     Tcl_DStringFree(&ds);
@@ -692,24 +692,28 @@ UpdateStringOfOSType(
     register Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    char string[5];
-    OSType osType = (OSType) objPtr->internalRep.longValue;
-    Tcl_DString ds;
-    Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
-    unsigned len;
+    const int size = TCL_UTF_MAX * 4;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, size);
+    OSType osType = (OSType) objPtr->internalRep.wideValue;
+    int written = 0;
+    Tcl_Encoding encoding;
+    char src[5];
 
-    string[0] = (char) (osType >> 24);
-    string[1] = (char) (osType >> 16);
-    string[2] = (char) (osType >>  8);
-    string[3] = (char) (osType);
-    string[4] = '\0';
-    Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
-    len = (unsigned) Tcl_DStringLength(&ds) + 1;
-    objPtr->bytes = ckalloc(len);
-    memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
-    objPtr->length = Tcl_DStringLength(&ds);
-    Tcl_DStringFree(&ds);
+    TclOOM(dst, size);
+
+    src[0] = (char) (osType >> 24);
+    src[1] = (char) (osType >> 16);
+    src[2] = (char) (osType >>  8);
+    src[3] = (char) (osType);
+    src[4] = '\0';
+
+    encoding = Tcl_GetEncoding(NULL, "macRoman");
+    Tcl_ExternalToUtf(NULL, encoding, src, -1, /* flags */ 0,
+	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
+	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
     Tcl_FreeEncoding(encoding);
+
+    (void)Tcl_InitStringRep(objPtr, NULL, written);
 }
 
 /*

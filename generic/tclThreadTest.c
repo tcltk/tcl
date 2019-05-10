@@ -18,7 +18,7 @@
 #endif
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  * Each thread has an single instance of the following structure. There is one
  * instance of this structure per thread even if that thread contains multiple
@@ -174,7 +174,6 @@ TclThread_Init(
     Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -248,7 +247,7 @@ ThreadObjCmd(
 
     switch ((enum options)option) {
     case THREAD_CANCEL: {
-	long id;
+	Tcl_WideInt id;
 	const char *result;
 	int flags, arg;
 
@@ -264,7 +263,7 @@ ThreadObjCmd(
 		arg++;
 	    }
 	}
-	if (Tcl_GetLongFromObj(interp, objv[arg], &id) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	arg++;
@@ -509,7 +508,7 @@ ThreadCreate(
     joinable = joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS;
 
     Tcl_MutexLock(&threadMutex);
-    if (Tcl_CreateThread(&id, NewTestThread, (ClientData) &ctrl,
+    if (Tcl_CreateThread(&id, NewTestThread, &ctrl,
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
@@ -1157,6 +1156,14 @@ ThreadExitProc(
     }
 
     Tcl_MutexLock(&threadMutex);
+
+    if (self == errorThreadId) {
+	if (errorProcString) {	/* Extra safety */
+	    ckfree(errorProcString);
+	    errorProcString = NULL;
+	}
+	errorThreadId = 0;
+    }
 
     if (threadEvalScript) {
 	ckfree(threadEvalScript);

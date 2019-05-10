@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_DR_REDUCE_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* reduce "x" in place modulo "n" using the Diminished Radix algorithm.
@@ -61,7 +58,7 @@ top:
 
    /* compute (x mod B**m) + k * [x/B**m] inline and inplace */
    for (i = 0; i < m; i++) {
-      r         = (((mp_word)*tmpx2++) * (mp_word)k) + *tmpx1 + mu;
+      r         = ((mp_word)*tmpx2++ * (mp_word)k) + *tmpx1 + mu;
       *tmpx1++  = (mp_digit)(r & MP_MASK);
       mu        = (mp_digit)(r >> ((mp_word)DIGIT_BIT));
    }

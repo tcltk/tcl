@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tommath.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -134,7 +135,7 @@ BuildCharSet(
 	     * as well as the dash.
 	     */
 
-	    if (*format == ']') {
+	    if (*format == ']' || !cset->ranges) {
 		cset->chars[cset->nchars++] = start;
 		cset->chars[cset->nchars++] = ch;
 	    } else {
@@ -260,7 +261,7 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX+1];
+    char buf[TCL_UTF_MAX + 1] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -415,14 +416,7 @@ ValidateFormat(
 	case 'x':
 	case 'X':
 	case 'b':
-	    break;
 	case 'u':
-	    if (flags & SCAN_BIG) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unsigned bignum scans are invalid", -1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
-		goto error;
-	    }
 	    break;
 	    /*
 	     * Bracket terms need special checking
@@ -725,7 +719,7 @@ Tcl_ScanObjCmd(
 	switch (ch) {
 	case 'n':
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj(string - baseString);
+		objPtr = Tcl_NewWideIntObj(string - baseString);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -887,15 +881,15 @@ Tcl_ScanObjCmd(
 
 	    offset = TclUtfToUniChar(string, &sch);
 	    i = (int)sch;
-#if TCL_UTF_MAX == 4
-	    if (!offset) {
-		offset = TclUtfToUniChar(string, &sch);
+#if TCL_UTF_MAX <= 4
+	    if ((sch >= 0xD800) && (offset < 3)) {
+		offset += TclUtfToUniChar(string+offset, &sch);
 		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
 	    }
 #endif
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj(i);
+		objPtr = Tcl_NewWideIntObj(i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -906,7 +900,7 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
-	    objPtr = Tcl_NewLongObj(0);
+	    objPtr = Tcl_NewWideIntObj(0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -932,19 +926,42 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = ~(Tcl_WideUInt)0 >> 1;	/* WIDE_MAX */
+		    wideValue = WIDE_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue++;	/* WIDE_MAX + 1 = WIDE_MIN */
+			wideValue = WIDE_MIN;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
-		    Tcl_SetWideIntObj(objPtr, wideValue);
+		    TclSetIntObj(objPtr, wideValue);
 		}
-	    } else if (!(flags & SCAN_BIG)) {
+	    } else if (flags & SCAN_BIG) {
+		if (flags & SCAN_UNSIGNED) {
+		    mp_int big;
+		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
+
+		    if (code == TCL_OK) {
+			if (big.sign != MP_ZPOS) {
+			    code = TCL_ERROR;
+			}
+			mp_clear(&big);
+		    }
+
+		    if (code == TCL_ERROR) {
+			if (objs != NULL) {
+			    ckfree(objs);
+			}
+			Tcl_DecrRefCount(objPtr);
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"unsigned bignum scans are invalid", -1));
+			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
+				"BADUNSIGNED",NULL);
+			return TCL_ERROR;
+		    }
+		}
+	    } else {
 		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			value = LONG_MIN;
@@ -956,7 +973,7 @@ Tcl_ScanObjCmd(
 		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
-		    Tcl_SetLongObj(objPtr, value);
+		    TclSetIntObj(objPtr, value);
 		}
 	    }
 	    objs[objIndex++] = objPtr;
@@ -992,8 +1009,10 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    if (objPtr->typePtr == &tclDoubleType) {
-			dvalue = objPtr->internalRep.doubleValue;
+		    const Tcl_ObjIntRep *irPtr
+			    = TclFetchIntRep(objPtr, &tclDoubleType);
+		    if (irPtr) {
+			dvalue = irPtr->doubleValue;
 		    } else
 #endif
 		    {
@@ -1062,7 +1081,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewIntObj(-1);
+		objPtr = Tcl_NewWideIntObj(-1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
@@ -1071,7 +1090,7 @@ Tcl_ScanObjCmd(
 		}
 	    }
 	} else if (numVars) {
-	    objPtr = Tcl_NewIntObj(result);
+	    objPtr = Tcl_NewWideIntObj(result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }

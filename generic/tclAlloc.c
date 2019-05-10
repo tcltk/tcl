@@ -22,7 +22,7 @@
  */
 
 #include "tclInt.h"
-#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
+#if !TCL_THREADS || !defined(USE_THREAD_ALLOC)
 
 #if USE_TCLALLOC
 
@@ -121,7 +121,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
  * variable.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static Tcl_Mutex *allocMutexPtr;
 #endif
 static int allocInit = 0;
@@ -171,7 +171,7 @@ TclInitAlloc(void)
 {
     if (!allocInit) {
 	allocInit = 1;
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
 #endif
     }
@@ -274,8 +274,8 @@ TclpAlloc(
 
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
-	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+	    bigBlockPtr = (struct block *) TclpSysAlloc(
+		    sizeof(struct block) + OVERHEAD + numBytes, 0);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -604,7 +604,7 @@ TclpRealloc(
 	if (maxSize < numBytes) {
 	    numBytes = maxSize;
 	}
-	memcpy(newPtr, oldPtr, (size_t) numBytes);
+	memcpy(newPtr, oldPtr, numBytes);
 	TclpFree(oldPtr);
 	return newPtr;
     }
@@ -661,14 +661,14 @@ mstats(
 
     fprintf(stderr, "\nused:\t");
     for (i = 0; i < NBUCKETS; i++) {
-	fprintf(stderr, " %" TCL_LL_MODIFIER "d", (Tcl_WideInt)numMallocs[i]);
+	fprintf(stderr, " %" TCL_Z_MODIFIER "u", numMallocs[i]);
 	totalUsed += numMallocs[i] * (1 << (i + 3));
     }
 
-    fprintf(stderr, "\n\tTotal small in use: %" TCL_LL_MODIFIER "d, total free: %" TCL_LL_MODIFIER "d\n",
-	(Tcl_WideInt)totalUsed, (Tcl_WideInt)totalFree);
-    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_LL_MODIFIER "d\n",
-	    MAXMALLOC, (Tcl_WideInt)numMallocs[NBUCKETS]);
+    fprintf(stderr, "\n\tTotal small in use: %" TCL_Z_MODIFIER "u, total free: %" TCL_Z_MODIFIER "u\n",
+	totalUsed, totalFree);
+    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_Z_MODIFIER "u\n",
+	    MAXMALLOC, numMallocs[NBUCKETS]);
 
     Tcl_MutexUnlock(allocMutexPtr);
 }
