@@ -4282,7 +4282,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    unsigned int result = 0;
+    TCL_HASH_TYPE result = 0;
     int length;
     const char *string;
 
@@ -4292,11 +4292,14 @@ TclHashObjKey(
         int negative = value < 0;
 
         if (negative) {
-            if (value == LONG_MIN) {
+            value = -value;
+        }
+        /* check corner cases (this will be optimized by compiler statically) */
+        if (sizeof(TCL_HASH_TYPE) <= sizeof(int)) {
+            if (value > INT_MIN) {
                 // Punt on the special case!
                 goto stringForm;
             }
-            value = -value;
         }
         while (value > 0) {
             result += (result << 3) + (value % 10 + UCHAR('0'));
@@ -4306,24 +4309,6 @@ TclHashObjKey(
             result += (result << 3) + UCHAR('-');
         }
         return (TCL_HASH_TYPE) result;
-#ifndef TCL_WIDE_INT_IS_LONG
-    } else if (objPtr->typePtr == &tclWideIntType && objPtr->bytes == NULL) {
-        Tcl_WideInt value = objPtr->internalRep.wideValue;
-
-        if (value < 0) {
-            if (value == LONG_MIN) {//FIXME
-                // Punt on the special case!
-                goto stringForm;
-            }
-            result = UCHAR('-');
-            value = -value;
-        }
-        while (value > 0) {
-            result += (result << 3) + (value % 10 + UCHAR('0'));
-            value /= 10;
-        }
-        return (TCL_HASH_TYPE) result;
-#endif // !TCL_WIDE_INT_IS_LONG
     }
 
  stringForm:
@@ -4364,11 +4349,9 @@ TclHashObjKey(
      * See [tcl-Feature Request #2958832]
      */
 
-    if (length > 0) {
-        const unsigned char *bytes = ((unsigned char *) string) + length;
-        do {
-            result += (result << 3) + *--bytes;
-        } while (bytes != (unsigned char *) string);
+    string += length;
+    while (length--) {
+        result += (result << 3) + (unsigned char)(*--string);
     }
     return (TCL_HASH_TYPE) result;
 }
