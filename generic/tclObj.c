@@ -4192,7 +4192,7 @@ TclCompareObjKeys(
     register const char *p1, *p2;
     register size_t l1, l2;
 
-    // Optimisation for comparing small integers
+    /* Optimisation for comparing small integers */
     if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
         return objPtr1->internalRep.longValue == objPtr2->internalRep.longValue;
     }
@@ -4286,30 +4286,12 @@ TclHashObjKey(
     int length;
     const char *string;
 
-    // Special case: we can compute the hash of integers numerically.
+    /* Special case: we can compute the hash of integers numerically. */
     if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
-        Tcl_WideInt value = objPtr->internalRep.wideValue;
-        int negative = value < 0;
+        Tcl_WideUInt value = (Tcl_WideUInt) objPtr->internalRep.wideValue;
 
-        if (negative) {
+        if (objPtr->internalRep.wideValue < 0) { /* negative */
             value = -value;
-            /* check corner cases (this will be optimized by compiler statically) */
-            if (sizeof(TCL_HASH_TYPE) <= sizeof(int)) {
-                if (value > INT_MAX) {
-                    // Punt on the special case!
-                    goto stringForm;
-                }
-            } else if (sizeof(TCL_HASH_TYPE) <= sizeof(long)) {
-                if (value > LONG_MAX) {
-                    // Punt on the special case!
-                    goto stringForm;
-                }
-            } else {
-                if (value > WIDE_MAX) {
-                    // Punt on the special case!
-                    goto stringForm;
-                }
-            }
         }
 
         /* important: use do-cycle, because value could be 0 */
@@ -4318,13 +4300,12 @@ TclHashObjKey(
             value /= 10;
         } while (value > 0);
 
-        if (negative) {
+        if (objPtr->internalRep.wideValue < 0) { /* negative */
             result += (result << 3) + UCHAR('-');
         }
         return (TCL_HASH_TYPE) result;
     }
 
- stringForm:
     string = TclGetString(objPtr);
     length = objPtr->length;
 
