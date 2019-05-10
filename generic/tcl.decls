@@ -667,7 +667,7 @@ declare 186 {
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
-    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr,
+    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type)
 }
 
@@ -2379,44 +2379,50 @@ declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
 }
 
-# TIP #???
+# TIP#312 New Tcl_LinkArray() function
 declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, int size)
+}
+
+# TIP #542
+declare 645 {
     Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
 }
-declare 645 {
+declare 646 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
 	    int numChars)
 }
-declare 646 {
+declare 647 {
     int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
-declare 647 {
+declare 648 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
 	    int length)
 }
-declare 648 {
+declare 649 {
     int Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
-declare 649 {
+declare 650 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
-declare 650 {
+declare 651 {
     int *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
-declare 651 {
+declare 652 {
     int Tcl_UniCharLen(const int *uniStr)
 }
-declare 652 {
+declare 653 {
     int Tcl_UniCharNcmp(const int *ucs, const int *uct,
 	    unsigned long numChars)
 }
-declare 653 {
+declare 654 {
     int Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
 	    unsigned long numChars)
 }
-declare 654 {
+declare 655 {
     int Tcl_UniCharCaseMatch(const int *uniStr,
 	    const int *uniPattern, int nocase)
 }

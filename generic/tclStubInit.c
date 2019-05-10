@@ -421,6 +421,8 @@ static int utf16Ncasecmp(const unsigned short *ucs, const unsigned short *uct, u
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
+#   undef Tcl_GetStringResult
+#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -1680,17 +1682,18 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
-    Tcl_NewUnicodeObj, /* 644 */
-    Tcl_SetUnicodeObj, /* 645 */
-    Tcl_GetUnicodeFromObj, /* 646 */
-    Tcl_AppendUnicodeToObj, /* 647 */
-    Tcl_UtfToUniChar, /* 648 */
-    Tcl_UniCharToUtfDString, /* 649 */
-    Tcl_UtfToUniCharDString, /* 650 */
-    Tcl_UniCharLen, /* 651 */
-    Tcl_UniCharNcmp, /* 652 */
-    Tcl_UniCharNcasecmp, /* 653 */
-    Tcl_UniCharCaseMatch, /* 654 */
+    Tcl_LinkArray, /* 644 */
+    Tcl_NewUnicodeObj, /* 645 */
+    Tcl_SetUnicodeObj, /* 646 */
+    Tcl_GetUnicodeFromObj, /* 647 */
+    Tcl_AppendUnicodeToObj, /* 648 */
+    Tcl_UtfToUniChar, /* 649 */
+    Tcl_UniCharToUtfDString, /* 650 */
+    Tcl_UtfToUniCharDString, /* 651 */
+    Tcl_UniCharLen, /* 652 */
+    Tcl_UniCharNcmp, /* 653 */
+    Tcl_UniCharNcasecmp, /* 654 */
+    Tcl_UniCharCaseMatch, /* 655 */
 };
 
 /* !END!: Do not edit above this line. */
