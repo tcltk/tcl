@@ -6605,7 +6605,7 @@ CompareVarKeys(
 
     /* Optimisation for comparing small integers */
     if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
-        return objPtr1->internalRep.longValue == objPtr2->internalRep.longValue;
+        return objPtr1->internalRep.wideValue == objPtr2->internalRep.wideValue;
     }
 
     /*
