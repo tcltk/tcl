@@ -998,7 +998,7 @@ CompileRegexp(
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
     tsdPtr->patterns[0] = ckalloc(length + 1);
-    memcpy(tsdPtr->patterns[0], string, (unsigned) length + 1);
+    memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
 

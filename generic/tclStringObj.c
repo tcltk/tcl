@@ -1391,7 +1391,7 @@ Tcl_AppendObjToObj(
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
 
-	if (appendObjPtr->typePtr == &tclStringType) {
+	if (TclHasIntRep(appendObjPtr, &tclStringType)) {
 	    Tcl_UniChar *unicode =
 		    Tcl_GetUnicodeFromObj(appendObjPtr, &numChars);
 
@@ -1412,7 +1412,7 @@ Tcl_AppendObjToObj(
     bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
-    if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
+    if ((numChars >= 0) && TclHasIntRep(appendObjPtr, &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
 
 	appendNumChars = appendStringPtr->numChars;
@@ -2041,16 +2041,16 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
-	    char buf[4];
+	    char buf[4] = "";
 	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
-	    if (!length) {
-		/* Special case for handling upper surrogates. */
-		length = Tcl_UniCharToUtf(-1, buf);
+	    if ((code >= 0xD800) && (length < 3)) {
+		/* Special case for handling high surrogates. */
+		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
@@ -2812,7 +2812,7 @@ TclGetStringStorage(
 {
     String *stringPtr;
 
-    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+    if (!TclHasIntRep(objPtr, &tclStringType) || objPtr->bytes == NULL) {
 	return TclGetStringFromObj(objPtr, (int *)sizePtr);
     }
 
@@ -2860,7 +2860,7 @@ TclStringRepeat(
      */
 
     if (!binary) {
-	if (objPtr->typePtr == &tclStringType) {
+	if (TclHasIntRep(objPtr, &tclStringType)) {
 	    String *stringPtr = GET_STRING(objPtr);
 	    if (stringPtr->hasUnicode) {
 		unichar = 1;
@@ -3037,7 +3037,7 @@ TclStringCat(
 	} else {
 	    /* assert (objPtr->typePtr != NULL) -- stork! */
 	    binary = 0;
-	    if (objPtr->typePtr == &tclStringType) {
+	    if (TclHasIntRep(objPtr, &tclStringType)) {
 		/* Have a pure Unicode value; ask to preserve it */
 		requestUniChar = 1;
 	    } else {
@@ -3227,7 +3227,7 @@ TclStringCat(
 	    if (TclIsPureByteArray(objPtr)) {
 		int more;
 		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
-		memcpy(dst, src, (size_t) more);
+		memcpy(dst, src, more);
 		dst += more;
 	    }
 	}
@@ -3326,7 +3326,7 @@ TclStringCat(
 		int more;
 		char *src = Tcl_GetStringFromObj(objPtr, &more);
 
-		memcpy(dst, src, (size_t) more);
+		memcpy(dst, src, more);
 		dst += more;
 	    }
 	}
@@ -3390,8 +3390,8 @@ TclStringCmp(
 	    s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    memCmpFn = memcmp;
-	} else if ((value1Ptr->typePtr == &tclStringType)
-		&& (value2Ptr->typePtr == &tclStringType)) {
+	} else if (TclHasIntRep(value1Ptr, &tclStringType)
+		&& TclHasIntRep(value2Ptr, &tclStringType)) {
 	    /*
 	     * Do a unicode-specific comparison if both of the args are of
 	     * String type. If the char length == byte length, we can do a
@@ -3864,7 +3864,8 @@ TclStringReverse(
  *
  * TclStringReplace --
  *
- *	Implements the inner engine of the [string replace] command.
+ *	Implements the inner engine of the [string replace] and
+ *	[string insert] commands.
  *
  *	The result is a concatenation of a prefix from objPtr, characters
  *	0 through first-1, the insertPtr string value, and a suffix from
@@ -3911,7 +3912,7 @@ TclStringReplace(
 
     /*
      * The caller very likely had to call Tcl_GetCharLength() or similar
-     * to be able to process index values.  This means it is like that
+     * to be able to process index values.  This means it is likely that
      * objPtr is either a proper "bytearray" or a "string" or else it has
      * a known and short string rep.
      */
@@ -4166,7 +4167,7 @@ SetStringFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    if (objPtr->typePtr != &tclStringType) {
+    if (!TclHasIntRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 
 	/*
@@ -4287,7 +4288,7 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	dst += Tcl_UniCharToUtf((int) unicode[i], dst);
+	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;

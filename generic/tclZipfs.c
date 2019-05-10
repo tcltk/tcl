@@ -381,6 +381,7 @@ static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
@@ -1286,6 +1287,7 @@ ZipFSCatalogFilesystem(
 
     *zf = *zf0;
     zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
     zf->name = ckalloc(zf->nameLength + 1);
@@ -1679,9 +1681,16 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+	ckfree(zf);
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
+	    != TCL_OK) {
+	ckfree(zf);
+	return TCL_ERROR;
+    }
+    ckfree(zf);
+    return TCL_OK;
 }
 
 /*
@@ -1711,6 +1720,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1768,11 +1778,14 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
+    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    ckfree(zf);
+    return result;
 }
 
 /*
@@ -1840,6 +1853,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
+    Tcl_DeleteExitHandler(ZipfsExitHandler, (ClientData)zf);
     ckfree(zf);
     unmounted = 1;
   done:
@@ -1911,7 +1925,7 @@ ZipFSMountBufferObjCmd(
     unsigned char *data;
     int length;
 
-    if (objc > 4) {
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
 	return TCL_ERROR;
     }
@@ -3155,21 +3169,6 @@ ZipFSListObjCmd(
 
 #ifdef _WIN32
 #define LIBRARY_SIZE	    64
-
-static inline int
-WCharToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start = dst;
-
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
-}
 #endif /* _WIN32 */
 
 Tcl_Obj *
@@ -3213,11 +3212,8 @@ TclZipfs_TclLibrary(void)
 
 #if defined(_WIN32)
     hModule = TclWinGetTclInstance();
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, dllName, MAX_PATH);
-    } else {
-	WCharToUtf(wName, dllName);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
@@ -4851,6 +4847,17 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 
+static void
+ZipfsExitHandler(
+    ClientData clientData)
+{
+    ZipFile *zf = (ZipFile *)clientData;
+
+    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
+	Tcl_Panic("tried to unmount busy filesystem");
+    }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4865,7 +4872,7 @@ int
 TclZipfs_AppHook(
     int *argcPtr,		/* Pointer to argc */
 #ifdef _WIN32
-    TCHAR
+    WCHAR
 #else /* !_WIN32 */
     char
 #endif /* _WIN32 */

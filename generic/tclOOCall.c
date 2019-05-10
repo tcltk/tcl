@@ -328,7 +328,7 @@ TclOOInvokeContext(
     if (contextPtr->index == 0) {
 	int i;
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -406,7 +406,7 @@ FinalizeMethodRefs(
     CallContext *contextPtr = data[0];
     int i;
 
-    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -631,7 +631,7 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    qsort((void *) strings, i, sizeof(char *), CmpStr);
 	}
 	*stringsPtr = strings;
     } else {
@@ -641,7 +641,10 @@ SortMethodNames(
     return i;
 }
 
-/* Comparator for SortMethodNames */
+/*
+ * Comparator for SortMethodNames
+ */
+
 static int
 CmpStr(
     const void *ptr1,
@@ -1004,7 +1007,7 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+    for (i = cbPtr->filterLength ; i < callPtr->numChain ; i++) {
 	if (callPtr->chain[i].mPtr == mPtr &&
 		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
@@ -1016,8 +1019,8 @@ AddMethodToCallChain(
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<callPtr->numChain ; i++) {
-		callPtr->chain[i] = callPtr->chain[i+1];
+	    for (; i + 1 < callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i + 1];
 	    }
 	    callPtr->chain[i].mPtr = mPtr;
 	    callPtr->chain[i].isFilter = (doneFilters != NULL);
@@ -1817,7 +1820,7 @@ TclOORenderCallChain(
      */
 
     objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i=0 ; i<callPtr->numChain ; i++) {
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =
