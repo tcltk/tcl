@@ -659,6 +659,14 @@ InstructionDesc const tclInstructionTable[] = {
 	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
 	 * Stack: ... => ... time */
 
+    {"dictGetDef",	  5,	INT_MIN,   1,	{OPERAND_UINT4}},
+	/* The top word is the default, the next op4 words (min 1) are a key
+	 * path into the dictionary just below the keys on the stack, and all
+	 * those values are replaced by the value read out of that key-path
+	 * (like [dict get]) except if there is no such key, when instead the
+	 * default is pushed instead.
+	 * Stack:  ... dict key1 ... keyN default => ... value */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -1744,7 +1752,7 @@ TclWordKnownAtCompileTime(
 
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
-		char utfBuf[TCL_UTF_MAX];
+		char utfBuf[4] = "";
 		int length = TclParseBackslash(tokenPtr->start,
 			tokenPtr->size, NULL, utfBuf);
 
@@ -2358,7 +2366,7 @@ TclCompileTokens(
 {
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
-    char buffer[TCL_UTF_MAX];
+    char buffer[4] = "";
     int i, numObjsToConcat, length, adjust;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
@@ -2837,7 +2845,7 @@ TclInitByteCode(
 
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
-    memcpy(p, envPtr->codeStart, (size_t) codeBytes);
+    memcpy(p, envPtr->codeStart, codeBytes);
 
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
@@ -2848,7 +2856,7 @@ TclInitByteCode(
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
-	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
+	memcpy(p, envPtr->exceptArrayPtr, exceptArrayBytes);
     } else {
 	codePtr->exceptArrayPtr = NULL;
     }
@@ -2856,7 +2864,7 @@ TclInitByteCode(
     p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy(p, envPtr->auxDataArrayPtr, (size_t) auxDataArrayBytes);
+	memcpy(p, envPtr->auxDataArrayPtr, auxDataArrayBytes);
     } else {
 	codePtr->auxDataArrayPtr = NULL;
     }
@@ -3008,7 +3016,7 @@ TclFindCompiledLocal(
 		char *localName = localPtr->name;
 
 		if ((nameBytes == localPtr->nameLength) &&
-			(strncmp(name,localName,(unsigned)nameBytes) == 0)) {
+			(strncmp(name, localName, nameBytes) == 0)) {
 		    return i;
 		}
 	    }
@@ -3040,7 +3048,7 @@ TclFindCompiledLocal(
 	localPtr->resolveInfo = NULL;
 
 	if (name != NULL) {
-	    memcpy(localPtr->name, name, (size_t) nameBytes);
+	    memcpy(localPtr->name, name, nameBytes);
 	}
 	localPtr->name[nameBytes] = '\0';
 	procPtr->numCompiledLocals++;

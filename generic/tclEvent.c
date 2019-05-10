@@ -139,6 +139,8 @@ static void		FinalizeThread(int quick);
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef Tcl_BackgroundError
 void
 Tcl_BackgroundError(
     Tcl_Interp *interp)		/* Interpreter in which an error has
@@ -146,6 +148,7 @@ Tcl_BackgroundError(
 {
     Tcl_BackgroundException(interp, TCL_ERROR);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 void
 Tcl_BackgroundException(

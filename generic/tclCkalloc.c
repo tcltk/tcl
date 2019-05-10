@@ -405,7 +405,7 @@ Tcl_DbCkalloc(
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE -sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size +
+	result = (struct mem_header *) TclpAlloc(size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -495,7 +495,7 @@ Tcl_AttemptDbCkalloc(
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size +
+	result = (struct mem_header *) TclpAlloc(size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -691,7 +691,7 @@ Tcl_DbCkrealloc(
 	copySize = memp->length;
     }
     newPtr = Tcl_DbCkalloc(size, file, line);
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
@@ -725,7 +725,7 @@ Tcl_AttemptDbCkrealloc(
     if (newPtr == NULL) {
 	return NULL;
     }
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
