@@ -4602,7 +4602,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
 	    (bignum).used = bignumPayload & 0x7fff;			\
 	}								\
-    } while (0) 
+    } while (0)
 
 /*
  *----------------------------------------------------------------

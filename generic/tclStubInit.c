@@ -868,7 +868,7 @@ const TclStubs tclStubs = {
     Tcl_GetServiceMode, /* 171 */
     Tcl_GetSlave, /* 172 */
     Tcl_GetStdChannel, /* 173 */
-    Tcl_GetStringResult, /* 174 */
+    0, /* 174 */
     0, /* 175 */
     Tcl_GetVar2, /* 176 */
     0, /* 177 */
