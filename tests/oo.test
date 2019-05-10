@@ -1549,6 +1549,30 @@ test oo-10.3 {OO: invoke and modify} -setup {
     oo::define B deletemethod b c
     lappend result [C a] [C b] [C c]
 } -result {A.a,B.a A.b,B.b A.c,B.c - A.a,B.a A.b A.c,B.c - A.a A.b,B.a A.c,B.c - A.a A.b A.c}
+test oo-10.4 {OO: invoke and modify} -setup {
+    oo::class create A {
+	method a {} {return A.a}
+	method b {} {return A.b}
+	method c {} {return A.c}
+    }
+    A create B
+    oo::objdefine B {
+	method a {} {return [next],B.a}
+	method b {} {return [next],B.b}
+	method c {} {return [next],B.c}
+    }
+    set result {}
+} -cleanup {
+    A destroy
+} -body {
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B deletemethod b
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B renamemethod a b
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B deletemethod b c
+    lappend result [B a] [B b] [B c]
+} -result {A.a,B.a A.b,B.b A.c,B.c - A.a,B.a A.b A.c,B.c - A.a A.b,B.a A.c,B.c - A.a A.b A.c}
 
 test oo-11.1 {OO: cleanup} {
     oo::object create foo
@@ -2525,7 +2549,7 @@ test oo-16.17 {OO: object introspection: creationid #500} -body {
 test oo-16.18 {OO: object introspection: creationid #500} -body {
     info object creationid
 } -returnCodes error -result {wrong # args: should be "info object creationid objName"}
-test oo-16.18 {OO: object introspection: creationid #500} -body {
+test oo-16.18.1 {OO: object introspection: creationid #500} -body {
     info object creationid oo::object gorp
 } -returnCodes error -result {wrong # args: should be "info object creationid objName"}
 test oo-16.19 {OO: object introspection: creationid #500} -setup {
@@ -4071,7 +4095,7 @@ test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
 } -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
 }] -result {0 {} {g h i a b c} {1 Resolve g 1 Resolve h 1 Resolve i 1 Get 1 Set {g h i a b c}}}
-test oo-32.6 {TIP 516: slots - class test} -setup [SampleSlotSetup {
+test oo-32.7 {TIP 516: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
 }] -body {
     list [info level] [sampleSlot -remove c a] \
