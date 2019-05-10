@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_LinkVar, Tcl_UnlinkVar, Tcl_UpdateLinkedVar \- link Tcl variable to C variable
+Tcl_LinkArray, Tcl_LinkVar, Tcl_UnlinkVar, Tcl_UpdateLinkedVar \- link Tcl variable to C variable
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -17,27 +17,52 @@ Tcl_LinkVar, Tcl_UnlinkVar, Tcl_UpdateLinkedVar \- link Tcl variable to C variab
 int
 \fBTcl_LinkVar\fR(\fIinterp, varName, addr, type\fR)
 .sp
+.VS "TIP 312"
+int
+\fBTcl_LinkArray\fR(\fIinterp, varName, addr, type, size\fR)
+.VE "TIP 312"
+.sp
 \fBTcl_UnlinkVar\fR(\fIinterp, varName\fR)
 .sp
 \fBTcl_UpdateLinkedVar\fR(\fIinterp, varName\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp writable
+.AS Tcl_Interp varName in
 .AP Tcl_Interp *interp in
 Interpreter that contains \fIvarName\fR.
 Also used by \fBTcl_LinkVar\fR to return error messages.
 .AP "const char" *varName in
 Name of global variable.
-.AP char *addr in
+.AP void *addr in
 Address of C variable that is to be linked to \fIvarName\fR.
+.sp
+.VS "TIP 312"
+In \fBTcl_LinkArray\fR, may be NULL to tell Tcl to create the storage
+for the array in the variable.
+.VE "TIP 312"
 .AP int type in
-Type of C variable.  Must be one of \fBTCL_LINK_INT\fR,
+Type of C variable for \fBTcl_LinkVar\fR or type of array element for
+\fBTcl_LinkArray\fR.  Must be one of \fBTCL_LINK_INT\fR,
 \fBTCL_LINK_UINT\fR, \fBTCL_LINK_CHAR\fR, \fBTCL_LINK_UCHAR\fR,
 \fBTCL_LINK_SHORT\fR, \fBTCL_LINK_USHORT\fR, \fBTCL_LINK_LONG\fR,
 \fBTCL_LINK_ULONG\fR, \fBTCL_LINK_WIDE_INT\fR,
-\fBTCL_LINK_WIDE_UINT\fR, \fBTCL_LINK_FLOAT\fR,
-\fBTCL_LINK_DOUBLE\fR, \fBTCL_LINK_BOOLEAN\fR, or
-\fBTCL_LINK_STRING\fR, optionally OR'ed with \fBTCL_LINK_READ_ONLY\fR
-to make Tcl variable read-only.
+\fBTCL_LINK_WIDE_UINT\fR, \fBTCL_LINK_FLOAT\fR, \fBTCL_LINK_DOUBLE\fR,
+\fBTCL_LINK_BOOLEAN\fR, or one of the extra ones listed below.
+.sp
+In \fBTcl_LinkVar\fR, the additional linked type \fBTCL_LINK_STRING\fR may be
+used.
+.sp
+.VS "TIP 312"
+In \fBTcl_LinkArray\fR, the additional linked types \fBTCL_LINK_CHARS\fR and
+\fBTCL_LINK_BYTES\fR may be used.
+.VE "TIP 312"
+.sp
+All the above for both functions may be
+optionally OR'ed with \fBTCL_LINK_READ_ONLY\fR to make the Tcl
+variable read-only.
+.AP int size in
+.VS "TIP 312"
+The number of elements in the C array. Must be greater than zero.
+.VE "TIP 312"
 .BE
 .SH DESCRIPTION
 .PP
@@ -52,12 +77,21 @@ while setting up the link (e.g. because \fIvarName\fR is the
 name of array) then \fBTCL_ERROR\fR is returned and the interpreter's result
 contains an error message.
 .PP
+.VS "TIP 312"
+\fBTcl_LinkArray\fR is similar, but for arrays of fixed size (given by
+the \fIsize\fR argument). When asked to allocate the backing C array
+storage (via the \fIaddr\fR argument being NULL), it writes the
+address that it allocated to the Tcl interpreter result.
+.VE "TIP 312"
+.PP
 The \fItype\fR argument specifies the type of the C variable,
+or the type of the elements of the C array,
 and must have one of the following values, optionally OR'ed with
 \fBTCL_LINK_READ_ONLY\fR:
 .TP
 \fBTCL_LINK_INT\fR
-The C variable is of type \fBint\fR.
+.
+The C variable, or each element of the C array, is of type \fBint\fR.
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetIntFromObj\fR;  attempts to write
 non-integer values into \fIvarName\fR will be rejected with
@@ -66,7 +100,8 @@ string, '+', '-' or the hex/octal/binary prefix) are accepted
 as if they are valid too.
 .TP
 \fBTCL_LINK_UINT\fR
-The C variable is of type \fBunsigned int\fR.
+.
+The C variable, or each element of the C array, is of type \fBunsigned int\fR.
 Any value written into the Tcl variable must have a proper unsigned
 integer form acceptable to \fBTcl_GetWideIntFromObj\fR and in the
 platform's defined range for the \fBunsigned int\fR type; attempts to
@@ -76,16 +111,31 @@ representations (like the empty string, '+', '-' or the hex/octal/binary
 prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_CHAR\fR
-The C variable is of type \fBchar\fR.
+.
+The C variable, or each element of the C array, is of type \fBchar\fR.
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetIntFromObj\fR and be in the range of the
 \fBchar\fR datatype; attempts to write non-integer or out-of-range
 values into \fIvarName\fR will be rejected with Tcl errors. Incomplete
 integer representations (like the empty string, '+', '-' or the
 hex/octal/binary prefix) are accepted as if they are valid too.
+.RS
+.PP
+.VS "TIP 312"
+If using an array of these, consider using \fBTCL_LINK_CHARS\fR instead.
+.VE "TIP 312"
+.RE
+.TP
+\fBTCL_LINK_CHARS\fR
+.VS "TIP 312"
+The C array is of type \fBchar *\fR and is mapped into Tcl as a string.
+Any value written into the Tcl variable must have the same length as
+the underlying storage. Only supported with \fBTcl_LinkArray\fR.
+.VE "TIP 312"
 .TP
 \fBTCL_LINK_UCHAR\fR
-The C variable is of type \fBunsigned char\fR.
+.
+The C variable, or each element of the C array, is of type \fBunsigned char\fR.
 Any value written into the Tcl variable must have a proper unsigned
 integer form acceptable to \fBTcl_GetIntFromObj\fR and in the
 platform's defined range for the \fBunsigned char\fR type; attempts to
@@ -93,9 +143,24 @@ write non-integer values (or values outside the range) into
 \fIvarName\fR will be rejected with Tcl errors. Incomplete integer
 representations (like the empty string, '+', '-' or the hex/octal/binary
 prefix) are accepted as if they are valid too.
+.RS
+.PP
+.VS "TIP 312"
+If using an array of these, consider using \fBTCL_LINK_BYTES\fR instead.
+.VE "TIP 312"
+.RE
+.TP
+\fBTCL_LINK_BYTES\fR
+.VS "TIP 312"
+The C array is of type \fBunsigned char *\fR and is mapped into Tcl
+as a bytearray.
+Any value written into the Tcl variable must have the same length as
+the underlying storage. Only supported with \fBTcl_LinkArray\fR.
+.VE "TIP 312"
 .TP
 \fBTCL_LINK_SHORT\fR
-The C variable is of type \fBshort\fR.
+.
+The C variable, or each element of the C array, is of type \fBshort\fR.
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetIntFromObj\fR and be in the range of the
 \fBshort\fR datatype; attempts to write non-integer or out-of-range
@@ -104,7 +169,8 @@ integer representations (like the empty string, '+', '-' or the
 hex/octal/binary prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_USHORT\fR
-The C variable is of type \fBunsigned short\fR.
+.
+The C variable, or each element of the C array, is of type \fBunsigned short\fR.
 Any value written into the Tcl variable must have a proper unsigned
 integer form acceptable to \fBTcl_GetIntFromObj\fR and in the
 platform's defined range for the \fBunsigned short\fR type; attempts to
@@ -114,7 +180,8 @@ representations (like the empty string, '+', '-' or the hex/octal/binary
 prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_LONG\fR
-The C variable is of type \fBlong\fR.
+.
+The C variable, or each element of the C array, is of type \fBlong\fR.
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetLongFromObj\fR; attempts to write
 non-integer or out-of-range
@@ -123,7 +190,8 @@ integer representations (like the empty string, '+', '-' or the
 hex/octal/binary prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_ULONG\fR
-The C variable is of type \fBunsigned long\fR.
+.
+The C variable, or each element of the C array, is of type \fBunsigned long\fR.
 Any value written into the Tcl variable must have a proper unsigned
 integer form acceptable to \fBTcl_GetWideIntFromObj\fR and in the
 platform's defined range for the \fBunsigned long\fR type; attempts to
@@ -133,7 +201,8 @@ representations (like the empty string, '+', '-' or the hex/octal/binary
 prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_DOUBLE\fR
-The C variable is of type \fBdouble\fR.
+.
+The C variable, or each element of the C array, is of type \fBdouble\fR.
 Any value written into the Tcl variable must have a proper real
 form acceptable to \fBTcl_GetDoubleFromObj\fR;  attempts to write
 non-real values into \fIvarName\fR will be rejected with
@@ -142,7 +211,8 @@ empty string, '.', '+', '-' or the hex/octal/binary prefix) are
 accepted as if they are valid too.
 .TP
 \fBTCL_LINK_FLOAT\fR
-The C variable is of type \fBfloat\fR.
+.
+The C variable, or each element of the C array, is of type \fBfloat\fR.
 Any value written into the Tcl variable must have a proper real
 form acceptable to \fBTcl_GetDoubleFromObj\fR and must be within the
 range acceptable for a \fBfloat\fR; attempts to
@@ -152,7 +222,9 @@ or real representations (like the empty string, '.', '+', '-' or
 the hex/octal/binary prefix) are accepted as if they are valid too.
 .TP
 \fBTCL_LINK_WIDE_INT\fR
-The C variable is of type \fBTcl_WideInt\fR (which is an integer type
+.
+The C variable, or each element of the C array, is of type \fBTcl_WideInt\fR
+(which is an integer type
 at least 64-bits wide on all platforms that can support it.)
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetWideIntFromObj\fR;  attempts to write
@@ -162,9 +234,10 @@ string, '+', '-' or the hex/octal/binary prefix) are accepted
 as if they are valid too.
 .TP
 \fBTCL_LINK_WIDE_UINT\fR
-The C variable is of type \fBTcl_WideUInt\fR (which is an unsigned
-integer type at least 64-bits wide on all platforms that can support
-it.)
+.
+The C variable, or each element of the C array, is of type \fBTcl_WideUInt\fR
+(which is an unsigned integer type at least 64-bits wide on all platforms that
+can support it.)
 Any value written into the Tcl variable must have a proper unsigned
 integer form acceptable to \fBTcl_GetWideIntFromObj\fR (it will be
 cast to unsigned);
@@ -175,7 +248,8 @@ the empty string, '+', '-' or the hex/octal/binary prefix) are accepted
 as if they are valid too.
 .TP
 \fBTCL_LINK_BOOLEAN\fR
-The C variable is of type \fBint\fR.
+.
+The C variable, or each element of the C array, is of type \fBint\fR.
 If its value is zero then it will read from Tcl as
 .QW 0 ;
 otherwise it will read from Tcl as
@@ -188,6 +262,7 @@ non-boolean values into \fIvarName\fR will be rejected with
 Tcl errors.
 .TP
 \fBTCL_LINK_STRING\fR
+.
 The C variable is of type \fBchar *\fR.
 If its value is not NULL then it must be a pointer to a string
 allocated with \fBTcl_Alloc\fR.
@@ -197,6 +272,7 @@ new value.
 If the C variable contains a NULL pointer then the Tcl variable
 will read as
 .QW NULL .
+This is only supported by \fBTcl_LinkVar\fR.
 .PP
 If the \fBTCL_LINK_READ_ONLY\fR flag is present in \fItype\fR then the
 variable will be read-only from Tcl, so that its value can only be

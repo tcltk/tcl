@@ -157,6 +157,7 @@ static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
+static Tcl_ObjCmdProc CoroTypeObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -243,6 +244,7 @@ static const CmdInfo builtInCmds[] = {
     {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
     {"lpop",		Tcl_LpopObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	CMD_IS_SAFE},
+    {"lremove", 	Tcl_LremoveObjCmd,	NULL,           	NULL,	CMD_IS_SAFE},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -936,8 +938,11 @@ Tcl_CreateInterp(void)
             TclNRAssembleObjCmd, NULL, NULL);
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
+    /* Coroutine monkeybusiness */
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
+            CoroTypeObjCmd, NULL, NULL);
 
     /* Export unsupported commands */
     nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
@@ -2328,14 +2333,16 @@ Tcl_CreateCommand(
 	    break;
 	}
 
-	/* An existing command conflicts. Try to delete it.. */
+	/*
+         * An existing command conflicts. Try to delete it...
+         */
+
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
-	 * Be careful to preserve
-	 * any existing import links so we can restore them down below. That
-	 * way, you can redefine a command and its import status will remain
-	 * intact.
+	 * Be careful to preserve any existing import links so we can restore
+	 * them down below. That way, you can redefine a command and its
+	 * import status will remain intact.
 	 */
 
 	cmdPtr->refCount++;
@@ -2355,16 +2362,15 @@ Tcl_CreateCommand(
 
     if (!isNew) {
 	/*
-	 * If the deletion callback recreated the command, just throw away
-	 * the new command (if we try to delete it again, we could get
-	 * stuck in an infinite loop).
+	 * If the deletion callback recreated the command, just throw away the
+	 * new command (if we try to delete it again, we could get stuck in an
+	 * infinite loop).
 	 */
 
 	Tcl_Free(Tcl_GetHashValue(hPtr));
     }
 
     if (!deleted) {
-
 	/*
 	 * Command resolvers (per-interp, per-namespace) might have resolved
 	 * to a command for the given namespace scope with this command not
@@ -2546,7 +2552,7 @@ TclCreateObjCommandInNs(
 	}
 
 	/*
-         * An existing command conflicts. Try to delete it.
+         * An existing command conflicts. Try to delete it...
          */
 
 	cmdPtr = Tcl_GetHashValue(hPtr);
@@ -4171,15 +4177,22 @@ EvalObjvCore(
     reresolve:
     assert(cmdPtr == NULL);
     if (preCmdPtr) {
-	/* Caller gave it to us */
+	/*
+         * Caller gave it to us.
+         */
+
 	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
-	    /* So long as it exists, use it. */
+	    /*
+             * So long as it exists, use it.
+             */
+
 	    cmdPtr = preCmdPtr;
 	} else if (flags & TCL_EVAL_NORESOLVE) {
 	    /*
-	     * When it's been deleted, and we're told not to attempt
-	     * resolving it ourselves, all we can do is raise an error.
+	     * When it's been deleted, and we're told not to attempt resolving
+	     * it ourselves, all we can do is raise an error.
 	     */
+
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "attempt to invoke a deleted command"));
 	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", NULL);
@@ -4195,14 +4208,12 @@ EvalObjvCore(
 
     if (enterTracesDone || iPtr->tracePtr
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
-
 	Tcl_Obj *commandPtr = TclGetSourceFromFrame(
 		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
 		objc, objv);
+
 	Tcl_IncrRefCount(commandPtr);
-
 	if (!enterTracesDone) {
-
 	    int code = TEOV_RunEnterTraces(interp, &cmdPtr, commandPtr,
 		    objc, objv);
 
@@ -4210,10 +4221,10 @@ EvalObjvCore(
 	     * Send any exception from enter traces back as an exception
 	     * raised by the traced command.
 	     * TODO: Is this a bug?  Letting an execution trace BREAK or
-	     * CONTINUE or RETURN in the place of the traced command?
-	     * Would either converting all exceptions to TCL_ERROR, or
-	     * just swallowing them be better?  (Swallowing them has the
-	     * problem of permanently hiding program errors.)
+	     * CONTINUE or RETURN in the place of the traced command?  Would
+	     * either converting all exceptions to TCL_ERROR, or just
+	     * swallowing them be better?  (Swallowing them has the problem of
+	     * permanently hiding program errors.)
 	     */
 
 	    if (code != TCL_OK) {
@@ -4222,9 +4233,8 @@ EvalObjvCore(
 	    }
 
 	    /*
-	     * If the enter traces made the resolved cmdPtr unusable, go
-	     * back and resolve again, but next time don't run enter
-	     * traces again.
+	     * If the enter traces made the resolved cmdPtr unusable, go back
+	     * and resolve again, but next time don't run enter traces again.
 	     */
 
 	    if (cmdPtr == NULL) {
@@ -4235,9 +4245,9 @@ EvalObjvCore(
 	}
 
 	/*
-	 * Schedule leave traces.  Raise the refCount on the resolved
-	 * cmdPtr, so that when it passes to the leave traces we know
-	 * it's still valid.
+	 * Schedule leave traces.  Raise the refCount on the resolved cmdPtr,
+	 * so that when it passes to the leave traces we know it's still
+	 * valid.
 	 */
 
 	cmdPtr->refCount++;
@@ -4304,12 +4314,10 @@ TclNRRunCallbacks(
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
 {
-    NRE_callback *callbackPtr;
-    Tcl_NRPostProc *procPtr;
-
     while (TOP_CB(interp) != rootPtr) {
-	callbackPtr = TOP_CB(interp);
-	procPtr = callbackPtr->procPtr;
+        NRE_callback *callbackPtr = TOP_CB(interp);
+        Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
+
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	result = procPtr(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
@@ -4469,7 +4477,7 @@ TEOV_Error(
     int objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
 
-    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)){
+    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	/*
 	 * If there was an error, a command string will be needed for the
 	 * error log: get it out of the itemPtr. The details depend on the
@@ -4678,7 +4686,7 @@ TEOV_RunLeaveTraces(
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
+	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
@@ -6377,14 +6385,17 @@ TclNRInvoke(
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
 
-    /* Avoid the exception-handling brain damage when numLevels == 0 . */
+    /*
+     * Avoid the exception-handling brain damage when numLevels == 0
+     */
+
     iPtr->numLevels++;
     Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
 
     /*
      * Normal command resolution of objv[0] isn't going to find cmdPtr.
-     * That's the whole point of **hidden** commands.  So tell the
-     * Eval core machinery not to even try (and risk finding something wrong).
+     * That's the whole point of **hidden** commands.  So tell the Eval core
+     * machinery not to even try (and risk finding something wrong).
      */
 
     return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NORESOLVE, cmdPtr);
@@ -7625,13 +7636,21 @@ TclDTraceInfo(
 	Tcl_DictObjGet(NULL, info, *k++, &val);
 	args[i] = val ? TclGetString(val) : NULL;
     }
-    /* no "proc" -> use "lambda" */
+
+    /*
+     * no "proc" -> use "lambda"
+     */
+
     if (!args[2]) {
 	Tcl_DictObjGet(NULL, info, *k, &val);
 	args[2] = val ? TclGetString(val) : NULL;
     }
     k++;
-    /* no "class" -> use "object" */
+
+    /*
+     * no "class" -> use "object"
+     */
+
     if (!args[5]) {
 	Tcl_DictObjGet(NULL, info, *k, &val);
 	args[5] = val ? TclGetString(val) : NULL;
@@ -7985,8 +8004,10 @@ TclNRTailcallObjCmd(
         Tcl_Obj *listPtr, *nsObjPtr;
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 
-        /* The tailcall data is in a Tcl list: the first element is the
-         * namespace, the rest the command to be tailcalled. */
+        /*
+         * The tailcall data is in a Tcl list: the first element is the
+         * namespace, the rest the command to be tailcalled.
+         */
 
         nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
         listPtr = Tcl_NewListObj(objc, objv);
@@ -8437,6 +8458,75 @@ TclNREvalList(
 /*
  *----------------------------------------------------------------------
  *
+ * CoroTypeObjCmd --
+ *
+ *      Implementation of [::tcl::unsupported::corotype] command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CoroTypeObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Look up the coroutine.
+     */
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only get coroutine type of a coroutine", -1));
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objv[1]), NULL);
+        return TCL_ERROR;
+    }
+
+    /*
+     * An active coroutine is "active". Can't tell what it might do in the
+     * future.
+     */
+
+    corPtr = cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("active", -1));
+        return TCL_OK;
+    }
+
+    /*
+     * Inactive coroutines are classified by the (effective) command used to
+     * suspend them, which matters when you're injecting a probe.
+     */
+
+    switch (corPtr->nargs) {
+    case COROUTINE_ARGUMENTS_SINGLE_OPTIONAL:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("yield", -1));
+        return TCL_OK;
+    case COROUTINE_ARGUMENTS_ARBITRARY:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("yieldto", -1));
+        return TCL_OK;
+    default:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "unknown coroutine type", -1));
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BAD_TYPE", NULL);
+        return TCL_ERROR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NRCoroInjectObjCmd --
  *
  *      Implementation of [::tcl::unsupported::inject] command.
@@ -8667,9 +8757,12 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    /* ensure that the command is looked up in the correct namespace */
+    /*
+     * Ensure that the command is looked up in the correct namespace.
+     */
+
     iPtr->lookupNsPtr = lookupNsPtr;
-    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+    Tcl_NREvalObj(interp, Tcl_NewListObj(objc - 2, objv + 2), 0);
     iPtr->numLevels--;
 
     SAVE_CONTEXT(corPtr->running);

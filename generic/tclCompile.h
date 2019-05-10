@@ -541,7 +541,6 @@ typedef struct ByteCode {
  */
 
 enum TclInstruction {
-
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
     INST_PUSH1,
@@ -818,10 +817,11 @@ enum TclInstruction {
 
     INST_CLOCK_READ,
 
+    INST_DICT_GET_DEF,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
-
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

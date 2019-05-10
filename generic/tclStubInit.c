@@ -867,7 +867,7 @@ const TclStubs tclStubs = {
     Tcl_GetServiceMode, /* 171 */
     Tcl_GetSlave, /* 172 */
     Tcl_GetStdChannel, /* 173 */
-    Tcl_GetStringResult, /* 174 */
+    0, /* 174 */
     0, /* 175 */
     Tcl_GetVar2, /* 176 */
     0, /* 177 */
@@ -1337,6 +1337,7 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
+    Tcl_LinkArray, /* 644 */
 };
 
 /* !END!: Do not edit above this line. */
