@@ -482,16 +482,16 @@ TclCompileStringInsertCmd(
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 3);
 
-    if (idx == (int) TCL_INDEX_START) {
+    if (idx == (int)TCL_INDEX_START) {
 	/* Prepend the insertion string */
 	OP4(	REVERSE, 2);
 	OP1(	STR_CONCAT1, 2);
-    } else  if (idx == (int) TCL_INDEX_END) {
+    } else  if (idx == (int)TCL_INDEX_END) {
 	/* Append the insertion string */
 	OP1(	STR_CONCAT1, 2);
     } else {
 	/* Prefix + insertion + suffix */
-	if (idx < (int) TCL_INDEX_END) {
+	if (idx < (int)TCL_INDEX_END) {
 	    /* See comments in compiler for [linsert]. */
 	    idx++;
 	}
