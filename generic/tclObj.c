@@ -4288,23 +4288,36 @@ TclHashObjKey(
 
     // Special case: we can compute the hash of integers numerically.
     if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
-        long value = objPtr->internalRep.longValue;
+        Tcl_WideInt value = objPtr->internalRep.wideValue;
         int negative = value < 0;
 
         if (negative) {
             value = -value;
-        }
-        /* check corner cases (this will be optimized by compiler statically) */
-        if (sizeof(TCL_HASH_TYPE) <= sizeof(int)) {
-            if (value > INT_MIN) {
-                // Punt on the special case!
-                goto stringForm;
+            /* check corner cases (this will be optimized by compiler statically) */
+            if (sizeof(TCL_HASH_TYPE) <= sizeof(int)) {
+                if (value > INT_MAX) {
+                    // Punt on the special case!
+                    goto stringForm;
+                }
+            } else if (sizeof(TCL_HASH_TYPE) <= sizeof(long)) {
+                if (value > LONG_MAX) {
+                    // Punt on the special case!
+                    goto stringForm;
+                }
+            } else {
+                if (value > WIDE_MAX) {
+                    // Punt on the special case!
+                    goto stringForm;
+                }
             }
         }
-        while (value > 0) {
+
+        /* important: use do-cycle, because value could be 0 */
+        do {
             result += (result << 3) + (value % 10 + UCHAR('0'));
             value /= 10;
-        }
+        } while (value > 0);
+
         if (negative) {
             result += (result << 3) + UCHAR('-');
         }
