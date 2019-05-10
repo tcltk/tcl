@@ -639,9 +639,10 @@ declare 172 {
 declare 173 {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
-declare 174 {
-    const char *Tcl_GetStringResult(Tcl_Interp *interp)
-}
+# Removed in 9.0, replaced by macro.
+#declare 174 {
+#    const char *Tcl_GetStringResult(Tcl_Interp *interp)
+#}
 # Removed in 9.0, replaced by macro.
 #declare 175 {deprecated {No longer in use, changed to macro}} {
 #    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
@@ -687,7 +688,7 @@ declare 186 {
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
-    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr,
+    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type)
 }
 
@@ -2430,6 +2431,12 @@ declare 642 {
 
 declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
+# TIP#312 New Tcl_LinkArray() function
+declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, int size)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

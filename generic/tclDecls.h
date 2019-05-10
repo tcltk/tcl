@@ -515,8 +515,7 @@ EXTERN Tcl_Interp *	Tcl_GetSlave(Tcl_Interp *interp,
 				const char *slaveName);
 /* 173 */
 EXTERN Tcl_Channel	Tcl_GetStdChannel(int type);
-/* 174 */
-EXTERN const char *	Tcl_GetStringResult(Tcl_Interp *interp);
+/* Slot 174 is reserved */
 /* Slot 175 is reserved */
 /* 176 */
 EXTERN const char *	Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
@@ -545,7 +544,7 @@ EXTERN char *		Tcl_JoinPath(int argc, const char *const *argv,
 				Tcl_DString *resultPtr);
 /* 187 */
 EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
-				char *addr, int type);
+				void *addr, int type);
 /* Slot 188 is reserved */
 /* 189 */
 EXTERN Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
@@ -1750,6 +1749,10 @@ EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
 EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
 /* 643 */
 EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
+/* 644 */
+EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
+				const char *varName, void *addr, int type,
+				int size);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1959,7 +1962,7 @@ typedef struct TclStubs {
     int (*tcl_GetServiceMode) (void); /* 171 */
     Tcl_Interp * (*tcl_GetSlave) (Tcl_Interp *interp, const char *slaveName); /* 172 */
     Tcl_Channel (*tcl_GetStdChannel) (int type); /* 173 */
-    const char * (*tcl_GetStringResult) (Tcl_Interp *interp); /* 174 */
+    void (*reserved174)(void);
     void (*reserved175)(void);
     const char * (*tcl_GetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 176 */
     void (*reserved177)(void);
@@ -1972,7 +1975,7 @@ typedef struct TclStubs {
     int (*tcl_InterpDeleted) (Tcl_Interp *interp); /* 184 */
     int (*tcl_IsSafe) (Tcl_Interp *interp); /* 185 */
     char * (*tcl_JoinPath) (int argc, const char *const *argv, Tcl_DString *resultPtr); /* 186 */
-    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, char *addr, int type); /* 187 */
+    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
     int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
@@ -2429,6 +2432,7 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
+    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2791,8 +2795,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetSlave) /* 172 */
 #define Tcl_GetStdChannel \
 	(tclStubsPtr->tcl_GetStdChannel) /* 173 */
-#define Tcl_GetStringResult \
-	(tclStubsPtr->tcl_GetStringResult) /* 174 */
+/* Slot 174 is reserved */
 /* Slot 175 is reserved */
 #define Tcl_GetVar2 \
 	(tclStubsPtr->tcl_GetVar2) /* 176 */
@@ -3694,6 +3697,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
 	(tclStubsPtr->tcl_IsShared) /* 643 */
+#define Tcl_LinkArray \
+	(tclStubsPtr->tcl_LinkArray) /* 644 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3701,11 +3706,9 @@ extern const TclStubs *tclStubsPtr;
 
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
-#   undef Tcl_GetStringResult
 #   undef Tcl_Init
 #   undef Tcl_ObjSetVar2
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
@@ -3759,6 +3762,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_EvalEx(interp, objPtr, -1, 0)
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+#define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
 	    *(statePtr) = Tcl_GetObjResult(interp); \

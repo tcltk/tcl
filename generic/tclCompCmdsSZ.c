@@ -449,6 +449,63 @@ TclCompileStringIndexCmd(
 }
 
 int
+TclCompileStringInsertCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int idx;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    /* Compute and push the string in which to insert */
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+
+    /* See what can be discovered about index at compile time */
+    tokenPtr = TokenAfter(tokenPtr);
+    if (TCL_OK != TclGetIndexFromToken(tokenPtr, TCL_INDEX_START,
+	    TCL_INDEX_END, &idx)) {
+
+	/* Nothing useful knowable - cease compile; let it direct eval */
+	return TCL_OK;
+    }
+
+    /* Compute and push the string to be inserted */
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 3);
+
+    if (idx == (int)TCL_INDEX_START) {
+	/* Prepend the insertion string */
+	OP4(	REVERSE, 2);
+	OP1(	STR_CONCAT1, 2);
+    } else  if (idx == (int)TCL_INDEX_END) {
+	/* Append the insertion string */
+	OP1(	STR_CONCAT1, 2);
+    } else {
+	/* Prefix + insertion + suffix */
+	if (idx < (int)TCL_INDEX_END) {
+	    /* See comments in compiler for [linsert]. */
+	    idx++;
+	}
+	OP4(	OVER, 1);
+	OP44(	STR_RANGE_IMM, 0, idx-1);
+	OP4(	REVERSE, 3);
+	OP44(	STR_RANGE_IMM, idx, TCL_INDEX_END);
+	OP1(	STR_CONCAT1, 3);
+    }
+
+    return TCL_OK;
+}
+
+int
 TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
