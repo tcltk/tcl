@@ -4288,22 +4288,46 @@ TclHashObjKey(
 
     /* Special case: we can compute the hash of integers numerically. */
     if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
-        Tcl_WideUInt value = (Tcl_WideUInt) objPtr->internalRep.wideValue;
+        const Tcl_WideInt objValue = objPtr->internalRep.wideValue;
+        register
+        Tcl_WideUInt value = (Tcl_WideUInt) objValue;
 
-        if (objPtr->internalRep.wideValue < 0) { /* negative */
-            value = -value;
+        if (objValue < 0) { /* wrap to positive (remove sign) */
+            value = (Tcl_WideUInt) -objValue;
         }
+
+#ifndef TCL_WIDE_INT_IS_LONG
+        /* 
+         * For the performance reasons we should try convert small integers
+         * as unsigned long if it is safe to cast in.
+         * Important: consider sign, so avoid UB by wide -0x8000000000000000.
+         */
+        if (value-1 < ((Tcl_WideUInt)ULONG_MAX)) {
+            register unsigned long lvalue = (unsigned long)value;
+
+            /* important: use do-cycle, because value could be 0 */
+            do {
+                result += (result << 3) + (lvalue % 10 + '0');
+                lvalue /= 10;
+            } while (lvalue);
+
+            if (objValue < 0) { /* negative, sign as char */
+                result += (result << 3) + '-';
+            }
+            return result;
+        }
+#endif
 
         /* important: use do-cycle, because value could be 0 */
         do {
-            result += (result << 3) + (value % 10 + UCHAR('0'));
+            result += (result << 3) + (value % 10 + '0');
             value /= 10;
-        } while (value > 0);
+        } while (value);
 
-        if (objPtr->internalRep.wideValue < 0) { /* negative */
-            result += (result << 3) + UCHAR('-');
+        if (objValue < 0) { /* negative, sign as char */
+            result += (result << 3) + '-';
         }
-        return (TCL_HASH_TYPE) result;
+        return result;
     }
 
     string = TclGetString(objPtr);
@@ -4347,7 +4371,7 @@ TclHashObjKey(
     while (length--) {
         result += (result << 3) + (unsigned char)(*--string);
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*

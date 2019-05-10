@@ -1486,8 +1486,11 @@ test var-25.1 {corner cases of int-hash optimizations (TIP 534} -setup {
     foreach i {
 	0
 	0x7fffffff -0x7fffffff
+	0xffffffff -0xffffffff
 	0x7fffffffffffffff -0x7fffffffffffffff
-	0x7ffffffffffffffffffffffffffffff -0x7ffffffffffffffffffffffffffffff
+	0xffffffffffffffff -0xffffffffffffffff
+	0x7fffffffffffffffffffffffffffffff -0x7fffffffffffffffffffffffffffffff
+	0xffffffffffffffffffffffffffffffff -0xffffffffffffffffffffffffffffffff
     } {
 	# check integer hash is equal string hash for values from [$i-5 .. $i+5]:
 	set i [expr {$i - 5}]
