@@ -329,11 +329,11 @@ trace procedures will always be invoked.
 .SH "RESTRICTIONS"
 .PP
 A trace procedure can be called at any time, even when there
-is a partially formed result in the interpreter's result area.  If
+are partially formed results stored in the interpreter.  If
 the trace procedure does anything that could damage this result (such
-as calling \fBTcl_Eval\fR) then it must save the original values of
-the interpreter's \fBresult\fR and \fBfreeProc\fR fields and restore
-them before it returns.
+as calling \fBTcl_Eval\fR) then it must use the \fBTcl_SaveInterpState\fR
+and related routines to save and restore the original state of
+the interpreter before it returns.
 .SH "UNDEFINED VARIABLES"
 .PP
 It is legal to set a trace on an undefined variable.
