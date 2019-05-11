@@ -79,8 +79,7 @@ typedef struct {
  * TCL_TRACE_EXEC_DIRECT	- This execution trace is triggered directly
  *				  by the command being traced, not because of
  *				  an internal trace.
- * The flags 'TCL_TRACE_DESTROYED' and 'TCL_INTERP_DESTROYED' may also be used
- * in command execution traces.
+ * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
  */
 
 #define TCL_TRACE_ENTER_DURING_EXEC	4
@@ -2565,6 +2564,9 @@ TclObjCallVarTraces(
     return TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags,
 	    leaveErrMsg);
 }
+
+#undef TCL_INTERP_DESTROYED
+#define TCL_INTERP_DESTROYED     0x100
 
 int
 TclCallVarTraces(
