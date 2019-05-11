@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_TraceVar 3 8.7 Tcl "Tcl Library Procedures"
+.TH Tcl_TraceVar 3 9.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -333,7 +333,8 @@ The routine \fBTcl_InterpDeleted\fR is an important tool for this.
 When \fBTcl_InterpDeleted\fR returns 1, \fIproc\fR will not be able
 to invoke any scripts in \fIinterp\fR. You may encounter old code using
 a deprecated flag value \fBTCL_INTERP_DESTROYED\fR to signal this
-condition, but any supported code should be converted to stop using it.
+condition, but Tcl 9 no longer supports this. Any supported code
+must be converted to stop using it.
 .PP
 A trace procedure can be called at any time, even when there
 are partially formed results stored in the interpreter.  If

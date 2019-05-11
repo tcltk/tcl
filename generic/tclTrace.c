@@ -2565,9 +2565,6 @@ TclObjCallVarTraces(
 	    leaveErrMsg);
 }
 
-#undef TCL_INTERP_DESTROYED
-#define TCL_INTERP_DESTROYED     0x100
-
 int
 TclCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
@@ -2647,13 +2644,6 @@ TclCallVarTraces(
     }
 
     /*
-     * Ignore any caller-provided TCL_INTERP_DESTROYED flag.  Only we can
-     * set it correctly.
-     */
-
-    flags &= ~TCL_INTERP_DESTROYED;
-
-    /*
      * Invoke traces on the array containing the variable, if relevant.
      */
 
@@ -2674,9 +2664,6 @@ TclCallVarTraces(
 	    Tcl_Preserve(tracePtr);
 	    if (state == NULL) {
 		state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, code);
-	    }
-	    if (Tcl_InterpDeleted((Tcl_Interp *) iPtr)) {
-		flags |= TCL_INTERP_DESTROYED;
 	    }
 	    result = tracePtr->traceProc(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
@@ -2718,9 +2705,6 @@ TclCallVarTraces(
 	    Tcl_Preserve(tracePtr);
 	    if (state == NULL) {
 		state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, code);
-	    }
-	    if (Tcl_InterpDeleted((Tcl_Interp *) iPtr)) {
-		flags |= TCL_INTERP_DESTROYED;
 	    }
 	    result = tracePtr->traceProc(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
