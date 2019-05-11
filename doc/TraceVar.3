@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
+.TH Tcl_TraceVar 3 8.7 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -160,10 +160,6 @@ The bit \fBTCL_TRACE_DESTROYED\fR will be set in \fIflags\fR if the trace is
 about to be destroyed;  this information may be useful to \fIproc\fR
 so that it can clean up its own internal data structures (see
 the section \fBTCL_TRACE_DESTROYED\fR below for more details).
-Lastly, the bit \fBTCL_INTERP_DESTROYED\fR will be set if the entire
-interpreter is being destroyed.
-When this bit is set, \fIproc\fR must be especially careful in
-the things it does (see the section \fBTCL_INTERP_DESTROYED\fR below).
 The trace procedure's return value should normally be NULL;  see
 \fBERROR RETURNS\fR below for information on other possibilities.
 .PP
@@ -330,12 +326,21 @@ During unset traces, the return value is ignored and all relevant
 trace procedures will always be invoked.
 .SH "RESTRICTIONS"
 .PP
+Because operations on variables may take place as part of the deletion
+of the interp that contains them, \fIproc\fR must be careful about checking
+what the \fIinterp\fR parameter can be used to do.
+The routine \fBTcl_InterpDeleted\fR is an important tool for this.
+When \fBTcl_InterpDeleted\fR returns 1, \fIproc\fR will not be able
+to invoke any scripts in \fIinterp\fR. You may encounter old code using
+a deprecated flag value \fBTCL_INTERP_DESTROYED\fR to signal this
+condition, but any supported code should be converted to stop using it.
+.PP
 A trace procedure can be called at any time, even when there
-is a partially formed result in the interpreter's result area.  If
+are partially formed results stored in the interpreter.  If
 the trace procedure does anything that could damage this result (such
-as calling \fBTcl_Eval\fR) then it must save the original values of
-the interpreter's \fBresult\fR and \fBfreeProc\fR fields and restore
-them before it returns.
+as calling \fBTcl_Eval\fR) then it must use the \fBTcl_SaveInterpState\fR
+and related routines to save and restore the original state of
+the interpreter before it returns.
 .SH "UNDEFINED VARIABLES"
 .PP
 It is legal to set a trace on an undefined variable.
@@ -354,23 +359,7 @@ Traces on a variable are always removed whenever the variable
 is deleted;  the only time \fBTCL_TRACE_DESTROYED\fR is not set is for
 a whole-array trace invoked when only a single element of an
 array is unset.
-.SH "TCL_INTERP_DESTROYED"
-.PP
-When an interpreter is destroyed, unset traces are called for
-all of its variables.
-The \fBTCL_INTERP_DESTROYED\fR bit will be set in the \fIflags\fR
-argument passed to the trace procedures.
-Trace procedures must be extremely careful in what they do if
-the \fBTCL_INTERP_DESTROYED\fR bit is set.
-It is not safe for the procedures to invoke any Tcl procedures
-on the interpreter, since its state is partially deleted.
-All that trace procedures should do under these circumstances is
-to clean up and free their own internal data structures.
 .SH BUGS
-.PP
-Tcl does not do any error checking to prevent trace procedures
-from misusing the interpreter during traces with \fBTCL_INTERP_DESTROYED\fR
-set.
 .PP
 Array traces are not yet integrated with the Tcl \fBinfo exists\fR command,
 nor is there Tcl-level access to array traces.
