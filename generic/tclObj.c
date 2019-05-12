@@ -4192,8 +4192,17 @@ TclCompareObjKeys(
     register const char *p1, *p2;
     register size_t l1, l2;
 
-    /* Optimisation for comparing small integers */
-    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
+    /*
+     * Optimisation for comparing small integers, where "small" means
+     * non-bigint. Note that if there's a string rep for either value (or
+     * we've got one non-integer), we can't optimize. For example, "0x7E" is
+     * not the same as "126" when hashing (because the primary hash algorithm
+     * is defined on strings) despite potentially having the same integer
+     * representation.
+     */
+
+    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL
+            && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
         return objPtr1->internalRep.wideValue == objPtr2->internalRep.wideValue;
     }
 
@@ -4201,7 +4210,9 @@ TclCompareObjKeys(
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
 
-       if (objPtr1 == objPtr2) return 1;
+       if (objPtr1 == objPtr2) {
+           return 1;
+       }
     */
 
     /*
@@ -4286,53 +4297,6 @@ TclHashObjKey(
     int length;
     const char *string;
 
-    /* Special case: we can compute the hash of integers numerically. */
-    if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
-        const Tcl_WideInt objValue = objPtr->internalRep.wideValue;
-        register
-        Tcl_WideUInt value = (Tcl_WideUInt) objValue;
-
-        if (objValue < 0) { /* wrap to positive (remove sign) */
-            value = (Tcl_WideUInt) -objValue;
-        }
-
-#ifndef TCL_WIDE_INT_IS_LONG
-        /* 
-         * For the performance reasons we should try convert small integers
-         * as unsigned long if it is safe to cast in.
-         * Important: consider sign, so avoid UB by wide -0x8000000000000000.
-         */
-        if (value-1 < ((Tcl_WideUInt)ULONG_MAX)) {
-            register unsigned long lvalue = (unsigned long)value;
-
-            /* important: use do-cycle, because value could be 0 */
-            do {
-                result += (result << 3) + (lvalue % 10 + '0');
-                lvalue /= 10;
-            } while (lvalue);
-
-            if (objValue < 0) { /* negative, sign as char */
-                result += (result << 3) + '-';
-            }
-            return result;
-        }
-#endif
-
-        /* important: use do-cycle, because value could be 0 */
-        do {
-            result += (result << 3) + (value % 10 + '0');
-            value /= 10;
-        } while (value);
-
-        if (objValue < 0) { /* negative, sign as char */
-            result += (result << 3) + '-';
-        }
-        return result;
-    }
-
-    string = TclGetString(objPtr);
-    length = objPtr->length;
-
     /*
      * I tried a zillion different hash functions and asked many other people
      * for advice. Many people had their own favorite functions, all
@@ -4367,6 +4331,89 @@ TclHashObjKey(
      * See [tcl-Feature Request #2958832]
      */
 
+    /*
+     * Special case: we can compute the hash of integers numerically. This
+     * allows us to avoid allocating a string representation to them.
+     */
+
+    if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
+        const Tcl_WideInt objValue = objPtr->internalRep.wideValue;
+        register Tcl_WideUInt value = (Tcl_WideUInt) objValue;
+
+        /*
+         * VERY TRICKY POINT: if the value is the minimum WideInt, use the
+         * string path with constant values as it is unsafe to negate (this is
+         * otherwise Undefined Behaviour). We use the string path here because
+         * we are not assuming the type of TCL_HASH_TYPE; if we knew it was
+         * 'unsigned', which is the default, we'd be able to just return
+         * 843933654 (which I computed directly).
+         */
+
+        if (value == ((Tcl_WideUInt) 1) << 63) {
+            string = "-9223372036854775808";
+            length = 20;
+            goto hashString;
+        }
+
+        if (objValue < 0) {     /* wrap to positive (remove sign) */
+            value = (Tcl_WideUInt) -objValue;
+        }
+
+#ifndef TCL_WIDE_INT_IS_LONG
+        /* 
+         * For the performance reasons we should try convert small integers
+         * as unsigned long if it is safe to cast in.
+         */
+
+        if (value <= (Tcl_WideUInt) ULONG_MAX) {
+            register unsigned long lvalue = (unsigned long) value;
+
+            /*
+             * Important: use do-cycle, because value could be 0
+             */
+
+            do {
+                /*
+                 * Theoretically, divmod() would be perfect for this.
+                 * Practically, it's usually miserably optimised so we avoid
+                 * it.
+                 */
+
+                result += (result << 3) + (lvalue % 10 + '0');
+                lvalue /= 10;
+            } while (lvalue);
+
+            if (objValue < 0) {         /* negative, sign as char */
+                result += (result << 3) + '-';
+            }
+            return result;
+        }
+#endif
+
+        /*
+         * Important: use do-cycle, because value could be 0
+         */
+
+        do {
+            /*
+             * Theoretically, divmod() would be perfect for this. Practically,
+             * it's usually miserably optimised so we avoid it.
+             */
+
+            result += (result << 3) + (value % 10 + '0');
+            value /= 10;
+        } while (value);
+
+        if (objValue < 0) {             /* negative, sign as char */
+            result += (result << 3) + '-';
+        }
+        return result;
+    }
+
+    string = TclGetString(objPtr);
+    length = objPtr->length;
+
+  hashString:
     string += length;
     while (length--) {
         result += (result << 3) + (unsigned char)(*--string);
