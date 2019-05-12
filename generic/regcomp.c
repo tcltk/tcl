@@ -1222,7 +1222,9 @@ parseqatom(
 	atom->min = (short) m;
 	atom->max = (short) n;
 	atom->flags |= COMBINE(qprefer, atom->flags);
-    } else if (m == 1 && n == 1) {
+    } else if (m == 1 && n == 1 && (qprefer == 0 ||
+	    (atom->flags & (LONGER | SHORTER | MIXED)) == 0 ||
+	    qprefer == (atom->flags & (LONGER | SHORTER | MIXED)))) {
 	/*
 	 * No/vacuous quantifier: done.
 	 */
