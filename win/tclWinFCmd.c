@@ -2043,7 +2043,7 @@ TclpCreateTemporaryDirectory(
 	error = ERROR_SUCCESS;
 	tempbuf[SUFFIX_LENGTH] = '\0';
 	for (i = 0 ; i < SUFFIX_LENGTH; i++) {
-	    tempbuf[i] = randChars[(int) (rand() * numRandChars)];
+	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
 	TclUtfToWCharDString(tempbuf, -1, &base);
