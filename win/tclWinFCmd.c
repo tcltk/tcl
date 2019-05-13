@@ -1982,6 +1982,8 @@ TclpCreateTemporaryDirectory(
     Tcl_DString base, name;	/* Contains WCHARs */
     int baseLen;
     DWORD error;
+    WCHAR tempBuf[MAX_PATH + 1];
+    DWORD len = GetTempPathW(MAX_PATH, tempBuf);
 
     /*
      * Build the path in writable memory from the user-supplied pieces and
@@ -1999,9 +2001,6 @@ TclpCreateTemporaryDirectory(
 	}
     } else {
     useSystemTemp:
-	WCHAR tempBuf[MAX_PATH + 1];
-	DWORD len = GetTempPathW(MAX_PATH, tempBuf);
-
 	Tcl_DStringInit(&base);
 	Tcl_DStringAppend(&base, (char *) tempBuf, len * sizeof(WCHAR));
     }
