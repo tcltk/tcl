@@ -1681,7 +1681,7 @@ test cmdAH-33.4 {file tempdir} -setup {
     file mkdir $base
 } -body {
     set pre [glob -nocomplain -directory $base *]
-    set d [file tempdir $base/]
+    set d [file normalize [file tempdir $base/]]
     list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
 	$pre [glob -nocomplain -directory $d *]
 } -match glob -result {GORP:/tcl_* 1 directory {} {}} -cleanup {
@@ -1692,7 +1692,7 @@ test cmdAH-33.5 {file tempdir} -setup {
     file mkdir $base
 } -body {
     set pre [glob -nocomplain -directory $base *]
-    set d [file tempdir $base/gorp]
+    set d [file normalize [file tempdir $base/gorp]]
     list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
 	$pre [glob -nocomplain -directory $d *]
 } -match glob -result {GORP:/gorp_* 1 directory {} {}} -cleanup {
