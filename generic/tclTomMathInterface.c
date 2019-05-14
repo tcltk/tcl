@@ -143,7 +143,7 @@ TclBNInitBignumFromLong(
     p = a->dp;
     while (v) {
 	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= DIGIT_BIT;
+	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
 }
@@ -219,7 +219,7 @@ TclBNInitBignumFromWideUInt(
     p = a->dp;
     while (v) {
 	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= DIGIT_BIT;
+	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
 }
