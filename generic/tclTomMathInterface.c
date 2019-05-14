@@ -196,7 +196,7 @@ TclBNInitBignumFromLong(
      */
 
     status = mp_init_size(a,
-	    (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT);
+	    (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT);
     if (status != MP_OKAY) {
 	Tcl_Panic("initialization failure in TclBNInitBignumFromLong");
     }
@@ -283,7 +283,7 @@ TclBNInitBignumFromWideUInt(
      */
 
     status = mp_init_size(a,
-	    (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT);
+	    (CHAR_BIT * sizeof(Tcl_WideUInt) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT);
     if (status != MP_OKAY) {
 	Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
     }
