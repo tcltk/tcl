@@ -45,8 +45,11 @@
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
 #define bn_reverse TclBN_reverse
+#define s_mp_reverse TclBN_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
+#define s_mp_mul_digs_fast TclBN_fast_s_mp_mul_digs
 #define fast_s_mp_sqr TclBN_fast_s_mp_sqr
+#define s_mp_sqr_fast TclBN_fast_s_mp_sqr
 #define mp_add TclBN_mp_add
 #define mp_add_d TclBN_mp_add_d
 #define mp_and TclBN_mp_and
@@ -76,7 +79,9 @@
 #define mp_init_set_int TclBN_mp_init_set_int
 #define mp_init_size TclBN_mp_init_size
 #define mp_karatsuba_mul TclBN_mp_karatsuba_mul
+#define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
+#define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -104,7 +109,9 @@
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
+#define s_mp_toom_mul TclBN_mp_toom_mul
 #define mp_toom_sqr TclBN_mp_toom_sqr
+#define s_mp_toom_sqr TclBN_mp_toom_sqr
 #define mp_toradix_n TclBN_mp_toradix_n
 #define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
 #define mp_xor TclBN_mp_xor
