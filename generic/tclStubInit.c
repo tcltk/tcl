@@ -1623,7 +1623,7 @@ const TclStubs tclStubs = {
     TclZipfs_Mount, /* 632 */
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
-    Tcl_GetIntForIndex, /* 635 */
+    TclZipfs_MountBuffer, /* 635 */
     Tcl_FreeIntRep, /* 636 */
     Tcl_InitStringRep, /* 637 */
     Tcl_FetchIntRep, /* 638 */
@@ -1633,6 +1633,7 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */
