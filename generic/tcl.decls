@@ -2385,7 +2385,7 @@ declare 644 {
 	    int type, int size)
 }
 
-declare 635 {
+declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
