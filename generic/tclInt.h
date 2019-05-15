@@ -2477,7 +2477,7 @@ typedef struct List {
 /*
  * Macros providing a faster path to booleans and integers:
  * Tcl_GetBooleanFromObj, Tcl_GetLongFromObj, Tcl_GetIntFromObj
- * and TclGetIntForIndex.
+ * and Tcl_GetIntForIndex.
  *
  * WARNING: these macros eval their args more than once.
  */
@@ -2514,7 +2514,7 @@ typedef struct List {
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
 	    ? (int)(objPtr)->internalRep.wideValue : -1), TCL_OK) \
-	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
  * Macro used to save a function call for common uses of
