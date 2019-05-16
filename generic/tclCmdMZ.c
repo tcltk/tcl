@@ -4009,6 +4009,7 @@ Tcl_TimeRateObjCmd(
 	TMRT_EV_DIRECT,	TMRT_OVERHEAD,	TMRT_CALIBRATE,	TMRT_LAST
     };
     ByteCode *codePtr = NULL;
+    int codeOptimized = 0;
 
     for (i = 1; i < objc - 1; i++) {
 	int index;
@@ -4200,6 +4201,7 @@ Tcl_TimeRateObjCmd(
 	 */
 	if (codePtr->codeStart[codePtr->numCodeBytes-1] == INST_DONE) {
 	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_CONTINUE;
+	    codeOptimized = 1;
 	}
     }
 
@@ -4487,6 +4489,11 @@ Tcl_TimeRateObjCmd(
 
   done:
     if (codePtr != NULL) {
+	if ( codeOptimized
+	  && codePtr->codeStart[codePtr->numCodeBytes-1] == INST_CONTINUE
+	) {
+	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_DONE;
+	}
 	TclReleaseByteCode(codePtr);
     }
     return result;
