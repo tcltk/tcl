@@ -3322,10 +3322,7 @@ TestlinkarrayCmd(
     };
     int optionIndex, typeIndex, readonly, i, size, length;
     char *name, *arg;
-    long addr;                  /* Wrong on Windows, but that's MS's fault for
-                                 * not supporting <stdint.h> correctly. They
-                                 * can suffer the warnings; the rest of us
-                                 * shouldn't have to! */
+    Tcl_WideInt addr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option args");
@@ -3383,7 +3380,7 @@ TestlinkarrayCmd(
 	 */
 
 	if (i < objc) {
-	    if (Tcl_GetLongFromObj(interp, objv[i], &addr) == TCL_ERROR) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
  		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong address value", -1));
 		return TCL_ERROR;
@@ -3391,7 +3388,7 @@ TestlinkarrayCmd(
 	} else {
 	    addr = 0;
 	}
-	return Tcl_LinkArray(interp, name, (void *) addr,
+	return Tcl_LinkArray(interp, name, INT2PTR(addr),
 		LinkTypes[typeIndex] | readonly, size);
     }
     return TCL_OK;
