@@ -412,6 +412,14 @@ test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
 	[expr {[lindex $m1 4] > 1000}] \
 	[expr {[lindex $m1 6] < 10}]
 } {1 1 1 1}
+test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} {
+    set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
+    list \
+    [expr {[lindex $m1 0] < 1000}] \
+    [expr {[lindex $m1 2] == 10}] \
+    [expr {[lindex $m1 4] > 1000}] \
+    [expr {[lindex $m1 6] < 100}]
+} {1 1 1 1}
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
     set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
