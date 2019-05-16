@@ -4512,6 +4512,14 @@ Tcl_TimeRateObjCmd(
 	}
 	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
 	TclPreserveByteCode(codePtr);
+	/* 
+	 * Replace last compiled done instruction with continue: it's a part of
+	 * iteration, this way evaluation will be more similar to a cycle (also
+	 * avoids extra overhead to set result to interp, etc.)
+	 */
+	if (codePtr->codeStart[codePtr->numCodeBytes-1] == INST_DONE) {
+	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_CONTINUE;
+	}
     }
 
     /*
@@ -4558,23 +4566,25 @@ Tcl_TimeRateObjCmd(
 	    } else {			/* eval */
 		result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	    }
-	    if (result != TCL_OK) {
-		/*
-		 * Allow break from measurement cycle (used for conditional
-		 * stop).
-		 */
+	    /*
+	     * Allow break and continue from measurement cycle (used for
+	     * conditional stop and flow control of iterations).
+	     */
 
-		if (result != TCL_BREAK) {
+	    switch (result) {
+		case TCL_OK:
+		    break;
+		case TCL_BREAK:
+		    /*
+		     * Force stop immediately.
+		     */
+		    threshold = 1;
+		    maxcnt = 0;
+		case TCL_CONTINUE:
+		    result = TCL_OK;
+		    break;
+		default:
 		    goto done;
-		}
-
-		/*
-		 * Force stop immediately.
-		 */
-
-		threshold = 1;
-		maxcnt = 0;
-		result = TCL_OK;
 	    }
 
 	    /*
