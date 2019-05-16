@@ -428,6 +428,12 @@ test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
 	[expr {[lindex $m1 4] == 1000000}] \
 	[expr {[lindex $m1 6] <= 0.001}]
 } {1 1 1 1}
+test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
+    set m1 {set m2 ok}
+    if 1 $m1
+    timerate $m1 1000 10
+    if 1 $m1; # if rollback is missing throws an error: invoked "continue" outside of a loop
+} ok
 
 # The tests for Tcl_WhileObjCmd are in while.test
 
