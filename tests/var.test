@@ -1480,21 +1480,30 @@ test var-24.24 {array default unset: errors} -setup {
     unset -nocomplain ary
 } -result * -match glob
 
+# note also similar test in dict.test...
 test var-25.1 {corner cases of int-hash optimizations (TIP 534} -setup {
     unset -nocomplain v
 } -body {
+    # check integer hash is equal string hash for values from [$i-5 .. $i+5]:
     foreach i {
 	0
-	0x7fffffff -0x7fffffff
-	0xffffffff -0xffffffff
-	0x7fffffffffffffff -0x7fffffffffffffff
-	0xffffffffffffffff -0xffffffffffffffff
-	0x7fffffffffffffffffffffffffffffff -0x7fffffffffffffffffffffffffffffff
-	0xffffffffffffffffffffffffffffffff -0xffffffffffffffffffffffffffffffff
+	0x55555555 0xaaaaaaaa 0x7fffffff 0xffffffff
+	0x5555555555555555 0xaaaaaaaaaaaaaaaa 0x7fffffffffffffff 0xffffffffffffffff
+	0x7fffffffffffffffffffffffffffffff 0xffffffffffffffffffffffffffffffff
     } {
-	# check integer hash is equal string hash for values from [$i-5 .. $i+5]:
+	# not canonical int's (positive / negative):
+	expr {$i}; # make int
+	set v($i) 1; set v([string trim "$i "]); unset v($i)
+	set j -$i
+	expr {$j}; # make int
+	set v($j) 1; set v([string trim "$j "]); unset v($j)
+	# canonical int form (positive / negative):
 	set i [expr {$i - 5}]
-	time { set v([incr i]) 1; set v([string trim "$i "]); unset v($i) } 10
+	time { 
+	    set v([incr i]) 1; set v([string trim "$i "]); unset v($i)
+	    set j [expr {-$i}]
+	    set v([incr j]) 1; set v([string trim "$j "]); unset v($j)
+	} 10
     }
     array size v
 } -cleanup {

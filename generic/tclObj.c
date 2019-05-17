@@ -4212,7 +4212,7 @@ TclCompareObjKeys(
 {
     register Tcl_Obj *objPtr1 = keyPtr;
     register Tcl_Obj *objPtr2 = hPtr->key.objPtr;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
@@ -4253,12 +4253,16 @@ TclCompareObjKeys(
     if (l1 != l2) {
         return 0;
     } else {
-	register const char *p1 = objPtr1->bytes, *p2 = objPtr2->bytes;
+	register const char *p1, *p2;
+
+	if (!l1) { /* empty string are equal */
+	    return 1;
+	}
+
+	/* compare both strings */
+	p1 = objPtr1->bytes; p2 = objPtr2->bytes;
 
 	assert(p1 != NULL && p2 != NULL);
-	if (!l1) {
-	    return 0;
-	}
 	do {
 	    if (*p1++ != *p2++) {
 		return 0;
@@ -4363,17 +4367,18 @@ TclHashObjKey(
 	Tcl_WideUInt num = objPtr->internalRep.wideValue;
 	/* remove sign and hash it differently */
 	if (objPtr->internalRep.wideValue < 0) {
-	    num = -num;
+	    num = -(Tcl_WideInt)num;
 	    result = (TCL_HASH_TYPE)'-' << 31; /* 45<<31 == 0x(x64?16:0)80000000 */
 	}
-    #if ((TCL_HASH_TYPE)-1) > 0xffffffff
-	/* unsigned 64-bit as unsigned 64-bit integer */
-	result += (TCL_HASH_TYPE)objPtr->internalRep.wideValue;
-    #else
-	/* unsigned 64-bit as sum of parts in 32-bit unsigned */
-	result += (TCL_HASH_TYPE)(num / 1000000000)
-		+ (TCL_HASH_TYPE)(num % 1000000000);
-    #endif
+	/* if will be optimized to compile time */
+	if (((TCL_HASH_TYPE)-1) >= UWIDE_MAX) {
+	    /* unsigned 64-bit as unsigned 64-bit integer */
+	    result += (TCL_HASH_TYPE)objPtr->internalRep.wideValue;
+	} else {
+	    /* unsigned 64-bit as sum of parts in 32-bit unsigned */
+	    result += (TCL_HASH_TYPE)(num / 1000000000)
+		    + (TCL_HASH_TYPE)(num % 1000000000);
+	}
 	return result;
     }
 
@@ -4382,7 +4387,7 @@ TclHashObjKey(
      * use fastest string to number conversion, thereby we don't care about
      * possible non-numeric characters, because it is just a hash value.
      */
-    result = 0;
+
     string = TclGetString(objPtr);
     length = objPtr->length;
 
@@ -4397,66 +4402,67 @@ TclHashObjKey(
     }
 
     if (length <= 19 && *string <= '9' && *string >= '0') {
-    #if ((TCL_HASH_TYPE)-1) > 0xffffffff
-        /* hash is 64-bit, assume compiled as x64 */
-        Tcl_WideUInt num = 0;
-	switch (length) {
-	    /* signed 64-bit int is max 19 chars = (+/-)9223372036854775807L */
-	    case 19:  num += (*string++ - '0') * 1000000000000000000;
-	    case 18:  num += (*string++ - '0') * 100000000000000000;
-	    case 17:  num += (*string++ - '0') * 10000000000000000;
-	    case 16:  num += (*string++ - '0') * 1000000000000000;
-	    case 15:  num += (*string++ - '0') * 100000000000000;
-	    case 14:  num += (*string++ - '0') * 10000000000000;
-	    case 13:  num += (*string++ - '0') * 1000000000000;
-	    case 12:  num += (*string++ - '0') * 100000000000;
-	    case 11:  num += (*string++ - '0') * 10000000000;
-	    /* signed 32-bit int is max 10 chars = (+/-)2147483647 */
-	    case 10:  num += (*string++ - '0') * 1000000000;
-	    case  9:  num += (*string++ - '0') * 100000000;
-	    case  8:  num += (*string++ - '0') * 10000000;
-	    case  7:  num += (*string++ - '0') * 1000000;
-	    case  6:  num += (*string++ - '0') * 100000;
-	    case  5:  num += (*string++ - '0') * 10000;
-	    case  4:  num += (*string++ - '0') * 1000;
-	    case  3:  num += (*string++ - '0') * 100;
-	    case  2:  num += (*string++ - '0') * 10;
-	    case  1:  num += (*string++ - '0');
+	/* if will be optimized to compile time */
+	if (((TCL_HASH_TYPE)-1) >= UWIDE_MAX) {
+	    /* hash is 64-bit, assume compiled as x64 */
+	    Tcl_WideUInt num = 0;
+	    switch (length) {
+		/* signed 64-bit int is max 19 chars = (+/-)9223372036854775807L */
+		case 19:  num += (*string++ - '0') * 1000000000000000000;
+		case 18:  num += (*string++ - '0') * 100000000000000000;
+		case 17:  num += (*string++ - '0') * 10000000000000000;
+		case 16:  num += (*string++ - '0') * 1000000000000000;
+		case 15:  num += (*string++ - '0') * 100000000000000;
+		case 14:  num += (*string++ - '0') * 10000000000000;
+		case 13:  num += (*string++ - '0') * 1000000000000;
+		case 12:  num += (*string++ - '0') * 100000000000;
+		case 11:  num += (*string++ - '0') * 10000000000;
+		/* signed 32-bit int is max 10 chars = (+/-)2147483647 */
+		case 10:  num += (*string++ - '0') * 1000000000;
+		case  9:  num += (*string++ - '0') * 100000000;
+		case  8:  num += (*string++ - '0') * 10000000;
+		case  7:  num += (*string++ - '0') * 1000000;
+		case  6:  num += (*string++ - '0') * 100000;
+		case  5:  num += (*string++ - '0') * 10000;
+		case  4:  num += (*string++ - '0') * 1000;
+		case  3:  num += (*string++ - '0') * 100;
+		case  2:  num += (*string++ - '0') * 10;
+		case  1:  num += (*string++ - '0');
+	    }
+	    /* result considering sign (if result is '-', "negate" numeric) */
+	    result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
+	    result += (TCL_HASH_TYPE)num;
+	} else {
+	    /* 32-bit hash (int calculation is faster) */
+	    unsigned int hnm = 0;
+	    unsigned int lnm = 0;
+	    switch (length) {
+		/* high part of hash (wide / 1000000000) */
+		case 19:  hnm += (*string++ - '0') * 100000000 * 10;
+		case 18:  hnm += (*string++ - '0') * 100000000;
+		case 17:  hnm += (*string++ - '0') * 10000000;
+		case 16:  hnm += (*string++ - '0') * 1000000;
+		case 15:  hnm += (*string++ - '0') * 100000;
+		case 14:  hnm += (*string++ - '0') * 10000;
+		case 13:  hnm += (*string++ - '0') * 1000;
+		case 12:  hnm += (*string++ - '0') * 100;
+		case 11:  hnm += (*string++ - '0') * 10;
+		case 10:  hnm += (*string++ - '0');
+		/* low part of hash (wide % 1000000000) */
+		case  9:  lnm += (*string++ - '0') * 100000000;
+		case  8:  lnm += (*string++ - '0') * 10000000;
+		case  7:  lnm += (*string++ - '0') * 1000000;
+		case  6:  lnm += (*string++ - '0') * 100000;
+		case  5:  lnm += (*string++ - '0') * 10000;
+		case  4:  lnm += (*string++ - '0') * 1000;
+		case  3:  lnm += (*string++ - '0') * 100;
+		case  2:  lnm += (*string++ - '0') * 10;
+		case  1:  lnm += (*string++ - '0');
+	    }
+	    /* result considering sign (if result is '-', "negate" numeric) */
+	    result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
+	    result += (TCL_HASH_TYPE)hnm + (TCL_HASH_TYPE)lnm;
 	}
-	/* result considering sign (if result is '-', "negate" numeric) */
-	result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
-	result += (TCL_HASH_TYPE)num;
-    #else 
-        /* 32-bit hash (int calculation is faster) */
-        unsigned int hnm = 0;
-        unsigned int lnm = 0;
-	switch (length) {
-	    /* high part of hash (wide / 1000000000) */
-	    case 19:  hnm += (*string++ - '0') * 100000000 * 10;
-	    case 18:  hnm += (*string++ - '0') * 100000000;
-	    case 17:  hnm += (*string++ - '0') * 10000000;
-	    case 16:  hnm += (*string++ - '0') * 1000000;
-	    case 15:  hnm += (*string++ - '0') * 100000;
-	    case 14:  hnm += (*string++ - '0') * 10000;
-	    case 13:  hnm += (*string++ - '0') * 1000;
-	    case 12:  hnm += (*string++ - '0') * 100;
-	    case 11:  hnm += (*string++ - '0') * 10;
-	    case 10:  hnm += (*string++ - '0');
-	    /* low part of hash (wide % 1000000000) */
-	    case  9:  lnm += (*string++ - '0') * 100000000;
-	    case  8:  lnm += (*string++ - '0') * 10000000;
-	    case  7:  lnm += (*string++ - '0') * 1000000;
-	    case  6:  lnm += (*string++ - '0') * 100000;
-	    case  5:  lnm += (*string++ - '0') * 10000;
-	    case  4:  lnm += (*string++ - '0') * 1000;
-	    case  3:  lnm += (*string++ - '0') * 100;
-	    case  2:  lnm += (*string++ - '0') * 10;
-	    case  1:  lnm += (*string++ - '0');
-	}
-	/* result considering sign (if result is '-', "negate" numeric) */
-	result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
-	result += (TCL_HASH_TYPE)hnm + (TCL_HASH_TYPE)lnm;
-    #endif
 
         return result;
     }

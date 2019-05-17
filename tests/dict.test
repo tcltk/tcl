@@ -819,6 +819,36 @@ test dict-15.13 {dict set command} -returnCodes error -body {
     unset dictVar
 } -result {missing value to go with key}
 
+# note also similar test in var.test...
+test dict-15.21 {corner cases of int-hash optimizations (TIP 534} -setup {
+    unset -nocomplain d
+} -body {
+    # check integer hash is equal string hash for values from [$i-5 .. $i+5]:
+    foreach i {
+	0
+	0x55555555 0xaaaaaaaa 0x7fffffff 0xffffffff
+	0x5555555555555555 0xaaaaaaaaaaaaaaaa 0x7fffffffffffffff 0xffffffffffffffff
+	0x7fffffffffffffffffffffffffffffff 0xffffffffffffffffffffffffffffffff
+    } {
+	# not canonical int's (positive / negative):
+	expr {$i}; # make int
+	dict set d $i 1; dict get $d [string trim "$i "]; dict unset d $i
+	set j -$i
+	expr {$j}; # make int
+	dict set d $j 1; dict get $d [string trim "$j "]; dict unset d $j
+	# canonical int form (positive / negative):
+	set i [expr {$i - 5}]
+	time { 
+	    dict set d [incr i] 1; dict get $d [string trim "$i "]; dict unset d $i
+	    set j [expr {-$i}]
+	    dict set d [incr j] 1; dict get $d [string trim "$j "]; dict unset d $j
+	} 10
+    }
+    dict size $d
+} -cleanup {
+    unset -nocomplain d
+} -result 0
+
 test dict-16.1 {dict unset command} -body {
     set dictVar {a b c d}
     dict unset dictVar a
