@@ -833,15 +833,19 @@ test dict-15.21 {corner cases of int-hash optimizations (TIP 534} -setup {
 	# not canonical int's (positive / negative):
 	expr {$i}; # make int
 	dict set d $i 1; dict get $d [string trim "$i "]; dict unset d $i
+	dict set d [string trim "$i "] 2; dict unset d $i
 	set j -$i
 	expr {$j}; # make int
 	dict set d $j 1; dict get $d [string trim "$j "]; dict unset d $j
+	dict set d [string trim "$j "] 2; dict unset d $j
 	# canonical int form (positive / negative):
 	set i [expr {$i - 5}]
 	time { 
 	    dict set d [incr i] 1; dict get $d [string trim "$i "]; dict unset d $i
+	    dict set d [string trim "$i "] 2; incr i; incr i -1; dict unset d $i
 	    set j [expr {-$i}]
 	    dict set d [incr j] 1; dict get $d [string trim "$j "]; dict unset d $j
+	    dict set d [string trim "$j "] 2; incr j; incr j -1; dict unset d $j
 	} 10
     }
     dict size $d

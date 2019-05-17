@@ -1494,15 +1494,19 @@ test var-25.1 {corner cases of int-hash optimizations (TIP 534} -setup {
 	# not canonical int's (positive / negative):
 	expr {$i}; # make int
 	set v($i) 1; set v([string trim "$i "]); unset v($i)
+	set v([string trim "$i "]) 2; unset v($i)
 	set j -$i
 	expr {$j}; # make int
 	set v($j) 1; set v([string trim "$j "]); unset v($j)
+	set v([string trim "$j "]) 2; unset v($j)
 	# canonical int form (positive / negative):
 	set i [expr {$i - 5}]
 	time { 
 	    set v([incr i]) 1; set v([string trim "$i "]); unset v($i)
+	    set v([string trim "$i "]) 2; incr i; incr i -1; unset v($i)
 	    set j [expr {-$i}]
 	    set v([incr j]) 1; set v([string trim "$j "]); unset v($j)
+	    set v([string trim "$j "]) 2; incr j; incr j -1; unset v($j)
 	} 10
     }
     array size v
