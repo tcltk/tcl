@@ -2436,7 +2436,7 @@ declare 643 {
 # TIP#312 New Tcl_LinkArray() function
 declare 644 {
     int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
-	    int type, int size)
+	    int type, size_t size)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

@@ -1752,7 +1752,7 @@ EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 /* 644 */
 EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 				const char *varName, void *addr, int type,
-				int size);
+				size_t size);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2432,7 +2432,7 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
-    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
+    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, size_t size); /* 644 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
