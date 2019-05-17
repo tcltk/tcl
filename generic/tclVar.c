@@ -26,13 +26,12 @@
 
 static Tcl_HashEntry *	AllocVarEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static void		FreeVarEntry(Tcl_HashEntry *hPtr);
-static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     TclHashObjKey,		/* hashKeyProc */
-    CompareVarKeys,		/* compareKeysProc */
+    TclCompareObjKeys,	/* compareKeysProc */
     AllocVarEntry,		/* allocEntryProc */
     FreeVarEntry		/* freeEntryProc */
 };
@@ -6591,45 +6590,6 @@ FreeVarEntry(
 	VarHashRefCount(varPtr)--;
     }
     Tcl_DecrRefCount(objPtr);
-}
-
-static int
-CompareVarKeys(
-    void *keyPtr,		/* New key to compare. */
-    Tcl_HashEntry *hPtr)	/* Existing key to compare. */
-{
-    Tcl_Obj *objPtr1 = keyPtr;
-    Tcl_Obj *objPtr2 = hPtr->key.objPtr;
-    register const char *p1, *p2;
-    register int l1, l2;
-
-    /* Optimisation for comparing small integers */
-    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
-        return objPtr1->internalRep.wideValue == objPtr2->internalRep.wideValue;
-    }
-
-    /*
-     * If the object pointers are the same then they match.
-     * OPT: this comparison was moved to the caller
-     *
-     * if (objPtr1 == objPtr2) return 1;
-     */
-
-    /*
-     * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being in a
-     * register.
-     */
-
-    p1 = TclGetString(objPtr1);
-    l1 = objPtr1->length;
-    p2 = TclGetString(objPtr2);
-    l2 = objPtr2->length;
-
-    /*
-     * Only compare string representations of the same length.
-     */
-
-    return ((l1 == l2) && !memcmp(p1, p2, l1));
 }
 
 /*----------------------------------------------------------------------

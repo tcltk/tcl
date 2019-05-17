@@ -4165,6 +4165,29 @@ AllocObjEntry(
     return hPtr;
 }
 
+static inline int
+IntObjIsCanonical(
+    Tcl_Obj *objPtr) 
+{
+    const char *p = objPtr->bytes;
+
+    /* 
+     * Canonical integers are:
+     *   without or with simple representation (like 0..9)
+     *   not hex, octal and not prefixed with + (consider minus-char as sign)
+     *   and does not contains spaces
+     */
+    return (
+	!p || objPtr->length == 1 /* simplest cases */
+	|| (
+	  (
+	      (*p > '0') /* not 0x..., 0o..., 00..., space... */
+	   || (*p == '-' && p[1] > '0') /* not -0 and -space... */
+	  )
+	  && (p[objPtr->length-1] >= '0') /* not ...space */
+	)
+    );
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -4187,49 +4210,62 @@ TclCompareObjKeys(
     void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    Tcl_Obj *objPtr1 = keyPtr;
-    Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
-    register const char *p1, *p2;
-    register size_t l1, l2;
-
-    /* Optimisation for comparing small integers */
-    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
-        return objPtr1->internalRep.wideValue == objPtr2->internalRep.wideValue;
-    }
+    register Tcl_Obj *objPtr1 = keyPtr;
+    register Tcl_Obj *objPtr2 = hPtr->key.objPtr;
+    register int l1, l2;
 
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
-
-       if (objPtr1 == objPtr2) return 1;
-    */
-
-    /*
-     * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
-     * in a register.
+     *
+     * if (objPtr1 == objPtr2) return 1;
+     *
+     * Normally we don't need to get strings, because if it is expected, it is
+     * already done in TclHashObjKey, this is also covered by assert below.
      */
 
-    p1 = TclGetString(objPtr1);
+    /* Optimisation for comparing integer objects */
+
+    if (objPtr1->typePtr == &tclIntType && objPtr2->typePtr == &tclIntType) {
+	if (objPtr1->internalRep.wideValue != objPtr2->internalRep.wideValue) {
+	    return 0;
+	}
+	/* 
+	 * Integers are equal, so check it is canonical ...
+	 */
+
+	if (IntObjIsCanonical(objPtr1) && IntObjIsCanonical(objPtr2)) {
+	    return 1;
+	}
+
+	/*
+	 * Compare its string representations.
+	 */
+    }
+
     l1 = objPtr1->length;
-    p2 = TclGetString(objPtr2);
     l2 = objPtr2->length;
 
     /*
-     * Only compare if the string representations are of the same length.
+     * Only compare string representations of the same length.
      */
 
-    if (l1 == l2) {
-	for (;; p1++, p2++, l1--) {
-	    if (*p1 != *p2) {
-		break;
-	    }
-	    if (l1 == 0) {
-		return 1;
-	    }
-	}
-    }
+    if (l1 != l2) {
+        return 0;
+    } else {
+	register const char *p1 = objPtr1->bytes, *p2 = objPtr2->bytes;
 
-    return 0;
+	assert(p1 != NULL && p2 != NULL);
+	if (!l1) {
+	    return 0;
+	}
+	do {
+	    if (*p1++ != *p2++) {
+		return 0;
+	    }
+	} while (--l1);
+    }
+    return 1;
 }
 
 /*
@@ -4286,53 +4322,6 @@ TclHashObjKey(
     int length;
     const char *string;
 
-    /* Special case: we can compute the hash of integers numerically. */
-    if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
-        const Tcl_WideInt objValue = objPtr->internalRep.wideValue;
-        register
-        Tcl_WideUInt value = (Tcl_WideUInt) objValue;
-
-        if (objValue < 0) { /* wrap to positive (remove sign) */
-            value = (Tcl_WideUInt) -objValue;
-        }
-
-#ifndef TCL_WIDE_INT_IS_LONG
-        /* 
-         * For the performance reasons we should try convert small integers
-         * as unsigned long if it is safe to cast in.
-         * Important: consider sign, so avoid UB by wide -0x8000000000000000.
-         */
-        if (value-1 < ((Tcl_WideUInt)ULONG_MAX)) {
-            register unsigned long lvalue = (unsigned long)value;
-
-            /* important: use do-cycle, because value could be 0 */
-            do {
-                result += (result << 3) + (lvalue % 10 + '0');
-                lvalue /= 10;
-            } while (lvalue);
-
-            if (objValue < 0) { /* negative, sign as char */
-                result += (result << 3) + '-';
-            }
-            return result;
-        }
-#endif
-
-        /* important: use do-cycle, because value could be 0 */
-        do {
-            result += (result << 3) + (value % 10 + '0');
-            value /= 10;
-        } while (value);
-
-        if (objValue < 0) { /* negative, sign as char */
-            result += (result << 3) + '-';
-        }
-        return result;
-    }
-
-    string = TclGetString(objPtr);
-    length = objPtr->length;
-
     /*
      * I tried a zillion different hash functions and asked many other people
      * for advice. Many people had their own favorite functions, all
@@ -4367,10 +4356,119 @@ TclHashObjKey(
      * See [tcl-Feature Request #2958832]
      */
 
-    string += length;
-    while (length--) {
-        result += (result << 3) + (unsigned char)(*--string);
+    /*
+     * TIP #534, use fast integer hashing if it is canonical
+     */
+    if (objPtr->typePtr == &tclIntType && IntObjIsCanonical(objPtr)) {
+	Tcl_WideUInt num = objPtr->internalRep.wideValue;
+	/* remove sign and hash it differently */
+	if (objPtr->internalRep.wideValue < 0) {
+	    num = -num;
+	    result = (TCL_HASH_TYPE)'-' << 31; /* 45<<31 == 0x(x64?16:0)80000000 */
+	}
+    #if ((TCL_HASH_TYPE)-1) > 0xffffffff
+	/* unsigned 64-bit as unsigned 64-bit integer */
+	result += (TCL_HASH_TYPE)objPtr->internalRep.wideValue;
+    #else
+	/* unsigned 64-bit as sum of parts in 32-bit unsigned */
+	result += (TCL_HASH_TYPE)(num / 1000000000)
+		+ (TCL_HASH_TYPE)(num % 1000000000);
+    #endif
+	return result;
     }
+
+    /*
+     * Hash string considering numeric (TIP #534), if it looks like a number
+     * use fastest string to number conversion, thereby we don't care about
+     * possible non-numeric characters, because it is just a hash value.
+     */
+    result = 0;
+    string = TclGetString(objPtr);
+    length = objPtr->length;
+
+    if (!length) { return result; }
+
+    if (*string == '-') {
+	result = '-';
+	string++; length--;
+	if (!length) {
+	    return result;
+	}
+    }
+
+    if (length <= 19 && *string <= '9' && *string >= '0') {
+    #if ((TCL_HASH_TYPE)-1) > 0xffffffff
+        /* hash is 64-bit, assume compiled as x64 */
+        Tcl_WideUInt num = 0;
+	switch (length) {
+	    /* signed 64-bit int is max 19 chars = (+/-)9223372036854775807L */
+	    case 19:  num += (*string++ - '0') * 1000000000000000000;
+	    case 18:  num += (*string++ - '0') * 100000000000000000;
+	    case 17:  num += (*string++ - '0') * 10000000000000000;
+	    case 16:  num += (*string++ - '0') * 1000000000000000;
+	    case 15:  num += (*string++ - '0') * 100000000000000;
+	    case 14:  num += (*string++ - '0') * 10000000000000;
+	    case 13:  num += (*string++ - '0') * 1000000000000;
+	    case 12:  num += (*string++ - '0') * 100000000000;
+	    case 11:  num += (*string++ - '0') * 10000000000;
+	    /* signed 32-bit int is max 10 chars = (+/-)2147483647 */
+	    case 10:  num += (*string++ - '0') * 1000000000;
+	    case  9:  num += (*string++ - '0') * 100000000;
+	    case  8:  num += (*string++ - '0') * 10000000;
+	    case  7:  num += (*string++ - '0') * 1000000;
+	    case  6:  num += (*string++ - '0') * 100000;
+	    case  5:  num += (*string++ - '0') * 10000;
+	    case  4:  num += (*string++ - '0') * 1000;
+	    case  3:  num += (*string++ - '0') * 100;
+	    case  2:  num += (*string++ - '0') * 10;
+	    case  1:  num += (*string++ - '0');
+	}
+	/* result considering sign (if result is '-', "negate" numeric) */
+	result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
+	result += (TCL_HASH_TYPE)num;
+    #else 
+        /* 32-bit hash (int calculation is faster) */
+        unsigned int hnm = 0;
+        unsigned int lnm = 0;
+	switch (length) {
+	    /* high part of hash (wide / 1000000000) */
+	    case 19:  hnm += (*string++ - '0') * 100000000 * 10;
+	    case 18:  hnm += (*string++ - '0') * 100000000;
+	    case 17:  hnm += (*string++ - '0') * 10000000;
+	    case 16:  hnm += (*string++ - '0') * 1000000;
+	    case 15:  hnm += (*string++ - '0') * 100000;
+	    case 14:  hnm += (*string++ - '0') * 10000;
+	    case 13:  hnm += (*string++ - '0') * 1000;
+	    case 12:  hnm += (*string++ - '0') * 100;
+	    case 11:  hnm += (*string++ - '0') * 10;
+	    case 10:  hnm += (*string++ - '0');
+	    /* low part of hash (wide % 1000000000) */
+	    case  9:  lnm += (*string++ - '0') * 100000000;
+	    case  8:  lnm += (*string++ - '0') * 10000000;
+	    case  7:  lnm += (*string++ - '0') * 1000000;
+	    case  6:  lnm += (*string++ - '0') * 100000;
+	    case  5:  lnm += (*string++ - '0') * 10000;
+	    case  4:  lnm += (*string++ - '0') * 1000;
+	    case  3:  lnm += (*string++ - '0') * 100;
+	    case  2:  lnm += (*string++ - '0') * 10;
+	    case  1:  lnm += (*string++ - '0');
+	}
+	/* result considering sign (if result is '-', "negate" numeric) */
+	result <<= 31; /* 45<<31 == 0x(x64?16:0)80000000 */
+	result += (TCL_HASH_TYPE)hnm + (TCL_HASH_TYPE)lnm;
+    #endif
+
+        return result;
+    }
+
+    /* 
+     * Fast string hashing (non-numeric)
+     */
+    result = (result << 3) + UCHAR(*string);
+    while (--length) {
+	result += (result << 3) + UCHAR(*++string);
+    }
+
     return result;
 }
 
