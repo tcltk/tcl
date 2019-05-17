@@ -4212,17 +4212,15 @@ TclCompareObjKeys(
 {
     register Tcl_Obj *objPtr1 = keyPtr;
     register Tcl_Obj *objPtr2 = hPtr->key.objPtr;
+    register const char *p1, *p2;
     register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
-     *
-     * if (objPtr1 == objPtr2) return 1;
-     *
-     * Normally we don't need to get strings, because if it is expected, it is
-     * already done in TclHashObjKey, this is also covered by assert below.
-     */
+
+       if (objPtr1 == objPtr2) return 1;
+    */
 
     /* Optimisation for comparing integer objects */
 
@@ -4239,11 +4237,18 @@ TclCompareObjKeys(
 	}
 
 	/*
-	 * Compare its string representations.
+	 * Compare those string representations.
 	 */
     }
 
+    /*
+     * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
+     * in a register.
+     */
+
+    p1 = TclGetString(objPtr1);
     l1 = objPtr1->length;
+    p2 = TclGetString(objPtr2);
     l2 = objPtr2->length;
 
     /*
@@ -4253,16 +4258,12 @@ TclCompareObjKeys(
     if (l1 != l2) {
         return 0;
     } else {
-	register const char *p1, *p2;
-
 	if (!l1) { /* empty string are equal */
 	    return 1;
 	}
 
 	/* compare both strings */
-	p1 = objPtr1->bytes; p2 = objPtr2->bytes;
 
-	assert(p1 != NULL && p2 != NULL);
 	do {
 	    if (*p1++ != *p2++) {
 		return 0;
@@ -4322,9 +4323,9 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    TCL_HASH_TYPE result = 0;
-    int length;
+    size_t length;
     const char *string;
+    TCL_HASH_TYPE result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
