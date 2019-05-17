@@ -434,7 +434,6 @@ If \fIname\fR contains no separators then returns \fIname\fR.  So,
 return \fBb\fR.
 .TP
 \fBfile tempdir\fR ?\fItemplate\fR?
-'\" TIP #210
 .VS "8.7, TIP 431"
 Creates a temporary directory (guaranteed to be newly created and writable by
 the current script) and returns its name. If \fItemplate\fR is given, it
