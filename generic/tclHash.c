@@ -20,6 +20,17 @@
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
 
+
+#if !defined(HASH2PTR) && !defined(PTR2HASH)
+#   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
+#	define HASH2PTR(p) ((void *)(uintptr_t)(p))
+#	define PTR2HASH(p) ((TCL_HASH_TYPE)(uintptr_t)(p))
+#   else
+#	define HASH2PTR(p) ((void *)(p))
+#	define PTR2HASH(p) ((TCL_HASH_TYPE)(p))
+#   endif
+#endif
+
 /*
  * When there are this many entries per bucket, on average, rebuild the hash
  * table to make it larger.
@@ -273,7 +284,7 @@ CreateHashEntry(
 {
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    unsigned int hash;
+    TCL_HASH_TYPE hash;
     int index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
@@ -295,7 +306,7 @@ CreateHashEntry(
 	    index = hash & tablePtr->mask;
 	}
     } else {
-	hash = PTR2UINT(key);
+	hash = PTR2HASH(key);
 	index = RANDOM_INDEX(tablePtr, hash);
     }
 
@@ -308,7 +319,7 @@ CreateHashEntry(
 
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-	    if (hash != PTR2UINT(hPtr->hash)) {
+	    if (hash != PTR2HASH(hPtr->hash)) {
 		continue;
 	    }
 	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
@@ -321,7 +332,7 @@ CreateHashEntry(
     } else {
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-	    if (hash != PTR2UINT(hPtr->hash)) {
+	    if (hash != PTR2HASH(hPtr->hash)) {
 		continue;
 	    }
 	    if (key == hPtr->key.oneWordValue) {
@@ -351,7 +362,7 @@ CreateHashEntry(
     }
 
     hPtr->tablePtr = tablePtr;
-    hPtr->hash = UINT2PTR(hash);
+    hPtr->hash = HASH2PTR(hash);
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
     tablePtr->numEntries++;
@@ -412,7 +423,7 @@ Tcl_DeleteHashEntry(
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX(tablePtr, PTR2INT(entryPtr->hash));
     } else {
-	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
+	index = PTR2HASH(entryPtr->hash) & tablePtr->mask;
     }
 
     bucketPtr = &tablePtr->buckets[index];
@@ -1040,7 +1051,7 @@ RebuildTable(
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX(tablePtr, PTR2INT(hPtr->hash));
 	    } else {
-		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
+		index = PTR2HASH(hPtr->hash) & tablePtr->mask;
 	    }
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;

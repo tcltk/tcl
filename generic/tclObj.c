@@ -4165,7 +4165,7 @@ AllocObjEntry(
     return hPtr;
 }
 
-static inline int
+static inline unsigned char
 IntObjIsCanonical(
     Tcl_Obj *objPtr) 
 {
@@ -4212,7 +4212,6 @@ TclCompareObjKeys(
 {
     register Tcl_Obj *objPtr1 = keyPtr;
     register Tcl_Obj *objPtr2 = hPtr->key.objPtr;
-    register const char *p1, *p2;
     register size_t l1, l2;
 
     /*
@@ -4222,33 +4221,63 @@ TclCompareObjKeys(
        if (objPtr1 == objPtr2) return 1;
     */
 
-    /* Optimisation for comparing integer objects */
+    /* 
+     * Optimisation for comparing integer objects 
+     * This allows also to avoid generation of string representation, so
+     * saves memory consumption (CPU-cache washout, branch mispredictions, etc)
+     */
 
+    /* If both are not integer - compare strings */
+    if (objPtr1->typePtr != &tclIntType && objPtr2->typePtr != &tclIntType) {
+	goto stringCompare;
+    }
+
+    /* If both are integer */
     if (objPtr1->typePtr == &tclIntType && objPtr2->typePtr == &tclIntType) {
+	unsigned char c1, c2;
+	/*
+	 * Check integers are equal ...
+	 */
 	if (objPtr1->internalRep.wideValue != objPtr2->internalRep.wideValue) {
 	    return 0;
 	}
 	/* 
-	 * Integers are equal, so check it is canonical ...
+	 * Integers are equal, so check they are canonical ...
 	 */
-
-	if (IntObjIsCanonical(objPtr1) && IntObjIsCanonical(objPtr2)) {
-	    return 1;
+	c1 = IntObjIsCanonical(objPtr1);
+	c2 = IntObjIsCanonical(objPtr2);
+	if (!(c1 | c2)) {
+	    /* 
+	     * both are not canonical: compare string representations
+	     * (which is already available)
+	     */
+	    goto stringCompare;
 	}
-
-	/*
-	 * Compare those string representations.
+	/* 
+	 * both are canonical, so equal - return 1, 
+	 * or one of them is not, then not equal - return 0
 	 */
+	return (c1 & c2);
     }
+    
+    /* 
+     * One of them is not an integer so compare string representations.
+     *
+     * Ensure we have both strings (don't use Tcl_GetStringFromObj as
+     * it would prevent l1 and l2 being in a register).
+     */
+    TclGetString(objPtr1);
+    TclGetString(objPtr2);
+
+stringCompare:
 
     /*
-     * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
-     * in a register.
+     * Normally we don't need to get strings, because if it is expected, it is
+     * already done in TclHashObjKey or above, so simply protect by assert here
      */
+    assert(objPtr1->bytes && objPtr2->bytes);
 
-    p1 = TclGetString(objPtr1);
     l1 = objPtr1->length;
-    p2 = TclGetString(objPtr2);
     l2 = objPtr2->length;
 
     /*
@@ -4258,12 +4287,14 @@ TclCompareObjKeys(
     if (l1 != l2) {
         return 0;
     } else {
+    	register const char *p1, *p2;
+
 	if (!l1) { /* empty string are equal */
 	    return 1;
 	}
 
 	/* compare both strings */
-
+	p1 = objPtr1->bytes; p2 = objPtr2->bytes;
 	do {
 	    if (*p1++ != *p2++) {
 		return 0;
