@@ -597,7 +597,7 @@ EXTERN char *		Tcl_JoinPath(int argc, const char *const *argv,
 				Tcl_DString *resultPtr);
 /* 187 */
 EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
-				char *addr, int type);
+				void *addr, int type);
 /* Slot 188 is reserved */
 /* 189 */
 EXTERN Tcl_Channel	Tcl_MakeFileChannel(ClientData handle, int mode);
@@ -754,7 +754,8 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
 /* 245 */
-EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
+TCL_DEPRECATED("No longer in use, changed to macro")
+int			Tcl_StringMatch(const char *str, const char *pattern);
 /* 246 */
 TCL_DEPRECATED("")
 int			Tcl_TellOld(Tcl_Channel chan);
@@ -1896,6 +1897,10 @@ EXTERN void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
 EXTERN void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
 /* 643 */
 EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
+/* 644 */
+EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
+				const char *varName, void *addr, int type,
+				int size);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2118,7 +2123,7 @@ typedef struct TclStubs {
     int (*tcl_InterpDeleted) (Tcl_Interp *interp); /* 184 */
     int (*tcl_IsSafe) (Tcl_Interp *interp); /* 185 */
     char * (*tcl_JoinPath) (int argc, const char *const *argv, Tcl_DString *resultPtr); /* 186 */
-    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, char *addr, int type); /* 187 */
+    int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (ClientData handle, int mode); /* 189 */
     int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
@@ -2176,7 +2181,7 @@ typedef struct TclStubs {
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
     TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
-    int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     TCL_DEPRECATED_API("") int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
@@ -2575,6 +2580,7 @@ typedef struct TclStubs {
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
+    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3893,6 +3899,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DecrRefCount) /* 642 */
 #define Tcl_IsShared \
 	(tclStubsPtr->tcl_IsShared) /* 643 */
+#define Tcl_LinkArray \
+	(tclStubsPtr->tcl_LinkArray) /* 644 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3978,6 +3986,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #ifdef TCL_NO_DEPRECATED
+#undef Tcl_GetStringResult
+#define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #undef Tcl_Eval
 #define Tcl_Eval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, -1, 0)
@@ -4073,6 +4083,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
 #undef Tcl_BackgroundError
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
+#undef Tcl_StringMatch
+#define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
 /*
  * Deprecated Tcl procedures:

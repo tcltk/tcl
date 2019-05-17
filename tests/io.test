@@ -5963,6 +5963,69 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
 } {initial foo eof}
 
 close $f
+
+test chan-io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
+} -constraints {stdio unixExecs fileevent openpipe} -body {
+
+    namespace eval refchan {
+	namespace ensemble create
+	namespace export *
+
+
+	proc finalize {chan args} {
+	    namespace delete c_$chan
+	}
+
+	proc initialize {chan args} {
+	    namespace eval c_$chan {}
+	    namespace upvar c_$chan watching watching
+	    set watching {}
+	    list finalize initialize seek watch write
+	}
+
+
+	proc watch {chan args} {
+	    namespace upvar c_$chan watching watching
+	    foreach arg $args {
+		switch $arg {
+		    write {
+			if {$arg ni $watching} {
+			    lappend watching $arg
+			}
+			chan postevent $chan $arg
+		    }
+		}
+	    }
+	}
+
+
+	proc write {chan args} {
+	    chan postevent $chan write
+	    return 1
+	}
+    }
+    set f [chan create w [namespace which refchan]]
+    chan configure $f -blocking 0
+    set data "some data"
+    set x 0
+    chan event $f writable [namespace code {
+	puts $f $data
+	incr count [string length $data]
+	if {$count > 262144} {
+	    chan event $f writable {}
+	    set x done
+	}
+    }]
+    after 10000 [namespace code {
+	set x timeout
+    }]
+    vwait [namespace which -variable x]
+    return $x
+} -cleanup {
+    catch {chan close $f}
+} -result done
+
+
 makeFile "foo bar" foo
 
 test io-45.1 {DeleteFileEvent, cleanup on close} {fileevent} {

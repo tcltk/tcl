@@ -241,7 +241,7 @@ InitializeHostName(
 	    if (dot != NULL) {
 		char *node = ckalloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
 		ckfree(node);
