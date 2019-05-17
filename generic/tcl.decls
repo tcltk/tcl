@@ -2386,43 +2386,43 @@ declare 644 {
 }
 
 # TIP #542
-declare 645 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
-}
 declare 646 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
 	    int numChars)
 }
 declare 647 {
-    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
 }
 declare 648 {
+    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+}
+declare 649 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
 	    int length)
 }
-declare 649 {
+declare 650 {
     int Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
-declare 650 {
+declare 651 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
-declare 651 {
+declare 652 {
     int *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
-declare 652 {
+declare 653 {
     int Tcl_UniCharLen(const int *uniStr)
 }
-declare 653 {
+declare 654 {
     int Tcl_UniCharNcmp(const int *ucs, const int *uct,
 	    unsigned long numChars)
 }
-declare 654 {
+declare 655 {
     int Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
 	    unsigned long numChars)
 }
-declare 655 {
+declare 656 {
     int Tcl_UniCharCaseMatch(const int *uniStr,
 	    const int *uniPattern, int nocase)
 }

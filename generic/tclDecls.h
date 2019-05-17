@@ -1901,34 +1901,35 @@ EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 				const char *varName, void *addr, int type,
 				int size);
-/* 645 */
-EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const int *unicode, int numChars);
+/* Slot 645 is reserved */
 /* 646 */
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const int *unicode, int numChars);
 /* 647 */
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const int *unicode, int numChars);
+/* 648 */
 EXTERN int *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
 				int *lengthPtr);
-/* 648 */
+/* 649 */
 EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 				const int *unicode, int length);
-/* 649 */
-EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
 /* 650 */
+EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
+/* 651 */
 EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
 				int uniLength, Tcl_DString *dsPtr);
-/* 651 */
+/* 652 */
 EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
 				Tcl_DString *dsPtr);
-/* 652 */
-EXTERN int		Tcl_UniCharLen(const int *uniStr);
 /* 653 */
+EXTERN int		Tcl_UniCharLen(const int *uniStr);
+/* 654 */
 EXTERN int		Tcl_UniCharNcmp(const int *ucs, const int *uct,
 				unsigned long numChars);
-/* 654 */
+/* 655 */
 EXTERN int		Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
 				unsigned long numChars);
-/* 655 */
+/* 656 */
 EXTERN int		Tcl_UniCharCaseMatch(const int *uniStr,
 				const int *uniPattern, int nocase);
 
@@ -2611,17 +2612,18 @@ typedef struct TclStubs {
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) (const int *unicode, int numChars); /* 645 */
+    void (*reserved645)(void);
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const int *unicode, int numChars); /* 646 */
-    int * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 647 */
-    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const int *unicode, int length); /* 648 */
-    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 649 */
-    char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 650 */
-    int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 651 */
-    int (*tcl_UniCharLen) (const int *uniStr); /* 652 */
-    int (*tcl_UniCharNcmp) (const int *ucs, const int *uct, unsigned long numChars); /* 653 */
-    int (*tcl_UniCharNcasecmp) (const int *ucs, const int *uct, unsigned long numChars); /* 654 */
-    int (*tcl_UniCharCaseMatch) (const int *uniStr, const int *uniPattern, int nocase); /* 655 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const int *unicode, int numChars); /* 647 */
+    int * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 648 */
+    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const int *unicode, int length); /* 649 */
+    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 650 */
+    char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 651 */
+    int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 652 */
+    int (*tcl_UniCharLen) (const int *uniStr); /* 653 */
+    int (*tcl_UniCharNcmp) (const int *ucs, const int *uct, unsigned long numChars); /* 654 */
+    int (*tcl_UniCharNcasecmp) (const int *ucs, const int *uct, unsigned long numChars); /* 655 */
+    int (*tcl_UniCharCaseMatch) (const int *uniStr, const int *uniPattern, int nocase); /* 656 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3942,28 +3944,29 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsShared) /* 643 */
 #define Tcl_LinkArray \
 	(tclStubsPtr->tcl_LinkArray) /* 644 */
-#define Tcl_NewUnicodeObj \
-	(tclStubsPtr->tcl_NewUnicodeObj) /* 645 */
+/* Slot 645 is reserved */
 #define Tcl_SetUnicodeObj \
 	(tclStubsPtr->tcl_SetUnicodeObj) /* 646 */
+#define Tcl_NewUnicodeObj \
+	(tclStubsPtr->tcl_NewUnicodeObj) /* 647 */
 #define Tcl_GetUnicodeFromObj \
-	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 647 */
+	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 648 */
 #define Tcl_AppendUnicodeToObj \
-	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 648 */
+	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 649 */
 #define Tcl_UtfToUniChar \
-	(tclStubsPtr->tcl_UtfToUniChar) /* 649 */
+	(tclStubsPtr->tcl_UtfToUniChar) /* 650 */
 #define Tcl_UniCharToUtfDString \
-	(tclStubsPtr->tcl_UniCharToUtfDString) /* 650 */
+	(tclStubsPtr->tcl_UniCharToUtfDString) /* 651 */
 #define Tcl_UtfToUniCharDString \
-	(tclStubsPtr->tcl_UtfToUniCharDString) /* 651 */
+	(tclStubsPtr->tcl_UtfToUniCharDString) /* 652 */
 #define Tcl_UniCharLen \
-	(tclStubsPtr->tcl_UniCharLen) /* 652 */
+	(tclStubsPtr->tcl_UniCharLen) /* 653 */
 #define Tcl_UniCharNcmp \
-	(tclStubsPtr->tcl_UniCharNcmp) /* 653 */
+	(tclStubsPtr->tcl_UniCharNcmp) /* 654 */
 #define Tcl_UniCharNcasecmp \
-	(tclStubsPtr->tcl_UniCharNcasecmp) /* 654 */
+	(tclStubsPtr->tcl_UniCharNcasecmp) /* 655 */
 #define Tcl_UniCharCaseMatch \
-	(tclStubsPtr->tcl_UniCharCaseMatch) /* 655 */
+	(tclStubsPtr->tcl_UniCharCaseMatch) /* 656 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
