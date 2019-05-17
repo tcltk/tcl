@@ -685,20 +685,20 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	@rm -rf ${TCL_VFS_ROOT}
 	@mkdir -p ${TCL_VFS_PATH}
 	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
-	@( \
-	  ln -s $(TOP_DIR)/library/* ${TCL_VFS_PATH}/ && \
-	  ln ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl \
-	) || ( \
-	  cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
-	  cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
-	)
+	@if \
+	    ln -s $(TOP_DIR)/library/* ${TCL_VFS_PATH}/ && \
+	    ln ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	then : ; else \
+	    cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
+	    cp -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
+	fi
 	@find ${TCL_VFS_ROOT} -type d -empty -delete
-	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
-	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
-	  cd ${TCL_VFS_ROOT} && \
-	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
-	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
-	  cd ..)
+	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
+	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
+	    echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")  2>/dev/null`; \
+	    echo 'cd ${TCL_VFS_ROOT} &&' $$zip '${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}'; \
+	    cd ${TCL_VFS_ROOT} && \
+	    $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null)
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
@@ -706,9 +706,9 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	rm -f $@
 	@MAKE_LIB@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
-		cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
-		${NATIVE_ZIP} -A ${LIB_FILE} \
-		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	    cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
+	    ${NATIVE_ZIP} -A ${LIB_FILE} \
+	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
@@ -2088,8 +2088,9 @@ checkstubs: $(TCL_LIB_FILE)
 
 checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
-		| grep -v 'Cmd$$' | sort -n` ; do \
+		| grep -Fv . | grep -v 'Cmd$$' | sort -n` ; do \
 	    match=0; \
+	    i=`echo $$i | sed 's/^_//'`; \
 	    for j in $(TOP_DIR)/doc/*.3 ; do \
 		if [ `grep '\-' $$j | grep -c $$i` -gt 0 ] ; then \
 		    match=1; \
@@ -2105,7 +2106,7 @@ checkdoc: $(TCL_LIB_FILE)
 #
 
 checkuchar:
-	-egrep isalnum\|isalpha\|iscntrl\|isdigit\|islower\|isprint\|ispunct\|isspace\|isupper\|isxdigit\|toupper\|tolower $(SRCS) | grep -v UCHAR
+	-@egrep isalnum\|isalpha\|iscntrl\|isdigit\|islower\|isprint\|ispunct\|isspace\|isupper\|isxdigit\|toupper\|tolower $(SRCS) | grep -v UCHAR
 
 #
 # Target to make sure that only symbols with "Tcl" prefixes are exported.
@@ -2125,14 +2126,17 @@ checkexports: $(TCL_LIB_FILE)
 # system.
 #
 
+RPM_PLATFORMS = i386
 rpm: all
 	-@rm -f THIS.TCL.SPEC
 	echo "%define _builddir `pwd`" > THIS.TCL.SPEC
 	echo "%define _rpmdir `pwd`/RPMS" >> THIS.TCL.SPEC
 	cat tcl.spec >> THIS.TCL.SPEC
-	mkdir -p RPMS/i386
-	rpmbuild -bb THIS.TCL.SPEC
-	mv RPMS/i386/*.rpm .
+	for platform in $(RPM_PLATFORMS); do \
+	    mkdir -p RPMS/$$platform && \
+	    rpmbuild -bb THIS.TCL.SPEC && \
+	    mv RPMS/$$platform/*.rpm .; \
+	done
 	-rm -rf RPMS THIS.TCL.SPEC
 
 #
@@ -2155,7 +2159,8 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
-dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
+		$(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
@@ -2181,7 +2186,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in $(BUILTIN_PACKAGE_LIST) ; do \
+	@for i in $(BUILTIN_PACKAGE_LIST) ; do \
 	    mkdir $(DISTDIR)/library/$$i;\
 	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
@@ -2190,8 +2195,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library/msgs
 	cp -p $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
 	@echo cp -r $(TOP_DIR)/library/tzdata $(DISTDIR)/library/tzdata
-	@( cd $(TOP_DIR); \
-	  find library/tzdata -name CVS -prune -o -type f -print ) \
+	@( cd $(TOP_DIR); find library/tzdata -type f -print ) \
 	    | ( cd $(TOP_DIR) ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR) ; tar xfp - )
 	@mkdir $(DISTDIR)/doc
@@ -2201,8 +2205,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.[ch] \
 		$(COMPAT_DIR)/README $(DISTDIR)/compat
 	@mkdir $(DISTDIR)/compat/zlib
-	( cd $(COMPAT_DIR)/zlib; \
-	  find . -name CVS -prune -o -type f -print ) \
+	@echo cp -r $(COMPAT_DIR)/zlib $(DISTDIR)/compat/zlib
+	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
 	@mkdir $(DISTDIR)/tests
