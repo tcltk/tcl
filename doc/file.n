@@ -438,12 +438,13 @@ return \fBb\fR.
 .VS "8.7, TIP 431"
 Creates a temporary directory (guaranteed to be newly created and writable by
 the current script) and returns its name. If \fItemplate\fR is given, it
-specifies one of or both of the directory to contain the temporary directory,
-and the base part of the directory name; it is considered to have the location
-of the directory if there is a directory separator in the name, and the base
-part is everything after the last directory separator (if non-empty).
-The default containing directory is determined by system-specific operations,
-and the default base name prefix is
+specifies one of or both of the existing directory (on a filesystem controlled
+by the operating system) to contain the temporary directory, and the base part
+of the directory name; it is considered to have the location of the directory
+if there is a directory separator in the name, and the base part is everything
+after the last directory separator (if non-empty).  The default containing
+directory is determined by system-specific operations, and the default base
+name prefix is
 .QW \fBtcl\fR .
 .RS
 .PP

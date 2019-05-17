@@ -1698,6 +1698,22 @@ test cmdAH-33.5 {file tempdir} -setup {
 } -match glob -result {GORP:/gorp_* 1 directory {} {}} -cleanup {
     catch {file delete -force $base}
 }
+test cmdAH-33.6 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
+test cmdAH-33.7 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/foobar
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
 
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}
