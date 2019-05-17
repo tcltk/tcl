@@ -1,15 +1,6 @@
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * The library is free for all purposes without any express
- * guarantee it works.
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
+
 #ifndef BN_H_
 #define BN_H_
 
@@ -116,28 +107,30 @@ typedef unsigned long long   mp_word;
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
 #define MP_DIGIT_MAX     MP_MASK
 
-/* equalities */
+typedef int mp_sign;
+#define MP_ZPOS       0   /* positive integer */
+#define MP_NEG        1   /* negative */
+typedef int mp_ord;
 #define MP_LT        -1   /* less than */
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
-
-#define MP_ZPOS       0   /* positive integer */
-#define MP_NEG        1   /* negative */
-
+typedef int mp_bool;
+#define MP_YES        1   /* yes response */
+#define MP_NO         0   /* no response */
+typedef int mp_err;
 #define MP_OKAY       0   /* ok result */
+#define MP_ERR        -1  /* unknown error */
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
-
-#define MP_YES        1   /* yes response */
-#define MP_NO         0   /* no response */
+#define MP_ITER       -4  /* Max. iterations reached */
 
 /* Primality generation flags */
 #define LTM_PRIME_BBS      0x0001 /* BBS style prime */
 #define LTM_PRIME_SAFE     0x0002 /* Safe prime (p-1)/2 == prime */
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
-typedef int           mp_err;
+/* tunable cutoffs */
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
@@ -146,6 +139,8 @@ typedef int           mp_err;
 #ifndef MP_PREC
 #   ifndef MP_LOW_MEM
 #      define MP_PREC 32        /* default digits of precision */
+#   elif defined(MP_8BIT)
+#      define MP_PREC 16        /* default digits of precision */
 #   else
 #      define MP_PREC 8         /* default digits of precision */
 #   endif
@@ -153,6 +148,45 @@ typedef int           mp_err;
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
 #define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
+
+/*
+ * MP_WUR - warn unused result
+ * ---------------------------
+ *
+ * The result of functions annotated with MP_WUR must be
+ * checked and cannot be ignored.
+ *
+ * Most functions in libtommath return an error code.
+ * This error code must be checked in order to prevent crashes or invalid
+ * results.
+ *
+ * If you still want to avoid the error checks for quick and dirty programs
+ * without robustness guarantees, you can `#define MP_WUR` before including
+ * tommath.h, disabling the warnings.
+ */
+#ifndef MP_WUR
+#  if defined(__GNUC__) && __GNUC__ >= 4
+#     define MP_WUR __attribute__((warn_unused_result))
+#  else
+#     define MP_WUR
+#  endif
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
+#  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
+#  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
+#  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
+#elif defined(_MSC_VER) && _MSC_VER >= 1500
+#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
+#  define MP_DEPRECATED_PRAGMA(s) __pragma(message(s))
+#else
+#  define MP_DEPRECATED
+#  define MP_DEPRECATED_PRAGMA(s)
+#endif
+
+#define USED(m)    ((m)->used)
+#define DIGIT(m,k) ((m)->dp[(k)])
+#define SIGN(m)    ((m)->sign)
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -167,10 +201,6 @@ struct mp_int {
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
-
-#define USED(m)     ((m)->used)
-#define DIGIT(m, k) ((m)->dp[(k)])
-#define SIGN(m)     ((m)->sign)
 
 /* error code to char* string */
 const char *mp_error_to_string(int code);
@@ -346,15 +376,20 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 /*
 int mp_rand(mp_int *a, int digits);
 */
+/* makes a pseudo-random small int of a given size */
+/*
+int mp_rand_digit(mp_digit *r);
+*/
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
-/* as last resort we will fall back to libtomcrypt's rng_get_bytes()
- * in case you don't use libtomcrypt or use it w/o rng_get_bytes()
- * you have to implement it somewhere else, as it's required */
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
 extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
 extern void (*ltm_rng_callback)(void);
 #endif
@@ -691,10 +726,17 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 int mp_prime_rabin_miller_trials(int size);
 */
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */

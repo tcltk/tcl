@@ -768,26 +768,26 @@ test info-22.8 {info frame, basic trace} -match glob -body {
 * {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
 unset -nocomplain msg
 
-test info-23.0.0 {eval'd info frame} {!singleTestInterp} {
-    eval {info frame}
-} 8
-test info-23.0.1 {eval'd info frame} -constraints {singleTestInterp} -match glob -body {
-    eval {info frame}
-} -result {1[12]} ;# SingleTestInterp results changes depending on running the whole suite, or info.test alone.
-test info-23.1.0 {eval'd info frame, semi-dynamic} {!singleTestInterp} {
-    eval info frame
-} 8
-test info-23.1.1 {eval'd info frame, semi-dynamic} -constraints {singleTestInterp} -match glob -body {
-    eval info frame
-} -result {1[12]}
-test info-23.2.0 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
-    set script {info frame}
-    eval $script
-} -cleanup {unset script} -result 8
-test info-23.2.1 {eval'd info frame, dynamic} -constraints {singleTestInterp} -match glob -body {
-    set script {info frame}
-    eval $script
-} -cleanup {unset script} -result {1[12]}
+
+
+
+
+
+
+
+
+
+## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
+test info-23.0 {eval'd info frame} -constraints {!singleTestInterp} -body {
+    list [i eval {info frame}] [i eval {eval {info frame}}]
+} -setup {interp create i} -cleanup {interp delete i} -result {1 2}
+test info-23.1 {eval'd info frame, semi-dynamic} -constraints {!singleTestInterp} -body {
+    i eval {eval info frame}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
+test info-23.2 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
+    i eval {	set script {info frame}
+		eval $script}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
 test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0

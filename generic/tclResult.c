@@ -464,7 +464,6 @@ Tcl_SetResult(
 
     ResetObjResult(iPtr);
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -488,9 +487,6 @@ Tcl_GetStringResult(
     register Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
     Interp *iPtr = (Interp *) interp;
-#ifdef TCL_NO_DEPRECATED
-    return Tcl_GetString(iPtr->objResultPtr);
-#else
     /*
      * If the string result is empty, move the object result to the string
      * result, then reset the object result.
@@ -501,8 +497,8 @@ Tcl_GetStringResult(
 		TCL_VOLATILE);
     }
     return iPtr->result;
-#endif
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
