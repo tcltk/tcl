@@ -3463,6 +3463,11 @@ Tcl_Close(
     Tcl_ClearChannelHandlers(chan);
 
     /*
+     * Cancel any outstanding timer.
+     */
+    Tcl_DeleteTimerHandler(statePtr->timer);
+
+    /*
      * Invoke the registered close callbacks and delete their records.
      */
 
@@ -4446,6 +4451,8 @@ Write(
 	    return -1;
 	}
     }
+
+    UpdateInterest(chanPtr);
 
     return total;
 }
@@ -8475,9 +8482,9 @@ UpdateInterest(
 	     *
 	     * - Tcl drops READABLE here, because it has data in its own
 	     *	 buffers waiting to be read by the extension.
-	     * - A READABLE event is syntesized via timer.
+	     * - A READABLE event is synthesized via timer.
 	     * - The OS still reports the EXCEPTION condition on the file.
-	     * - And the extension gets the EXCPTION event first, and handles
+	     * - And the extension gets the EXCEPTION event first, and handles
 	     *	 this as EOF.
 	     *
 	     * End result ==> Premature end of reading from a file.
@@ -8503,6 +8510,16 @@ UpdateInterest(
 	    }
 	}
     }
+
+    if (!statePtr->timer
+	&& mask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+	    ChannelTimerProc,chanPtr);
+    }
+
+
     ChanWatch(chanPtr, mask);
 }
 
@@ -8531,6 +8548,21 @@ ChannelTimerProc(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
+    Tcl_Preserve(statePtr);
+    statePtr->timer = NULL;
+    if (statePtr->interestMask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	) {
+	/*
+	 * Restart the timer in case a channel handler reenters the event loop
+	 * before UpdateInterest gets called by Tcl_NotifyChannel.
+	 */
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                ChannelTimerProc,chanPtr);
+	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
+    }
+
     if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
 	    && (statePtr->interestMask & TCL_READABLE)
 	    && (statePtr->inQueueHead != NULL)
@@ -8542,13 +8574,11 @@ ChannelTimerProc(
 
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
                 ChannelTimerProc,chanPtr);
-	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-	Tcl_Release(statePtr);
     } else {
-	statePtr->timer = NULL;
 	UpdateInterest(chanPtr);
     }
+    Tcl_Release(statePtr);
 }
 
 /*

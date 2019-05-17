@@ -482,16 +482,16 @@ TclCompileStringInsertCmd(
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 3);
 
-    if (idx == TCL_INDEX_START) {
+    if (idx == (int)TCL_INDEX_START) {
 	/* Prepend the insertion string */
 	OP4(	REVERSE, 2);
 	OP1(	STR_CONCAT1, 2);
-    } else  if (idx == TCL_INDEX_END) {
+    } else  if (idx == (int)TCL_INDEX_END) {
 	/* Append the insertion string */
 	OP1(	STR_CONCAT1, 2);
     } else {
 	/* Prefix + insertion + suffix */
-	if (idx < TCL_INDEX_END) {
+	if (idx < (int)TCL_INDEX_END) {
 	    /* See comments in compiler for [linsert]. */
 	    idx++;
 	}
@@ -821,7 +821,7 @@ TclCompileStringMatchCmd(
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
-	if ((length <= 1) || strncmp(str, "-nocase", (size_t) length)) {
+	if ((length <= 1) || strncmp(str, "-nocase", length)) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */
@@ -1012,7 +1012,7 @@ TclCompileStringRangeCmd(
      * the string the same as the start of the string.
      */
 
-    if (idx1 == TCL_INDEX_NONE) {
+    if (idx1 == (int)TCL_INDEX_NONE) {
 	/* [string range $s end+1 $last] must be empty string */
 	OP(		POP);
 	PUSH(		"");
@@ -1027,7 +1027,7 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
-    if (idx2 == TCL_INDEX_NONE) {
+    if (idx2 == (int)TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(		POP);
 	PUSH(		"");
@@ -1105,8 +1105,8 @@ TclCompileStringReplaceCmd(
      * compile direct to bytecode implementing the no-op.
      */
 
-    if ((last == TCL_INDEX_NONE)		/* Know (last < 0) */
-	    || (first == TCL_INDEX_NONE)	/* Know (first > end) */
+    if ((last == (int)TCL_INDEX_NONE)		/* Know (last < 0) */
+	    || (first == (int)TCL_INDEX_NONE)	/* Know (first > end) */
 
 	/*
 	 * Tricky to determine when runtime (last < first) can be
@@ -1117,7 +1117,7 @@ TclCompileStringReplaceCmd(
 	 *	(last <= TCL_INDEX END) && (last < first) => ACCEPT
 	 *	else => cannot tell REJECT
 	 */
-	    || ((first <= TCL_INDEX_END) && (last <= TCL_INDEX_END)
+	    || ((first <= (int)TCL_INDEX_END) && (last <= (int)TCL_INDEX_END)
 		&& (last < first))		/* Know (last < first) */
 	/*
 	 * (first == TCL_INDEX_NONE) &&
@@ -1128,7 +1128,7 @@ TclCompileStringReplaceCmd(
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else [[last >= TCL_INDEX START]] && (last < first) => ACCEPT
 	 */
-	    || ((first >= TCL_INDEX_START) && (last >= TCL_INDEX_START)
+	    || ((first >= (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)
 		&& (last < first))) {		/* Know (last < first) */
 	if (parsePtr->numWords == 5) {
 	    tokenPtr = TokenAfter(tokenPtr);
@@ -1179,7 +1179,7 @@ TclCompileStringReplaceCmd(
      * getting a guarantee that first <= last.
      */
 
-    if ((first == TCL_INDEX_START) && (last >= TCL_INDEX_START)) {
+    if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
 	/* empty prefix */
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
@@ -1187,13 +1187,13 @@ TclCompileStringReplaceCmd(
 	if (last == INT_MAX) {
 	    OP(		POP);		/* Pop  original */
 	} else {
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	}
 	return TCL_OK;
     }
 
-    if ((last == TCL_INDEX_NONE) && (first <= TCL_INDEX_END)) {
+    if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
 	OP44(		STR_RANGE_IMM, 0, first-1);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
@@ -1210,19 +1210,19 @@ TclCompileStringReplaceCmd(
 	 * are harmless when they are replaced by another empty string.
 	 */
 
-	if (first == TCL_INDEX_START) {
+	if (first == (int)TCL_INDEX_START) {
 	    /* empty prefix - build suffix only */
 
-	    if (last == TCL_INDEX_END) {
+	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix too => empty result */
 		OP(	POP);		/* Pop  original */
 		PUSH	(	"");
 		return TCL_OK;
 	    }
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    return TCL_OK;
 	} else {
-	    if (last == TCL_INDEX_END) {
+	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix - build prefix only */
 		OP44(	STR_RANGE_IMM, 0, first-1);
 		return TCL_OK;
@@ -1230,7 +1230,7 @@ TclCompileStringReplaceCmd(
 	    OP(		DUP);
 	    OP44(	STR_RANGE_IMM, 0, first-1);
 	    OP4(	REVERSE, 2);
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	    return TCL_OK;
 	}
