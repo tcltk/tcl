@@ -560,9 +560,7 @@ TclPathPart(
     Tcl_Obj *pathPtr,		/* Path to take dirname of */
     Tcl_PathPart portion)	/* Requested portion of name */
 {
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
-
-    if (irPtr) {
+    if (TclHasIntRep(pathPtr, &fsPathType)) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
 	if (PATHFLAGS(pathPtr) != 0) {
@@ -1158,8 +1156,6 @@ Tcl_FSConvertToPathType(
     Tcl_Obj *pathPtr)		/* Object to convert to a valid, current path
 				 * type. */
 {
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
-
     /*
      * While it is bad practice to examine an object's type directly, this is
      * actually the best thing to do here. The reason is that if we are
@@ -1170,7 +1166,7 @@ Tcl_FSConvertToPathType(
      * path.
      */
 
-    if (irPtr) {
+    if (TclHasIntRep(pathPtr, &fsPathType)) {
 	if (TclFSEpochOk(PATHOBJ(pathPtr)->filesystemEpoch)) {
 	    return TCL_OK;
 	}
@@ -1481,9 +1477,8 @@ MakePathFromNormalized(
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     FsPath *fsPathPtr;
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
-    if (irPtr) {
+    if (TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -1684,7 +1679,7 @@ Tcl_FSGetTranslatedStringPath(
 	const char *orig = TclGetStringFromObj(transPtr, &len);
 	char *result = ckalloc(len+1);
 
-	memcpy(result, orig, (size_t) len+1);
+	memcpy(result, orig, len+1);
 	TclDecrRefCount(transPtr);
 	return result;
     }
@@ -2087,9 +2082,8 @@ TclFSEnsureEpochOk(
     const Tcl_Filesystem **fsPtrPtr)
 {
     FsPath *srcFsPathPtr;
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
-    if (irPtr == NULL) {
+    if (!TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -2146,13 +2140,12 @@ TclFSSetPathDetails(
     ClientData clientData)
 {
     FsPath *srcFsPathPtr;
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);;
 
     /*
      * Make sure pathPtr is of the correct type.
      */
 
-    if (irPtr == NULL) {
+    if (!TclHasIntRep(pathPtr, &fsPathType)) {
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return;
 	}
@@ -2250,9 +2243,8 @@ SetFsPathFromAny(
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
     char *name;
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
 
-    if (irPtr) {
+    if (TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -2558,8 +2550,6 @@ TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
     ClientData *clientDataPtr)
 {
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
-
     /*
      * A special case is required to handle the empty path "". This is a valid
      * path (i.e. the user should be able to do 'file exists ""' without
@@ -2567,7 +2557,7 @@ TclNativePathInFilesystem(
      * semantics of Tcl (at present anyway), so we have to abide by them here.
      */
 
-    if (irPtr) {
+    if (TclHasIntRep(pathPtr, &fsPathType)) {
 	if (pathPtr->bytes != NULL && pathPtr->bytes[0] == '\0') {
 	    /*
 	     * We reject the empty path "".

@@ -96,7 +96,7 @@ the database.
 .RE
 .PP
 Cookie jar instances may be made with any of the standard TclOO instance
-creation methods (\fBcreate\fR or \fRnew\fR).
+creation methods (\fBcreate\fR or \fBnew\fR).
 .TP
 \fB::http::cookiejar new\fR ?\fIfilename\fR?
 .

@@ -46,8 +46,8 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    TCHAR *volumeName;		/* Native wide string volume name. */
-    TCHAR driveLetter;		/* Drive letter corresponding to the volume
+    WCHAR *volumeName;		/* Native wide string volume name. */
+    WCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
 				/* Pointer to next structure in list, or
@@ -286,11 +286,11 @@ TclWinEncodingsCleanup(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    const TCHAR *mountPoint)
+    const WCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
-    TCHAR Target[55];		/* Target of mount at mount point */
-    TCHAR drive[4] = TEXT("A:\\");
+    WCHAR Target[55];		/* Target of mount at mount point */
+    WCHAR drive[4] = TEXT("A:\\");
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -301,14 +301,14 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
 	     * mount points on the fly.
 	     */
 
-	    drive[0] = (TCHAR) dlIter->driveLetter;
+	    drive[0] = (WCHAR) dlIter->driveLetter;
 
 	    /*
 	     * Try to read the volume mount point and see where it points.
@@ -316,7 +316,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    if (GetVolumeNameForVolumeMountPoint(drive,
 		    Target, 55) != 0) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
@@ -379,7 +379,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
@@ -400,7 +400,7 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
 	    return (char) dlIter->driveLetter;
 	}
@@ -447,7 +447,7 @@ TclWinDriveLetterForVolMountPoint(
  *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
  *		Tcl_FreeEncoding(encoding);
  *
- *	By convention, in Windows a TCHAR is a Unicode character. If you plan
+ *	By convention, in Windows a WCHAR is a Unicode character. If you plan
  *	on targeting a Unicode interface when running on Windows, these
  *	functions should be used. If you plan on targetting a "char" oriented
  *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
@@ -463,7 +463,7 @@ TclWinDriveLetterForVolMountPoint(
  *---------------------------------------------------------------------------
  */
 
-TCHAR *
+WCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
     int len,			/* Source string length in bytes, or -1 for
@@ -471,119 +471,31 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 4
-    Tcl_UniChar ch = 0;
-    TCHAR *w, *wString;
-    const char *p, *end;
-    int oldLength;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
-#if TCL_UTF_MAX > 4
-
-    if (len < 0) {
-	len = strlen(string);
-    }
-
-    /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
-     * bytes.
-     */
-
-    oldLength = Tcl_DStringLength(dsPtr);
-
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((len + 1) * sizeof(TCHAR)));
-    wString = (TCHAR *) (Tcl_DStringValue(dsPtr) + oldLength);
-
-    w = wString;
-    p = string;
-    end = string + len - 4;
-    while (p < end) {
-	p += TclUtfToUniChar(p, &ch);
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    *w = '\0';
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + ((char *) w - (char *) wString));
-
-    return wString;
-#else
-    return Tcl_UtfToUniCharDString(string, len, dsPtr);
-#endif
+    return TclUtfToWCharDString(string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode. */
+    const WCHAR *string,	/* Source string in Unicode. */
     int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 4
-    const TCHAR *w, *wEnd;
-    char *p, *result;
-    int oldLength, blen = 1;
-#endif
-
     Tcl_DStringInit(dsPtr);
     if (!string) {
 	return NULL;
     }
     if (len < 0) {
-	len = wcslen((TCHAR *)string);
+	len = wcslen((WCHAR *)string);
     } else {
 	len /= 2;
     }
-#if TCL_UTF_MAX > 4
-    oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
-    result = Tcl_DStringValue(dsPtr) + oldLength;
-
-    p = result;
-    wEnd = (TCHAR *)string + len;
-    for (w = (TCHAR *)string; w < wEnd; ) {
-	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling high surrogates. */
-	    p += Tcl_UniCharToUtf(-1, p);
-	}
-	blen = Tcl_UniCharToUtf(*w, p);
-	p += blen;
-	w++;
-    }
-    if (!blen) {
-	/* Special case for handling high surrogates. */
-	p += Tcl_UniCharToUtf(-1, p);
-    }
-    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
-
-    return result;
-#else
-    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
-#endif
+    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
 }
 
 /*

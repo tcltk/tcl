@@ -905,7 +905,7 @@ Tcl_SplitList(
 	}
 	argv[i] = p;
 	if (literal) {
-	    memcpy(p, element, (size_t) elSize);
+	    memcpy(p, element, elSize);
 	    p += elSize;
 	    *p = 0;
 	    p++;
@@ -1654,7 +1654,7 @@ Tcl_Backslash(
     int *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
 {
-    char buf[TCL_UTF_MAX];
+    char buf[4] = "";
     Tcl_UniChar ch = 0;
 
     Tcl_UtfBackslash(src, readPtr, buf);
@@ -2049,7 +2049,7 @@ Tcl_Concat(
 	if (needSpace) {
 	    *p++ = ' ';
 	}
-	memcpy(p, element, (size_t) elemLength);
+	memcpy(p, element, elemLength);
 	p += elemLength;
 	needSpace = 1;
     }
@@ -2186,6 +2186,7 @@ Tcl_ConcatObj(
     return resPtr;
 }
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  *----------------------------------------------------------------------
  *
@@ -2204,6 +2205,7 @@ Tcl_ConcatObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_StringMatch
 int
 Tcl_StringMatch(
     const char *str,		/* String. */
@@ -2212,7 +2214,7 @@ Tcl_StringMatch(
 {
     return Tcl_StringCaseMatch(str, pattern, 0);
 }
-
+#endif /* TCL_NO_DEPRECATED */
 /*
  *----------------------------------------------------------------------
  *
@@ -2302,7 +2304,7 @@ Tcl_StringCaseMatch(
 		    if (nocase) {
 			while (*str) {
 			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
+			    if (ch2==ch1 || ch2==(Tcl_UniChar)Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
 			    str += charLen;
@@ -2658,7 +2660,7 @@ TclStringMatchObj(
     trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
      */
 
-    if ((strObj->typePtr == &tclStringType) || (strObj->typePtr == NULL)) {
+    if (TclHasIntRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
@@ -2751,7 +2753,7 @@ Tcl_DStringAppend(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2854,7 +2856,7 @@ Tcl_DStringAppendElement(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2948,7 +2950,7 @@ Tcl_DStringSetLength(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
@@ -3446,7 +3448,7 @@ TclPrecTraceProc(
     int flags)			/* Information about what happened. */
 {
     Tcl_Obj *value;
-    int prec;
+    Tcl_WideInt prec;
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
@@ -3486,11 +3488,11 @@ TclPrecTraceProc(
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
-	    || Tcl_GetIntFromObj(NULL, value, &prec) != TCL_OK
+	    || Tcl_GetWideIntFromObj(NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
 	return (char *) "improper value for precision";
     }
-    *precisionPtr = prec;
+    *precisionPtr = (int)prec;
     return NULL;
 }
 #endif /* !TCL_NO_DEPRECATED)*/
@@ -3726,7 +3728,7 @@ GetWideForIndex(
 
 	/* objPtr holds an integer outside the signed wide range */
 	/* Truncate to the signed wide range. */
-	*widePtr = mp_isneg((mp_int *)cd) ? WIDE_MIN : WIDE_MAX;
+	*widePtr = (((mp_int *)cd)->sign != MP_ZPOS) ? WIDE_MIN : WIDE_MAX;
     return TCL_OK;
     }
 
@@ -3839,7 +3841,7 @@ GetWideForIndex(
 		} else {
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
-		    if (mp_isneg((mp_int *)cd)) {
+		    if (((mp_int *)cd)->sign != MP_ZPOS) {
 			*widePtr = WIDE_MIN;
 		    } else {
 			*widePtr = WIDE_MAX;
@@ -3986,7 +3988,7 @@ GetEndOffsetFromObj(
 
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */
-		if (mp_isneg((mp_int *)cd)) {
+		if (((mp_int *)cd)->sign != MP_ZPOS) {
 		    offset = (bytes[3] == '-') ? WIDE_MAX : WIDE_MIN;
 		} else {
 		    offset = (bytes[3] == '-') ? WIDE_MIN : WIDE_MAX;

@@ -213,7 +213,7 @@ TclCreateLiteral(
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])
-		    && (memcmp(objBytes, bytes, (unsigned) length) == 0)))) {
+		    && (memcmp(objBytes, bytes, length) == 0)))) {
 		/*
 		 * A literal was found: return it
 		 */
@@ -424,7 +424,7 @@ TclRegisterLiteral(
 	objPtr = localPtr->objPtr;
 	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
+		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
 		ckfree(bytes);
 	    }
@@ -1057,7 +1057,7 @@ TclInvalidateCmdLiteral(
 	    strlen(name), -1, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
-	if (literalObjPtr->typePtr == &tclCmdNameType) {
+	if (TclHasIntRep(literalObjPtr, &tclCmdNameType)) {
 	    TclFreeIntRep(literalObjPtr);
 	}
 	/* Balance the refcount effects of TclCreateLiteral() above */

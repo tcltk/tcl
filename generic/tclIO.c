@@ -3463,6 +3463,11 @@ Tcl_Close(
     Tcl_ClearChannelHandlers(chan);
 
     /*
+     * Cancel any outstanding timer.
+     */
+    Tcl_DeleteTimerHandler(statePtr->timer);
+
+    /*
      * Invoke the registered close callbacks and delete their records.
      */
 
@@ -4320,7 +4325,7 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
@@ -4408,7 +4413,7 @@ Write(
 	     */
 
 	    saved = -SpaceLeft(bufPtr);
-	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
 
@@ -4446,6 +4451,8 @@ Write(
 	    return -1;
 	}
     }
+
+    UpdateInterest(chanPtr);
 
     return total;
 }
@@ -5086,7 +5093,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5103,7 +5110,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5654,7 +5661,7 @@ Tcl_ReadRaw(
          * Copy the current chunk into the read buffer.
          */
 
-	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	memcpy(readBuf, RemovePoint(bufPtr), toCopy);
 	bufPtr->nextRemoved += toCopy;
 	copied += toCopy;
 	readBuf += toCopy;
@@ -6216,7 +6223,7 @@ ReadChars(
 		     * and do not encounter the eof char this time.
 		     */
 
-		    dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		    statePtr->flags = savedFlags;
 		    statePtr->inputEncodingFlags = savedIEFlags;
 		    statePtr->inputEncodingState = savedState;
@@ -6241,7 +6248,7 @@ ReadChars(
 		 * here in this call.
 		 */
 
-		dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		statePtr->flags = savedFlags;
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
@@ -6334,7 +6341,7 @@ ReadChars(
 	     * bytes demanded by the Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - 1 + TCL_UTF_MAX - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - dst + (TCL_UTF_MAX - 1);
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -6402,7 +6409,7 @@ ReadChars(
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
-	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    memcpy(RemovePoint(nextPtr), src, srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
 	    Tcl_SetObjLength(objPtr, numBytes);
@@ -6508,7 +6515,7 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) srcLen);
+	    memcpy(dstStart, srcStart, srcLen);
 	}
 	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
 	    char *dst = dstStart;
@@ -6665,7 +6672,7 @@ Tcl_Ungets(
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     bufPtr = AllocChannelBuffer(len);
-    memcpy(InsertPoint(bufPtr), str, (size_t) len);
+    memcpy(InsertPoint(bufPtr), str, len);
     bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == NULL) {
@@ -8475,9 +8482,9 @@ UpdateInterest(
 	     *
 	     * - Tcl drops READABLE here, because it has data in its own
 	     *	 buffers waiting to be read by the extension.
-	     * - A READABLE event is syntesized via timer.
+	     * - A READABLE event is synthesized via timer.
 	     * - The OS still reports the EXCEPTION condition on the file.
-	     * - And the extension gets the EXCPTION event first, and handles
+	     * - And the extension gets the EXCEPTION event first, and handles
 	     *	 this as EOF.
 	     *
 	     * End result ==> Premature end of reading from a file.
@@ -8503,6 +8510,16 @@ UpdateInterest(
 	    }
 	}
     }
+
+    if (!statePtr->timer
+	&& mask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+	    ChannelTimerProc,chanPtr);
+    }
+
+
     ChanWatch(chanPtr, mask);
 }
 
@@ -8531,6 +8548,21 @@ ChannelTimerProc(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
+    Tcl_Preserve(statePtr);
+    statePtr->timer = NULL;
+    if (statePtr->interestMask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	) {
+	/*
+	 * Restart the timer in case a channel handler reenters the event loop
+	 * before UpdateInterest gets called by Tcl_NotifyChannel.
+	 */
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                ChannelTimerProc,chanPtr);
+	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
+    }
+
     if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
 	    && (statePtr->interestMask & TCL_READABLE)
 	    && (statePtr->inQueueHead != NULL)
@@ -8542,13 +8574,11 @@ ChannelTimerProc(
 
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
                 ChannelTimerProc,chanPtr);
-	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-	Tcl_Release(statePtr);
     } else {
-	statePtr->timer = NULL;
 	UpdateInterest(chanPtr);
     }
+    Tcl_Release(statePtr);
 }
 
 /*

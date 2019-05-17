@@ -126,7 +126,8 @@ applied to integers.
 .TP 20
 \fB**\fR
 .
-Exponentiation.  Valid for numeric operands.
+Exponentiation.  Valid for numeric operands.  The maximum exponent value
+that Tcl can handle if the first number is an integer > 1 is 268435455.
 .TP 20
 \fB*\0\0/\0\0%\fR
 .

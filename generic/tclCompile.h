@@ -840,8 +840,10 @@ typedef struct ByteCode {
 
 #define INST_CLOCK_READ			189
 
+#define INST_DICT_GET_DEF		190
+
 /* The last opcode */
-#define LAST_INST_OPCODE		189
+#define LAST_INST_OPCODE		190
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
