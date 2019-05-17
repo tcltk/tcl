@@ -1683,17 +1683,18 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
-    Tcl_NewUnicodeObj, /* 645 */
+    0, /* 645 */
     Tcl_SetUnicodeObj, /* 646 */
-    Tcl_GetUnicodeFromObj, /* 647 */
-    Tcl_AppendUnicodeToObj, /* 648 */
-    Tcl_UtfToUniChar, /* 649 */
-    Tcl_UniCharToUtfDString, /* 650 */
-    Tcl_UtfToUniCharDString, /* 651 */
-    Tcl_UniCharLen, /* 652 */
-    Tcl_UniCharNcmp, /* 653 */
-    Tcl_UniCharNcasecmp, /* 654 */
-    Tcl_UniCharCaseMatch, /* 655 */
+    Tcl_NewUnicodeObj, /* 647 */
+    Tcl_GetUnicodeFromObj, /* 648 */
+    Tcl_AppendUnicodeToObj, /* 649 */
+    Tcl_UtfToUniChar, /* 650 */
+    Tcl_UniCharToUtfDString, /* 651 */
+    Tcl_UtfToUniCharDString, /* 652 */
+    Tcl_UniCharLen, /* 653 */
+    Tcl_UniCharNcmp, /* 654 */
+    Tcl_UniCharNcasecmp, /* 655 */
+    Tcl_UniCharCaseMatch, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */
