@@ -653,6 +653,18 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #------------------------------------------------------------------------
+
+AC_MSG_CHECKING([whether to track line continuation])
+AC_ARG_ENABLE(line-continuations,
+    AC_HELP_STRING([--enable-line-continuations],
+	[enable the tracking of line continuations for [info frame] (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test $tcl_ok = yes; then
+    AC_DEFINE(TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS, 1, [Do we source code line numbers accurately?])
+fi
+AC_MSG_RESULT([$tcl_ok])
+
+#------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
 #	be overriden on the configure command line either way.
