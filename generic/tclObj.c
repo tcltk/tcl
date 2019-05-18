@@ -19,6 +19,15 @@
 #include <math.h>
 
 /*
+ * Allow disabling (by default) of the performance cost of [info frame] as a
+ * compile-time option.
+ */
+
+#ifndef TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS
+#define TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS 1
+#endif
+
+/*
  * Table of all object types.
  */
 
@@ -98,7 +107,7 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 static void             TclThreadFinalizeContLines(ClientData clientData);
-static ThreadSpecificData *TclGetContLineTable(void);
+static Tcl_HashTable *  TclGetContLineTable(void);
 
 /*
  * Nested Tcl_Obj deletion management support
@@ -511,6 +520,56 @@ TclFinalizeObjects(void)
 /*
  *----------------------------------------------------------------------
  *
+ * LineContinuationsMustBeTracked --
+ *
+ *      Bookkeeping of line continuation (backslash+newline) sequences with
+ *      the purpose of reporting correct line numbers in the result of [info
+ *      frame level] introduces noticeable overhead in TclFreeObj().
+ *      Therefore that functionality can be turned on or off via the
+ *      environment variable TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS
+ *      (setting it to 0 results in improved performance at the cost of worse
+ *      debuggability of Tcl scripts, while any other value has an opposite
+ *      effect). During compilation, defining a macro with the same name sets
+ *      the default value for that setting.
+ *
+ * Returns:
+ *      A true value if we want detailed tracking, a false one if we don't.
+ *
+ * TIP #530
+ *----------------------------------------------------------------------
+ */
+
+#define TRACK_CONTINUATIONS_NEEDS_INIT  (-1)
+
+static int
+LineContinuationsMustBeTracked(void)
+{
+    static int trackContinuations = TRACK_CONTINUATIONS_NEEDS_INIT;
+
+    /*
+     * Not technically thread safe, but two threads will assign the same
+     * value.
+     */
+
+    if (trackContinuations == TRACK_CONTINUATIONS_NEEDS_INIT) {
+        Tcl_DString buffer;
+        const char *valuePtr = TclGetEnv(
+                "TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS", &buffer);
+
+        if (valuePtr == NULL) {
+            trackContinuations =
+                    (TCL_INFO_FRAME_ENABLE_ACCURATE_LINE_NUMBERS != 0);
+        } else {
+            trackContinuations = (strcmp(valuePtr, "0") != 0);
+            Tcl_DStringFree(&buffer);
+        }
+    }
+    return trackContinuations;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclGetContLineTable --
  *
  *	This procedure is a helper which returns the thread-specific
@@ -518,7 +577,7 @@ TclFinalizeObjects(void)
  *	Tcl_Obj*, and the objThreadMap, etc.
  *
  * Results:
- *	A reference to the thread-data.
+ *	A reference to the hash table that is stored in thread-data.
  *
  * Side effects:
  *	May allocate memory for the thread-data.
@@ -527,9 +586,15 @@ TclFinalizeObjects(void)
  *----------------------------------------------------------------------
  */
 
-static ThreadSpecificData *
+static Tcl_HashTable *
 TclGetContLineTable(void)
 {
+    ThreadSpecificData *tsdPtr;
+
+    if (!LineContinuationsMustBeTracked()) {
+        return NULL;
+    }
+
     /*
      * Initialize the hashtable tracking invisible continuation lines.  For
      * the release we use a thread exit handler to ensure that this is done
@@ -538,14 +603,13 @@ TclGetContLineTable(void)
      * we try to operate on a data structure already gone.
      */
 
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
+    tsdPtr = TCL_TSD_INIT(&dataKey);
     if (!tsdPtr->lineCLPtr) {
 	tsdPtr->lineCLPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
 	Tcl_CreateThreadExitHandler(TclThreadFinalizeContLines,NULL);
     }
-    return tsdPtr;
+    return tsdPtr->lineCLPtr;
 }
 
 /*
@@ -573,11 +637,15 @@ TclContinuationsEnter(
     int *loc)
 {
     int newEntry;
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr =
-	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    Tcl_HashEntry *hPtr;
+    Tcl_HashTable *contLineTable = TclGetContLineTable();
+    ContLineLoc *clLocPtr;
 
+    if (!contLineTable) {
+        return NULL;
+    }
+    hPtr = Tcl_CreateHashEntry(contLineTable, objPtr, &newEntry);
+    clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
     if (!newEntry) {
 	/*
 	 * We're entering ContLineLoc data for the same value more than one
@@ -604,7 +672,7 @@ TclContinuationsEnter(
     }
 
     clLocPtr->num = num;
-    memcpy(&clLocPtr->loc, loc, num*sizeof(int));
+    memcpy(&clLocPtr->loc, loc, num * sizeof(int));
     clLocPtr->loc[num] = CLL_END;       /* Sentinel */
     Tcl_SetHashValue(hPtr, clLocPtr);
 
@@ -684,20 +752,23 @@ TclContinuationsEnterDerived(
 	ContLineLoc *clLocPtr = TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
-	 * Re-base the locations.
+	 * Re-base the locations. Note that TclContinuationsEnter() may return
+	 * NULL if user policy has disabled continuation line tracking.
 	 */
 
-	for (i=0 ; i<num ; i++) {
-	    clLocPtr->loc[i] -= start;
+        if (clLocPtr != NULL) {
+            for (i=0 ; i<num ; i++) {
+                clLocPtr->loc[i] -= start;
 
-	    /*
-	     * Continuation lines coming before the string and affecting us
-	     * should not happen, due to the proper maintenance of clNext
-	     * during compilation.
-	     */
+                /*
+                 * Continuation lines coming before the string and affecting
+                 * us should not happen, due to the proper maintenance of
+                 * clNext during compilation.
+                 */
 
-	    if (clLocPtr->loc[i] < 0) {
-		Tcl_Panic("Derived ICL data for object using offsets from before the script");
+                if (clLocPtr->loc[i] < 0) {
+                    Tcl_Panic("Derived ICL data for object using offsets from before the script");
+                }
 	    }
 	}
     }
@@ -728,14 +799,16 @@ TclContinuationsCopy(
     Tcl_Obj *objPtr,
     Tcl_Obj *originObjPtr)
 {
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
+    Tcl_HashTable *contLineTable = TclGetContLineTable();
 
-    if (hPtr) {
-	ContLineLoc *clLocPtr = Tcl_GetHashValue(hPtr);
+    if (contLineTable) {
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(contLineTable, originObjPtr);
 
-	TclContinuationsEnter(objPtr, clLocPtr->num, clLocPtr->loc);
+        if (hPtr) {
+            ContLineLoc *clLocPtr = Tcl_GetHashValue(hPtr);
+
+            TclContinuationsEnter(objPtr, clLocPtr->num, clLocPtr->loc);
+        }
     }
 }
 
@@ -762,14 +835,16 @@ ContLineLoc *
 TclContinuationsGet(
     Tcl_Obj *objPtr)
 {
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+    Tcl_HashTable *contLineTable = TclGetContLineTable();
 
-    if (!hPtr) {
-        return NULL;
+    if (contLineTable) {
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(contLineTable, objPtr);
+
+        if (hPtr) {
+            return Tcl_GetHashValue(hPtr);
+        }
     }
-    return Tcl_GetHashValue(hPtr);
+    return NULL;
 }
 
 /*
@@ -798,18 +873,20 @@ TclThreadFinalizeContLines(
      * Release the hashtable tracking invisible continuation lines.
      */
 
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
-    for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	ckfree(Tcl_GetHashValue(hPtr));
-	Tcl_DeleteHashEntry(hPtr);
+    if (tsdPtr->lineCLPtr != NULL) {
+        for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
+                hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
+            ckfree(Tcl_GetHashValue(hPtr));
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
+        ckfree(tsdPtr->lineCLPtr);
+        tsdPtr->lineCLPtr = NULL;
     }
-    Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
-    ckfree(tsdPtr->lineCLPtr);
-    tsdPtr->lineCLPtr = NULL;
 }
 
 /*
