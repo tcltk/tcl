@@ -4417,7 +4417,7 @@ TesttranslatefilenameCmd(
  *
  * TestupvarCmd --
  *
- *	This procedure implements the "testupvar2" command.  It is used
+ *	This procedure implements the "testupvar" command.  It is used
  *	to test Tcl_UpVar and Tcl_UpVar2.
  *
  * Results:
