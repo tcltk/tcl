@@ -325,7 +325,7 @@ CreateHashEntry(
 	    }
 #endif
 	    /* if keys pointers or values are equal */
-	    if (((void *) key == hPtr->key.oneWordValue)
+	    if ((key == hPtr->key.oneWordValue)
 		|| compareKeysProc((VOID *) key, hPtr)
 	    ) {
 		if (newPtr) {
