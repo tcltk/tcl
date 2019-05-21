@@ -311,7 +311,10 @@ CreateHashEntry(
 	    if (hash != PTR2UINT(hPtr->hash)) {
 		continue;
 	    }
-	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
+	    /* if keys pointers or values are equal */
+	    if ((key == hPtr->key.oneWordValue)
+		|| compareKeysProc((VOID *) key, hPtr)
+	    ) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}
