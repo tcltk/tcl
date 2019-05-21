@@ -4363,17 +4363,20 @@ Tcl_TimeRateObjCmd(
 
     {
 	Tcl_Obj *objarr[8], **objs = objarr;
-	Tcl_WideInt val;
+	Tcl_WideUInt usec, val;
 	int digits;
 
-	middle -= start;		/* execution time in microsecs */
+	/* 
+	 * Absolute execution time in microseconds or in wide clicks.
+	 */
+	usec = (Tcl_WideUInt)(middle - start);
 
 #ifdef TCL_WIDE_CLICKS
 	/*
-	 * convert execution time in wide clicks to microsecs.
+	 * convert execution time (in wide clicks) to microsecs.
 	 */
 
-	middle *= TclpWideClickInMicrosec();
+	usec *= TclpWideClickInMicrosec();
 #endif /* TCL_WIDE_CLICKS */
 
 	if (!count) {		/* no iterations - avoid divide by zero */
@@ -4397,10 +4400,10 @@ Tcl_TimeRateObjCmd(
 
 		Tcl_WideUInt curOverhead = overhead * count;
 
-		if (middle > curOverhead) {
-		    middle -= curOverhead;
+		if (usec > curOverhead) {
+		    usec -= curOverhead;
 		} else {
-		    middle = 0;
+		    usec = 0;
 		}
 	    }
 	} else {
@@ -4408,15 +4411,15 @@ Tcl_TimeRateObjCmd(
 	     * Calibration: obtaining new measurement overhead.
 	     */
 
-	    if (measureOverhead > ((double) middle) / count) {
-		measureOverhead = ((double) middle) / count;
+	    if (measureOverhead > ((double) usec) / count) {
+		measureOverhead = ((double) usec) / count;
 	    }
 	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}
 
-	val = middle / count;		/* microsecs per iteration */
+	val = usec / count;		/* microsecs per iteration */
 	if (val >= 1000000) {
 	    objs[0] = Tcl_NewWideIntObj(val);
 	} else {
@@ -4431,7 +4434,7 @@ Tcl_TimeRateObjCmd(
 	    } else {
 		digits = 1;
 	    }
-	    objs[0] = Tcl_ObjPrintf("%.*f", digits, ((double) middle)/count);
+	    objs[0] = Tcl_ObjPrintf("%.*f", digits, ((double) usec)/count);
 	}
 
 	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
@@ -4440,11 +4443,11 @@ Tcl_TimeRateObjCmd(
 	 * Calculate speed as rate (count) per sec
 	 */
 
-	if (!middle) {
-	    middle++;			/* Avoid divide by zero. */
+	if (!usec) {
+	    usec++;			/* Avoid divide by zero. */
 	}
 	if (count < (WIDE_MAX / 1000000)) {
-	    val = (count * 1000000) / middle;
+	    val = (count * 1000000) / usec;
 	    if (val < 100000) {
 		if (val < 100) {
 		    digits = 3;
@@ -4454,12 +4457,12 @@ Tcl_TimeRateObjCmd(
 		    digits = 1;
 		}
 		objs[4] = Tcl_ObjPrintf("%.*f",
-			digits, ((double) (count * 1000000)) / middle);
+			digits, ((double) (count * 1000000)) / usec);
 	    } else {
 		objs[4] = Tcl_NewWideIntObj(val);
 	    }
 	} else {
-	    objs[4] = Tcl_NewWideIntObj((count / middle) * 1000000);
+	    objs[4] = Tcl_NewWideIntObj((count / usec) * 1000000);
 	}
 
     retRes:
@@ -4468,8 +4471,8 @@ Tcl_TimeRateObjCmd(
 	 */
 
 	if (!calibrate) {
-	    if (middle >= 1) {
-		objs[6] = Tcl_ObjPrintf("%.3f", (double)middle / 1000);
+	    if (usec >= 1) {
+		objs[6] = Tcl_ObjPrintf("%.3f", (double)usec / 1000);
 	    } else {
 		objs[6] = Tcl_NewWideIntObj(0);
 	    }
