@@ -60,7 +60,7 @@
  */
 
 #if defined(UNICODE) && (TCL_UTF_MAX == 3)
-#   define NewNativeObj Tcl_NewUnicodeObj
+#   define NewNativeObj TclNewUnicodeObj
 #else /* !UNICODE || (TCL_UTF_MAX > 3) */
 static inline Tcl_Obj *
 NewNativeObj(
@@ -73,7 +73,8 @@ NewNativeObj(
     if (length > 0) {
 	length *= sizeof(WCHAR);
     }
-    Tcl_WinTCharToUtf(string, length, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_Utf16ToUtfDString(string, length, &ds);
 #else
     Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
 #endif

@@ -604,11 +604,11 @@ Tcl_RegsubObjCmd(
 
 	numMatches = 0;
 	nocase = (cflags & TCL_REG_NOCASE);
-	strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
+	strCmpFn = nocase ? Tcl_Utf32Ncasecmp : Tcl_Utf32Ncmp;
 
-	wsrc = Tcl_GetUnicodeFromObj(objv[0], &slen);
-	wstring = Tcl_GetUnicodeFromObj(objv[1], &wlen);
-	wsubspec = Tcl_GetUnicodeFromObj(objv[2], &wsublen);
+	wsrc = TclGetUnicodeFromObj(objv[0], &slen);
+	wstring = TclGetUnicodeFromObj(objv[1], &wlen);
+	wsubspec = TclGetUnicodeFromObj(objv[2], &wsublen);
 	wend = wstring + wlen - (slen ? slen - 1 : 0);
 	result = TCL_OK;
 
@@ -619,11 +619,11 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    if (wstring < wend) {
-		resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+		resultPtr = TclNewUnicodeObj(wstring, 0);
 		Tcl_IncrRefCount(resultPtr);
 		for (; wstring < wend; wstring++) {
-		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
-		    Tcl_AppendUnicodeToObj(resultPtr, wstring, 1);
+		    TclAppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    TclAppendUnicodeToObj(resultPtr, wstring, 1);
 		    numMatches++;
 		}
 		wlen = 0;
@@ -636,18 +636,18 @@ Tcl_RegsubObjCmd(
 			(slen==1 || (strCmpFn(wstring, wsrc,
 				(unsigned long) slen) == 0))) {
 		    if (numMatches == 0) {
-			resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+			resultPtr = TclNewUnicodeObj(wstring, 0);
 			Tcl_IncrRefCount(resultPtr);
 		    }
 		    if (p != wstring) {
-			Tcl_AppendUnicodeToObj(resultPtr, p, wstring - p);
+			TclAppendUnicodeToObj(resultPtr, p, wstring - p);
 			p = wstring + slen;
 		    } else {
 			p += slen;
 		    }
 		    wstring = p - 1;
 
-		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    TclAppendUnicodeToObj(resultPtr, wsubspec, wsublen);
 		    numMatches++;
 		}
 	    }
@@ -699,14 +699,14 @@ Tcl_RegsubObjCmd(
     } else {
 	objPtr = objv[1];
     }
-    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
     if (objv[2] == objv[0]) {
 	subPtr = Tcl_DuplicateObj(objv[2]);
     } else {
 	subPtr = objv[2];
     }
     if (!command) {
-	wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+	wsubspec = TclGetUnicodeFromObj(subPtr, &wsublen);
     }
 
     result = TCL_OK;
@@ -742,7 +742,7 @@ Tcl_RegsubObjCmd(
 	    break;
 	}
 	if (numMatches == 0) {
-	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+	    resultPtr = TclNewUnicodeObj(wstring, 0);
 	    Tcl_IncrRefCount(resultPtr);
 	    if (offset > 0) {
 		/*
@@ -750,7 +750,7 @@ Tcl_RegsubObjCmd(
 		 * specified.
 		 */
 
-		Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
+		TclAppendUnicodeToObj(resultPtr, wstring, offset);
 	    }
 	}
 	numMatches++;
@@ -763,7 +763,7 @@ Tcl_RegsubObjCmd(
 	Tcl_RegExpGetInfo(regExpr, &info);
 	start = info.matches[0].start;
 	end = info.matches[0].end;
-	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
+	TclAppendUnicodeToObj(resultPtr, wstring + offset, start);
 
 	/*
 	 * In command-prefix mode, the substitutions are added as quoted
@@ -785,7 +785,7 @@ Tcl_RegsubObjCmd(
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
-		    args[idx + numParts] = Tcl_NewUnicodeObj(
+		    args[idx + numParts] = TclNewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
 		    args[idx + numParts] = Tcl_NewObj();
@@ -826,7 +826,7 @@ Tcl_RegsubObjCmd(
 	     * the user code.
 	     */
 
-	    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+	    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
 
 	    offset += end;
 	    if (end == 0 || start == end) {
@@ -838,7 +838,7 @@ Tcl_RegsubObjCmd(
 		 */
 
 		if (offset < wlen) {
-		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		    TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
 	    }
@@ -867,7 +867,7 @@ Tcl_RegsubObjCmd(
 		    idx = ch - '0';
 		} else if ((ch == '\\') || (ch == '&')) {
 		    *wsrc = ch;
-		    Tcl_AppendUnicodeToObj(resultPtr, wfirstChar,
+		    TclAppendUnicodeToObj(resultPtr, wfirstChar,
 			    wsrc - wfirstChar + 1);
 		    *wsrc = '\\';
 		    wfirstChar = wsrc + 2;
@@ -881,7 +881,7 @@ Tcl_RegsubObjCmd(
 	    }
 
 	    if (wfirstChar != wsrc) {
-		Tcl_AppendUnicodeToObj(resultPtr, wfirstChar,
+		TclAppendUnicodeToObj(resultPtr, wfirstChar,
 			wsrc - wfirstChar);
 	    }
 
@@ -889,7 +889,7 @@ Tcl_RegsubObjCmd(
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
-		    Tcl_AppendUnicodeToObj(resultPtr,
+		    TclAppendUnicodeToObj(resultPtr,
 			    wstring + offset + subStart, subEnd - subStart);
 		}
 	    }
@@ -901,7 +901,7 @@ Tcl_RegsubObjCmd(
 	}
 
 	if (wfirstChar != wsrc) {
-	    Tcl_AppendUnicodeToObj(resultPtr, wfirstChar, wsrc - wfirstChar);
+	    TclAppendUnicodeToObj(resultPtr, wfirstChar, wsrc - wfirstChar);
 	}
 
 	if (end == 0) {
@@ -911,7 +911,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    if (offset < wlen) {
-		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
 	    }
 	    offset++;
 	} else {
@@ -923,7 +923,7 @@ Tcl_RegsubObjCmd(
 		 */
 
 		if (offset < wlen) {
-		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		    TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
 	    }
@@ -948,7 +948,7 @@ Tcl_RegsubObjCmd(
 	resultPtr = objv[1];
 	Tcl_IncrRefCount(resultPtr);
     } else if (offset < wlen) {
-	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
+	TclAppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (objc == 4) {
 	if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr,
@@ -2080,7 +2080,7 @@ StringMapCmd(
     } else {
 	sourceObj = objv[objc-1];
     }
-    ustring1 = Tcl_GetUnicodeFromObj(sourceObj, &length1);
+    ustring1 = TclGetUnicodeFromObj(sourceObj, &length1);
     if (length1 == 0) {
 	/*
 	 * Empty input string, just stop now.
@@ -2090,13 +2090,13 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
+    strCmpFn = (nocase ? Tcl_Utf32Ncasecmp : Tcl_Utf32Ncmp);
 
     /*
      * Force result to be Unicode
      */
 
-    resultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+    resultPtr = TclNewUnicodeObj(ustring1, 0);
 
     if (mapElemc == 2) {
 	/*
@@ -2109,7 +2109,7 @@ StringMapCmd(
 	int mapLen, u2lc;
 	Tcl_UniChar *mapString;
 
-	ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
+	ustring2 = TclGetUnicodeFromObj(mapElemv[0], &length2);
 	p = ustring1;
 	if ((length2 > length1) || (length2 == 0)) {
 	    /*
@@ -2118,7 +2118,7 @@ StringMapCmd(
 
 	    ustring1 = end;
 	} else {
-	    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
+	    mapString = TclGetUnicodeFromObj(mapElemv[1], &mapLen);
 	    u2lc = (nocase ? Tcl_UniCharToLower(*ustring2) : 0);
 	    for (; ustring1 < end; ustring1++) {
 		if (((*ustring1 == *ustring2) ||
@@ -2126,14 +2126,14 @@ StringMapCmd(
 			(length2==1 || strCmpFn(ustring1, ustring2,
 				(unsigned long) length2) == 0)) {
 		    if (p != ustring1) {
-			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
+			TclAppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
 		    } else {
 			p += length2;
 		    }
 		    ustring1 = p - 1;
 
-		    Tcl_AppendUnicodeToObj(resultPtr, mapString, mapLen);
+		    TclAppendUnicodeToObj(resultPtr, mapString, mapLen);
 		}
 	    }
 	}
@@ -2154,7 +2154,7 @@ StringMapCmd(
 	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
 	for (index = 0; index < mapElemc; index++) {
-	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
+	    mapStrings[index] = TclGetUnicodeFromObj(mapElemv[index],
 		    mapLens+index);
 	    if (nocase && ((index % 2) == 0)) {
 		u2lc[index/2] = Tcl_UniCharToLower(*mapStrings[index]);
@@ -2178,7 +2178,7 @@ StringMapCmd(
 			 * Put the skipped chars onto the result first.
 			 */
 
-			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
+			TclAppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
 		    } else {
 			p += length2;
@@ -2194,7 +2194,7 @@ StringMapCmd(
 		     * Append the map value to the unicode string.
 		     */
 
-		    Tcl_AppendUnicodeToObj(resultPtr,
+		    TclAppendUnicodeToObj(resultPtr,
 			    mapStrings[index+1], mapLens[index+1]);
 		    break;
 		}
@@ -2211,7 +2211,7 @@ StringMapCmd(
 	 * Put the rest of the unmapped chars onto result.
 	 */
 
-	Tcl_AppendUnicodeToObj(resultPtr, p, ustring1 - p);
+	TclAppendUnicodeToObj(resultPtr, p, ustring1 - p);
     }
     Tcl_SetObjResult(interp, resultPtr);
   done:

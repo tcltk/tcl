@@ -577,7 +577,8 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    Tcl_DStringInit(&ds);
+    nativePath = Tcl_UtfToUtf16DString(path, -1, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -1290,7 +1291,8 @@ ApplicationType(
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
-	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
+	Tcl_DStringInit(&ds);
+	nativeName = Tcl_UtfToUtf16DString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
 	found = SearchPath(NULL, nativeName, NULL, MAX_PATH,
 		nativeFullPath, &rest);
@@ -1308,7 +1310,8 @@ ApplicationType(
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	Tcl_DStringInit(&ds);
+	strcpy(fullName, Tcl_Utf16ToUtfDString(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1399,7 +1402,8 @@ ApplicationType(
 	 */
 
 	GetShortPathName(nativeFullPath, nativeFullPath, MAX_PATH);
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	Tcl_DStringInit(&ds);
+	strcpy(fullName, Tcl_Utf16ToUtfDString(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1727,7 +1731,8 @@ BuildCommandLine(
 	}
     }
     Tcl_DStringFree(linePtr);
-    Tcl_WinUtfToTChar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
+    Tcl_DStringInit(linePtr);
+    Tcl_UtfToUtf16DString(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
     Tcl_DStringFree(&ds);
 }
 
@@ -3209,7 +3214,8 @@ TclpOpenTemporaryFile(
     if (basenameObj) {
 	const char *string = TclGetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	Tcl_DStringInit(&buf);
+	Tcl_UtfToUtf16DString(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
@@ -3229,7 +3235,8 @@ TclpOpenTemporaryFile(
 
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
-	Tcl_WinUtfToTChar(number, strlen(number), &buf);
+	Tcl_DStringInit(&buf);
+	Tcl_UtfToUtf16DString(number, strlen(number), &buf);
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);

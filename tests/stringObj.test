@@ -464,22 +464,6 @@ test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
     teststringobj set 1 foo
     teststringobj appendself 1 3
 } foo
-test stringObj-15.5 {Tcl_Append*ToObj: self appends} testobj {
-    teststringobj set 1 foo
-    teststringobj appendself2 1 0
-} foofoo
-test stringObj-15.6 {Tcl_Append*ToObj: self appends} testobj {
-    teststringobj set 1 foo
-    teststringobj appendself2 1 1
-} foooo
-test stringObj-15.7 {Tcl_Append*ToObj: self appends} testobj {
-    teststringobj set 1 foo
-    teststringobj appendself2 1 2
-} fooo
-test stringObj-15.8 {Tcl_Append*ToObj: self appends} testobj {
-    teststringobj set 1 foo
-    teststringobj appendself2 1 3
-} foo
 
 if {[testConstraint testobj]} {
     testobj freeallvars

@@ -2663,8 +2663,8 @@ TclStringMatchObj(
     if (TclHasIntRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
-	udata = Tcl_GetUnicodeFromObj(strObj, &length);
-	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
+	udata = TclGetUnicodeFromObj(strObj, &length);
+	uptn  = TclGetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
 		&& !flags) {

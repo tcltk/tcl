@@ -225,7 +225,7 @@ three:
 char *
 Tcl_UniCharToUtfDString(
     const int *uniStr,	/* Unicode string to convert to UTF-8. */
-    int uniLength,		/* Length of Unicode string (must be >= 0). */
+    int uniLength,		/* Length of Unicode string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -237,6 +237,14 @@ Tcl_UniCharToUtfDString(
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
      */
 
+    if (uniLength < 0) {
+	uniLength = 0;
+	w = uniStr;
+	while (*w != '\0') {
+	    uniLength++;
+	    w++;
+	}
+    }
     oldLength = Tcl_DStringLength(dsPtr);
     Tcl_DStringSetLength(dsPtr, oldLength + (uniLength + 1) * 4);
     string = Tcl_DStringValue(dsPtr) + oldLength;
@@ -256,7 +264,7 @@ Tcl_UniCharToUtfDString(
 char *
 Tcl_Utf16ToUtfDString(
     const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
-    int uniLength,		/* Length of Utf-16 string (must be >= 0). */
+    int uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -268,6 +276,15 @@ Tcl_Utf16ToUtfDString(
      * UTF-8 string length in bytes will be <= Utf16 string length * 3.
      */
 
+    if (uniLength < 0) {
+
+	uniLength = 0;
+	w = uniStr;
+	while (*w != '\0') {
+	    uniLength++;
+	    w++;
+	}
+    }
     oldLength = Tcl_DStringLength(dsPtr);
     Tcl_DStringSetLength(dsPtr, oldLength + (uniLength + 1) * 3);
     string = Tcl_DStringValue(dsPtr) + oldLength;
@@ -692,8 +709,6 @@ Tcl_UtfCharComplete(
 #if TCL_UTF_MAX == 3
 #	undef Tcl_UtfToUniChar
 #	define Tcl_UtfToUniChar Tcl_UtfToUtf16
-#	undef Tcl_UniCharLen
-#	define Tcl_UniCharLen Tcl_Utf16Len
 #endif
 
 int
@@ -1633,23 +1648,9 @@ Tcl_UniCharToTitle(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX == 3 && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 int
 Tcl_UniCharLen(
-    const int *uniStr)	/* Unicode string to find length of. */
-{
-    int len = 0;
-
-    while (*uniStr != '\0') {
-	len++;
-	uniStr++;
-    }
-    return len;
-}
-#endif /* TCL_UTF_MAX > 3 */
-
-int
-Tcl_Utf16Len(
     const unsigned short *utf16Str)	/* Unicode string to find length of. */
 {
     int len = 0;
@@ -1660,6 +1661,7 @@ Tcl_Utf16Len(
     }
     return len;
 }
+#endif /* TCL_UTF_MAX == 3 && !defined(TCL_NO_DEPRECATED) */
 
 /*
  *----------------------------------------------------------------------
@@ -1680,7 +1682,7 @@ Tcl_Utf16Len(
 
 #if TCL_UTF_MAX > 3
 int
-Tcl_UniCharNcmp(
+Tcl_Utf32Ncmp(
     const int *ucs,	/* Unicode string to compare to uct. */
     const int *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
@@ -1708,7 +1710,7 @@ Tcl_UniCharNcmp(
 #endif /* TCL_UTF_MAX > 3 */
 
 int
-Tcl_Utf16Ncmp(
+Tcl_UniCharNcmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
     const unsigned short *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
@@ -1754,7 +1756,7 @@ Tcl_Utf16Ncmp(
 
 #if TCL_UTF_MAX > 3
 int
-Tcl_UniCharNcasecmp(
+Tcl_Utf32Ncasecmp(
     const int *ucs,	/* Unicode string to compare to uct. */
     const int *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
@@ -1774,7 +1776,7 @@ Tcl_UniCharNcasecmp(
 #endif /* TCL_UTF_MAX > 3 */
 
 int
-Tcl_Utf16Ncasecmp(
+Tcl_UniCharNcasecmp(
     const unsigned short *ucs,	/* Utf16 string to compare to uct. */
     const unsigned short *uct,	/* Utf16 string ucs is compared to. */
     unsigned long numChars)	/* Number of Utf16 characters to compare. */
@@ -2126,7 +2128,7 @@ Tcl_UniCharIsWordChar(
 
 #if TCL_UTF_MAX > 3
 int
-Tcl_UniCharCaseMatch(
+Tcl_Utf32CaseMatch(
     const int *uniStr,	/* Unicode String. */
     const int *uniPattern,
 				/* Pattern, which may contain special
@@ -2193,7 +2195,7 @@ Tcl_UniCharCaseMatch(
 			}
 		    }
 		}
-		if (Tcl_UniCharCaseMatch(uniStr, uniPattern, nocase)) {
+		if (Tcl_Utf32CaseMatch(uniStr, uniPattern, nocase)) {
 		    return 1;
 		}
 		if (*uniStr == 0) {
@@ -2294,7 +2296,7 @@ Tcl_UniCharCaseMatch(
 #endif /* TCL_UTF_MAX > 3 */
 
 int
-Tcl_Utf16CaseMatch(
+Tcl_UniCharCaseMatch(
     const unsigned short *uniStr,	/* Unicode String. */
     const unsigned short *uniPattern,
 				/* Pattern, which may contain special
@@ -2361,7 +2363,7 @@ Tcl_Utf16CaseMatch(
 			}
 		    }
 		}
-		if (Tcl_Utf16CaseMatch(uniStr, uniPattern, nocase)) {
+		if (Tcl_UniCharCaseMatch(uniStr, uniPattern, nocase)) {
 		    return 1;
 		}
 		if (*uniStr == 0) {
