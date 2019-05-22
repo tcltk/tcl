@@ -34,7 +34,8 @@ gai_strerror(
     } else {
 	tsdPtr->initialized = 1;
     }
-    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    Tcl_DStringInit(&tsdPtr->errorMsg);
+    Tcl_Utf16ToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
 }
 #endif

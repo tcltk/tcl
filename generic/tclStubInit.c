@@ -60,16 +60,16 @@
 #undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
-#undef Tcl_GetUnicodeFromObj
-#undef Tcl_NewUnicodeObj
-#undef Tcl_SetUnicodeObj
+#undef TclGetUnicodeFromObj
+#undef TclNewUnicodeObj
+#undef TclSetUnicodeObj
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
-#undef Tcl_UniCharNcmp
-#undef Tcl_UniCharNcasecmp
-#undef Tcl_UniCharCaseMatch
-#undef Tcl_AppendUnicodeToObj
+#undef Tcl_Utf32Ncmp
+#undef Tcl_Utf32Ncasecmp
+#undef Tcl_Utf32CaseMatch
+#undef TclAppendUnicodeToObj
 
 static void uniCodePanic() {
 #if TCL_UTF_MAX == 3
@@ -80,25 +80,24 @@ static void uniCodePanic() {
 }
 
 #if TCL_UTF_MAX == 3
-#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
-#   define Tcl_SetUnicodeObj (void (*)(Tcl_Obj *,const int *, int)) uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void (*)(Tcl_Obj *, const int *, int)) uniCodePanic
+#   define TclGetUnicodeFromObj (int *(*)(Tcl_Obj *, int *)) uniCodePanic
+#   define TclNewUnicodeObj (Tcl_Obj *(*)(const int *, int)) uniCodePanic
+#   define TclSetUnicodeObj (void (*)(Tcl_Obj *,const int *, int)) uniCodePanic
+#   define TclAppendUnicodeToObj (void (*)(Tcl_Obj *, const int *, int)) uniCodePanic
 #   define Tcl_UtfToUniChar (int (*)(const char *, int *)) uniCodePanic
 #   define Tcl_UniCharToUtfDString (char *(*)(const int *, int, Tcl_DString *)) uniCodePanic
 #   define Tcl_UtfToUniCharDString (int *(*)(const char *, int, Tcl_DString *)) uniCodePanic
-#   define Tcl_UniCharCaseMatch (int (*)(const int *, const int *, int)) uniCodePanic
-#   define Tcl_UniCharLen (int (*)(const int *)) uniCodePanic
-#   define Tcl_UniCharNcmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
-#   define Tcl_UniCharNcasecmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
+#   define Tcl_Utf32CaseMatch (int (*)(const int *, const int *, int)) uniCodePanic
+#   define Tcl_Utf32Ncmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
+#   define Tcl_Utf32Ncasecmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
 #else
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #	define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
 #   endif
-#   define Tcl_GetUtf16FromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
-#   define Tcl_NewUtf16Obj (Tcl_Obj *(*)(const unsigned short *, int)) uniCodePanic
-#   define Tcl_SetUtf16Obj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
-#   define Tcl_AppendUtf16ToObj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
+#   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *)) uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int)) uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int)) uniCodePanic
 #endif
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -303,9 +302,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    if (len < 0) {
-	len = wcslen((wchar_t *)string);
-    } else {
+    if (len > 0) {
 	len /= 2;
     }
     return Tcl_Utf16ToUtfDString((const unsigned short *)string, len, dsPtr);
@@ -359,22 +356,22 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
 #if TCL_UTF_MAX > 3
 static int uniCharNcmp(const int *ucs, const int *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
+   return Tcl_Utf32Ncmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcmp (int(*)(const int*,const int*,unsigned long))uniCharNcmp
+#define Tcl_Utf32Ncmp (int(*)(const int*,const int*,unsigned long))uniCharNcmp
 static int uniCharNcasecmp(const int *ucs, const int *uct, unsigned int n){
-   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
+   return Tcl_Utf32Ncasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcasecmp (int(*)(const int*,const int*,unsigned long))uniCharNcasecmp
+#define Tcl_Utf32Ncasecmp (int(*)(const int*,const int*,unsigned long))uniCharNcasecmp
 #else
 static int utf16Ncmp(const unsigned short *ucs, const unsigned short *uct, unsigned int n){
-   return Tcl_Utf16Ncmp(ucs, uct, (unsigned long)n);
+   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_Utf16Ncmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncmp
+#define Tcl_UniCharNcmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncmp
 static int utf16Ncasecmp(const unsigned short *ucs, const unsigned short *uct, unsigned int n){
-   return Tcl_Utf16Ncasecmp(ucs, uct, (unsigned long)n);
+   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_Utf16Ncasecmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const unsigned short*,const unsigned short*,unsigned long))utf16Ncasecmp
 #endif
 
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -521,6 +518,10 @@ tellOld(
     return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
+
+#if TCL_UTF_MAX > 3 || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#   define Tcl_UniCharLen 0
+#endif
 
 /*
  * WARNING: The contents of this file is automatically generated by the
@@ -1390,8 +1391,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_Utf16Len, /* 352 */
-    Tcl_Utf16Ncmp, /* 353 */
+    Tcl_UniCharLen, /* 352 */
+    Tcl_UniCharNcmp, /* 353 */
     Tcl_Utf16ToUtfDString, /* 354 */
     Tcl_UtfToUtf16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
@@ -1416,13 +1417,13 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsPunct, /* 375 */
     Tcl_RegExpExecObj, /* 376 */
     Tcl_RegExpGetInfo, /* 377 */
-    Tcl_NewUtf16Obj, /* 378 */
-    Tcl_SetUtf16Obj, /* 379 */
+    Tcl_NewUnicodeObj, /* 378 */
+    Tcl_SetUnicodeObj, /* 379 */
     Tcl_GetCharLength, /* 380 */
     Tcl_GetUniChar, /* 381 */
     Tcl_GetUnicode, /* 382 */
     Tcl_GetRange, /* 383 */
-    Tcl_AppendUtf16ToObj, /* 384 */
+    Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
     Tcl_GetAllocMutex, /* 387 */
@@ -1457,8 +1458,8 @@ const TclStubs tclStubs = {
     Tcl_SpliceChannel, /* 416 */
     Tcl_ClearChannelHandlers, /* 417 */
     Tcl_IsChannelExisting, /* 418 */
-    Tcl_Utf16Ncasecmp, /* 419 */
-    Tcl_Utf16CaseMatch, /* 420 */
+    Tcl_UniCharNcasecmp, /* 419 */
+    Tcl_UniCharCaseMatch, /* 420 */
     Tcl_FindHashEntry, /* 421 */
     Tcl_CreateHashEntry, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
@@ -1472,7 +1473,7 @@ const TclStubs tclStubs = {
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
-    Tcl_GetUtf16FromObj, /* 434 */
+    Tcl_GetUnicodeFromObj, /* 434 */
     Tcl_GetMathFuncInfo, /* 435 */
     Tcl_ListMathFuncs, /* 436 */
     Tcl_SubstObj, /* 437 */
@@ -1684,17 +1685,16 @@ const TclStubs tclStubs = {
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
     0, /* 645 */
-    Tcl_SetUnicodeObj, /* 646 */
-    Tcl_NewUnicodeObj, /* 647 */
-    Tcl_GetUnicodeFromObj, /* 648 */
-    Tcl_AppendUnicodeToObj, /* 649 */
-    Tcl_UtfToUniChar, /* 650 */
-    Tcl_UniCharToUtfDString, /* 651 */
-    Tcl_UtfToUniCharDString, /* 652 */
-    Tcl_UniCharLen, /* 653 */
-    Tcl_UniCharNcmp, /* 654 */
-    Tcl_UniCharNcasecmp, /* 655 */
-    Tcl_UniCharCaseMatch, /* 656 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharToUtfDString, /* 647 */
+    Tcl_UtfToUniCharDString, /* 648 */
+    TclSetUnicodeObj, /* 649 */
+    TclNewUnicodeObj, /* 650 */
+    TclGetUnicodeFromObj, /* 651 */
+    TclAppendUnicodeToObj, /* 652 */
+    Tcl_Utf32Ncmp, /* 653 */
+    Tcl_Utf32Ncasecmp, /* 654 */
+    Tcl_Utf32CaseMatch, /* 655 */
 };
 
 /* !END!: Do not edit above this line. */

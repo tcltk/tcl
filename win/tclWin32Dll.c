@@ -490,9 +490,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    if (len < 0) {
-	len = wcslen((WCHAR *)string);
-    } else {
+    if (len > 0) {
 	len /= 2;
     }
     return Tcl_Utf16ToUtfDString(string, len, dsPtr);

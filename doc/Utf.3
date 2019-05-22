@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToUtf16, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Utf16ToUtfDString, Tcl_UtfToUtf16DString, Tcl_UniCharLen, Tcl_Utf16Len, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_Utf16Ncmp, Tcl_Utf16Ncasecmp, Tcl_UniCharCaseMatch, Tcl_Utf16CaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToUtf16, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Utf16ToUtfDString, Tcl_UtfToUtf16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -40,25 +40,13 @@ int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
 .sp
 int
-\fBTcl_Utf16Len\fR(\fIutf16Str\fR)
-.sp
-int
 \fBTcl_UniCharNcmp\fR(\fIucs, uct, numChars\fR)
 .sp
 int
 \fBTcl_UniCharNcasecmp\fR(\fIucs, uct, numChars\fR)
 .sp
 int
-\fBTcl_Utf16Ncmp\fR(\fIutf16s, tf16t, numChars\fR)
-.sp
-int
-\fBTcl_Utf16Ncasecmp\fR(\fIutf16s, utf16t, numChars\fR)
-.sp
-int
 \fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
-.sp
-int
-\fBTcl_Utf16CaseMatch\fR(\fIutf16Str, utf16Pattern, nocase\fR)
 .sp
 int
 \fBTcl_UtfNcmp\fR(\fIcs, ct, numChars\fR)
@@ -129,8 +117,7 @@ A null-terminated utf-16 string.
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
 .AP int uniLength in
-The length of the Unicode string in characters.  Must be greater than or
-equal to 0.
+The length of the Unicode string in characters.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "unsigned long" numChars in
@@ -217,11 +204,6 @@ is the Unicode case insensitive version.
 \fBTcl_UniCharCaseMatch\fR is the Unicode equivalent to
 \fBTcl_StringCaseMatch\fR.  It accepts a null-terminated Unicode string,
 a Unicode pattern, and a boolean value specifying whether the match should
-be case sensitive and returns whether the string matches the pattern.
-.PP
-\fBTcl_Utf16CaseMatch\fR is the utf-16 equivalent to
-\fBTcl_StringCaseMatch\fR.  It accepts a null-terminated utf-16 string,
-a utf-16 pattern, and a boolean value specifying whether the match should
 be case sensitive and returns whether the string matches the pattern.
 .PP
 \fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR for UTF-8 strings. It

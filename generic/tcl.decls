@@ -1245,11 +1245,11 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
-    int Tcl_Utf16Len(const unsigned short *uniStr)
+declare 352 {deprecated {Use Tcl_GetCharLength}} {
+    int Tcl_UniCharLen(const unsigned short *uniStr)
 }
 declare 353 {
-    int Tcl_Utf16Ncmp(const unsigned short *ucs, const unsigned short *uct,
+    int Tcl_UniCharNcmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 354 {
@@ -1339,10 +1339,10 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUtf16Obj(const unsigned short *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned short *unicode, int numChars)
 }
 declare 379 {
-    void Tcl_SetUtf16Obj(Tcl_Obj *objPtr, const unsigned short *unicode,
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int numChars)
 }
 declare 380 {
@@ -1358,7 +1358,7 @@ declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
 declare 384 {
-    void Tcl_AppendUtf16ToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
+    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int length)
 }
 declare 385 {
@@ -1484,11 +1484,11 @@ declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
 declare 419 {
-    int Tcl_Utf16Ncasecmp(const unsigned short *ucs, const unsigned short *uct,
+    int Tcl_UniCharNcasecmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 420 {
-    int Tcl_Utf16CaseMatch(const unsigned short *uniStr,
+    int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
 	    const unsigned short *uniPattern, int nocase)
 }
 declare 421 {
@@ -1542,7 +1542,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    unsigned short *Tcl_GetUtf16FromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2387,43 +2387,40 @@ declare 644 {
 
 # TIP #542
 declare 646 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
-	    int numChars)
-}
-declare 647 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const int *unicode, int numChars)
-}
-declare 648 {
-    int *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
-}
-declare 649 {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
-	    int length)
-}
-declare 650 {
     int Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
-declare 651 {
+declare 647 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
-declare 652 {
+declare 648 {
     int *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
+declare 649 {
+    void TclSetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
+	    int numChars)
+}
+declare 650 {
+    Tcl_Obj *TclNewUnicodeObj(const int *unicode, int numChars)
+}
+declare 651 {
+    int *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+}
+declare 652 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
+	    int length)
+}
 declare 653 {
-    int Tcl_UniCharLen(const int *uniStr)
+    int Tcl_Utf32Ncmp(const int *ucs, const int *uct,
+	    unsigned long numChars)
 }
 declare 654 {
-    int Tcl_UniCharNcmp(const int *ucs, const int *uct,
+    int Tcl_Utf32Ncasecmp(const int *ucs, const int *uct,
 	    unsigned long numChars)
 }
 declare 655 {
-    int Tcl_UniCharNcasecmp(const int *ucs, const int *uct,
-	    unsigned long numChars)
-}
-declare 656 {
-    int Tcl_UniCharCaseMatch(const int *uniStr,
+    int Tcl_Utf32CaseMatch(const int *uniStr,
 	    const int *uniPattern, int nocase)
 }
 
