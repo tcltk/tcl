@@ -1,17 +1,6 @@
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
+
 #ifndef BN_H_
 #define BN_H_
 
@@ -148,30 +137,31 @@ extern "C" {
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
 #define MP_DIGIT_MAX     MP_MASK
 
-/* equalities */
+typedef int mp_sign;
+#define MP_ZPOS       0   /* positive integer */
+#define MP_NEG        1   /* negative */
+typedef int mp_ord;
 #define MP_LT        -1   /* less than */
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
-
-#define MP_ZPOS       0   /* positive integer */
-#define MP_NEG        1   /* negative */
-
+typedef int mp_bool;
+#define MP_YES        1   /* yes response */
+#define MP_NO         0   /* no response */
+typedef int mp_err;
 #define MP_OKAY       0   /* ok result */
+#define MP_ERR        -1  /* unknown error */
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
-
-#define MP_YES        1   /* yes response */
-#define MP_NO         0   /* no response */
+#define MP_ITER       -4  /* Max. iterations reached */
 
 /* Primality generation flags */
 #define LTM_PRIME_BBS      0x0001 /* BBS style prime */
 #define LTM_PRIME_SAFE     0x0002 /* Safe prime (p-1)/2 == prime */
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
-typedef int           mp_err;
+/* tunable cutoffs */
 
-/* you'll have to tune these... */
 #if defined(BUILD_tcl) || !defined(_WIN32)
 MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
            KARATSUBA_SQR_CUTOFF,
@@ -184,15 +174,56 @@ MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
 
 /* default precision */
 #ifndef MP_PREC
-   #ifndef MP_LOW_MEM
-      #define MP_PREC                 32     /* default digits of precision */
-   #else
-      #define MP_PREC                 8      /* default digits of precision */
-   #endif   
+#   ifndef MP_LOW_MEM
+#      define MP_PREC 32        /* default digits of precision */
+#   elif defined(MP_8BIT)
+#      define MP_PREC 16        /* default digits of precision */
+#   else
+#      define MP_PREC 8         /* default digits of precision */
+#   endif
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
 #define MP_WARRAY               (1 << (sizeof(mp_word) * CHAR_BIT - 2 * DIGIT_BIT + 1))
+
+/*
+ * MP_WUR - warn unused result
+ * ---------------------------
+ *
+ * The result of functions annotated with MP_WUR must be
+ * checked and cannot be ignored.
+ *
+ * Most functions in libtommath return an error code.
+ * This error code must be checked in order to prevent crashes or invalid
+ * results.
+ *
+ * If you still want to avoid the error checks for quick and dirty programs
+ * without robustness guarantees, you can `#define MP_WUR` before including
+ * tommath.h, disabling the warnings.
+ */
+#ifndef MP_WUR
+#  if defined(__GNUC__) && __GNUC__ >= 4
+#     define MP_WUR __attribute__((warn_unused_result))
+#  else
+#     define MP_WUR
+#  endif
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
+#  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
+#  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
+#  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
+#elif defined(_MSC_VER) && _MSC_VER >= 1500
+#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
+#  define MP_DEPRECATED_PRAGMA(s) __pragma(message(s))
+#else
+#  define MP_DEPRECATED
+#  define MP_DEPRECATED_PRAGMA(s)
+#endif
+
+#define USED(m)    ((m)->used)
+#define DIGIT(m,k) ((m)->dp[(k)])
+#define SIGN(m)    ((m)->sign)
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -207,10 +238,6 @@ struct mp_int {
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
-
-#define USED(m)    ((m)->used)
-#define DIGIT(m,k) ((m)->dp[(k)])
-#define SIGN(m)    ((m)->sign)
 
 /* error code to char* string */
 /*
@@ -276,6 +303,16 @@ void mp_set(mp_int *a, mp_digit b);
 /* set a 32-bit const */
 /*
 int mp_set_int(mp_int *a, unsigned long b);
+*/
+
+/* set a platform dependent unsigned long value */
+/*
+int mp_set_long(mp_int *a, unsigned long b);
+*/
+
+/* set a platform dependent unsigned long long value */
+/*
+int mp_set_long_long(mp_int *a, unsigned long long b);
 */
 
 /* get a 32-bit value */
@@ -650,7 +687,7 @@ int mp_prime_miller_rabin(mp_int *a, mp_int *b, int *result);
 */
 
 /* This gives [for a given bit size] the number of trials required
- * such that Miller-Rabin gives a prob of failure lower than 2^-96 
+ * such that Miller-Rabin gives a prob of failure lower than 2^-96
  */
 /*
 int mp_prime_rabin_miller_trials(int size);
@@ -677,7 +714,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
 */
 
 /* makes a truly random prime of a given size (bytes),
- * call with bbs = 1 if you want it to be congruent to 3 mod 4 
+ * call with bbs = 1 if you want it to be congruent to 3 mod 4
  *
  * You have to supply a callback which fills in a buffer with random bytes.  "dat" is a parameter you can
  * have passed to the callback (e.g. a state or something).  This function doesn't use "dat" itself
@@ -690,10 +727,9 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
 /* makes a truly random prime of a given size (bits),
  *
  * Flags are as follows:
- * 
+ *
  *   LTM_PRIME_BBS      - make prime congruent to 3 mod 4
  *   LTM_PRIME_SAFE     - make sure (p-1)/2 is prime as well (implies LTM_PRIME_BBS)
- *   LTM_PRIME_2MSB_OFF - make the 2nd highest bit zero
  *   LTM_PRIME_2MSB_ON  - make the 2nd highest bit one
  *
  * You have to supply a callback which fills in a buffer with random bytes.  "dat" is a parameter you can
@@ -830,7 +866,7 @@ MODULE_SCOPE const char *mp_s_rmap;
 #endif
 
 #ifdef __cplusplus
-   }
+}
 #endif
 
 #endif

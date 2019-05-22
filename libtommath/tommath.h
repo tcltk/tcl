@@ -506,7 +506,6 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
  * 
  *   LTM_PRIME_BBS      - make prime congruent to 3 mod 4
  *   LTM_PRIME_SAFE     - make sure (p-1)/2 is prime as well (implies LTM_PRIME_BBS)
- *   LTM_PRIME_2MSB_OFF - make the 2nd highest bit zero
  *   LTM_PRIME_2MSB_ON  - make the 2nd highest bit one
  *
  * You have to supply a callback which fills in a buffer with random bytes.  "dat" is a parameter you can

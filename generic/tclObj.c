@@ -2778,8 +2778,8 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
+	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1)
+		    / MP_DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
 		unsigned char *bytes = (unsigned char *)&scratch;
@@ -3079,7 +3079,7 @@ Tcl_GetWideIntFromObj(
 
 	    UNPACK_BIGNUM(objPtr, big);
 	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(Tcl_WideInt)
-		     + DIGIT_BIT - 1) / DIGIT_BIT) {
+		     + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
 		Tcl_WideInt scratch;
@@ -3498,7 +3498,7 @@ Tcl_SetBignumObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
     if ((size_t)(bignumValue->used)
-	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	    <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
 	unsigned char *bytes = (unsigned char *)&scratch;
@@ -3522,7 +3522,7 @@ Tcl_SetBignumObj(
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
     if ((size_t)(bignumValue->used)
-	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
 	Tcl_WideInt scratch;
@@ -3921,11 +3921,10 @@ TclCompareObjKeys(
 
     /*
      * If the object pointers are the same then they match.
-     */
+     * OPT: this comparison was moved to the caller
 
-    if (objPtr1 == objPtr2) {
-	return 1;
-    }
+       if (objPtr1 == objPtr2) return 1;
+    */
 
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being

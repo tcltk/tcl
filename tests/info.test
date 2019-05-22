@@ -773,16 +773,16 @@ test info-22.8 {info frame, basic trace} -constraints {!singleTestInterp} -match
 
 
 ## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
-test info-23.0 {eval'd info frame} {!singleTestInterp} {
-    eval {info frame}
-} 8
-test info-23.1 {eval'd info frame, semi-dynamic} {!singleTestInterp} {
-    eval info frame
-} 8
-test info-23.2 {eval'd info frame, dynamic} {!singleTestInterp} {
-    set script {info frame}
-    eval $script
-} 8
+test info-23.0 {eval'd info frame} -constraints {!singleTestInterp} -body {
+    list [i eval {info frame}] [i eval {eval {info frame}}]
+} -setup {interp create i} -cleanup {interp delete i} -result {1 2}
+test info-23.1 {eval'd info frame, semi-dynamic} -constraints {!singleTestInterp} -body {
+    i eval {eval info frame}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
+test info-23.2 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
+    i eval {	set script {info frame}
+		eval $script}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
 test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0
