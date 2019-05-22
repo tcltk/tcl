@@ -604,7 +604,7 @@ Tcl_RegsubObjCmd(
 
 	numMatches = 0;
 	nocase = (cflags & TCL_REG_NOCASE);
-	strCmpFn = nocase ? Tcl_Utf32Ncasecmp : Tcl_Utf32Ncmp;
+	strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
 	wsrc = TclGetUnicodeFromObj(objv[0], &slen);
 	wstring = TclGetUnicodeFromObj(objv[1], &wlen);
@@ -2090,7 +2090,7 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? Tcl_Utf32Ncasecmp : Tcl_Utf32Ncmp);
+    strCmpFn = (nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
 
     /*
      * Force result to be Unicode

@@ -66,9 +66,6 @@
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
-#undef Tcl_Utf32Ncmp
-#undef Tcl_Utf32Ncasecmp
-#undef Tcl_Utf32CaseMatch
 #undef TclAppendUnicodeToObj
 
 static void uniCodePanic() {
@@ -87,9 +84,6 @@ static void uniCodePanic() {
 #   define Tcl_UtfToUniChar (int (*)(const char *, int *)) uniCodePanic
 #   define Tcl_UniCharToUtfDString (char *(*)(const int *, int, Tcl_DString *)) uniCodePanic
 #   define Tcl_UtfToUniCharDString (int *(*)(const char *, int, Tcl_DString *)) uniCodePanic
-#   define Tcl_Utf32CaseMatch (int (*)(const int *, const int *, int)) uniCodePanic
-#   define Tcl_Utf32Ncmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
-#   define Tcl_Utf32Ncasecmp (int (*)(const int *, const int *, unsigned long)) uniCodePanic
 #else
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #	define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *)) uniCodePanic
@@ -356,13 +350,13 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
 #if TCL_UTF_MAX > 3
 static int uniCharNcmp(const int *ucs, const int *uct, unsigned int n){
-   return Tcl_Utf32Ncmp(ucs, uct, (unsigned long)n);
+   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_Utf32Ncmp (int(*)(const int*,const int*,unsigned long))uniCharNcmp
+#define Tcl_UniCharNcmp (int(*)(const int*,const int*,unsigned long))uniCharNcmp
 static int uniCharNcasecmp(const int *ucs, const int *uct, unsigned int n){
-   return Tcl_Utf32Ncasecmp(ucs, uct, (unsigned long)n);
+   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_Utf32Ncasecmp (int(*)(const int*,const int*,unsigned long))uniCharNcasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const int*,const int*,unsigned long))uniCharNcasecmp
 #else
 static int utf16Ncmp(const unsigned short *ucs, const unsigned short *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
@@ -520,7 +514,10 @@ tellOld(
 #endif /* !TCL_NO_DEPRECATED */
 
 #if TCL_UTF_MAX > 3 || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#   define Tcl_UniCharCaseMatch 0
 #   define Tcl_UniCharLen 0
+#   define XTcl_UniCharNcmp 0
+#   define XTcl_UniCharNcasecmp 0
 #endif
 
 /*
@@ -1692,9 +1689,6 @@ const TclStubs tclStubs = {
     TclNewUnicodeObj, /* 650 */
     TclGetUnicodeFromObj, /* 651 */
     TclAppendUnicodeToObj, /* 652 */
-    Tcl_Utf32Ncmp, /* 653 */
-    Tcl_Utf32Ncasecmp, /* 654 */
-    Tcl_Utf32CaseMatch, /* 655 */
 };
 
 /* !END!: Do not edit above this line. */

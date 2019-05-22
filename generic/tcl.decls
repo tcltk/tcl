@@ -1248,8 +1248,8 @@ declare 351 {
 declare 352 {deprecated {Use Tcl_GetCharLength}} {
     int Tcl_UniCharLen(const unsigned short *uniStr)
 }
-declare 353 {
-    int Tcl_UniCharNcmp(const unsigned short *ucs, const unsigned short *uct,
+declare 353 {deprecated {Use Tcl_UtfNcmp}} {
+    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
 declare 354 {
@@ -1483,13 +1483,13 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
-declare 419 {
-    int Tcl_UniCharNcasecmp(const unsigned short *ucs, const unsigned short *uct,
+declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
+    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
-declare 420 {
-    int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
-	    const unsigned short *uniPattern, int nocase)
+declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
+    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
+	    const Tcl_UniChar *uniPattern, int nocase)
 }
 declare 421 {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
@@ -2411,19 +2411,6 @@ declare 652 {
     void TclAppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
 	    int length)
 }
-declare 653 {
-    int Tcl_Utf32Ncmp(const int *ucs, const int *uct,
-	    unsigned long numChars)
-}
-declare 654 {
-    int Tcl_Utf32Ncasecmp(const int *ucs, const int *uct,
-	    unsigned long numChars)
-}
-declare 655 {
-    int Tcl_Utf32CaseMatch(const int *uniStr,
-	    const int *uniPattern, int nocase)
-}
-
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
