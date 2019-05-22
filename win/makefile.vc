@@ -251,7 +251,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
@@ -275,6 +274,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
@@ -299,11 +299,16 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_int.obj \
+	$(TMP_DIR)\bn_mp_set_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_tc_and.obj \
+	$(TMP_DIR)\bn_mp_tc_div_2d.obj \
+	$(TMP_DIR)\bn_mp_tc_or.obj \
+	$(TMP_DIR)\bn_mp_tc_xor.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \

@@ -80,9 +80,10 @@ and all following characters into their lower-case equivalents.
 
 .SH BUGS
 .PP
-At this time, the case conversions are only defined for the ISO8859-1
-characters.  Unicode characters above 0x00ff are not modified by these
-routines.
+At this time, the case conversions are only defined for the Unicode
+plane 0 characters.  The result for Unicode characters above 0xffff
+is undefined, but - actually - only the lower 16 bits of the
+character value is handled.
 
 .SH KEYWORDS
 utf, unicode, toupper, tolower, totitle, case

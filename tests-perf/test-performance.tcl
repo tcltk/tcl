@@ -94,51 +94,97 @@ proc _test_out_total {} {
   puts [lindex $_(itm) $maxi]
   puts [string repeat ** 40]
   puts ""
+  unset -nocomplain _(itm) _(starttime)
+}
+
+proc _test_start {reptime} {
+  upvar _ _
+  array set _ [list itm {} reptime $reptime starttime [clock milliseconds] -from-run 0]
+}
+
+proc _test_iter {args} {
+  if {[llength $args] > 2} {
+    return -code error "wrong # args: should be \"[lindex [info level [info level]] 0] ?level? measure-result\""
+  }
+  set lvl 1
+  if {[llength $args] > 1} {
+    set args [lassign $args lvl]
+  }
+  upvar $lvl _ _
+  puts [set _(m) {*}$args]
+  lappend _(itm) $_(m)
+  puts ""
+}
+
+proc _adjust_maxcount {reptime maxcount} {
+  if {[llength $reptime] > 1} {
+    lreplace $reptime 1 1 [expr {min($maxcount,[lindex $reptime 1])}]
+  } else {
+    lappend reptime $maxcount
+  }
 }
 
 proc _test_run {args} {
   upvar _ _
   # parse args:
-  set _(out-result) 1
-  if {[lindex $args 0] eq "-no-result"} {
-    set _(out-result) 0
+  array set _ [set _opts {-no-result 0 -uplevel 0}]
+  while {[llength $args] > 2} {
+    if {[set o [lindex $args 0]] ni $_opts || $_($o)} {
+      break
+    }
+    set _($o) 1
     set args [lrange $args 1 end]
   }
+  unset -nocomplain _opts o
   if {[llength $args] < 2 || [llength $args] > 3} {
     return -code error "wrong # args: should be \"[lindex [info level [info level]] 0] ?-no-result? reptime lst ?outcmd?\""
   }
-  set outcmd {puts $_(r)}
+  set _(outcmd) {puts}
   set args [lassign $args reptime lst]
   if {[llength $args]} {
-    set outcmd [lindex $args 0]
+    set _(outcmd) [lindex $args 0]
   }
   # avoid output if only once:
   if {[lindex $reptime 0] <= 1 || ([llength $reptime] > 1 && [lindex $reptime 1] == 1)} {
-    set _(out-result) 0
+    set _(-no-result) 1
   }
-  array set _ [list itm {} reptime $reptime starttime [clock milliseconds]]
+  if {![info exists _(itm)]} {
+    array set _ [list itm {} reptime $reptime starttime [clock milliseconds] -from-run 1]
+  } else {
+    array set _ [list reptime $reptime]
+  }
 
   # process measurement:
   foreach _(c) [_test_get_commands $lst] {
-    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
+    {*}$_(outcmd) "% [regsub -all {\n[ \t]*} $_(c) {; }]"
     if {[regexp {^\s*\#} $_(c)]} continue
     if {[regexp {^\s*(?:setup|cleanup)\s+} $_(c)]} {
-      puts [if 1 [lindex $_(c) 1]]
+      set _(c) [lindex $_(c) 1]
+      if {$_(-uplevel)} {
+        set _(c) [list uplevel 1 $_(c)]
+      }
+      {*}$_(outcmd) [if 1 $_(c)]
       continue
     }
+    if {$_(-uplevel)} {
+      set _(c) [list uplevel 1 $_(c)]
+    }
+    set _(ittime) $_(reptime)
     # if output result (and not once):
-    if {$_(out-result)} {
+    if {!$_(-no-result)} {
       set _(r) [if 1 $_(c)]
-      if {$outcmd ne {}} $outcmd
-      if {[llength $_(reptime)] > 1} { # decrement max-count
-        lset _(reptime) 1 [expr {[lindex $_(reptime) 1] - 1}]
+      if {$_(outcmd) ne {}} {{*}$_(outcmd) $_(r)}
+      if {[llength $_(ittime)] > 1} { # decrement max-count
+        lset _(ittime) 1 [expr {[lindex $_(ittime) 1] - 1}]
       }
     }
-    puts [set _(m) [timerate $_(c) {*}$_(reptime)]]
+    {*}$_(outcmd) [set _(m) [timerate $_(c) {*}$_(ittime)]]
     lappend _(itm) $_(m)
-    puts ""
+    {*}$_(outcmd) ""
   }
-  _test_out_total
+  if {$_(-from-run)} {
+    _test_out_total
+  }
 }
 
 }; # end of namespace ::tclTestPerf
