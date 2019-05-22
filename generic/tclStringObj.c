@@ -3402,7 +3402,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) TclGetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) TclGetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)Tcl_Utf32Ncasecmp;
+		memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
@@ -3427,7 +3427,7 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_Utf32Ncmp;
+			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
 		    }
 		}
 	    }

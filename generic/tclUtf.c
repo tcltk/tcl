@@ -1680,39 +1680,10 @@ Tcl_UniCharLen(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
-int
-Tcl_Utf32Ncmp(
-    const int *ucs,	/* Unicode string to compare to uct. */
-    const int *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
-{
-#ifdef WORDS_BIGENDIAN
-    /*
-     * We are definitely on a big-endian machine; memcmp() is safe
-     */
-
-    return memcmp(ucs, uct, numChars*sizeof(int));
-
-#else /* !WORDS_BIGENDIAN */
-    /*
-     * We can't simply call memcmp() because that is not lexically correct.
-     */
-
-    for ( ; numChars != 0; ucs++, uct++, numChars--) {
-	if (*ucs != *uct) {
-	    return (*ucs - *uct);
-	}
-    }
-    return 0;
-#endif /* WORDS_BIGENDIAN */
-}
-#endif /* TCL_UTF_MAX > 3 */
-
 int
 Tcl_UniCharNcmp(
-    const unsigned short *ucs,	/* Unicode string to compare to uct. */
-    const unsigned short *uct,	/* Unicode string ucs is compared to. */
+    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
 #ifdef WORDS_BIGENDIAN
@@ -1754,31 +1725,10 @@ Tcl_UniCharNcmp(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
-int
-Tcl_Utf32Ncasecmp(
-    const int *ucs,	/* Unicode string to compare to uct. */
-    const int *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
-{
-    for ( ; numChars != 0; numChars--, ucs++, uct++) {
-	if (*ucs != *uct) {
-	    int lcs = Tcl_UniCharToLower(*ucs);
-	    int lct = Tcl_UniCharToLower(*uct);
-
-	    if (lcs != lct) {
-		return (lcs - lct);
-	    }
-	}
-    }
-    return 0;
-}
-#endif /* TCL_UTF_MAX > 3 */
-
 int
 Tcl_UniCharNcasecmp(
-    const unsigned short *ucs,	/* Utf16 string to compare to uct. */
-    const unsigned short *uct,	/* Utf16 string ucs is compared to. */
+    const Tcl_UniChar *ucs,	/* Utf16 string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Utf16 string ucs is compared to. */
     unsigned long numChars)	/* Number of Utf16 characters to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
@@ -2126,184 +2076,16 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
-int
-Tcl_Utf32CaseMatch(
-    const int *uniStr,	/* Unicode String. */
-    const int *uniPattern,
-				/* Pattern, which may contain special
-				 * characters. */
-    int nocase)			/* 0 for case sensitive, 1 for insensitive */
-{
-    int ch1 = 0, p;
-
-    while (1) {
-	p = *uniPattern;
-
-	/*
-	 * See if we're at the end of both the pattern and the string. If so,
-	 * we succeeded. If we're at the end of the pattern but not at the end
-	 * of the string, we failed.
-	 */
-
-	if (p == 0) {
-	    return (*uniStr == 0);
-	}
-	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
-	}
-
-	/*
-	 * Check for a "*" as the next pattern character. It matches any
-	 * substring. We handle this by skipping all the characters up to the
-	 * next matching one in the pattern, and then calling ourselves
-	 * recursively for each postfix of string, until either we match or we
-	 * reach the end of the string.
-	 */
-
-	if (p == '*') {
-	    /*
-	     * Skip all successive *'s in the pattern
-	     */
-
-	    while (*(++uniPattern) == '*') {
-		/* empty body */
-	    }
-	    p = *uniPattern;
-	    if (p == 0) {
-		return 1;
-	    }
-	    if (nocase) {
-		p = Tcl_UniCharToLower(p);
-	    }
-	    while (1) {
-		/*
-		 * Optimization for matching - cruise through the string
-		 * quickly if the next char in the pattern isn't a special
-		 * character
-		 */
-
-		if ((p != '[') && (p != '?') && (p != '\\')) {
-		    if (nocase) {
-			while (*uniStr && (p != *uniStr)
-				&& (p != Tcl_UniCharToLower(*uniStr))) {
-			    uniStr++;
-			}
-		    } else {
-			while (*uniStr && (p != *uniStr)) {
-			    uniStr++;
-			}
-		    }
-		}
-		if (Tcl_Utf32CaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
-		}
-		if (*uniStr == 0) {
-		    return 0;
-		}
-		uniStr++;
-	    }
-	}
-
-	/*
-	 * Check for a "?" as the next pattern character. It matches any
-	 * single character.
-	 */
-
-	if (p == '?') {
-	    uniPattern++;
-	    uniStr++;
-	    continue;
-	}
-
-	/*
-	 * Check for a "[" as the next pattern character. It is followed by a
-	 * list of characters that are acceptable, or by a range (two
-	 * characters separated by "-").
-	 */
-
-	if (p == '[') {
-	    int startChar, endChar;
-
-	    uniPattern++;
-	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
-	    uniStr++;
-	    while (1) {
-		if ((*uniPattern == ']') || (*uniPattern == 0)) {
-		    return 0;
-		}
-		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
-			: *uniPattern);
-		uniPattern++;
-		if (*uniPattern == '-') {
-		    uniPattern++;
-		    if (*uniPattern == 0) {
-			return 0;
-		    }
-		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
-			    : *uniPattern);
-		    uniPattern++;
-		    if (((startChar <= ch1) && (ch1 <= endChar))
-			    || ((endChar <= ch1) && (ch1 <= startChar))) {
-			/*
-			 * Matches ranges of form [a-z] or [z-a].
-			 */
-			break;
-		    }
-		} else if (startChar == ch1) {
-		    break;
-		}
-	    }
-	    while (*uniPattern != ']') {
-		if (*uniPattern == 0) {
-		    uniPattern--;
-		    break;
-		}
-		uniPattern++;
-	    }
-	    uniPattern++;
-	    continue;
-	}
-
-	/*
-	 * If the next pattern character is '\', just strip off the '\' so we
-	 * do exact matching on the character that follows.
-	 */
-
-	if (p == '\\') {
-	    if (*(++uniPattern) == '\0') {
-		return 0;
-	    }
-	}
-
-	/*
-	 * There's no special character. Just make sure that the next bytes of
-	 * each string match.
-	 */
-
-	if (nocase) {
-	    if (Tcl_UniCharToLower(*uniStr) !=
-		    Tcl_UniCharToLower(*uniPattern)) {
-		return 0;
-	    }
-	} else if (*uniStr != *uniPattern) {
-	    return 0;
-	}
-	uniStr++;
-	uniPattern++;
-    }
-}
-#endif /* TCL_UTF_MAX > 3 */
-
+#if !defined(TCL_NO_DEPRECATED) && TCL_UTF_MAX == 3 && TCL_MAJOR_VERSION < 9
 int
 Tcl_UniCharCaseMatch(
-    const unsigned short *uniStr,	/* Unicode String. */
-    const unsigned short *uniPattern,
+    const Tcl_UniChar *uniStr,	/* Unicode String. */
+    const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    unsigned short ch1 = 0, p;
+    Tcl_UniChar ch1 = 0, p;
 
     while (1) {
 	p = *uniPattern;
@@ -2391,7 +2173,7 @@ Tcl_UniCharCaseMatch(
 	 */
 
 	if (p == '[') {
-	    unsigned short startChar, endChar;
+	    Tcl_UniChar startChar, endChar;
 
 	    uniPattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
@@ -2461,6 +2243,7 @@ Tcl_UniCharCaseMatch(
 	uniPattern++;
     }
 }
+#endif /* defined(TCL_NO_DEPRECATED) */
 
 /*
  *----------------------------------------------------------------------

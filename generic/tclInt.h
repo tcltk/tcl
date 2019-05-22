@@ -4687,7 +4687,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #ifdef WORDS_BIGENDIAN
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #else /* !WORDS_BIGENDIAN */
-#   define TclUniCharNcmp Tcl_Utf32Ncmp
+#   define TclUniCharNcmp Tcl_UniCharNcmp
 #endif /* WORDS_BIGENDIAN */
 
 /*
