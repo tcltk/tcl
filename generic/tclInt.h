@@ -2186,6 +2186,12 @@ typedef struct Interp {
     Tcl_Obj *innerContext;	/* cached list for fast reallocation */
     int resetErrorStack;        /* controls cleaning up of ::errorStack */
 
+    struct {
+	int level;
+	const Tcl_LogHandler *handler;
+	ClientData clientData;
+    } log;
+
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -3073,6 +3079,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
+MODULE_SCOPE void	TclInstallStdoutLogger(Tcl_Interp *interp);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsSpaceProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
@@ -4941,6 +4948,17 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	    (((limit).timeGranularity == 1) ||				\
 	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
 	    ? 1 : 0)))
+
+/*
+ * Inline logging check. Not great because we can't use varargs macros.
+ */
+
+#define TclLog(interp,levelValue,arguments) \
+    do {							\
+	if ((levelValue) >= ((Interp *) (interp))->log.level) { \
+	    Tcl_Log arguments;					\
+	}							\
+    } while (0)
 
 /*
  * Compile-time assertions: these produce a compile time error if the

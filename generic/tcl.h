@@ -2340,6 +2340,34 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Logging system declarations.
+ */
+
+typedef enum {
+    TCL_LOG_DEV,
+    TCL_LOG_DEBUG,
+    TCL_LOG_INFO,
+    TCL_LOG_NOTICE,
+    TCL_LOG_WARNING,
+    TCL_LOG_ERROR,
+    TCL_LOG_FATAL,
+    TCL_LOG_BUG
+} Tcl_LogLevel;
+
+typedef int (Tcl_LogProc)(ClientData clientData, Tcl_Interp *interp,
+			Tcl_LogLevel level, Tcl_Obj *message);
+typedef void (Tcl_SetLogLevelProc)(ClientData clientData, Tcl_Interp *interp,
+			Tcl_LogLevel level);
+typedef void (Tcl_FreeLogHandlerProc)(ClientData clientData);
+
+typedef struct Tcl_LogHandler {
+    Tcl_LogProc *logProc;
+    Tcl_SetLogLevelProc *setLevelProc;
+    Tcl_FreeLogHandlerProc *freeProc;
+} Tcl_LogHandler;
+
+/*
+ *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */

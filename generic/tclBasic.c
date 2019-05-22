@@ -875,6 +875,15 @@ Tcl_CreateInterp(void)
     iPtr->deferredCallbacks = NULL;
 
     /*
+     * Set a basic logger.
+     */
+
+    iPtr->log.level = TCL_LOG_DEV;
+    iPtr->log.handler = NULL;
+    iPtr->log.clientData = NULL;
+    TclInstallStdoutLogger((Tcl_Interp *) iPtr);
+
+    /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
      * pre-existing command by the same name). If a command has a Tcl_CmdProc
