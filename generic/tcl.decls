@@ -2388,24 +2388,24 @@ declare 644 {
 # TIP #390
 declare 645 {
     void Tcl_Log(Tcl_Interp *interp, Tcl_LogLevel level,
-	    const char *message, ...);
+	    const char *message, ...)
 }
 
 declare 646 {
-    void Tcl_SetLogLevel(Tcl_Interp *interp, Tcl_LogLevel level);
+    void Tcl_SetLogLevel(Tcl_Interp *interp, Tcl_LogLevel level)
 }
 
 declare 647 {
-    Tcl_LogLevel Tcl_GetLogLevel(Tcl_Interp *interp);
+    Tcl_LogLevel Tcl_GetLogLevel(Tcl_Interp *interp)
 }
 
 declare 648 {
-    int Tcl_LogLevelEnabled(Tcl_Interp *interp, Tcl_LogLevel level);
+    int Tcl_LogLevelEnabled(Tcl_Interp *interp, Tcl_LogLevel level)
 }
 
 declare 649 {
     void Tcl_SetLogHandler(Tcl_Interp *interp,
-	    const Tcl_LogHandler *logHandler, ClientData clientData);
+	    const Tcl_LogHandler *logHandler, ClientData clientData)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

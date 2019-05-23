@@ -1631,6 +1631,11 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_Log, /* 645 */
+    Tcl_SetLogLevel, /* 646 */
+    Tcl_GetLogLevel, /* 647 */
+    Tcl_LogLevelEnabled, /* 648 */
+    Tcl_SetLogHandler, /* 649 */
 };
 
 /* !END!: Do not edit above this line. */

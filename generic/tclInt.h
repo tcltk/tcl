@@ -2187,7 +2187,7 @@ typedef struct Interp {
     int resetErrorStack;        /* controls cleaning up of ::errorStack */
 
     struct {
-	int level;
+	Tcl_LogLevel level;
 	const Tcl_LogHandler *handler;
 	ClientData clientData;
     } log;
@@ -2906,6 +2906,8 @@ struct Tcl_LoadHandle_ {
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
+MODULE_SCOPE void	TclAppendPrintfToObjVA(Tcl_Obj *objPtr,
+			    const char *format, va_list argList);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
@@ -2958,6 +2960,11 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((format (printf, 3, 4)))
+#endif
+MODULE_SCOPE void	TclDoLog(Tcl_Interp *interp, Tcl_LogLevel level,
+			    const char *message, ...);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -4950,17 +4957,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	    ? 1 : 0)))
 
 /*
- * Inline logging check. Not great because we can't use varargs macros.
- */
-
-#define TclLog(interp,levelValue,arguments) \
-    do {							\
-	if ((levelValue) >= ((Interp *) (interp))->log.level) { \
-	    Tcl_Log arguments;					\
-	}							\
-    } while (0)
-
-/*
  * Compile-time assertions: these produce a compile time error if the
  * expression is not known to be true at compile time. If the assertion is
  * known to be false, the compiler (or optimizer?) will error out with
@@ -4973,6 +4969,19 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TCL_CT_ASSERT(e) \
     {enum { ct_assert_value = 1/(!!(e)) };}
+
+/*
+ * Inline logging check. Not great because we can't use varargs macros.
+ */
+
+#define TclLog(interp,levelValue,arguments) \
+    do {							\
+	TCL_CT_ASSERT(levelValue >= TCL_LOG_DEV);		\
+	TCL_CT_ASSERT(levelValue <= TCL_LOG_BUG);		\
+	if ((levelValue) >= ((Interp *) (interp))->log.level) { \
+	    TclDoLog arguments;					\
+	}							\
+    } while (0)
 
 /*
  *----------------------------------------------------------------

@@ -11,7 +11,7 @@
 
 #include "tclInt.h"
 
-static const char *levelNames = {
+static const char *levelNames[] = {
     "DEV",
     "DEBUG",
     "INFO",
@@ -41,9 +41,8 @@ Tcl_SetLogLevel(
 	Tcl_Panic("bad log level: %d", level);
     }
     iPtr->log.level = level;
-    if (iPtr->log.handler && iPtr->log.handler->setLogLevelProc) {
-	iPtr->log.handler->setLogLevelProc(iPtr->log.clientData,
-		interp, level);
+    if (iPtr->log.handler && iPtr->log.handler->setLevelProc) {
+	iPtr->log.handler->setLevelProc(iPtr->log.clientData, interp, level);
     }
 }
 
@@ -96,8 +95,55 @@ Tcl_Log(
      */
 
     objPtr = Tcl_NewObj();
-    va_start(argList, format);
-    TclAppendPrintfToObjVA(objPtr, format, argList);
+    va_start(argList, message);
+    TclAppendPrintfToObjVA(objPtr, message, argList);
+    va_end(argList);
+
+    /*
+     * Dispatch to the log handler. Note that logging does not report errors
+     * directly.
+     */
+
+    Tcl_IncrRefCount(objPtr);
+    iPtr->log.handler->logProc(iPtr->log.clientData,
+	    interp, level, objPtr);
+    Tcl_DecrRefCount(objPtr);
+}
+
+void
+TclDoLog(
+    Tcl_Interp *interp,
+    Tcl_LogLevel level,
+    const char *message,
+    ...)
+{
+    Interp *iPtr = (Interp *) interp;
+    va_list argList;
+    Tcl_Obj *objPtr;
+
+    /*
+     * Are we allowed to log this at the moment?
+     */
+
+    if (level < iPtr->log.level) {
+	return;
+    }
+
+    /*
+     * Is there a handler registered?
+     */
+
+    if (!iPtr->log.handler || !iPtr->log.handler->logProc) {
+	return;
+    }
+
+    /*
+     * Format the log detail message. The log handler itself may do more.
+     */
+
+    objPtr = Tcl_NewObj();
+    va_start(argList, message);
+    TclAppendPrintfToObjVA(objPtr, message, argList);
     va_end(argList);
 
     /*
@@ -162,7 +208,7 @@ void
 TclInstallStdoutLogger(
     Tcl_Interp *interp)
 {
-    struct StdoutLog *levelStore = Tcl_Alloc(sizeof(struct StdoutLog));
+    struct StdoutLog *levelStore = ckalloc(sizeof(struct StdoutLog));
     Tcl_SetLogHandler(interp, &simpleStdoutLog, levelStore);
 }
 
@@ -181,7 +227,7 @@ StdoutLogFree(
     ClientData clientData)
 {
     struct StdoutLog *levelStore = clientData;
-    Tcl_Free(levelStore);
+    ckfree(levelStore);
 }
 
 static int

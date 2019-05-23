@@ -2558,6 +2558,15 @@ Tcl_Format(
  *---------------------------------------------------------------------------
  */
 
+void
+TclAppendPrintfToObjVA(
+    Tcl_Obj *objPtr,
+    const char *format,
+    va_list argList)
+{
+    AppendPrintfToObjVA(objPtr, format, argList);
+}
+
 static void
 AppendPrintfToObjVA(
     Tcl_Obj *objPtr,

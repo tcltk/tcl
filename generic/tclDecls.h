@@ -1901,6 +1901,21 @@ EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 				const char *varName, void *addr, int type,
 				int size);
+/* 645 */
+EXTERN void		Tcl_Log(Tcl_Interp *interp, Tcl_LogLevel level,
+				const char *message, ...);
+/* 646 */
+EXTERN void		Tcl_SetLogLevel(Tcl_Interp *interp,
+				Tcl_LogLevel level);
+/* 647 */
+EXTERN Tcl_LogLevel	Tcl_GetLogLevel(Tcl_Interp *interp);
+/* 648 */
+EXTERN int		Tcl_LogLevelEnabled(Tcl_Interp *interp,
+				Tcl_LogLevel level);
+/* 649 */
+EXTERN void		Tcl_SetLogHandler(Tcl_Interp *interp,
+				const Tcl_LogHandler *logHandler,
+				ClientData clientData);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2581,6 +2596,11 @@ typedef struct TclStubs {
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
+    void (*tcl_Log) (Tcl_Interp *interp, Tcl_LogLevel level, const char *message, ...); /* 645 */
+    void (*tcl_SetLogLevel) (Tcl_Interp *interp, Tcl_LogLevel level); /* 646 */
+    Tcl_LogLevel (*tcl_GetLogLevel) (Tcl_Interp *interp); /* 647 */
+    int (*tcl_LogLevelEnabled) (Tcl_Interp *interp, Tcl_LogLevel level); /* 648 */
+    void (*tcl_SetLogHandler) (Tcl_Interp *interp, const Tcl_LogHandler *logHandler, ClientData clientData); /* 649 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3901,6 +3921,16 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsShared) /* 643 */
 #define Tcl_LinkArray \
 	(tclStubsPtr->tcl_LinkArray) /* 644 */
+#define Tcl_Log \
+	(tclStubsPtr->tcl_Log) /* 645 */
+#define Tcl_SetLogLevel \
+	(tclStubsPtr->tcl_SetLogLevel) /* 646 */
+#define Tcl_GetLogLevel \
+	(tclStubsPtr->tcl_GetLogLevel) /* 647 */
+#define Tcl_LogLevelEnabled \
+	(tclStubsPtr->tcl_LogLevelEnabled) /* 648 */
+#define Tcl_SetLogHandler \
+	(tclStubsPtr->tcl_SetLogHandler) /* 649 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
