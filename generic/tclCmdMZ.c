@@ -4659,7 +4659,7 @@ Tcl_TimeRateObjCmd(
 	    } else {
 		objs[6] = Tcl_NewWideIntObj(0);
 	    }
-	    TclNewLiteralStringObj(objs[7], "nett-ms");
+	    TclNewLiteralStringObj(objs[7], "net-ms");
 	}
 
 	/*
