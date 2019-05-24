@@ -373,10 +373,10 @@ test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative
     list [catch {timerate "foreach a {c d e} \{" -12456} msg] $msg
 } {1 {missing close-brace}}
 test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
-    regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? nett-ms$} [timerate {} 0]
+    regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? net-ms$} [timerate {} 0]
 } 1
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
-    regexp {^0 \ws/# 0 # 0 #/sec 0 nett-ms$} [timerate {} 0 0]
+    regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
 test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} {
     set m1 [timerate {_nrt_sleep 0} 20]
