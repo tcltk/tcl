@@ -5247,7 +5247,7 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	/* 
+	/*
 	assert ( toIdx != TCL_INDEX_AFTER);
 	 *
 	 * Extra safety for legacy bytecodes:
@@ -8260,7 +8260,7 @@ LongPwrSmallExpon(long l1, long exponent) {
 	lResult *= lResult;	/* b**8 */
 	break;
     }
-    return lResult;    
+    return lResult;
 }
 #endif
 static inline Tcl_WideInt

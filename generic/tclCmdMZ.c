@@ -4513,7 +4513,7 @@ Tcl_TimeRateObjCmd(
 	}
 	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
 	TclPreserveByteCode(codePtr);
-	/* 
+	/*
 	 * Replace last compiled done instruction with continue: it's a part of
 	 * iteration, this way evaluation will be more similar to a cycle (also
 	 * avoids extra overhead to set result to interp, etc.)
@@ -4689,7 +4689,7 @@ Tcl_TimeRateObjCmd(
 	Tcl_WideUInt usec, val;
 	int digits;
 
-	/* 
+	/*
 	 * Absolute execution time in microseconds or in wide clicks.
 	 */
 	usec = (Tcl_WideUInt)(middle - start);

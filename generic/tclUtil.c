@@ -1686,7 +1686,7 @@ UtfWellFormedEnd(
     if (Tcl_UtfCharComplete(p, l - p)) {
 	return bytes;
     }
-    /* 
+    /*
      * Malformed utf-8 end, be sure we've NTS to safe compare of end-character,
      * avoid segfault by access violation out of range.
      */
@@ -3667,21 +3667,21 @@ TclFormatInt(
  *
  * Value
  * 	TCL_OK
- *      
+ *
  * 	    The index is stored at the address given by by 'indexPtr'. If
  * 	    'objPtr' has the value "end", the value stored is 'endValue'.
- * 
+ *
  * 	TCL_ERROR
- *      
+ *
  * 	    The value of 'objPtr' does not have one of the expected formats. If
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
- * 
+ *
  * Effect
- * 
+ *
  * 	The object referenced by 'objPtr' is converted, as needed, to an
  * 	integer, wide integer, or end-based-index object.
- * 
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3839,7 +3839,7 @@ GetEndOffsetFromObj(
     return TCL_OK;
 }
 
-    
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4017,12 +4017,12 @@ TclIndexEncode(
         /* usual case, the absolute index value encodes itself */
     } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &idx)) {
         /*
-         * We parsed an end+offset index value. 
+         * We parsed an end+offset index value.
          * idx holds the offset value in the range INT_MIN...INT_MAX.
          */
         if (idx > 0) {
             /*
-             * All end+postive or end-negative expressions 
+             * All end+postive or end-negative expressions
              * always indicate "after the end".
              */
             idx = after;

@@ -4971,7 +4971,7 @@ NoopObjCmd(
  *	without type and with internal representation containing NULL's.
  *
  *	If no argument supplied it returns empty object with tclEmptyStringRep,
- *	otherwise it returns this as pure bytes object with bytes value equal 
+ *	otherwise it returns this as pure bytes object with bytes value equal
  *	string.
  *
  * Results:
