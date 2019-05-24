@@ -3937,7 +3937,7 @@ Tcl_LsortObjCmd(
 		/*
 		 * Do not shrink the actual memory block used; that doesn't
 		 * work with TclStackAlloc-allocated memory. [Bug 2918962]
-		 * 
+		 *
 		 * TODO: Consider a pointer increment to replace this
 		 * array shift.
 		 */
