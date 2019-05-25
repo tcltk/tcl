@@ -9435,6 +9435,10 @@ InjectHandlerPostCall(
      */
 
     if (isProbe) {
+        if (result == TCL_ERROR) {
+            Tcl_AddErrorInfo(interp,
+                    "\n    (injected coroutine probe command)");
+        }
         corPtr->nargs = nargs;
         corPtr->stackLevel = NULL;
         numLevels = iPtr->numLevels;
