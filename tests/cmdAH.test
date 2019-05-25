@@ -233,7 +233,7 @@ test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -1524,7 +1524,7 @@ test cmdAH-29.6.1 {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {unknown or ambiguous subcommand "ex": must be *}
@@ -1656,6 +1656,62 @@ test cmdAH-32.6 {file tempfile - templates} -body {
 } -constraints {unix nonPortable} -cleanup {
     catch {file delete $name}
 } -result ok
+
+test cmdAH-33.1 {file tempdir} -body {
+    file tempdir a b
+} -returnCodes error -result {wrong # args: should be "file tempdir ?template?"}
+test cmdAH-33.2 {file tempdir} -body {
+    set d [file tempdir]
+    list [file tail $d] [file exists $d] [file type $d] \
+	[glob -nocomplain -directory $d *]
+} -match glob -result {tcl_* 1 directory {}} -cleanup {
+    catch {file delete $d}
+}
+test cmdAH-33.3 {file tempdir} -body {
+    set d [file tempdir gorp]
+    list [file tail $d] [file exists $d] [file type $d] \
+	[glob -nocomplain -directory $d *]
+} -match glob -result {gorp_* 1 directory {}} -cleanup {
+    catch {file delete $d}
+}
+test cmdAH-33.4 {file tempdir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -body {
+    set pre [glob -nocomplain -directory $base *]
+    set d [file normalize [file tempdir $base/]]
+    list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
+	$pre [glob -nocomplain -directory $d *]
+} -match glob -result {GORP:/tcl_* 1 directory {} {}} -cleanup {
+    catch {file delete -force $base}
+}
+test cmdAH-33.5 {file tempdir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -body {
+    set pre [glob -nocomplain -directory $base *]
+    set d [file normalize [file tempdir $base/gorp]]
+    list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
+	$pre [glob -nocomplain -directory $d *]
+} -match glob -result {GORP:/gorp_* 1 directory {} {}} -cleanup {
+    catch {file delete -force $base}
+}
+test cmdAH-33.6 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
+test cmdAH-33.7 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/foobar
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
 
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}

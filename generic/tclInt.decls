@@ -1057,6 +1057,12 @@ declare 257 {
     void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
+
+# TIP 431: temporary directory creation function
+declare 258 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
 
 ##############################################################################
 
