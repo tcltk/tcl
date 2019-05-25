@@ -2274,6 +2274,85 @@ DefaultTempDir(void)
     return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCreateTemporaryDirectory --
+ *
+ *	Creates a temporary directory, possibly based on the supplied bits and
+ *	pieces of template supplied in the arguments.
+ *
+ * Results:
+ *	An object (refcount 0) containing the name of the newly-created
+ *	directory, or NULL on failure.
+ *
+ * Side effects:
+ *	Accesses the native filesystem. Makes a directory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclpCreateTemporaryDirectory(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj)
+{
+    Tcl_DString template, tmp;
+    const char *string;
+
+#define DEFAULT_TEMP_DIR_PREFIX	"tcl"
+
+    /*
+     * Build the template in writable memory from the user-supplied pieces and
+     * some defaults.
+     */
+
+    if (dirObj) {
+	string = TclGetString(dirObj);
+	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &template);
+    } else {
+	Tcl_DStringInit(&template);
+	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
+    }
+
+    if (Tcl_DStringValue(&template)[Tcl_DStringLength(&template) - 1] != '/') {
+	TclDStringAppendLiteral(&template, "/");
+    }
+
+    if (basenameObj) {
+	string = TclGetString(basenameObj);
+	if (basenameObj->length) {
+	    Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
+	    TclDStringAppendDString(&template, &tmp);
+	    Tcl_DStringFree(&tmp);
+	} else {
+	    TclDStringAppendLiteral(&template, DEFAULT_TEMP_DIR_PREFIX);
+	}
+    } else {
+	TclDStringAppendLiteral(&template, DEFAULT_TEMP_DIR_PREFIX);
+    }
+
+    TclDStringAppendLiteral(&template, "_XXXXXX");
+
+    /*
+     * Make the temporary directory.
+     */
+
+    if (mkdtemp(Tcl_DStringValue(&template)) == NULL) {
+	Tcl_DStringFree(&template);
+	return NULL;
+    }
+
+    /*
+     * The template has been updated. Tell the caller what it was.
+     */
+
+    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&template),
+	    Tcl_DStringLength(&template), &tmp);
+    Tcl_DStringFree(&template);
+    return TclDStringToObj(&tmp);
+}
+
 #if defined(__CYGWIN__)
 
 static void
