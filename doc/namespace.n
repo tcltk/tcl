@@ -206,6 +206,15 @@ If another command is defined and exported in this namespace later on,
 it will not be imported.
 .RE
 .TP
+\fBnamespace invoke\fR \fInamespace cmd\fR ?\fIarg ...\fR?
+.VS "TIP 284"
+Invokes the command called \fIcmd\fR, as resolved from namespace
+\fInamespace\fR, with the supplied arguments; the command is invoked
+in the scope of the caller of \fBnamespace invoke\fR, so there are no
+intervening stack frames. If \fInamespace\fR does not exist, the
+command returns an error.
+.VE "TIP 284"
+.TP
 \fBnamespace inscope\fR \fInamespace\fR \fIscript\fR ?\fIarg ...\fR?
 .
 Executes a script in the context of the specified \fInamespace\fR.

@@ -113,6 +113,8 @@ static int		NamespaceForgetCmd(ClientData dummy,Tcl_Interp *interp,
 static void		NamespaceFree(Namespace *nsPtr);
 static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		NamespaceInvokeCmd(ClientData dummy,Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceInscopeCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NRNamespaceInscopeCmd(ClientData dummy,
@@ -185,6 +187,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+    {"invoke",	   NamespaceInvokeCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
     {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
     {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
@@ -3756,6 +3759,76 @@ NamespaceImportCmd(
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NamespaceInvokeCmd --
+ *
+ *	Invoked to implement the "namespace invoke" command that invokes a
+ *	command in a predefined namespace. Handles the syntax:
+ *
+ *	    namespace invoke ns cmd ?arg1? ?arg2? ...
+ *
+ *      This invokes the command cmd, as resolved from namespace ns, with the
+ *      supplied arguments. It is similar to:
+ *
+ *          namespace eval ns [list cmd ?arg1? ?arg2? ...]
+ *
+ *      up to the fact that it executes in the caller's context: it does *not*
+ *      push a new CallFrame.
+ *
+ * Results:
+ *	Returns TCL_OK if the namespace is found and the command is executed
+ *	successfully. Returns TCL_ERROR if anything goes wrong.
+ *
+ * Side effects:
+ *	Returns the result of the command in the interpreter's result object.
+ *	If anything goes wrong, this function returns an error message as the
+ *	result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NamespaceInvokeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Namespace *namespacePtr;
+    int result;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Try to resolve the namespace reference, caching the result in the
+     * namespace object along the way. If the namespace is not found, return
+     * an error.
+     */
+
+    result = TclGetNamespaceFromObj(interp, objv[1], &namespacePtr);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (namespacePtr == NULL) {
+	Tcl_AppendResult(interp, "unknown namespace \"",
+		Tcl_GetString(objv[1]), "\"", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Invoke the command in the requested namespace
+     */
+
+    iPtr->lookupNsPtr = (Namespace *) namespacePtr;
+    return Tcl_EvalObjv(interp, objc - 2, objv + 2, TCL_EVAL_INVOKE);
+}   
 
 /*
  *----------------------------------------------------------------------
