@@ -3323,6 +3323,84 @@ namespace eval : {
 
 : p1
 } 16fe1b5807
+
+namespace eval ::namespace-57 {
+test namespace-57.1 {namespace invoke} -returnCodes error -body {
+    namespace invoke
+} -result {wrong # args: should be "namespace invoke name cmd ?arg...?"}
+test namespace-57.2 {namespace invoke} -returnCodes error -body {
+    namespace invoke no_such_namespace namespace current
+} -result {namespace "no_such_namespace" not found in "::namespace-57"}
+test namespace-57.3 {namespace invoke} -returnCodes error -body {
+    namespace invoke :: definitely_no_such_command
+} -result {invalid command name "definitely_no_such_command"}
+test namespace-57.4 {namespace invoke doesn't push a namespace} -body {
+    namespace invoke :: namespace current
+} -result ::namespace-57
+test namespace-57.5 {namespace invoke resolves in the given ns} -setup {
+    namespace eval ns {}
+} -body {
+    proc target {} {return "in origin"}
+    proc ns::target {} {return "in target"}
+    namespace invoke ns target
+} -cleanup {
+    rename target {}
+    namespace delete ns
+} -result {in target}
+test namespace-57.6 {namespace invoke resolves in the given ns} -setup {
+    namespace eval ns {}
+} -body {
+    namespace eval ns::tcl {}
+    namespace invoke ns tcl::prefix match {a bcd e} b
+} -cleanup {
+    namespace delete ns
+} -result bcd
+test namespace-57.7 {namespace invoke resolves in the given ns} -setup {
+    namespace eval ns {}
+} -body {
+    namespace eval ns::tcl {proc prefix args {return ok}}
+    namespace invoke ns tcl::prefix match {a bcd e} b
+} -cleanup {
+    namespace delete ns
+} -result ok
+test namespace-57.8 {namespace invoke resolves in the given ns} -setup {
+    namespace eval ns {}
+    namespace eval ns2 {
+	proc foo {} {return "this is in ns2"}
+    }
+} -body {
+    namespace eval ns {
+	namespace path ::namespace-57::ns2
+    }
+    namespace invoke ns foo
+} -cleanup {
+    namespace delete ns
+} -result {this is in ns2}
+test namespace-57.9 {namespace invoke preserves word boundaries} -setup {
+    namespace eval ns {
+	proc count args {list [llength $args] $args}
+    }
+} -body {
+    namespace invoke ns count a {b c} gorp
+} -cleanup {
+    namespace delete ns
+} -result {3 {a {b c} gorp}}
+test namespace-57.10 {namespace invoke is NRE-aware} -setup {
+    namespace eval ns {}
+} -body {
+    proc ns::count args {
+	yield $args
+	return [llength $args]
+    }
+    coroutine c apply {args {
+	yield
+	namespace invoke ns count {*}$args
+    } ::namespace-57} a {b c} gorp
+    list [c] [c]
+} -cleanup {
+    namespace delete ns
+} -result {{a {b c} gorp} 3}
+}
 
 # cleanup
 catch {rename cmd1 {}}

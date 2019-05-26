@@ -1,4 +1,4 @@
-# Commands covered:  uplevel
+# Commands covered:  uplevel, invoke
 #
 # This file contains a collection of tests for one or more of the Tcl built-in
 # commands.  Sourcing this file into Tcl runs the tests and generates output
@@ -294,6 +294,43 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
     rename foo {}
     rename moo {}
 } -result {3 3 3}
+
+test invoke-1.1 {invoke command usage} -returnCodes error -body {
+    invoke
+} -result {wrong # args: should be "invoke level command ?arg ...?"}
+test invoke-1.2 {invoke command usage} -returnCodes error -body {
+    invoke 0
+} -result {wrong # args: should be "invoke level command ?arg ...?"}
+test invoke-1.3 {invoke command usage} -returnCodes error -body {
+    invoke list a b c
+} -result {bad level "list"}
+test invoke-1.4 {invoke command usage} -returnCodes error -body {
+    invoke 50000 list a b c
+} -result {bad level "50000"}
+test invoke-1.5 {invoke preserves word boundaries} -body {
+    invoke 0 list "a b" c
+} -result {{a b} c}
+test invoke-1.6 {invoke walks the stack} -body {
+    apply {x {
+	apply {x {
+	    apply {x {
+		apply {{x levels} {
+		    lmap l $levels {string cat $l -> [invoke $l set x]}
+		}} jkl {3 2 1 0 #1 #2 #3 #4}
+	    }} ghi
+	}} def
+    }} abc
+} -result {3->abc 2->def 1->ghi 0->jkl #1->abc #2->def #3->ghi #4->jkl}
+test invoke-1.7 {invoke is NRE-aware} -body {
+    coroutine c apply {{} {
+	set x [yield]
+	list [apply {x {
+	    invoke 1 eval {set x [yield $x]}
+	    return $x
+	}} $x,$x] $x
+    }}
+    list [c 135] [c 246]
+} -result {135 {135,135 246}}
 
 # cleanup
 ::tcltest::cleanupTests
