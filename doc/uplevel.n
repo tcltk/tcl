@@ -95,7 +95,7 @@ proc do {body while condition} {
 }
 .CE
 .SH "SEE ALSO"
-apply(n), namespace(n), upvar(n)
+apply(n), invoke(n), namespace(n), upvar(n)
 .SH KEYWORDS
 context, level, namespace, stack frame, variable
 .\" Local Variables:

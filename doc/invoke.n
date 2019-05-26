@@ -1,0 +1,116 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\" Copyright (c) 2019 Donal K Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH invoke n 8.7 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+invoke \- Execute a command in a different stack frame
+.SH SYNOPSIS
+\fBinvoke \fIlevel command \fR?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBinvoke\fR command concatenates \fIcommand\fR with all of the \fIarg\fR
+arguments as if they had been passed to \fBlist\fR; it then evaluates the
+result in the variable context indicated by \fIlevel\fR.  \fBInvoke\fR returns
+the result of that evaluation.
+.PP
+If \fIlevel\fR is an integer then it gives a distance (up the procedure
+calling stack) to move before executing the command.  If \fIlevel\fR consists
+of \fB#\fR followed by a integer then the level gives an absolute level.
+.PP
+For example, suppose that procedure \fBa\fR was invoked from top-level, and
+that it called \fBb\fR, and that \fBb\fR called \fBc\fR.  Suppose that \fBc\fR
+invokes the \fBinvoke\fR command.  If \fIlevel\fR is \fB1\fR or \fB#2\fR, then
+the command will be executed in the variable context of \fBb\fR.  If
+\fIlevel\fR is \fB2\fR or \fB#1\fR then the command will be executed in the
+variable context of \fBa\fR.  If \fIlevel\fR is \fB3\fR or \fB#0\fR then the
+command will be executed at top-level (only global variables will be visible).
+.PP
+The \fBinvoke\fR command causes the invoking procedure to disappear from the
+procedure calling stack while the command is being executed.  In the above
+example, suppose \fBc\fR invokes the command
+.PP
+.CS
+\fBinvoke\fR 1 set x "some arbitrary string"
+.CE
+.PP
+where \fBd\fR is another Tcl procedure.  The \fBset\fR command will modify the
+variable \fBx\fR in \fBb\fR's context, at level 3, as if called from \fBb\fR:
+the procedure \fBc\fR does not appear to be on the call stack when the
+\fBset\fR is executing.  The \fBinfo level\fR command may be used to obtain
+the level of the current procedure.
+.PP
+\fBInvoke\fR makes it possible to implement new control constructs as Tcl
+procedures, and is useful in situations where the caller of \fBinvoke\fR is in
+control of the arguments (unlike with \fBuplevel\fR which is more suitable for
+calling a script provided by the caller of the procedure).
+.PP
+The \fBnamespace eval\fR and \fBapply\fR commands and TclOO methods offer
+other ways (besides procedure calls) that the Tcl naming context can change.
+They add a call frame to the stack to represent the namespace context.  This
+means each \fBnamespace eval\fR command counts as another call level for
+\fBinvoke\fR and \fBupvar\fR commands.  For example, \fBinfo level 1\fR will
+return a list describing a command that is either the outermost procedure call
+or the outermost \fBnamespace eval\fR command.  Also, \fBinvoke #0\fR
+evaluates a command at top-level in the outermost namespace (the global
+namespace).
+.SH EXAMPLE
+As stated above, the \fBinvoke\fR command is useful for creating new control
+constructs.  This example shows how (ignoring \fBupvar\fRed variables and
+arrays) it can be used to create a \fIlambda\fR command that creates a lambda
+term (using \fBapply\fR) that can be in the same namespace context as the
+caller of \fBlambda\fR with a copy (effectively read-only) of the local
+variables in the stack frame it was called from, for effectively
+lexically-scoped variables:
+.PP
+.CS
+proc \fIlambda\fR {args body} {
+    set locals [\fBinvoke\fR 1 info locals]
+    set arguments [list {*}$locals {*}$args]
+    set ns [\fBinvoke\fR 1 namespace current]
+    set values [lmap var $locals {\fBinvoke\fR 1 set $var}]
+    return [list apply [list $arguments $body $ns] {*}$values]
+}
+
+\fI# Demonstrating it in use\fR
+namespace eval foo {
+    variable b {}
+
+    proc bar {x y} {
+        set z [expr {$x + $y}]
+
+        return [\fIlambda\fR a {
+            variable b
+            lappend b $a
+            return $x,$y,$z,$a,[join $b "|"]
+        }]
+    }
+}
+
+set with23 [foo::bar 2 3]
+puts [{*}$with23 "demo"]
+\fI# ==> 2,3,5,demo,demo\fR
+puts [{*}$with23 "again"]
+\fI# ==> 2,3,5,again,demo|again\fR
+
+set with45 [foo::bar 4 5]
+puts [{*}$with45 "more"]
+\fI# ==> 4,5,9,more,demo|again|more\fR
+puts [{*}$with23 "again"]
+\fI# ==> 2,3,5,again,demo|again|more|again\fR
+.CE
+.SH "SEE ALSO"
+apply(n), namespace(n), uplevel(n), upvar(n)
+.SH KEYWORDS
+context, level, namespace, stack frame, variable
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
