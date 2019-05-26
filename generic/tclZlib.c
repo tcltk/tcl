@@ -196,7 +196,7 @@ static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
 static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static inline void	ZlibTransformEventTimerKill(ZlibChannelData *cd);
-static void		ZlibTransformTimerRun(ClientData clientData);
+static void		ZlibTransformTimerRun(void *clientData);
 
 /*
  * Type of zlib-based compressing and decompressing channels.
@@ -422,6 +422,7 @@ GenerateHeader(
 {
     Tcl_Obj *value;
     int len, result = TCL_ERROR;
+    Tcl_WideInt wideValue = 0;
     const char *valueStr;
     Tcl_Encoding latin1enc;
     static const char *const types[] = {
@@ -485,10 +486,11 @@ GenerateHeader(
 
     if (GetValue(interp, dictObj, "time", &value) != TCL_OK) {
 	goto error;
-    } else if (value != NULL && Tcl_GetLongFromObj(interp, value,
-	    (long *) &headerPtr->header.time) != TCL_OK) {
+    } else if (value != NULL && Tcl_GetWideIntFromObj(interp, value,
+	    &wideValue) != TCL_OK) {
 	goto error;
     }
+    headerPtr->header.time = wideValue;
 
     if (GetValue(interp, dictObj, "type", &value) != TCL_OK) {
 	goto error;
@@ -565,10 +567,10 @@ ExtractHeader(
 	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
-	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
+	SetValue(dictObj, "os", Tcl_NewWideIntObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
-	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
+	SetValue(dictObj, "time", Tcl_NewWideIntObj(headerPtr->time));
     }
     if (headerPtr->text != Z_UNKNOWN) {
 	SetValue(dictObj, "type",
@@ -593,7 +595,7 @@ SetInflateDictionary(
 	int length;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
-	return inflateSetDictionary(strm, bytes, (unsigned) length);
+	return inflateSetDictionary(strm, bytes, length);
     }
     return Z_OK;
 }
@@ -607,7 +609,7 @@ SetDeflateDictionary(
 	int length;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
-	return deflateSetDictionary(strm, bytes, (unsigned) length);
+	return deflateSetDictionary(strm, bytes, length);
     }
     return Z_OK;
 }
@@ -623,7 +625,7 @@ Deflate(
     int e;
 
     strm->next_out = (Bytef *) bufferPtr;
-    strm->avail_out = (unsigned) bufferSize;
+    strm->avail_out = bufferSize;
     e = deflate(strm, flush);
     if (writtenPtr != NULL) {
 	*writtenPtr = bufferSize - strm->avail_out;
@@ -882,7 +884,7 @@ Tcl_ZlibStreamInit(
 
 static void
 ZlibStreamCmdDelete(
-    ClientData cd)
+    void *cd)
 {
     ZlibStreamHandle *zshPtr = cd;
 
@@ -1488,7 +1490,7 @@ Tcl_ZlibStreamGet(
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
 		Tcl_ListObjIndex(NULL, zshPtr->outData, i, &itemObj);
-		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+		(void) Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		if (i == 0) {
 		    count += itemLen - zshPtr->outPos;
 		} else {
@@ -1858,7 +1860,7 @@ Tcl_ZlibInflate(
     if (headerPtr != NULL) {
 	ExtractHeader(&header, gzipHeaderDictObj);
 	SetValue(gzipHeaderDictObj, "size",
-		Tcl_NewLongObj((long) stream.total_out));
+		Tcl_NewWideIntObj(stream.total_out));
 	ckfree(nameBuf);
 	ckfree(commentBuf);
     }
@@ -1894,7 +1896,7 @@ Tcl_ZlibCRC32(
     int len)
 {
     /* Nothing much to do, just wrap the crc32(). */
-    return crc32(crc, (Bytef *) buf, (unsigned) len);
+    return crc32(crc, (Bytef *) buf, len);
 }
 
 unsigned int
@@ -1903,7 +1905,7 @@ Tcl_ZlibAdler32(
     const unsigned char *buf,
     int len)
 {
-    return adler32(adler, (Bytef *) buf, (unsigned) len);
+    return adler32(adler, (Bytef *) buf, len);
 }
 
 /*
@@ -1918,7 +1920,7 @@ Tcl_ZlibAdler32(
 
 static int
 ZlibCmd(
-    ClientData notUsed,
+    void *notUsed,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2514,7 +2516,7 @@ ZlibPushSubcmd(
 
 static int
 ZlibStreamCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2617,7 +2619,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_ZlibStreamEof(zstream)));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_ZlibStreamEof(zstream)));
 	return TCL_OK;
     case zs_checksum:		/* $strm checksum */
 	if (objc != 2) {
@@ -2640,7 +2642,7 @@ ZlibStreamCmd(
 
 static int
 ZlibStreamAddCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2764,7 +2766,7 @@ ZlibStreamAddCmd(
 
 static int
 ZlibStreamPutCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2853,7 +2855,7 @@ ZlibStreamPutCmd(
 
 static int
 ZlibStreamHeaderCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2892,7 +2894,7 @@ ZlibStreamHeaderCmd(
 
 static int
 ZlibTransformClose(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp)
 {
     ZlibChannelData *cd = instanceData;
@@ -2983,7 +2985,7 @@ ZlibTransformClose(
 
 static int
 ZlibTransformInput(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -3097,7 +3099,7 @@ ZlibTransformInput(
 
 static int
 ZlibTransformOutput(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -3218,7 +3220,7 @@ ZlibTransformFlush(
 
 static int
 ZlibTransformSetOption(			/* not used */
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     const char *value)
@@ -3331,7 +3333,7 @@ ZlibTransformSetOption(			/* not used */
 
 static int
 ZlibTransformGetOption(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
@@ -3451,7 +3453,7 @@ ZlibTransformGetOption(
 
 static void
 ZlibTransformWatch(
-    ClientData instanceData,
+    void *instanceData,
     int mask)
 {
     ZlibChannelData *cd = instanceData;
@@ -3474,7 +3476,7 @@ ZlibTransformWatch(
 
 static int
 ZlibTransformEventHandler(
-    ClientData instanceData,
+    void *instanceData,
     int interestMask)
 {
     ZlibChannelData *cd = instanceData;
@@ -3495,7 +3497,7 @@ ZlibTransformEventTimerKill(
 
 static void
 ZlibTransformTimerRun(
-    ClientData clientData)
+    void *clientData)
 {
     ZlibChannelData *cd = clientData;
 
@@ -3516,9 +3518,9 @@ ZlibTransformTimerRun(
 
 static int
 ZlibTransformGetHandle(
-    ClientData instanceData,
+    void *instanceData,
     int direction,
-    ClientData *handlePtr)
+    void **handlePtr)
 {
     ZlibChannelData *cd = instanceData;
 
@@ -3537,7 +3539,7 @@ ZlibTransformGetHandle(
 
 static int
 ZlibTransformBlockMode(
-    ClientData instanceData,
+    void *instanceData,
     int mode)
 {
     ZlibChannelData *cd = instanceData;

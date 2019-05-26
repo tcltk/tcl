@@ -132,8 +132,9 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
+# Only available as stub-entry, for backwards-compatible stub-enabled extensions
 declare 30 {
-    void TclFreeObj(Tcl_Obj *objPtr)
+    void TclOldFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
@@ -282,7 +283,7 @@ declare 74 {
 declare 75 {
     int Tcl_AsyncReady(void)
 }
-declare 76 {
+declare 76 {deprecated {No longer in use, changed to macro}} {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
 declare 77 {deprecated {Use Tcl_UtfBackslash}} {
@@ -513,7 +514,7 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-declare 144 {
+declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_FindExecutable(const char *argv0)
 }
 declare 145 {
@@ -666,7 +667,7 @@ declare 186 {
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
-    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr,
+    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type)
 }
 
@@ -812,7 +813,7 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {
+declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
@@ -859,11 +860,11 @@ declare 242 {
 declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
-declare 244 {
+declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
-declare 245 {
+declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
 declare 246 {deprecated {}} {
@@ -1868,7 +1869,7 @@ declare 518 {
 }
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
-declare 519 {
+declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
@@ -2346,6 +2347,44 @@ declare 635 {
 	    unsigned char *data, size_t datalen, int copy)
 }
 
+# TIP #445
+declare 636 {
+    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+}
+declare 637 {
+    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+	    unsigned int numBytes)
+}
+declare 638 {
+    Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
+}
+declare 639 {
+    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    const Tcl_ObjIntRep *irPtr)
+}
+declare 640 {
+    int Tcl_HasStringRep(Tcl_Obj *objPtr)
+}
+
+# TIP #506
+declare 641 {
+    void Tcl_IncrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 642 {
+    void Tcl_DecrRefCount(Tcl_Obj *objPtr)
+}
+
+declare 643 {
+    int Tcl_IsShared(Tcl_Obj *objPtr)
+}
+
+# TIP#312 New Tcl_LinkArray() function
+declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, int size)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2395,6 +2434,19 @@ export {
 export {
     void Tcl_MainEx(int argc, char **argv, Tcl_AppInitProc *appInitProc,
     Tcl_Interp *interp)
+}
+export {
+    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+export {
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+}
+export {
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+}
+export {
+    void Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,

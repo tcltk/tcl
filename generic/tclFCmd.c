@@ -180,7 +180,7 @@ FileCopyRename(
 	}
 	jargv[0] = objv[objc - 1];
 	jargv[1] = source;
-	newFileName = TclJoinPath(2, jargv);
+	newFileName = TclJoinPath(2, jargv, 1);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);
@@ -1345,7 +1345,7 @@ TclFileReadLinkCmd(
 /*
  *---------------------------------------------------------------------------
  *
- * TclFileTemporaryCmd
+ * TclFileTemporaryCmd --
  *
  *	This function implements the "tempfile" subcommand of the "file"
  *	command.
@@ -1501,6 +1501,151 @@ TclFileTemporaryCmd(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclFileTempDirCmd --
+ *
+ *	This function implements the "tempdir" subcommand of the "file"
+ *	command.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Creates a temporary directory.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclFileTempDirCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirNameObj;	/* Object that will contain the directory
+				 * name. */
+    Tcl_Obj *baseDirObj = NULL, *nameBaseObj = NULL;
+				/* Pieces of template. Each piece is NULL if
+				 * it is omitted. The platform temporary file
+				 * engine might ignore some pieces. */
+
+    if (objc < 1 || objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?template?");
+	return TCL_ERROR;
+    }
+
+    if (objc > 1) {
+	int length;
+	Tcl_Obj *templateObj = objv[1];
+	const char *string = TclGetStringFromObj(templateObj, &length);
+	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
+
+	/*
+	 * Treat an empty string as if it wasn't there.
+	 */
+
+	if (length == 0) {
+	    goto makeTemporary;
+	}
+
+	/*
+	 * The template only gives a directory if there is a directory
+	 * separator in it, and only gives a base name if there's at least one
+	 * character after the last directory separator.
+	 */
+
+	if (strchr(string, '/') == NULL
+		&& (!onWindows || strchr(string, '\\') == NULL)) {
+	    /*
+	     * No directory separator, so just assume we have a file name.
+	     * This is a bit wrong on Windows where we could have problems
+	     * with disk name prefixes... but those are much less common in
+	     * naked form so we just pass through and let the OS figure it out
+	     * instead.
+	     */
+
+	    nameBaseObj = templateObj;
+	    Tcl_IncrRefCount(nameBaseObj);
+	} else if (string[length-1] != '/'
+		&& (!onWindows || string[length-1] != '\\')) {
+	    /*
+	     * If the template has a non-terminal directory separator, split
+	     * into dirname and tail.
+	     */
+
+	    baseDirObj = TclPathPart(interp, templateObj, TCL_PATH_DIRNAME);
+	    nameBaseObj = TclPathPart(interp, templateObj, TCL_PATH_TAIL);
+	} else {
+	    /*
+	     * Otherwise, there must be a terminal directory separator, so
+	     * just the directory is given.
+	     */
+
+	    baseDirObj = templateObj;
+	    Tcl_IncrRefCount(baseDirObj);
+	}
+
+	/*
+	 * Only allow creation of temporary directories in the native
+	 * filesystem since they are frequently used for integration with
+	 * external tools or system libraries.
+	 */
+
+	if (baseDirObj != NULL && Tcl_FSGetFileSystemForPath(baseDirObj)
+		!= &tclNativeFilesystem) {
+	    TclDecrRefCount(baseDirObj);
+	    baseDirObj = NULL;
+	}
+    }
+
+    /*
+     * Convert empty parts of the template into unspecified parts.
+     */
+
+    if (baseDirObj && !TclGetString(baseDirObj)[0]) {
+	TclDecrRefCount(baseDirObj);
+	baseDirObj = NULL;
+    }
+    if (nameBaseObj && !TclGetString(nameBaseObj)[0]) {
+	TclDecrRefCount(nameBaseObj);
+	nameBaseObj = NULL;
+    }
+
+    /*
+     * Create and open the temporary file.
+     */
+
+  makeTemporary:
+    dirNameObj = TclpCreateTemporaryDirectory(baseDirObj, nameBaseObj);
+
+    /*
+     * If we created pieces of template, get rid of them now.
+     */
+
+    if (baseDirObj) {
+	TclDecrRefCount(baseDirObj);
+    }
+    if (nameBaseObj) {
+	TclDecrRefCount(nameBaseObj);
+    }
+
+    /*
+     * Deal with results.
+     */
+
+    if (dirNameObj == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create temporary directory: %s",
+		Tcl_PosixError(interp)));
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirNameObj);
     return TCL_OK;
 }
 

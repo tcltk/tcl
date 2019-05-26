@@ -2027,7 +2027,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (literal->typePtr == &tclDoubleType) {
+	    if (TclHasIntRep(literal, &tclDoubleType)) {
 		const char *p = start;
 
 		while (p < end) {
@@ -2066,9 +2066,9 @@ ParseLexeme(
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
-	    char utfBytes[TCL_UTF_MAX];
+	    char utfBytes[4];
 
-	    memcpy(utfBytes, start, (size_t) numBytes);
+	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
 	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
@@ -2476,11 +2476,13 @@ CompileExprTree(
 		     * already, then use it to share via the literal table.
 		     */
 
-		    if (objPtr->bytes) {
+		    if (TclHasStringRep(objPtr)) {
 			Tcl_Obj *tableValue;
+			int numBytes;
+			const char *bytes
+				= Tcl_GetStringFromObj(objPtr, &numBytes);
 
-			index = TclRegisterLiteral(envPtr, objPtr->bytes,
-				objPtr->length, 0);
+			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, index);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {

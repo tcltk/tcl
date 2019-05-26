@@ -9,12 +9,14 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 #ifndef NO_FLOATING_POINT
 #include <math.h>
+#if (DIGIT_BIT != 28) || (FLT_RADIX != 2) || (DBL_MANT_DIG != 53) || (DBL_MAX_EXP != 1024)
+#define NO_FLOATING_POINT
+#endif
 #endif
 
 /* this function is less generic than mp_n_root, simpler and faster */
@@ -22,8 +24,8 @@ int mp_sqrt(const mp_int *arg, mp_int *ret)
 {
    int res;
    mp_int t1, t2;
-   int i, j, k;
 #ifndef NO_FLOATING_POINT
+   int i, j, k;
    volatile double d;
    mp_digit dig;
 #endif
@@ -39,6 +41,8 @@ int mp_sqrt(const mp_int *arg, mp_int *ret)
       return MP_OKAY;
    }
 
+#ifndef NO_FLOATING_POINT
+
    i = (arg->used / 2) - 1;
    j = 2 * i;
    if ((res = mp_init_size(&t1, i+2)) != MP_OKAY) {
@@ -52,8 +56,6 @@ int mp_sqrt(const mp_int *arg, mp_int *ret)
    for (k = 0; k < i; ++k) {
       t1.dp[k] = (mp_digit) 0;
    }
-
-#ifndef NO_FLOATING_POINT
 
    /* Estimate the square root using the hardware floating point unit. */
 
@@ -97,11 +99,16 @@ int mp_sqrt(const mp_int *arg, mp_int *ret)
 
 #else
 
-   /* Estimate the square root as having 1 in the most significant place. */
+   if ((res = mp_init_copy(&t1, arg)) != MP_OKAY) {
+      return res;
+   }
 
-   t1.used = i + 2;
-   t1.dp[i+1] = (mp_digit) 1;
-   t1.dp[i] = (mp_digit) 0;
+   if ((res = mp_init(&t2)) != MP_OKAY) {
+      goto E2;
+   }
+
+   /* First approx. (not very bad for large arg) */
+   mp_rshd(&t1, t1.used/2);
 
 #endif
 

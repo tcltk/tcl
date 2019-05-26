@@ -266,7 +266,7 @@ typedef struct AuxDataType {
 typedef struct AuxData {
     const AuxDataType *type;	/* Pointer to the AuxData type associated with
 				 * this ClientData. */
-    ClientData clientData;	/* The compilation data itself. */
+    void *clientData;	/* The compilation data itself. */
 } AuxData;
 
 /*
@@ -514,6 +514,23 @@ typedef struct ByteCode {
 				 * created. */
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
+
+#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (codePtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
+    } while (0)
+
+
+
+#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
+	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
 
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to the
@@ -823,8 +840,10 @@ typedef struct ByteCode {
 
 #define INST_CLOCK_READ			189
 
+#define INST_DICT_GET_DEF		190
+
 /* The last opcode */
-#define LAST_INST_OPCODE		189
+#define LAST_INST_OPCODE		190
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

@@ -9,8 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* Check if remainders are possible squares - fast exclude non-squares */
@@ -50,13 +49,12 @@ int mp_is_square(const mp_int *arg, int *ret)
       return MP_VAL;
    }
 
-   /* digits used?  (TSD) */
-   if (arg->used == 0) {
+   if (IS_ZERO(arg)) {
       return MP_OKAY;
    }
 
    /* First check mod 128 (suppose that DIGIT_BIT is at least 7) */
-   if (rem_128[127u & DIGIT(arg, 0)] == (char)1) {
+   if (rem_128[127u & arg->dp[0]] == (char)1) {
       return MP_OKAY;
    }
 

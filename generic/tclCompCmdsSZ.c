@@ -449,6 +449,63 @@ TclCompileStringIndexCmd(
 }
 
 int
+TclCompileStringInsertCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int idx;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    /* Compute and push the string in which to insert */
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+
+    /* See what can be discovered about index at compile time */
+    tokenPtr = TokenAfter(tokenPtr);
+    if (TCL_OK != TclGetIndexFromToken(tokenPtr, TCL_INDEX_START,
+	    TCL_INDEX_END, &idx)) {
+
+	/* Nothing useful knowable - cease compile; let it direct eval */
+	return TCL_OK;
+    }
+
+    /* Compute and push the string to be inserted */
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 3);
+
+    if (idx == (int)TCL_INDEX_START) {
+	/* Prepend the insertion string */
+	OP4(	REVERSE, 2);
+	OP1(	STR_CONCAT1, 2);
+    } else  if (idx == (int)TCL_INDEX_END) {
+	/* Append the insertion string */
+	OP1(	STR_CONCAT1, 2);
+    } else {
+	/* Prefix + insertion + suffix */
+	if (idx < (int)TCL_INDEX_END) {
+	    /* See comments in compiler for [linsert]. */
+	    idx++;
+	}
+	OP4(	OVER, 1);
+	OP44(	STR_RANGE_IMM, 0, idx-1);
+	OP4(	REVERSE, 3);
+	OP44(	STR_RANGE_IMM, idx, TCL_INDEX_END);
+	OP1(	STR_CONCAT1, 3);
+    }
+
+    return TCL_OK;
+}
+
+int
 TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -461,7 +518,7 @@ TclCompileStringIsCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
-	"boolean",	"digit",	"double",	"entier",
+	"boolean",	"dict", "digit",	"double",	"entier",
 	"false",	"graph",	"integer",	"list",
 	"lower",	"print",	"punct",	"space",
 	"true",		"upper",	"wideinteger",	"wordchar",
@@ -469,7 +526,7 @@ TclCompileStringIsCmd(
     };
     enum isClasses {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
-	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
+	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
 	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
 	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
 	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
@@ -703,7 +760,19 @@ TclCompileStringIsCmd(
 	}
 	FIXJUMP1(	end);
 	return TCL_OK;
-
+    case STR_IS_DICT:
+	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	OP4(		BEGIN_CATCH4, range);
+	ExceptionRangeStarts(envPtr, range);
+	OP(		DUP);
+	OP(		DICT_VERIFY);
+	ExceptionRangeEnds(envPtr, range);
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	OP(		POP);
+	OP(		PUSH_RETURN_CODE);
+	OP(		END_CATCH);
+	OP(		LNOT);
+	return TCL_OK;
     case STR_IS_LIST:
 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	OP4(		BEGIN_CATCH4, range);
@@ -752,7 +821,7 @@ TclCompileStringMatchCmd(
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
-	if ((length <= 1) || strncmp(str, "-nocase", (size_t) length)) {
+	if ((length <= 1) || strncmp(str, "-nocase", length)) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */
@@ -934,7 +1003,7 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -943,14 +1012,14 @@ TclCompileStringRangeCmd(
      * the string the same as the start of the string.
      */
 
-    if (idx1 == TCL_INDEX_AFTER) {
+    if (idx1 == (int)TCL_INDEX_NONE) {
 	/* [string range $s end+1 $last] must be empty string */
 	OP(		POP);
 	PUSH(		"");
 	return TCL_OK;
     }
 
-    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
@@ -958,7 +1027,7 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
-    if (idx2 == TCL_INDEX_BEFORE) {
+    if (idx2 == (int)TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(		POP);
 	PUSH(		"");
@@ -1008,7 +1077,7 @@ TclCompileStringReplaceCmd(
      * Check for first index known and useful at compile time.
      */
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &first) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1017,7 +1086,7 @@ TclCompileStringReplaceCmd(
      * Check for last index known and useful at compile time.
      */
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &last) != TCL_OK) {
 	goto genericReplace;
     }
@@ -1036,8 +1105,8 @@ TclCompileStringReplaceCmd(
      * compile direct to bytecode implementing the no-op.
      */
 
-    if ((last == TCL_INDEX_BEFORE)		/* Know (last < 0) */
-	    || (first == TCL_INDEX_AFTER)	/* Know (first > end) */
+    if ((last == (int)TCL_INDEX_NONE)		/* Know (last < 0) */
+	    || (first == (int)TCL_INDEX_NONE)	/* Know (first > end) */
 
 	/*
 	 * Tricky to determine when runtime (last < first) can be
@@ -1045,24 +1114,21 @@ TclCompileStringReplaceCmd(
 	 * cases...
 	 *
 	 * (first <= TCL_INDEX_END) &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX END) && (last < first) => ACCEPT
 	 *	else => cannot tell REJECT
 	 */
-	    || ((first <= TCL_INDEX_END) && (last <= TCL_INDEX_END)
+	    || ((first <= (int)TCL_INDEX_END) && (last <= (int)TCL_INDEX_END)
 		&& (last < first))		/* Know (last < first) */
 	/*
-	 * (first == TCL_INDEX_BEFORE) &&
-	 *	(last == TCL_INDEX_AFTER) => (first < last) REJECT
+	 * (first == TCL_INDEX_NONE) &&
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else		=> (first < last) REJECT
 	 *
 	 * else [[first >= TCL_INDEX_START]] &&
-	 *	(last == TCL_INDEX_AFTER) => cannot tell REJECT
 	 *	(last <= TCL_INDEX_END) => cannot tell REJECT
 	 *	else [[last >= TCL_INDEX START]] && (last < first) => ACCEPT
 	 */
-	    || ((first >= TCL_INDEX_START) && (last >= TCL_INDEX_START)
+	    || ((first >= (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)
 		&& (last < first))) {		/* Know (last < first) */
 	if (parsePtr->numWords == 5) {
 	    tokenPtr = TokenAfter(tokenPtr);
@@ -1091,43 +1157,43 @@ TclCompileStringReplaceCmd(
      *		(first <= end)
      *
      * The encoded indices (first <= TCL_INDEX END) and
-     * (first == TCL_INDEX_BEFORE) always meets this condition, but
+     * (first == TCL_INDEX_NONE) always meets this condition, but
      * any other encoded first index has some list for which it fails.
      *
      * We also need, second:
      *
      *		(last >= 0)
      *
-     * The encoded indices (last >= TCL_INDEX_START) and
-     * (last == TCL_INDEX_AFTER) always meet this condition but any
-     * other encoded last index has some list for which it fails.
+     * The encoded index (last >= TCL_INDEX_START) always meet this
+     * condition but any other encoded last index has some list for
+     * which it fails.
      *
      * Finally we need, third:
      *
      *		(first <= last)
      *
      * Considered in combination with the constraints we already have,
-     * we see that we can proceed when (first == TCL_INDEX_BEFORE)
-     * or (last == TCL_INDEX_AFTER). These also permit simplification
-     * of the prefix|replace|suffix construction. The other constraints,
-     * though, interfere with getting a guarantee that first <= last.
+     * we see that we can proceed when (first == TCL_INDEX_NONE).
+     * These also permit simplification of the prefix|replace|suffix
+     * construction. The other constraints, though, interfere with
+     * getting a guarantee that first <= last.
      */
 
-    if ((first == TCL_INDEX_BEFORE) && (last >= TCL_INDEX_START)) {
+    if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
 	/* empty prefix */
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
 	OP4(		REVERSE, 2);
-	if (last == TCL_INDEX_AFTER) {
+	if (last == INT_MAX) {
 	    OP(		POP);		/* Pop  original */
 	} else {
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	}
 	return TCL_OK;
     }
 
-    if ((last == TCL_INDEX_AFTER) && (first <= TCL_INDEX_END)) {
+    if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
 	OP44(		STR_RANGE_IMM, 0, first-1);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 4);
@@ -1144,19 +1210,19 @@ TclCompileStringReplaceCmd(
 	 * are harmless when they are replaced by another empty string.
 	 */
 
-	if ((first == TCL_INDEX_BEFORE) || (first == TCL_INDEX_START)) {
+	if (first == (int)TCL_INDEX_START) {
 	    /* empty prefix - build suffix only */
 
-	    if ((last == TCL_INDEX_END) || (last == TCL_INDEX_AFTER)) {
+	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix too => empty result */
 		OP(	POP);		/* Pop  original */
 		PUSH	(	"");
 		return TCL_OK;
 	    }
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    return TCL_OK;
 	} else {
-	    if ((last == TCL_INDEX_END) || (last == TCL_INDEX_AFTER)) {
+	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix - build prefix only */
 		OP44(	STR_RANGE_IMM, 0, first-1);
 		return TCL_OK;
@@ -1164,7 +1230,7 @@ TclCompileStringReplaceCmd(
 	    OP(		DUP);
 	    OP44(	STR_RANGE_IMM, 0, first-1);
 	    OP4(	REVERSE, 2);
-	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	    return TCL_OK;
 	}
@@ -1493,7 +1559,7 @@ TclSubstCompile(
     for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	int length, literal, catchRange, breakJump;
-	char buf[TCL_UTF_MAX];
+	char buf[4] = "";
 	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
 	JumpFixup continueFixup, otherFixup, endFixup;
 

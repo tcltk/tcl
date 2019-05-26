@@ -20,7 +20,7 @@ Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
 \fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
-.VS 8.6.2
+.
 Concatenate the given \fIstring\fRs just like placing them directly
 next to each other and return the resulting compound string.  If no
 \fIstring\fRs are present, the result is an empty string.
@@ -32,7 +32,6 @@ of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
 and is more efficient than building a list of arguments and using
 \fBjoin\fR with an empty join string.
 .RE
-.VE
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
@@ -89,6 +88,24 @@ If \fIcharIndex\fR is less than 0 or greater than or equal to the
 length of the string then this command returns an empty string.
 .RE
 .TP
+\fBstring insert \fIstring index insertString\fR
+.VS "TIP 504"
+Returns a copy of \fIstring\fR with \fIinsertString\fR inserted at the
+\fIindex\fR'th character.  The \fIindex\fR may be specified as described in the
+\fBSTRING INDICES\fR section.
+.RS
+.PP
+If \fIindex\fR is start-relative, the first character inserted in the returned
+string will be at the specified index.  If \fIindex\fR is end-relative, the last
+character inserted in the returned string will be at the specified index.
+.PP
+If \fIindex\fR is at or before the start of \fIstring\fR (e.g., \fIindex\fR is
+\fB0\fR), \fIinsertString\fR is prepended to \fIstring\fR.  If \fIindex\fR is at
+or after the end of \fIstring\fR (e.g., \fIindex\fR is \fBend\fR),
+\fIinsertString\fR is appended to \fIstring\fR.
+.RE
+.VE "TIP 504"
+.TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 .
 Returns 1 if \fIstring\fR is a valid member of the specified character
@@ -111,17 +128,24 @@ Any character with a value less than \eu0080 (those that are in the
 Any of the forms allowed to \fBTcl_GetBoolean\fR.
 .IP \fBcontrol\fR 12
 Any Unicode control character.
+.IP \fBdict\fR 12
+.VS TIP501
+Any proper dict structure, with optional surrounding whitespace. In
+case of improper dict structure, 0 is returned and the \fIvarname\fR
+will contain the index of the
+.QW element
+where the dict parsing fails, or \-1 if this cannot be determined.
+.VE TIP501
 .IP \fBdigit\fR 12
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
 Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
-.VS 8.6
+.
 Any of the valid string formats for an integer value of arbitrary size
 in Tcl, with optional surrounding whitespace. The formats accepted are
 exactly those accepted by the C routine \fBTcl_GetBignumFromObj\fR.
-.VE
 .IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
@@ -268,7 +292,9 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR. An index of 0 refers to the first
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
+character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
 as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
 it is treated as if it were zero, and if \fIlast\fR is greater than or
@@ -278,13 +304,16 @@ string is returned.
 .TP
 \fBstring repeat \fIstring count\fR
 .
-Returns \fIstring\fR repeated \fIcount\fR number of times.
+Returns a string consisting of \fIstring\fR concatenated with itself
+\fIcount\fR times. If \fIcount\fR is 0, the empty string will be
+returned.
 .TP
 \fBstring replace \fIstring first last\fR ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR.  An index of 0 refers to the
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR).  An index of 0 refers to the
 first character of the string.  \fIFirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.  If \fInewstring\fR is
 specified, then it is placed in the removed character range.  If

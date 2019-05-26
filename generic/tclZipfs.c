@@ -291,6 +291,11 @@ static const char pwrot[16] = {
 /*
  * Table to compute CRC32.
  */
+#ifdef Z_U4
+   typedef Z_U4 z_crc_t;
+#else
+   typedef unsigned long z_crc_t;
+#endif
 
 static const z_crc_t crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
@@ -356,7 +361,7 @@ static inline int	DescribeMounted(Tcl_Interp *interp,
 static inline int	ListMountPoints(Tcl_Interp *interp);
 static int		ZipfsAppHookFindTclInit(const char *archive);
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
-			    ClientData *clientDataPtr);
+			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
 static Tcl_Obj *	ZipFSFilesystemSeparatorProc(Tcl_Obj *pathPtr);
 static int		ZipFSStatProc(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -376,18 +381,19 @@ static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
-static int		ZipChannelClose(ClientData instanceData,
+static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
-static int		ZipChannelGetFile(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		ZipChannelRead(ClientData instanceData, char *buf,
+static int		ZipChannelGetFile(void *instanceData,
+			    int direction, void **handlePtr);
+static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-static int		ZipChannelSeek(ClientData instanceData, long offset,
+static int		ZipChannelSeek(void *instanceData, long offset,
 			    int mode, int *errloc);
-static void		ZipChannelWatchChannel(ClientData instanceData,
+static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
-static int		ZipChannelWrite(ClientData instanceData,
+static int		ZipChannelWrite(void *instanceData,
 			    const char *buf, int toWrite, int *errloc);
 
 /*
@@ -547,12 +553,13 @@ DosTimeDate(
     struct tm tm;
     time_t ret;
 
-    memset(&tm, 0, sizeof(struct tm));
+    memset(&tm, 0, sizeof(tm));
+    tm.tm_isdst = -1;			/* let mktime() deal with DST */
     tm.tm_year = ((dosDate & 0xfe00) >> 9) + 80;
     tm.tm_mon = ((dosDate & 0x1e0) >> 5) - 1;
     tm.tm_mday = dosDate & 0x1f;
     tm.tm_hour = (dosTime & 0xf800) >> 11;
-    tm.tm_min = (dosTime & 0x7e) >> 5;
+    tm.tm_min = (dosTime & 0x7e0) >> 5;
     tm.tm_sec = (dosTime & 0x1f) << 1;
     ret = mktime(&tm);
     if (ret == (time_t) -1) {
@@ -1089,7 +1096,7 @@ ZipFSOpenArchive(
     ZipFile *zf)
 {
     size_t i;
-    ClientData handle;
+    void *handle;
 
     zf->nameLength = 0;
     zf->isMemBuffer = 0;
@@ -1280,6 +1287,7 @@ ZipFSCatalogFilesystem(
 
     *zf = *zf0;
     zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
     zf->name = ckalloc(zf->nameLength + 1);
@@ -1673,9 +1681,16 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+	ckfree(zf);
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
+	    != TCL_OK) {
+	ckfree(zf);
+	return TCL_ERROR;
+    }
+    ckfree(zf);
+    return TCL_OK;
 }
 
 /*
@@ -1705,6 +1720,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1762,11 +1778,14 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
+    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    ckfree(zf);
+    return result;
 }
 
 /*
@@ -1834,6 +1853,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
+    Tcl_DeleteExitHandler(ZipfsExitHandler, (ClientData)zf);
     ckfree(zf);
     unmounted = 1;
   done:
@@ -1862,7 +1882,7 @@ TclZipfs_Unmount(
 
 static int
 ZipFSMountObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1896,7 +1916,7 @@ ZipFSMountObjCmd(
 
 static int
 ZipFSMountBufferObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1905,7 +1925,7 @@ ZipFSMountBufferObjCmd(
     unsigned char *data;
     int length;
 
-    if (objc > 4) {
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
 	return TCL_ERROR;
     }
@@ -1948,7 +1968,7 @@ ZipFSMountBufferObjCmd(
 
 static int
 ZipFSRootObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1975,7 +1995,7 @@ ZipFSRootObjCmd(
 
 static int
 ZipFSUnmountObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2006,7 +2026,7 @@ ZipFSUnmountObjCmd(
 
 static int
 ZipFSMkKeyObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2785,7 +2805,7 @@ ZipFSMkZipOrImgObjCmd(
 
 static int
 ZipFSMkZipObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2805,7 +2825,7 @@ ZipFSMkZipObjCmd(
 
 static int
 ZipFSLMkZipObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2842,7 +2862,7 @@ ZipFSLMkZipObjCmd(
 
 static int
 ZipFSMkImgObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2863,7 +2883,7 @@ ZipFSMkImgObjCmd(
 
 static int
 ZipFSLMkImgObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2900,7 +2920,7 @@ ZipFSLMkImgObjCmd(
 
 static int
 ZipFSCanonicalObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2956,7 +2976,7 @@ ZipFSCanonicalObjCmd(
 
 static int
 ZipFSExistsObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3009,7 +3029,7 @@ ZipFSExistsObjCmd(
 
 static int
 ZipFSInfoObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3059,7 +3079,7 @@ ZipFSInfoObjCmd(
 
 static int
 ZipFSListObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3149,21 +3169,6 @@ ZipFSListObjCmd(
 
 #ifdef _WIN32
 #define LIBRARY_SIZE	    64
-
-static inline int
-WCharToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start = dst;
-
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
-}
 #endif /* _WIN32 */
 
 Tcl_Obj *
@@ -3207,11 +3212,8 @@ TclZipfs_TclLibrary(void)
 
 #if defined(_WIN32)
     hModule = TclWinGetTclInstance();
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, dllName, MAX_PATH);
-    } else {
-	WCharToUtf(wName, dllName);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
@@ -3274,7 +3276,7 @@ TclZipfs_TclLibrary(void)
 
 static int
 ZipFSTclLibraryObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3308,7 +3310,7 @@ ZipFSTclLibraryObjCmd(
 
 static int
 ZipChannelClose(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     ZipChannel *info = instanceData;
@@ -3366,7 +3368,7 @@ ZipChannelClose(
 
 static int
 ZipChannelRead(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errloc)
@@ -3439,7 +3441,7 @@ ZipChannelRead(
 
 static int
 ZipChannelWrite(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errloc)
@@ -3486,7 +3488,7 @@ ZipChannelWrite(
 
 static int
 ZipChannelSeek(
-    ClientData instanceData,
+    void *instanceData,
     long offset,
     int mode,
     int *errloc)
@@ -3558,7 +3560,7 @@ ZipChannelSeek(
 
 static void
 ZipChannelWatchChannel(
-    ClientData instanceData,
+    void *instanceData,
     int mask)
 {
     return;
@@ -3583,9 +3585,9 @@ ZipChannelWatchChannel(
 
 static int
 ZipChannelGetFile(
-    ClientData instanceData,
+    void *instanceData,
     int direction,
-    ClientData *handlePtr)
+    void **handlePtr)
 {
     return TCL_ERROR;
 }
@@ -3720,7 +3722,7 @@ ZipChannelOpen(
 	    unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	    if (z->isEncrypted) {
-		int len = z->zipFilePtr->passBuf[0];
+		int len = z->zipFilePtr->passBuf[0] & 0xFF;
 		char passBuf[260];
 
 		for (i = 0; i < len; i++) {
@@ -3821,7 +3823,7 @@ ZipChannelOpen(
 	info->numBytes = z->numBytes;
 	info->maxWrite = 0;
 	if (info->isEncrypted) {
-	    int len = z->zipFilePtr->passBuf[0];
+	    int len = z->zipFilePtr->passBuf[0] & 0xFF;
 	    char passBuf[260];
 
 	    for (i = 0; i < len; i++) {
@@ -3909,6 +3911,31 @@ ZipChannelOpen(
 		Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "CORRUPT", NULL);
 	    }
 	    goto error;
+	} else if (info->isEncrypted) {
+	    unsigned char *ubuf = NULL;
+	    unsigned int j, len;
+
+	    /*
+	     * Decode encrypted but uncompressed file, since we support
+	     * Tcl_Seek() on it, and it can be randomly accessed later.
+	     */
+
+	    len = z->numCompressedBytes - 12;
+	    ubuf = (unsigned char *) attemptckalloc(len);
+	    if (ubuf == NULL) {
+		ckfree((char *) info);
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("out of memory", -1));
+		}
+		goto error;
+	    }
+	    for (j = 0; j < len; j++) {
+		ch = info->ubuf[j];
+		ubuf[j] = zdecode(info->keys, crc32tab, ch);
+	    }
+	    info->ubuf = ubuf;
+	    info->isEncrypted = 0;
 	}
     }
 
@@ -4330,7 +4357,7 @@ ZipFSMatchInDirectoryProc(
 static int
 ZipFSPathInFilesystemProc(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    void **clientDataPtr)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -4503,7 +4530,7 @@ ZipFSFileAttrsGetProc(
 	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->name, -1);
 	break;
     case 5:
-	*objPtrRef = Tcl_NewStringObj("0555", -1);
+	*objPtrRef = Tcl_NewStringObj("0o555", -1);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
@@ -4654,7 +4681,7 @@ ZipFSLoadFile(
 		    TCL_PATH_DIRNAME);
 	}
 	if (objs[0]) {
-	    altPath = TclJoinPath(2, objs);
+	    altPath = TclJoinPath(2, objs, 0);
 	    if (altPath) {
 		Tcl_IncrRefCount(altPath);
 		if (Tcl_FSAccess(altPath, R_OK) == 0) {
@@ -4749,7 +4776,6 @@ TclZipfs_Init(
      */
 
     WriteLock();
-    /* Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init); */
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
@@ -4821,6 +4847,17 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 
+static void
+ZipfsExitHandler(
+    ClientData clientData)
+{
+    ZipFile *zf = (ZipFile *)clientData;
+
+    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
+	Tcl_Panic("tried to unmount busy filesystem");
+    }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4835,7 +4872,7 @@ int
 TclZipfs_AppHook(
     int *argcPtr,		/* Pointer to argc */
 #ifdef _WIN32
-    TCHAR
+    WCHAR
 #else /* !_WIN32 */
     char
 #endif /* _WIN32 */

@@ -433,6 +433,36 @@ If \fIname\fR contains no separators then returns \fIname\fR.  So,
 \fBfile tail a/b\fR, \fBfile tail a/b/\fR and \fBfile tail b\fR all
 return \fBb\fR.
 .TP
+\fBfile tempdir\fR ?\fItemplate\fR?
+.VS "8.7, TIP 431"
+Creates a temporary directory (guaranteed to be newly created and writable by
+the current script) and returns its name. If \fItemplate\fR is given, it
+specifies one of or both of the existing directory (on a filesystem controlled
+by the operating system) to contain the temporary directory, and the base part
+of the directory name; it is considered to have the location of the directory
+if there is a directory separator in the name, and the base part is everything
+after the last directory separator (if non-empty).  The default containing
+directory is determined by system-specific operations, and the default base
+name prefix is
+.QW \fBtcl\fR .
+.RS
+.PP
+The following output is typical and illustrative; the actual output will vary
+between platforms:
+.PP
+.CS
+% \fBfile tempdir\fR
+/var/tmp/tcl_u0kuy5
+ % \fBfile tempdir\fR /tmp/myapp
+/tmp/myapp_8o7r9L
+% \fBfile tempdir\fR /tmp/
+/tmp/tcl_1mOJHD
+% \fBfile tempdir\fR myapp
+/var/tmp/myapp_0ihS0n
+.CE
+.RE
+.VE "8.7, TIP 431"
+.TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
 '\" TIP #210
 .VS 8.6

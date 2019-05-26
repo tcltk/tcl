@@ -9,8 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* init a new mp_int */
@@ -19,7 +18,7 @@ int mp_init(mp_int *a)
    int i;
 
    /* allocate memory required and clear it */
-   a->dp = OPT_CAST(mp_digit) XMALLOC(sizeof(mp_digit) * (size_t)MP_PREC);
+   a->dp = (mp_digit *) XMALLOC(MP_PREC * sizeof(mp_digit));
    if (a->dp == NULL) {
       return MP_MEM;
    }

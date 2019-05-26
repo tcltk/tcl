@@ -19,12 +19,7 @@
 
 /*
  * The following table provides parsing information about each possible 8-bit
- * character. The table is designed to be referenced with either signed or
- * unsigned characters, so it has 384 entries. The first 128 entries
- * correspond to negative character values, the next 256 correspond to
- * positive character values. The last 128 entries are identical to the first
- * 128. The table is always indexed with a 128-byte offset (the 128th entry
- * corresponds to a character value of 0).
+ * character. The table is designed to be referenced with unsigned characters.
  *
  * The macro CHAR_TYPE is used to index into the table and return information
  * about its character argument. The following return values are defined.
@@ -44,42 +39,6 @@
  */
 
 const char tclCharTypeTable[] = {
-    /*
-     * Negative character values, from -128 to -1:
-     */
-
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 
     /*
      * Positive character values, from 0-127:
@@ -592,7 +551,7 @@ Tcl_ParseCommand(
 
 int
 TclIsSpaceProc(
-    char byte)
+    int byte)
 {
     return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
 }
@@ -621,7 +580,7 @@ TclIsSpaceProc(
 
 int
 TclIsBareword(
-    char byte)
+    int byte)
 {
     if (byte < '0' || byte > 'z') {
 	return 0;
@@ -832,7 +791,7 @@ TclParseBackslash(
     Tcl_UniChar unichar = 0;
     int result;
     int count;
-    char buf[TCL_UTF_MAX];
+    char buf[4] = "";
 
     if (numBytes == 0) {
 	if (readPtr != NULL) {
@@ -890,7 +849,7 @@ TclParseBackslash(
 	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "x".
+	     * No hexdigits -> This is just "x".
 	     */
 
 	    result = 'x';
@@ -905,7 +864,7 @@ TclParseBackslash(
 	count += TclParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "u".
+	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
 	}
@@ -914,7 +873,7 @@ TclParseBackslash(
 	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "U".
+	     * No hexdigits -> This is just "U".
 	     */
 	    result = 'U';
 	}
@@ -967,7 +926,7 @@ TclParseBackslash(
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
-	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
+	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
 	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}
@@ -980,9 +939,9 @@ TclParseBackslash(
 	*readPtr = count;
     }
     count = Tcl_UniCharToUtf(result, dst);
-    if (!count) {
-	/* Special case for handling upper surrogates. */
-	count = Tcl_UniCharToUtf(-1, dst);
+    if ((result >= 0xD800) && (count < 3)) {
+	/* Special case for handling high surrogates. */
+	count += Tcl_UniCharToUtf(-1, dst + count);
     }
     return count;
 }
@@ -2192,7 +2151,7 @@ TclSubstTokens(
 	Tcl_Obj *appendObj = NULL;
 	const char *append = NULL;
 	int appendByteLength = 0;
-	char utfCharBytes[TCL_UTF_MAX];
+	char utfCharBytes[4] = "";
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:

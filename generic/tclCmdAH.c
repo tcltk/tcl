@@ -382,7 +382,7 @@ CatchObjCmdCallback(
     }
 
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
@@ -932,7 +932,7 @@ Tcl_ExitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int value;
+    Tcl_WideInt value;
 
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
@@ -941,10 +941,10 @@ Tcl_ExitObjCmd(
 
     if (objc == 1) {
 	value = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+    } else if (TclGetWideBitsFromObj(interp, objv[1], &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_Exit(value);
+    Tcl_Exit((int)value);
     /*NOTREACHED*/
     return TCL_OK;		/* Better not ever reach this! */
 }
@@ -1093,6 +1093,7 @@ TclInitFileCmd(
 	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
 	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
 	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"tempdir",	TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
 	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
@@ -1179,7 +1180,7 @@ FileAttrAccessTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_atime));
     return TCL_OK;
 }
 
@@ -1259,7 +1260,7 @@ FileAttrModifyTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_mtime));
     return TCL_OK;
 }
 
@@ -1882,7 +1883,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
     return TCL_OK;
 }
 
@@ -2278,23 +2279,23 @@ StoreStatData(
      * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
-    STORE_ARY("dev",	Tcl_NewLongObj((long)statPtr->st_dev));
+    STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
     STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-    STORE_ARY("nlink",	Tcl_NewLongObj((long)statPtr->st_nlink));
-    STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
-    STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
+    STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+    STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
+    STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
     STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ARY("blksize", Tcl_NewLongObj((long)statPtr->st_blksize));
+    STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-    STORE_ARY("atime",	Tcl_NewLongObj((long)statPtr->st_atime));
-    STORE_ARY("mtime",	Tcl_NewLongObj((long)statPtr->st_mtime));
-    STORE_ARY("ctime",	Tcl_NewLongObj((long)statPtr->st_ctime));
+    STORE_ARY("atime",	Tcl_NewWideIntObj((long)statPtr->st_atime));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj((long)statPtr->st_mtime));
+    STORE_ARY("ctime",	Tcl_NewWideIntObj((long)statPtr->st_ctime));
     mode = (unsigned short) statPtr->st_mode;
-    STORE_ARY("mode",	Tcl_NewIntObj(mode));
+    STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
 

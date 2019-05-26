@@ -9,8 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
+ * SPDX-License-Identifier: Unlicense
  */
 
 #ifndef LTM_NO_FILE
@@ -23,24 +22,24 @@ int mp_fwrite(const mp_int *a, int radix, FILE *stream)
       return err;
    }
 
-   buf = OPT_CAST(char) XMALLOC((size_t)len);
+   buf = (char *) XMALLOC((size_t)len);
    if (buf == NULL) {
       return MP_MEM;
    }
 
    if ((err = mp_toradix(a, buf, radix)) != MP_OKAY) {
-      XFREE(buf);
+      XFREE(buf, len);
       return err;
    }
 
    for (x = 0; x < len; x++) {
       if (fputc((int)buf[x], stream) == EOF) {
-         XFREE(buf);
+         XFREE(buf, len);
          return MP_VAL;
       }
    }
 
-   XFREE(buf);
+   XFREE(buf, len);
    return MP_OKAY;
 }
 #endif

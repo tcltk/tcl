@@ -32,6 +32,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
@@ -143,6 +144,8 @@ typedef enum TalInstType {
 				 * be strictly positive, consumes N, produces
 				 * 1 */
     ASSEM_DICT_GET,		/* 'dict get' and related - consumes N+1
+				 * operands, produces 1, N > 0 */
+    ASSEM_DICT_GET_DEF,		/* 'dict getwithdefault' - consumes N+2
 				 * operands, produces 1, N > 0 */
     ASSEM_DICT_SET,		/* specifies key count and LVT index, consumes
 				 * N+1 operands, produces 1, N > 0 */
@@ -271,15 +274,12 @@ static void		CompileEmbeddedScript(AssemblyEnv*, Tcl_Token*,
 			    const TalInstDesc*);
 static int		DefineLabel(AssemblyEnv* envPtr, const char* label);
 static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr);
-static void		DupAssembleCodeInternalRep(Tcl_Obj* src,
-			    Tcl_Obj* dest);
 static void		FillInJumpOffsets(AssemblyEnv*);
 static int		CreateMirrorJumpTable(AssemblyEnv* assemEnvPtr,
 			    Tcl_Obj* jumpTable);
 static int		FindLocalVar(AssemblyEnv* envPtr,
 			    Tcl_Token** tokenPtrPtr);
 static int		FinishAssembly(AssemblyEnv*);
-static void		FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeAssemblyEnv(AssemblyEnv*);
 static int		GetBooleanOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**, int*);
@@ -317,6 +317,9 @@ static void		UnstackExpiredCatches(CompileEnv*, BasicBlock*, int,
 /*
  * Tcl_ObjType that describes bytecode emitted by the assembler.
  */
+
+static Tcl_FreeInternalRepProc	FreeAssembleCodeInternalRep;
+static Tcl_DupInternalRepProc	DupAssembleCodeInternalRep;
 
 static const Tcl_ObjType assembleCodeType = {
     "assemblecode",
@@ -361,6 +364,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"dictExists",	ASSEM_DICT_GET, INST_DICT_EXISTS,	INT_MIN,1},
     {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
+    {"dictGetDef",	ASSEM_DICT_GET_DEF, INST_DICT_GET_DEF,	INT_MIN,1},
     {"dictIncrImm",	ASSEM_SINT4_LVT4,
 					INST_DICT_INCR_IMM,	1,	1},
     {"dictLappend",	ASSEM_LVT4,	INST_DICT_LAPPEND,	2,	1},
@@ -618,10 +622,14 @@ BBUpdateStackReqs(
 
     if (consumed == INT_MIN) {
 	/*
-	 * The instruction is variadic; it consumes 'count' operands.
+	 * The instruction is variadic; it consumes 'count' operands, or
+	 * 'count+1' for ASSEM_DICT_GET_DEF.
 	 */
 
 	consumed = count;
+	if (TalInstructionTable[tblIdx].instType == ASSEM_DICT_GET_DEF) {
+	    consumed++;
+	}
     }
     if (produced < 0) {
 	/*
@@ -802,7 +810,7 @@ TclNRAssembleObjCmd(
 	Tcl_AddErrorInfo(interp, "\n    (\"");
 	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
-	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
+	backtrace = Tcl_NewWideIntObj(Tcl_GetErrorLine(interp));
 	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
@@ -847,15 +855,15 @@ CompileAssembleObj(
     const char* source;		/* String representation of the source code */
     int sourceLen;		/* Length of the source code in bytes */
 
-
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
      * is valid in the current context.
      */
 
-    if (objPtr->typePtr == &assembleCodeType) {
+    ByteCodeGetIntRep(objPtr, &assembleCodeType, codePtr);
+
+    if (codePtr) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == namespacePtr)
@@ -869,7 +877,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	TclFreeIntRep(objPtr);
+	Tcl_StoreIntRep(objPtr, &assembleCodeType, NULL);
     }
 
     /*
@@ -1395,6 +1403,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_DICT_GET:
+    case ASSEM_DICT_GET_DEF:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
@@ -2261,7 +2270,7 @@ GetListIndexOperand(
      * when list size limits grow.
      */
     status = TclIndexEncode(interp, value,
-	    TCL_INDEX_BEFORE,TCL_INDEX_BEFORE, result);
+	    TCL_INDEX_NONE,TCL_INDEX_NONE, result);
 
     Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
@@ -4262,7 +4271,7 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_Obj* lineNo;		/* Line number in the source */
 
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    lineNo = Tcl_NewIntObj(bbPtr->startLine);
+    lineNo = Tcl_NewWideIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
     Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");
@@ -4332,7 +4341,10 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
+
+    ByteCodeGetIntRep(objPtr, &assembleCodeType, codePtr);
+    assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
 }
