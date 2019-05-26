@@ -718,15 +718,15 @@ TclGetFrame(
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
-	int result;
-	Tcl_Obj obj;
+    int result;
+    Tcl_Obj obj;
 
-	obj.bytes = (char *) name;
-	obj.length = strlen(name);
-	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeIntRep(&obj);
-	return result;
+    obj.bytes = (char *) name;
+    obj.length = strlen(name);
+    obj.typePtr = NULL;
+    result = TclObjGetFrame(interp, &obj, framePtrPtr);
+    TclFreeIntRep(&obj);
+    return result;
 }
 
 /*
@@ -865,10 +865,12 @@ Uplevel_Callback(
     int result)
 {
     CallFrame *savedVarFramePtr = data[0];
+    const char *msgPiece = data[1];
 
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"uplevel\" body line %d)", Tcl_GetErrorLine(interp)));
+		"\n    (\"%s\" body line %d)",
+		msgPiece, Tcl_GetErrorLine(interp)));
     }
 
     /*
@@ -954,9 +956,89 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
-	    NULL);
+    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, "uplevel",
+	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InvokeObjCmd --
+ *
+ *	This object function is invoked to process the "invoke" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Tcl_InvokeObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRInvokeObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRInvokeObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    register Interp *iPtr = (Interp *) interp;
+    int result;
+    CallFrame *savedVarFramePtr, *framePtr;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "level command ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Find the level to use for executing the command.
+     */
+
+    result = TclObjGetFrame(interp, objv[1], &framePtr);
+    if (result == -1) {
+	return TCL_ERROR;
+    } else if (result == 0) {
+	/*
+	 * Must have a level, and whatever we've got, that's what we haven't
+	 * got.
+	 */
+
+	const char *name = TclGetString(objv[1]);
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Modify the interpreter state to execute in the given frame.
+     */
+
+    savedVarFramePtr = iPtr->varFramePtr;
+    iPtr->varFramePtr = framePtr;
+
+    /*
+     * Execute the residual arguments as a command.
+     */
+
+    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, "invoke",
+	    NULL, NULL);
+    return TclNREvalObjv(interp, objc - 2, objv + 2, TCL_EVAL_INVOKE, NULL);
 }
 
 /*

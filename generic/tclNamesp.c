@@ -115,6 +115,8 @@ static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceInvokeCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		NRNamespaceInvokeCmd(ClientData dummy,
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceInscopeCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NRNamespaceInscopeCmd(ClientData dummy,
@@ -187,7 +189,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"invoke",	   NamespaceInvokeCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
+    {"invoke",	   NamespaceInvokeCmd,	TclCompileBasicMin2ArgCmd, NRNamespaceInvokeCmd, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
     {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
     {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
@@ -3828,7 +3830,47 @@ NamespaceInvokeCmd(
 
     iPtr->lookupNsPtr = (Namespace *) namespacePtr;
     return Tcl_EvalObjv(interp, objc - 2, objv + 2, TCL_EVAL_INVOKE);
-}   
+}
+
+static int
+NRNamespaceInvokeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Namespace *namespacePtr;
+    int result;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Try to resolve the namespace reference, caching the result in the
+     * namespace object along the way. If the namespace is not found, return
+     * an error.
+     */
+
+    result = TclGetNamespaceFromObj(interp, objv[1], &namespacePtr);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (namespacePtr == NULL) {
+	Tcl_AppendResult(interp, "unknown namespace \"",
+		Tcl_GetString(objv[1]), "\"", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Invoke the command in the requested namespace
+     */
+
+    iPtr->lookupNsPtr = (Namespace *) namespacePtr;
+    return TclNREvalObjv(interp, objc - 2, objv + 2, TCL_EVAL_INVOKE, NULL);
+}
 
 /*
  *----------------------------------------------------------------------

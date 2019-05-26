@@ -2808,6 +2808,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRInvokeObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRPackageObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
@@ -3439,6 +3440,9 @@ MODULE_SCOPE int	Tcl_IncrObjCmd(ClientData clientData,
 MODULE_SCOPE Tcl_Command TclInitInfoCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_InterpObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_InvokeObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_JoinObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
