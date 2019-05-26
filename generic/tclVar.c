@@ -6910,11 +6910,19 @@ TclPragmaNoAliasCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, j, varc, isNew;
+    typedef struct {
+	int setIndex;
+	Tcl_Obj *variableName;
+    } AliasData;
+    int i, j, varc, isNew, result = TCL_ERROR;
     Var *key, *ignored;
     Tcl_HashTable table;
     Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
     Tcl_Obj **varv;
+    AliasData *aliasData;
+
+    Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
 
     /*
      * For each set of variables...
@@ -6922,7 +6930,7 @@ TclPragmaNoAliasCmd(
 
     for (i=1 ; i<objc ; i++) {
 	if (Tcl_ListObjGetElements(interp, objv[i], &varc, &varv) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto error;
 	}
 
 	/*
@@ -6931,34 +6939,58 @@ TclPragmaNoAliasCmd(
 	 * there.
 	 */
 
-	Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
 	for (j=0 ; j<varc ; j++) {
-	    key = TclObjLookupVarEx(interp, varv[j], NULL, TCL_LEAVE_ERR_MSG,
+	    Tcl_Obj *varName = varv[j];
+
+	    Tcl_IncrRefCount(varName);
+	    key = TclObjLookupVarEx(interp, varName, NULL, TCL_LEAVE_ERR_MSG,
 		    "resolve", 0, 0, &ignored);
 	    if (key == NULL) {
-		Tcl_DeleteHashTable(&table);
-		return TCL_ERROR;
+		TclDecrRefCount(varName);
+		goto error;
 	    }
-	    hPtr = Tcl_CreateHashEntry(&table, key, &isNew);
-	    if (!isNew) {
-		/*
-		 * There was a duplicate value! Generate an error message.
-		 */
 
-		Tcl_Obj *otherName = Tcl_GetHashValue(hPtr);
+	    hPtr = Tcl_CreateHashEntry(&table, key, &isNew);
+	    if (isNew) {
+		aliasData = ckalloc(sizeof(AliasData));
+		aliasData->setIndex = i;
+		aliasData->variableName = varName;
+		Tcl_SetHashValue(hPtr, aliasData);
+		continue;
+	    }
+
+	    /*
+	     * Two variables alias, but that's OK if they're in the same
+	     * variable set.
+	     */
+
+	    aliasData = Tcl_GetHashValue(hPtr);
+	    if (aliasData->setIndex != i) {
+		/*
+		 * There was a real duplicate! Generate an error message.
+		 */
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" aliases to the same variable as \"%s\"",
-			Tcl_GetString(varv[j]), Tcl_GetString(otherName)));
+			Tcl_GetString(varName),
+			Tcl_GetString(aliasData->variableName)));
 		Tcl_SetErrorCode(interp, "TCL", "VAR_ALIAS", NULL);
-		Tcl_DeleteHashTable(&table);
-		return TCL_ERROR;
+		TclDecrRefCount(varName);
+		goto error;
 	    }
-	    Tcl_SetHashValue(hPtr, varv[j]);
+	    TclDecrRefCount(varName);
 	}
-	Tcl_DeleteHashTable(&table);
     }
-    return TCL_OK;
+    result = TCL_OK;
+  error:
+    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	aliasData = Tcl_GetHashValue(hPtr);
+	TclDecrRefCount(aliasData->variableName);
+	ckfree(Tcl_GetHashValue(hPtr));
+    }
+    Tcl_DeleteHashTable(&table);
+    return result;
 }
 
 /*

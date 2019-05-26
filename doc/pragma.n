@@ -25,17 +25,22 @@ subcommands:
 \fBtcl::pragma noalias\fR ?\fIvariableSet ...\fR?
 .
 This subcommand takes an arbitrary number of variable sets, \fIvariableSet\fR,
-etc., and checks to see if they alias each other. Each variable set is a list
-of variable names, and two variable names in a variable set alias if they
-resolve to the same variable storage (i.e., after allowing for any variable
-resolution rules, any use of \fBglobal\fR or \fBupvar\fR, any
-namespace-qualification, etc.) If any variable names in a variable set
-indicate the same storage space, this command will produce an error. Only
-existing variables can be checked this way.
+(lists of variable names), and checks to see if they alias each other.
+Variable names within a variable set may resolve to the same variable (after
+following links such as those created by \fBupvar\fR and \fBglobal\fR, and
+allowing for any current namespace qualification, TclOO variable resolution,
+etc.), but it is an error if a variable mentioned in one variable set resolves
+to the same variable as a variable mentioned in another set. Only existing
+variables can be checked this way.
 .RS
 .PP
-This command takes multiple variable sets. Each variable set is checked
-independently.
+When the local variables in a procedure all have simple names (this is the
+overwhelmingly common case), they can be asserted to all not alias each other
+with:
+.PP
+.CS
+\fBtcl::pragma noalias\fR {*}[info locals]
+.CE
 .RE
 .TP
 \fBtcl::pragma type \fItypeName\fR ?\fIvalue ...\fR?
@@ -47,19 +52,23 @@ of the arbitrary number of \fIvalue\fRs are not of that type. Supported
 .TP
 \fBboolean\fR
 .
-This indicates the type of values accepted by \fBTcl_GetBooleanFromObj\fR.
+This indicates the type of values accepted by \fBTcl_GetBooleanFromObj\fR().
 .TP
 \fBdict\fR
 .
-This indicates the type of values accepted by \fBTcl_DictObjSize\fR.
+This indicates the type of values accepted by \fBTcl_DictObjSize\fR().
 .TP
 \fBdouble\fR
 .
-This indicates the type of values accepted by \fBTcl_GetDoubleFromObj\fR.
+This indicates the type of values accepted by \fBTcl_GetDoubleFromObj\fR().
+.TP
+\fBint32\fR
+.
+This indicates the type of values accepted by \fBTcl_GetIntFromObj\fR().
 .TP
 \fBint64\fR
 .
-This indicates the type of values accepted by \fBTcl_GetWideIntFromObj\fR.
+This indicates the type of values accepted by \fBTcl_GetWideIntFromObj\fR().
 .TP
 \fBinteger\fR
 .
@@ -70,13 +79,13 @@ restriction. This is the type of values accepted by integer-accepting
 .TP
 \fBlist\fR
 .
-This indicates the type of values accepted by \fBTcl_ListObjLength\fR.
+This indicates the type of values accepted by \fBTcl_ListObjLength\fR().
 .TP
 \fBnumber\fR
 .
 This indicates the type of any value accepted as a number, without length
-restriction. This is the type of values accepted by \fBexpr\fR operators such
-as \fB+\fR or \fB*\fR.
+restriction. This is the type of values accepted by \fBexpr\fR operators
+such as \fB+\fR or \fB*\fR.
 .RE
 .SH EXAMPLES
 .PP
@@ -90,12 +99,12 @@ proc addThreeIntegers {a b c} {
 .CE
 .PP
 This shows how a procedure could declare that two variables passed in by
-name/\fBupvar\fR must be distinct from each other.
+name/\fBupvar\fR must be distinct from each other:
 .PP
 .CS
 proc swap {v1Name v2Name} {
     upvar 1 $v1Name v1 $v2Name v2
-    \fBtcl::pragma noalias\fR {v1 v2}
+    \fBtcl::pragma noalias\fR v1 v2
     set tmp $v2
     set v2 $v1
     set v1 $tmp

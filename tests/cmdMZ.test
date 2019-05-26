@@ -449,12 +449,12 @@ test cmdMZ-try-1.0 {
 
 
 # Pragmas
-test cmdMZ-6.1 {tcl::pragma: basics} -body {
+test cmdMZ-6.1 {tcl::pragma: basics} -returnCodes error -body {
     tcl::pragma
-} -returnCodes error -result {wrong # args: should be "tcl::pragma subcommand ?arg ...?"}
-test cmdMZ-6.2 {tcl::pragma: basics} -body {
+} -result {wrong # args: should be "tcl::pragma subcommand ?arg ...?"}
+test cmdMZ-6.2 {tcl::pragma: basics} -returnCodes error -body {
     tcl::pragma ?
-} -returnCodes error -result {unknown or ambiguous subcommand "?": must be noalias, or type}
+} -result {unknown or ambiguous subcommand "?": must be noalias, or type}
 
 test cmdMZ-7.1 {tcl::pragma noalias} -body {
     tcl::pragma noalias
@@ -466,14 +466,17 @@ test cmdMZ-7.3 {tcl::pragma noalias} -body {
     tcl::pragma noalias ::env
 } -result {}
 test cmdMZ-7.4 {tcl::pragma noalias} -body {
-    tcl::pragma noalias ::env ::env
+    tcl::pragma noalias ::env ::tcl_platform
 } -result {}
 test cmdMZ-7.5 {tcl::pragma noalias} -body {
-    tcl::pragma noalias ::env ::env ::env
+    tcl::pragma noalias ::env ::tcl_platform ::auto_path
 } -result {}
 test cmdMZ-7.6 {tcl::pragma noalias} -body {
-    tcl::pragma noalias {::env ::env}
+    tcl::pragma noalias ::env ::env
 } -returnCodes error -result {"::env" aliases to the same variable as "::env"}
+test cmdMZ-7.6 {tcl::pragma noalias} -body {
+    tcl::pragma noalias {::env ::env}
+} -result {}
 test cmdMZ-7.7 {tcl::pragma noalias} -body {
     tcl::pragma noalias {::env ::tcl_platform}
 } -result {}
@@ -484,13 +487,13 @@ test cmdMZ-7.8 {tcl::pragma noalias} -body {
 } -returnCodes error -result {can't resolve "env": no such variable}
 test cmdMZ-7.9 {tcl::pragma noalias} -body {
     apply {{x y} {
-	tcl::pragma noalias [info locals]
+	tcl::pragma noalias {*}[info locals]
     }} 1 2
 } -result {}
 test cmdMZ-7.10 {tcl::pragma noalias} -body {
     apply {{x y} {
 	global env
-	tcl::pragma noalias [list {*}[info locals] env]
+	tcl::pragma noalias {*}[info locals] env
     }} 1 2
 } -result {}
 test cmdMZ-7.11 {tcl::pragma noalias} -body {
@@ -503,16 +506,44 @@ test cmdMZ-7.11 {tcl::pragma noalias} -body {
 test cmdMZ-7.12 {tcl::pragma noalias} -body {
     apply {{x y} {
 	upvar 0 x z
-	tcl::pragma noalias {x y z}
+	tcl::pragma noalias x y z
     }} 1 2
 } -returnCodes error -result {"z" aliases to the same variable as "x"}
+test cmdMZ-7.13 {tcl::pragma noalias} -setup {
+    variable a 3 b 4
+} -body {
+    proc swap {&x &y} {
+	upvar 1 ${&x} x ${&y} y
+	tcl::pragma noalias x y
+	set y $x[set x $y;string cat]
+	return
+    }
+    swap a b
+    list $a $b
+} -cleanup {
+    unset -nocomplain a b
+} -result {4 3}
+test cmdMZ-7.14 {tcl::pragma noalias} -setup {
+    variable a 3
+} -body {
+    proc swap {&x &y} {
+	upvar 1 ${&x} x ${&y} y
+	tcl::pragma noalias x y
+	set y $x[set x $y;string cat]
+	return
+    }
+    swap a a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {"y" aliases to the same variable as "x"}
+rename swap {}
 
-test cmdMZ-8.1 {tcl::pragma type} -body {
+test cmdMZ-8.1 {tcl::pragma type} -returnCodes error -body {
     tcl::pragma type
-} -returnCodes error -result {wrong # args: should be "tcl::pragma type typeName ?value...?"}
-test cmdMZ-8.2 {tcl::pragma type} -body {
+} -result {wrong # args: should be "tcl::pragma type typeName ?value...?"}
+test cmdMZ-8.2 {tcl::pragma type} -returnCodes error -body {
     tcl::pragma type ?
-} -returnCodes error -result {bad type "?": must be boolean, dict, double, int64, integer, list, or number}
+} -result {bad type "?": must be boolean, dict, double, int32, int64, integer, list, or number}
 test cmdMZ-8.3 {tcl::pragma type} -body {
     tcl::pragma type boolean
 } -result {}
@@ -544,40 +575,54 @@ test cmdMZ-8.12 {tcl::pragma type} -body {
     tcl::pragma type double 0 1 0x1 123 1e2 -.0 inf { +inf }
 } -result {}
 test cmdMZ-8.13 {tcl::pragma type} -body {
-    tcl::pragma type int64 gorp
+    tcl::pragma type int32 gorp
 } -returnCodes error -result {expected integer but got "gorp"}
 test cmdMZ-8.14 {tcl::pragma type} -body {
-    tcl::pragma type int64 123 0x123 gorp
+    tcl::pragma type int32 123 0x123 gorp
 } -returnCodes error -result {expected integer but got "gorp"}
-test cmdMZ-8.15 {tcl::pragma type} -body {
-    tcl::pragma type int64 123 0b10101 0d123 0o123 0x123 { 456 }
-} -result {}
+test cmdMZ-8.15 {tcl::pragma type} -returnCodes error -body {
+    tcl::pragma type int32 123 0x123 123456123456123
+} -result {integer value too large to represent as non-long integer}
 test cmdMZ-8.16 {tcl::pragma type} -body {
-    tcl::pragma type integer gorp
-} -returnCodes error -result {expected integer but got "gorp"}
+    tcl::pragma type int32 123 0b10101 0d123 0o123 0x123 { 456 }
+} -result {}
 test cmdMZ-8.17 {tcl::pragma type} -body {
-    tcl::pragma type integer 123 0x123 gorp
+    tcl::pragma type int64 gorp
 } -returnCodes error -result {expected integer but got "gorp"}
 test cmdMZ-8.18 {tcl::pragma type} -body {
+    tcl::pragma type int64 123 0x123 gorp
+} -returnCodes error -result {expected integer but got "gorp"}
+test cmdMZ-8.19 {tcl::pragma type} -body {
+    tcl::pragma type int64 123 0b10101 0d123 0o123 0x123 { 456 } \
+	123456123456123
+} -result {}
+test cmdMZ-8.20 {tcl::pragma type} -body {
+    tcl::pragma type integer gorp
+} -returnCodes error -result {expected integer but got "gorp"}
+test cmdMZ-8.21 {tcl::pragma type} -body {
+    tcl::pragma type integer 123 0x123 gorp
+} -returnCodes error -result {expected integer but got "gorp"}
+test cmdMZ-8.22 {tcl::pragma type} -body {
     tcl::pragma type integer 123 0b10101 0d123 0o123 0x123 { 456 } \
+	123456123456123 \
 	123456789012345678901234567890123456789012345678901234567890
 } -result {}
-test cmdMZ-8.19 {tcl::pragma type} -body {
+test cmdMZ-8.23 {tcl::pragma type} -body {
     tcl::pragma type list \{gorp
 } -returnCodes error -result "expected list value but got \"\{gorp\""
-test cmdMZ-8.20 {tcl::pragma type} -body {
+test cmdMZ-8.24 {tcl::pragma type} -body {
     tcl::pragma type list true false \{gorp
 } -returnCodes error -result "expected list value but got \"\{gorp\""
-test cmdMZ-8.21 {tcl::pragma type} -body {
+test cmdMZ-8.25 {tcl::pragma type} -body {
     tcl::pragma type list yes no 0 1 1.5 true false on off
 } -result {}
-test cmdMZ-8.22 {tcl::pragma type} -body {
+test cmdMZ-8.26 {tcl::pragma type} -body {
     tcl::pragma type number gorp
 } -returnCodes error -result {expected number but got "gorp"}
-test cmdMZ-8.23 {tcl::pragma type} -body {
+test cmdMZ-8.27 {tcl::pragma type} -body {
     tcl::pragma type number .5 nan gorp
 } -returnCodes error -result {expected number but got "gorp"}
-test cmdMZ-8.24 {tcl::pragma type} -body {
+test cmdMZ-8.28 {tcl::pragma type} -body {
     tcl::pragma type number 0 1 1.5 inf -25.375e8
 } -result {}
 

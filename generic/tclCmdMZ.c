@@ -5434,12 +5434,12 @@ TclPragmaTypeCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     enum PragmaTypes {
-	BOOL_TYPE, DICT_TYPE, DOUBLE_TYPE, INT_TYPE, INTEGER_TYPE, LIST_TYPE,
-	NUMBER_TYPE
+	BOOL_TYPE, DICT_TYPE, DOUBLE_TYPE, INT32_TYPE, INT64_TYPE,
+	INTEGER_TYPE, LIST_TYPE, NUMBER_TYPE
     };
     static const char *types[] = {
-	"boolean", "dict", "double", "int64", "integer", "list", "number",
-	NULL
+	"boolean", "dict", "double", "int32", "int64", "integer", "list",
+	"number", NULL
     };
     int idx, i;
 
@@ -5459,8 +5459,8 @@ TclPragmaTypeCmd(
     for (i=2 ; i<objc ; i++) {
 	Tcl_Obj *valuePtr = objv[i];
 	double dval;
-	int bval, len;
-	Tcl_WideInt ival;
+	int bval, len, i32val;
+	Tcl_WideInt i64val;
 	ClientData cdval;
 
 	switch ((enum PragmaTypes) idx) {
@@ -5482,8 +5482,13 @@ TclPragmaTypeCmd(
 		return TCL_ERROR;
 	    }
 	    break;
-	case INT_TYPE:
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &ival) != TCL_OK) {
+	case INT32_TYPE:
+	    if (Tcl_GetIntFromObj(interp, valuePtr, &i32val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case INT64_TYPE:
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &i64val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;
@@ -5496,7 +5501,7 @@ TclPragmaTypeCmd(
 	    }
 	    break;
 	case INTEGER_TYPE:
-	    if (TclGetWideBitsFromObj(interp, valuePtr, &ival) != TCL_OK) {
+	    if (TclGetWideBitsFromObj(interp, valuePtr, &i64val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;
