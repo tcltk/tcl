@@ -13,12 +13,11 @@
 .SH NAME
 expr \- Evaluate an expression
 .SH SYNOPSIS
-\fBexpr \fIarg \fR?\fIarg arg ...\fR?
+\fBexpr \fIexpression\fR
 .BE
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
-that expression, returning its value.
+Evaluates the expression, \fIexpression\fR, returning its value.
 The operators permitted in an expression include a subset of
 the operators permitted in C expressions.  For those operators
 common to both Tcl and C, Tcl applies the same meaning and precedence
@@ -28,7 +27,7 @@ floating-point value, but may also be a non-numeric value.
 For example, the expression
 .PP
 .CS
-\fBexpr\fR 8.2 + 6
+\fBexpr\fR {8.2 + 6}
 .CE
 .PP
 evaluates to 14.2.
@@ -96,9 +95,9 @@ produces the value on the right side.
 .PP
 .CS
 .ta 6c
-\fBexpr\fR 3.1 + $a	\fI6.1\fR
-\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
-\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {3.1 + $a}	\fI6.1\fR
+\fBexpr\fR {2 + "$a.$b"}	\fI5.6\fR
+\fBexpr\fR {4*[llength "6 2"]}	\fI8\fR
 \fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
 .SS OPERATORS
@@ -230,7 +229,7 @@ only one of \fB[a]\fR or \fB[b]\fR is evaluated,
 depending on the value of \fB$v\fR.  This is not true of the normal Tcl parser,
 so it is normally recommended to enclose the arguments to \fBexpr\fR in braces.
 Without braces, as in
-\fBexpr\fR $v ? [a] : [b]
+\fBexpr\fR $v?[a]:[b]
 both \fB[a]\fR and \fB[b]\fR are evaluated before \fBexpr\fR is even called.
 .PP
 For more details on the results
@@ -343,19 +342,42 @@ set b {$a + 2}
 \fBexpr\fR $b*4
 .CE
 .PP
-
 When an expression is generated at runtime, like the one above is, the bytcode
 compiler must ensure that new code is generated each time the expression
 is evaluated.  This is the most costly kind of expression from a performance
 perspective.  In such cases, consider directly using the commands described in
 the \fBmathfunc\fR(n) or \fBmathop\fR(n) documentation instead of \fBexpr\fR.
-
+.PP
 Most expressions are not formed at runtime, but are literal strings or contain
 substitutions that don't introduce other substitutions.  To allow the bytecode
 compiler to work with an expression as a string literal at compilation time,
 ensure that it contains no substitutions or that it is enclosed in braces or
 otherwise quoted to prevent Tcl from performing substitutions, allowing
 \fBexpr\fR to perform them instead.
+.SH "COMPATIBILITY WITH TCL 8.*"
+.PP
+In Tcl 8 and older, the \fBexpr\fR command would concatenate multiple
+arguments to form the expression; if this behavior is desired in Tcl
+9.0 onwards, explicit use of \fBconcat\fR is required (this is also
+compatible with earlier versions). Note that this is often a source of
+bugs, including security bugs, so it is \fInot recommended\fR.
+.PP
+.CS
+set a 3
+set b {$a + 2}
+\fBexpr\fR [concat $b * 4]
+.CE
+.PP
+However, some cases that _are_ supported can be preferable, such as
+embedding the use of \fBexpr\fR with a variable argument inside an
+otherwise constant expression:
+.PP
+.CS
+\fBexpr\fR {[\fBexpr\fR $b] * 4}
+.CE
+.PP
+This may change what value is calculated. Such changes may actually
+fix more bugs than they cause!
 .SH EXAMPLES
 .PP
 A numeric comparison whose result is 1:
