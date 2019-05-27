@@ -465,7 +465,7 @@ test format-13.1 {tcl_precision fuzzy comparison} {
     set a 0.0000000000001
     set b 0.00000000000001
     set c 0.00000000000000001
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000000 0.000000000000110 0.00000000000011001}
 test format-13.2 {tcl_precision fuzzy comparison} {
@@ -476,7 +476,7 @@ test format-13.2 {tcl_precision fuzzy comparison} {
     set a 0.000000000001
     set b 0.000000000000005
     set c 0.0000000000000008
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000001 0.000000000001006 0.00000000000100580}
 test format-13.3 {tcl_precision fuzzy comparison} {
@@ -485,7 +485,7 @@ test format-13.3 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.00000000000099
     set b 0.000000000000011
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.17f} $c $c $c $c
 } {0.0000000000 0.000000000001 0.000000000001001 0.00000000000100100}
 test format-13.4 {tcl_precision fuzzy comparison} {
@@ -494,7 +494,7 @@ test format-13.4 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.33333333333333
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
 } {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
 test format-13.5 {tcl_precision fuzzy comparison} {
@@ -503,7 +503,7 @@ test format-13.5 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.99999999999999
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f} $c $c $c
 } {1.4444444444 1.444444444444 1.444444444443990}
 
@@ -539,7 +539,7 @@ for {set i 0} {$i < 290} {incr i} {
     append b $a
 }
 for {set i 290} {$i < 400} {incr i} {
-    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
+    test format-16.[expr {$i - 289}] {testing MAX_FLOAT_SIZE} {
         format {%s} $b
     } $b
     append b "x"

@@ -165,7 +165,7 @@ test foreach-4.1 {noncompiled foreach and shared variable or value list objects 
     catch {unset x}
     foreach {12.0} {a b c} {
         set x 12.0
-        set x [expr $x + 1]
+        set x [expr [concat $x + 1]]
     }
     set x
 } 13.0

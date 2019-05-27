@@ -105,7 +105,7 @@ test interp-2.11 {anonymous interps vs existing procs} {
     proc interp$thenum {} {}
     set x [interp create]
     regexp "interp(\[0-9]+)" $x dummy anothernum
-    expr $anothernum > $thenum
+    expr {$anothernum > $thenum}
 } 1
 test interp-2.12 {anonymous interps vs existing procs} {
     set x [interp create -safe]
@@ -114,7 +114,7 @@ test interp-2.12 {anonymous interps vs existing procs} {
     proc interp$thenum {} {}
     set x [interp create -safe]
     regexp "interp(\[0-9]+)" $x dummy anothernum
-    expr $anothernum - $thenum
+    expr {$anothernum - $thenum}
 } 1
 test interp-2.13 {correct default when no $path arg is given} -body {
     interp create --
@@ -224,22 +224,22 @@ interp create a
 
 # Part 5: Testing eval in interpreter object command and with interp command
 test interp-6.1 {testing eval} {
-    a eval expr 3 + 5
+    a eval expr {{3 + 5}}
 } 8
 test interp-6.2 {testing eval} -returnCodes error -body {
     a eval foo
 } -result {invalid command name "foo"}
 test interp-6.3 {testing eval} {
-    a eval {proc foo {} {expr 3 + 5}}
+    a eval {proc foo {} {expr {3 + 5}}}
     a eval foo
 } 8
-catch {a eval {proc foo {} {expr 3 + 5}}}
+catch {a eval {proc foo {} {expr {3 + 5}}}}
 test interp-6.4 {testing eval} {
     interp eval a foo
 } 8
 test interp-6.5 {testing eval} {
     interp create {a x2}
-    interp eval {a x2} {proc frob {} {expr 4 * 9}}
+    interp eval {a x2} {proc frob {} {expr {4 * 9}}}
     interp eval {a x2} frob
 } 36
 catch {interp create {a x2}}
@@ -746,7 +746,7 @@ test interp-16.5 {testing deletion order, bgerror} {
     xxx eval {proc bgerror {args} {exit}}
     xxx alias exit kill xxx
     proc kill {i} {interp delete $i}
-    xxx eval after 100 expr a + b
+    xxx eval after 100 expr {a + b}
     after 200
     update
     interp exists xxx
@@ -966,7 +966,7 @@ test interp-19.9 {alias deletion, renaming} {
     interp create a
     interp alias a foo a bar
     interp eval a rename foo blotz
-    interp eval a {proc foo {} {expr 34 * 34}}
+    interp eval a {proc foo {} {expr {34 * 34}}}
     interp alias a foo {}
     set l [interp eval a foo]
     interp delete a
@@ -3171,7 +3171,7 @@ test interp-34.3.1 {basic test of limits - pure inside-command loop} -body {
 	}
     }
     # We use a time limit here; command limits don't trap this case
-    $i limit time -seconds [expr {[clock seconds]+2}]
+    $i limit time -seconds [expr {[clock seconds] + 2}]
     $i eval foobar
 } -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
@@ -3193,8 +3193,8 @@ test interp-34.4 {limits with callbacks: extending limits} -setup {
 } -body {
     interp alias $i foo {} cb1
     set curlim [$i eval info cmdcount]
-    $i limit command -command "cb2 [expr $curlim+100]" \
-	    -value [expr {$curlim+10}]
+    $i limit command -command "cb2 [expr {$curlim + 100}]" \
+	    -value [expr {$curlim + 10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
 } -result {6 4 b} -cleanup {
@@ -3222,7 +3222,7 @@ test interp-34.5 {limits with callbacks: removing limits} -setup {
 } -body {
     interp alias $i foo {} cb1
     set curlim [$i eval info cmdcount]
-    $i limit command -command "cb2 {}" -value [expr {$curlim+10}]
+    $i limit command -command "cb2 {}" -value [expr {$curlim + 10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
 } -result {6 4 b} -cleanup {
@@ -3247,7 +3247,7 @@ test interp-34.6 {limits with callbacks: removing limits and handlers} -setup {
 } -body {
     interp alias $i foo {} cb1
     set curlim [$i eval info cmdcount]
-    $i limit command -command cb2 -value [expr {$curlim+10}]
+    $i limit command -command cb2 -value [expr {$curlim + 10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
 } -result {6 4 b} -cleanup {
@@ -3266,7 +3266,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 	proc cb2 {args} {
 	    global c i curlim
 	    set c b
-	    $i limit command -value [expr {$curlim+1000}]
+	    $i limit command -value [expr {$curlim + 1000}]
 	    trapToParent
 	}
     }
@@ -3289,7 +3289,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 	set c a
 	interp alias $i foo {} cb1
 	set curlim [$i eval info cmdcount]
-	$i limit command -command cb2 -value [expr {$curlim+10}]
+	$i limit command -command cb2 -value [expr {$curlim + 10}]
     }
     $i eval {
 	$i eval {
@@ -3304,7 +3304,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 # Bug 1085023
 test interp-34.8 {time limits trigger in vwaits} -body {
     set i [interp create]
-    interp limit $i time -seconds [expr {[clock seconds]+1}] -granularity 1
+    interp limit $i time -seconds [expr {[clock seconds] + 1}] -granularity 1
     $i eval {
 	set x {}
 	vwait x
@@ -3352,8 +3352,8 @@ test interp-34.11 {time limit extension in callbacks} -setup {
 } -body {
     set i [interp create]
     set t0 [clock seconds]
-    $i limit time -seconds [expr {$t0+1}] -granularity 1 \
-	-command "cb1 $i [expr {$t0+2}]"
+    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 \
+	-command "cb1 $i [expr {$t0 + 2}]"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
@@ -3380,8 +3380,8 @@ test interp-34.12 {time limit extension in callbacks} -setup {
 } -body {
     set i [interp create]
     set t0 [clock seconds]
-    set ::times "[expr {$t0+2}] [expr {$t0+100}]"
-    $i limit time -seconds [expr {$t0+1}] -granularity 1 -command "cb1 $i"
+    set ::times "[expr {$t0 + 2}] [expr {$t0 + 100}]"
+    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 -command "cb1 $i"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
@@ -3615,8 +3615,8 @@ test interp-37.1 {safe interps and min() and max(): Bug 2895741} -setup {
     set result {}
 } -body {
     interp create {a b} -safe
-    lappend result [interp eval a {expr min(5,2,3)*max(7,13,11)}]
-    lappend result [interp eval {a b} {expr min(5,2,3)*max(7,13,11)}]
+    lappend result [interp eval a {expr {min(5,2,3)*max(7,13,11)}}]
+    lappend result [interp eval {a b} {expr {min(5,2,3)*max(7,13,11)}}]
 } -cleanup {
     unset -nocomplain result
     interp delete a

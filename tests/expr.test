@@ -139,16 +139,11 @@ catch {unset a b i x}
 
 test expr-1.1 {TclCompileExprCmd: no expression} {
     list [catch {expr  } msg] $msg
-} {1 {wrong # args: should be "expr arg ?arg ...?"}}
+} {1 {wrong # args: should be "expr expression"}}
 test expr-1.2 {TclCompileExprCmd: one expression word} {
     expr -25
 } -25
-test expr-1.3 {TclCompileExprCmd: two expression words} {
-    expr -8.2   -6
-} -14.2
-test expr-1.4 {TclCompileExprCmd: five expression words} {
-    expr 20 - 5 +10 -7
-} 18
+# 1.3 and 1.4 no longer apply
 test expr-1.5 {TclCompileExprCmd: quoted expression word} {
     expr "0005"
 } 5
@@ -186,12 +181,12 @@ test expr-1.13 {TclCompileExprCmd: second level of substitutions in expr not in 
 } foo
 test expr-1.14 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
-    set x 2;  set b {$x};  set a [expr $b == 2]
+    set x 2;  set b {$x};  set a [expr $b==2]
     set a
 } 1
 test expr-1.15 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
-    set x 2;  set b {$x};  set a [expr $b eq 2]
+    set x 2;  set b {$x};  set a [expr "$b eq 2"]
     set a
 } 1
 
@@ -776,10 +771,10 @@ test expr-20.5 {proper double evaluation compilation, working case} {
     expr 1?{$a}:0
 } yellow
 test expr-20.6 {handling of compile error in trial compile} {
-    list [catch {expr + {[incr]}} msg] $msg
+    list [catch {expr {+[incr]}} msg] $msg
 } {1 {wrong # args: should be "incr varName ?increment?"}}
 test expr-20.7 {handling of compile error in runtime case} {
-    list [catch {expr + {[error foo]}} msg] $msg
+    list [catch {expr {+[error foo]}} msg] $msg
 } {1 foo}
 
 # Test for non-numeric boolean literal handling
@@ -5687,21 +5682,21 @@ foreach s {no false off} {
     }
     incr i
 }
-test expr-31.3.4.0 {boolean conversion} {expr bool(n)} 0
-test expr-31.3.5.0 {boolean conversion} {expr bool("n")} 0
-test expr-31.4.4.0 {boolean conversion} {expr bool(f)} 0
-test expr-31.4.5.0 {boolean conversion} {expr bool("f")} 0
-test expr-31.6  {boolean conversion} {expr bool(-1 + 1)} 0
-test expr-31.7  {boolean conversion} {expr bool(0 + 1)} 1
-test expr-31.8  {boolean conversion} {expr bool(0.0)} 0
-test expr-31.9  {boolean conversion} {expr bool(0x0)} 0
-test expr-31.10 {boolean conversion} {expr bool(wide(0))} 0
-test expr-31.11 {boolean conversion} {expr bool(5.0)} 1
-test expr-31.12 {boolean conversion} {expr bool(5)} 1
-test expr-31.13 {boolean conversion} {expr bool(0x5)} 1
-test expr-31.14 {boolean conversion} {expr bool(wide(5))} 1
+test expr-31.3.4.0 {boolean conversion} {expr {bool(n)}} 0
+test expr-31.3.5.0 {boolean conversion} {expr {bool("n")}} 0
+test expr-31.4.4.0 {boolean conversion} {expr {bool(f)}} 0
+test expr-31.4.5.0 {boolean conversion} {expr {bool("f")}} 0
+test expr-31.6  {boolean conversion} {expr {bool(-1 + 1)}} 0
+test expr-31.7  {boolean conversion} {expr {bool(0 + 1)}} 1
+test expr-31.8  {boolean conversion} {expr {bool(0.0)}} 0
+test expr-31.9  {boolean conversion} {expr {bool(0x0)}} 0
+test expr-31.10 {boolean conversion} {expr {bool(wide(0))}} 0
+test expr-31.11 {boolean conversion} {expr {bool(5.0)}} 1
+test expr-31.12 {boolean conversion} {expr {bool(5)}} 1
+test expr-31.13 {boolean conversion} {expr {bool(0x5)}} 1
+test expr-31.14 {boolean conversion} {expr {bool(wide(5))}} 1
 test expr-31.15 {boolean conversion} -body {
-    expr bool("fred")
+    expr {bool("fred")}
 } -returnCodes error -match glob -result *
 
 test expr-32.1 {expr mod basics} {

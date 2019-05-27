@@ -133,16 +133,11 @@ catch {unset a b i x}
 
 test compExpr-old-1.1 {TclCompileExprCmd: no expression} {
     list [catch {expr  } msg] $msg
-} {1 {wrong # args: should be "expr arg ?arg ...?"}}
+} {1 {wrong # args: should be "expr expression"}}
 test compExpr-old-1.2 {TclCompileExprCmd: one expression word} {
     expr -25
 } -25
-test compExpr-old-1.3 {TclCompileExprCmd: two expression words} {
-    expr -8.2   -6
-} -14.2
-test compExpr-old-1.4 {TclCompileExprCmd: five expression words} {
-    expr 20 - 5 +10 -7
-} 18
+# 1.3 and 1.4 no longer apply
 test compExpr-old-1.5 {TclCompileExprCmd: quoted expression word} {
     expr "0005"
 } 5
@@ -180,7 +175,7 @@ test compExpr-old-1.13 {TclCompileExprCmd: second level of substitutions in expr
 } foo
 test compExpr-old-1.14 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
-    set x 2;  set b {$x};  set a [expr $b == 2]
+    set x 2;  set b {$x};  set a [expr $b==2]
     set a
 } 1
 

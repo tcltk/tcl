@@ -201,7 +201,7 @@ test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    for {} [expr $i < 3] {} {
+    for {} [expr {$i < 3}] {} {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -275,7 +275,7 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    while [expr $i < 3] {
+    while [expr {$i < 3}] {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -334,7 +334,7 @@ test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; incr}}
 } -returnCodes error -result {wrong # args: should be "incr varName ?increment?"}
 test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
-    apply {{} { set r [list foobar] ; expr !a }}
+    apply {{} { set r [list foobar] ; expr [concat !a] }}
 } -returnCodes error -match glob -result *
 test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; expr {!a} }}

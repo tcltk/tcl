@@ -68,7 +68,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]} {
+if {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]} {
     return
 }
 
@@ -963,7 +963,7 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
     }
     close $f
     set f [open "|[list [interpreter] $path(script)]" r+]
-    proc accept {s a p} {expr 10 / 0}
+    proc accept {s a p} {expr {10 / 0}}
     set s [socket -server accept -myaddr $localhost 0]
     puts $f [lindex [fconfigure $s -sockname] 2]
     close $f

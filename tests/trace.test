@@ -2312,8 +2312,8 @@ test trace-28.10 {exec trace info nonsense} {
 } {1 {wrong # args: should be "trace remove execution name opList command"}}
 
 test trace-29.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
-    testcmdtrace tracetest {set stuff [expr 14 + 16]}
-} {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
+    testcmdtrace tracetest {set stuff [expr {14 + 16}]}
+} {{expr {14 + 16}} {expr {14 + 16}} {set stuff [expr {14 + 16}]} {set stuff 30}}
 test trace-29.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [info tclversion]}
 } [concat {{info tclversion} {info tclversion} ::tcl::info::tclversion {::tcl::info::tclversion} {set stuff [info tclversion]}} [list "set stuff [info tclversion]"]]

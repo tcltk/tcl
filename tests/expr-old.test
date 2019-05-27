@@ -185,7 +185,7 @@ test expr-old-2.35 {floating-point operators} {expr 3.3||0.0} 1
 test expr-old-2.36 {floating-point operators} {expr 3.3>2.3?44.3:66.3} 44.3
 test expr-old-2.37 {floating-point operators} {expr 2.3>3.3?44.3:66.3} 66.3
 test expr-old-2.38 {floating-point operators} {
-    list [catch {expr 028.1 + 09.2} msg] $msg
+    list [catch {expr {028.1 + 09.2}} msg] $msg
 } {0 37.3}
 
 # Operators that aren't legal on floating-point numbers
@@ -550,7 +550,7 @@ test expr-old-26.19 {error conditions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-26.20 {error conditions} {
     list [catch expr msg] $msg
-} {1 {wrong # args: should be "expr arg ?arg ...?"}}
+} {1 {wrong # args: should be "expr expression"}}
 
 # Cancelled evaluation.
 
@@ -694,19 +694,7 @@ test expr-old-30.2 {long values} {
 } 5
 
 # Expressions spanning multiple arguments
-
-test expr-old-31.1 {multiple arguments to expr command} {
-    expr 4 + ( 6 *12) -3
-} 73
-test expr-old-31.2 {multiple arguments to expr command} -body {
-    expr 2 + (3 + 4
-} -returnCodes error -match glob -result *
-test expr-old-31.3 {multiple arguments to expr command} -body {
-    expr 2 + 3 +
-} -returnCodes error -match glob -result *
-test expr-old-31.4 {multiple arguments to expr command} -body {
-    expr 2 + 3 )
-} -returnCodes error -match glob -result *
+# TIP 526: expr-old-31.* now irrelevant
 
 # Math functions
 
@@ -720,7 +708,7 @@ test expr-old-32.3 {math functions in expressions} {
     format %.6g [expr atan(1.0)]
 } {0.785398}
 test expr-old-32.4 {math functions in expressions} {
-    format %.6g [expr atan2(2.0, 2.0)]
+    format %.6g [expr {atan2(2.0, 2.0)}]
 } {0.785398}
 test expr-old-32.5 {math functions in expressions} {
     format %.6g [expr ceil(1.999)]
@@ -741,10 +729,10 @@ test expr-old-32.10 {math functions in expressions} {
     format %.6g [expr floor(2.001)]
 } {2}
 test expr-old-32.11 {math functions in expressions} {
-    format %.6g [expr fmod(7.3, 3.2)]
+    format %.6g [expr {fmod(7.3, 3.2)}]
 } {0.9}
 test expr-old-32.12 {math functions in expressions} {
-    format %.6g [expr hypot(3.0, 4.0)]
+    format %.6g [expr {hypot(3.0, 4.0)}]
 } {5}
 test expr-old-32.13 {math functions in expressions} {
     format %.6g [expr log(2.8)]
@@ -753,7 +741,7 @@ test expr-old-32.14 {math functions in expressions} {
     format %.6g [expr log10(2.8)]
 } {0.447158}
 test expr-old-32.15 {math functions in expressions} {
-    format %.6g [expr pow(2.1, 3.1)]
+    format %.6g [expr {pow(2.1, 3.1)}]
 } {9.97424}
 test expr-old-32.16 {math functions in expressions} {
     format %.6g [expr sin(.1)]
@@ -837,13 +825,13 @@ test expr-old-32.40 {math functions in expressions} {
     expr round(-1e60)
 } -999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.41 {math functions in expressions} {
-    list [catch {expr pow(1.0 + 3.0 - 2, .8 * 5)} msg] $msg
+    list [catch {expr {pow(1.0 + 3.0 - 2, .8 * 5)}} msg] $msg
 } {0 16.0}
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
 test expr-old-32.45 {math functions in expressions} {
-    expr (0 <= rand()) && (rand() < 1)
+    expr {(0 <= rand()) && (rand() < 1)}
 } {1}
 test expr-old-32.46 {math functions in expressions} -body {
     list [catch {expr rand(24)} msg] $msg
@@ -858,9 +846,9 @@ test expr-old-32.49 {math functions in expressions} -body {
     expr srand("")
 } -returnCodes error -match glob -result *
 test expr-old-32.50 {math functions in expressions} {
-    set result [expr round(srand(12345) * 1000)]
+    set result [expr {round(srand(12345) * 1000)}]
     for {set i 0} {$i < 10} {incr i} {
-	lappend result [expr round(rand() * 1000)]
+	lappend result [expr {round(rand() * 1000)}]
     }
     set result
 } {97 834 948 36 12 51 766 585 914 784 333}
@@ -875,13 +863,13 @@ test expr-old-32.53 {math functions in expressions} {
 } {1}
 
 test expr-old-33.1 {conversions and fancy args to math functions} {
-    expr hypot ( 3 , 4 )
+    expr {hypot ( 3 , 4 )}
 } 5.0
 test expr-old-33.2 {conversions and fancy args to math functions} {
-    expr hypot ( (2.0+1.0) , 4 )
+    expr {hypot ( (2.0+1.0) , 4 )}
 } 5.0
 test expr-old-33.3 {conversions and fancy args to math functions} {
-    expr hypot ( 3 , (3.0 + 1.0) )
+    expr {hypot ( 3 , (3.0 + 1.0) )}
 } 5.0
 test expr-old-33.4 {conversions and fancy args to math functions} {
     format %.6g [expr cos(acos(0.1))]
@@ -909,19 +897,19 @@ test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
 } -match glob -result {1 {too few arguments for math function*}}
 test expr-old-34.8 {errors in math functions} -body {
-    list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
+    list [catch {expr {hypot(1.0, 2.0, 3.0)}} msg] $msg
 } -match glob -result {1 {too many arguments for math function*}}
 test expr-old-34.9 {errors in math functions} {
     list [catch {expr acos(-2.0)} msg] $msg $errorCode
 } {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}
 test expr-old-34.10 {errors in math functions} {
-    list [catch {expr pow(-3, 1000001)} msg] $msg
+    list [catch {expr {pow(-3, 1000001)}} msg] $msg
 } {0 -Inf}
 test expr-old-34.11a {errors in math functions} !ieeeFloatingPoint {
-    list [catch {expr pow(3, 1000001)} msg] $msg $errorCode
+    list [catch {expr {pow(3, 1000001)}} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
 test expr-old-34.11b {errors in math functions} ieeeFloatingPoint {
-    list [catch {expr pow(3, 1000001)} msg] $msg
+    list [catch {expr {pow(3, 1000001)}} msg] $msg
 } {0 Inf}
 test expr-old-34.12a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr -14.0*exp(100000)} msg] $msg $errorCode
@@ -1129,9 +1117,9 @@ test expr-old-38.3 {Tcl_ExprString} -constraints testexprstring -body {
 
 test expr-old-39.1 {Rounding with wide result} {
     set x 1.0e10
-    set y [expr $x + 0.1]
+    set y [expr {$x + 0.1}]
     catch {
-	set x [list [expr {$x == round($y)}] [expr $x == -round(-$y)]]
+	set x [list [expr {$x == round($y)}] [expr {$x == -round(-$y)}]]
     }
     set x
 } {1 1}
@@ -1160,7 +1148,7 @@ test expr-old-40.6 {min math function} -body {
     expr {min(300, "0xFF")}
 } -result 255
 test expr-old-40.7 {min math function} -body {
-    expr min(1[string repeat 0 10000], 1e300)
+    expr {min("1[string repeat 0 10000]", 1e300)}
 } -result 1e+300
 test expr-old-40.8 {min math function} -body {
     expr {min(0, "a")}
@@ -1185,7 +1173,7 @@ test expr-old-41.6 {max math function} -body {
     expr {max(200, "0xFF")}
 } -result 255
 test expr-old-41.7 {max math function} -body {
-    expr max(1[string repeat 0 10000], 1e300)
+    expr {max("1[string repeat 0 10000]", 1e300)}
 } -result 1[string repeat 0 10000]
 test expr-old-41.8 {max math function} -body {
     expr {max(0, "a")}
