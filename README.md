@@ -5,7 +5,7 @@ This is the **Tcl 8.7a2** source distribution.
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-[![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-5-branch)](https://travis-ci.org/tcltk/tcl)
+[![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-branch)](https://travis-ci.org/tcltk/tcl)
 
 ## Contents
  1. [Introduction](#intro)
