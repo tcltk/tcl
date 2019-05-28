@@ -2180,7 +2180,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
 	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
 	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/README $(DISTDIR)/generic
 	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README \
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README.md \
 		$(TOP_DIR)/ChangeLog.[12]??? $(TOP_DIR)/license.terms \
 		$(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library
