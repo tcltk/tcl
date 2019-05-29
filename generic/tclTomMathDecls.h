@@ -44,13 +44,6 @@
 #define XREALLOC(x,n) TclBNRealloc(x,n)
 #define XCALLOC(n,x) TclBNCalloc(n,x)
 
-/* Rename the global symbols in libtommath to avoid linkage conflicts */
-
-#define KARATSUBA_MUL_CUTOFF TclBNKaratsubaMulCutoff
-#define KARATSUBA_SQR_CUTOFF TclBNKaratsubaSqrCutoff
-#define TOOM_MUL_CUTOFF TclBNToomMulCutoff
-#define TOOM_SQR_CUTOFF TclBNToomSqrCutoff
-
 #define bn_reverse TclBN_reverse
 #define s_mp_reverse TclBN_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
@@ -172,7 +165,8 @@ EXTERN int		TclBN_mp_add_d(mp_int *a, mp_digit b, mp_int *c);
 #ifndef TclBN_mp_and_TCL_DECLARED
 #define TclBN_mp_and_TCL_DECLARED
 /* 4 */
-EXTERN int		TclBN_mp_and(mp_int *a, mp_int *b, mp_int *c);
+EXTERN int		TclBN_mp_and(CONST mp_int *a, CONST mp_int *b,
+				mp_int *c);
 #endif
 #ifndef TclBN_mp_clamp_TCL_DECLARED
 #define TclBN_mp_clamp_TCL_DECLARED
@@ -192,17 +186,17 @@ EXTERN void		TclBN_mp_clear_multi(mp_int *a, ...);
 #ifndef TclBN_mp_cmp_TCL_DECLARED
 #define TclBN_mp_cmp_TCL_DECLARED
 /* 8 */
-EXTERN int		TclBN_mp_cmp(mp_int *a, mp_int *b);
+EXTERN int		TclBN_mp_cmp(CONST mp_int *a, CONST mp_int *b);
 #endif
 #ifndef TclBN_mp_cmp_d_TCL_DECLARED
 #define TclBN_mp_cmp_d_TCL_DECLARED
 /* 9 */
-EXTERN int		TclBN_mp_cmp_d(mp_int *a, mp_digit b);
+EXTERN int		TclBN_mp_cmp_d(CONST mp_int *a, mp_digit b);
 #endif
 #ifndef TclBN_mp_cmp_mag_TCL_DECLARED
 #define TclBN_mp_cmp_mag_TCL_DECLARED
 /* 10 */
-EXTERN int		TclBN_mp_cmp_mag(mp_int *a, mp_int *b);
+EXTERN int		TclBN_mp_cmp_mag(CONST mp_int *a, CONST mp_int *b);
 #endif
 #ifndef TclBN_mp_copy_TCL_DECLARED
 #define TclBN_mp_copy_TCL_DECLARED
@@ -325,7 +319,8 @@ EXTERN int		TclBN_mp_neg(mp_int *a, mp_int *b);
 #ifndef TclBN_mp_or_TCL_DECLARED
 #define TclBN_mp_or_TCL_DECLARED
 /* 34 */
-EXTERN int		TclBN_mp_or(mp_int *a, mp_int *b, mp_int *c);
+EXTERN int		TclBN_mp_or(CONST mp_int *a, CONST mp_int *b,
+				mp_int *c);
 #endif
 #ifndef TclBN_mp_radix_size_TCL_DECLARED
 #define TclBN_mp_radix_size_TCL_DECLARED
@@ -398,7 +393,8 @@ EXTERN int		TclBN_mp_unsigned_bin_size(mp_int *a);
 #ifndef TclBN_mp_xor_TCL_DECLARED
 #define TclBN_mp_xor_TCL_DECLARED
 /* 48 */
-EXTERN int		TclBN_mp_xor(mp_int *a, mp_int *b, mp_int *c);
+EXTERN int		TclBN_mp_xor(CONST mp_int *a, CONST mp_int *b,
+				mp_int *c);
 #endif
 #ifndef TclBN_mp_zero_TCL_DECLARED
 #define TclBN_mp_zero_TCL_DECLARED
@@ -487,13 +483,13 @@ typedef struct TclTomMathStubs {
     int (*tclBN_revision) (void); /* 1 */
     int (*tclBN_mp_add) (mp_int *a, mp_int *b, mp_int *c); /* 2 */
     int (*tclBN_mp_add_d) (mp_int *a, mp_digit b, mp_int *c); /* 3 */
-    int (*tclBN_mp_and) (mp_int *a, mp_int *b, mp_int *c); /* 4 */
+    int (*tclBN_mp_and) (CONST mp_int *a, CONST mp_int *b, mp_int *c); /* 4 */
     void (*tclBN_mp_clamp) (mp_int *a); /* 5 */
     void (*tclBN_mp_clear) (mp_int *a); /* 6 */
     void (*tclBN_mp_clear_multi) (mp_int *a, ...); /* 7 */
-    int (*tclBN_mp_cmp) (mp_int *a, mp_int *b); /* 8 */
-    int (*tclBN_mp_cmp_d) (mp_int *a, mp_digit b); /* 9 */
-    int (*tclBN_mp_cmp_mag) (mp_int *a, mp_int *b); /* 10 */
+    int (*tclBN_mp_cmp) (CONST mp_int *a, CONST mp_int *b); /* 8 */
+    int (*tclBN_mp_cmp_d) (CONST mp_int *a, mp_digit b); /* 9 */
+    int (*tclBN_mp_cmp_mag) (CONST mp_int *a, CONST mp_int *b); /* 10 */
     int (*tclBN_mp_copy) (mp_int *a, mp_int *b); /* 11 */
     int (*tclBN_mp_count_bits) (mp_int *a); /* 12 */
     int (*tclBN_mp_div) (mp_int *a, mp_int *b, mp_int *q, mp_int *r); /* 13 */
@@ -517,7 +513,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_mul_2) (mp_int *a, mp_int *p); /* 31 */
     int (*tclBN_mp_mul_2d) (mp_int *a, int d, mp_int *p); /* 32 */
     int (*tclBN_mp_neg) (mp_int *a, mp_int *b); /* 33 */
-    int (*tclBN_mp_or) (mp_int *a, mp_int *b, mp_int *c); /* 34 */
+    int (*tclBN_mp_or) (CONST mp_int *a, CONST mp_int *b, mp_int *c); /* 34 */
     int (*tclBN_mp_radix_size) (mp_int *a, int radix, int *size); /* 35 */
     int (*tclBN_mp_read_radix) (mp_int *a, CONST char *str, int radix); /* 36 */
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
@@ -531,7 +527,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_to_unsigned_bin_n) (mp_int *a, unsigned char *b, unsigned long *outlen); /* 45 */
     int (*tclBN_mp_toradix_n) (mp_int *a, char *str, int radix, int maxlen); /* 46 */
     int (*tclBN_mp_unsigned_bin_size) (mp_int *a); /* 47 */
-    int (*tclBN_mp_xor) (mp_int *a, mp_int *b, mp_int *c); /* 48 */
+    int (*tclBN_mp_xor) (CONST mp_int *a, CONST mp_int *b, mp_int *c); /* 48 */
     void (*tclBN_mp_zero) (mp_int *a); /* 49 */
     void (*tclBN_reverse) (unsigned char *s, int len); /* 50 */
     int (*tclBN_fast_s_mp_mul_digs) (mp_int *a, mp_int *b, mp_int *c, int digs); /* 51 */

@@ -1920,7 +1920,7 @@ Tcl_CreateCommand(
 
 	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
-	
+
 	/*
 	 * Be careful to preserve
 	 * any existing import links so we can restore them down below. That
@@ -2107,7 +2107,7 @@ Tcl_CreateObjCommand(
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
-	 * [***] This is wrong.  See Tcl Bug a16752c252.  
+	 * [***] This is wrong.  See Tcl Bug a16752c252.
 	 * However, this buggy behavior is kept under particular
 	 * circumstances to accommodate deployed binaries of the
 	 * "tclcompiler" program. http://sourceforge.net/projects/tclpro/
@@ -5188,7 +5188,7 @@ TclEvalObjEx(
 		TclStackAlloc(interp, sizeof(CmdFrame));
 
 	eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-	eoFramePtr->level = (iPtr->cmdFramePtr == NULL?  1 
+	eoFramePtr->level = (iPtr->cmdFramePtr == NULL?  1
 		: iPtr->cmdFramePtr->level + 1);
 	eoFramePtr->framePtr = iPtr->framePtr;
 	eoFramePtr->nextPtr = iPtr->cmdFramePtr;
@@ -6346,7 +6346,7 @@ ExprIsqrtFunc(
 	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (SIGN(&big) == MP_NEG) {
+	if (mp_isneg(&big)) {
 	    mp_clear(&big);
 	    goto negarg;
 	}
@@ -6617,8 +6617,7 @@ ExprAbsFunc(
 #endif
 
     if (type == TCL_NUMBER_BIG) {
-	/* TODO: const correctness ? */
-	if (mp_cmp_d((mp_int *) ptr, 0) == MP_LT) {
+	if (mp_cmp_d(ptr, 0) == MP_LT) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
 	    mp_neg(&big, &big);
@@ -6768,7 +6767,7 @@ ExprIntFunc(
 	mp_int big;
 
 	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+	mp_mod_2d(&big, CHAR_BIT * sizeof(long), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
 	TclGetLongFromObj(NULL, objPtr, &iResult);
@@ -6800,7 +6799,7 @@ ExprWideFunc(
 	mp_int big;
 
 	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+	mp_mod_2d(&big, CHAR_BIT * sizeof(Tcl_WideInt), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
 	Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
@@ -7007,7 +7006,7 @@ ExprSrandFunc(
 	    return TCL_ERROR;
 	}
 
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+	mp_mod_2d(&big, CHAR_BIT * sizeof(long), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
 	TclGetLongFromObj(NULL, objPtr, &i);
