@@ -269,9 +269,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], mp_iseven(&bignumValue));
+	    Tcl_SetIntObj(varPtr[varIndex], !mp_isodd(&bignumValue));
 	} else {
-	    SetVarToObj(varIndex, Tcl_NewIntObj(mp_iseven(&bignumValue)));
+	    SetVarToObj(varIndex, Tcl_NewIntObj(!mp_isodd(&bignumValue)));
 	}
 	mp_clear(&bignumValue);
 	break;

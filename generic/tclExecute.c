@@ -1361,7 +1361,7 @@ FreeExprCodeInternalRep(
 
 ByteCode *
 TclCompileObj(
-    Tcl_Interp *interp, 
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     const CmdFrame *invoker,
     int word)
@@ -4942,29 +4942,28 @@ TclExecuteByteCode(
 
 		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
-		    /* TODO: internals intrusion */
-		    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
+		    if ((l1 > 0) ^ mp_isneg(&big2)) {
 			/*
-			 * Arguments are opposite sign; remainder is sum.
+			 * Arguments are same sign; remainder is first operand.
 			 */
 
-			mp_int big1;
-
-			TclBNInitBignumFromLong(&big1, l1);
-			mp_add(&big2, &big1, &big2);
-			mp_clear(&big1);
-			objResultPtr = Tcl_NewBignumObj(&big2);
-			TRACE(("%s\n", O2S(objResultPtr)));
-			NEXT_INST_F(1, 2, 1);
+			mp_clear(&big2);
+			TRACE(("%s\n", O2S(valuePtr)));
+			NEXT_INST_F(1, 1, 0);
 		    }
 
 		    /*
-		     * Arguments are same sign; remainder is first operand.
+		     * Arguments are opposite sign; remainder is sum.
 		     */
 
-		    mp_clear(&big2);
-		    TRACE(("%s\n", O2S(valuePtr)));
-		    NEXT_INST_F(1, 1, 0);
+		    mp_int big1;
+
+		    TclBNInitBignumFromLong(&big1, l1);
+		    mp_add(&big2, &big1, &big2);
+		    mp_clear(&big1);
+		    objResultPtr = Tcl_NewBignumObj(&big2);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
 		}
 	    }
 #ifndef NO_WIDE_TYPE
@@ -4999,28 +4998,28 @@ TclExecuteByteCode(
 		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 		    /* TODO: internals intrusion */
-		    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
+		    if ((w1 > ((Tcl_WideInt) 0)) ^ mp_isneg(&big2)) {
 			/*
-			 * Arguments are opposite sign; remainder is sum.
+			 * Arguments are same sign; remainder is first operand.
 			 */
 
-			mp_int big1;
-
-			TclBNInitBignumFromWideInt(&big1, w1);
-			mp_add(&big2, &big1, &big2);
-			mp_clear(&big1);
-			objResultPtr = Tcl_NewBignumObj(&big2);
-			TRACE(("%s\n", O2S(objResultPtr)));
-			NEXT_INST_F(1, 2, 1);
+			mp_clear(&big2);
+			TRACE(("%s\n", O2S(valuePtr)));
+			NEXT_INST_F(1, 1, 0);
 		    }
-
 		    /*
-		     * Arguments are same sign; remainder is first operand.
+		     * Arguments are opposite sign; remainder is sum.
 		     */
 
-		    mp_clear(&big2);
-		    TRACE(("%s\n", O2S(valuePtr)));
-		    NEXT_INST_F(1, 1, 0);
+		    mp_int big1;
+
+		    TclBNInitBignumFromWideInt(&big1, w1);
+		    mp_add(&big2, &big1, &big2);
+		    mp_clear(&big1);
+		    objResultPtr = Tcl_NewBignumObj(&big2);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+
 		}
 	    }
 #endif
@@ -5033,7 +5032,7 @@ TclExecuteByteCode(
 		mp_init(&bigRemainder);
 		mp_div(&big1, &big2, &bigResult, &bigRemainder);
 		if (!mp_iszero(&bigRemainder)
-			&& (bigRemainder.sign != big2.sign)) {
+			&& (mp_isneg(&bigRemainder) != mp_isneg(&big2))) {
 		    /*
 		     * Convert to Tcl's integer division rules.
 		     */
@@ -5316,139 +5315,24 @@ TclExecuteByteCode(
 	}
 
 	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
-	    mp_int big1, big2, bigResult, *First, *Second;
-	    int numPos;
+	    mp_int big1, big2, bigResult;
 
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
-	    /*
-	     * Count how many positive arguments we have. If only one of the
-	     * arguments is negative, store it in 'Second'.
-	     */
-
-	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
-		First = &big1;
-		Second = &big2;
-	    } else {
-		First = &big2;
-		Second = &big1;
-		numPos = (mp_cmp_d(First, 0) != MP_LT);
-	    }
 	    mp_init(&bigResult);
 
 	    switch (*pc) {
 	    case INST_BITAND:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_and(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1))
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(First, &bigResult, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_or(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_and(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_or(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(Second, &bigResult, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_and(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_or(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITXOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P^N = ~(P^~N) = -(P^(-N-1))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a ^ b = (~a ^ ~b) = (-a-1^-b-1)
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		}
+		mp_xor(&big1, &big2, &bigResult);
 		break;
 	    }
 
@@ -6256,9 +6140,8 @@ TclExecuteByteCode(
 		}
 		mp_init(&bigRemainder);
 		mp_div(&big1, &big2, &bigResult, &bigRemainder);
-		/* TODO: internals intrusion */
 		if (!mp_iszero(&bigRemainder)
-			&& (bigRemainder.sign != big2.sign)) {
+			&& (mp_isneg(&bigRemainder) != mp_isneg(&big2))) {
 		    /*
 		     * Convert to Tcl's integer division rules.
 		     */

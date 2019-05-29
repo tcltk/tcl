@@ -129,7 +129,7 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 				/* Highest power of two that is greater than
 				 * DBL_MAX_10_EXP, divided by 16 */
 #define DIGIT_GROUP		8
-				/* floor(DIGIT_BIT*log(2)/log(10)) */
+				/* floor(MP_DIGIT_BIT*log(2)/log(10)) */
 
 /* Union used to dismantle floating point numbers. */
 
@@ -1447,9 +1447,9 @@ AccumulateDecimalDigit(
 	 * More than single digit multiplication. Multiply by the appropriate
 	 * small powers of 5, and then shift. Large strings of zeroes are
 	 * eaten 256 at a time; this is less efficient than it could be, but
-	 * seems implausible. We presume that DIGIT_BIT is at least 27. The
+	 * seems implausible. We presume that MP_DIGIT_BIT is at least 27. The
 	 * first multiplication, by up to 10**7, is done with a one-DIGIT
-	 * multiply (this presumes that DIGIT_BIT >= 24).
+	 * multiply (this presumes that MP_DIGIT_BIT >= 24).
 	 */
 
 	n = numZeros + 1;
@@ -3100,7 +3100,7 @@ StrictInt64Conversion(Double* dPtr,
  *
  *	Test whether bankers' rounding should round a digit up. Assumption
  *	is made that the denominator of the fraction being tested is
- *	a power of 2**DIGIT_BIT.
+ *	a power of 2**MP_DIGIT_BIT.
  *
  * Results:
  *	Returns 1 iff the fraction is more than 1/2, or if the fraction
@@ -3112,7 +3112,7 @@ StrictInt64Conversion(Double* dPtr,
 inline static int
 ShouldBankerRoundUpPowD(mp_int* b,
 				/* Numerator of the fraction */
-			int sd,	/* Denominator is 2**(sd*DIGIT_BIT) */
+			int sd,	/* Denominator is 2**(sd*MP_DIGIT_BIT) */
 			int isodd)
 				/* 1 if the digit is odd, 0 if even */
 {
@@ -3153,7 +3153,7 @@ ShouldBankerRoundUpToNextPowD(mp_int* b,
 			      mp_int* m,
 				/* Numerator of the rounding tolerance */
 			      int sd,
-				/* Common denominator is 2**(sd*DIGIT_BIT) */
+				/* Common denominator is 2**(sd*MP_DIGIT_BIT) */
 			      int convType,
 				/* Conversion type: STEELE defeats
 				 * round-to-even (Not sure why one wants to
@@ -3168,7 +3168,7 @@ ShouldBankerRoundUpToNextPowD(mp_int* b,
     /*
      * Compare B and S-m -- which is the same as comparing B+m and S --
      * which we do by computing b+m and doing a bitwhack compare against
-     * 2**(DIGIT_BIT*sd)
+     * 2**(MP_DIGIT_BIT*sd)
      */
     mp_add(b, m, temp);
     if (temp->used <= sd) {	/* too few digits to be > S */
@@ -3200,7 +3200,7 @@ ShouldBankerRoundUpToNextPowD(mp_int* b,
  *	digits that reconverts exactly to the given number, or to
  *	'ilim' digits if that will yield a shorter result. The denominator
  *	in David Gay's conversion algorithm is known to be a power of
- *	2**DIGIT_BIT, and hence the division in the main loop may be replaced
+ *	2**MP_DIGIT_BIT, and hence the division in the main loop may be replaced
  *	by a digit shift and mask.
  *
  * Results:
@@ -3289,7 +3289,7 @@ ShorteningBignumConversionPowD(Double* dPtr,
     }
     mp_init(&temp);
 
-    /* Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+    /* Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction */
 
     i = 0;
@@ -3396,7 +3396,7 @@ ShorteningBignumConversionPowD(Double* dPtr,
  *	Converts a double-precision number to a fixed-lengt string of
  *	'ilim' digits (or 'ilim1' if log10(d) has been overestimated.)
  *	The denominator in David Gay's conversion algorithm is known to
- *	be a power of 2**DIGIT_BIT, and hence the division in the main
+ *	be a power of 2**MP_DIGIT_BIT, and hence the division in the main
  *	loop may be replaced by a digit shift and mask.
  *
  * Results:
@@ -3465,7 +3465,7 @@ StrictBignumConversionPowD(Double* dPtr,
     mp_init(&temp);
 
     /*
-     * Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+     * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction
      */
 
@@ -4234,7 +4234,7 @@ TclDoubleDigits(double dv,	/* Number to convert */
 	    /*
 	     * The denominator is a power of 2, so we can replace division
 	     * by digit shifts. First we round up s2 to a multiple of
-	     * DIGIT_BIT, and adjust m2 and b2 accordingly. Then we launch
+	     * MP_DIGIT_BIT, and adjust m2 and b2 accordingly. Then we launch
 	     * into a version of the comparison that's specialized for
 	     * the 'power of mp_digit in the denominator' case.
 	     */
@@ -4294,7 +4294,7 @@ TclDoubleDigits(double dv,	/* Number to convert */
 	    /*
 	     * The denominator is a power of 2, so we can replace division
 	     * by digit shifts. First we round up s2 to a multiple of
-	     * DIGIT_BIT, and adjust m2 and b2 accordingly. Then we launch
+	     * MP_DIGIT_BIT, and adjust m2 and b2 accordingly. Then we launch
 	     * into a version of the comparison that's specialized for
 	     * the 'power of mp_digit in the denominator' case.
 	     */
@@ -4573,10 +4573,10 @@ TclBignumToDouble(
     bits = mp_count_bits(a);
     if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	errno = ERANGE;
-	if (a->sign == MP_ZPOS) {
-	    return HUGE_VAL;
-	} else {
+	if (mp_isneg(a)) {
 	    return -HUGE_VAL;
+	} else {
+	    return HUGE_VAL;
 	}
     }
     shift = mantBits - bits;
@@ -4606,10 +4606,10 @@ TclBignumToDouble(
 
 	    mp_div_2d(a, -shift, &b, NULL);
 	    if (mp_isodd(&b)) {
-		if (b.sign == MP_ZPOS) {
-		    mp_add_d(&b, 1, &b);
-		} else {
+		if (mp_isneg(&b)) {
 		    mp_sub_d(&b, 1, &b);
+		} else {
+		    mp_add_d(&b, 1, &b);
 		}
 	    }
 	} else {
@@ -4619,10 +4619,10 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -1-shift, &b, NULL);
-	    if (b.sign == MP_ZPOS) {
-		mp_add_d(&b, 1, &b);
-	    } else {
+	    if (mp_isneg(&b)) {
 		mp_sub_d(&b, 1, &b);
+	    } else {
+		mp_add_d(&b, 1, &b);
 	    }
 	    mp_div_2d(&b, 1, &b, NULL);
 	}
@@ -4648,10 +4648,10 @@ TclBignumToDouble(
      * Return the result with the appropriate sign.
      */
 
-    if (a->sign == MP_ZPOS) {
-	return r;
-    } else {
+    if (mp_isneg(a)) {
 	return -r;
+    } else {
+	return r;
     }
 }
 
@@ -4824,7 +4824,7 @@ BignumToBiasedFrExp(
      */
 
     *machexp = bits - mantBits + 2;
-    return ((a->sign == MP_ZPOS) ? r : -r);
+    return (mp_isneg(a) ? -r : r);
 }
 
 /*

@@ -241,13 +241,13 @@ typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
 /* error code to char* string */
 /*
-char *mp_error_to_string(int code);
+const char *mp_error_to_string(mp_err code);
 */
 
 /* ---> init and deinit bignum functions <--- */
 /* init a bignum */
 /*
-int mp_init(mp_int *a);
+mp_err mp_init(mp_int *a);
 */
 
 /* free a bignum */
@@ -257,7 +257,7 @@ void mp_clear(mp_int *a);
 
 /* init a null terminated series of arguments */
 /*
-int mp_init_multi(mp_int *mp, ...);
+mp_err mp_init_multi(mp_int *mp, ...);
 */
 
 /* clear a null terminated series of arguments */
@@ -272,23 +272,24 @@ void mp_exch(mp_int *a, mp_int *b);
 
 /* shrink ram required for a bignum */
 /*
-int mp_shrink(mp_int *a);
+mp_err mp_shrink(mp_int *a);
 */
 
 /* grow an int to a given size */
 /*
-int mp_grow(mp_int *a, int size);
+mp_err mp_grow(mp_int *a, int size);
 */
 
 /* init to a given number of digits */
 /*
-int mp_init_size(mp_int *a, int size);
+mp_err mp_init_size(mp_int *a, int size);
 */
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
 #define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 #define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
 /*
@@ -676,14 +677,14 @@ int mp_prime_is_divisible(mp_int *a, int *result);
  * Sets result to 0 if composite or 1 if probable prime
  */
 /*
-int mp_prime_fermat(mp_int *a, mp_int *b, int *result);
+mp_err mp_prime_fermat(const mp_int *a, const mp_int *b, mp_bool *result);
 */
 
 /* performs one Miller-Rabin test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
 /*
-int mp_prime_miller_rabin(mp_int *a, mp_int *b, int *result);
+mp_err mp_prime_miller_rabin(const mp_int *a, const mp_int *b, mp_bool *result);
 */
 
 /* This gives [for a given bit size] the number of trials required
@@ -701,7 +702,7 @@ int mp_prime_rabin_miller_trials(int size);
  * Sets result to 1 if probably prime, 0 otherwise
  */
 /*
-int mp_prime_is_prime(mp_int *a, int t, int *result);
+mp_err mp_prime_is_prime(const mp_int *a, int t, mp_bool *result);
 */
 
 /* finds the next prime after the number "a" using "t" trials
@@ -710,7 +711,7 @@ int mp_prime_is_prime(mp_int *a, int t, int *result);
  * bbs_style = 1 means the prime must be congruent to 3 mod 4
  */
 /*
-int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
+mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style);
 */
 
 /* makes a truly random prime of a given size (bytes),
@@ -728,9 +729,9 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
  *
  * Flags are as follows:
  *
- *   LTM_PRIME_BBS      - make prime congruent to 3 mod 4
- *   LTM_PRIME_SAFE     - make sure (p-1)/2 is prime as well (implies LTM_PRIME_BBS)
- *   LTM_PRIME_2MSB_ON  - make the 2nd highest bit one
+ *   MP_PRIME_BBS      - make prime congruent to 3 mod 4
+ *   MP_PRIME_SAFE     - make sure (p-1)/2 is prime as well (implies MP_PRIME_BBS)
+ *   MP_PRIME_2MSB_ON  - make the 2nd highest bit one
  *
  * You have to supply a callback which fills in a buffer with random bytes.  "dat" is a parameter you can
  * have passed to the callback (e.g. a state or something).  This function doesn't use "dat" itself
