@@ -2044,7 +2044,7 @@ Tcl_AppendFormatToObj(
 		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
 			goto error;
 		    }
-		    mp_mod_2d(&big, (int) CHAR_BIT*sizeof(Tcl_WideInt), &big);
+		    mp_mod_2d(&big, CHAR_BIT*sizeof(Tcl_WideInt), &big);
 		    objPtr = Tcl_NewBignumObj(&big);
 		    Tcl_IncrRefCount(objPtr);
 		    Tcl_GetWideIntFromObj(NULL, objPtr, &w);
@@ -2059,7 +2059,7 @@ Tcl_AppendFormatToObj(
 		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
 			goto error;
 		    }
-		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+		    mp_mod_2d(&big, CHAR_BIT * sizeof(long), &big);
 		    objPtr = Tcl_NewBignumObj(&big);
 		    Tcl_IncrRefCount(objPtr);
 		    TclGetLongFromObj(NULL, objPtr, &l);
