@@ -51,13 +51,13 @@ proc _test_out_total {} {
 
   set mintm 0x7fffffff
   set maxtm 0
-  set nett 0
+  set nettm 0
   set wtm 0
   set wcnt 0
   set i 0
   foreach tm $_(itm) {
     if {[llength $tm] > 6} {
-      set nett [expr {$nett + [lindex $tm 6]}]
+      set nettm [expr {$nettm + [lindex $tm 6]}]
     }
     set wtm [expr {$wtm + [lindex $tm 0]}]
     set wcnt [expr {$wcnt + [lindex $tm 2]}]
@@ -69,15 +69,15 @@ proc _test_out_total {} {
 
   puts [string repeat ** 40]
   set s [format "%d cases in %.2f sec." $tcnt [expr {([clock milliseconds] - $_(starttime)) / 1000.0}]]
-  if {$nett > 0} {
-    append s [format " (%.2f nett-sec.)" [expr {$nett / 1000.0}]]
+  if {$nettm > 0} {
+    append s [format " (%.2f net-sec.)" [expr {$nettm / 1000.0}]]
   }
   puts "Total $s:"
   lset _(m) 0 [format %.6f $wtm]
   lset _(m) 2 $wcnt
-  lset _(m) 4 [format %.3f [expr {$wcnt / (($nett ? $nett : ($tcnt * [lindex $_(reptime) 0])) / 1000.0)}]]
+  lset _(m) 4 [format %.3f [expr {$wcnt / (($nettm ? $nettm : ($tcnt * [lindex $_(reptime) 0])) / 1000.0)}]]
   if {[llength $_(m)] > 6} {
-    lset _(m) 6 [format %.3f $nett]
+    lset _(m) 6 [format %.3f $nettm]
   }
   puts $_(m)
   puts "Average:"
