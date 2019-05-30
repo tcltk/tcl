@@ -8208,15 +8208,15 @@ ExecuteExtendedBinaryMathOp(
 
 	    switch (opcode) {
 	    case INST_BITAND:
-		mp_tc_and(&big1, &big2, &bigResult);
+		mp_and(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITOR:
-		mp_tc_or(&big1, &big2, &bigResult);
+		mp_or(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITXOR:
-		mp_tc_xor(&big1, &big2, &bigResult);
+		mp_xor(&big1, &big2, &bigResult);
 		break;
 	    }
 
