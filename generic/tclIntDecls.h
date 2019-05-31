@@ -28,6 +28,7 @@
 #endif
 
 #if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
+#   define tclGetIntForIndex tcl_GetIntForIndex
 /* Those macro's are especially for Itcl 3.4 compatibility */
 #   define tclCreateNamespace tcl_CreateNamespace
 #   define tclDeleteNamespace tcl_DeleteNamespace
@@ -129,7 +130,8 @@ EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 				CallFrame **framePtrPtr);
 /* Slot 33 is reserved */
 /* 34 */
-EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_GetIntForIndex")
+int			TclGetIntForIndex(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int endValue, int *indexPtr);
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
@@ -695,7 +697,7 @@ typedef struct TclIntStubs {
     const char * (*tclGetExtension) (const char *name); /* 31 */
     int (*tclGetFrame) (Tcl_Interp *interp, const char *str, CallFrame **framePtrPtr); /* 32 */
     void (*reserved33)(void);
-    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
+    TCL_DEPRECATED_API("Use Tcl_GetIntForIndex") int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
     void (*reserved35)(void);
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
@@ -1381,6 +1383,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclBackgroundException
 #   undef TclSetStartupScript
 #   undef TclGetStartupScript
+#   undef TclGetIntForIndex
 #   undef TclCreateNamespace
 #   undef TclDeleteNamespace
 #   undef TclAppendExportList
