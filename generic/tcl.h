@@ -459,19 +459,18 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 typedef struct Tcl_RegExpIndices {
-    long start;			/* Character offset of first character in
+    size_t start;			/* Character offset of first character in
 				 * match. */
-    long end;			/* Character offset of first character after
+    size_t end;			/* Character offset of first character after
 				 * the match. */
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    int nsubs;			/* Number of subexpressions in the compiled
+    size_t nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    long extendStart;		/* The offset at which a subsequent match
+    size_t extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
-    long reserved;		/* Reserved for later use. */
 } Tcl_RegExpInfo;
 
 /*
@@ -2171,6 +2170,7 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 
 #define TCL_IO_FAILURE	((size_t)-1)
 #define TCL_AUTO_LENGTH	((size_t)-1)
+#define TCL_INDEX_NONE  ((size_t)-1)
 
 /*
  *----------------------------------------------------------------------------
