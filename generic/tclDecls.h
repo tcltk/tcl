@@ -1753,6 +1753,10 @@ EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 				const char *varName, void *addr, int type,
 				size_t size);
+/* 645 */
+EXTERN int		Tcl_GetIntForIndex(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, size_t endValue,
+				size_t *indexPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2433,6 +2437,7 @@ typedef struct TclStubs {
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, size_t size); /* 644 */
+    int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t endValue, size_t *indexPtr); /* 645 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3699,6 +3704,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsShared) /* 643 */
 #define Tcl_LinkArray \
 	(tclStubsPtr->tcl_LinkArray) /* 644 */
+#define Tcl_GetIntForIndex \
+	(tclStubsPtr->tcl_GetIntForIndex) /* 645 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

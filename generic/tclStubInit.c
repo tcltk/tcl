@@ -234,7 +234,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     0, /* 33 */
-    TclGetIntForIndex, /* 34 */
+    0, /* 34 */
     0, /* 35 */
     0, /* 36 */
     TclGetLoadedPackages, /* 37 */
@@ -1339,6 +1339,7 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */
