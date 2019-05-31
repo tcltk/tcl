@@ -8191,7 +8191,7 @@ ExecuteExtendedBinaryMathOp(
 	if (opcode == INST_LSHIFT) {
 	    mp_mul_2d(&big1, shift, &bigResult);
 	} else {
-	    mp_tc_div_2d(&big1, shift, &bigResult);
+	    mp_signed_rsh(&big1, shift, &bigResult);
 	}
 	mp_clear(&big1);
 	BIG_RESULT(&bigResult);
@@ -8208,15 +8208,15 @@ ExecuteExtendedBinaryMathOp(
 
 	    switch (opcode) {
 	    case INST_BITAND:
-		mp_tc_and(&big1, &big2, &bigResult);
+		mp_and(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITOR:
-		mp_tc_or(&big1, &big2, &bigResult);
+		mp_or(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITXOR:
-		mp_tc_xor(&big1, &big2, &bigResult);
+		mp_xor(&big1, &big2, &bigResult);
 		break;
 	    }
 

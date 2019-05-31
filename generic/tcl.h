@@ -2325,6 +2325,7 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 #define TCL_IO_FAILURE	(-1)
 #define TCL_AUTO_LENGTH	(-1)
+#define TCL_INDEX_NONE	(-1)
 
 /*
  *----------------------------------------------------------------------------
