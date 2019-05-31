@@ -61,6 +61,13 @@
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
+#undef TclBN_mp_tc_and
+#undef TclBN_mp_tc_or
+#undef TclBN_mp_tc_xor
+#define TclBN_mp_tc_and TclBN_mp_and
+#define TclBN_mp_tc_or TclBN_mp_or
+#define TclBN_mp_tc_xor TclBN_mp_xor
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSockMinimumBuffersOld 0
@@ -950,7 +957,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
-    TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
 };
 
