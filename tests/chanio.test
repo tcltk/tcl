@@ -888,7 +888,7 @@ test chan-io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} -setup
     # Tcl_ExternalToUtf()
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto lf} -buffering none
-    chan configure $f -encoding unicode
+    chan configure $f -encoding utf-16
     chan puts -nonewline $f "bbbbbbbbbbbbbbb\n123456789abcdef\r"
     chan configure $f -buffersize 16
     chan gets $f
@@ -1129,7 +1129,7 @@ test chan-io-8.2 {PeekAhead: only go to device if no more cached data} -setup {
     chan event $f read [namespace code {
 	lappend x [chan gets $f line] $line [testchannel inputbuffered $f]
     }]
-    chan configure $f -encoding unicode -buffersize 16 -blocking 0
+    chan configure $f -encoding utf-16 -buffersize 16 -blocking 0
     vwait [namespace which -variable x]
     chan configure $f -translation auto -encoding ascii -blocking 1
     # here
