@@ -827,7 +827,7 @@ proc IPmacro {argList} {
 	set text "\u00b7"
     }
 
-    set tab [expr $indent * 0.1]i
+    set tab [expr {$indent * 0.1}]i
     newPara $tab -$tab
     set state(sb) 80
     setTabs $tab
