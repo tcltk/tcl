@@ -615,8 +615,8 @@ declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
 declare 151 {
-    void TclRegExpRangeUniChar(Tcl_RegExp re, size_t index, int *startPtr,
-	    int *endPtr)
+    void TclRegExpRangeUniChar(Tcl_RegExp re, size_t index, size_t *startPtr,
+	    size_t *endPtr)
 }
 declare 152 {
     void TclSetLibraryPath(Tcl_Obj *pathPtr)

@@ -2637,10 +2637,10 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    const char *bytes,		/* String to append. If length is -1 then this
-				 * must be null-terminated. */
+    const char *bytes,		/* String to append. If length is
+				 * TCL_AUTO_LENGTH then this must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * -1, then append all of bytes, up to null
+				 * TCL_AUTO_LENGTH, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
@@ -2664,18 +2664,18 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    size_t offset = TCL_AUTO_LENGTH;
+	    size_t index = TCL_INDEX_NONE;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
-		offset = bytes - dsPtr->string;
+		index = bytes - dsPtr->string;
 	    }
 
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (offset != TCL_AUTO_LENGTH) {
-		bytes = dsPtr->string + offset;
+	    if (index != TCL_INDEX_NONE) {
+		bytes = dsPtr->string + index;
 	    }
 	}
     }
