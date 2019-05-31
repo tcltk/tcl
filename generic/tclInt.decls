@@ -151,7 +151,7 @@ declare 32 {
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
-declare 34 {
+declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }

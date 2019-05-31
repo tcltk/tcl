@@ -394,6 +394,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpReaddir 0
 #   define TclSetStartupScript 0
 #   define TclGetStartupScript 0
+#   define TclGetIntForIndex 0
 #   define TclCreateNamespace 0
 #   define TclDeleteNamespace 0
 #   define TclAppendExportList 0
@@ -444,6 +445,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
+#   define TclGetIntForIndex Tcl_GetIntForIndex
 #   define TclCreateNamespace Tcl_CreateNamespace
 #   define TclDeleteNamespace Tcl_DeleteNamespace
 #   define TclAppendExportList Tcl_AppendExportList
@@ -1639,6 +1641,7 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */
