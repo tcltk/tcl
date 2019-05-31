@@ -1906,7 +1906,9 @@ EXTERN int		Tcl_IsShared(Tcl_Obj *objPtr);
 EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 				const char *varName, void *addr, int type,
 				int size);
-/* Slot 645 is reserved */
+/* 645 */
+EXTERN int		Tcl_GetIntForIndex(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int endValue, int *indexPtr);
 /* 646 */
 EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
 /* 647 */
@@ -2605,7 +2607,7 @@ typedef struct TclStubs {
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
-    void (*reserved645)(void);
+    int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 645 */
     int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 648 */
@@ -3933,7 +3935,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsShared) /* 643 */
 #define Tcl_LinkArray \
 	(tclStubsPtr->tcl_LinkArray) /* 644 */
-/* Slot 645 is reserved */
+#define Tcl_GetIntForIndex \
+	(tclStubsPtr->tcl_GetIntForIndex) /* 645 */
 #define Tcl_UtfToUniChar \
 	(tclStubsPtr->tcl_UtfToUniChar) /* 646 */
 #define Tcl_UniCharToUtfDString \

@@ -2384,7 +2384,10 @@ declare 644 {
     int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type, int size)
 }
-
+declare 645 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int endValue, int *indexPtr)
+}
 # TIP #542
 declare 646 {
     int Tcl_UtfToUniChar(const char *src, int *chPtr)
