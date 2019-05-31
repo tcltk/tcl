@@ -39,7 +39,7 @@ static char data\[\]=\"[translate $r]\";"
 static const char * const data\[\]= {"
     set n 1
     for {set i 0} {$i<$lg} {incr i $MAX} {
-	set part [string range $r $i [expr $i+$MAX-1]]
+	set part [string range $r $i [expr {$i+$MAX-1}]]
 	set len  [string length $part];
 	puts "\t/* Start of part $n ($len characters) */"
 	puts "\t\"[translate $part]\","
