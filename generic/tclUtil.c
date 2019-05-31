@@ -114,7 +114,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is
+ * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
  * around. This type is only created from a pre-existing string, so an
@@ -3562,7 +3562,7 @@ GetWideForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIntForIndex --
+ * Tcl_GetIntForIndex --
  *
  *	Provides an integer corresponding to the list index held in a Tcl
  *	object. The string value 'objPtr' is expected have the format
@@ -3589,7 +3589,7 @@ GetWideForIndex(
  */
 
 int
-TclGetIntForIndex(
+Tcl_GetIntForIndex(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
