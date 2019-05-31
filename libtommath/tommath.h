@@ -1,14 +1,6 @@
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
+
 #ifndef BN_H_
 #define BN_H_
 
@@ -157,18 +149,18 @@ void mp_clear_multi(mp_int *mp, ...);
 void mp_exch(mp_int *a, mp_int *b);
 
 /* shrink ram required for a bignum */
-int mp_shrink(mp_int *a);
+mp_err mp_shrink(mp_int *a);
 
 /* grow an int to a given size */
-int mp_grow(mp_int *a, int size);
+mp_err mp_grow(mp_int *a, int size);
 
 /* init to a given number of digits */
-int mp_init_size(mp_int *a, int size);
+mp_err mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) (!mp_get_bit((a),0))
-#define mp_isodd(a)  mp_get_bit((a),0)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -292,7 +284,7 @@ int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
 int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* right shift (two complement) */
-int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+int mp_signed_rsh(const mp_int *a, int b, mp_int *c);
 
 /* ---> Basic arithmetic <--- */
 
