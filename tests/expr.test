@@ -137,13 +137,16 @@ proc do_twelve_days {} {
 
 catch {unset a b i x}
 
-test expr-1.1 {TclCompileExprCmd: no expression} {
-    list [catch {expr  } msg] $msg
-} {1 {wrong # args: should be "expr expression"}}
+test expr-1.1 {TclCompileExprCmd: no expression} -body {
+    expr
+} -returnCodes error -result {wrong # args: should be "expr expression"}
 test expr-1.2 {TclCompileExprCmd: one expression word} {
-    expr -25
-} -25
-# 1.3 and 1.4 no longer apply
+    expr +25
+} 25
+test expr-1.3 {TclCompileExprCmd: two arguments} -body {
+    expr +1 +2
+} -returnCodes error -result {wrong # args: should be "expr expression"}
+# 1.4 no longer applies
 test expr-1.5 {TclCompileExprCmd: quoted expression word} {
     expr "0005"
 } 5

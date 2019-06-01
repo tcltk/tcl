@@ -100,7 +100,7 @@ test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array e
     catch {rename p ""}
 } -returnCodes error -body {
     proc p {a(1) a(2)} {
-	set z [expr $a(1)+$a(2)]
+	set z [expr {$a(1)+$a(2)}]
 	puts "$z=z, $a(1)=$a(1)"
     }
 } -result {formal parameter "a(1)" is an array element}

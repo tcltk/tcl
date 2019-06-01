@@ -1904,7 +1904,7 @@ test oo-13.5 {OO: changing an object's class: non-class to class} -setup {
 	class oo::class
     }
     oo::define fooObj {
-	method x {} {expr 1+2+3}
+	method x {} {expr {1+2+3}}
     }
     [fooObj new] x
 } -cleanup {
@@ -1916,7 +1916,7 @@ test oo-13.6 {OO: changing an object's class: class to non-class} -setup {
 } -body {
     set result dangling
     oo::define foo {
-	method x {} {expr 1+2+3}
+	method x {} {expr {1+2+3}}
     }
     oo::class create boo {
 	superclass foo
@@ -1939,7 +1939,7 @@ test oo-13.7 {OO: changing an object's class} -setup {
 } -body {
     oo::define bar method x {} {return ok}
     oo::define foo {
-	method x {} {expr 1+2+3}
+	method x {} {expr {1+2+3}}
 	self mixin foo
     }
     lappend result [foo x]
@@ -1953,7 +1953,7 @@ test oo-13.8 {OO: changing an object's class to itself} -setup {
     oo::class create foo
 } -body {
     oo::define foo {
-	method x {} {expr 1+2+3}
+	method x {} {expr {1+2+3}}
     }
     oo::objdefine foo class foo
 } -cleanup {

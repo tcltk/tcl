@@ -313,7 +313,7 @@ namespace eval pkg2 {
     namespace export p2-1
 }
 proc pkg2::p2-1 { num } {
-    return [expr $num * 2]
+    return [expr {$num * 2}]
 }
 } [file join pkg pkg2_a.tcl]
 
@@ -326,7 +326,7 @@ namespace eval pkg2 {
     namespace export p2-2
 }
 proc pkg2::p2-2 { num } {
-    return [expr $num * 3]
+    return [expr {$num * 3}]
 }
 } [file join pkg pkg2_b.tcl]
 
@@ -407,10 +407,10 @@ namespace eval pkg3 {
     namespace export p3-1 p3-2
 }
 proc pkg3::p3-1 { num } {
-    return {[expr $num * 2]}
+    return {[expr {$num * 2}]}
 }
 proc pkg3::p3-2 { num } {
-    return {[expr $num * 3]}
+    return {[expr {$num * 3}]}
 }
 } [file join pkg pkg3.tcl]
 
@@ -518,10 +518,10 @@ namespace eval circ2 {
     namespace export c2-1 c2-2
 }
 proc circ2::c2-1 { num } {
-    return [expr $num * [circ3::c3-1]]
+    return [expr {$num * [circ3::c3-1]}]
 }
 proc circ2::c2-2 { num } {
-    return [expr $num * [circ3::c3-2]]
+    return [expr {$num * [circ3::c3-2]}]
 }
 } [file join pkg circ2.tcl]
 

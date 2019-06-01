@@ -122,7 +122,7 @@ test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
 set url //${::HOST}:$port
-set badurl //${::HOST}:[expr $port+1]
+set badurl //${::HOST}:[expr {$port+1}]
 test http-3.3 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token

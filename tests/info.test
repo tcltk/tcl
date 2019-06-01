@@ -325,7 +325,7 @@ test info-9.2 {info level option} {
 } {1 {t1 146 testString}}
 test info-9.3 {info level option} {
     proc t1 {a b} {
-        t2 [expr $a*2] $b
+        t2 [expr {$a*2}] $b
     }
     proc t2 {x y} {
         list [info level] [info level 1] [info level 2] [info level -1] \

@@ -20,9 +20,10 @@ test pwd-1.1 {simple pwd} {
     catch pwd
 } 0
 test pwd-1.2 {simple pwd} {
-    expr [string length pwd]>0
+    expr {[string length [pwd]]>0}
 } 1
-test pwd-1.3 {pwd takes no args} -body {
+
+test pwd-2.1 {pwd takes no args} -body {
     pwd foobar
 } -returnCodes error -result "wrong \# args: should be \"pwd\""
 

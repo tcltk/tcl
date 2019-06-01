@@ -511,7 +511,7 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 	foreach e $l {lappend n [list [expr {rand()}] $e]}
 	lindex [lsort -real -index $l $n] 1 1
     }
-    expr srand(1)
+    expr {srand(1)}
     test_lsort 0
 } -result 0 -cleanup {
     rename test_lsort ""

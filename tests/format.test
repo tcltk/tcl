@@ -377,20 +377,20 @@ test format-8.23 {error conditions} {
 # scripts, therefore they are not documented. It's intended use is through
 # the function Tcl_AppendPrintfToObj (et al).
 test format-8.24 {Undocumented formats} -body {
-    format "%zd %td %d" [expr 2**30] [expr 2**30] [expr 2**30]
+    format "%zd %td %d" [expr {2**30}] [expr {2**30}] [expr {2**30}]
 } -result {1073741824 1073741824 1073741824}
 test format-8.25 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%zd %td %lld" [expr 2**33] [expr 2**33] [expr 2**33]
+    format "%zd %td %lld" [expr {2**33}] [expr {2**33}] [expr {2**33}]
 } -result {8589934592 8589934592 8589934592}
 # Since "%p" is equivalent to "%#llx" in 64-bit platforms and equivalent
 # to "%#x" in 32-bit platforms, it are really not useful in scripts,
 # therefore they are not documented. It's intended use is through the
 # function Tcl_AppendPrintfToObj (et al).
 test format-8.26 {Undocumented formats} -body {
-    format "%p %#x" [expr 2**31] [expr 2**31]
+    format "%p %#x" [expr {2**31}] [expr {2**31}]
 } -result {0x80000000 0x80000000}
 test format-8.27 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%p %#llx" [expr 2**33] [expr 2**33]
+    format "%p %#llx" [expr {2**33}] [expr {2**33}]
 } -result {0x200000000 0x200000000}
 
 test format-9.1 {long result} {

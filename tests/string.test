@@ -600,7 +600,7 @@ test string-6.27.$noComp {string is double, true} {
     run {string is double 1}
 } 1
 test string-6.28.$noComp {string is double, true} {
-    run {string is double [expr double(1)]}
+    run {string is double [expr {double(1)}]}
 } 1
 test string-6.29.$noComp {string is double, true} {
     run {string is double 1.0}
@@ -675,7 +675,7 @@ test string-6.48.$noComp {string is integer, true} {
     run {string is integer +1234567890}
 } 1
 test string-6.49.$noComp {string is integer, true on type} {
-    run {string is integer [expr int(50.0)]}
+    run {string is integer [expr {int(50.0)}]}
 } 1
 test string-6.50.$noComp {string is integer, true} {
     run {string is integer [list -10]}
@@ -696,7 +696,7 @@ test string-6.55.$noComp {string is integer, no overflow possible} {
     run {string is integer +[largest_int]0}
 } 1
 test string-6.56.$noComp {string is integer, false} {
-    list [run {string is integer -fail var [expr double(1)]}] $var
+    list [run {string is integer -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.57.$noComp {string is integer, false} {
     list [run {string is integer -fail var "    "}] $var
@@ -845,7 +845,7 @@ test string-6.95.$noComp {string is wideinteger, true} {
     run {string is wideinteger +1234567890}
 } 1
 test string-6.96.$noComp {string is wideinteger, true on type} {
-    run {string is wideinteger [expr wide(50.0)]}
+    run {string is wideinteger [expr {wide(50.0)}]}
 } 1
 test string-6.97.$noComp {string is wideinteger, true} {
     run {string is wideinteger [list -10]}
@@ -866,7 +866,7 @@ test string-6.102.$noComp {string is wideinteger, false on overflow} {
     list [run {string is wideinteger -fail var +[largest_int]0}] $var
 } {0 -1}
 test string-6.103.$noComp {string is wideinteger, false} {
-    list [run {string is wideinteger -fail var [expr double(1)]}] $var
+    list [run {string is wideinteger -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.104.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var "    "}] $var
@@ -901,7 +901,7 @@ test string-6.110.$noComp {string is entier, true} {
     run {string is entier +1234567890}
 } 1
 test string-6.111.$noComp {string is entier, true on type} {
-    run {string is entier [expr wide(50.0)]}
+    run {string is entier [expr {wide(50.0)}]}
 } 1
 test string-6.112.$noComp {string is entier, true} {
     run {string is entier [list -10]}
@@ -922,7 +922,7 @@ test string-6.117.$noComp {string is entier, false} {
     list [run {string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc}] $var
 } {0 84}
 test string-6.118.$noComp {string is entier, false} {
-    list [run {string is entier -fail var [expr double(1)]}] $var
+    list [run {string is entier -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.119.$noComp {string is entier, false} {
     list [run {string is entier -fail var "    "}] $var

@@ -1086,7 +1086,7 @@ test cmdAH-23.4 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
     file lstat $linkfile stat
-    list $stat(nlink) [expr $stat(mode)&0777] $stat(type)
+    list $stat(nlink) [expr {$stat(mode) & 0o777}] $stat(type)
 } -result {1 511 link}
 test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
     list [catch {file lstat _bogus_ stat} msg] [string tolower $msg] \

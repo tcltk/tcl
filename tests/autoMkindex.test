@@ -40,8 +40,8 @@ namespace import -force blt::*
 # Should be able to handle "proc" definitions, even if they are preceded by
 # white space.
 
-proc normal {x y} {return [expr $x+$y]}
-  proc indented {x y} {return [expr $x+$y]}
+proc normal {x y} {return [expr {$x+$y}]}
+  proc indented {x y} {return [expr {$x+$y}]}
 
 #
 # Should be able to handle proc declarations within namespaces, even if they

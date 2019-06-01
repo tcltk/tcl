@@ -453,7 +453,7 @@ test var-7.4 {Tcl_VariableObjCmd, list of vars} -setup {
         variable three 3 four 4
     }
     list [lsort [info vars test_ns_var::*]] \
-         [namespace eval test_ns_var {expr $three+$four}]
+         [namespace eval test_ns_var {expr {$three+$four}}]
 } -result [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
 test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} -setup {
     catch {unset a}

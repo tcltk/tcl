@@ -17,7 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 proc a {x y} {
-    newset z [expr $x+$y]
+    newset z [expr {$x + $y}]
     return $z
 }
 proc newset {name value} {

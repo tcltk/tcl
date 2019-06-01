@@ -27,8 +27,8 @@ package require opt 0.4.6
 set n $::tcl::OptDescN
 
 test opt-1.1 {OptKeyRegister / check that auto allocation is skipping existing keys} {
-    list [::tcl::OptKeyRegister {} $n] [::tcl::OptKeyRegister {} [expr $n+1]] [::tcl::OptKeyRegister {}]
-} "$n [expr $n+1] [expr $n+2]"
+    list [::tcl::OptKeyRegister {} $n] [::tcl::OptKeyRegister {} [expr {$n+1}]] [::tcl::OptKeyRegister {}]
+} "$n [expr {$n+1}] [expr {$n+2}]"
 
 test opt-2.1 {OptKeyDelete} {
     list [::tcl::OptKeyRegister {} testkey] \
