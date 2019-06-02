@@ -527,7 +527,7 @@ proc tab {} {
     global inPRE charCnt tabString file
 #	? charCnt
     if {$inPRE == 1} {
-	set pos [expr {$charCnt % [string length $tabString]} ]
+	set pos [expr {$charCnt % [string length $tabString]}]
 	set spaces [string first "1" [string range $tabString $pos end] ]
 	text [format "%*s" [incr spaces] " "]
     } else {

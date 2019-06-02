@@ -203,12 +203,14 @@ typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
 
 /* error code to char* string */
-const char *mp_error_to_string(int code);
+/*
+const char *mp_error_to_string(mp_err code);
+*/
 
 /* ---> init and deinit bignum functions <--- */
 /* init a bignum */
 /*
-int mp_init(mp_int *a);
+mp_err mp_init(mp_int *a);
 */
 
 /* free a bignum */
@@ -218,7 +220,7 @@ void mp_clear(mp_int *a);
 
 /* init a null terminated series of arguments */
 /*
-int mp_init_multi(mp_int *mp, ...);
+mp_err mp_init_multi(mp_int *mp, ...);
 */
 
 /* clear a null terminated series of arguments */
@@ -233,23 +235,23 @@ void mp_exch(mp_int *a, mp_int *b);
 
 /* shrink ram required for a bignum */
 /*
-int mp_shrink(mp_int *a);
+mp_err mp_shrink(mp_int *a);
 */
 
 /* grow an int to a given size */
 /*
-int mp_grow(mp_int *a, int size);
+mp_err mp_grow(mp_int *a, int size);
 */
 
 /* init to a given number of digits */
 /*
-int mp_init_size(mp_int *a, int size);
+mp_err mp_init_size(mp_int *a, int size);
 */
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) (!mp_get_bit((a),0))
-#define mp_isodd(a)  mp_get_bit((a),0)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -410,24 +412,9 @@ int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
-/* c = a XOR b (two complement) */
-/*
-int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c);
-*/
-
-/* c = a OR b (two complement) */
-/*
-int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
-*/
-
-/* c = a AND b (two complement) */
-/*
-int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
-*/
-
 /* right shift (two complement) */
 /*
-int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+int mp_signed_rsh(const mp_int *a, int b, mp_int *c);
 */
 
 /* ---> Basic arithmetic <--- */

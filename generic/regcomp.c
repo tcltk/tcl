@@ -338,7 +338,6 @@ compile(
     v->spaceused = 0;
     re->re_magic = REMAGIC;
     re->re_info = 0;		/* bits get set during parse */
-    re->re_csize = sizeof(chr);
     re->re_guts = NULL;
     re->re_fns = (void*)(&functions);
 
@@ -2085,8 +2084,8 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
-	    (int) re->re_nsub, re->re_info, re->re_csize, g->ntree);
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "d, info 0%lo, ntree %d\n",
+	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);
     if (!NULLCNFA(g->search)) {

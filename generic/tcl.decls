@@ -2439,6 +2439,11 @@ declare 644 {
 	    int type, size_t size)
 }
 
+declare 645 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t endValue, size_t *indexPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

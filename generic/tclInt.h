@@ -2413,7 +2413,7 @@ typedef struct List {
 /*
  * Macros providing a faster path to booleans and integers:
  * Tcl_GetBooleanFromObj, Tcl_GetLongFromObj, Tcl_GetIntFromObj
- * and TclGetIntForIndex.
+ * and Tcl_GetIntForIndex.
  *
  * WARNING: these macros eval their args more than once.
  */
@@ -2449,7 +2449,7 @@ typedef struct List {
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
 	    ? (size_t)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
-	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
  * Macro used to save a function call for common uses of
@@ -4128,7 +4128,6 @@ MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((size_t)-2)
-#define TCL_INDEX_NONE          ((size_t)-1) /* Index out of range or END+1 */
 #define TCL_INDEX_START         ((size_t)0)
 
 /*
@@ -4972,7 +4971,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #   define TclNewWideIntObjFromSize(value) \
 	Tcl_NewWideIntObj(TclWideIntFromSize(value))
 #else
-#   define TclWideIntFromSize(value)	(value)
+#   define TclWideIntFromSize(value)	((Tcl_WideInt)(value))
 #   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
 #endif
 

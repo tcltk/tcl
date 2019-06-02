@@ -187,10 +187,6 @@ exec(
 	FreeVars(v);
 	return REG_INVARG;
     }
-    if (re->re_csize != sizeof(chr)) {
-	FreeVars(v);
-	return REG_MIXED;
-    }
 
     /*
      * Setup.
@@ -889,7 +885,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == -1) {
+    if (v->pmatch[n].rm_so == (size_t)-1) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;
