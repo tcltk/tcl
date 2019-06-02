@@ -133,7 +133,7 @@ proc do_twelve_days {} {
     unset xxx
     return $result
 }
-
+
 # start of tests
 
 catch {unset a b i x}
@@ -7162,14 +7162,147 @@ test expr-52.1 {
 		::tcl::unsupported::representation $a]]
 } {0 0 1 1}
 
-
-
-# cleanup
-if {[info exists a]} {
-    unset a
+foreach func {isfinite isinf isnan isnormal issubnormal} {
+    test expr-53.1.$func {float classification: basic arg handling} -body {
+	expr ${func}()
+    } -returnCodes error -result "too few arguments for math function \"$func\""
+    test expr-53.2.$func {float classification: basic arg handling} -body {
+	expr ${func}(1,2)
+    } -returnCodes error -result "too many arguments for math function \"$func\""
+    test expr-53.3.$func {float classification: basic arg handling} -body {
+	expr ${func}(true)
+    } -returnCodes error -result {expected number but got "true"}
+    test expr-53.4.$func {float classification: basic arg handling} -body {
+	expr ${func}("gorp")
+    } -returnCodes error -result {expected number but got "gorp"}
+    test expr-53.5.$func {float classification: basic arg handling} -body {
+	expr ${func}(1.0)
+    } -match glob -result *
+    test expr-53.6.$func {float classification: basic arg handling} -body {
+	expr ${func}(0x123)
+    } -match glob -result *
 }
-catch {unset min}
-catch {unset max}
+
+test expr-54.0 {float classification: isfinite} {expr {isfinite(1.0)}} 1
+test expr-54.1 {float classification: isfinite} {expr {isfinite(-1.0)}} 1
+test expr-54.2 {float classification: isfinite} {expr {isfinite(0.0)}} 1
+test expr-54.3 {float classification: isfinite} {expr {isfinite(-0.0)}} 1
+test expr-54.4 {float classification: isfinite} {expr {isfinite(1/Inf)}} 1
+test expr-54.5 {float classification: isfinite} {expr {isfinite(-1/Inf)}} 1
+test expr-54.6 {float classification: isfinite} {expr {isfinite(1e-314)}} 1
+test expr-54.7 {float classification: isfinite} {expr {isfinite(inf)}} 0
+test expr-54.8 {float classification: isfinite} {expr {isfinite(-inf)}} 0
+test expr-54.9 {float classification: isfinite} {expr {isfinite(NaN)}} 0
+
+test expr-55.0 {float classification: isinf} {expr {isinf(1.0)}} 0
+test expr-55.1 {float classification: isinf} {expr {isinf(-1.0)}} 0
+test expr-55.2 {float classification: isinf} {expr {isinf(0.0)}} 0
+test expr-55.3 {float classification: isinf} {expr {isinf(-0.0)}} 0
+test expr-55.4 {float classification: isinf} {expr {isinf(1/Inf)}} 0
+test expr-55.5 {float classification: isinf} {expr {isinf(-1/Inf)}} 0
+test expr-55.6 {float classification: isinf} {expr {isinf(1e-314)}} 0
+test expr-55.7 {float classification: isinf} {expr {isinf(inf)}} 1
+test expr-55.8 {float classification: isinf} {expr {isinf(-inf)}} 1
+test expr-55.9 {float classification: isinf} {expr {isinf(NaN)}} 0
+
+test expr-56.0 {float classification: isnan} {expr {isnan(1.0)}} 0
+test expr-56.1 {float classification: isnan} {expr {isnan(-1.0)}} 0
+test expr-56.2 {float classification: isnan} {expr {isnan(0.0)}} 0
+test expr-56.3 {float classification: isnan} {expr {isnan(-0.0)}} 0
+test expr-56.4 {float classification: isnan} {expr {isnan(1/Inf)}} 0
+test expr-56.5 {float classification: isnan} {expr {isnan(-1/Inf)}} 0
+test expr-56.6 {float classification: isnan} {expr {isnan(1e-314)}} 0
+test expr-56.7 {float classification: isnan} {expr {isnan(inf)}} 0
+test expr-56.8 {float classification: isnan} {expr {isnan(-inf)}} 0
+test expr-56.9 {float classification: isnan} {expr {isnan(NaN)}} 1
+
+test expr-57.0 {float classification: isnormal} {expr {isnormal(1.0)}} 1
+test expr-57.1 {float classification: isnormal} {expr {isnormal(-1.0)}} 1
+test expr-57.2 {float classification: isnormal} {expr {isnormal(0.0)}} 0
+test expr-57.3 {float classification: isnormal} {expr {isnormal(-0.0)}} 0
+test expr-57.4 {float classification: isnormal} {expr {isnormal(1/Inf)}} 0
+test expr-57.5 {float classification: isnormal} {expr {isnormal(-1/Inf)}} 0
+test expr-57.6 {float classification: isnormal} {expr {isnormal(1e-314)}} 0
+test expr-57.7 {float classification: isnormal} {expr {isnormal(inf)}} 0
+test expr-57.8 {float classification: isnormal} {expr {isnormal(-inf)}} 0
+test expr-57.9 {float classification: isnormal} {expr {isnormal(NaN)}} 0
+
+test expr-58.0 {float classification: issubnormal} {expr {issubnormal(1.0)}} 0
+test expr-58.1 {float classification: issubnormal} {expr {issubnormal(-1.0)}} 0
+test expr-58.2 {float classification: issubnormal} {expr {issubnormal(0.0)}} 0
+test expr-58.3 {float classification: issubnormal} {expr {issubnormal(-0.0)}} 0
+test expr-58.4 {float classification: issubnormal} {expr {issubnormal(1/Inf)}} 0
+test expr-58.5 {float classification: issubnormal} {expr {issubnormal(-1/Inf)}} 0
+test expr-58.6 {float classification: issubnormal} {expr {issubnormal(1e-314)}} 1
+test expr-58.7 {float classification: issubnormal} {expr {issubnormal(inf)}} 0
+test expr-58.8 {float classification: issubnormal} {expr {issubnormal(-inf)}} 0
+test expr-58.9 {float classification: issubnormal} {expr {issubnormal(NaN)}} 0
+
+test expr-59.0 {float classification: fpclassify} {fpclassify 1.0} normal
+test expr-59.1 {float classification: fpclassify} {fpclassify -1.0} normal
+test expr-59.2 {float classification: fpclassify} {fpclassify 0.0} zero
+test expr-59.3 {float classification: fpclassify} {fpclassify -0.0} zero
+test expr-59.4 {float classification: fpclassify} {fpclassify [expr 1/Inf]} zero
+test expr-59.5 {float classification: fpclassify} {fpclassify [expr -1/Inf]} zero
+test expr-59.6 {float classification: fpclassify} {fpclassify 1e-314} subnormal
+test expr-59.7 {float classification: fpclassify} {fpclassify inf} infinite
+test expr-59.8 {float classification: fpclassify} {fpclassify -inf} infinite
+test expr-59.9 {float classification: fpclassify} {fpclassify NaN} nan
+test expr-59.10 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify
+} -result {wrong # args: should be "fpclassify floatValue"}
+test expr-59.11 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify a b
+} -result {wrong # args: should be "fpclassify floatValue"}
+test expr-59.12 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify gorp
+} -result {expected number but got "gorp"}
+
+test expr-60.1 {float classification: basic arg handling} -body {
+    expr isunordered()
+} -returnCodes error -result {too few arguments for math function "isunordered"}
+test expr-60.2 {float classification: basic arg handling} -body {
+    expr isunordered(1)
+} -returnCodes error -result {too few arguments for math function "isunordered"}
+test expr-60.3 {float classification: basic arg handling} -body {
+    expr {isunordered(1, 2, 3)}
+} -returnCodes error -result {too many arguments for math function "isunordered"}
+test expr-60.4 {float classification: basic arg handling} -body {
+    expr {isunordered(true, 1.0)}
+} -returnCodes error -result {expected number but got "true"}
+test expr-60.5 {float classification: basic arg handling} -body {
+    expr {isunordered("gorp", 1.0)}
+} -returnCodes error -result {expected number but got "gorp"}
+test expr-60.6 {float classification: basic arg handling} -body {
+    expr {isunordered(0x123, 1.0)}
+} -match glob -result *
+test expr-60.7 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, true)}
+} -returnCodes error -result {expected number but got "true"}
+test expr-60.8 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, "gorp")}
+} -returnCodes error -result {expected number but got "gorp"}
+test expr-60.9 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, 0x123)}
+} -match glob -result *
+
+# Big matrix of comparisons, but it's just a binary isinf()
+set values {1.0 -1.0 0.0 -0.0 1e-314 Inf -Inf NaN}
+set results {0 0 0 0 0 0 0 1}
+set ctr 0
+foreach v1 $values r1 $results {
+    foreach v2 $values r2 $results {
+	test expr-61.[incr ctr] "float classification: isunordered($v1,$v2)" {
+	    expr {isunordered($v1, $v2)}
+	} [expr {$r1 || $r2}]
+    }
+}
+unset -nocomplain values results ctr
+
+# cleanup
+unset -nocomplain a
+unset -nocomplain min
+unset -nocomplain max
 ::tcltest::cleanupTests
 return
 
