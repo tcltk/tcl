@@ -372,7 +372,8 @@ InitializeHostName(
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf(tbuf, -1, &ds));
+	Tcl_DStringInit(&ds);
+	Tcl_UtfToLower(Tcl_Utf16ToUtfDString(tbuf, -1, &ds));
 
     } else {
 	Tcl_DStringInit(&ds);

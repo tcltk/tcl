@@ -634,10 +634,11 @@ WinReadLinkDirectory(
 	    }
 	}
 
-	Tcl_WinTCharToUtf(
+	Tcl_DStringInit(&ds);
+	Tcl_Utf16ToUtfDString(
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
 		reparseBuffer->MountPointReparseBuffer
-		.SubstituteNameLength, &ds);
+		.SubstituteNameLength>>1, &ds);
 
 	copy = Tcl_DStringValue(&ds)+offset;
 	len = Tcl_DStringLength(&ds)-offset;
@@ -1023,7 +1024,8 @@ TclpMatchInDirectory(
 	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
-	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
+	Tcl_DStringInit(&ds);
+	native = Tcl_UtfToUtf16DString(dirName, -1, &ds);
 	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
@@ -1096,7 +1098,8 @@ TclpMatchInDirectory(
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
-	    utfname = Tcl_WinTCharToUtf(native, -1, &ds);
+	    Tcl_DStringInit(&ds);
+	    utfname = Tcl_Utf16ToUtfDString(native, -1, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1471,14 +1474,14 @@ TclpGetUserHome(
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToUtf16DString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(name, nameLen, &ds);
+	wName = Tcl_UtfToUtf16DString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * User does not exist; if domain was not specified, try again
@@ -1506,7 +1509,7 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		size = lstrlenW(wHomeDir);
-		TclWCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_Utf16ToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
@@ -1514,7 +1517,7 @@ TclpGetUserHome(
 		 */
 
 		GetProfilesDirectoryW(buf, &size);
-		TclWCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_Utf16ToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
@@ -1884,11 +1887,11 @@ NativeIsExec(
     }
 
     path += len-3;
-    if ((wcsicmp(path, L"exe") == 0)
-	    || (wcsicmp(path, L"com") == 0)
-	    || (wcsicmp(path, L"cmd") == 0)
-	    || (wcsicmp(path, L"cmd") == 0)
-	    || (wcsicmp(path, L"bat") == 0)) {
+    if ((_wcsicmp(path, L"exe") == 0)
+	    || (_wcsicmp(path, L"com") == 0)
+	    || (_wcsicmp(path, L"cmd") == 0)
+	    || (_wcsicmp(path, L"cmd") == 0)
+	    || (_wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
     return 0;
@@ -1982,7 +1985,8 @@ TclpGetCwd(
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
-    Tcl_WinTCharToUtf(native, -1, bufferPtr);
+    Tcl_DStringInit(bufferPtr);
+    Tcl_Utf16ToUtfDString(native, -1, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2190,7 +2194,8 @@ NativeDev(
     const char *fullPath;
 
     GetFullPathName(nativePath, MAX_PATH, nativeFullPath, &nativePart);
-    fullPath = Tcl_WinTCharToUtf(nativeFullPath, -1, &ds);
+    Tcl_DStringInit(&ds);
+    fullPath = Tcl_Utf16ToUtfDString(nativeFullPath, -1, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2211,7 +2216,8 @@ NativeDev(
 	} else {
 	    p++;
 	}
-	nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
+	Tcl_DStringInit(&volString);
+	nativeVol = Tcl_UtfToUtf16DString(fullPath, p - fullPath, &volString);
 	dw = (DWORD) -1;
 	GetVolumeInformation(nativeVol, NULL, 0, &dw, NULL, NULL, NULL, 0);
 
@@ -2491,7 +2497,8 @@ TclpFilesystemPathType(
     } else {
 	Tcl_DString ds;
 
-	Tcl_WinTCharToUtf(volType, -1, &ds);
+	Tcl_DStringInit(&ds);
+	Tcl_Utf16ToUtfDString(volType, -1, &ds);
 	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
@@ -2561,7 +2568,10 @@ TclpObjNormalizePath(
 	     */
 
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const WCHAR *nativePath = Tcl_WinUtfToTChar(path,
+	    const WCHAR *nativePath;
+
+	    Tcl_DStringInit(&ds);
+	    nativePath = Tcl_UtfToUtf16DString(path,
 		    currentPathEndPosition - path, &ds);
 
 	    if (GetFileAttributesEx(nativePath,
@@ -2763,11 +2773,14 @@ TclpObjNormalizePath(
 
 	if (1) {
 	    WCHAR wpath[MAX_PATH];
-	    const WCHAR *nativePath =
-		    Tcl_WinUtfToTChar(path, lastValidPathEnd - path, &ds);
-	    DWORD wpathlen = GetLongPathNameProc(nativePath,
-		    (WCHAR *) wpath, MAX_PATH);
+	    const WCHAR *nativePath;
+	    DWORD wpathlen;
 
+	    Tcl_DStringInit(&ds);
+	    nativePath =
+		    Tcl_UtfToUtf16DString(path, lastValidPathEnd - path, &ds);
+	    wpathlen = GetLongPathNameProc(nativePath,
+		    (WCHAR *) wpath, MAX_PATH);
 	    /*
 	     * We have to make the drive letter uppercase.
 	     */
@@ -2794,8 +2807,9 @@ TclpObjNormalizePath(
 	 * native encoding, so we have to convert it to Utf.
 	 */
 
-	Tcl_WinTCharToUtf((const WCHAR *) Tcl_DStringValue(&dsNorm),
-		Tcl_DStringLength(&dsNorm), &ds);
+	Tcl_DStringInit(&ds);
+	Tcl_Utf16ToUtfDString((const WCHAR *) Tcl_DStringValue(&dsNorm),
+		Tcl_DStringLength(&dsNorm)>>1, &ds);
 	nextCheckpoint = Tcl_DStringLength(&ds);
 	if (*lastValidPathEnd != 0) {
 	    /*
@@ -2970,7 +2984,8 @@ TclpNativeToNormalized(
     int len;
     char *copy, *p;
 
-    Tcl_WinTCharToUtf((const WCHAR *) clientData, -1, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_Utf16ToUtfDString((const WCHAR *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
