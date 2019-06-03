@@ -2007,9 +2007,10 @@ TclpCreateTemporaryDirectory(
 	if (dirObj->length < 1) {
 	    goto useSystemTemp;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(dirObj), -1, &base);
+	Tcl_DStringInit(&base);
+	Tcl_UtfToUtf16DString(Tcl_GetString(dirObj), -1, &base);
 	if (dirObj->bytes[dirObj->length - 1] != '\\') {
-	    TclUtfToWCharDString("\\", -1, &base);
+	    Tcl_UtfToUtf16DString("\\", -1, &base);
 	}
     } else {
     useSystemTemp:
@@ -2025,13 +2026,11 @@ TclpCreateTemporaryDirectory(
 #define SUFFIX_LENGTH	8
 
     if (basenameObj) {
-	Tcl_WinUtfToTChar(Tcl_GetString(basenameObj), -1, &name);
-	TclDStringAppendDString(&base, &name);
-	Tcl_DStringFree(&name);
+	Tcl_UtfToUtf16DString(Tcl_GetString(basenameObj), -1, &base);
     } else {
-	TclUtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
+	Tcl_UtfToUtf16DString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
     }
-    TclUtfToWCharDString("_", -1, &base);
+    Tcl_UtfToUtf16DString("_", -1, &base);
 
     /*
      * Now we keep on trying random suffixes until we get one that works
@@ -2058,7 +2057,7 @@ TclpCreateTemporaryDirectory(
 	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
-	TclUtfToWCharDString(tempbuf, -1, &base);
+	Tcl_UtfToUtf16DString(tempbuf, -1, &base);
     } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL)
 	    && (error = GetLastError()) == ERROR_ALREADY_EXISTS);
 
@@ -2078,7 +2077,8 @@ TclpCreateTemporaryDirectory(
      * as a (clean) Tcl_Obj.
      */
 
-    Tcl_WinTCharToUtf((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
+    Tcl_DStringInit(&name);
+    Tcl_Utf16ToUtfDString((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
     Tcl_DStringFree(&base);
     return TclDStringToObj(&name);
 }
