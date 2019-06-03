@@ -1253,11 +1253,11 @@ declare 353 {
 	    unsigned long numChars)
 }
 declare 354 {
-    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+    char *Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
-    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+    unsigned short *Tcl_UtfToUtf16DString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 {
@@ -2388,6 +2388,16 @@ declare 644 {
 declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
+}
+
+# TIP #5??
+declare 647 {
+    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+	    int uniLength, Tcl_DString *dsPtr)
+}
+declare 648 {
+    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+	    int length, Tcl_DString *dsPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

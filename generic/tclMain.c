@@ -70,10 +70,8 @@ NewNativeObj(
     Tcl_DString ds;
 
 #ifdef UNICODE
-    if (length > 0) {
-	length *= sizeof(WCHAR);
-    }
-    Tcl_WinTCharToUtf(string, length, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_Utf16ToUtfDString(string, length, &ds);
 #else
     Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
 #endif

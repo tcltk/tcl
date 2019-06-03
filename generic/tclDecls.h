@@ -1068,10 +1068,10 @@ EXTERN int		Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
 				const Tcl_UniChar *uct,
 				unsigned long numChars);
 /* 354 */
-EXTERN char *		Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+EXTERN char *		Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
 				int uniLength, Tcl_DString *dsPtr);
 /* 355 */
-EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString(const char *src, int length,
+EXTERN unsigned short *	 Tcl_UtfToUtf16DString(const char *src, int length,
 				Tcl_DString *dsPtr);
 /* 356 */
 EXTERN Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp,
@@ -1904,6 +1904,13 @@ EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
 /* 645 */
 EXTERN int		Tcl_GetIntForIndex(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int endValue, int *indexPtr);
+/* Slot 646 is reserved */
+/* 647 */
+EXTERN char *		Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+				int uniLength, Tcl_DString *dsPtr);
+/* 648 */
+EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString(const char *src, int length,
+				Tcl_DString *dsPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2293,8 +2300,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
     int (*tcl_UniCharLen) (const Tcl_UniChar *uniStr); /* 352 */
     int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 353 */
-    char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
-    Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
+    char * (*tcl_Utf16ToUtfDString) (const unsigned short *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
+    unsigned short * (*tcl_UtfToUtf16DString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
     TCL_DEPRECATED_API("Use Tcl_EvalTokensStandard") Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 357 */
     void (*tcl_FreeParse) (Tcl_Parse *parsePtr); /* 358 */
@@ -2585,6 +2592,9 @@ typedef struct TclStubs {
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, int size); /* 644 */
     int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 645 */
+    void (*reserved646)(void);
+    char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, int uniLength, Tcl_DString *dsPtr); /* 647 */
+    Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 648 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3323,10 +3333,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharLen) /* 352 */
 #define Tcl_UniCharNcmp \
 	(tclStubsPtr->tcl_UniCharNcmp) /* 353 */
-#define Tcl_UniCharToUtfDString \
-	(tclStubsPtr->tcl_UniCharToUtfDString) /* 354 */
-#define Tcl_UtfToUniCharDString \
-	(tclStubsPtr->tcl_UtfToUniCharDString) /* 355 */
+#define Tcl_Utf16ToUtfDString \
+	(tclStubsPtr->tcl_Utf16ToUtfDString) /* 354 */
+#define Tcl_UtfToUtf16DString \
+	(tclStubsPtr->tcl_UtfToUtf16DString) /* 355 */
 #define Tcl_GetRegExpFromObj \
 	(tclStubsPtr->tcl_GetRegExpFromObj) /* 356 */
 #define Tcl_EvalTokens \
@@ -3907,6 +3917,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_LinkArray) /* 644 */
 #define Tcl_GetIntForIndex \
 	(tclStubsPtr->tcl_GetIntForIndex) /* 645 */
+/* Slot 646 is reserved */
+#define Tcl_UniCharToUtfDString \
+	(tclStubsPtr->tcl_UniCharToUtfDString) /* 647 */
+#define Tcl_UtfToUniCharDString \
+	(tclStubsPtr->tcl_UtfToUniCharDString) /* 648 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4092,6 +4107,12 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_StringMatch
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
+#if TCL_UTF_MAX <= 4
+#   undef Tcl_UniCharToUtfDString
+#   define Tcl_UniCharToUtfDString Tcl_Utf16ToUtfDString
+#   undef Tcl_UtfToUniCharDString
+#   define Tcl_UtfToUniCharDString Tcl_UtfToUtf16DString
+#endif
 /*
  * Deprecated Tcl procedures:
  */

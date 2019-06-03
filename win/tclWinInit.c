@@ -476,8 +476,8 @@ TclpGetUserName(
 	    return NULL;
 	}
 	cchUserNameLen--;
-	cchUserNameLen *= sizeof(WCHAR);
-	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+	Tcl_DStringInit(bufferPtr);
+	Tcl_Utf16ToUtfDString(szUserName, cchUserNameLen, bufferPtr);
     }
     return Tcl_DStringValue(bufferPtr);
 }

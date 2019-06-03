@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Utf16ToUtfDString, Tcl_UtfToUtf16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -24,8 +24,14 @@ int
 char *
 \fBTcl_UniCharToUtfDString\fR(\fIuniStr, uniLength, dsPtr\fR)
 .sp
+char *
+\fBTcl_Utf16ToUtfDString\fR(\fIutf16Str, uniLength, dsPtr\fR)
+.sp
 Tcl_UniChar *
 \fBTcl_UtfToUniCharDString\fR(\fIsrc, length, dsPtr\fR)
+.sp
+unsigned short *
+\fBTcl_UtfToUtf16DString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
@@ -80,6 +86,8 @@ Buffer in which the UTF-8 representation of the Tcl_UniChar is stored.  At most
 The Unicode character to be converted or examined.
 .AP Tcl_UniChar *chPtr out
 Filled with the Tcl_UniChar represented by the head of the UTF-8 string.
+.AP unsigned short *utf16Ptr out
+Filled with the utf-16 represented by the head of the UTF-8 string.
 .AP "const char" *src in
 Pointer to a UTF-8 string.
 .AP "const char" *cs in
@@ -94,12 +102,13 @@ A null-terminated Unicode string.
 A null-terminated Unicode string.
 .AP "const Tcl_UniChar" *uniPattern in
 A null-terminated Unicode string.
+.AP "const unsigned short" *utf16Str in
+A null-terminated utf-16 string.
 .AP int length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
 .AP int uniLength in
-The length of the Unicode string in characters.  Must be greater than or
-equal to 0.
+The length of the Unicode string in characters.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "unsigned long" numChars in
@@ -121,11 +130,10 @@ case-insensitive (1).
 
 .SH DESCRIPTION
 .PP
-These routines convert between UTF-8 strings and Unicode characters.  An
-Unicode character represented as an unsigned, fixed-size
-quantity.  A UTF-8 character is a Unicode character represented as
-a varying-length sequence of up to \fBTCL_UTF_MAX\fR bytes.  A multibyte UTF-8
-sequence consists of a lead byte followed by some number of trail bytes.
+These routines convert between UTF-8 strings and Unicode/Utf-16 characters.
+A UTF-8 character is a Unicode character represented as a varying-length
+sequence of up to \fBTCL_UTF_MAX\fR bytes.  A multibyte UTF-8 sequence
+consists of a lead byte followed by some number of trail bytes.
 .PP
 \fBTCL_UTF_MAX\fR is the maximum number of bytes that it takes to
 represent one Unicode character in the UTF-8 representation.
@@ -148,12 +156,11 @@ a byte in the range 0x80 - 0x9F, \fBTcl_UtfToUniChar\fR assumes the
 cp1252 encoding, stores the corresponding Tcl_UniChar in \fI*chPtr\fR
 and returns 1. If the input is otherwise
 not in proper UTF-8 format, \fBTcl_UtfToUniChar\fR will store the first
-byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0000 and
-0x00ff and return 1.
+byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x00A0 and
+0x00FF and return 1.
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
 to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
-You must specify \fIuniLength\fR, the length of the given Unicode string.
 The return value is a pointer to the UTF-8 representation of the
 Unicode string.  Storage for the return value is appended to the
 end of the \fBTcl_DString\fR.
