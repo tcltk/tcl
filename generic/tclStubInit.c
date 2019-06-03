@@ -72,7 +72,7 @@ static void uniCodePanic() {
 #if TCL_UTF_MAX == 3
     Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX>3, but Tcl is compiled with -DTCL_UTF_MAX==3");
 #else
-    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX==3, but Tcl is compiled with -DTCL_UTF_MAX>3");
+    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX==3, but Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 #endif
 }
 
@@ -280,6 +280,7 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
+#if (TCL_UTF_MAX == 3) && !defined(TCL_NO_DEPRECATED)
 char *
 Tcl_WinUtfToTChar(
     const char *string,
@@ -308,6 +309,7 @@ Tcl_WinTCharToUtf(
     }
     return Tcl_Utf16ToUtfDString((const unsigned short *)string, len, dsPtr);
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #if defined(TCL_WIDE_INT_IS_LONG)
 /* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
@@ -527,6 +529,11 @@ tellOld(
 #   define Tcl_UniCharLen 0
 #   define XTcl_UniCharNcmp 0
 #   define XTcl_UniCharNcasecmp 0
+#endif
+
+#if (TCL_UTF_MAX > 3) || defined(TCL_NO_DEPRECATED)
+#define Tcl_WinUtfToTChar 0
+#define Tcl_WinTCharToUtf 0
 #endif
 
 /*
