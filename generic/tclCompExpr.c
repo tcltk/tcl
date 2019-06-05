@@ -281,7 +281,11 @@ enum Marks {
 				 * parse tree. The sub-expression between
 				 * parens becomes the single argument of the
 				 * matching OPEN_PAREN unary operator. */
-#define END		(BINARY | 28)
+#define STR_LT		(BINARY | 28)
+#define STR_GT		(BINARY | 29)
+#define STR_LEQ		(BINARY | 30)
+#define STR_GEQ		(BINARY | 31)
+#define END		(BINARY | 32)
 				/* This lexeme represents the end of the
 				 * string being parsed. Treating it as a
 				 * binary operator follows the same logic as
@@ -360,12 +364,14 @@ static const unsigned char prec[] = {
     PREC_EQUAL,		/* IN_LIST */
     PREC_EQUAL,		/* NOT_IN_LIST */
     PREC_CLOSE_PAREN,	/* CLOSE_PAREN */
+    PREC_COMPARE,	/* STR_LT */
+    PREC_COMPARE,	/* STR_GT */
+    PREC_COMPARE,	/* STR_LEQ */
+    PREC_COMPARE,	/* STR_GEQ */
     PREC_END,		/* END */
     /* Expansion room for more binary operators */
-    0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,
     /* Unary operator lexemes */
     PREC_UNARY,		/* UNARY_PLUS */
     PREC_UNARY,		/* UNARY_MINUS */
@@ -415,12 +421,14 @@ static const unsigned char instruction[] = {
     INST_LIST_IN,	/* IN_LIST */
     INST_LIST_NOT_IN,	/* NOT_IN_LIST */
     0,			/* CLOSE_PAREN */
+    INST_STR_LT,	/* STR_LT */
+    INST_STR_GT,	/* STR_GT */
+    INST_STR_LEQ,	/* STR_LEQ */
+    INST_STR_GEQ,	/* STR_GEQ */
     0,			/* END */
     /* Expansion room for more binary operators */
-    0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,
     /* Unary operator lexemes */
     INST_UPLUS,		/* UNARY_PLUS */
     INST_UMINUS,	/* UNARY_MINUS */
@@ -2001,6 +2009,35 @@ ParseLexeme(
 		return 2;
 	    }
 	}
+	break;
+
+    case 'l':
+	if ((numBytes > 1)
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(UCHAR(start[2])))) {
+	    switch (start[1]) {
+	    case 't':
+		*lexemePtr = STR_LT;
+		return 2;
+	    case 'e':
+		*lexemePtr = STR_LEQ;
+		return 2;
+	    }
+	}
+	break;
+	
+    case 'g':
+	if ((numBytes > 1)
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(UCHAR(start[2])))) {
+	    switch (start[1]) {
+	    case 't':
+		*lexemePtr = STR_GT;
+		return 2;
+	    case 'e':
+		*lexemePtr = STR_GEQ;
+		return 2;
+	    }
+	}
+	break;
     }
 
     literal = Tcl_NewObj();
