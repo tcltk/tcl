@@ -423,8 +423,8 @@ static const unsigned char instruction[] = {
     0,			/* CLOSE_PAREN */
     INST_STR_LT,	/* STR_LT */
     INST_STR_GT,	/* STR_GT */
-    INST_STR_LEQ,	/* STR_LEQ */
-    INST_STR_GEQ,	/* STR_GEQ */
+    INST_STR_LE,	/* STR_LEQ */
+    INST_STR_GE,	/* STR_GEQ */
     0,			/* END */
     /* Expansion room for more binary operators */
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
