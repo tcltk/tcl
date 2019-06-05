@@ -504,6 +504,14 @@ static const OpCmdInfo mathOpCmds[] = {
 		/* unused */ {0},	NULL},
     { "eq",	TclSortingOpCmd,	TclCompileStreqOpCmd,
 		/* unused */ {0},	NULL},
+    { "lt",	TclSortingOpCmd,	TclCompileStrLtOpCmd,
+		/* unused */ {0},	NULL},
+    { "le",	TclSortingOpCmd,	TclCompileStrLeOpCmd,
+		/* unused */ {0},	NULL},
+    { "gt",	TclSortingOpCmd,	TclCompileStrGtOpCmd,
+		/* unused */ {0},	NULL},
+    { "ge",	TclSortingOpCmd,	TclCompileStrGeOpCmd,
+		/* unused */ {0},	NULL},
     { NULL,	NULL,			NULL,
 		{0},			NULL}
 };
