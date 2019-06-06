@@ -411,6 +411,26 @@ test expr-8.34 {expr edge cases} -body {
 test expr-8.35 {expr edge cases} -body {
     expr {1ea}
 } -returnCodes error -match glob -result *
+test expr-8.36 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x < $y}] [expr {$x lt $y}] [expr {$x lt $x}]
+} {0 1 0}
+test expr-8.37 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x <= $y}] [expr {$x le $y}] [expr {$x le $x}]
+} {0 1 1}
+test expr-8.38 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x > $y}] [expr {$x gt $y}] [expr {$x gt $x}]
+} {1 0 0}
+test expr-8.39 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x >= $y}] [expr {$x ge $y}] [expr {$x ge $x}]
+} {1 0 1}
 
 test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63

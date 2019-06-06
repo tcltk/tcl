@@ -95,7 +95,7 @@ proc TestOp {op args} {
     }
     return [lindex $results 0]
 }
-
+
 # start of tests
 
 namespace eval ::testmathop {
@@ -1342,6 +1342,46 @@ test mathop-26.2 { misc ops, corner cases } {
     set res
 } [list 2147483648 9223372036854775808 9223372036854775808 4294967296 18446744073709551616]
 
+test mathop-27.1 {lt operator} {::tcl::mathop::lt} 1
+test mathop-27.2 {lt operator} {::tcl::mathop::lt a} 1
+test mathop-27.3 {lt operator} {::tcl::mathop::lt a b} 1
+test mathop-27.4 {lt operator} {::tcl::mathop::lt b a} 0
+test mathop-27.5 {lt operator} {::tcl::mathop::lt a a} 0
+test mathop-27.6 {lt operator} {::tcl::mathop::lt a b c} 1
+test mathop-27.7 {lt operator} {::tcl::mathop::lt b a c} 0
+test mathop-27.8 {lt operator} {::tcl::mathop::lt a c b} 0
+test mathop-27.9 {lt operator} {::tcl::mathop::lt 012 0x0} 1
+
+test mathop-28.1 {le operator} {::tcl::mathop::le} 1
+test mathop-28.2 {le operator} {::tcl::mathop::le a} 1
+test mathop-28.3 {le operator} {::tcl::mathop::le a b} 1
+test mathop-28.4 {le operator} {::tcl::mathop::le b a} 0
+test mathop-28.5 {le operator} {::tcl::mathop::le a a} 1
+test mathop-28.6 {le operator} {::tcl::mathop::le a b c} 1
+test mathop-28.7 {le operator} {::tcl::mathop::le b a c} 0
+test mathop-28.8 {le operator} {::tcl::mathop::le a c b} 0
+test mathop-28.9 {le operator} {::tcl::mathop::le 012 0x0} 1
+
+test mathop-29.1 {gt operator} {::tcl::mathop::gt} 1
+test mathop-29.2 {gt operator} {::tcl::mathop::gt a} 1
+test mathop-29.3 {gt operator} {::tcl::mathop::gt a b} 0
+test mathop-29.4 {gt operator} {::tcl::mathop::gt b a} 1
+test mathop-29.5 {gt operator} {::tcl::mathop::gt a a} 0
+test mathop-29.6 {gt operator} {::tcl::mathop::gt c b a} 1
+test mathop-29.7 {gt operator} {::tcl::mathop::gt b a c} 0
+test mathop-29.8 {gt operator} {::tcl::mathop::gt a c b} 0
+test mathop-29.9 {gt operator} {::tcl::mathop::gt 0x0 012} 1
+
+test mathop-30.1 {ge operator} {::tcl::mathop::ge} 1
+test mathop-30.2 {ge operator} {::tcl::mathop::ge a} 1
+test mathop-30.3 {ge operator} {::tcl::mathop::ge a b} 0
+test mathop-30.4 {ge operator} {::tcl::mathop::ge b a} 1
+test mathop-30.5 {ge operator} {::tcl::mathop::ge a a} 1
+test mathop-30.6 {ge operator} {::tcl::mathop::ge c b a} 1
+test mathop-30.7 {ge operator} {::tcl::mathop::ge b a c} 0
+test mathop-30.8 {ge operator} {::tcl::mathop::ge a c b} 0
+test mathop-30.9 {ge operator} {::tcl::mathop::ge 0x0 012} 1
+
 if 0 {
     # Compare ops to expr bytecodes
     namespace import ::tcl::mathop::*
@@ -1354,7 +1394,7 @@ if 0 {
     _X 3 4 5
     set ::tcl_traceCompile 0
 }
-
+
 # cleanup
 namespace delete ::testmathop
 namespace delete ::testmathop2
