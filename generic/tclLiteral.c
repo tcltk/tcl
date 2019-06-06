@@ -465,7 +465,7 @@ TclRegisterLiteral(
 
 #ifdef TCL_COMPILE_DEBUG
     if (globalPtr != NULL && globalPtr->refCount < 1) {
-	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
+	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %ld",
 		"TclRegisterLiteral", (length>60? 60 : length), bytes,
 		globalPtr->refCount);
     }
@@ -1174,9 +1174,9 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != -1) {
+	    if (localPtr->refCount != (size_t)-1) {
 		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
-		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %ld",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
 	    }
@@ -1227,7 +1227,7 @@ TclVerifyGlobalLiteralTable(
 	    count++;
 	    if (globalPtr->refCount < 1) {
 		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
-		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %ld",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : length), bytes, globalPtr->refCount);
 	    }
