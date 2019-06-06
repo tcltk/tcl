@@ -227,7 +227,9 @@ TclCreateLiteral(
 		if (flags & LITERAL_ON_HEAP) {
 		    ckfree(bytes);
 		}
-		globalPtr->refCount++;
+		if (globalPtr->refCount != (unsigned) -1) {
+		    globalPtr->refCount++;
+		}
 		return objPtr;
 	    }
 	}
@@ -625,7 +627,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = (size_t)-1;	/* i.e., unused */
+    lPtr->refCount = (unsigned) -1;	/* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {
@@ -848,7 +850,7 @@ TclReleaseLiteral(
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount-- <= 1) {
+	    if ((entryPtr->refCount != (unsigned)-1) && (entryPtr->refCount-- <= 1)) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -1174,7 +1176,7 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != -1) {
+	    if (localPtr->refCount != (size_t)-1) {
 		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
 			"TclVerifyLocalLiteralTable",
