@@ -227,7 +227,9 @@ TclCreateLiteral(
 		if (flags & LITERAL_ON_HEAP) {
 		    Tcl_Free((void *)bytes);
 		}
-		globalPtr->refCount++;
+		if (globalPtr->refCount != TCL_AUTO_LENGTH) {
+		    globalPtr->refCount++;
+		}
 		return objPtr;
 	    }
 	}
@@ -847,7 +849,7 @@ TclReleaseLiteral(
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount-- <= 1) {
+	    if ((entryPtr->refCount != TCL_AUTO_LENGTH) && (entryPtr->refCount-- <= 1)) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {

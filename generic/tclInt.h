@@ -551,7 +551,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    size_t refCount;		/* Used to ensure this structure is not
+    size_t refCount;	/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -1505,7 +1505,7 @@ typedef struct LiteralEntry {
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
 				 * entry can be freed when refCount drops to
-				 * 0. If in a local literal table, -1. */
+				 * 0. If in a local literal table, TCL_AUTO_LENGTH. */
     Namespace *nsPtr;		/* Namespace in which this literal is used. We
 				 * try to avoid sharing literal non-FQ command
 				 * names among different namespaces to reduce
