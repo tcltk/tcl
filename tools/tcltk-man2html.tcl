@@ -32,6 +32,11 @@ set ::CSSFILE "docs.css"
 source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
 
 proc findversion {top name useversion} {
+    # Default search version is a glob pattern, switch it for string match:
+    if {$useversion eq {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}} {
+	set useversion {[8-9].[0-9]}
+    }
+    # Search:
     set upper [string toupper $name]
     foreach top1 [list $top $top/..] sub {{} generic} {
 	foreach dirname [
@@ -152,22 +157,30 @@ proc parse_command_line {} {
     }
 
     if {$build_tcl} {
-	# Find Tcl.
-	lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
-	if {$tcldir eq {} && $opt_build_tcl} {
-	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
-	    exit 1
+	# Find Tcl (firstly using glob pattern / backwards compatible way)
+	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
+		-directory $tcltkdir tcl$useversion]] end]
+	if {$tcldir eq {}} {
+	    lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
+	    if {$tcldir eq {} && $opt_build_tcl} {
+		puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
+		exit 1
+	    }
 	}
 	puts "using Tcl source directory $tcltkdir $tcldir"
     }
 
 
     if {$build_tk} {
-	# Find Tk.
-	lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
-	if {$tkdir eq {} && $opt_build_tk} {
-	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
-	    exit 1
+	# Find Tk (firstly using glob pattern / backwards compatible way)
+	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
+		-directory $tcltkdir tk$useversion]] end]
+	if {$tkdir eq {}} {
+	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	    if {$tkdir eq {} && $opt_build_tk} {
+		puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
+		exit 1
+	    }
 	}
 	puts "using Tk source directory $tkdir"
     }
