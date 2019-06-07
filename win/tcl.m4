@@ -509,7 +509,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # Step 0: Enable 64 bit support?
 
     AC_MSG_CHECKING([if 64bit support is requested])
-    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
+    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (default: on)], [do64bit=$enableval], [do64bit=yes])
     AC_MSG_RESULT($do64bit)
 
     # Set some defaults (may get changed below)

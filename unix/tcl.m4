@@ -913,8 +913,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_MSG_CHECKING([if 64bit support is requested])
     AC_ARG_ENABLE(64bit,
 	AC_HELP_STRING([--enable-64bit],
-	    [enable 64bit support (default: off)]),
-	[do64bit=$enableval], [do64bit=no])
+	    [enable 64bit support (default: on)]),
+	[do64bit=$enableval], [do64bit=yes])
     AC_MSG_RESULT([$do64bit])
 
     # Step 0.b: Enable Solaris 64 bit VIS support?

@@ -160,7 +160,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
+        - CFGOPT="--host=i686-w64-mingw32 --disable-64bit --disable-shared"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -176,7 +176,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
+        - CFGOPT="--host=i686-w64-mingw32 --disable-64bit CFLAGS=-DTCL_UTF_MAX=6"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -192,7 +192,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
+        - CFGOPT="--host=i686-w64-mingw32 --disable-64bit CFLAGS=-DTCL_UTF_MAX=3"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -208,7 +208,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
+        - CFGOPT="--host=i686-w64-mingw32 --disable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
         - NO_DIRECT_TEST=1
 # Test with mingw-w64 (64 bit)
     - os: linux
@@ -224,7 +224,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+        - CFGOPT="--host=x86_64-w64-mingw32"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -239,7 +239,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
+        - CFGOPT="--host=x86_64-w64-mingw32 --disable-shared"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -254,7 +254,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
+        - CFGOPT="--host=x86_64-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -269,7 +269,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
+        - CFGOPT="--host=x86_64-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
@@ -284,7 +284,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+        - CFGOPT="--host=x86_64-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
         - NO_DIRECT_TEST=1
 before_install:
   - export ERROR_ON_FAILURES=1
