@@ -1537,11 +1537,11 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    int numBuckets;		/* Total number of buckets allocated at
+    unsigned int numBuckets; /* Total number of buckets allocated at
 				 * **buckets. */
-    int numEntries;		/* Total number of entries present in
+    unsigned int numEntries; /* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    unsigned int rebuildSize; /* Enlarge table when numEntries gets to be
 				 * this large. */
     unsigned int mask;		/* Mask value used in hashing function. */
 } LiteralTable;
@@ -1554,10 +1554,10 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    long numExecutions;		/* Number of ByteCodes executed. */
-    long numCompilations;	/* Number of ByteCodes created. */
-    long numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    long instructionCount[256];	/* Number of times each instruction was
+    size_t numExecutions;		/* Number of ByteCodes executed. */
+    size_t numCompilations;	/* Number of ByteCodes created. */
+    size_t numByteCodesFreed;	/* Number of ByteCodes destroyed. */
+    size_t instructionCount[256];	/* Number of times each instruction was
 				 * executed. */
 
     double totalSrcBytes;	/* Total source bytes ever compiled. */
@@ -1565,10 +1565,10 @@ typedef struct ByteCodeStats {
     double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
 
-    long srcCount[32];		/* Source size distribution: # of srcs of
+    size_t srcCount[32];		/* Source size distribution: # of srcs of
 				 * size [2**(n-1)..2**n), n in [0..32). */
-    long byteCodeCount[32];	/* ByteCode size distribution. */
-    long lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
+    size_t byteCodeCount[32];	/* ByteCode size distribution. */
+    size_t lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
 
     double currentInstBytes;	/* Instruction bytes-current ByteCodes. */
     double currentLitBytes;	/* Current literal bytes. */
@@ -1576,11 +1576,11 @@ typedef struct ByteCodeStats {
     double currentAuxBytes;	/* Current auxiliary information bytes. */
     double currentCmdMapBytes;	/* Current src<->code map bytes. */
 
-    long numLiteralsCreated;	/* Total literal objects ever compiled. */
+    size_t numLiteralsCreated;	/* Total literal objects ever compiled. */
     double totalLitStringBytes;	/* Total string bytes in all literals. */
     double currentLitStringBytes;
 				/* String bytes in current literals. */
-    long literalCount[32];	/* Distribution of literal string sizes. */
+    size_t literalCount[32];	/* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
 
@@ -2513,7 +2513,7 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
-	    ? (int)(objPtr)->internalRep.wideValue : -1), TCL_OK) \
+	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -2776,10 +2776,10 @@ MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 MODULE_SCOPE Tcl_Obj *	tclFreeObjList;
 
 #ifdef TCL_COMPILE_STATS
-MODULE_SCOPE long	tclObjsAlloced;
-MODULE_SCOPE long	tclObjsFreed;
+MODULE_SCOPE size_t	tclObjsAlloced;
+MODULE_SCOPE size_t	tclObjsFreed;
 #define TCL_MAX_SHARED_OBJ_STATS 5
-MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
+MODULE_SCOPE size_t	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 #endif /* TCL_COMPILE_STATS */
 
 /*
