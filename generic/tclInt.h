@@ -2707,10 +2707,10 @@ MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 MODULE_SCOPE Tcl_Obj *	tclFreeObjList;
 
 #ifdef TCL_COMPILE_STATS
-MODULE_SCOPE long	tclObjsAlloced;
-MODULE_SCOPE long	tclObjsFreed;
+MODULE_SCOPE size_t	tclObjsAlloced;
+MODULE_SCOPE size_t	tclObjsFreed;
 #define TCL_MAX_SHARED_OBJ_STATS 5
-MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
+MODULE_SCOPE size_t	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 #endif /* TCL_COMPILE_STATS */
 
 /*

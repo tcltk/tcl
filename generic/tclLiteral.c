@@ -467,7 +467,7 @@ TclRegisterLiteral(
 
 #ifdef TCL_COMPILE_DEBUG
     if (globalPtr != NULL && (globalPtr->refCount + 1 < 2)) {
-	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "d",
+	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes,
 		globalPtr->refCount);
     }
@@ -1129,11 +1129,11 @@ TclLiteralStats(
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
-	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "d entries: %" TCL_Z_MODIFIER "d\n",
+	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "d\n",
+    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
@@ -1185,7 +1185,7 @@ TclVerifyLocalLiteralTable(
 	}
     }
     if (count != localTablePtr->numEntries) {
-	Tcl_Panic("%s: local literal table had %" TCL_Z_MODIFIER "d entries, should be %" TCL_Z_MODIFIER "d",
+	Tcl_Panic("%s: local literal table had %" TCL_Z_MODIFIER "u entries, should be %" TCL_Z_MODIFIER "u",
 		"TclVerifyLocalLiteralTable", count,
 		localTablePtr->numEntries);
     }
@@ -1223,7 +1223,7 @@ TclVerifyGlobalLiteralTable(
 	    count++;
 	    if (globalPtr->refCount + 1 < 2) {
 		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
-		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "d",
+		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : (int)length), bytes, globalPtr->refCount);
 	    }
@@ -1234,7 +1234,7 @@ TclVerifyGlobalLiteralTable(
 	}
     }
     if (count != globalTablePtr->numEntries) {
-	Tcl_Panic("%s: global literal table had %" TCL_Z_MODIFIER "d entries, should be %" TCL_Z_MODIFIER "d",
+	Tcl_Panic("%s: global literal table had %" TCL_Z_MODIFIER "u entries, should be %" TCL_Z_MODIFIER "u",
 		"TclVerifyGlobalLiteralTable", count,
 		globalTablePtr->numEntries);
     }
