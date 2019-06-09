@@ -119,7 +119,7 @@ The injection is a one-off. It is not retained once it has been executed. It
 may \fByield\fR or \fByieldto\fR as part of its execution.
 .PP
 Note that running coroutines may be neither probed nor injected; the
-operations may only be applied to 
+operations may only be applied to
 .VE "8.7, TIP383"
 .SH EXAMPLES
 .PP
