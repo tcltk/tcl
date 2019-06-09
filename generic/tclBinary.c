@@ -81,6 +81,9 @@ static int		BinaryFormatCmd(ClientData clientData,
 static int		BinaryScanCmd(ClientData clientData,
 			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		BinarySetCmd(ClientData clientData,
+			    Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 /* Binary encoding sub-ensemble commands */
 static int		BinaryEncodeHex(ClientData clientData,
 			    Tcl_Interp *interp,
@@ -141,6 +144,7 @@ static const char B64Digits[65] = {
 static const EnsembleImplMap binaryMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "set",	BinarySetCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
     { "encode", NULL, NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
@@ -1343,6 +1347,523 @@ BinaryFormatCmd(
 	}
     }
     Tcl_SetObjResult(interp, resultPtr);
+    return TCL_OK;
+
+ badValue:
+    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "expected %s string but got \"%s\" instead",
+	    errorString, errorValue));
+    return TCL_ERROR;
+
+ badCount:
+    errorString = "missing count for \"@\" field specifier";
+    goto error;
+
+ badIndex:
+    errorString = "not enough arguments for all format specifiers";
+    goto error;
+
+ badField:
+    {
+	Tcl_UniChar ch = 0;
+	char buf[TCL_UTF_MAX + 1] = "";
+
+	TclUtfToUniChar(errorString, &ch);
+	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad field specifier \"%s\"", buf));
+	return TCL_ERROR;
+    }
+
+ error:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinarySetCmd --
+ *
+ *	This procedure implements the "binary set" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinarySetCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int arg;			/* Index of next argument to consume. */
+    int value = 0;		/* Current integer value to be packed.
+				 * Initialized to avoid compiler warning. */
+    char cmd;			/* Current format character. */
+    int count;			/* Count associated with current format
+				 * character. */
+    int flags;			/* Format field flags */
+    const char *format;		/* Pointer to current position in format
+				 * string. */
+    Tcl_Obj *valuePtr;		/* Object holding binary value buffer. */
+    unsigned char *buffer;	/* Start of result buffer. */
+    unsigned char *cursor;	/* Current position within result buffer. */
+    unsigned char *maxPos;	/* Greatest position within result buffer that
+				 * cursor has visited.*/
+    const char *errorString;
+    const char *errorValue, *str;
+    int offset, size, length, originalLength;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName formatString ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    valuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
+    if (valuePtr == NULL) {
+	valuePtr = Tcl_NewByteArrayObj(NULL, 0);
+    }
+    buffer = Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
+    length = originalLength;
+
+    /*
+     * To avoid copying the data, we format the string in two passes. The
+     * first pass computes the size of the output buffer. The second pass
+     * places the formatted data into the buffer.
+     */
+
+    format = TclGetString(objv[2]);
+    arg = 3;
+    offset = 0;
+    while (*format != '\0') {
+	str = format;
+	flags = 0;
+	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
+	    break;
+	}
+	switch (cmd) {
+	case 'a':
+	case 'A':
+	case 'b':
+	case 'B':
+	case 'h':
+	case 'H':
+	    /*
+	     * For string-type specifiers, the count corresponds to the number
+	     * of bytes in a single argument.
+	     */
+
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		Tcl_GetByteArrayFromObj(objv[arg], &count);
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    arg++;
+	    if (cmd == 'a' || cmd == 'A') {
+		offset += count;
+	    } else if (cmd == 'b' || cmd == 'B') {
+		offset += (count + 7) / 8;
+	    } else {
+		offset += (count + 1) / 2;
+	    }
+	    break;
+	case 'c':
+	    size = 1;
+	    goto doNumbers;
+	case 't':
+	case 's':
+	case 'S':
+	    size = 2;
+	    goto doNumbers;
+	case 'n':
+	case 'i':
+	case 'I':
+	    size = 4;
+	    goto doNumbers;
+	case 'm':
+	case 'w':
+	case 'W':
+	    size = 8;
+	    goto doNumbers;
+	case 'r':
+	case 'R':
+	case 'f':
+	    size = sizeof(float);
+	    goto doNumbers;
+	case 'q':
+	case 'Q':
+	case 'd':
+	    size = sizeof(double);
+
+	doNumbers:
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+
+	    /*
+	     * For number-type specifiers, the count corresponds to the number
+	     * of elements in the list stored in a single argument. If no
+	     * count is specified, then the argument is taken as a single
+	     * non-list value.
+	     */
+
+	    if (count == BINARY_NOCOUNT) {
+		arg++;
+		count = 1;
+	    } else {
+		int listc;
+		Tcl_Obj **listv;
+
+		/*
+		 * The macro evals its args more than once: avoid arg++
+		 */
+
+		if (TclListObjGetElements(interp, objv[arg], &listc,
+			&listv) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		arg++;
+
+		if (count == BINARY_ALL) {
+		    count = listc;
+		} else if (count > listc) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "number of elements in list does not match count",
+			    -1));
+		    return TCL_ERROR;
+		}
+	    }
+	    offset += count*size;
+	    break;
+
+	case 'x':
+	    if (count == BINARY_ALL) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot use \"*\" in format string with \"x\"", -1));
+		return TCL_ERROR;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    offset += count;
+	    break;
+	case 'X':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count > offset) || (count == BINARY_ALL)) {
+		count = offset;
+	    }
+	    if (offset > length) {
+		length = offset;
+	    }
+	    offset -= count;
+	    break;
+	case '@':
+	    if (offset > length) {
+		length = offset;
+	    }
+	    if (count == BINARY_ALL) {
+		offset = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		goto badCount;
+	    } else {
+		offset = count;
+	    }
+	    break;
+	default:
+	    errorString = str;
+	    goto badField;
+	}
+    }
+    if (offset > length) {
+	length = offset;
+    }
+
+    /*
+     * Prepare the result object by preallocating the caclulated number of
+     * bytes and filling with nulls.
+     */
+
+    if (Tcl_IsShared(valuePtr)) {
+	valuePtr = Tcl_DuplicateObj(valuePtr);
+    }
+    buffer = Tcl_SetByteArrayLength(valuePtr, length);
+    if (length > originalLength) {
+	memset(buffer + originalLength, 0, length - originalLength);
+    }
+    Tcl_IncrRefCount(valuePtr);
+
+    /*
+     * Pack the data into the result object. Note that we can skip the error
+     * checking during this pass, since we have already parsed the string
+     * once.
+     */
+
+    arg = 3;
+    format = TclGetString(objv[2]);
+    cursor = buffer;
+    maxPos = cursor;
+    while (*format != 0) {
+	flags = 0;
+	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
+	    break;
+	}
+	if ((count == 0) && (cmd != '@')) {
+	    if (cmd != 'x') {
+		arg++;
+	    }
+	    continue;
+	}
+	switch (cmd) {
+	case 'a':
+	case 'A': {
+	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
+	    unsigned char *bytes;
+
+	    bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
+
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if (length >= count) {
+		memcpy(cursor, bytes, count);
+	    } else {
+		memcpy(cursor, bytes, length);
+		memset(cursor + length, pad, count - length);
+	    }
+	    cursor += count;
+	    break;
+	}
+	case 'b':
+	case 'B': {
+	    unsigned char *last;
+
+	    str = TclGetStringFromObj(objv[arg], &length);
+	    arg++;
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    last = cursor + ((count + 7) / 8);
+	    if (count > length) {
+		count = length;
+	    }
+	    value = 0;
+	    errorString = "binary";
+	    if (cmd == 'B') {
+		for (offset = 0; offset < count; offset++) {
+		    value <<= 1;
+		    if (str[offset] == '1') {
+			value |= 1;
+		    } else if (str[offset] != '0') {
+			errorValue = str;
+			Tcl_DecrRefCount(valuePtr);
+			goto badValue;
+		    }
+		    if (((offset + 1) % 8) == 0) {
+			*cursor++ = UCHAR(value);
+			value = 0;
+		    }
+		}
+	    } else {
+		for (offset = 0; offset < count; offset++) {
+		    value >>= 1;
+		    if (str[offset] == '1') {
+			value |= 128;
+		    } else if (str[offset] != '0') {
+			errorValue = str;
+			Tcl_DecrRefCount(valuePtr);
+			goto badValue;
+		    }
+		    if (!((offset + 1) % 8)) {
+			*cursor++ = UCHAR(value);
+			value = 0;
+		    }
+		}
+	    }
+	    if ((offset % 8) != 0) {
+		if (cmd == 'B') {
+		    value <<= 8 - (offset % 8);
+		} else {
+		    value >>= 8 - (offset % 8);
+		}
+		*cursor++ = UCHAR(value);
+	    }
+	    while (cursor < last) {
+		*cursor++ = '\0';
+	    }
+	    break;
+	}
+	case 'h':
+	case 'H': {
+	    unsigned char *last;
+	    int c;
+
+	    str = TclGetStringFromObj(objv[arg], &length);
+	    arg++;
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    last = cursor + ((count + 1) / 2);
+	    if (count > length) {
+		count = length;
+	    }
+	    value = 0;
+	    errorString = "hexadecimal";
+	    if (cmd == 'H') {
+		for (offset = 0; offset < count; offset++) {
+		    value <<= 4;
+		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
+			errorValue = str;
+			Tcl_DecrRefCount(valuePtr);
+			goto badValue;
+		    }
+		    c = str[offset] - '0';
+		    if (c > 9) {
+			c += ('0' - 'A') + 10;
+		    }
+		    if (c > 16) {
+			c += ('A' - 'a');
+		    }
+		    value |= (c & 0xf);
+		    if (offset % 2) {
+			*cursor++ = (char) value;
+			value = 0;
+		    }
+		}
+	    } else {
+		for (offset = 0; offset < count; offset++) {
+		    value >>= 4;
+
+		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
+			errorValue = str;
+			Tcl_DecrRefCount(valuePtr);
+			goto badValue;
+		    }
+		    c = str[offset] - '0';
+		    if (c > 9) {
+			c += ('0' - 'A') + 10;
+		    }
+		    if (c > 16) {
+			c += ('A' - 'a');
+		    }
+		    value |= ((c << 4) & 0xf0);
+		    if (offset % 2) {
+			*cursor++ = UCHAR(value & 0xff);
+			value = 0;
+		    }
+		}
+	    }
+	    if (offset % 2) {
+		if (cmd == 'H') {
+		    value <<= 4;
+		} else {
+		    value >>= 4;
+		}
+		*cursor++ = UCHAR(value);
+	    }
+
+	    while (cursor < last) {
+		*cursor++ = '\0';
+	    }
+	    break;
+	}
+	case 'c':
+	case 't':
+	case 's':
+	case 'S':
+	case 'n':
+	case 'i':
+	case 'I':
+	case 'm':
+	case 'w':
+	case 'W':
+	case 'r':
+	case 'R':
+	case 'd':
+	case 'q':
+	case 'Q':
+	case 'f': {
+	    int listc, i;
+	    Tcl_Obj **listv;
+
+	    if (count == BINARY_NOCOUNT) {
+		/*
+		 * Note that we are casting away the const-ness of objv, but
+		 * this is safe since we aren't going to modify the array.
+		 */
+
+		listv = (Tcl_Obj **) (objv + arg);
+		listc = 1;
+		count = 1;
+	    } else {
+		TclListObjGetElements(interp, objv[arg], &listc, &listv);
+		if (count == BINARY_ALL) {
+		    count = listc;
+		}
+	    }
+	    arg++;
+	    for (i = 0; i < count; i++) {
+		if (FormatNumber(interp, cmd, listv[i], &cursor) != TCL_OK) {
+		    Tcl_DecrRefCount(valuePtr);
+		    return TCL_ERROR;
+		}
+	    }
+	    break;
+	}
+	case 'x':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    memset(cursor, 0, count);
+	    cursor += count;
+	    break;
+	case 'X':
+	    if (cursor > maxPos) {
+		maxPos = cursor;
+	    }
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
+		cursor = buffer;
+	    } else {
+		cursor -= count;
+	    }
+	    break;
+	case '@':
+	    if (cursor > maxPos) {
+		maxPos = cursor;
+	    }
+	    if (count == BINARY_ALL) {
+		cursor = maxPos;
+	    } else {
+		cursor = buffer + count;
+	    }
+	    break;
+	}
+    }
+    if (!Tcl_ObjSetVar2(interp, objv[1], NULL, valuePtr, TCL_LEAVE_ERR_MSG)) {
+	TclDecrRefCount(valuePtr);
+	return TCL_ERROR;
+    }
+    TclDecrRefCount(valuePtr);
     return TCL_OK;
 
  badValue:
