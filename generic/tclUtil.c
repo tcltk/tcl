@@ -114,7 +114,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is
+ * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
  * around. This type is only created from a pre-existing string, so an
@@ -2637,10 +2637,10 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    const char *bytes,		/* String to append. If length is -1 then this
-				 * must be null-terminated. */
+    const char *bytes,		/* String to append. If length is
+				 * TCL_AUTO_LENGTH then this must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * -1, then append all of bytes, up to null
+				 * TCL_AUTO_LENGTH, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
@@ -2664,18 +2664,18 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    size_t offset = TCL_AUTO_LENGTH;
+	    size_t index = TCL_INDEX_NONE;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
-		offset = bytes - dsPtr->string;
+		index = bytes - dsPtr->string;
 	    }
 
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (offset != TCL_AUTO_LENGTH) {
-		bytes = dsPtr->string + offset;
+	    if (index != TCL_INDEX_NONE) {
+		bytes = dsPtr->string + index;
 	    }
 	}
     }
@@ -3562,7 +3562,7 @@ GetWideForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIntForIndex --
+ * Tcl_GetIntForIndex --
  *
  *	Provides an integer corresponding to the list index held in a Tcl
  *	object. The string value 'objPtr' is expected have the format
@@ -3589,7 +3589,7 @@ GetWideForIndex(
  */
 
 int
-TclGetIntForIndex(
+Tcl_GetIntForIndex(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */

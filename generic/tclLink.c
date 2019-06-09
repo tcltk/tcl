@@ -33,10 +33,10 @@ typedef struct {
 				 * actual variable may be aliased at that time
 				 * via upvar. */
     void *addr;			/* Location of C variable. */
-    int bytes;			/* Size of C variable array. This is 0 when
+    size_t bytes;		/* Size of C variable array. This is 0 when
 				 * single variables, and >0 used for array
 				 * variables. */
-    int numElems;		/* Number of elements in C variable array.
+    size_t numElems;	/* Number of elements in C variable array.
 				 * Zero for single variables. */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
@@ -237,7 +237,7 @@ Tcl_LinkArray(
 				 * interpreter result. */
     int type,			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
-    int size)			/* Size of C variable array, >1 if array */
+    size_t size)			/* Size of C variable array, >1 if array */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -736,7 +736,7 @@ LinkTraceProc(
 {
     Link *linkPtr = clientData;
     int changed;
-    int valueLength;
+    size_t valueLength = 0;
     const char *value;
     char **pp;
     Tcl_Obj *valueObj;
@@ -886,7 +886,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
@@ -901,7 +901,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_BINARY:
-	value = (char *) Tcl_GetByteArrayFromObj(valueObj, &valueLength);
+	value = (char *) TclGetByteArrayFromObj(valueObj, &valueLength);
 	if (valueLength != linkPtr->bytes) {
 	    return (char *) "wrong size of binary value";
 	}
@@ -929,7 +929,7 @@ LinkTraceProc(
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
 	if (Tcl_ListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
-		|| objc != linkPtr->numElems) {
+		|| (size_t)objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
     }
@@ -1269,7 +1269,7 @@ ObjValue(
 {
     char *p;
     Tcl_Obj *resultObj, **objv;
-    int i;
+    size_t i;
 
     switch (linkPtr->type) {
     case TCL_LINK_INT:

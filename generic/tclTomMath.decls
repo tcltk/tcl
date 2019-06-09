@@ -221,17 +221,20 @@ declare 72 {
 }
 
 # Added in libtommath 1.1.0
-declare 73 {
-    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
-}
-declare 74 {
-    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
-}
-declare 75 {
-    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
-}
+# No longer in use: replaced by mp_and()
+#declare 73 {
+#    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
+#}
+# No longer in use: replaced by mp_or()
+#declare 74 {
+#    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
+#}
+# No longer in use: replaced by mp_xor()
+#declare 75 {
+#    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
+#}
 declare 76 {
-    int TclBN_mp_tc_div_2d(const mp_int *a, int b, mp_int *c)
+    int TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
 declare 77 {
     int TclBN_mp_get_bit(const mp_int *a, int b)

@@ -645,7 +645,7 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d",
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
 		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,

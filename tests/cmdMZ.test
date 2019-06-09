@@ -369,10 +369,10 @@ test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative
     list [catch {timerate "foreach a {c d e} \{" -12456} msg] $msg
 } {1 {missing close-brace}}
 test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
-    regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? nett-ms$} [timerate {} 0]
+    regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? net-ms$} [timerate {} 0]
 } 1
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
-    regexp {^0 \ws/# 0 # 0 #/sec 0 nett-ms$} [timerate {} 0 0]
+    regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
 test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} {
     set m1 [timerate {_nrt_sleep 0} 20]
@@ -403,6 +403,14 @@ test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
 	[expr {[lindex $m1 4] > 1000}] \
 	[expr {[lindex $m1 6] < 10}]
 } {1 1 1 1}
+test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} {
+    set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
+    list \
+    [expr {[lindex $m1 0] < 1000}] \
+    [expr {[lindex $m1 2] == 10}] \
+    [expr {[lindex $m1 4] > 1000}] \
+    [expr {[lindex $m1 6] < 100}]
+} {1 1 1 1}
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
     set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
@@ -416,6 +424,12 @@ test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
 	[expr {[lindex $m1 4] == 1000000}] \
 	[expr {[lindex $m1 6] <= 0.001}]
 } {1 1 1 1}
+test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
+    set m1 {set m2 ok}
+    if 1 $m1
+    timerate $m1 1000 10
+    if 1 $m1; # if rollback is missing throws an error: invoked "continue" outside of a loop
+} ok
 
 test cmdMZ-try-1.0 {
 

@@ -242,7 +242,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     0, /* 33 */
-    TclGetIntForIndex, /* 34 */
+    0, /* 34 */
     0, /* 35 */
     0, /* 36 */
     TclGetLoadedPackages, /* 37 */
@@ -466,6 +466,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
+    TclpCreateTemporaryDirectory, /* 258 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -661,10 +662,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
     TclBN_mp_get_int, /* 72 */
-    TclBN_mp_tc_and, /* 73 */
-    TclBN_mp_tc_or, /* 74 */
-    TclBN_mp_tc_xor, /* 75 */
-    TclBN_mp_tc_div_2d, /* 76 */
+    0, /* 73 */
+    0, /* 74 */
+    0, /* 75 */
+    TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
 };
 
@@ -1348,6 +1349,7 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */
