@@ -1566,6 +1566,10 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	puts stderr ""
     }
 
+    if {![llength $manual(wing-toc)]} {
+	fatal "not table of contents."
+    }
+
     #
     # make the wing table of contents for the section
     #
