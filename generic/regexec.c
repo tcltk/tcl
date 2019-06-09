@@ -889,7 +889,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == -1) {
+    if (v->pmatch[n].rm_so == TCL_INDEX_NONE) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;
