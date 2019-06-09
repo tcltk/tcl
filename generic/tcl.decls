@@ -2436,7 +2436,12 @@ declare 643 {
 # TIP#312 New Tcl_LinkArray() function
 declare 644 {
     int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
-	    int type, int size)
+	    int type, size_t size)
+}
+
+declare 645 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t endValue, size_t *indexPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

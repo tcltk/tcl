@@ -117,8 +117,8 @@ extern "C" {
 /* the biggie, a compiled RE (or rather, a front end to same) */
 typedef struct {
     int re_magic;		/* magic number */
-    size_t re_nsub;		/* number of subexpressions */
     long re_info;		/* information about RE */
+    size_t re_nsub;		/* number of subexpressions */
 #define	REG_UBACKREF		000001
 #define	REG_ULOOKAHEAD		000002
 #define	REG_UBOUNDS		000004
@@ -133,7 +133,6 @@ typedef struct {
 #define	REG_UEMPTYMATCH		004000
 #define	REG_UIMPOSSIBLE		010000
 #define	REG_USHORTEST		020000
-    int re_csize;		/* sizeof(character) */
     char *re_endp;		/* backward compatibility kludge */
     /* the rest is opaque pointers to hidden innards */
     char *re_guts;		/* `char *' is more portable than `void *' */
@@ -142,8 +141,8 @@ typedef struct {
 
 /* result reporting (may acquire more fields later) */
 typedef struct {
-    long rm_so;		/* start of substring */
-    long rm_eo;		/* end of substring */
+    size_t rm_so;		/* start of substring */
+    size_t rm_eo;		/* end of substring */
 } regmatch_t;
 
 /* supplementary control and reporting */

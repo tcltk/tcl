@@ -344,7 +344,7 @@ static int		TestreturnObjCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		TestregexpXflags(const char *string,
-			    int length, int *cflagsPtr, int *eflagsPtr);
+			    size_t length, int *cflagsPtr, int *eflagsPtr);
 static int		TestsaveresultCmd(void *dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -4001,12 +4001,12 @@ TestregexpObjCmd(
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
 	    const char *varName;
 	    const char *value;
-	    int start, end;
+	    size_t start, end;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
-	    sprintf(resinfo, "%d %d", start, end-1);
+	    sprintf(resinfo, "%" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d", TclWideIntFromSize(start), TclWideIntFromSize(end-1));
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -4020,7 +4020,7 @@ TestregexpObjCmd(
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
-	    sprintf(resinfo, "%ld", info.extendStart);
+	    sprintf(resinfo, "%" TCL_LL_MODIFIER "d", TclWideIntFromSize(info.extendStart));
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -4041,7 +4041,7 @@ TestregexpObjCmd(
 
     Tcl_RegExpGetInfo(regExpr, &info);
     for (i = 0; i < objc; i++) {
-	int start, end;
+	size_t start, end;
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
@@ -4051,9 +4051,9 @@ TestregexpObjCmd(
 
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
-	    } else if (ii > (size_t)info.nsubs) {
-		start = -1;
-		end = -1;
+	    } else if (ii > info.nsubs) {
+		start = TCL_INDEX_NONE;
+		end = TCL_INDEX_NONE;
 	    } else {
 		start = info.matches[ii].start;
 		end = info.matches[ii].end;
@@ -4064,19 +4064,19 @@ TestregexpObjCmd(
 	     * instead of the first character after the match.
 	     */
 
-	    if (end >= 0) {
+	    if (end != TCL_INDEX_NONE) {
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewWideIntObj(start);
-	    objs[1] = Tcl_NewWideIntObj(end);
+	    objs[0] = TclNewWideIntObjFromSize(start);
+	    objs[1] = TclNewWideIntObjFromSize(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > (size_t)info.nsubs) {
+	    } else if (ii > info.nsubs) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
@@ -4117,11 +4117,12 @@ TestregexpObjCmd(
 static void
 TestregexpXflags(
     const char *string,	/* The string of flags. */
-    int length,			/* The length of the string in bytes. */
+    size_t length,			/* The length of the string in bytes. */
     int *cflagsPtr,		/* compile flags word */
     int *eflagsPtr)		/* exec flags word */
 {
-    int i, cflags, eflags;
+    size_t i;
+    int cflags, eflags;
 
     cflags = *cflagsPtr;
     eflags = *eflagsPtr;
@@ -4413,7 +4414,7 @@ TesttranslatefilenameCmd(
  *
  * TestupvarCmd --
  *
- *	This procedure implements the "testupvar2" command.  It is used
+ *	This procedure implements the "testupvar" command.  It is used
  *	to test Tcl_UpVar and Tcl_UpVar2.
  *
  * Results:
