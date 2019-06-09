@@ -1176,7 +1176,7 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != (size_t)-1) {
+	    if (localPtr->refCount != (unsigned)-1) {
 		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
 			"TclVerifyLocalLiteralTable",
