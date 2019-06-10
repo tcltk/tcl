@@ -643,7 +643,7 @@ test binary-18.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 } -result {bad field specifier "u"}
 
 test binary-19.1 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
-    binary s
+    binary sc
 } -result {wrong # args: should be "binary scan value formatString ?varName ...?"}
 test binary-19.2 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
     binary scan foo
@@ -2917,6 +2917,28 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary scan \U0001f415 a* v; set v
     set str {}
 } -result {}
+
+test binary-79.1 {binary set} {
+    list [set x abc] [binary set x @1c 66] [set x]
+} {abc {} aBc}
+test binary-79.2 {binary set} -returnCodes error -body {
+    binary set
+} -result {wrong # args: should be "binary set varName formatString ?arg ...?"}
+test binary-79.3 {binary set} -returnCodes error -body {
+    binary set x
+} -result {wrong # args: should be "binary set varName formatString ?arg ...?"}
+test binary-79.4 {binary set} -returnCodes error -body {
+    binary set x c
+} -result {not enough arguments for all format specifiers}
+test binary-79.5 {binary set} -setup {
+    unset -nocomplain ary
+    array set ary {x y}
+} -returnCodes error -body {
+    binary set ary c 1
+} -cleanup {
+    unset -nocomplain ary
+} -result {can't set "ary": variable is array}
+
 
 # ----------------------------------------------------------------------
 # cleanup
