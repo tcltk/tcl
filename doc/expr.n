@@ -106,7 +106,7 @@ Then the command on the left side of each of the lines below
 will produce the value on the right side of the line:
 .PP
 .CS
-.ta 8c
+.ta 9c
 \fBexpr\fR 3.1 + $a	\fI6.1\fR
 \fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
 \fBexpr\fR 4*[llength "6 2"]	\fI8\fR
@@ -227,6 +227,7 @@ of the \fBpow\fR function (after any type conversions.)
 All of the binary operators but exponentiation group left-to-right
 within the same precedence level; exponentiation groups right-to-left.  For example, the command
 .PP
+.PP
 .CS
 \fBexpr\fR {4*2 < 7}
 .CE
@@ -264,7 +265,7 @@ before invoking the \fBexpr\fR command.
 .PP
 When the expression parser encounters a mathematical function
 such as \fBsin($x)\fR, it replaces it with a call to an ordinary
-Tcl function in the \fBtcl::mathfunc\fR namespace.  The processing
+Tcl command in the \fBtcl::mathfunc\fR namespace.  The processing
 of an expression such as:
 .PP
 .CS
@@ -396,9 +397,11 @@ set b {$a + 2}
 .CE
 .PP
 return 11, not a multiple of 4.
-This is because the Tcl parser will first substitute \fB$a + 2\fR for
-the variable \fBb\fR,
-then the \fBexpr\fR command will evaluate the expression \fB$a + 2*4\fR.
+This is because the Tcl parser will first substitute
+.QW "\fB$a + 2\fR"
+for the variable \fBb\fR,
+then the \fBexpr\fR command will evaluate the expression
+.QW "\fB$a + 2*4\fR" .
 .PP
 Most expressions do not require a second round of substitutions.
 Either they are enclosed in braces or, if not,
@@ -412,6 +415,21 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
+.PP
+If it is necessary to include a non-constant expression string within the
+wider context of an otherwise-constant expression, the most efficient
+technique is to put the varying part inside a recursive \fBexpr\fR, as this at
+least allows for the compilation of the outer part, though it does mean that
+the varying part must itself be evaluated as a separate expression. Thus, in
+this example the result is 20 and the outer expression benefits from fully
+cached bytecode compilation.
+.PP
+.CS
+set a 3
+set b {$a + 2}
+\fBexpr\fR {[\fBexpr\fR $b] * 4}
+.CE
+.PP
 When the expression is unbraced to allow the substitution of a function or
 operator, consider using the commands documented in the \fBmathfunc\fR(n) or
 \fBmathop\fR(n) manual pages directly instead.
