@@ -97,7 +97,7 @@ and the value of \fBb\fR is 6.  The command on the left side of each line
 produces the value on the right side.
 .PP
 .CS
-.ta 6c
+.ta 8c
 \fBexpr\fR 3.1 + $a	\fI6.1\fR
 \fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
 \fBexpr\fR 4*[llength "6 2"]	\fI8\fR
@@ -190,16 +190,20 @@ Bit-wise OR.  Valid for integer operands.
 \fB&&\fR
 .
 Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
-
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
 \fB||\fR
 .
 Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
-\fIx\fB?\fIy\fB:\fIz\fR
+\fIx \fB?\fI y \fB:\fI z\fR
 .
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
+This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP
 The exponentiation operator promotes types in the same way that the multiply
 and divide operators do, and the result is is the same as the result of
@@ -339,33 +343,55 @@ substitution on the value before \fBexpr\fR is called.
 In the following example, the value of the expression is 11 because the Tcl parser first
 substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR.  Enclosing the
 expression in braces would result in a syntax error.
+.PP
 .CS
 set a 3
 set b {$a + 2}
 \fBexpr\fR $b*4
 .CE
 .PP
-
-When an expression is generated at runtime, like the one above is, the bytcode
+When an expression is generated at runtime, like the one above is, the bytecode
 compiler must ensure that new code is generated each time the expression
 is evaluated.  This is the most costly kind of expression from a performance
 perspective.  In such cases, consider directly using the commands described in
 the \fBmathfunc\fR(n) or \fBmathop\fR(n) documentation instead of \fBexpr\fR.
-
+.PP
 Most expressions are not formed at runtime, but are literal strings or contain
 substitutions that don't introduce other substitutions.  To allow the bytecode
 compiler to work with an expression as a string literal at compilation time,
 ensure that it contains no substitutions or that it is enclosed in braces or
 otherwise quoted to prevent Tcl from performing substitutions, allowing
 \fBexpr\fR to perform them instead.
+.PP
+If it is necessary to include a non-constant expression string within the
+wider context of an otherwise-constant expression, the most efficient
+technique is to put the varying part inside a recursive \fBexpr\fR, as this at
+least allows for the compilation of the outer part, though it does mean that
+the varying part must itself be evaluated as a separate expression. Thus, in
+this example the result is 20 and the outer expression benefits from fully
+cached bytecode compilation.
+.PP
+.CS
+set a 3
+set b {$a + 2}
+\fBexpr\fR {[\fBexpr\fR $b] * 4}
+.CE
+.PP
+In general, you should enclose your expression in braces wherever possible,
+and where not possible, the argument to \fBexpr\fR should be an expression
+defined elsewhere as simply as possible. It is usually more efficient and
+safer to use other techniques (e.g., the commands in the \fBtcl::mathop\fR
+namespace) than it is to do complex expression generation.
 .SH EXAMPLES
 .PP
 A numeric comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0x03" > "2"}
 .CE
 .PP
 A string comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0y" > "0x12"}
 .CE
