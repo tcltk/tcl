@@ -106,7 +106,7 @@ Then the command on the left side of each of the lines below
 will produce the value on the right side of the line:
 .PP
 .CS
-.ta 6c
+.ta 8c
 \fBexpr\fR 3.1 + $a	\fI6.1\fR
 \fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
 \fBexpr\fR 4*[llength "6 2"]	\fI8\fR
@@ -201,18 +201,23 @@ Bit-wise OR.  Valid for integer operands only.
 Logical AND.  Produces a 1 result if both operands are non-zero,
 0 otherwise.
 Valid for boolean and numeric (integers or floating-point) operands only.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
 \fB||\fR
 .
 Logical OR.  Produces a 0 result if both operands are zero, 1 otherwise.
 Valid for boolean and numeric (integers or floating-point) operands only.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
-\fIx\fB?\fIy\fB:\fIz\fR
+\fIx \fB?\fI y \fB:\fI z\fR
 .
 If-then-else, as in C.  If \fIx\fR
 evaluates to non-zero, then the result is the value of \fIy\fR.
 Otherwise the result is the value of \fIz\fR.
 The \fIx\fR operand must have a boolean or numeric value.
+This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP
 See the C manual for more details on the results
 produced by each operator.
