@@ -201,20 +201,20 @@ Bit-wise OR.  Valid for integer operands.
 \fB&&\fR
 .
 Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
-This operator evaluates lazily; it only evaluates its right-hand side if it
+This operator evaluates lazily; it only evaluates its second operand if it
 must in order to determine its result.
 .TP 20
 \fB||\fR
 .
 Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
-This operator evaluates lazily; it only evaluates its right-hand side if it
+This operator evaluates lazily; it only evaluates its second operand if it
 must in order to determine its result.
 .TP 20
 \fIx \fB?\fI y \fB:\fI z\fR
 .
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
-This operator evaluates lazily; it only evaluates one of \fIy\fR or \fIz\fR.
+This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP
 The exponentiation operator promotes types in the same way that the multiply
 and divide operators do, and the result is is the same as the result of
