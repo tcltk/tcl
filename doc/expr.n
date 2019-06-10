@@ -97,7 +97,7 @@ and the value of \fBb\fR is 6.  The command on the left side of each line
 produces the value on the right side.
 .PP
 .CS
-.ta 8c
+.ta 9c
 \fBexpr\fR 3.1 + $a	\fI6.1\fR
 \fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
 \fBexpr\fR 4*[llength "6 2"]	\fI8\fR
@@ -192,6 +192,8 @@ Bit-wise OR.  Valid for integer operands.
 Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
 This operator evaluates lazily; it only evaluates its second operand if it
 must in order to determine its result.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
 \fB||\fR
 .
@@ -210,6 +212,7 @@ and divide operators do, and the result is is the same as the result of
 \fBpow\fR.
 Exponentiation groups right-to-left within a precedence level. Other binary
 operators group left-to-right.  For example, the value of
+.PP
 .PP
 .CS
 \fBexpr\fR {4*2 < 7}
@@ -341,8 +344,12 @@ This also avoids issues that can arise if Tcl is allowed to perform
 substitution on the value before \fBexpr\fR is called.
 .PP
 In the following example, the value of the expression is 11 because the Tcl parser first
-substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR.  Enclosing the
-expression in braces would result in a syntax error.
+substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as part
+of evaluating the expression
+.QW "$a + 2*4" .
+Enclosing the
+expression in braces would result in a syntax error as \fB$b\fR does
+not evaluate to a numeric value.
 .PP
 .CS
 set a 3
