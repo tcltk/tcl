@@ -385,11 +385,13 @@ namespace) than it is to do complex expression generation.
 .SH EXAMPLES
 .PP
 A numeric comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0x03" > "2"}
 .CE
 .PP
 A string comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0y" > "0x12"}
 .CE
