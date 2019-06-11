@@ -2938,6 +2938,17 @@ test binary-79.5 {binary set} -setup {
 } -cleanup {
     unset -nocomplain ary
 } -result {can't set "ary": variable is array}
+test binary-79.6 {binary set: errors prevent mutation} -setup {
+    unset -nocomplain x
+    set foo foo
+    set bar bar
+} -body {
+    # Make unshared string
+    set x [format %s%s $foo $bar]
+    list [catch {binary set x ci 70 gorp} msg] $msg $x
+} -cleanup {
+    unset -nocomplain x
+} -result {1 {expected integer but got "gorp"} foobar}
 
 
 # ----------------------------------------------------------------------

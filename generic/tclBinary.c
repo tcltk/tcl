@@ -1420,16 +1420,27 @@ BinarySetCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size, length, originalLength;
+    int offset, size, length, originalLength, usesFailingOps = 0;
+    Tcl_Obj *emptyObj;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName formatString ?arg ...?");
 	return TCL_ERROR;
     }
 
-    valuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
+    /*
+     * Trickery to create the variable if it didn't already exist but without
+     * changing its internal representation at all; depends on the fact that
+     * concatenating the empty string is a special case.
+     */
+
+    TclNewObj(emptyObj);
+    Tcl_IncrRefCount(emptyObj);
+    valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, emptyObj,
+	    TCL_APPEND_VALUE | TCL_LEAVE_ERR_MSG);
+    TclDecrRefCount(emptyObj);
     if (valuePtr == NULL) {
-	valuePtr = Tcl_NewByteArrayObj(NULL, 0);
+	return TCL_ERROR;
     }
     buffer = Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
     length = originalLength;
@@ -1450,12 +1461,13 @@ BinarySetCmd(
 	    break;
 	}
 	switch (cmd) {
-	case 'a':
-	case 'A':
 	case 'b':
 	case 'B':
 	case 'h':
 	case 'H':
+	    usesFailingOps = 1;
+	case 'a':
+	case 'A':
 	    /*
 	     * For string-type specifiers, the count corresponds to the number
 	     * of bytes in a single argument.
@@ -1507,6 +1519,7 @@ BinarySetCmd(
 	    size = sizeof(double);
 
 	doNumbers:
+	    usesFailingOps = 1;
 	    if (arg >= objc) {
 		goto badIndex;
 	    }
@@ -1544,7 +1557,7 @@ BinarySetCmd(
 		    return TCL_ERROR;
 		}
 	    }
-	    offset += count*size;
+	    offset += count * size;
 	    break;
 
 	case 'x':
@@ -1592,10 +1605,12 @@ BinarySetCmd(
 
     /*
      * Prepare the result object by preallocating the caclulated number of
-     * bytes and filling with nulls.
+     * bytes and filling with nulls. Note that if we use an operation that can
+     * fail part way through, we must duplicate here even if the object is
+     * unshared because we mustn't mutate anything on failure. Bother.
      */
 
-    if (Tcl_IsShared(valuePtr)) {
+    if (Tcl_IsShared(valuePtr) || usesFailingOps) {
 	valuePtr = Tcl_DuplicateObj(valuePtr);
     }
     buffer = Tcl_SetByteArrayLength(valuePtr, length);
@@ -1841,7 +1856,7 @@ BinarySetCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
+	    if ((count == BINARY_ALL) || (count > cursor - buffer)) {
 		cursor = buffer;
 	    } else {
 		cursor -= count;
