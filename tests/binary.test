@@ -2949,6 +2949,14 @@ test binary-79.6 {binary set: errors prevent mutation} -setup {
 } -cleanup {
     unset -nocomplain x
 } -result {1 {expected integer but got "gorp"} foobar}
+test binary-79.7 {binary set: errors prevent creation} -setup {
+    unset -nocomplain nosuchvar
+} -body {
+    list [catch {binary set nosuchvar ci 70 gorp} msg] $msg \
+	[info exist nosuchvar]
+} -cleanup {
+    unset -nocomplain x
+} -result {1 {expected integer but got "gorp"} 0}
 
 
 # ----------------------------------------------------------------------

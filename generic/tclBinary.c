@@ -1413,6 +1413,7 @@ BinarySetCmd(
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
 				 * string. */
+    Var *varPtr, *arrayPtr;
     Tcl_Obj *valuePtr;		/* Object holding binary value buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
     unsigned char *cursor;	/* Current position within result buffer. */
@@ -1421,7 +1422,6 @@ BinarySetCmd(
     const char *errorString;
     const char *errorValue, *str;
     int offset, size, length, originalLength, usesFailingOps = 0;
-    Tcl_Obj *emptyObj;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName formatString ?arg ...?");
@@ -1434,13 +1434,14 @@ BinarySetCmd(
      * concatenating the empty string is a special case.
      */
 
-    TclNewObj(emptyObj);
-    Tcl_IncrRefCount(emptyObj);
-    valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, emptyObj,
-	    TCL_APPEND_VALUE | TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(emptyObj);
-    if (valuePtr == NULL) {
+    varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
+	    "set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
 	return TCL_ERROR;
+    }
+    valuePtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr, objv[1], NULL, 0, -1);
+    if (valuePtr == NULL) {
+	TclNewObj(valuePtr);
     }
     buffer = Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
     length = originalLength;
@@ -1874,7 +1875,8 @@ BinarySetCmd(
 	    break;
 	}
     }
-    if (!Tcl_ObjSetVar2(interp, objv[1], NULL, valuePtr, TCL_LEAVE_ERR_MSG)) {
+    if (!TclPtrSetVarIdx(interp, varPtr, arrayPtr, objv[1], NULL, valuePtr,
+	    TCL_LEAVE_ERR_MSG, -1)) {
 	TclDecrRefCount(valuePtr);
 	return TCL_ERROR;
     }
