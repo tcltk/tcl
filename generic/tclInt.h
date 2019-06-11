@@ -79,7 +79,7 @@
 #include <string.h>
 #endif
 #if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
-     || defined(__cplusplus) || defined(_MSC_VER)
+     || defined(__cplusplus) || defined(_MSC_VER) || defined(__ICC)
 #include <stddef.h>
 #else
 typedef int ptrdiff_t;
