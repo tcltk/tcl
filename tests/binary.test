@@ -2958,6 +2958,79 @@ test binary-79.7 {binary set: errors prevent creation} -setup {
     unset -nocomplain x
 } -result {1 {expected integer but got "gorp"} 0}
 
+test binary-80.1 {binary set: a} {
+    set x abc
+    binary set x a A
+    return $x
+} Abc
+test binary-80.2 {binary set: a} {
+    set x abc
+    binary set x a* AB
+    return $x
+} ABc
+test binary-80.3 {binary set: a} {
+    set x abc
+    binary set x a1 AB
+    return $x
+} Abc
+test binary-80.4 {binary set: a} {
+    set x abc
+    binary set x a2 A
+    scan $x %c%c%c
+} {65 0 99}
+
+test binary-81.1 {binary set: A} {
+    set x abc
+    binary set x A A
+    return $x
+} Abc
+test binary-81.2 {binary set: A} {
+    set x abc
+    binary set x A* AB
+    return $x
+} ABc
+test binary-81.3 {binary set: A} {
+    set x abc
+    binary set x A1 AB
+    return $x
+} Abc
+test binary-81.4 {binary set: A} {
+    set x abc
+    binary set x A2 A
+    scan $x %c%c%c
+} {65 32 99}
+
+test binary-82.1 {binary set: b} {
+    set x abc
+    binary set x b 10101010
+    scan $x %c%c%c
+} {1 98 99}
+test binary-82.2 {binary set: b} {
+    set x abc
+    binary set x b* 1010101011011010
+    return $x
+} "U\[c"
+test binary-82.3 {binary set: b} {
+    set x abc
+    binary set x b4 1010101010101010
+    scan $x %c%c%c
+} {5 98 99}
+
+test binary-83.1 {binary set: B} {
+    set x abc
+    binary set x B 10101010
+    scan $x %c%c%c
+} {128 98 99}
+test binary-83.2 {binary set: B} {
+    set x abc
+    binary set x B* 0101010101101101
+    return $x
+} Umc
+test binary-83.3 {binary set: B} {
+    set x abc
+    binary set x B4 1010101010101010
+    scan $x %c%c%c
+} {160 98 99}
 
 # ----------------------------------------------------------------------
 # cleanup
