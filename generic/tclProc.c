@@ -634,7 +634,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = Tcl_Alloc(TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = Tcl_Alloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
