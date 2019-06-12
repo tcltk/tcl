@@ -4868,15 +4868,16 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #endif
 
 /*
- * ----------------------------------------------------------------------
- * Macro to use to find the offset of a field in a structure. Computes number
- * of bytes from beginning of structure to a given field.
+ * Macro to use to find the offset of a field in astructure.
+ * Computes number of bytes from beginning of structure to a given field.
  */
 
-#ifdef offsetof
-#define TclOffset(type, field) ((int) offsetof(type, field))
-#else
-#define TclOffset(type, field) ((int) ((char *) &((type *) 0)->field))
+#ifndef TCL_NO_DEPRECATED
+#   define TclOffset(type, field) ((int) offsetof(type, field))
+#endif
+/* Workaround for platforms missing offsetof(), e.g. VC++ 6.0 */
+#ifndef offsetof
+#   define offsetof(type, field) ((size_t) ((char *) &((type *) 0)->field))
 #endif
 
 /*
