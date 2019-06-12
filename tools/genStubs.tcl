@@ -523,7 +523,7 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append line " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -631,7 +631,7 @@ proc genStubs::makeSlot {name decl index} {
 	    }
 	    append text ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append text " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {

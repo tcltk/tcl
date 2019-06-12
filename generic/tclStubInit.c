@@ -61,6 +61,13 @@
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 
+#undef TclBN_mp_tc_and
+#undef TclBN_mp_tc_or
+#undef TclBN_mp_tc_xor
+#define TclBN_mp_tc_and TclBN_mp_and
+#define TclBN_mp_tc_or TclBN_mp_or
+#define TclBN_mp_tc_xor TclBN_mp_xor
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSockMinimumBuffersOld 0
@@ -387,6 +394,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpReaddir 0
 #   define TclSetStartupScript 0
 #   define TclGetStartupScript 0
+#   define TclGetIntForIndex 0
 #   define TclCreateNamespace 0
 #   define TclDeleteNamespace 0
 #   define TclAppendExportList 0
@@ -437,6 +445,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
+#   define TclGetIntForIndex Tcl_GetIntForIndex
 #   define TclCreateNamespace Tcl_CreateNamespace
 #   define TclDeleteNamespace Tcl_DeleteNamespace
 #   define TclAppendExportList Tcl_AppendExportList
@@ -950,7 +959,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
-    TclBN_mp_tc_div_2d, /* 76 */
+    TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
 };
 
@@ -1632,6 +1641,7 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
 };
 
 /* !END!: Do not edit above this line. */

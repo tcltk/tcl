@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -30,6 +30,9 @@ Tcl_Obj *
 .sp
 int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
+.sp
+int
+\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, intPtr\fR)
 .sp
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
@@ -55,6 +58,8 @@ int
 \fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
 .SH ARGUMENTS
 .AS Tcl_WideInt doubleValue in/out
+.AP int endValue in
+\fBTcl_GetIntForIndex\fR will return this when the input value is "end".
 .AP int intValue in
 Integer value used to initialize or set a Tcl value.
 .AP long longValue in
@@ -114,6 +119,16 @@ unshared Tcl value.  Any attempt to set the value of a shared Tcl value
 violates Tcl's copy-on-write policy.  Any existing string representation
 or internal representation in the unshared Tcl value will be freed
 as a consequence of setting the new value.
+.PP
+The \fBTcl_GetIntForIndex\fR routine attempts to retrieve an index
+value from the Tcl value \fIobjPtr\fR.  If the attempt succeeds,
+then \fBTCL_OK\fR is returned, and the value is written to the
+storage provided by the caller.  The attempt might fail if
+\fIobjPtr\fR does not hold an index value.  If the attempt fails,
+then \fBTCL_ERROR\fR is returned, and if \fIinterp\fR is non-NULL,
+an error message is left in \fIinterp\fR.  The \fBTcl_ObjType\fR
+of \fIobjPtr\fR may be changed to make subsequent calls to the
+same routine more efficient.
 .PP
 The \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
 \fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
