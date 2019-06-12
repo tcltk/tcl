@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_MOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* c = a mod b, 0 <= c < b if b > 0, b < c <= 0 if b < 0 */

@@ -45,7 +45,7 @@
  * library calls.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 typedef struct {
     struct passwd pwd;
@@ -180,7 +180,7 @@ struct passwd *
 TclpGetPwNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -199,7 +199,7 @@ TclpGetPwNam(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = Tcl_Alloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -212,7 +212,7 @@ TclpGetPwNam(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = Tcl_Realloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -260,7 +260,7 @@ struct passwd *
 TclpGetPwUid(
     uid_t uid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwuid(uid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -279,7 +279,7 @@ TclpGetPwUid(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = Tcl_Alloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -292,7 +292,7 @@ TclpGetPwUid(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = Tcl_Realloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -338,7 +338,7 @@ FreePwBuf(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    ckfree(tsdPtr->pbuf);
+    Tcl_Free(tsdPtr->pbuf);
 }
 #endif /* NEED_PW_CLEANER */
 
@@ -363,7 +363,7 @@ struct group *
 TclpGetGrNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -382,7 +382,7 @@ TclpGetGrNam(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -395,7 +395,7 @@ TclpGetGrNam(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = Tcl_Realloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -443,7 +443,7 @@ struct group *
 TclpGetGrGid(
     gid_t gid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrgid(gid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -462,7 +462,7 @@ TclpGetGrGid(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -475,7 +475,7 @@ TclpGetGrGid(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = Tcl_Realloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -521,7 +521,7 @@ FreeGrBuf(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    ckfree(tsdPtr->gbuf);
+    Tcl_Free(tsdPtr->gbuf);
 }
 #endif /* NEED_GR_CLEANER */
 
@@ -546,7 +546,7 @@ struct hostent *
 TclpGetHostByName(
     const char *name)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYNAME)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYNAME)
     return gethostbyname(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -616,7 +616,7 @@ TclpGetHostByAddr(
     int length,
     int type)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYADDR)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYADDR)
     return gethostbyaddr(addr, length, type);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

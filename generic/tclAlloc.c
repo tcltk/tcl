@@ -22,7 +22,7 @@
  */
 
 #include "tclInt.h"
-#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
+#if !TCL_THREADS || !defined(USE_THREAD_ALLOC)
 
 #if USE_TCLALLOC
 
@@ -121,7 +121,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
  * variable.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static Tcl_Mutex *allocMutexPtr;
 #endif
 static int allocInit = 0;
@@ -171,7 +171,7 @@ TclInitAlloc(void)
 {
     if (!allocInit) {
 	allocInit = 1;
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
 #endif
     }
@@ -249,13 +249,13 @@ TclFinalizeAllocSubsystem(void)
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
     register union overhead *overPtr;
     register size_t bucket;
-    register unsigned amount;
+    register size_t amount;
     struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
@@ -274,7 +274,7 @@ TclpAlloc(
 
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
-	    bigBlockPtr = (struct block *) TclpSysAlloc(
+	    bigBlockPtr = TclpSysAlloc(
 		    sizeof(struct block) + OVERHEAD + numBytes);
 	}
 	if (bigBlockPtr == NULL) {
@@ -405,8 +405,7 @@ MoreCore(
     numBlocks = amount / size;
     ASSERT(numBlocks*size == amount);
 
-    blockPtr = (struct block *) TclpSysAlloc(
-	    sizeof(struct block) + amount);
+    blockPtr = TclpSysAlloc(sizeof(struct block) + amount);
     /* no more room! */
     if (blockPtr == NULL) {
 	return;
@@ -446,7 +445,7 @@ MoreCore(
 
 void
 TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+    void *oldPtr)		/* Pointer to memory to free. */
 {
     register size_t size;
     register union overhead *overPtr;
@@ -509,10 +508,10 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+    void *oldPtr,		/* Pointer to alloced block. */
+    size_t numBytes)	/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
@@ -604,7 +603,7 @@ TclpRealloc(
 	if (maxSize < numBytes) {
 	    numBytes = maxSize;
 	}
-	memcpy(newPtr, oldPtr, (size_t) numBytes);
+	memcpy(newPtr, oldPtr, numBytes);
 	TclpFree(oldPtr);
 	return newPtr;
     }
@@ -692,11 +691,12 @@ mstats(
  *----------------------------------------------------------------------
  */
 
-char *
+#undef TclpAlloc
+void *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
-    return (char *) malloc(numBytes);
+    return malloc(numBytes);
 }
 
 /*
@@ -715,9 +715,10 @@ TclpAlloc(
  *----------------------------------------------------------------------
  */
 
+#undef TclpFree
 void
 TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+    void *oldPtr)		/* Pointer to memory to free. */
 {
     free(oldPtr);
     return;
@@ -739,12 +740,12 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+    void *oldPtr,		/* Pointer to alloced block. */
+    size_t numBytes)	/* New size of memory. */
 {
-    return (char *) realloc(oldPtr, numBytes);
+    return realloc(oldPtr, numBytes);
 }
 
 #endif /* !USE_TCLALLOC */

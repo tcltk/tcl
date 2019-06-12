@@ -31,8 +31,10 @@ TCL_DECLARE_MUTEX(consoleMutex)
  * Bit masks used in the flags field of the ConsoleInfo structure below.
  */
 
-#define CONSOLE_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define CONSOLE_ASYNC	(1<<1)	/* Channel is non-blocking. */
+#define CONSOLE_PENDING	 (1<<0)	/* Message is pending in the queue. */
+#define CONSOLE_ASYNC	 (1<<1)	/* Channel is non-blocking. */
+#define CONSOLE_READ_OPS (1<<4)	/* Channel supports read-related ops. */
+#define CONSOLE_RESET    (1<<5)	/* Console mode needs to be reset. */
 
 /*
  * Bit masks used in the sharedFlags field of the ConsoleInfo structure below.
@@ -102,6 +104,7 @@ typedef struct ConsoleInfo {
 				 * readable object. */
     int bytesRead;		/* Number of bytes in the buffer. */
     int offset;			/* Number of bytes read out of the buffer. */
+    DWORD initMode;		/* Initial console mode. */
     char buffer[CONSOLE_BUFFER_SIZE];
 				/* Data consumed by reader thread. */
 } ConsoleInfo;
@@ -144,12 +147,18 @@ static int		ConsoleEventProc(Tcl_Event *evPtr, int flags);
 static void		ConsoleExitHandler(ClientData clientData);
 static int		ConsoleGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
+static int		ConsoleGetOptionProc(ClientData instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    Tcl_DString *dsPtr);
 static void		ConsoleInit(void);
 static int		ConsoleInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		ConsoleOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
+static int		ConsoleSetOptionProc(ClientData instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    const char *value);
 static void		ConsoleSetupProc(ClientData clientData, int flags);
 static void		ConsoleWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
@@ -175,8 +184,8 @@ static const Tcl_ChannelType consoleChannelType = {
     ConsoleInputProc,		/* Input proc. */
     ConsoleOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
-    NULL,			/* Set option proc. */
-    NULL,			/* Get option proc. */
+    ConsoleSetOptionProc,	/* Set option proc. */
+    ConsoleGetOptionProc,	/* Get option proc. */
     ConsoleWatchProc,		/* Set up notifier to watch the channel. */
     ConsoleGetHandleProc,	/* Get an OS handle from channel. */
     NULL,			/* close2proc. */
@@ -455,7 +464,7 @@ ConsoleCheckProc(
 	}
 
 	if (needEvent) {
-	    ConsoleEvent *evPtr = ckalloc(sizeof(ConsoleEvent));
+	    ConsoleEvent *evPtr = Tcl_Alloc(sizeof(ConsoleEvent));
 
 	    infoPtr->flags |= CONSOLE_PENDING;
 	    evPtr->header.proc = ConsoleEventProc;
@@ -569,6 +578,17 @@ ConsoleCloseProc(
     consolePtr->validMask &= ~TCL_WRITABLE;
 
     /*
+     * If the user has been tinkering with the mode, reset it now. We ignore
+     * any errors from this; we're quite possibly about to close or exit
+     * anyway.
+     */
+
+    if ((consolePtr->flags & CONSOLE_READ_OPS) &&
+	    (consolePtr->flags & CONSOLE_RESET)) {
+	SetConsoleMode(consolePtr->handle, consolePtr->initMode);
+    }
+
+    /*
      * Don't close the Win32 handle if the handle is a standard channel during
      * the thread exit process. Otherwise, one thread may kill the stdio of
      * another.
@@ -590,7 +610,7 @@ ConsoleCloseProc(
      * Remove the file from the list of watched files.
      */
 
-    for (nextPtrPtr = &(tsdPtr->firstConsolePtr), infoPtr = *nextPtrPtr;
+    for (nextPtrPtr = &tsdPtr->firstConsolePtr, infoPtr = *nextPtrPtr;
 	    infoPtr != NULL;
 	    nextPtrPtr = &infoPtr->nextPtr, infoPtr = *nextPtrPtr) {
 	if (infoPtr == (ConsoleInfo *) consolePtr) {
@@ -599,10 +619,10 @@ ConsoleCloseProc(
 	}
     }
     if (consolePtr->writeBuf != NULL) {
-	ckfree(consolePtr->writeBuf);
+	Tcl_Free(consolePtr->writeBuf);
 	consolePtr->writeBuf = 0;
     }
-    ckfree(consolePtr);
+    Tcl_Free(consolePtr);
 
     return errorCode;
 }
@@ -660,11 +680,11 @@ ConsoleInputProc(
 	 */
 
 	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = bufSize;
 	    infoPtr->offset += bufSize;
 	} else {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
 	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
 	    /*
@@ -766,12 +786,12 @@ ConsoleOutputProc(
 	     */
 
 	    if (infoPtr->writeBuf) {
-		ckfree(infoPtr->writeBuf);
+		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(threadInfo->readyEvent);
 	TclPipeThreadSignal(&threadInfo->TI);
@@ -1303,7 +1323,7 @@ TclWinOpenConsoleChannel(
      * See if a channel with this handle already exists.
      */
 
-    infoPtr = ckalloc(sizeof(ConsoleInfo));
+    infoPtr = Tcl_Alloc(sizeof(ConsoleInfo));
     memset(infoPtr, 0, sizeof(ConsoleInfo));
 
     infoPtr->validMask = permissions;
@@ -1332,7 +1352,9 @@ TclWinOpenConsoleChannel(
 	 * we only want to catch when complete lines are ready for reading.
 	 */
 
-	GetConsoleMode(infoPtr->handle, &modes);
+	infoPtr->flags |= CONSOLE_READ_OPS;
+	GetConsoleMode(infoPtr->handle, &infoPtr->initMode);
+	modes = infoPtr->initMode;
 	modes &= ~(ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
 	modes |= ENABLE_LINE_INPUT;
 	SetConsoleMode(infoPtr->handle, modes);
@@ -1360,11 +1382,7 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-#ifdef UNICODE
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-#else
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-#endif
     return infoPtr->channel;
 }
 
@@ -1416,6 +1434,213 @@ ConsoleThreadActionProc(
 	infoPtr->threadId = NULL;
     }
     Tcl_MutexUnlock(&consoleMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsoleSetOptionProc --
+ *
+ *	Sets an option on a channel.
+ *
+ * Results:
+ *	A standard Tcl result. Also sets the interp's result on error if
+ *	interp is not NULL.
+ *
+ * Side effects:
+ *	May modify an option on a console. Sets Error message if needed (by
+ *	calling Tcl_BadChannelOption).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConsoleSetOptionProc(
+    ClientData instanceData,	/* File state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Which option to set? */
+    const char *value)		/* New value for option. */
+{
+    ConsoleInfo *infoPtr = instanceData;
+    int len = strlen(optionName);
+    int vlen = strlen(value);
+
+    /*
+     * Option -inputmode normal|password|raw
+     */
+
+    if ((infoPtr->flags & CONSOLE_READ_OPS) && (len > 1) &&
+	    (strncmp(optionName, "-inputmode", len) == 0)) {
+	DWORD mode;
+
+	if (GetConsoleMode(infoPtr->handle, &mode) == 0) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read console mode: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	if (Tcl_UtfNcasecmp(value, "NORMAL", vlen) == 0) {
+	    mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	} else if (Tcl_UtfNcasecmp(value, "PASSWORD", vlen) == 0) {
+	    mode |= ENABLE_LINE_INPUT;
+	    mode &= ~ENABLE_ECHO_INPUT;
+	} else if (Tcl_UtfNcasecmp(value, "RAW", vlen) == 0) {
+	    mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	} else if (Tcl_UtfNcasecmp(value, "RESET", vlen) == 0) {
+	    /*
+	     * Reset to the initial mode, whatever that is.
+	     */
+
+	    mode = infoPtr->initMode;
+	} else {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad mode \"%s\" for -inputmode: must be"
+			" normal, password, raw, or reset", value));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (SetConsoleMode(infoPtr->handle, mode) == 0) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set console mode: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * If we've changed the mode from default, schedule a reset later.
+	 */
+
+	if (mode == infoPtr->initMode) {
+	    infoPtr->flags &= ~CONSOLE_RESET;
+	} else {
+	    infoPtr->flags |= CONSOLE_RESET;
+	}
+	return TCL_OK;
+    }
+
+    if (infoPtr->flags & CONSOLE_READ_OPS) {
+	return Tcl_BadChannelOption(interp, optionName, "inputmode");
+    } else {
+	return Tcl_BadChannelOption(interp, optionName, "");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsoleGetOptionProc --
+ *
+ *	Gets a mode associated with an IO channel. If the optionName arg is
+ *	non-NULL, retrieves the value of that option. If the optionName arg is
+ *	NULL, retrieves a list of alternating option names and values for the
+ *	given channel.
+ *
+ * Results:
+ *	A standard Tcl result. Also sets the supplied DString to the string
+ *	value of the option(s) returned.  Sets error message if needed
+ *	(by calling Tcl_BadChannelOption).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConsoleGetOptionProc(
+    ClientData instanceData,	/* File state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Option to get. */
+    Tcl_DString *dsPtr)		/* Where to store value(s). */
+{
+    ConsoleInfo *infoPtr = instanceData;
+    int valid = 0;		/* Flag if valid option parsed. */
+    unsigned int len;
+    char buf[TCL_INTEGER_SPACE];
+
+    if (optionName == NULL) {
+	len = 0;
+    } else {
+	len = strlen(optionName);
+    }
+
+    /*
+     * Get option -inputmode
+     *
+     * This is a great simplification of the underlying reality, but actually
+     * represents what almost all scripts really want to know.
+     */
+
+    if (infoPtr->flags & CONSOLE_READ_OPS) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-inputmode");
+	}
+	if (len==0 || (len>1 && strncmp(optionName, "-inputmode", len)==0)) {
+	    DWORD mode;
+
+	    valid = 1;
+	    if (GetConsoleMode(infoPtr->handle, &mode) == 0) {
+		TclWinConvertError(GetLastError());
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "couldn't read console mode: %s",
+			    Tcl_PosixError(interp)));
+		}
+		return TCL_ERROR;
+	    }
+	    if (mode & ENABLE_LINE_INPUT) {
+		if (mode & ENABLE_ECHO_INPUT) {
+		    Tcl_DStringAppendElement(dsPtr, "normal");
+		} else {
+		    Tcl_DStringAppendElement(dsPtr, "password");
+		}
+	    } else {
+		Tcl_DStringAppendElement(dsPtr, "raw");
+	    }
+	}
+    }
+
+    /*
+     * Get option -winsize
+     * Option is readonly and returned by [fconfigure chan -winsize] but not
+     * returned by [fconfigure chan] without explicit option name.
+     */
+
+    if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
+	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+
+	valid = 1;
+	if (!GetConsoleScreenBufferInfo(infoPtr->handle, &consoleInfo)) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read console size: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	sprintf(buf, "%d",
+		consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
+	Tcl_DStringAppendElement(dsPtr, buf);
+	sprintf(buf, "%d",
+		consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+
+    if (valid) {
+	return TCL_OK;
+    }
+    if (infoPtr->flags & CONSOLE_READ_OPS) {
+	return Tcl_BadChannelOption(interp, optionName, "inputmode winsize");
+    } else {
+	return Tcl_BadChannelOption(interp, optionName, "");
+    }
 }
 
 /*

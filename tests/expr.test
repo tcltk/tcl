@@ -20,10 +20,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
+testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -416,12 +415,9 @@ test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test expr-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test expr-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-test expr-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+test expr-9.5 {CompileRelationalExpr: shift expr producing LONG_MIN} {
     expr {int(1<<63)}
-} -9223372036854775808
-test expr-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
-    expr {int(1<<31)}
-} -2147483648
+} 9223372036854775808
 test expr-9.6 {CompileRelationalExpr: error in shift expr} -body {
     expr x>>3
 } -returnCodes error -match glob -result *
@@ -1110,7 +1106,7 @@ test expr-23.54.11 {INST_EXPON: Bug 2798543} {
     expr {3**9 == 3**131081}
 } 0
 test expr-23.54.12 {INST_EXPON: Bug 2798543} -body {
-    expr {3**9 == 3**268435465}
+    expr {3**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.54.13 {INST_EXPON: Bug 2798543} {
     expr {(-3)**9 == (-3)**65545}
@@ -1125,7 +1121,7 @@ test expr-23.55.2 {INST_EXPON: Bug 2798543} {
     expr {4**9 == 4**131081}
 } 0
 test expr-23.55.3 {INST_EXPON: Bug 2798543} -body {
-    expr {4**9 == 4**268435465}
+    expr {4**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.55.4 {INST_EXPON: Bug 2798543} {
     expr {(-4)**9 == (-4)**65545}
@@ -1140,7 +1136,7 @@ test expr-23.56.2 {INST_EXPON: Bug 2798543} {
     expr {5**9 == 5**131081}
 } 0
 test expr-23.56.3 {INST_EXPON: Bug 2798543} -body {
-    expr {5**9 == 5**268435465}
+    expr {5**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.56.4 {INST_EXPON: Bug 2798543} {
     expr {(-5)**9 == (-5)**65545}
@@ -1155,7 +1151,7 @@ test expr-23.57.2 {INST_EXPON: Bug 2798543} {
     expr {6**9 == 6**131081}
 } 0
 test expr-23.57.3 {INST_EXPON: Bug 2798543} -body {
-    expr {6**9 == 6**268435465}
+    expr {6**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.57.4 {INST_EXPON: Bug 2798543} {
     expr {(-6)**9 == (-6)**65545}
@@ -1170,7 +1166,7 @@ test expr-23.58.2 {INST_EXPON: Bug 2798543} {
     expr {7**9 == 7**131081}
 } 0
 test expr-23.58.3 {INST_EXPON: Bug 2798543} -body {
-    expr {7**9 == 7**268435465}
+    expr {7**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.58.4 {INST_EXPON: Bug 2798543} {
     expr {(-7)**9 == (-7)**65545}
@@ -1185,7 +1181,7 @@ test expr-23.59.2 {INST_EXPON: Bug 2798543} {
     expr {8**9 == 8**131081}
 } 0
 test expr-23.59.3 {INST_EXPON: Bug 2798543} -body {
-    expr {8**9 == 8**268435465}
+    expr {8**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.59.4 {INST_EXPON: Bug 2798543} {
     expr {(-8)**9 == (-8)**65545}
@@ -1197,7 +1193,7 @@ test expr-23.60.1 {INST_EXPON: Bug 2798543} {
     expr {9**9 == 9**131081}
 } 0
 test expr-23.60.2 {INST_EXPON: Bug 2798543} -body {
-    expr {9**9 == 9**268435465}
+    expr {9**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.60.3 {INST_EXPON: Bug 2798543} {
     expr {(-9)**9 == (-9)**65545}
@@ -1209,7 +1205,7 @@ test expr-23.61.1 {INST_EXPON: Bug 2798543} {
     expr {10**9 == 10**131081}
 } 0
 test expr-23.61.2 {INST_EXPON: Bug 2798543} -body {
-    expr {10**9 == 10**268435465}
+    expr {10**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.61.3 {INST_EXPON: Bug 2798543} {
     expr {(-10)**9 == (-10)**65545}
@@ -1221,7 +1217,7 @@ test expr-23.62.1 {INST_EXPON: Bug 2798543} {
     expr {11**9 == 11**131081}
 } 0
 test expr-23.62.2 {INST_EXPON: Bug 2798543} -body {
-    expr {11**9 == 11**268435465}
+    expr {11**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.62.3 {INST_EXPON: Bug 2798543} {
     expr {(-11)**9 == (-11)**65545}
@@ -1236,7 +1232,7 @@ test expr-23.63.2 {INST_EXPON: Bug 2798543} {
     expr {3**20 == 3**131092}
 } 0
 test expr-23.63.3 {INST_EXPON: Bug 2798543} -body {
-    expr {3**20 == 3**268435476}
+    expr {3**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.63.4 {INST_EXPON: Bug 2798543} {
     expr {(-3)**20 == (-3)**65556}
@@ -1251,7 +1247,7 @@ test expr-23.64.2 {INST_EXPON: Bug 2798543} {
     expr {4**17 == 4**131089}
 } 0
 test expr-23.64.3 {INST_EXPON: Bug 2798543} -body {
-    expr {4**17 == 4**268435473}
+    expr {4**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.64.4 {INST_EXPON: Bug 2798543} {
     expr {(-4)**17 == (-4)**65553}
@@ -1266,7 +1262,7 @@ test expr-23.65.2 {INST_EXPON: Bug 2798543} {
     expr {5**17 == 5**131089}
 } 0
 test expr-23.65.3 {INST_EXPON: Bug 2798543} -body {
-    expr {5**17 == 5**268435473}
+    expr {5**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.65.4 {INST_EXPON: Bug 2798543} {
     expr {(-5)**17 == (-5)**65553}
@@ -1281,7 +1277,7 @@ test expr-23.66.2 {INST_EXPON: Bug 2798543} {
     expr {6**17 == 6**131089}
 } 0
 test expr-23.66.3 {INST_EXPON: Bug 2798543} -body {
-    expr {6**17 == 6**268435473}
+    expr {6**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.66.4 {INST_EXPON: Bug 2798543} {
     expr {(-6)**17 == (-6)**65553}
@@ -1296,7 +1292,7 @@ test expr-23.67.2 {INST_EXPON: Bug 2798543} {
     expr {7**17 == 7**131089}
 } 0
 test expr-23.67.3 {INST_EXPON: Bug 2798543} -body {
-    expr {7**17 == 7**268435473}
+    expr {7**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.67.4 {INST_EXPON: Bug 2798543} {
     expr {(-7)**17 == (-7)**65553}
@@ -1311,7 +1307,7 @@ test expr-23.68.2 {INST_EXPON: Bug 2798543} {
     expr {8**17 == 8**131089}
 } 0
 test expr-23.68.3 {INST_EXPON: Bug 2798543} -body {
-    expr {8**17 == 8**268435473}
+    expr {8**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.68.4 {INST_EXPON: Bug 2798543} {
     expr {(-8)**17 == (-8)**65553}
@@ -1326,7 +1322,7 @@ test expr-23.69.2 {INST_EXPON: Bug 2798543} {
     expr {9**17 == 9**131089}
 } 0
 test expr-23.69.3 {INST_EXPON: Bug 2798543} -body {
-    expr {9**17 == 9**268435473}
+    expr {9**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.69.4 {INST_EXPON: Bug 2798543} {
     expr {(-9)**17 == (-9)**65553}
@@ -1341,7 +1337,7 @@ test expr-23.70.2 {INST_EXPON: Bug 2798543} {
     expr {10**17 == 10**131089}
 } 0
 test expr-23.70.3 {INST_EXPON: Bug 2798543} -body {
-    expr {10**17 == 10**268435473}
+    expr {10**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.70.4 {INST_EXPON: Bug 2798543} {
     expr {(-10)**17 == (-10)**65553}
@@ -1356,7 +1352,7 @@ test expr-23.71.2 {INST_EXPON: Bug 2798543} {
     expr {11**17 == 11**131089}
 } 0
 test expr-23.71.3 {INST_EXPON: Bug 2798543} -body {
-    expr {11**17 == 11**268435473}
+    expr {11**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.71.4 {INST_EXPON: Bug 2798543} {
     expr {(-11)**17 == (-11)**65553}
@@ -1368,7 +1364,7 @@ test expr-23.72.1 {INST_EXPON: Bug 2798543} {
     expr {12**17 == 12**131089}
 } 0
 test expr-23.72.2 {INST_EXPON: Bug 2798543} -body {
-    expr {12**17 == 12**268435473}
+    expr {12**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.72.3 {INST_EXPON: Bug 2798543} {
     expr {(-12)**17 == (-12)**65553}
@@ -1380,7 +1376,7 @@ test expr-23.73.1 {INST_EXPON: Bug 2798543} {
     expr {13**17 == 13**131089}
 } 0
 test expr-23.73.2 {INST_EXPON: Bug 2798543} -body {
-    expr {13**17 == 13**268435473}
+    expr {13**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.73.3 {INST_EXPON: Bug 2798543} {
     expr {(-13)**17 == (-13)**65553}
@@ -1392,7 +1388,7 @@ test expr-23.74.1 {INST_EXPON: Bug 2798543} {
     expr {14**17 == 14**131089}
 } 0
 test expr-23.74.2 {INST_EXPON: Bug 2798543} -body {
-    expr {14**17 == 14**268435473}
+    expr {14**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.74.3 {INST_EXPON: Bug 2798543} {
     expr {(-14)**17 == (-14)**65553}
@@ -1404,8 +1400,8 @@ test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
 test expr-24.2 {expr edge cases; shifting} {expr int(5)>>63} 0
 test expr-24.3 {expr edge cases; shifting} {expr wide(5)>>32} 0
 test expr-24.4 {expr edge cases; shifting} {expr wide(5)>>63} 0
-test expr-24.5 {expr edge cases; shifting} longIs32bit {expr int(5<<32)} 0
-test expr-24.6 {expr edge cases; shifting} longIs32bit {expr int(5<<63)} 0
+test expr-24.5 {expr edge cases; shifting} {expr int(5<<32)} 21474836480
+test expr-24.6 {expr edge cases; shifting} {expr int(5<<63)} 46116860184273879040
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
 test expr-24.8 {expr edge cases; shifting} {expr wide(10<<63)} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
@@ -5808,7 +5804,7 @@ test expr-32.9 {bignum regression} {
     expr {0%-(1+(1<<63))}
 } 0
 
-test expr-33.1 {parse largest long value} longIs32bit {
+test expr-33.1 {parse largest long value} {
     set max_long_str 2147483647
     set max_long_hex "0x7FFFFFFF "
 
@@ -5822,7 +5818,7 @@ test expr-33.1 {parse largest long value} longIs32bit {
         [expr {$max_long + 0}] \
         [expr {2147483647 + 0}] \
         [expr {$max_long == $max_long_hex}] \
-        [expr {int(2147483647 + 1) < 0}] \
+        [expr {int(2147483647 + 1) > 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
 test expr-33.2 {parse smallest long value} longIs32bit {
@@ -5842,7 +5838,7 @@ test expr-33.2 {parse smallest long value} longIs32bit {
         [expr {$min_long + 0}] \
         [expr {-2147483648 + 0}] \
         [expr {$min_long == $min_long_hex}] \
-        [expr {int(-2147483648 - 1) == 0x7FFFFFFF}] \
+        [expr {int(-2147483648 - 1) == -0x80000001}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
 test expr-33.3 {parse largest wide value} wideIs64bit {
@@ -5922,17 +5918,17 @@ test expr-34.11 {expr edge cases} {
 test expr-34.12 {expr edge cases} {
     expr {$min % -2}
 } {0}
-test expr-34.13 {expr edge cases} longIs32bit {
+test expr-34.13 {expr edge cases} {
     expr {int($min / -1)}
-} {-2147483648}
+} {2147483648}
 test expr-34.14 {expr edge cases} {
     expr {$min % -1}
 } {0}
-test expr-34.15 {expr edge cases} longIs32bit {
-    expr {int($min * -1)}
+test expr-34.15 {expr edge cases} {
+    expr {-int($min * -1)}
 } $min
-test expr-34.16 {expr edge cases} longIs32bit {
-    expr {int(-$min)}
+test expr-34.16 {expr edge cases} {
+    expr {-int(-$min)}
 } $min
 test expr-34.17 {expr edge cases} {
     expr {$min / 1}
@@ -6719,8 +6715,8 @@ test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -0x80000000
 } {This is a result: -2147483648}
 test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -0xffffffff
-} {This is a result: 1}
+    testexprlongobj -0x7fffffff
+} {This is a result: -2147483647}
 test expr-39.10 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
@@ -6745,8 +6741,8 @@ test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -2147483648.
 } {This is a result: -2147483648}
 test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -4294967295.
-} {This is a result: 1}
+    testexprlongobj -2147483648.
+} {This is a result: -2147483648}
 test expr-39.16 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
@@ -7155,6 +7151,15 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
 test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
+
+test expr-52.1 {
+	comparison with empty string does not generate string representation
+} {
+	set a [list one two three]
+	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
+		string match {*no string representation*} [
+		::tcl::unsupported::representation $a]]
+} {0 0 1 1}
 
 
 

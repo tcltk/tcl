@@ -15,7 +15,7 @@
 
 #include "tclInt.h"
 #if defined(_WIN32) || defined(__CYGWIN__)
-    MODULE_SCOPE TCL_NORETURN void tclWinDebugPanic(const char *format, ...);
+    MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 #endif
 
 /*
@@ -23,11 +23,7 @@
  * procedure.
  */
 
-#if defined(__CYGWIN__)
-static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
-#else
-static TCL_NORETURN Tcl_PanicProc *panicProc = NULL;
-#endif
+static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -47,17 +43,10 @@ static TCL_NORETURN Tcl_PanicProc *panicProc = NULL;
 
 void
 Tcl_SetPanicProc(
-    TCL_NORETURN Tcl_PanicProc *proc)
+    TCL_NORETURN1 Tcl_PanicProc *proc)
 {
-#if defined(_WIN32)
-    /* tclWinDebugPanic only installs if there is no panicProc yet. */
-    if ((proc != tclWinDebugPanic) || (panicProc == NULL))
-#elif defined(__CYGWIN__)
-    if (proc == NULL)
-	panicProc = tclWinDebugPanic;
-    else
-#endif
     panicProc = proc;
+    TclInitSubsystems();
 }
 
 /*
@@ -107,26 +96,24 @@ Tcl_Panic(
 
     if (panicProc != NULL) {
 	panicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-#ifdef _WIN32
-    } else if (IsDebuggerPresent()) {
-	tclWinDebugPanic(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-#endif
     } else {
+#if defined(_WIN32) || defined(__CYGWIN__)
+    tclWinDebugPanic(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+#else
 	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-#if defined(_WIN32) || defined(__CYGWIN__)
+#endif
 #   if defined(__GNUC__)
 	__builtin_trap();
 #   elif defined(_WIN64)
 	__debugbreak();
 #   elif defined(_MSC_VER) && defined (_M_IX86)
 	_asm {int 3}
-#   else
+#   elif defined(_WIN32)
 	DebugBreak();
 #   endif
-#endif
 #if defined(_WIN32)
 	ExitProcess(1);
 #else

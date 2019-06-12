@@ -198,6 +198,13 @@ proc genStubs::declare {args} {
 		|| ($index > $stubs($curName,generic,lastNum))} {
 	    set stubs($curName,generic,lastNum) $index
 	}
+    } elseif {([lindex $platformList 0] eq "nostub")} {
+	set stubs($curName,nostub,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
+	}
     } else {
 	foreach platform $platformList {
 	    if {$decl ne ""} {
@@ -516,7 +523,7 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append line " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -593,6 +600,8 @@ proc genStubs::makeSlot {name decl index} {
     set text "    "
     if {[info exists stubs($name,deprecated,$index)]} {
 	append text "TCL_DEPRECATED_API(\"$stubs($name,deprecated,$index)\") "
+    } elseif {[info exists stubs($name,nostub,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,nostub,$index)\") "
     }
     if {$args eq ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
@@ -600,6 +609,8 @@ proc genStubs::makeSlot {name decl index} {
     }
     if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
+    } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
+	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -620,7 +631,7 @@ proc genStubs::makeSlot {name decl index} {
 	    }
 	    append text ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append text " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -701,6 +712,9 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    set slots [array names stubs $name,*,$i]
 	    set emit 0
 	    if {[info exists stubs($name,deprecated,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,nostub,$i)]} {
 		append text [$slotProc $name $stubs($name,generic,$i) $i]
 		set emit 1
 	    } elseif {[info exists stubs($name,generic,$i)]} {

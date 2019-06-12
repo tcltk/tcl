@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_KARATSUBA_SQR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* Karatsuba squaring, computes b = a*a using three
@@ -37,7 +34,7 @@ int mp_karatsuba_sqr(const mp_int *a, mp_int *b)
 
    /* init copy all the temps */
    if (mp_init_size(&x0, B) != MP_OKAY)
-      goto ERR;
+      goto LBL_ERR;
    if (mp_init_size(&x1, a->used - B) != MP_OKAY)
       goto X0;
 
@@ -117,7 +114,7 @@ X1:
    mp_clear(&x1);
 X0:
    mp_clear(&x0);
-ERR:
+LBL_ERR:
    return err;
 }
 #endif

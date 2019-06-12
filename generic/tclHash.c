@@ -28,7 +28,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245UL) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*(size_t)1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -190,6 +190,23 @@ Tcl_InitCustomHashTable(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindHashEntry --
+ *
+ *	Given a hash table find the entry with a matching key.
+ *
+ * Results:
+ *	The return value is a token for the matching entry in the hash table,
+ *	or NULL if there was no matching entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -230,8 +247,7 @@ CreateHashEntry(
 {
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    unsigned int hash;
-    unsigned int index;
+    size_t hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -268,7 +284,10 @@ CreateHashEntry(
 	    if (hash != hPtr->hash) {
 		continue;
 	    }
-	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
+	    /* if keys pointers or values are equal */
+	    if ((key == hPtr->key.oneWordValue)
+		|| compareKeysProc((void *) key, hPtr)
+	    ) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}
@@ -302,7 +321,7 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = ckalloc(sizeof(Tcl_HashEntry));
+	hPtr = Tcl_Alloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	Tcl_SetHashValue(hPtr, NULL);
     }
@@ -350,7 +369,7 @@ Tcl_DeleteHashEntry(
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
-    unsigned int index;
+    size_t index;
 
     tablePtr = entryPtr->tablePtr;
 
@@ -392,7 +411,7 @@ Tcl_DeleteHashEntry(
     if (typePtr->freeEntryProc) {
 	typePtr->freeEntryProc(entryPtr);
     } else {
-	ckfree(entryPtr);
+	Tcl_Free(entryPtr);
     }
 }
 
@@ -443,7 +462,7 @@ Tcl_DeleteHashTable(
 	    if (typePtr->freeEntryProc) {
 		typePtr->freeEntryProc(hPtr);
 	    } else {
-		ckfree(hPtr);
+		Tcl_Free(hPtr);
 	    }
 	    hPtr = nextPtr;
 	}
@@ -457,7 +476,7 @@ Tcl_DeleteHashTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) tablePtr->buckets);
 	} else {
-	    ckfree(tablePtr->buckets);
+	    Tcl_Free(tablePtr->buckets);
 	}
     }
 
@@ -602,17 +621,17 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%" TCL_LL_MODIFIER "d entries in table, %" TCL_LL_MODIFIER "d buckets\n",
-	    (Tcl_WideInt)tablePtr->numEntries, (Tcl_WideInt)tablePtr->numBuckets);
+    result = Tcl_Alloc((NUM_COUNTERS * 60) + 300);
+    sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	sprintf(p, "number of buckets with %d entries: %" TCL_LL_MODIFIER "d\n",
-		(int)i, (Tcl_WideInt)count[i]);
+	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %d\n",
-	    NUM_COUNTERS, (int)overflow);
+    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+	    NUM_COUNTERS, overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
     return result;
@@ -637,13 +656,13 @@ Tcl_HashStats(
 static Tcl_HashEntry *
 AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)			/* Key to store in the hash table entry. */
 {
     int *array = (int *) keyPtr;
     register int *iPtr1, *iPtr2;
     Tcl_HashEntry *hPtr;
     int count;
-    unsigned int size;
+    size_t size;
 
     count = tablePtr->keyType;
 
@@ -651,7 +670,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = ckalloc(size);
+    hPtr = Tcl_Alloc(size);
 
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -681,11 +700,11 @@ AllocArrayEntry(
 
 static int
 CompareArrayKeys(
-    void *keyPtr,		/* New key to compare. */
+    void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    register const int *iPtr1 = (const int *) keyPtr;
-    register const int *iPtr2 = (const int *) hPtr->key.words;
+    const int *iPtr1 = keyPtr;
+    const int *iPtr2 = hPtr->key.words;
     Tcl_HashTable *tablePtr = hPtr->tablePtr;
     int count;
 
@@ -721,7 +740,7 @@ CompareArrayKeys(
 static TCL_HASH_TYPE
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)				/* Key from which to compute hash value. */
 {
     register const int *array = (const int *) keyPtr;
     register TCL_HASH_TYPE result;
@@ -753,7 +772,7 @@ HashArrayKey(
 static Tcl_HashEntry *
 AllocStringEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)			/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
@@ -763,7 +782,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    hPtr = Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
     return hPtr;
@@ -788,13 +807,10 @@ AllocStringEntry(
 
 static int
 CompareStringKeys(
-    void *keyPtr,		/* New key to compare. */
+    void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    register const char *p1 = (const char *) keyPtr;
-    register const char *p2 = (const char *) hPtr->key.string;
-
-    return !strcmp(p1, p2);
+    return !strcmp(keyPtr, hPtr->key.string);
 }
 
 /*
@@ -817,7 +833,7 @@ CompareStringKeys(
 static TCL_HASH_TYPE
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)			/* Key from which to compute hash value. */
 {
     register const char *string = keyPtr;
     register TCL_HASH_TYPE result;
@@ -972,18 +988,20 @@ RebuildTable(
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc(
+	tablePtr->buckets = TclpSysAlloc(
 		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     } else {
 	tablePtr->buckets =
-		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+		Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {
 	*newChainPtr = NULL;
     }
     tablePtr->rebuildSize *= 4;
-    tablePtr->downShift -= 2;
+    if (tablePtr->downShift > 1) {
+	tablePtr->downShift -= 2;
+    }
     tablePtr->mask = (tablePtr->mask << 2) + 3;
 
     /*
@@ -1012,7 +1030,7 @@ RebuildTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) oldBuckets);
 	} else {
-	    ckfree(oldBuckets);
+	    Tcl_Free(oldBuckets);
 	}
     }
 }

@@ -13,7 +13,7 @@
 
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 #include <signal.h>
 
 /*
@@ -117,7 +117,7 @@ TSDTableDelete(
 	     * and must now be deallocated or they will leak.
 	     */
 
-	    ckfree(tsdTablePtr->tablePtr[i]);
+	    Tcl_Free(tsdTablePtr->tablePtr[i]);
 	}
     }
 

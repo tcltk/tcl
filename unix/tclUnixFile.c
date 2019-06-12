@@ -41,7 +41,7 @@ TclpFindExecutable(
 {
     Tcl_Encoding encoding;
 #ifdef __CYGWIN__
-    int length;
+    size_t length;
     char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
     GetModuleFileNameW(NULL, buf, PATH_MAX);
@@ -259,7 +259,7 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	DIR *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
 	size_t dirLength, nativeDirLen;
@@ -269,8 +269,7 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -310,7 +309,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = opendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -388,7 +387,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	closedir(d);
+	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);
@@ -720,7 +719,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = ckalloc(strlen(buffer) + 1);
+	char *newCd = Tcl_Alloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -940,6 +939,7 @@ TclpObjLink(
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
+	    size_t length;
 
 	    /*
 	     * Now we don't want to link to the absolute, normalized path.
@@ -951,8 +951,8 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetString(transPtr);
-	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
+	    target = TclGetStringFromObj(transPtr, &length);
+	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -1105,8 +1105,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
@@ -1116,8 +1115,8 @@ TclNativeCreateNativeRep(
 	return NULL;
     }
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
+    nativePathPtr = Tcl_Alloc(len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;
@@ -1157,7 +1156,7 @@ TclNativeDupInternalRep(
 
     len = (strlen((const char*) clientData) + 1) * sizeof(char);
 
-    copy = ckalloc(len);
+    copy = Tcl_Alloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }

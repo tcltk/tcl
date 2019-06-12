@@ -222,7 +222,7 @@ TimerExitProc(
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
 	while (timerHandlerPtr != NULL) {
 	    tsdPtr->firstTimerHandlerPtr = timerHandlerPtr->nextPtr;
-	    ckfree(timerHandlerPtr);
+	    Tcl_Free(timerHandlerPtr);
 	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
 	}
     }
@@ -297,7 +297,7 @@ TclCreateAbsoluteTimerHandler(
     register TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    timerHandlerPtr = ckalloc(sizeof(TimerHandler));
+    timerHandlerPtr = Tcl_Alloc(sizeof(TimerHandler));
 
     /*
      * Fill in fields for the event.
@@ -310,8 +310,8 @@ TclCreateAbsoluteTimerHandler(
     timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
-     * Add the event to the queue in the correct position
-     * (ordered by event firing time).
+     * Add the event to the queue in the correct position (ordered by event
+     * firing time).
      */
 
     for (tPtr2 = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL; tPtr2 != NULL;
@@ -373,7 +373,7 @@ Tcl_DeleteTimerHandler(
 	} else {
 	    prevPtr->nextPtr = timerHandlerPtr->nextPtr;
 	}
-	ckfree(timerHandlerPtr);
+	Tcl_Free(timerHandlerPtr);
 	return;
     }
 }
@@ -488,7 +488,7 @@ TimerCheckProc(
 	if (blockTime.sec == 0 && blockTime.usec == 0 &&
 		!tsdPtr->timerPending) {
 	    tsdPtr->timerPending = 1;
-	    timerEvPtr = ckalloc(sizeof(Tcl_Event));
+	    timerEvPtr = Tcl_Alloc(sizeof(Tcl_Event));
 	    timerEvPtr->proc = TimerHandlerEventProc;
 	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
 	}
@@ -591,7 +591,7 @@ TimerHandlerEventProc(
 
 	*nextPtrPtr = timerHandlerPtr->nextPtr;
 	timerHandlerPtr->proc(timerHandlerPtr->clientData);
-	ckfree(timerHandlerPtr);
+	Tcl_Free(timerHandlerPtr);
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
     return 1;
@@ -625,7 +625,7 @@ Tcl_DoWhenIdle(
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    idlePtr = ckalloc(sizeof(IdleHandler));
+    idlePtr = Tcl_Alloc(sizeof(IdleHandler));
     idlePtr->proc = proc;
     idlePtr->clientData = clientData;
     idlePtr->generation = tsdPtr->idleGeneration;
@@ -674,7 +674,7 @@ Tcl_CancelIdleCall(
 	while ((idlePtr->proc == proc)
 		&& (idlePtr->clientData == clientData)) {
 	    nextPtr = idlePtr->nextPtr;
-	    ckfree(idlePtr);
+	    Tcl_Free(idlePtr);
 	    idlePtr = nextPtr;
 	    if (prevPtr == NULL) {
 		tsdPtr->idleList = idlePtr;
@@ -749,7 +749,7 @@ TclServiceIdle(void)
 	    tsdPtr->lastIdlePtr = NULL;
 	}
 	idlePtr->proc(idlePtr->clientData);
-	ckfree(idlePtr);
+	Tcl_Free(idlePtr);
     }
     if (tsdPtr->idleList) {
 	blockTime.sec = 0;
@@ -788,8 +788,8 @@ Tcl_AfterObjCmd(
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
-    int length;
-    int index;
+    size_t length;
+    int index = -1;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
@@ -808,7 +808,7 @@ Tcl_AfterObjCmd(
 
     assocPtr = Tcl_GetAssocData(interp, "tclAfter", NULL);
     if (assocPtr == NULL) {
-	assocPtr = ckalloc(sizeof(AfterAssocData));
+	assocPtr = Tcl_Alloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
@@ -818,13 +818,10 @@ Tcl_AfterObjCmd(
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (objv[1]->typePtr == &tclIntType
-	    || objv[1]->typePtr == &tclBignumType
-	    || (Tcl_GetIndexFromObjStruct(NULL, objv[1], afterSubCmds,
-		    sizeof(char *), "", 0, &index) != TCL_OK)) {
-	index = -1;
-	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
-            const char *arg = Tcl_GetString(objv[1]);
+    if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
+		!= TCL_OK) {
+            const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"
@@ -848,7 +845,7 @@ Tcl_AfterObjCmd(
 	if (objc == 2) {
 	    return AfterDelay(interp, ms);
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = Tcl_Alloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -886,7 +883,7 @@ Tcl_AfterObjCmd(
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
 	const char *command, *tempCommand;
-	int tempLength;
+	size_t tempLength;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
@@ -903,7 +900,7 @@ Tcl_AfterObjCmd(
 	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
-		    && !memcmp(command, tempCommand, (unsigned) length)) {
+		    && !memcmp(command, tempCommand, length)) {
 		break;
 	    }
 	}
@@ -928,7 +925,7 @@ Tcl_AfterObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = Tcl_Alloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -1016,8 +1013,8 @@ AfterDelay(
 
     Tcl_GetTime(&now);
     endTime = now;
-    endTime.sec += (long)(ms/1000);
-    endTime.usec += ((int)(ms%1000))*1000;
+    endTime.sec += (long)(ms / 1000);
+    endTime.usec += ((int)(ms % 1000)) * 1000;
     if (endTime.usec >= 1000000) {
 	endTime.sec++;
 	endTime.usec -= 1000000;
@@ -1045,17 +1042,17 @@ AfterDelay(
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
-	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-		diff = 1;
-	    }
+            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+                diff = 1;
+            }
 	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-		    break;
-		}
+		Tcl_Sleep((long) diff);
+                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+                    break;
+                }
 	    } else {
-		break;
-	    }
+                break;
+            }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
@@ -1193,7 +1190,7 @@ AfterProc(
      */
 
     Tcl_DecrRefCount(afterPtr->commandPtr);
-    ckfree(afterPtr);
+    Tcl_Free(afterPtr);
 }
 
 /*
@@ -1231,7 +1228,7 @@ FreeAfterPtr(
 	prevPtr->nextPtr = afterPtr->nextPtr;
     }
     Tcl_DecrRefCount(afterPtr->commandPtr);
-    ckfree(afterPtr);
+    Tcl_Free(afterPtr);
 }
 
 /*
@@ -1270,9 +1267,9 @@ AfterCleanupProc(
 	    Tcl_CancelIdleCall(AfterProc, afterPtr);
 	}
 	Tcl_DecrRefCount(afterPtr->commandPtr);
-	ckfree(afterPtr);
+	Tcl_Free(afterPtr);
     }
-    ckfree(assocPtr);
+    Tcl_Free(assocPtr);
 }
 
 /*

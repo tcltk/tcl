@@ -138,7 +138,7 @@ PkguaEqObjCmd(
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
@@ -210,7 +210,7 @@ Pkgua_Init(
 
     PkguaInitTokensHashTable();
 
-    code = Tcl_PkgProvideEx(interp, "Pkgua", "1.0", NULL);
+    code = Tcl_PkgProvide(interp, "Pkgua", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

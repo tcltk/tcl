@@ -11,6 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -65,7 +66,7 @@ Pkgb_SubObjCmd(
 	Tcl_AppendResult(interp, " in line: ", buf, NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(first - second));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
     return TCL_OK;
 }
 

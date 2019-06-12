@@ -55,7 +55,7 @@
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 
@@ -123,7 +123,6 @@ TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
-CAT32		= $(OUT_DIR)\cat32.exe
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -236,6 +235,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
+	$(TMP_DIR)\tclZipfs.obj \
 	$(TMP_DIR)\tclZlib.obj
 
 ZLIBOBJS = \
@@ -252,7 +252,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
@@ -276,6 +275,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_s_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_get_int.obj \
 	$(TMP_DIR)\bn_mp_get_long.obj \
 	$(TMP_DIR)\bn_mp_get_long_long.obj \
@@ -310,6 +310,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_signed_rsh.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \
@@ -350,7 +351,8 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj
+	$(TMP_DIR)\tclOOStubLib.obj \
+	$(TMP_DIR)\tclWinPanic.obj
 
 ### The following paths CANNOT have spaces in them as they appear on
 ### the left side of implicit rules.
@@ -382,20 +384,23 @@ release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
-tcltest:    setup $(TCLTEST) dlls $(CAT32)
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
+!if $(SYMBOLS)
+install:    install-pdbs
+!endif
 setup:      default-setup
 
 test: test-core test-pkgs
-test-core: setup $(TCLTEST) dlls $(CAT32)
+test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.0 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.2 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.1 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.3 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
-runtest: setup $(TCLTEST) dlls $(CAT32)
+runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
 
@@ -417,10 +422,10 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+
 $(TCLIMPLIB): $(TCLLIB)
 
 !endif # $(STATIC_BUILD)
-
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
@@ -482,11 +487,6 @@ clean-pkgs:
 	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
 	    popd \
 	  )
-
-$(CAT32): $(WINDIR)\cat.c
-	$(cc32) $(cflags) $(crt) -D_CRT_NONSTDC_NO_DEPRECATE -DCONSOLE -Fo$(TMP_DIR)\ $?
-	$(CONEXECMD) -stack:16384 $(TMP_DIR)\cat.obj
-	$(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
@@ -581,7 +581,6 @@ $(OUT_DIR)\tcl.nmake:
 	@type << >$@
 CORE_MACHINE = $(MACHINE)
 CORE_DEBUG = $(DEBUG)
-CORE_TCL_THREADS = $(TCL_THREADS)
 CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
 CORE_USE_WIDECHAR_API = $(USE_WIDECHAR_API)
 <<
@@ -637,7 +636,6 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
-@TCL_THREADS@        $(TCL_THREADS)
 @TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
 @TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
 @TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
@@ -687,6 +685,9 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
+$(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
+	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
+
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
@@ -702,6 +703,8 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	-DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
 	-DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
 	-DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
+	-DCFG_RUNTIME_DLLFILE="\"$(CFG_RUNTIME_DLLFILE:\=\\)\""     \
+	-DCFG_RUNTIME_ZIPFILE="\"$(CFG_RUNTIME_ZIPFILE:\=\\)\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
@@ -710,7 +713,6 @@ $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
-### *ALL* extensions need to built with -DTCL_THREADS=1
 
 $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
@@ -739,6 +741,9 @@ $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
+$(TMP_DIR)\tclWinPanic.obj: $(WINDIR)\tclWinPanic.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
@@ -909,6 +914,11 @@ install-msgs:
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+
+install-pdbs:
+	@echo Installing debug symbols
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
+# "emacs font-lock highlighting fix
 
 #---------------------------------------------------------------------
 # Clean up

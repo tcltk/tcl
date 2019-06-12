@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_REDUCE_2K_SETUP_L_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* determines the setup value */
@@ -26,14 +23,14 @@ int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d)
    }
 
    if ((res = mp_2expt(&tmp, mp_count_bits(a))) != MP_OKAY) {
-      goto ERR;
+      goto LBL_ERR;
    }
 
    if ((res = s_mp_sub(&tmp, a, d)) != MP_OKAY) {
-      goto ERR;
+      goto LBL_ERR;
    }
 
-ERR:
+LBL_ERR:
    mp_clear(&tmp);
    return res;
 }

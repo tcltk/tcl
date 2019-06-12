@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_S_MP_EXPTMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 #ifdef MP_LOW_MEM
@@ -101,19 +98,19 @@ int s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, i
    /* compute the value at M[1<<(winsize-1)] by squaring
     * M[1] (winsize-1) times
     */
-   if ((err = mp_copy(&M[1], &M[1 << (winsize - 1)])) != MP_OKAY) {
+   if ((err = mp_copy(&M[1], &M[(size_t)1 << (winsize - 1)])) != MP_OKAY) {
       goto LBL_MU;
    }
 
    for (x = 0; x < (winsize - 1); x++) {
       /* square it */
-      if ((err = mp_sqr(&M[1 << (winsize - 1)],
-                        &M[1 << (winsize - 1)])) != MP_OKAY) {
+      if ((err = mp_sqr(&M[(size_t)1 << (winsize - 1)],
+                        &M[(size_t)1 << (winsize - 1)])) != MP_OKAY) {
          goto LBL_MU;
       }
 
       /* reduce modulo P */
-      if ((err = redux(&M[1 << (winsize - 1)], P, &mu)) != MP_OKAY) {
+      if ((err = redux(&M[(size_t)1 << (winsize - 1)], P, &mu)) != MP_OKAY) {
          goto LBL_MU;
       }
    }

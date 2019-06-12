@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_GET_LONG_LONG_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* get the lower unsigned long long of an mp_int, platform dependent */
@@ -21,21 +18,25 @@ Tcl_WideUInt mp_get_long_long(const mp_int *a)
    int i;
    Tcl_WideUInt res;
 
-   if (a->used == 0) {
+   if (IS_ZERO(a)) {
       return 0;
    }
 
    /* get number of digits of the lsb we have to read */
-   i = MIN(a->used, ((((int)sizeof(Tcl_WideUInt) * CHAR_BIT) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
+   i = MIN(a->used, (((CHAR_BIT * (int)sizeof(Tcl_WideUInt)) + DIGIT_BIT - 1) / DIGIT_BIT)) - 1;
 
    /* get most significant digit of result */
-   res = DIGIT(a, i);
+   res = (unsigned long long)a->dp[i];
 
 #if DIGIT_BIT < 64
    while (--i >= 0) {
-      res = (res << DIGIT_BIT) | DIGIT(a, i);
+      res = (res << DIGIT_BIT) | (unsigned long long)a->dp[i];
    }
 #endif
    return res;
 }
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

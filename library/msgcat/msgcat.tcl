@@ -49,7 +49,7 @@ namespace eval msgcat {
 namespace eval msgcat::mcutil {
     namespace export getsystemlocale getpreferences
     namespace ensemble create -prefix 0
-    
+
     # Map of language codes used in Windows registry to those of ISO-639
     if {[info sharedlibextension] eq ".dll"} {
 	variable WinRegToISO639 [dict create  {*}{
@@ -187,7 +187,7 @@ namespace eval msgcat::mcutil {
 #	Find the translation for the given string based on the current
 #	locale setting. Check the local namespace first, then look in each
 #	parent namespace until the source is found.  If additional args are
-#	specified, use the format command to work them into the traslated
+#	specified, use the format command to work them into the translated
 #	string.
 #	If no catalog item is found, mcunknown is called in the caller frame
 #	and its result is returned.
@@ -209,7 +209,7 @@ proc msgcat::mc {args} {
 #	Find the translation for the given string based on the current
 #	locale setting. Check the passed namespace first, then look in each
 #	parent namespace until the source is found.  If additional args are
-#	specified, use the format command to work them into the traslated
+#	specified, use the format command to work them into the translated
 #	string.
 #	If no catalog item is found, mcunknown is called in the caller frame
 #	and its result is returned.
@@ -292,7 +292,7 @@ proc msgcat::mcexists {args} {
 	}
     }
     set src [lindex $args 0]
-    
+
     if {![info exists ns]} { set ns [PackageNamespaceGet] }
 
     set loclist [PackagePreferences $ns]
@@ -537,7 +537,7 @@ proc msgcat::mcpackagelocale {subcommand args} {
 	set - preferences {
 	    # set a package locale or add a package locale
 	    set fSet [expr {$subcommand eq "set"}]
-	    
+
 	    # Check parameter
 	    if {$fSet && 1 < [llength $args] } {
 		return -code error "wrong # args: should be\
@@ -1105,7 +1105,7 @@ proc msgcat::mcflmset {pairs} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    tailcal mcmset $FileLocale $pairs
+    tailcall mcmset $FileLocale $pairs
 }
 
 # msgcat::mcunknown --
@@ -1116,7 +1116,7 @@ proc msgcat::mcflmset {pairs} {
 #	by an application specific routine for error reporting
 #	purposes.  The default behavior is to return the source string.
 #	If additional args are specified, the format command will be used
-#	to work them into the traslated string.
+#	to work them into the translated string.
 #
 # Arguments:
 #	locale		The current locale.
@@ -1137,9 +1137,9 @@ proc msgcat::mcunknown {args} {
 #	- Default global handler, if mcunknown is not redefined.
 #	- Per package handler, if the package sets unknowncmd to the empty
 #	  string.
-#	It returna the source string if the argument list is empty.
+#	It returns the source string if the argument list is empty.
 #	If additional args are specified, the format command will be used
-#	to work them into the traslated string.
+#	to work them into the translated string.
 #
 # Arguments:
 #	locale		(unused) The current locale.
@@ -1241,7 +1241,7 @@ proc ::msgcat::PackageNamespaceGet {} {
 	}
     }
 }
-  
+
 # Initialize the default locale
 proc msgcat::mcutil::getsystemlocale {} {
     global env
@@ -1279,7 +1279,7 @@ proc msgcat::mcutil::getsystemlocale {} {
 
     # On Vista and later:
     # HCU/Control Panel/Desktop : PreferredUILanguages is for language packs,
-    # HCU/Control Pannel/International : localName is the default locale.
+    # HCU/Control Panel/International : localName is the default locale.
     #
     # They contain the local string as RFC5646, composed of:
     # [a-z]{2,3} : language
@@ -1315,8 +1315,8 @@ proc msgcat::mcutil::getsystemlocale {} {
     }
     #
     # Keep trying to match against smaller and smaller suffixes
-    # of the registry value, since the latter hexadigits appear
-    # to determine general language and earlier hexadigits determine
+    # of the registry value, since the latter hexdigits appear
+    # to determine general language and earlier hexdigits determine
     # more precise information, such as territory.  For example,
     #     0409 - English - United States
     #     0809 - English - United Kingdom

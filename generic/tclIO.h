@@ -36,7 +36,7 @@
  */
 
 typedef struct ChannelBuffer {
-    int refCount;		/* Current uses count */
+    size_t refCount;		/* Current uses count */
     int nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
     int nextRemoved;		/* Position of next byte to be removed from
@@ -50,7 +50,7 @@ typedef struct ChannelBuffer {
 				 * structure. */
 } ChannelBuffer;
 
-#define CHANNELBUFFER_HEADER_SIZE	TclOffset(ChannelBuffer, buf)
+#define CHANNELBUFFER_HEADER_SIZE	offsetof(ChannelBuffer, buf)
 
 /*
  * How much extra space to allocate in buffer to hold bytes from previous
@@ -96,7 +96,7 @@ typedef struct EventScriptRecord {
 
 typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
-    ClientData instanceData;	/* Instance-specific data provided by creator
+    void *instanceData;	/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
@@ -113,7 +113,7 @@ typedef struct Channel {
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
-    int refCount;
+    size_t refCount;
 } Channel;
 
 /*
@@ -163,7 +163,7 @@ typedef struct ChannelState {
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */
-    int refCount;		/* How many interpreters hold references to
+    size_t refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
     struct CloseCallback *closeCbPtr;
 				/* Callbacks registered to be called when the

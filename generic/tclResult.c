@@ -74,7 +74,7 @@ Tcl_SaveInterpState(
     int status)			/* status code for current operation */
 {
     Interp *iPtr = (Interp *) interp;
-    InterpState *statePtr = ckalloc(sizeof(InterpState));
+    InterpState *statePtr = Tcl_Alloc(sizeof(InterpState));
 
     statePtr->status = status;
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
@@ -204,33 +204,7 @@ Tcl_DiscardInterpState(
 	Tcl_DecrRefCount(statePtr->errorStack);
     }
     Tcl_DecrRefCount(statePtr->objResult);
-    ckfree(statePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetStringResult --
- *
- *	Returns an interpreter's result value as a string.
- *
- * Results:
- *	The interpreter's result as a string.
- *
- * Side effects:
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
- *
- *----------------------------------------------------------------------
- */
-
-const char *
-Tcl_GetStringResult(
-    register Tcl_Interp *interp)/* Interpreter whose result to return. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    return Tcl_GetString(iPtr->objResultPtr);
+    Tcl_Free(statePtr);
 }
 
 /*
@@ -383,12 +357,13 @@ Tcl_AppendElement(
     Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
+    size_t length;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = TclGetString(iPtr->objResultPtr);
-    if (TclNeedSpace(bytes, bytes+iPtr->objResultPtr->length)) {
+    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
+    if (TclNeedSpace(bytes, bytes + length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
     Tcl_AppendObjToObj(iPtr->objResultPtr, listPtr);
@@ -512,7 +487,7 @@ ResetObjResult(
     } else {
 	if (objResultPtr->bytes != &tclEmptyString) {
 	    if (objResultPtr->bytes) {
-		ckfree(objResultPtr->bytes);
+		Tcl_Free(objResultPtr->bytes);
 	    }
 	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;
@@ -776,8 +751,10 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    (void) TclGetString(valuePtr);
-	    if (valuePtr->length) {
+	    size_t length;
+
+	    (void) TclGetStringFromObj(valuePtr, &length);
+	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
 		iPtr->flags |= ERR_ALREADY_LOGGED;

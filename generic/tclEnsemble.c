@@ -21,8 +21,6 @@ static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
-static int		NsEnsembleImplementationCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NsEnsembleImplementationCmdNR(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
@@ -86,9 +84,24 @@ static const Tcl_ObjType ensembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
+#define ECRSetIntRep(objPtr, ecRepPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &ensembleCmdType, &ir);		\
+    } while (0)
+
+#define ECRGetIntRep(objPtr, ecRepPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
+	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 /*
- * The internal rep for caching ensemble subcommand lookups and
- * spell corrections.
+ * The internal rep for caching ensemble subcommand lookups and spelling
+ * corrections.
  */
 
 typedef struct {
@@ -98,10 +111,9 @@ typedef struct {
     Command *token;             /* Reference to the command for which this
                                  * structure is a cache of the resolution. */
     Tcl_Obj *fix;               /* Corrected spelling, if needed. */
-    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand
-                                 * hash table. */
+    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand hash
+                                 * table. */
 } EnsembleCmdRep;
-
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -111,9 +123,8 @@ NewNsObj(
 
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
-    } else {
-	return Tcl_NewStringObj(nsPtr->fullName, -1);
     }
+    return Tcl_NewStringObj(nsPtr->fullName, -1);
 }
 
 /*
@@ -147,7 +158,7 @@ TclNamespaceEnsembleCmd(
 {
     Tcl_Namespace *namespacePtr;
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp), *cxtPtr,
-    	*foundNsPtr, *altFoundNsPtr, *actualCxtPtr;
+	    *foundNsPtr, *altFoundNsPtr, *actualCxtPtr;
     Tcl_Command token;
     Tcl_DictSearch search;
     Tcl_Obj *listObj;
@@ -168,8 +179,8 @@ TclNamespaceEnsembleCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ensembleSubcommands,
-	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
+	    "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -208,8 +219,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2) {
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[0], ensembleCreateOptions,
-		    sizeof(char *), "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[0], ensembleCreateOptions,
+		    "option", 0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
@@ -302,7 +313,8 @@ TclNamespaceEnsembleCmd(
 			Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
 				newList);
 		    }
-		    Tcl_DictObjNext(&search, &subcmdWordsObj,&listObj, &done);
+		    Tcl_DictObjNext(&search, &subcmdWordsObj, &listObj,
+			    &done);
 		} while (!done);
 
 		if (allocatedMapFlag) {
@@ -336,8 +348,8 @@ TclNamespaceEnsembleCmd(
 	}
 
 	TclGetNamespaceForQualName(interp, name, cxtPtr,
-	TCL_CREATE_NS_IF_UNKNOWN, &foundNsPtr, &altFoundNsPtr, &actualCxtPtr,
-	&simpleName);
+		TCL_CREATE_NS_IF_UNKNOWN, &foundNsPtr, &altFoundNsPtr,
+		&actualCxtPtr, &simpleName);
 
 	/*
 	 * Create the ensemble. Note that this might delete another ensemble
@@ -347,8 +359,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	token = TclCreateEnsembleInNs(interp, simpleName,
-	     (Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr,
-	     (permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
+		(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr,
+		(permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
 	Tcl_SetEnsembleSubcommandList(interp, token, subcmdObj);
 	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
@@ -388,8 +400,8 @@ TclNamespaceEnsembleCmd(
 	if (objc == 4) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[3], ensembleConfigOptions,
-		    sizeof(char *), "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[3], ensembleConfigOptions,
+		    "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
@@ -509,8 +521,8 @@ TclNamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2) {
-		if (Tcl_GetIndexFromObjStruct(interp, objv[0],ensembleConfigOptions,
-			sizeof(char *), "option", 0, &index) != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[0],ensembleConfigOptions,
+			"option", 0, &index) != TCL_OK) {
 		freeMapAndError:
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
@@ -576,7 +588,8 @@ TclNamespaceEnsembleCmd(
 				Tcl_AppendStringsToObj(newCmd, "::", NULL);
 			    }
 			    Tcl_AppendObjToObj(newCmd, listv[0]);
-			    Tcl_ListObjReplace(NULL, newList, 0,1, 1,&newCmd);
+			    Tcl_ListObjReplace(NULL, newList, 0, 1, 1,
+				    &newCmd);
 			    if (patchedDict == NULL) {
 				patchedDict = Tcl_DuplicateObj(objv[1]);
 			    }
@@ -650,26 +663,24 @@ TclNamespaceEnsembleCmd(
 Tcl_Command
 TclCreateEnsembleInNs(
     Tcl_Interp *interp,
-
-    const char *name,   /* Simple name of command to create (no */
-			/* namespace components). */
-    Tcl_Namespace       /* Name of namespace to create the command in. */
-    *nameNsPtr,
-    Tcl_Namespace
-    *ensembleNsPtr,	/* Name of the namespace for the ensemble. */
-    int flags
-    )
+    const char *name,		/* Simple name of command to create (no
+				 * namespace components). */
+    Tcl_Namespace *nameNsPtr,	/* Name of namespace to create the command
+				 * in. */
+    Tcl_Namespace *ensembleNsPtr,
+				/* Name of the namespace for the ensemble. */
+    int flags)
 {
     Namespace *nsPtr = (Namespace *) ensembleNsPtr;
     EnsembleConfig *ensemblePtr;
     Tcl_Command token;
 
-    ensemblePtr = ckalloc(sizeof(EnsembleConfig));
+    ensemblePtr = Tcl_Alloc(sizeof(EnsembleConfig));
     token = TclNRCreateCommandInNs(interp, name,
-	(Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
-	NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
+	    (Tcl_Namespace *) nameNsPtr, TclEnsembleImplementationCmd,
+	    NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
     if (token == NULL) {
-	ckfree(ensemblePtr);
+	Tcl_Free(ensemblePtr);
 	return NULL;
     }
 
@@ -701,18 +712,15 @@ TclCreateEnsembleInNs(
     }
 
     return ensemblePtr->token;
-
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_CreateEnsemble
  *
- *	Create a simple ensemble attached to the given namespace.
- *
- *	Deprecated by TclCreateEnsembleInNs.
+ *	Create a simple ensemble attached to the given namespace. Deprecated
+ *	(internally) by TclCreateEnsembleInNs.
  *
  * Value
  *
@@ -732,8 +740,8 @@ Tcl_CreateEnsemble(
     Tcl_Namespace *namespacePtr,
     int flags)
 {
-    Namespace *nsPtr = (Namespace *)namespacePtr, *foundNsPtr, *altNsPtr,
-    	*actualNsPtr;
+    Namespace *nsPtr = (Namespace *) namespacePtr, *foundNsPtr, *altNsPtr,
+	    *actualNsPtr;
     const char * simpleName;
 
     if (nsPtr == NULL) {
@@ -741,11 +749,10 @@ Tcl_CreateEnsemble(
     }
 
     TclGetNamespaceForQualName(interp, name, nsPtr, TCL_CREATE_NS_IF_UNKNOWN,
-    	&foundNsPtr, &altNsPtr, &actualNsPtr, &simpleName);
+	    &foundNsPtr, &altNsPtr, &actualNsPtr, &simpleName);
     return TclCreateEnsembleInNs(interp, simpleName,
-	(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr, flags);
+	    (Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr, flags);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -774,7 +781,7 @@ Tcl_SetEnsembleSubcommandList(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -850,7 +857,7 @@ Tcl_SetEnsembleParameterList(
     Tcl_Obj *oldList;
     int length;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -926,7 +933,7 @@ Tcl_SetEnsembleMappingDict(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldDict;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -1025,7 +1032,7 @@ Tcl_SetEnsembleUnknownHandler(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -1091,7 +1098,7 @@ Tcl_SetEnsembleFlags(
     EnsembleConfig *ensemblePtr;
     int wasCompiled;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -1167,7 +1174,7 @@ Tcl_GetEnsembleSubcommandList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1209,7 +1216,7 @@ Tcl_GetEnsembleParameterList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1251,7 +1258,7 @@ Tcl_GetEnsembleMappingDict(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1292,7 +1299,7 @@ Tcl_GetEnsembleUnknownHandler(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1333,7 +1340,7 @@ Tcl_GetEnsembleFlags(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1374,7 +1381,7 @@ Tcl_GetEnsembleNamespace(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1424,7 +1431,7 @@ Tcl_FindEnsemble(
 	return NULL;
     }
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	/*
 	 * Reuse existing infrastructure for following import link chains
 	 * rather than duplicating it.
@@ -1432,7 +1439,8 @@ Tcl_FindEnsemble(
 
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
 
-	if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd){
+	if (cmdPtr == NULL
+		|| cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not an ensemble command",
@@ -1470,11 +1478,11 @@ Tcl_IsEnsemble(
 {
     Command *cmdPtr = (Command *) token;
 
-    if (cmdPtr->objProc == NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc == TclEnsembleImplementationCmd) {
 	return 1;
     }
     cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-    if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr == NULL || cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	return 0;
     }
     return 1;
@@ -1616,7 +1624,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
 		} else {
 		    /*
@@ -1637,7 +1645,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	ckfree(nameParts);
+	Tcl_Free((void *)nameParts);
     }
     return ensemble;
 }
@@ -1645,7 +1653,7 @@ TclMakeEnsemble(
 /*
  *----------------------------------------------------------------------
  *
- * NsEnsembleImplementationCmd --
+ * TclEnsembleImplementationCmd --
  *
  *	Implements an ensemble of commands (being those exported by a
  *	namespace other than the global namespace) as a command with the same
@@ -1664,8 +1672,8 @@ TclMakeEnsemble(
  *----------------------------------------------------------------------
  */
 
-static int
-NsEnsembleImplementationCmd(
+int
+TclEnsembleImplementationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -1749,10 +1757,10 @@ NsEnsembleImplementationCmdNR(
 	 * check here, and if we're still valid, we can jump straight to the
 	 * part where we do the invocation of the subcommand.
 	 */
+	EnsembleCmdRep *ensembleCmd;
 
-	if (subObj->typePtr==&ensembleCmdType){
-	    EnsembleCmdRep *ensembleCmd = subObj->internalRep.twoPtrValue.ptr1;
-
+	ECRGetIntRep(subObj, ensembleCmd);
+	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
 		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
@@ -1803,8 +1811,7 @@ NsEnsembleImplementationCmdNR(
 	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetString(subObj);
-	stringLength = subObj->length;
+	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
@@ -2072,8 +2079,8 @@ TclResetRewriteEnsemble(
  *
  * TclSpellFix --
  *
- *	Record a spelling correction that needs making in the
- *	generation of the WrongNumArgs usage message.
+ *	Record a spelling correction that needs making in the generation of
+ *	the WrongNumArgs usage message.
  *
  * Results:
  *	None.
@@ -2090,10 +2097,11 @@ FreeER(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **tmp = (Tcl_Obj **)data[0];
+    Tcl_Obj **tmp = (Tcl_Obj **) data[0];
+    Tcl_Obj **store = (Tcl_Obj **) data[1];
 
-    ckfree(tmp[2]);
-    ckfree(tmp);
+    Tcl_Free(store);
+    Tcl_Free(tmp);
     return result;
 }
 
@@ -2109,8 +2117,8 @@ TclSpellFix(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *const *search;
     Tcl_Obj **store;
-    int idx;
-    int size;
+    size_t idx;
+    size_t size;
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
@@ -2118,22 +2126,28 @@ TclSpellFix(
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 
-    /* Compute the valid length of the ensemble root */
+    /*
+     * Compute the valid length of the ensemble root.
+     */
 
     size = iPtr->ensembleRewrite.numRemovedObjs + objc
-		- iPtr->ensembleRewrite.numInsertedObjs;
+	    - iPtr->ensembleRewrite.numInsertedObjs;
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
-	/* Awful casting abuse here */
+	/*
+	 * Awful casting abuse here!
+	 */
+
 	search = (Tcl_Obj *const *) search[1];
     }
 
     if (badIdx < iPtr->ensembleRewrite.numInsertedObjs) {
 	/*
-	 * Misspelled value was inserted. We cannot directly jump
-	 * to the bad value, but have to search.
+	 * Misspelled value was inserted. We cannot directly jump to the bad
+	 * value, but have to search.
 	 */
+
 	idx = 1;
 	while (idx < size) {
 	    if (search[idx] == bad) {
@@ -2145,7 +2159,10 @@ TclSpellFix(
 	    return;
 	}
     } else {
-	/* Jump to the misspelled value. */
+	/*
+	 * Jump to the misspelled value.
+	 */
+
 	idx = iPtr->ensembleRewrite.numRemovedObjs + badIdx
 		- iPtr->ensembleRewrite.numInsertedObjs;
 
@@ -2157,17 +2174,26 @@ TclSpellFix(
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
-	store = (Tcl_Obj **)search[2];
+	store = (Tcl_Obj **) search[2];
     }  else {
-	Tcl_Obj **tmp = ckalloc(3 * sizeof(Tcl_Obj *));
-	tmp[0] = NULL;
-	tmp[1] = (Tcl_Obj *)iPtr->ensembleRewrite.sourceObjs;
-	tmp[2] = (Tcl_Obj *)ckalloc(size * sizeof(Tcl_Obj *));
-	memcpy(tmp[2], tmp[1], size*sizeof(Tcl_Obj *));
+	Tcl_Obj **tmp = Tcl_Alloc(3 * sizeof(Tcl_Obj *));
 
+	store = Tcl_Alloc(size * sizeof(Tcl_Obj *));
+	memcpy(store, iPtr->ensembleRewrite.sourceObjs,
+		size * sizeof(Tcl_Obj *));
+
+	/*
+	 * Awful casting abuse here! Note that the NULL in the first element
+	 * indicates that the initial objects are a raw array in the second
+	 * element and the rewritten ones are a raw array in the third.
+	 */
+
+	tmp[0] = NULL;
+	tmp[1] = (Tcl_Obj *) iPtr->ensembleRewrite.sourceObjs;
+	tmp[2] = (Tcl_Obj *) store;
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
-	TclNRAddCallback(interp, FreeER, tmp, NULL, NULL, NULL);
-	store = (Tcl_Obj **)tmp[2];
+
+	TclNRAddCallback(interp, FreeER, tmp, store, NULL, NULL);
     }
 
     store[idx] = fix;
@@ -2380,8 +2406,8 @@ MakeCachedEnsembleCommand(
 {
     register EnsembleCmdRep *ensembleCmd;
 
-    if (objPtr->typePtr == &ensembleCmdType) {
-	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    ECRGetIntRep(objPtr, ensembleCmd);
+    if (ensembleCmd) {
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
 	    Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2392,10 +2418,8 @@ MakeCachedEnsembleCommand(
 	 * our own.
 	 */
 
-	TclFreeIntRep(objPtr);
-	ensembleCmd = ckalloc(sizeof(EnsembleCmdRep));
-	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
-	objPtr->typePtr = &ensembleCmdType;
+	ensembleCmd = Tcl_Alloc(sizeof(EnsembleCmdRep));
+	ECRSetIntRep(objPtr, ensembleCmd);
     }
 
     /*
@@ -2447,7 +2471,7 @@ ClearTable(
             Tcl_DecrRefCount(prefixObj);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        ckfree((char *) ensemblePtr->subcommandArrayPtr);
+        Tcl_Free(ensemblePtr->subcommandArrayPtr);
     }
     Tcl_DeleteHashTable(hash);
 }
@@ -2544,7 +2568,8 @@ BuildEnsembleConfig(
     Tcl_HashSearch search;	/* Used for scanning the set of commands in
 				 * the namespace that backs up this
 				 * ensemble. */
-    int i, j, isNew;
+    size_t i, j;
+    int isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *mapDict = ensemblePtr->subcommandDict;
@@ -2570,7 +2595,7 @@ BuildEnsembleConfig(
              * as the dict mapping to targets.
              */
 
-            for (i = 0; i < subc; i += 2) {
+            for (i = 0; i < (size_t)subc; i += 2) {
                 name = TclGetString(subv[i]);
                 hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
                 if (!isNew) {
@@ -2590,16 +2615,21 @@ BuildEnsembleConfig(
                 }
             }
         } else {
-            /* Usual case where we can freely act on the list and dict. */
+            /*
+	     * Usual case where we can freely act on the list and dict.
+	     */
 
-            for (i = 0; i < subc; i++) {
+            for (i = 0; i < (size_t)subc; i++) {
                 name = TclGetString(subv[i]);
                 hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
                 if (!isNew) {
                     continue;
                 }
 
-                /* Lookup target in the dictionary */
+                /*
+		 * Lookup target in the dictionary.
+		 */
+
                 if (mapDict) {
                     Tcl_DictObjGet(NULL, mapDict, subv[i], &target);
                     if (target) {
@@ -2611,10 +2641,11 @@ BuildEnsembleConfig(
 
                 /*
                  * target was not in the dictionary so map onto the namespace.
-                 * Note in this case that we do not guarantee that the
-                 * command is actually there; that is the programmer's
-                 * responsibility (or [::unknown] of course).
+                 * Note in this case that we do not guarantee that the command
+                 * is actually there; that is the programmer's responsibility
+                 * (or [::unknown] of course).
                  */
+
                 cmdObj = Tcl_NewStringObj(name, -1);
                 cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
                 Tcl_SetHashValue(hPtr, cmdPrefixObj);
@@ -2662,11 +2693,10 @@ BuildEnsembleConfig(
 	for (; hPtr!= NULL ; hPtr=Tcl_NextHashEntry(&search)) {
 	    char *nsCmdName =		/* Name of command in namespace. */
 		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
-	    size_t k;
 
-	    for (k=0 ; k<ensemblePtr->nsPtr->numExportPatterns ; k++) {
+	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
 		if (Tcl_StringMatch(nsCmdName,
-			ensemblePtr->nsPtr->exportArrayPtr[k])) {
+			ensemblePtr->nsPtr->exportArrayPtr[i])) {
 		    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
 
 		    /*
@@ -2707,7 +2737,7 @@ BuildEnsembleConfig(
      */
 
     ensemblePtr->subcommandArrayPtr =
-	    ckalloc(sizeof(char *) * hash->numEntries);
+	    Tcl_Alloc(sizeof(char *) * hash->numEntries);
 
     /*
      * Fill array from both ends as this makes us less likely to end up with
@@ -2794,14 +2824,14 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    EnsembleCmdRep *ensembleCmd;
 
+    ECRGetIntRep(objPtr, ensembleCmd);
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
     }
-    ckfree(ensembleCmd);
-    objPtr->typePtr = NULL;
+    Tcl_Free(ensembleCmd);
 }
 
 /*
@@ -2827,11 +2857,12 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-    EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
+    EnsembleCmdRep *ensembleCmd;
+    EnsembleCmdRep *ensembleCopy = Tcl_Alloc(sizeof(EnsembleCmdRep));
 
-    copyPtr->typePtr = &ensembleCmdType;
-    copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
+    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRSetIntRep(copyPtr, ensembleCopy);
+
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
     ensembleCopy->token->refCount++;
@@ -2879,7 +2910,7 @@ TclCompileEnsemble(
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
     int len, result, flags = 0, i, depth = 1, invokeAnyway = 0;
     int ourResult = TCL_ERROR;
-    unsigned numBytes;
+    size_t numBytes;
     const char *word;
     DefineLineInformation;
 
@@ -2949,7 +2980,7 @@ TclCompileEnsemble(
 
     (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
     if (listObj != NULL) {
-	int sclen;
+	size_t sclen;
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
@@ -2958,7 +2989,7 @@ TclCompileEnsemble(
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = TclGetStringFromObj(elems[i], &sclen);
-	    if ((sclen == (int) numBytes) && !memcmp(word, str, numBytes)) {
+	    if ((sclen == numBytes) && !memcmp(word, str, numBytes)) {
 		/*
 		 * Exact match! Excellent!
 		 */
@@ -3005,7 +3036,7 @@ TclCompileEnsemble(
 	 * No map, so check the dictionary directly.
 	 */
 
-	TclNewStringObj(subcmdObj, word, (int) numBytes);
+	TclNewStringObj(subcmdObj, word, numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
 	    /*
@@ -3146,7 +3177,7 @@ TclCompileEnsemble(
 
     while (mapPtr->nuloc - 1 > eclIndex) {
         mapPtr->nuloc--;
-        ckfree(mapPtr->loc[mapPtr->nuloc].line);
+        Tcl_Free(mapPtr->loc[mapPtr->nuloc].line);
         mapPtr->loc[mapPtr->nuloc].line = NULL;
     }
 
@@ -3321,7 +3352,7 @@ TclAttemptCompileProc(
 
 	if (diff != 1) {
 	    Tcl_Panic("bad stack adjustment when compiling"
-		    " %.*s (was %d instead of 1)", parsePtr->tokenPtr->size,
+		    " %.*s (was %d instead of 1)", (int)parsePtr->tokenPtr->size,
 		    parsePtr->tokenPtr->start, diff);
 	}
 #endif
@@ -3347,6 +3378,7 @@ CompileToInvokedCommand(
     Tcl_Obj *objPtr, **words;
     char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t length;
     DefineLineInformation;
 
     /*
@@ -3359,8 +3391,8 @@ CompileToInvokedCommand(
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
-	    bytes = TclGetString(words[i-1]);
-	    PushLiteral(envPtr, bytes, words[i-1]->length);
+	    bytes = TclGetStringFromObj(words[i-1], &length);
+	    PushLiteral(envPtr, bytes, length);
 	    continue;
 	}
 
@@ -3388,11 +3420,11 @@ CompileToInvokedCommand(
 
     objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = TclGetString(objPtr);
+    bytes = TclGetStringFromObj(objPtr, &length);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, objPtr->length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);
