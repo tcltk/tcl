@@ -3,7 +3,7 @@
 #
 
 #version of library
-VERSION=1.1.0
+VERSION=1.1.0-develop
 VERSION_PC=1.1.0
 VERSION_SO=2:0:1
 
@@ -49,16 +49,29 @@ endif
 
 CFLAGS += -I./ -Wall -Wsign-compare -Wextra -Wshadow
 
+ifdef SANITIZER
+CFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fno-sanitize=float-divide-by-zero
+endif
+
 ifndef NO_ADDTL_WARNINGS
 # additional warnings
-CFLAGS += -Wsystem-headers -Wdeclaration-after-statement -Wbad-function-cast -Wcast-align
+CFLAGS += -Wdeclaration-after-statement -Wbad-function-cast -Wcast-align
 CFLAGS += -Wstrict-prototypes -Wpointer-arith
+endif
+
+ifdef CONV_WARNINGS
+CFLAGS += -std=c89 -Wconversion -Wsign-conversion
+ifeq ($(CONV_WARNINGS), strict)
+CFLAGS += -DMP_USE_ENUMS -Wc++-compat
+endif
+else
+CFLAGS += -Wsystem-headers
 endif
 
 ifdef COMPILE_DEBUG
 #debug
 CFLAGS += -g3
-else
+endif
 
 ifdef COMPILE_SIZE
 #for size
@@ -74,7 +87,6 @@ CFLAGS  += -fomit-frame-pointer
 endif
 
 endif # COMPILE_SIZE
-endif # COMPILE_DEBUG
 
 ifneq ($(findstring clang,$(CC)),)
 CFLAGS += -Wno-typedef-redefinition -Wno-tautological-compare -Wno-builtin-requires-header
@@ -92,7 +104,7 @@ endif
 ifeq ($(PLATFORM),FreeBSD)
   _ARCH := $(shell sysctl -b hw.machine_arch)
 else
-  _ARCH := $(shell arch)
+  _ARCH := $(shell uname -m)
 endif
 
 # adjust coverage set
@@ -104,8 +116,8 @@ else
    COVERAGE_APP = ./test
 endif
 
-HEADERS_PUB=tommath.h tommath_class.h tommath_superclass.h
-HEADERS=tommath_private.h $(HEADERS_PUB)
+HEADERS_PUB=tommath.h
+HEADERS=tommath_private.h tommath_class.h tommath_superclass.h $(HEADERS_PUB)
 
 test_standalone: CFLAGS+=-DLTM_DEMO_TEST_VS_MTEST=0
 
@@ -141,7 +153,7 @@ cleancov-clean:
 cleancov: cleancov-clean clean
 
 clean:
-	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/demo.o test timing mpitest mtest/mtest mtest/mtest.exe \
+	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/test.o demo/main.o demo/opponent.o test timing mpitest mtest/mtest mtest/mtest.exe tuning_list\
         *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
 	rm -rf .libs/
 	${MAKE} -C etc/ clean MAKE=${MAKE}
