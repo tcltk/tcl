@@ -284,7 +284,10 @@ CreateHashEntry(
 	    if (hash != hPtr->hash) {
 		continue;
 	    }
-	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
+	    /* if keys pointers or values are equal */
+	    if ((key == hPtr->key.oneWordValue)
+		|| compareKeysProc((void *) key, hPtr)
+	    ) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}
@@ -779,7 +782,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = Tcl_Alloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    hPtr = Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
     return hPtr;

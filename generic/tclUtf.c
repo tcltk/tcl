@@ -1027,7 +1027,7 @@ Tcl_UtfAtIndex(
     size_t len = 0;
 #endif
 
-    if (index != TCL_AUTO_LENGTH) {
+    if (index != TCL_INDEX_NONE) {
 	while (index--) {
 #if TCL_UTF_MAX <= 4
 	    src += (len = TclUtfToUniChar(src, &ch));
