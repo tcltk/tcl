@@ -3324,16 +3324,16 @@ namespace eval : {
 : p1
 } 16fe1b5807
 
-test namespace-56.4 {Bug 8b9854c3d8} -setup {
-    namespace eval namespace-56.4 {
-	proc cmd {} {string match ::* [lindex [info level 0] 0]}
+test namespace-56.5 {Bug 8b9854c3d8} -setup {
+    namespace eval namespace-56.5 {
+	proc cmd {} {string match ::* [lindex [[string cat info] level 0] 0]}
 	namespace export *
 	namespace ensemble create
     }
 } -body {
-    namespace-56.4 cmd
+    namespace-56.5 cmd
 } -cleanup {
-    namespace delete namespace-56.4
+    namespace delete namespace-56.5
 } -result 1
 
 
