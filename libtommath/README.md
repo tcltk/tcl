@@ -23,3 +23,7 @@ The project can be build by using `make`. Along with the usual `make`, `make cle
 Tests are located in `demo/` and can be built in two flavors.
 * `make test` creates a test binary that is intended to be run against `mtest`. `mtest` can be built with `make mtest` and test execution is done like `./mtest/mtest | ./test`. `mtest` is creating test vectors using an alternative MPI library and `test` is consuming these vectors to verify correct behavior of ltm
 * `make test_standalone` creates a stand-alone test binary that executes several test routines.
+
+## Building and Installing
+
+Building is straightforward for GNU Linux only, the section "Building LibTomMath" in the documentation in `doc/bn.pdf` has the details.

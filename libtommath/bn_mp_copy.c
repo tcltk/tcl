@@ -1,21 +1,13 @@
 #include "tommath_private.h"
 #ifdef BN_MP_COPY_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* copy, b = a */
-int mp_copy(const mp_int *a, mp_int *b)
+mp_err mp_copy(const mp_int *a, mp_int *b)
 {
-   int     res, n;
+   int n;
+   mp_err err;
 
    /* if dst == src do nothing */
    if (a == b) {
@@ -24,8 +16,8 @@ int mp_copy(const mp_int *a, mp_int *b)
 
    /* grow dest */
    if (b->alloc < a->used) {
-      if ((res = mp_grow(b, a->used)) != MP_OKAY) {
-         return res;
+      if ((err = mp_grow(b, a->used)) != MP_OKAY) {
+         return err;
       }
    }
 
@@ -47,9 +39,7 @@ int mp_copy(const mp_int *a, mp_int *b)
       }
 
       /* clear high digits */
-      for (; n < b->used; n++) {
-         *tmpb++ = 0;
-      }
+      MP_ZERO_DIGITS(tmpb, b->used - n);
    }
 
    /* copy used count and sign */
@@ -58,7 +48,3 @@ int mp_copy(const mp_int *a, mp_int *b)
    return MP_OKAY;
 }
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

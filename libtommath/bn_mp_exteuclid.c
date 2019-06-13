@@ -1,24 +1,15 @@
 #include "tommath_private.h"
 #ifdef BN_MP_EXTEUCLID_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* Extended euclidean algorithm of (a, b) produces
    a*u1 + b*u2 = u3
  */
-int mp_exteuclid(const mp_int *a, const mp_int *b, mp_int *U1, mp_int *U2, mp_int *U3)
+mp_err mp_exteuclid(const mp_int *a, const mp_int *b, mp_int *U1, mp_int *U2, mp_int *U3)
 {
    mp_int u1, u2, u3, v1, v2, v3, t1, t2, t3, q, tmp;
-   int err;
+   mp_err err;
 
    if ((err = mp_init_multi(&u1, &u2, &u3, &v1, &v2, &v3, &t1, &t2, &t3, &q, &tmp, NULL)) != MP_OKAY) {
       return err;
@@ -37,7 +28,7 @@ int mp_exteuclid(const mp_int *a, const mp_int *b, mp_int *U1, mp_int *U2, mp_in
    }
 
    /* loop while v3 != 0 */
-   while (mp_iszero(&v3) == MP_NO) {
+   while (!MP_IS_ZERO(&v3)) {
       /* q = u3/v3 */
       if ((err = mp_div(&u3, &v3, &q, NULL)) != MP_OKAY) {
          goto LBL_ERR;
@@ -116,7 +107,3 @@ LBL_ERR:
    return err;
 }
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

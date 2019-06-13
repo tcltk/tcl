@@ -1,24 +1,16 @@
 #include "tommath_private.h"
 #ifdef BN_MP_TORADIX_N_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* stores a bignum as a ASCII string in a given radix (2..64)
  *
  * Stores upto maxlen-1 chars and always a NULL byte
  */
-int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 {
-   int     res, digs;
+   int     digs;
+   mp_err  err;
    mp_int  t;
    mp_digit d;
    char   *_s = str;
@@ -29,14 +21,14 @@ int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    }
 
    /* quick out if its zero */
-   if (mp_iszero(a) == MP_YES) {
+   if (MP_IS_ZERO(a)) {
       *str++ = '0';
       *str = '\0';
       return MP_OKAY;
    }
 
-   if ((res = mp_init_copy(&t, a)) != MP_OKAY) {
-      return res;
+   if ((err = mp_init_copy(&t, a)) != MP_OKAY) {
+      return err;
    }
 
    /* if it is negative output a - */
@@ -53,14 +45,14 @@ int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    }
 
    digs = 0;
-   while (mp_iszero(&t) == MP_NO) {
+   while (!MP_IS_ZERO(&t)) {
       if (--maxlen < 1) {
          /* no more room */
          break;
       }
-      if ((res = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
+      if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
          mp_clear(&t);
-         return res;
+         return err;
       }
       *str++ = mp_s_rmap[d];
       ++digs;
@@ -69,7 +61,7 @@ int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    /* reverse the digits of the string.  In this case _s points
     * to the first digit [exluding the sign] of the number
     */
-   bn_reverse((unsigned char *)_s, digs);
+   s_mp_reverse((unsigned char *)_s, digs);
 
    /* append a NULL so the string is properly terminated */
    *str = '\0';
@@ -79,7 +71,3 @@ int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 }
 
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
