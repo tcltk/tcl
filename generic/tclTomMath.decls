@@ -256,7 +256,7 @@ declare 76 {
 }
 
 declare 77 {
-    int TclBN_mp_get_bit(const mp_int *a, int b)
+    int TclBN_mp_get_bit(const mp_int *a, unsigned int b)
 }
 
 
