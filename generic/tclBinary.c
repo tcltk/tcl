@@ -1629,7 +1629,7 @@ BinarySetCmd(
     arg = 3;
     format = TclGetString(objv[2]);
     cursor = buffer;
-    maxPos = cursor;
+    maxPos = cursor + originalLength;
     while (*format != 0) {
 	flags = 0;
 	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
