@@ -2961,76 +2961,487 @@ test binary-79.7 {binary set: errors prevent creation} -setup {
 test binary-80.1 {binary set: a} {
     set x abc
     binary set x a A
-    return $x
-} Abc
+    binary encode hex $x
+} 416263
 test binary-80.2 {binary set: a} {
     set x abc
     binary set x a* AB
-    return $x
-} ABc
+    binary encode hex $x
+} 414263
 test binary-80.3 {binary set: a} {
     set x abc
     binary set x a1 AB
-    return $x
-} Abc
+    binary encode hex $x
+} 416263
 test binary-80.4 {binary set: a} {
     set x abc
     binary set x a2 A
-    scan $x %c%c%c
-} {65 0 99}
+    binary encode hex $x
+} 410063
 
 test binary-81.1 {binary set: A} {
     set x abc
     binary set x A A
-    return $x
-} Abc
+    binary encode hex $x
+} 416263
 test binary-81.2 {binary set: A} {
     set x abc
     binary set x A* AB
-    return $x
-} ABc
+    binary encode hex $x
+} 414263
 test binary-81.3 {binary set: A} {
     set x abc
     binary set x A1 AB
-    return $x
-} Abc
+    binary encode hex $x
+} 416263
 test binary-81.4 {binary set: A} {
     set x abc
     binary set x A2 A
-    scan $x %c%c%c
-} {65 32 99}
+    binary encode hex $x
+} 412063
 
 test binary-82.1 {binary set: b} {
     set x abc
     binary set x b 10101010
-    scan $x %c%c%c
-} {1 98 99}
+    binary encode hex $x
+} 016263
 test binary-82.2 {binary set: b} {
     set x abc
     binary set x b* 1010101011011010
-    return $x
-} "U\[c"
+    binary encode hex $x
+} 555b63
 test binary-82.3 {binary set: b} {
     set x abc
     binary set x b4 1010101010101010
-    scan $x %c%c%c
-} {5 98 99}
+    binary encode hex $x
+} 056263
 
 test binary-83.1 {binary set: B} {
     set x abc
     binary set x B 10101010
-    scan $x %c%c%c
-} {128 98 99}
+    binary encode hex $x
+} 806263
 test binary-83.2 {binary set: B} {
     set x abc
     binary set x B* 0101010101101101
-    return $x
-} Umc
+    binary encode hex $x
+} 556d63
 test binary-83.3 {binary set: B} {
     set x abc
     binary set x B4 1010101010101010
-    scan $x %c%c%c
-} {160 98 99}
+    binary encode hex $x
+} a06263
+
+test binary-84.1 {binary set: c} {
+    set x abc
+    binary set x c 65
+    binary encode hex $x
+} 416263
+test binary-84.2 {binary set: c} {
+    set x abc
+    binary set x c* {65 66}
+    binary encode hex $x
+} 414263
+test binary-84.3 {binary set: c} {
+    set x abcdef
+    binary set x c4 {65 66 67 68 69}
+    binary encode hex $x
+} 414243446566
+
+test binary-85.1 {binary set: h} {
+    set x abc
+    binary set x h abcdef
+    binary encode hex $x
+} 0a6263
+test binary-85.2 {binary set: h} {
+    set x abc
+    binary set x h* 1424
+    binary encode hex $x
+} 414263
+test binary-85.3 {binary set: h} {
+    set x abc
+    binary set x h4 142434
+    binary encode hex $x
+} 414263
+
+test binary-86.1 {binary set: H} {
+    set x abc
+    binary set x H abcdef
+    binary encode hex $x
+} a06263
+test binary-86.2 {binary set: H} {
+    set x abc
+    binary set x H* 4142
+    binary encode hex $x
+} 414263
+test binary-86.3 {binary set: H} {
+    set x abc
+    binary set x H4 414243
+    binary encode hex $x
+} 414263
+
+test binary-87.1 {binary set: s} {
+    set x abcdef
+    binary set x s 65
+    binary encode hex $x
+} 410063646566
+test binary-87.2 {binary set: s} {
+    set x abcdef
+    binary set x s* {65 66}
+    binary encode hex $x
+} 410042006566
+test binary-87.3 {binary set: s} {
+    set x abcdef
+    binary set x s2 {65 -66 67 68 69}
+    binary encode hex $x
+} 4100beff6566
+
+test binary-88.1 {binary set: S} {
+    set x abcdef
+    binary set x S 65
+    binary encode hex $x
+} 004163646566
+test binary-88.2 {binary set: S} {
+    set x abcdef
+    binary set x S* {65 66}
+    binary encode hex $x
+} 004100426566
+test binary-88.3 {binary set: S} {
+    set x abcdef
+    binary set x S2 {65 -66 67 68 69}
+    binary encode hex $x
+} 0041ffbe6566
+
+test binary-89.1.BE {binary set: t} bigEndian {
+    set x abcdef
+    binary set x t 65
+    binary encode hex $x
+} 004163646566
+test binary-89.2.BE {binary set: t} bigEndian {
+    set x abcdef
+    binary set x t* {65 66}
+    binary encode hex $x
+} 004100426566
+test binary-89.3.BE {binary set: t} bigEndian {
+    set x abcdef
+    binary set x t2 {65 -66 67 68 69}
+    binary encode hex $x
+} 0041ffbe6566
+test binary-89.1.LE {binary set: t} littleEndian {
+    set x abcdef
+    binary set x t 65
+    binary encode hex $x
+} 410063646566
+test binary-89.2.LE {binary set: t} littleEndian {
+    set x abcdef
+    binary set x t* {65 66}
+    binary encode hex $x
+} 410042006566
+test binary-89.3.LE {binary set: t} littleEndian {
+    set x abcdef
+    binary set x t2 {65 -66 67 68 69}
+    binary encode hex $x
+} 4100beff6566
+
+test binary-90.1 {binary set: i} {
+    set x abcdefghij
+    binary set x i 65
+    binary encode hex $x
+} 4100000065666768696a
+test binary-90.2 {binary set: i} {
+    set x abcdefghij
+    binary set x i* {65 66}
+    binary encode hex $x
+} 4100000042000000696a
+test binary-90.3 {binary set: i} {
+    set x abcdefghij
+    binary set x i2 {65 -66 67 68 69}
+    binary encode hex $x
+} 41000000beffffff696a
+
+test binary-91.1 {binary set: I} {
+    set x abcdefghij
+    binary set x I 65
+    binary encode hex $x
+} 0000004165666768696a
+test binary-91.2 {binary set: I} {
+    set x abcdefghij
+    binary set x I* {65 66}
+    binary encode hex $x
+} 0000004100000042696a
+test binary-91.3 {binary set: I} {
+    set x abcdefghij
+    binary set x I2 {65 -66 67 68 69}
+    binary encode hex $x
+} 00000041ffffffbe696a
+
+test binary-92.1.BE {binary set: n} bigEndian {
+    set x abcdefghij
+    binary set x n 65
+    binary encode hex $x
+} 0000004165666768696a
+test binary-92.2.BE {binary set: n} bigEndian {
+    set x abcdefghij
+    binary set x n* {65 66}
+    binary encode hex $x
+} 0000004100000042696a
+test binary-92.3.BE {binary set: n} bigEndian {
+    set x abcdefghij
+    binary set x n2 {65 -66 67 68 69}
+    binary encode hex $x
+} 00000041ffffffbe696a
+test binary-92.1.LE {binary set: n} littleEndian {
+    set x abcdefghij
+    binary set x n 65
+    binary encode hex $x
+} 4100000065666768696a
+test binary-92.2.LE {binary set: n} littleEndian {
+    set x abcdefghij
+    binary set x n* {65 66}
+    binary encode hex $x
+} 4100000042000000696a
+test binary-92.3.LE {binary set: n} littleEndian {
+    set x abcdefghij
+    binary set x n2 {65 -66 67 68 69}
+    binary encode hex $x
+} 41000000beffffff696a
+
+test binary-93.1 {binary set: w} {
+    set x abcdefghijklmnopqr
+    binary set x w 65
+    binary encode hex $x
+} 4100000000000000696a6b6c6d6e6f707172
+test binary-93.2 {binary set: w} {
+    set x abcdefghijklmnopqr
+    binary set x w* {65 66}
+    binary encode hex $x
+} 410000000000000042000000000000007172
+test binary-93.3 {binary set: w} {
+    set x abcdefghijklmnopqr
+    binary set x w2 {65 -66 67 68 69}
+    binary encode hex $x
+} 4100000000000000beffffffffffffff7172
+
+test binary-94.1 {binary set: W} {
+    set x abcdefghijklmnopqr
+    binary set x W 65
+    binary encode hex $x
+} 0000000000000041696a6b6c6d6e6f707172
+test binary-94.2 {binary set: W} {
+    set x abcdefghijklmnopqr
+    binary set x W* {65 66}
+    binary encode hex $x
+} 000000000000004100000000000000427172
+test binary-94.3 {binary set: W} {
+    set x abcdefghijklmnopqr
+    binary set x W2 {65 -66 67 68 69}
+    binary encode hex $x
+} 0000000000000041ffffffffffffffbe7172
+
+test binary-95.1.BE {binary set: m} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x m 65
+    binary encode hex $x
+} 0000000000000041696a6b6c6d6e6f707172
+test binary-95.2.BE {binary set: m} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x m* {65 66}
+    binary encode hex $x
+} 000000000000004100000000000000427172
+test binary-95.3.BE {binary set: m} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x m2 {65 -66 67 68 69}
+    binary encode hex $x
+} 0000000000000041ffffffffffffffbe7172
+test binary-95.1.LE {binary set: m} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x m 65
+    binary encode hex $x
+} 4100000000000000696a6b6c6d6e6f707172
+test binary-95.2.LE {binary set: m} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x m* {65 66}
+    binary encode hex $x
+} 410000000000000042000000000000007172
+test binary-95.3.LE {binary set: m} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x m2 {65 -66 67 68 69}
+    binary encode hex $x
+} 4100000000000000beffffffffffffff7172
+
+test binary-96.1 {binary set: r} {
+    set x abcdefghij
+    binary set x r 65.3
+    binary encode hex $x
+} 9a99824265666768696a
+test binary-96.2 {binary set: r} {
+    set x abcdefghij
+    binary set x r* {65.3 66.6}
+    binary encode hex $x
+} 9a99824233338542696a
+test binary-96.3 {binary set: r} {
+    set x abcdefghij
+    binary set x r2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 9a998242333385c2696a
+
+test binary-97.1 {binary set: R} {
+    set x abcdefghij
+    binary set x R 65.3
+    binary encode hex $x
+} 4282999a65666768696a
+test binary-97.2 {binary set: R} {
+    set x abcdefghij
+    binary set x R* {65.3 66.6}
+    binary encode hex $x
+} 4282999a42853333696a
+test binary-97.3 {binary set: R} {
+    set x abcdefghij
+    binary set x R2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 4282999ac2853333696a
+
+test binary-98.1.BE {binary set: f} bigEndian {
+    set x abcdefghij
+    binary set x f 65.3
+    binary encode hex $x
+} 4282999a65666768696a
+test binary-98.2.BE {binary set: f} bigEndian {
+    set x abcdefghij
+    binary set x f* {65.3 66.6}
+    binary encode hex $x
+} 4282999a42853333696a
+test binary-98.3.BE {binary set: f} bigEndian {
+    set x abcdefghij
+    binary set x f2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 4282999ac2853333696a
+test binary-98.1.LE {binary set: f} littleEndian {
+    set x abcdefghij
+    binary set x f 65.3
+    binary encode hex $x
+} 9a99824265666768696a
+test binary-98.2.LE {binary set: f} littleEndian {
+    set x abcdefghij
+    binary set x f* {65.3 66.6}
+    binary encode hex $x
+} 9a99824233338542696a
+test binary-98.3.LE {binary set: f} littleEndian {
+    set x abcdefghij
+    binary set x f2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 9a998242333385c2696a
+
+test binary-99.1 {binary set: q} {
+    set x abcdefghijklmnopqr
+    binary set x q 65.3
+    binary encode hex $x
+} 3333333333535040696a6b6c6d6e6f707172
+test binary-99.2 {binary set: q} {
+    set x abcdefghijklmnopqr
+    binary set x q* {65.3 66.6}
+    binary encode hex $x
+} 33333333335350406666666666a650407172
+test binary-99.3 {binary set: q} {
+    set x abcdefghijklmnopqr
+    binary set x q2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 33333333335350406666666666a650c07172
+
+test binary-100.1 {binary set: Q} {
+    set x abcdefghijklmnopqr
+    binary set x Q 65.3
+    binary encode hex $x
+} 4050533333333333696a6b6c6d6e6f707172
+test binary-100.2 {binary set: Q} {
+    set x abcdefghijklmnopqr
+    binary set x Q* {65.3 66.6}
+    binary encode hex $x
+} 40505333333333334050a666666666667172
+test binary-100.3 {binary set: Q} {
+    set x abcdefghijklmnopqr
+    binary set x Q2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 4050533333333333c050a666666666667172
+
+test binary-101.1.BE {binary set: d} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x d 65.3
+    binary encode hex $x
+} 4050533333333333696a6b6c6d6e6f707172
+test binary-101.2.BE {binary set: d} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x d* {65.3 66.6}
+    binary encode hex $x
+} 40505333333333334050a666666666667172
+test binary-101.3.BE {binary set: d} bigEndian {
+    set x abcdefghijklmnopqr
+    binary set x d2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 4050533333333333c050a666666666667172
+test binary-101.1.LE {binary set: d} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x d 65.3
+    binary encode hex $x
+} 3333333333535040696a6b6c6d6e6f707172
+test binary-101.2.LE {binary set: d} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x d* {65.3 66.6}
+    binary encode hex $x
+} 33333333335350406666666666a650407172
+test binary-101.3.LE {binary set: d} littleEndian {
+    set x abcdefghijklmnopqr
+    binary set x d2 {65.3 -66.6 67.1 68.8 69.2}
+    binary encode hex $x
+} 33333333335350406666666666a650c07172
+
+test binary-102.1 {binary set: x} {
+    set x abc
+    binary set x x
+    binary encode hex $x
+} 006263
+test binary-102.2 {binary set: x} {
+    set x abc
+    binary set x x2
+    binary encode hex $x
+} 000063
+
+test binary-103.1 {binary set: X} {
+    set x abcdef
+    binary set x a2Xa AB Z
+    binary encode hex $x
+} 415a63646566
+test binary-103.2 {binary set: X} {
+    set x abcdef
+    binary set x a4X2a ABCD Z
+    binary encode hex $x
+} 41425a446566
+test binary-103.3 {binary set: X} {
+    set x abcdef
+    binary set x a2X4a ABCD Z
+    binary encode hex $x
+} 5a4263646566
+test binary-103.4 {binary set: X} {
+    set x abcdef
+    binary set x a2X*a ABCD Z
+    binary encode hex $x
+} 5a4263646566
+
+test binary-104.1 {binary set: @} {
+    set x abcdef
+    binary set x a4@2a ABCD Z
+    binary encode hex $x
+} 41425a446566
+test binary-104.2 {binary set: @} {
+    set x abcdef
+    binary set x a2@4a ABCD Z
+    binary encode hex $x
+} 414263645a66
+test binary-104.3 {binary set: @} {
+    set x abcdef
+    binary set x a2@*a ABCD Z
+    binary encode hex $x
+} 4142636465665a
 
 # ----------------------------------------------------------------------
 # cleanup
