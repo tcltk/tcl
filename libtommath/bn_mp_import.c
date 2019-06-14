@@ -1,24 +1,15 @@
 #include "tommath_private.h"
 #ifdef BN_MP_IMPORT_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* based on gmp's mpz_import.
  * see http://gmplib.org/manual/Integer-Import-and-Export.html
  */
-int mp_import(mp_int *rop, size_t count, int order, size_t size,
-              int endian, size_t nails, const void *op)
+mp_err mp_import(mp_int *rop, size_t count, int order, size_t size,
+                 int endian, size_t nails, const void *op)
 {
-   int result;
+   mp_err err;
    size_t odd_nails, nail_bytes, i, j;
    unsigned char odd_nail_mask;
 
@@ -43,12 +34,12 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size,
 
    for (i = 0; i < count; ++i) {
       for (j = 0; j < (size - nail_bytes); ++j) {
-         unsigned char byte = *((unsigned char *)op +
+         unsigned char byte = *((const unsigned char *)op +
                                 (((order == 1) ? i : ((count - 1u) - i)) * size) +
                                 ((endian == 1) ? (j + nail_bytes) : (((size - 1u) - j) - nail_bytes)));
 
-         if ((result = mp_mul_2d(rop, (j == 0u) ? (int)(8u - odd_nails) : 8, rop)) != MP_OKAY) {
-            return result;
+         if ((err = mp_mul_2d(rop, (j == 0u) ? (int)(8u - odd_nails) : 8, rop)) != MP_OKAY) {
+            return err;
          }
 
          rop->dp[0] |= (j == 0u) ? (mp_digit)(byte & odd_nail_mask) : (mp_digit)byte;
@@ -62,7 +53,3 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size,
 }
 
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

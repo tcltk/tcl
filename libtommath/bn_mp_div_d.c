@@ -1,24 +1,16 @@
 #include "tommath_private.h"
 #ifdef BN_MP_DIV_D_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* single digit division (based on routine from MPI) */
-int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
+mp_err mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
 {
    mp_int  q;
    mp_word w;
    mp_digit t;
-   int     res, ix;
+   mp_err err;
+   int ix;
 
    /* cannot divide by zero */
    if (b == 0u) {
@@ -26,7 +18,7 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    }
 
    /* quick outs */
-   if ((b == 1u) || (mp_iszero(a) == MP_YES)) {
+   if ((b == 1u) || MP_IS_ZERO(a)) {
       if (d != NULL) {
          *d = 0;
       }
@@ -37,11 +29,10 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    }
 
    /* power of two ? */
-   if (((b & (b-1)) == 0)) {
-      for (ix = 1; ix < DIGIT_BIT; ix++) {
-         if (b == (((mp_digit)1)<<ix)) {
-            break;
-         }
+   if ((b & (b-1)) == 0u) {
+      ix = 1;
+      while ((ix < MP_DIGIT_BIT) && (b != (((mp_digit)1)<<ix))) {
+         ix++;
       }
       if (d != NULL) {
          *d = a->dp[0] & (((mp_digit)1<<(mp_digit)ix) - 1uL);
@@ -60,15 +51,15 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
 #endif
 
    /* no easy answer [c'est la vie].  Just division */
-   if ((res = mp_init_size(&q, a->used)) != MP_OKAY) {
-      return res;
+   if ((err = mp_init_size(&q, a->used)) != MP_OKAY) {
+      return err;
    }
 
    q.used = a->used;
    q.sign = a->sign;
    w = 0;
    for (ix = a->used - 1; ix >= 0; ix--) {
-      w = (w << (mp_word)DIGIT_BIT) | (mp_word)a->dp[ix];
+      w = (w << (mp_word)MP_DIGIT_BIT) | (mp_word)a->dp[ix];
 
       if (w >= b) {
          t = (mp_digit)(w / b);
@@ -89,11 +80,7 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    }
    mp_clear(&q);
 
-   return res;
+   return err;
 }
 
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

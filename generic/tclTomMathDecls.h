@@ -37,9 +37,9 @@
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (ckfree((char*)(x)))
 
-#define XMALLOC(size)                   TclBNAlloc(size)
-#define XFREE(mem, size)                TclBNFree(mem)
-#define XREALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
+#define MP_MALLOC(size)                   TclBNAlloc(size)
+#define MP_REALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
+#define MP_FREE(mem, size)                TclBNFree(mem)
 
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
@@ -334,7 +334,7 @@ EXTERN int		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 EXTERN int		TclBN_mp_signed_rsh(const mp_int *a, int b,
 				mp_int *c);
 /* 77 */
-EXTERN int		TclBN_mp_get_bit(const mp_int *a, int b);
+EXTERN int		TclBN_mp_get_bit(const mp_int *a, unsigned int b);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -417,7 +417,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     int (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
     int (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c); /* 76 */
-    int (*tclBN_mp_get_bit) (const mp_int *a, int b); /* 77 */
+    int (*tclBN_mp_get_bit) (const mp_int *a, unsigned int b); /* 77 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;

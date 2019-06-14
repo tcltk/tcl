@@ -26,32 +26,34 @@ endif
 LCOV_ARGS=--directory .
 
 #START_INS
-OBJECTS=bn_error.o bn_fast_mp_invmod.o bn_fast_mp_montgomery_reduce.o bn_fast_s_mp_mul_digs.o \
-bn_fast_s_mp_mul_high_digs.o bn_fast_s_mp_sqr.o bn_mp_2expt.o bn_mp_abs.o bn_mp_add.o bn_mp_add_d.o \
-bn_mp_addmod.o bn_mp_and.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o bn_mp_cmp.o bn_mp_cmp_d.o \
-bn_mp_cmp_mag.o bn_mp_cnt_lsb.o bn_mp_complement.o bn_mp_copy.o bn_mp_count_bits.o bn_mp_div.o \
-bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o bn_mp_div_d.o bn_mp_dr_is_modulus.o bn_mp_dr_reduce.o \
-bn_mp_dr_setup.o bn_mp_exch.o bn_mp_export.o bn_mp_expt_d.o bn_mp_expt_d_ex.o bn_mp_exptmod.o \
-bn_mp_exptmod_fast.o bn_mp_exteuclid.o bn_mp_fread.o bn_mp_fwrite.o bn_mp_gcd.o bn_mp_get_bit.o \
-bn_mp_get_double.o bn_mp_get_int.o bn_mp_get_long.o bn_mp_get_long_long.o bn_mp_grow.o bn_mp_import.o \
-bn_mp_init.o bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o bn_mp_init_set_int.o bn_mp_init_size.o \
-bn_mp_invmod.o bn_mp_invmod_slow.o bn_mp_is_square.o bn_mp_jacobi.o bn_mp_karatsuba_mul.o \
-bn_mp_karatsuba_sqr.o bn_mp_kronecker.o bn_mp_lcm.o bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mod_d.o \
+OBJECTS=bn_cutoffs.o bn_deprecated.o bn_mp_2expt.o bn_mp_abs.o bn_mp_add.o bn_mp_add_d.o bn_mp_addmod.o \
+bn_mp_and.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
+bn_mp_cnt_lsb.o bn_mp_complement.o bn_mp_copy.o bn_mp_count_bits.o bn_mp_decr.o bn_mp_div.o bn_mp_div_2.o \
+bn_mp_div_2d.o bn_mp_div_3.o bn_mp_div_d.o bn_mp_dr_is_modulus.o bn_mp_dr_reduce.o bn_mp_dr_setup.o \
+bn_mp_error_to_string.o bn_mp_exch.o bn_mp_export.o bn_mp_expt_d.o bn_mp_exptmod.o bn_mp_exteuclid.o \
+bn_mp_fread.o bn_mp_fwrite.o bn_mp_gcd.o bn_mp_get_double.o bn_mp_get_i32.o bn_mp_get_i64.o \
+bn_mp_get_mag32.o bn_mp_get_mag64.o bn_mp_grow.o bn_mp_ilogb.o bn_mp_import.o bn_mp_incr.o bn_mp_init.o \
+bn_mp_init_copy.o bn_mp_init_i32.o bn_mp_init_i64.o bn_mp_init_multi.o bn_mp_init_set.o bn_mp_init_size.o \
+bn_mp_init_u32.o bn_mp_init_u64.o bn_mp_invmod.o bn_mp_is_square.o bn_mp_iseven.o bn_mp_isodd.o \
+bn_mp_kronecker.o bn_mp_lcm.o bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mod_d.o \
 bn_mp_montgomery_calc_normalization.o bn_mp_montgomery_reduce.o bn_mp_montgomery_setup.o bn_mp_mul.o \
-bn_mp_mul_2.o bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_mulmod.o bn_mp_n_root.o bn_mp_n_root_ex.o bn_mp_neg.o \
-bn_mp_or.o bn_mp_prime_fermat.o bn_mp_prime_frobenius_underwood.o bn_mp_prime_is_divisible.o \
-bn_mp_prime_is_prime.o bn_mp_prime_miller_rabin.o bn_mp_prime_next_prime.o \
-bn_mp_prime_rabin_miller_trials.o bn_mp_prime_random_ex.o bn_mp_prime_strong_lucas_selfridge.o \
-bn_mp_radix_size.o bn_mp_radix_smap.o bn_mp_rand.o bn_mp_read_radix.o bn_mp_read_signed_bin.o \
-bn_mp_read_unsigned_bin.o bn_mp_reduce.o bn_mp_reduce_2k.o bn_mp_reduce_2k_l.o bn_mp_reduce_2k_setup.o \
-bn_mp_reduce_2k_setup_l.o bn_mp_reduce_is_2k.o bn_mp_reduce_is_2k_l.o bn_mp_reduce_setup.o bn_mp_rshd.o \
-bn_mp_set.o bn_mp_set_double.o bn_mp_set_int.o bn_mp_set_long.o bn_mp_set_long_long.o bn_mp_shrink.o \
-bn_mp_signed_bin_size.o bn_mp_sqr.o bn_mp_sqrmod.o bn_mp_sqrt.o bn_mp_sqrtmod_prime.o bn_mp_sub.o \
-bn_mp_sub_d.o bn_mp_submod.o bn_mp_tc_and.o bn_mp_tc_div_2d.o bn_mp_tc_or.o bn_mp_tc_xor.o \
-bn_mp_to_signed_bin.o bn_mp_to_signed_bin_n.o bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
-bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix.o bn_mp_toradix_n.o bn_mp_unsigned_bin_size.o bn_mp_xor.o \
-bn_mp_zero.o bn_prime_tab.o bn_reverse.o bn_s_mp_add.o bn_s_mp_exptmod.o bn_s_mp_mul_digs.o \
-bn_s_mp_mul_high_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o bncore.o
+bn_mp_mul_2.o bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_mulmod.o bn_mp_n_root.o bn_mp_neg.o bn_mp_or.o \
+bn_mp_prime_fermat.o bn_mp_prime_frobenius_underwood.o bn_mp_prime_is_prime.o \
+bn_mp_prime_miller_rabin.o bn_mp_prime_next_prime.o bn_mp_prime_rabin_miller_trials.o \
+bn_mp_prime_rand.o bn_mp_prime_strong_lucas_selfridge.o bn_mp_radix_size.o bn_mp_radix_smap.o \
+bn_mp_rand.o bn_mp_read_radix.o bn_mp_read_signed_bin.o bn_mp_read_unsigned_bin.o bn_mp_reduce.o \
+bn_mp_reduce_2k.o bn_mp_reduce_2k_l.o bn_mp_reduce_2k_setup.o bn_mp_reduce_2k_setup_l.o \
+bn_mp_reduce_is_2k.o bn_mp_reduce_is_2k_l.o bn_mp_reduce_setup.o bn_mp_rshd.o bn_mp_set.o \
+bn_mp_set_double.o bn_mp_set_i32.o bn_mp_set_i64.o bn_mp_set_u32.o bn_mp_set_u64.o bn_mp_shrink.o \
+bn_mp_signed_bin_size.o bn_mp_signed_rsh.o bn_mp_sqr.o bn_mp_sqrmod.o bn_mp_sqrt.o bn_mp_sqrtmod_prime.o \
+bn_mp_sub.o bn_mp_sub_d.o bn_mp_submod.o bn_mp_to_signed_bin.o bn_mp_to_signed_bin_n.o \
+bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o bn_mp_toradix.o bn_mp_toradix_n.o \
+bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_prime_tab.o bn_s_mp_add.o bn_s_mp_balance_mul.o \
+bn_s_mp_exptmod.o bn_s_mp_exptmod_fast.o bn_s_mp_get_bit.o bn_s_mp_invmod_fast.o bn_s_mp_invmod_slow.o \
+bn_s_mp_karatsuba_mul.o bn_s_mp_karatsuba_sqr.o bn_s_mp_montgomery_reduce_fast.o bn_s_mp_mul_digs.o \
+bn_s_mp_mul_digs_fast.o bn_s_mp_mul_high_digs.o bn_s_mp_mul_high_digs_fast.o \
+bn_s_mp_prime_is_divisible.o bn_s_mp_rand_jenkins.o bn_s_mp_rand_platform.o bn_s_mp_reverse.o \
+bn_s_mp_sqr.o bn_s_mp_sqr_fast.o bn_s_mp_sub.o bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o
 
 #END_INS
 
@@ -94,11 +96,11 @@ uninstall:
 	rm $(DESTDIR)$(LIBPATH)/$(LIBNAME)
 	rm $(HEADERS_PUB:%=$(DESTDIR)$(INCPATH)/%)
 
-test: $(LIBNAME) demo/demo.o
-	$(CC) $(CFLAGS) demo/demo.o $(LIBNAME) $(LFLAGS) -o test
+test: demo/main.o demo/opponent.o demo/test.o $(LIBNAME)
+	$(CC) $(CFLAGS) $^ $(LFLAGS) -o test
 
-test_standalone: $(LIBNAME) demo/demo.o
-	$(CC) $(CFLAGS) demo/demo.o $(LIBNAME) $(LFLAGS) -o test
+test_standalone: demo/main.o demo/opponent.o demo/test.o $(LIBNAME)
+	$(CC) $(CFLAGS) $^ $(LFLAGS) -o test
 
 .PHONY: mtest
 mtest:
@@ -107,6 +109,10 @@ mtest:
 timing: $(LIBNAME) demo/timing.c
 	$(CC) $(CFLAGS) -DTIMER demo/timing.c $(LIBNAME) $(LFLAGS) -o timing
 
+tune: $(LIBNAME)
+	$(MAKE) -C etc tune
+	$(MAKE)
+
 # You have to create a file .coveralls.yml with the content "repo_token: <the token>"
 # in the base folder to be able to submit to coveralls
 coveralls: lcov
@@ -114,9 +120,6 @@ coveralls: lcov
 
 docdvi poster docs mandvi manual:
 	$(MAKE) -C doc/ $@ V=$(V)
-
-pretty:
-	perl pretty.build
 
 .PHONY: pre_gen
 pre_gen:
@@ -148,11 +151,11 @@ zipup: clean astyle new_file manual poster docs
 	gpg -b -a ltm-$(VERSION).zip
 
 new_file:
-	bash updatemakes.sh
-	perl dep.pl
+	perl helper.pl --update-files
 
 perlcritic:
 	perlcritic *.pl doc/*.pl
 
 astyle:
-	astyle --options=astylerc $(OBJECTS:.o=.c) tommath*.h demo/*.c etc/*.c mtest/mtest.c
+	@echo "   * run astyle on all sources"
+	@astyle --options=astylerc --formatted $(OBJECTS:.o=.c) tommath*.h demo/*.c etc/*.c mtest/mtest.c

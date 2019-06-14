@@ -311,9 +311,6 @@ GENERIC_OBJS = \
 	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
-	bn_reverse.${OBJEXT} \
-	bn_fast_s_mp_mul_digs.${OBJEXT} \
-	bn_fast_s_mp_sqr.${OBJEXT} \
 	bn_mp_add.${OBJEXT} \
 	bn_mp_add_d.${OBJEXT} \
 	bn_mp_and.${OBJEXT} \
@@ -333,17 +330,12 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
-	bn_mp_expt_d_ex.${OBJEXT} \
-	bn_s_mp_get_bit.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_set.${OBJEXT} \
-	bn_mp_init_set_int.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
-	bn_mp_karatsuba_mul.${OBJEXT} \
-	bn_mp_karatsuba_sqr.$(OBJEXT) \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \
 	bn_mp_mod_2d.${OBJEXT} \
@@ -358,8 +350,6 @@ TOMMATH_OBJS = \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
-	bn_mp_set_int.${OBJEXT} \
-	bn_mp_set_long.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sqrt.${OBJEXT} \
@@ -368,16 +358,23 @@ TOMMATH_OBJS = \
 	bn_mp_signed_rsh.${OBJEXT} \
 	bn_mp_to_unsigned_bin.${OBJEXT} \
 	bn_mp_to_unsigned_bin_n.${OBJEXT} \
-	bn_mp_toom_mul.${OBJEXT} \
-	bn_mp_toom_sqr.${OBJEXT} \
 	bn_mp_toradix_n.${OBJEXT} \
 	bn_mp_unsigned_bin_size.${OBJEXT} \
 	bn_mp_xor.${OBJEXT} \
 	bn_mp_zero.${OBJEXT} \
 	bn_s_mp_add.${OBJEXT} \
+	bn_s_mp_balance_mul.$(OBJEXT) \
+	bn_s_mp_get_bit.${OBJEXT} \
+	bn_s_mp_karatsuba_mul.${OBJEXT} \
+	bn_s_mp_karatsuba_sqr.$(OBJEXT) \
 	bn_s_mp_mul_digs.${OBJEXT} \
+	bn_s_mp_mul_digs_fast.${OBJEXT} \
+	bn_s_mp_reverse.${OBJEXT} \
+	bn_s_mp_sqr_fast.${OBJEXT} \
 	bn_s_mp_sqr.${OBJEXT} \
-	bn_s_mp_sub.${OBJEXT}
+	bn_s_mp_sub.${OBJEXT} \
+	bn_s_mp_toom_mul.${OBJEXT} \
+	bn_s_mp_toom_sqr.${OBJEXT}
 
 
 WIN_OBJS = \

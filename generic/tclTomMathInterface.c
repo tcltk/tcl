@@ -106,7 +106,7 @@ TclBN_revision(void)
  *----------------------------------------------------------------------
  */
 
-extern void
+void
 TclBNInitBignumFromLong(
     mp_int *a,
     long initVal)
@@ -164,7 +164,7 @@ TclBNInitBignumFromLong(
  *----------------------------------------------------------------------
  */
 
-extern void
+void
 TclBNInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
@@ -193,7 +193,7 @@ TclBNInitBignumFromWideInt(
  *----------------------------------------------------------------------
  */
 
-extern void
+void
 TclBNInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */

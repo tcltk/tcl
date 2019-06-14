@@ -251,9 +251,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bn_reverse.obj \
-	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
-	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_add.obj \
 	$(TMP_DIR)\bn_mp_add_d.obj \
 	$(TMP_DIR)\bn_mp_and.obj \
@@ -273,17 +270,12 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
-	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
-	$(TMP_DIR)\bn_s_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
-	$(TMP_DIR)\bn_mp_init_set_int.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
-	$(TMP_DIR)\bn_mp_karatsuba_mul.obj \
-	$(TMP_DIR)\bn_mp_karatsuba_sqr.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
 	$(TMP_DIR)\bn_mp_mod_2d.obj \
@@ -298,8 +290,6 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
-	$(TMP_DIR)\bn_mp_set_int.obj \
-	$(TMP_DIR)\bn_mp_set_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
@@ -308,16 +298,23 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_signed_rsh.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
-	$(TMP_DIR)\bn_mp_toom_mul.obj \
-	$(TMP_DIR)\bn_mp_toom_sqr.obj \
 	$(TMP_DIR)\bn_mp_toradix_n.obj \
 	$(TMP_DIR)\bn_mp_unsigned_bin_size.obj \
 	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
+	$(TMP_DIR)\bn_s_mp_balance_mul.obj \
+	$(TMP_DIR)\bn_s_mp_get_bit.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_mul.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_sqr.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
+	$(TMP_DIR)\bn_s_mp_mul_digs_fast.obj \
+	$(TMP_DIR)\bn_s_mp_reverse.obj \
 	$(TMP_DIR)\bn_s_mp_sqr.obj \
-	$(TMP_DIR)\bn_s_mp_sub.obj
+	$(TMP_DIR)\bn_s_mp_sqr_fast.obj \
+	$(TMP_DIR)\bn_s_mp_sub.obj \
+	$(TMP_DIR)\bn_s_mp_toom_sqr.obj \
+	$(TMP_DIR)\bn_s_mp_toom_mul.obj
 
 PLATFORMOBJS = \
 	$(TMP_DIR)\tclWin32Dll.obj \

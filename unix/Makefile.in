@@ -315,26 +315,26 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
 
-TOMMATH_OBJS = bn_reverse.o bn_fast_s_mp_mul_digs.o \
-	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
+TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
+	bn_s_mp_sqr_fast.o bn_mp_add.o bn_mp_and.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
         bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
 	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_d.o \
-        bn_mp_expt_d_ex.o bn_s_mp_get_bit.o bn_mp_grow.o bn_mp_init.o \
+        bn_s_mp_get_bit.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
-	bn_mp_init_set_int.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
-	bn_mp_karatsuba_sqr.o \
+	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
+	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
         bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
         bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
-        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_int.o \
-	bn_mp_set_long.o bn_mp_shrink.o \
+        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o \
+	bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
 	bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
-	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
+	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_toradix_n.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
@@ -483,9 +483,6 @@ STUB_SRCS = \
 	$(GENERIC_DIR)/tclOOStubLib.c
 
 TOMMATH_SRCS = \
-	$(TOMMATH_DIR)/bn_reverse.c \
-	$(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c \
-	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
 	$(TOMMATH_DIR)/bn_mp_add.c \
 	$(TOMMATH_DIR)/bn_mp_add_d.c \
 	$(TOMMATH_DIR)/bn_mp_and.c \
@@ -505,17 +502,12 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
 	$(TOMMATH_DIR)/bn_mp_expt_d.c \
-	$(TOMMATH_DIR)/bn_mp_expt_d_ex.c \
-	$(TOMMATH_DIR)/bn_s_mp_get_bit.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
 	$(TOMMATH_DIR)/bn_mp_init_multi.c \
 	$(TOMMATH_DIR)/bn_mp_init_set.c \
-	$(TOMMATH_DIR)/bn_mp_init_set_int.c \
 	$(TOMMATH_DIR)/bn_mp_init_size.c \
-	$(TOMMATH_DIR)/bn_mp_karatsuba_mul.c \
-	$(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c \
 	$(TOMMATH_DIR)/bn_mp_lshd.c \
 	$(TOMMATH_DIR)/bn_mp_mod.c \
 	$(TOMMATH_DIR)/bn_mp_mod_2d.c \
@@ -530,8 +522,6 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_read_radix.c \
 	$(TOMMATH_DIR)/bn_mp_rshd.c \
 	$(TOMMATH_DIR)/bn_mp_set.c \
-	$(TOMMATH_DIR)/bn_mp_set_int.c \
-	$(TOMMATH_DIR)/bn_mp_set_long.c \
 	$(TOMMATH_DIR)/bn_mp_shrink.c \
 	$(TOMMATH_DIR)/bn_mp_sqr.c \
 	$(TOMMATH_DIR)/bn_mp_sqrt.c \
@@ -546,6 +536,12 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c \
 	$(TOMMATH_DIR)/bn_mp_xor.c \
 	$(TOMMATH_DIR)/bn_mp_zero.c \
+	$(TOMMATH_DIR)/bn_s_mp_reverse.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_digs_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_sqr_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_get_bit.c \
+	$(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c \
+	$(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c \
 	$(TOMMATH_DIR)/bn_s_mp_add.c \
 	$(TOMMATH_DIR)/bn_s_mp_mul_digs.c \
 	$(TOMMATH_DIR)/bn_s_mp_sqr.c \
@@ -1357,14 +1353,14 @@ tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
 
-bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
+bn_s_mp_reverse.o: $(TOMMATH_DIR)/bn_s_mp_reverse.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_reverse.c
 
-bn_fast_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+bn_s_mp_mul_digs_fast.o: $(TOMMATH_DIR)/bn_s_mp_mul_digs_fast.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs_fast.c
 
-bn_fast_s_mp_sqr.o: $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
+bn_s_mp_sqr_fast.o: $(TOMMATH_DIR)/bn_s_mp_sqr_fast.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sqr_fast.c
 
 bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
@@ -1423,9 +1419,6 @@ bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
 
-bn_mp_expt_d_ex.o: $(TOMMATH_DIR)/bn_mp_expt_d_ex.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d_ex.c
-
 bn_s_mp_get_bit.o: $(TOMMATH_DIR)/bn_s_mp_get_bit.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_get_bit.c
 
@@ -1444,17 +1437,17 @@ bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c $(MATHHDRS)
 bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set.c
 
-bn_mp_init_set_int.o: $(TOMMATH_DIR)/bn_mp_init_set_int.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set_int.c
-
 bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
 
-bn_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+bn_s_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c
 
-bn_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+bn_s_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c
+
+bn_s_mp_balance_mul.o: $(TOMMATH_DIR)/bn_s_mp_balance_mul.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_balance_mul.c
 
 bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
@@ -1498,12 +1491,6 @@ bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c $(MATHHDRS)
 bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
 
-bn_mp_set_int.o: $(TOMMATH_DIR)/bn_mp_set_int.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_int.c
-
-bn_mp_set_long.o: $(TOMMATH_DIR)/bn_mp_set_long.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_long.c
-
 bn_mp_shrink.o: $(TOMMATH_DIR)/bn_mp_shrink.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_shrink.c
 
@@ -1528,11 +1515,11 @@ bn_mp_to_unsigned_bin.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c $(MATHHDRS)
 bn_mp_to_unsigned_bin_n.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c
 
-bn_mp_toom_mul.o: $(TOMMATH_DIR)/bn_mp_toom_mul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
+bn_s_mp_toom_mul.o: $(TOMMATH_DIR)/bn_s_mp_toom_mul.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_toom_mul.c
 
-bn_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_mp_toom_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_sqr.c
+bn_s_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_s_mp_toom_sqr.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_toom_sqr.c
 
 bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
