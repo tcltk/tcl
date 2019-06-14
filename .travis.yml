@@ -144,7 +144,7 @@ matrix:
             - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT=--host=i686-w64-mingw32
+        - CFGOPT="--host=i686-w64-mingw32 --disable-64bit"
         - NO_DIRECT_TEST=1
     - os: linux
       dist: xenial
