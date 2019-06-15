@@ -23,9 +23,9 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#ifndef fpclassify /* Older MSVC */
 #include <float.h>
-#endif /* defined(_MSC_VER) && (_MSC_VER <= 1200) */
+#endif /* !fpclassify */
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -8319,14 +8319,21 @@ ExprSrandFunc(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
+ * But it does have _fpclass() which does almost the same job.
+ *
+ * This makes it conform to the C99 standard API, and just delegates to the
+ * standard macro on platforms that do it correctly.
+ */
+
 static inline int
 ClassifyDouble(
     double d)
 {
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-    /*
-     * MSVC6 is supported by Tcl, but doesn't have fpclassify(). Of course.
-     */
+#ifdef fpclassify
+    return fpclassify(d);
+#else /* !fpclassify */
 #define FP_ZERO 0
 #define FP_NORMAL 1
 #define FP_SUBNORMAL 2
@@ -8352,9 +8359,7 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-#else /* !defined(_MSC_VER) || (_MSC_VER > 1200) */
-    return fpclassify(d);
-#endif /* defined(_MSC_VER) && (_MSC_VER <= 1200) */
+#endif /* fpclassify */
 }
 
 static int
