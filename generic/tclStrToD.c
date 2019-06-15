@@ -3263,7 +3263,7 @@ ShorteningBignumConversionPowD(Double* dPtr,
      */
 
     TclBNInitBignumFromWideUInt(&b, bw);
-    mp_init_set_int(&mminus, 1);
+    mp_init_set(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3666,7 +3666,7 @@ ShorteningBignumConversion(Double* dPtr,
 
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
+    mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
 
     /*
@@ -3683,7 +3683,7 @@ ShorteningBignumConversion(Double* dPtr,
 
     /* mminus = 2**m2minus * 5**m5 */
 
-    mp_init_set_int(&mminus, minit);
+    mp_init_set(&mminus, minit);
     mp_mul_2d(&mminus, m2minus, &mminus);
     if (m2plus > m2minus) {
 	mp_init_copy(&mplus, &mminus);
@@ -3879,7 +3879,7 @@ StrictBignumConversion(Double* dPtr,
     mp_init_multi(&temp, &dig, NULL);
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
+    mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
 
     /*
