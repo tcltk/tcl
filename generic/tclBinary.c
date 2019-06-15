@@ -1399,7 +1399,7 @@ BinaryFormatCmd(
 
 static int
 BinarySetCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData ignored,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1413,42 +1413,38 @@ BinarySetCmd(
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
 				 * string. */
-    Var *varPtr, *arrayPtr;
-    Tcl_Obj *valuePtr;		/* Object holding binary value buffer. */
+    Tcl_Obj *valuePtr;		/* Object holding binary value buffer, which
+				 * might be value read from variable, or might
+				 * be duplicate or new. */
+    int originalLength;		/* Length of the starting value read from the
+				 * variable. */
     unsigned char *buffer;	/* Start of result buffer. */
     unsigned char *cursor;	/* Current position within result buffer. */
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    const unsigned char *bytes;
-    int offset, size, length, originalLength, duplicated = 0;
-    int type, isFloat, i, argLength, listc;
-    ClientData data;
-    Tcl_WideInt wide;
-    Tcl_Obj **listv;
+    int offset, size, length, i, argLength;
+    const unsigned char *bytes;	/* Working buffer for testing arguments. */
+    Tcl_Obj **listv;		/* Used for parsing list arguments. */
+    int listc;			/* Used for parsing list arguments. */
+    int isFloat;		/* What type of number parsing to use. */
+    int type;			/* Used for parsing numbers. */
+    ClientData data;		/* Used for parsing numbers. */
+    Tcl_WideInt wide;		/* Used for parsing numbers. */
+    double dummy;		/* Used for parsing numbers. */
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName formatString ?arg ...?");
 	return TCL_ERROR;
     }
 
-    /*
-     * Trickery to create the variable if it didn't already exist but without
-     * changing its internal representation at all; depends on the fact that
-     * concatenating the empty string is a special case.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
-	    "set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
-    if (varPtr == NULL) {
-	return TCL_ERROR;
-    }
-    valuePtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr, objv[1], NULL, 0, -1);
+    valuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (valuePtr == NULL) {
-	TclNewObj(valuePtr);
+	originalLength = 0;
+    } else {
+	(void) Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
     }
-    (void) Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
     length = originalLength;
 
     /*
@@ -1593,7 +1589,6 @@ BinarySetCmd(
 
 	    if (count == BINARY_NOCOUNT) {
 		if (isFloat) {
-		    double dummy;
 		    if (TclGetNumberFromObj(NULL, objv[arg],
 			    &data, &type) != TCL_OK) {
 			return Tcl_GetDoubleFromObj(interp, objv[arg], &dummy);
@@ -1624,7 +1619,6 @@ BinarySetCmd(
 		}
 		for (i = 0; i < count; i++) {
 		    if (isFloat) {
-			double dummy;
 			if (TclGetNumberFromObj(NULL, listv[i],
 				&data, &type) != TCL_OK) {
 			    return Tcl_GetDoubleFromObj(interp, listv[i],
@@ -1691,9 +1685,10 @@ BinarySetCmd(
      * unshared because we mustn't mutate anything on failure. Bother.
      */
 
-    if (Tcl_IsShared(valuePtr)) {
+    if (valuePtr == NULL) {
+	valuePtr = Tcl_NewObj();
+    } else if (Tcl_IsShared(valuePtr)) {
 	valuePtr = Tcl_DuplicateObj(valuePtr);
-	duplicated = 1;
     }
     buffer = Tcl_SetByteArrayLength(valuePtr, length);
     if (length > originalLength) {
@@ -1758,7 +1753,6 @@ BinarySetCmd(
 		count = length;
 	    }
 	    value = 0;
-	    errorString = "binary";
 	    if (cmd == 'B') {
 		for (offset = 0; offset < count; offset++) {
 		    value <<= 1;
@@ -1812,7 +1806,6 @@ BinarySetCmd(
 		count = length;
 	    }
 	    value = 0;
-	    errorString = "hexadecimal";
 	    if (cmd == 'H') {
 		for (offset = 0; offset < count; offset++) {
 		    value <<= 4;
@@ -1875,8 +1868,7 @@ BinarySetCmd(
 	case 'd':
 	case 'q':
 	case 'Q':
-	case 'f': {
-
+	case 'f':
 	    if (count == BINARY_NOCOUNT) {
 		/*
 		 * Note that we are casting away the const-ness of objv, but
@@ -1901,7 +1893,6 @@ BinarySetCmd(
 		(void) FormatNumber(interp, cmd, listv[i], &cursor);
 	    }
 	    break;
-	}
 	case 'x':
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1934,18 +1925,24 @@ BinarySetCmd(
 	    break;
 	}
     }
-    if (!TclPtrSetVarIdx(interp, varPtr, arrayPtr, objv[1], NULL, valuePtr,
-	    TCL_LEAVE_ERR_MSG, -1)) {
+
+    /*
+     * Store the value back in the variable. This is vital if the value was
+     * allocated in this function, which could be the case if either we
+     * duplicated a shared value or we are assigning the variable anew.
+     */
+
+    Tcl_IncrRefCount(valuePtr);
+    if (!Tcl_ObjSetVar2(interp, objv[1], NULL, valuePtr, TCL_LEAVE_ERR_MSG)) {
 	/*
 	 * Failure here with an in-place modification means there are traces
 	 * applying shenanigans.
 	 */
 
-	if (duplicated) {
-	    TclDecrRefCount(valuePtr);
-	}
+	TclDecrRefCount(valuePtr);
 	return TCL_ERROR;
     }
+    TclDecrRefCount(valuePtr);
     return TCL_OK;
 
  badValue:

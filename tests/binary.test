@@ -2955,8 +2955,16 @@ test binary-79.7 {binary set: errors prevent creation} -setup {
     list [catch {binary set nosuchvar ci 70 gorp} msg] $msg \
 	[info exist nosuchvar]
 } -cleanup {
-    unset -nocomplain x
+    unset -nocomplain nosuchvar
 } -result {1 {expected integer but got "gorp"} 0}
+test binary-79.8 {binary set: create variable} -setup {
+    unset -nocomplain nosuchvar
+} -body {
+    binary set nosuchvar "c3" {65 66 67}
+    return $nosuchvar
+} -cleanup {
+    unset -nocomplain nosuchvar
+} -result ABC
 
 test binary-80.1 {binary set: a} {
     set x abc
