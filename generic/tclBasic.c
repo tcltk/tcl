@@ -23,6 +23,9 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#include <float.h>
+#endif /* defined(_MSC_VER) && (_MSC_VER <= 1200) */
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -8316,6 +8319,44 @@ ExprSrandFunc(
  *----------------------------------------------------------------------
  */
 
+static inline int
+ClassifyDouble(
+    double d)
+{
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+    /*
+     * MSVC6 is supported by Tcl, but doesn't have fpclassify(). Of course.
+     */
+#define FP_ZERO 0
+#define FP_NORMAL 1
+#define FP_SUBNORMAL 2
+#define FP_INFINITE 3
+#define FP_NAN 4
+
+    switch (_fpclass(d)) {
+    case _FPCLASS_NZ:
+    case _FPCLASS_PZ:
+        return FP_ZERO;
+    case _FPCLASS_NN:
+    case _FPCLASS_PN:
+        return FP_NORMAL;
+    case _FPCLASS_ND:
+    case _FPCLASS_PD:
+        return FP_SUBNORMAL;
+    case _FPCLASS_NINF:
+    case _FPCLASS_PINF:
+        return FP_INFINITE;
+    default:
+        Tcl_Panic("result of _fpclass() outside documented range!");
+    case _FPCLASS_QNAN:
+    case _FPCLASS_SNAN:
+        return FP_NAN;
+    }
+#else /* !defined(_MSC_VER) || (_MSC_VER > 1200) */
+    return fpclassify(d);
+#endif /* defined(_MSC_VER) && (_MSC_VER <= 1200) */
+}
+
 static int
 ExprIsFiniteFunc(
     ClientData ignored,
@@ -8340,7 +8381,7 @@ ExprIsFiniteFunc(
         if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
             return TCL_ERROR;
         }
-        type = fpclassify(d);
+        type = ClassifyDouble(d);
         result = (type != FP_INFINITE && type != FP_NAN);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
@@ -8371,7 +8412,7 @@ ExprIsInfinityFunc(
         if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = (fpclassify(d) == FP_INFINITE);
+        result = (ClassifyDouble(d) == FP_INFINITE);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -8401,7 +8442,7 @@ ExprIsNaNFunc(
         if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = (fpclassify(d) == FP_NAN);
+        result = (ClassifyDouble(d) == FP_NAN);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -8431,7 +8472,7 @@ ExprIsNormalFunc(
         if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = (fpclassify(d) == FP_NORMAL);
+        result = (ClassifyDouble(d) == FP_NORMAL);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -8461,7 +8502,7 @@ ExprIsSubnormalFunc(
         if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = (fpclassify(d) == FP_SUBNORMAL);
+        result = (ClassifyDouble(d) == FP_SUBNORMAL);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -8491,17 +8532,17 @@ ExprIsUnorderedFunc(
         result = 1;
     } else {
         d = *((const double *) ptr);
-        result |= isnan(d);
+        result = (ClassifyDouble(d) == FP_NAN);
     }
 
     if (TclGetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
-        result = 1;
+        result |= 1;
     } else {
         d = *((const double *) ptr);
-        result |= isnan(d);
+        result |= (ClassifyDouble(d) == FP_NAN);
     }
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
@@ -8534,7 +8575,7 @@ FloatClassifyObjCmd(
     } else if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
         return TCL_ERROR;
     }
-    switch (fpclassify(d)) {
+    switch (ClassifyDouble(d)) {
     case FP_INFINITE:
         TclNewLiteralStringObj(objPtr, "infinite");
         break;
