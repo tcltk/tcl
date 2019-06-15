@@ -281,7 +281,7 @@ typedef struct ByteArray {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
+		(offsetof(ByteArray, bytes) + (len))
 #define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
