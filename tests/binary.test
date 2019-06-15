@@ -2917,7 +2917,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary scan \U0001f415 a* v; set v
     set str {}
 } -result {}
-
+
 test binary-79.1 {binary set} {
     list [set x abc] [binary set x @1c 66] [set x]
 } {abc {} aBc}
