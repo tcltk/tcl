@@ -1421,7 +1421,12 @@ BinarySetCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size, length, originalLength, usesFailingOps = 0;
+    const unsigned char *bytes;
+    int offset, size, length, originalLength, duplicated = 0;
+    int type, isFloat, i, argLength, listc;
+    ClientData data;
+    Tcl_WideInt wide;
+    Tcl_Obj **listv;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName formatString ?arg ...?");
@@ -1443,13 +1448,14 @@ BinarySetCmd(
     if (valuePtr == NULL) {
 	TclNewObj(valuePtr);
     }
-    buffer = Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
+    (void) Tcl_GetByteArrayFromObj(valuePtr, &originalLength);
     length = originalLength;
 
     /*
      * To avoid copying the data, we format the string in two passes. The
-     * first pass computes the size of the output buffer. The second pass
-     * places the formatted data into the buffer.
+     * first pass computes the size of the output buffer and checks that the
+     * supplied values are legal. The second pass places the formatted data
+     * into the buffer.
      */
 
     format = TclGetString(objv[2]);
@@ -1461,12 +1467,70 @@ BinarySetCmd(
 	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
 	    break;
 	}
+	isFloat = 0;
 	switch (cmd) {
 	case 'b':
 	case 'B':
+	    /*
+	     * For string-type specifiers, the count corresponds to the number
+	     * of bytes in a single argument.
+	     */
+
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		Tcl_GetByteArrayFromObj(objv[arg], &count);
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    bytes = Tcl_GetByteArrayFromObj(objv[arg], &argLength);
+	    if (count > argLength) {
+		count = argLength;
+	    }
+	    for (i = 0 ; i < count; i++) {
+		switch (bytes[i]) {
+		case '0':
+		case '1':
+		    break;
+		default:
+		    errorString = "binary";
+		    errorValue = Tcl_GetString(objv[arg]);
+		    goto badValue;
+		}
+	    }
+	    arg++;
+	    offset += (count + 7) / 8;
+	    break;
 	case 'h':
 	case 'H':
-	    usesFailingOps = 1;
+	    /*
+	     * For string-type specifiers, the count corresponds to the number
+	     * of bytes in a single argument.
+	     */
+
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		Tcl_GetByteArrayFromObj(objv[arg], &count);
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    bytes = Tcl_GetByteArrayFromObj(objv[arg], &argLength);
+	    if (count > argLength) {
+		count = argLength;
+	    }
+	    for (i = 0 ; i < count; i++) {
+		if (!isxdigit(bytes[i])) {		/* INTL: digit */
+		    errorString = "hexadecimal";
+		    errorValue = Tcl_GetString(objv[arg]);
+		    goto badValue;
+		}
+	    }
+	    arg++;
+	    offset += (count + 1) / 2;
+	    break;
 	case 'a':
 	case 'A':
 	    /*
@@ -1483,13 +1547,7 @@ BinarySetCmd(
 		count = 1;
 	    }
 	    arg++;
-	    if (cmd == 'a' || cmd == 'A') {
-		offset += count;
-	    } else if (cmd == 'b' || cmd == 'B') {
-		offset += (count + 7) / 8;
-	    } else {
-		offset += (count + 1) / 2;
-	    }
+	    offset += count;
 	    break;
 	case 'c':
 	    size = 1;
@@ -1513,14 +1571,15 @@ BinarySetCmd(
 	case 'R':
 	case 'f':
 	    size = sizeof(float);
+	    isFloat = 1;
 	    goto doNumbers;
 	case 'q':
 	case 'Q':
 	case 'd':
 	    size = sizeof(double);
+	    isFloat = 1;
 
 	doNumbers:
-	    usesFailingOps = 1;
 	    if (arg >= objc) {
 		goto badIndex;
 	    }
@@ -1533,12 +1592,20 @@ BinarySetCmd(
 	     */
 
 	    if (count == BINARY_NOCOUNT) {
-		arg++;
+		if (isFloat) {
+		    double dummy;
+		    if (TclGetNumberFromObj(NULL, objv[arg],
+			    &data, &type) != TCL_OK) {
+			return Tcl_GetDoubleFromObj(interp, objv[arg], &dummy);
+		    }
+		} else {
+		    if (Tcl_GetWideIntFromObj(interp, objv[arg],
+			    &wide) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		}
 		count = 1;
 	    } else {
-		int listc;
-		Tcl_Obj **listv;
-
 		/*
 		 * The macro evals its args more than once: avoid arg++
 		 */
@@ -1547,25 +1614,38 @@ BinarySetCmd(
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		arg++;
 
 		if (count == BINARY_ALL) {
 		    count = listc;
 		} else if (count > listc) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "number of elements in list does not match count",
-			    -1));
-		    return TCL_ERROR;
+		    errorString =
+			    "number of elements in list does not match count";
+		    goto error;
+		}
+		for (i = 0; i < count; i++) {
+		    if (isFloat) {
+			double dummy;
+			if (TclGetNumberFromObj(NULL, listv[i],
+				&data, &type) != TCL_OK) {
+			    return Tcl_GetDoubleFromObj(interp, listv[i],
+				    &dummy);
+			}
+		    } else {
+			if (Tcl_GetWideIntFromObj(interp, listv[i],
+				&wide) != TCL_OK) {
+			    return TCL_ERROR;
+			}
+		    }
 		}
 	    }
+	    arg++;
 	    offset += count * size;
 	    break;
 
 	case 'x':
 	    if (count == BINARY_ALL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot use \"*\" in format string with \"x\"", -1));
-		return TCL_ERROR;
+		errorString = "cannot use \"*\" in format string with \"x\"";
+		goto error;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
@@ -1611,14 +1691,14 @@ BinarySetCmd(
      * unshared because we mustn't mutate anything on failure. Bother.
      */
 
-    if (Tcl_IsShared(valuePtr) || usesFailingOps) {
+    if (Tcl_IsShared(valuePtr)) {
 	valuePtr = Tcl_DuplicateObj(valuePtr);
+	duplicated = 1;
     }
     buffer = Tcl_SetByteArrayLength(valuePtr, length);
     if (length > originalLength) {
 	memset(buffer + originalLength, 0, length - originalLength);
     }
-    Tcl_IncrRefCount(valuePtr);
 
     /*
      * Pack the data into the result object. Note that we can skip the error
@@ -1645,7 +1725,6 @@ BinarySetCmd(
 	case 'a':
 	case 'A': {
 	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
-	    unsigned char *bytes;
 
 	    bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
 
@@ -1685,10 +1764,6 @@ BinarySetCmd(
 		    value <<= 1;
 		    if (str[offset] == '1') {
 			value |= 1;
-		    } else if (str[offset] != '0') {
-			errorValue = str;
-			Tcl_DecrRefCount(valuePtr);
-			goto badValue;
 		    }
 		    if (((offset + 1) % 8) == 0) {
 			*cursor++ = UCHAR(value);
@@ -1700,10 +1775,6 @@ BinarySetCmd(
 		    value >>= 1;
 		    if (str[offset] == '1') {
 			value |= 128;
-		    } else if (str[offset] != '0') {
-			errorValue = str;
-			Tcl_DecrRefCount(valuePtr);
-			goto badValue;
 		    }
 		    if (!((offset + 1) % 8)) {
 			*cursor++ = UCHAR(value);
@@ -1745,11 +1816,6 @@ BinarySetCmd(
 	    if (cmd == 'H') {
 		for (offset = 0; offset < count; offset++) {
 		    value <<= 4;
-		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
-			errorValue = str;
-			Tcl_DecrRefCount(valuePtr);
-			goto badValue;
-		    }
 		    c = str[offset] - '0';
 		    if (c > 9) {
 			c += ('0' - 'A') + 10;
@@ -1766,12 +1832,6 @@ BinarySetCmd(
 	    } else {
 		for (offset = 0; offset < count; offset++) {
 		    value >>= 4;
-
-		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
-			errorValue = str;
-			Tcl_DecrRefCount(valuePtr);
-			goto badValue;
-		    }
 		    c = str[offset] - '0';
 		    if (c > 9) {
 			c += ('0' - 'A') + 10;
@@ -1816,8 +1876,6 @@ BinarySetCmd(
 	case 'q':
 	case 'Q':
 	case 'f': {
-	    int listc, i;
-	    Tcl_Obj **listv;
 
 	    if (count == BINARY_NOCOUNT) {
 		/*
@@ -1836,10 +1894,11 @@ BinarySetCmd(
 	    }
 	    arg++;
 	    for (i = 0; i < count; i++) {
-		if (FormatNumber(interp, cmd, listv[i], &cursor) != TCL_OK) {
-		    Tcl_DecrRefCount(valuePtr);
-		    return TCL_ERROR;
-		}
+		/*
+		 * Already checked the error cases.
+		 */
+
+		(void) FormatNumber(interp, cmd, listv[i], &cursor);
 	    }
 	    break;
 	}
@@ -1877,10 +1936,16 @@ BinarySetCmd(
     }
     if (!TclPtrSetVarIdx(interp, varPtr, arrayPtr, objv[1], NULL, valuePtr,
 	    TCL_LEAVE_ERR_MSG, -1)) {
-	TclDecrRefCount(valuePtr);
+	/*
+	 * Failure here with an in-place modification means there are traces
+	 * applying shenanigans.
+	 */
+
+	if (duplicated) {
+	    TclDecrRefCount(valuePtr);
+	}
 	return TCL_ERROR;
     }
-    TclDecrRefCount(valuePtr);
     return TCL_OK;
 
  badValue:

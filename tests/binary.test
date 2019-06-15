@@ -2917,7 +2917,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary scan \U0001f415 a* v; set v
     set str {}
 } -result {}
-
+
 test binary-79.1 {binary set} {
     list [set x abc] [binary set x @1c 66] [set x]
 } {abc {} aBc}
@@ -3015,6 +3015,11 @@ test binary-82.3 {binary set: b} {
     binary set x b4 1010101010101010
     binary encode hex $x
 } 056263
+test binary-82.4 {binary set: b, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ab8 A 1010gorp} msg] $msg $x
+} {1 {expected binary string but got "1010gorp" instead} abcdef}
 
 test binary-83.1 {binary set: B} {
     set x abc
@@ -3031,6 +3036,11 @@ test binary-83.3 {binary set: B} {
     binary set x B4 1010101010101010
     binary encode hex $x
 } a06263
+test binary-83.4 {binary set: B, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aB8 A 1010gorp} msg] $msg $x
+} {1 {expected binary string but got "1010gorp" instead} abcdef}
 
 test binary-84.1 {binary set: c} {
     set x abc
@@ -3047,6 +3057,16 @@ test binary-84.3 {binary set: c} {
     binary set x c4 {65 66 67 68 69}
     binary encode hex $x
 } 414243446566
+test binary-83.4 {binary set: c, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ac A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-83.5 {binary set: c, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ac2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-85.1 {binary set: h} {
     set x abc
@@ -3063,6 +3083,11 @@ test binary-85.3 {binary set: h} {
     binary set x h4 142434
     binary encode hex $x
 } 414263
+test binary-85.4 {binary set: h, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ah8 A 1010gorp} msg] $msg $x
+} {1 {expected hexadecimal string but got "1010gorp" instead} abcdef}
 
 test binary-86.1 {binary set: H} {
     set x abc
@@ -3079,6 +3104,11 @@ test binary-86.3 {binary set: H} {
     binary set x H4 414243
     binary encode hex $x
 } 414263
+test binary-86.4 {binary set: H, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aH8 A 1010gorp} msg] $msg $x
+} {1 {expected hexadecimal string but got "1010gorp" instead} abcdef}
 
 test binary-87.1 {binary set: s} {
     set x abcdef
@@ -3095,6 +3125,16 @@ test binary-87.3 {binary set: s} {
     binary set x s2 {65 -66 67 68 69}
     binary encode hex $x
 } 4100beff6566
+test binary-87.4 {binary set: s, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x as A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-87.5 {binary set: s, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x as2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-88.1 {binary set: S} {
     set x abcdef
@@ -3111,6 +3151,16 @@ test binary-88.3 {binary set: S} {
     binary set x S2 {65 -66 67 68 69}
     binary encode hex $x
 } 0041ffbe6566
+test binary-83.4 {binary set: S, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aS A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-83.5 {binary set: S, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aS2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-89.1.BE {binary set: t} bigEndian {
     set x abcdef
@@ -3158,6 +3208,16 @@ test binary-90.3 {binary set: i} {
     binary set x i2 {65 -66 67 68 69}
     binary encode hex $x
 } 41000000beffffff696a
+test binary-90.4 {binary set: i, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ai A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-90.5 {binary set: i, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ai2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-91.1 {binary set: I} {
     set x abcdefghij
@@ -3174,6 +3234,16 @@ test binary-91.3 {binary set: I} {
     binary set x I2 {65 -66 67 68 69}
     binary encode hex $x
 } 00000041ffffffbe696a
+test binary-91.4 {binary set: I, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aI A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-91.5 {binary set: I, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aI2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-92.1.BE {binary set: n} bigEndian {
     set x abcdefghij
@@ -3221,6 +3291,16 @@ test binary-93.3 {binary set: w} {
     binary set x w2 {65 -66 67 68 69}
     binary encode hex $x
 } 4100000000000000beffffffffffffff7172
+test binary-93.4 {binary set: w, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aw A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-93.5 {binary set: w, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aw2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-94.1 {binary set: W} {
     set x abcdefghijklmnopqr
@@ -3237,6 +3317,16 @@ test binary-94.3 {binary set: W} {
     binary set x W2 {65 -66 67 68 69}
     binary encode hex $x
 } 0000000000000041ffffffffffffffbe7172
+test binary-94.4 {binary set: W, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aW A gorp} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
+test binary-94.5 {binary set: W, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x aW2 A {65 gorp}} msg] $msg $x
+} {1 {expected integer but got "gorp"} abcdef}
 
 test binary-95.1.BE {binary set: m} bigEndian {
     set x abcdefghijklmnopqr
@@ -3331,6 +3421,16 @@ test binary-98.3.LE {binary set: f} littleEndian {
     binary set x f2 {65.3 -66.6 67.1 68.8 69.2}
     binary encode hex $x
 } 9a998242333385c2696a
+test binary-98.4 {binary set: f, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x af A gorp} msg] $msg $x
+} {1 {expected floating-point number but got "gorp"} abcdef}
+test binary-98.5 {binary set: f, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x af2 A {65 gorp}} msg] $msg $x
+} {1 {expected floating-point number but got "gorp"} abcdef}
 
 test binary-99.1 {binary set: q} {
     set x abcdefghijklmnopqr
@@ -3394,6 +3494,16 @@ test binary-101.3.LE {binary set: d} littleEndian {
     binary set x d2 {65.3 -66.6 67.1 68.8 69.2}
     binary encode hex $x
 } 33333333335350406666666666a650c07172
+test binary-101.4 {binary set: d, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ad A gorp} msg] $msg $x
+} {1 {expected floating-point number but got "gorp"} abcdef}
+test binary-101.5 {binary set: d, error case} {
+    set x abc
+    append x def
+    list [catch {binary set x ad2 A {65 gorp}} msg] $msg $x
+} {1 {expected floating-point number but got "gorp"} abcdef}
 
 test binary-102.1 {binary set: x} {
     set x abc
