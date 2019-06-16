@@ -40,6 +40,13 @@ When an expression evaluates to an integer, the value is the decimal form of
 the integer, and when an expression evaluates to a floating-point number, the
 value is the form produced by the \fB%g\fR format specifier of Tcl's
 \fBformat\fR command.
+.PP
+.VS "9.0, TIP 526"
+Unlike with prior versions of Tcl, from Tcl 9.0 onwards, the \fBexpr\fR
+command only accepts a single argument instead of concatenating an arbitrary
+number of arguments to form an expression.
+See \fBCOMPATIBILITY WITH TCL 8.*\fR below for details.
+.VE "9.0, TIP 526"
 .SS OPERANDS
 .PP
 An expression consists of a combination of operands, operators, parentheses and
@@ -94,7 +101,7 @@ and the value of \fBb\fR is 6.  The command on the left side of each line
 produces the value on the right side.
 .PP
 .CS
-.ta 6c
+.ta 9c
 \fBexpr\fR {3.1 + $a}	\fI6.1\fR
 \fBexpr\fR {2 + "$a.$b"}	\fI5.6\fR
 \fBexpr\fR {4*[llength "6 2"]}	\fI8\fR
@@ -156,7 +163,18 @@ A right shift always propagates the sign bit.
 .TP 20
 \fB<\0\0>\0\0<=\0\0>=\fR
 .
-Boolean less than, greater than, less than or equal, and greater than or equal.
+Boolean numeric-preferring comparisons: less than, greater than, less than or
+equal, and greater than or equal. If either argument is not numeric, the
+comparison is done using UNICODE string comparison, as with the string
+comparison operators below, which have the same precedence.
+.TP 20
+\fBlt\0\0gt\0\0le\0\0ge\fR
+.VS "8.7, TIP461"
+Boolean string comparisons: less than, greater than, less than or equal, and
+greater than or equal. These always compare values using their UNICODE strings
+(also see \fBstring compare\fR), unlike with the numeric-preferring
+comparisons abov, which have the same precedence.
+.VE "8.7, TIP461"
 .TP 20
 \fB==\0\0!=\fR
 .
@@ -187,22 +205,29 @@ Bit-wise OR.  Valid for integer operands.
 \fB&&\fR
 .
 Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
-
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
 \fB||\fR
 .
 Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
-\fIx\fB?\fIy\fB:\fIz\fR
+\fIx \fB?\fI y \fB:\fI z\fR
 .
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
+This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP
 The exponentiation operator promotes types in the same way that the multiply
 and divide operators do, and the result is is the same as the result of
 \fBpow\fR.
 Exponentiation groups right-to-left within a precedence level. Other binary
 operators group left-to-right.  For example, the value of
+.PP
 .PP
 .CS
 \fBexpr\fR {4*2 < 7}
@@ -315,16 +340,16 @@ A floating-point result can be distinguished from an integer result by the
 presence of either
 .QW \fB.\fR
 or
-.QW \fBe\fR
+.QW \fBe\fR .
 .PP
-. For example,
+For example,
 .PP
 .CS
 \fBexpr\fR {20.0/5.0}
 .CE
 .PP
 returns \fB4.0\fR, not \fB4\fR.
-.SH "PERFORMANCE CONSIDERATIONS"
+.SH "PERFORMANCE AND COMPATIBILITY"
 .PP
 Where an expression contains syntax that Tcl would otherwise perform
 substitutions on, enclosing an expression in braces or otherwise quoting it
@@ -334,15 +359,20 @@ This also avoids issues that can arise if Tcl is allowed to perform
 substitution on the value before \fBexpr\fR is called.
 .PP
 In the following example, the value of the expression is 11 because the Tcl parser first
-substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR.  Enclosing the
-expression in braces would result in a syntax error.
+substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as part
+of evaluating the expression
+.QW "$a + 2*4" .
+Simply enclosing the
+expression in braces would result in a syntax error as \fB$b\fR does
+not evaluate to a numeric value.
+.PP
 .CS
 set a 3
 set b {$a + 2}
 \fBexpr\fR $b*4
 .CE
 .PP
-When an expression is generated at runtime, like the one above is, the bytcode
+When an expression is generated at runtime, like the one above is, the bytecode
 compiler must ensure that new code is generated each time the expression
 is evaluated.  This is the most costly kind of expression from a performance
 perspective.  In such cases, consider directly using the commands described in
@@ -354,41 +384,90 @@ compiler to work with an expression as a string literal at compilation time,
 ensure that it contains no substitutions or that it is enclosed in braces or
 otherwise quoted to prevent Tcl from performing substitutions, allowing
 \fBexpr\fR to perform them instead.
-.SH "COMPATIBILITY WITH TCL 8.*"
 .PP
+In general, you should enclose your expression in braces wherever possible,
+and where not possible, the argument to \fBexpr\fR should be an expression
+defined elsewhere as simply as possible. It is usually more efficient and
+safer to use other techniques (e.g., the commands in the \fBtcl::mathop\fR
+namespace) than it is to do complex expression generation. Storing a
+complex expression in a variable and using that with \fBexpr\fR is a
+case which the bytecode compiler also supports well, provided that
+expression is always evaluated in the same stack context (though the
+expression could be conveyed across procedure calls and through
+\fBuplevel\fR calls in between).
+.SS "COMPATIBILITY WITH TCL 8.*"
+.PP
+.VS "9.0, TIP 526"
 In Tcl 8 and older, the \fBexpr\fR command would concatenate multiple
-arguments to form the expression; if this behavior is desired in Tcl
-9.0 onwards, explicit use of \fBconcat\fR is required (this is also
-compatible with earlier versions). Note that this is often a source of
-bugs, including security bugs, so it is \fInot recommended\fR.
+arguments to form the expression; if this behavior is desired in Tcl 9.0
+onwards, explicit use of \fBconcat\fR is required (this is also compatible
+with earlier versions of Tcl) or a double-quoted argument could be used (as
+whitespace is not generally important in expressions). Note that this style of
+programming is often a source of bugs, including security bugs, so it is
+\fInot recommended\fR. For example, instead of this version (supported in Tcl
+8 and before):
 .PP
 .CS
 set a 3
 set b {$a + 2}
+\fBexpr\fR $b * 4
+.CE
+.PP
+you might write:
+.PP
+.CS
+# ...
 \fBexpr\fR [concat $b * 4]
 .CE
 .PP
-However, some cases that _are_ supported can be preferable, such as
-embedding the use of \fBexpr\fR with a variable argument inside an
-otherwise constant expression:
+or:
 .PP
 .CS
+# ...
+\fBexpr\fR "$b * 4"
+.CE
+.PP
+Both of the above cases substitute \fB$b\fR prior to evaluating the
+expression, and do the building of the expression dynamically making it
+difficult to avoid compiling the expression on every call to \fBexpr\fR.
+.PP
+However, some use cases that \fIare\fR supported may be preferable, such as
+embedding the use of \fBexpr\fR with a variable argument inside an otherwise
+constant expression:
+.PP
+.CS
+# ...
 \fBexpr\fR {[\fBexpr\fR $b] * 4}
 .CE
 .PP
-This may change what value is calculated. Such changes may actually
-fix more bugs than they cause!
+This changes what value is calculated (in this case, producing \fB20\fR rather
+than \fB11\fR) because they force the inner expression to be evaluated
+independently of the outer one; such changes may actually fix more bugs than
+they cause! Note that this allows the outer expression to be fully compiled,
+and enables compilation of the inner expression too (which can be cached in
+some cases).
+.VE "9.0, TIP 526"
 .SH EXAMPLES
 .PP
 A numeric comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0x03" > "2"}
 .CE
 .PP
 A string comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0y" > "0x12"}
 .CE
+.PP
+.VS "8.7, TIP461"
+A forced string comparison whose result is 0:
+.PP
+.CS
+\fBexpr\fR {"0x03" gt "2"}
+.CE
+.VE "8.7, TIP461"
 .PP
 Define a procedure that computes an
 .QW interesting
@@ -445,10 +524,11 @@ string(n), Tcl(n), while(n)
 arithmetic, boolean, compare, expression, fuzzy comparison
 .SH COPYRIGHT
 .nf
-Copyright (c) 1993 The Regents of the University of California.
-Copyright (c) 1994-2000 Sun Microsystems Incorporated.
-Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 1993 The Regents of the University of California.
+Copyright \(co 1994-2000 Sun Microsystems Incorporated.
+Copyright \(co 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:

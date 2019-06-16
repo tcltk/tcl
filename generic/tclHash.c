@@ -782,7 +782,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = Tcl_Alloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    hPtr = Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
     return hPtr;

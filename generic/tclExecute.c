@@ -97,9 +97,9 @@ static const char *const resultStrings[] = {
  */
 
 #ifdef TCL_COMPILE_STATS
-long		tclObjsAlloced = 0;
-long		tclObjsFreed = 0;
-long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
+size_t		tclObjsAlloced = 0;
+size_t		tclObjsFreed = 0;
+size_t		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
 /*
@@ -153,7 +153,7 @@ typedef struct {
  */
 
 #define VarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
+    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 static inline Var *
 VarHashCreateVar(
@@ -4875,6 +4875,10 @@ TEBCresume(
     case INST_STR_EQ:
     case INST_STR_NEQ:		/* String (in)equality check */
     case INST_STR_CMP:		/* String compare. */
+    case INST_STR_LT:
+    case INST_STR_GT:
+    case INST_STR_LE:
+    case INST_STR_GE:
     stringCompare:
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
@@ -4905,15 +4909,19 @@ TEBCresume(
 		match = (match != 0);
 		break;
 	    case INST_LT:
+	    case INST_STR_LT:
 		match = (match < 0);
 		break;
 	    case INST_GT:
+	    case INST_STR_GT:
 		match = (match > 0);
 		break;
 	    case INST_LE:
+	    case INST_STR_LE:
 		match = (match <= 0);
 		break;
 	    case INST_GE:
+	    case INST_STR_GE:
 		match = (match >= 0);
 		break;
 	    }
@@ -4926,8 +4934,8 @@ TEBCresume(
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
 	slength = Tcl_GetCharLength(valuePtr);
-	TclNewIntObj(objResultPtr, slength);
-	TRACE(("\"%.20s\" => %" TCL_Z_MODIFIER "d\n", O2S(valuePtr), slength));
+	objResultPtr = TclNewWideIntObjFromSize(slength);
+	TRACE(("\"%.20s\" => %" TCL_Z_MODIFIER "u\n", O2S(valuePtr), slength));
 	NEXT_INST_F(1, 1, 1);
 
     case INST_STR_UPPER:
@@ -6838,7 +6846,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if ((unsigned int)length != duiPtr->length) {
+	if ((size_t)length != duiPtr->length) {
 	    Tcl_Panic("dictUpdateStart argument length mismatch");
 	}
 	for (i=0 ; i<length ; i++) {
@@ -8811,7 +8819,7 @@ GetSrcInfoForPc(
     int bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
-    assert ((int)pcOffset < codePtr->numCodeBytes);
+    assert (pcOffset < (size_t)codePtr->numCodeBytes);
 
     /*
      * Decode the code and source offset and length for each command. The
@@ -8954,8 +8962,8 @@ GetExceptRangeForPc(
     ExceptionRange *rangeArrayPtr;
     int numRanges = codePtr->numExceptRanges;
     ExceptionRange *rangePtr;
-    unsigned int pcOffset = pc - codePtr->codeStart;
-    unsigned int start;
+    size_t pcOffset = pc - codePtr->codeStart;
+    size_t start;
 
     if (numRanges == 0) {
 	return NULL;
@@ -9132,10 +9140,9 @@ EvalStatsCmd(
     double objBytesIfUnshared, strBytesIfUnshared, sharingBytesSaved;
     double strBytesSharedMultX, strBytesSharedOnce;
     double numInstructions, currentHeaderBytes;
-    long numCurrentByteCodes, numByteCodeLits;
-    long refCountSum, literalMgmtBytes, sum;
-    int numSharedMultX, numSharedOnce;
-    size_t decadeHigh, minSizeDecade, maxSizeDecade, length, i;
+    size_t numCurrentByteCodes, numByteCodeLits;
+    size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
+    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade, i;
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
@@ -9180,9 +9187,9 @@ EvalStatsCmd(
 	    "Compilation and execution statistics for interpreter %p\n",
 	    iPtr);
 
-    Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%" TCL_Z_MODIFIER "d\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%" TCL_Z_MODIFIER "u\n",
 	    statsPtr->numExecutions);
-    Tcl_AppendPrintfToObj(objPtr, "Number ByteCodes compiled\t%" TCL_Z_MODIFIER "d\n",
+    Tcl_AppendPrintfToObj(objPtr, "Number ByteCodes compiled\t%" TCL_Z_MODIFIER "u\n",
 	    statsPtr->numCompilations);
     Tcl_AppendPrintfToObj(objPtr, "  Mean executions/compile\t%.1f\n",
 	    statsPtr->numExecutions / (float)statsPtr->numCompilations);
@@ -9194,7 +9201,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "  Mean inst/execution\t\t%.0f\n",
 	    numInstructions / statsPtr->numExecutions);
 
-    Tcl_AppendPrintfToObj(objPtr, "\nTotal ByteCodes\t\t\t%" TCL_Z_MODIFIER "d\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal ByteCodes\t\t\t%" TCL_Z_MODIFIER "u\n",
 	    statsPtr->numCompilations);
     Tcl_AppendPrintfToObj(objPtr, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->totalSrcBytes);
@@ -9215,7 +9222,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "  Mean code/source\t\t%.1f\n",
 	    totalCodeBytes / statsPtr->totalSrcBytes);
 
-    Tcl_AppendPrintfToObj(objPtr, "\nCurrent (active) ByteCodes\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent (active) ByteCodes\t%" TCL_Z_MODIFIER "u\n",
 	    numCurrentByteCodes);
     Tcl_AppendPrintfToObj(objPtr, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->currentSrcBytes);
@@ -9246,17 +9253,17 @@ EvalStatsCmd(
 
     numSharedMultX = 0;
     Tcl_AppendPrintfToObj(objPtr, "\nTcl_IsShared object check (all objects):\n");
-    Tcl_AppendPrintfToObj(objPtr, "  Object had refcount <=1 (not shared)\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Object had refcount <=1 (not shared)\t%" TCL_Z_MODIFIER "u\n",
 	    tclObjsShared[1]);
     for (i = 2;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	Tcl_AppendPrintfToObj(objPtr, "  refcount ==%" TCL_Z_MODIFIER "d\t\t%ld\n",
+	Tcl_AppendPrintfToObj(objPtr, "  refcount ==%" TCL_Z_MODIFIER "u\t\t%" TCL_Z_MODIFIER "u\n",
 		i, tclObjsShared[i]);
 	numSharedMultX += tclObjsShared[i];
     }
-    Tcl_AppendPrintfToObj(objPtr, "  refcount >=%" TCL_Z_MODIFIER "d\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "  refcount >=%" TCL_Z_MODIFIER "u\t\t%" TCL_Z_MODIFIER "u\n",
 	    i, tclObjsShared[0]);
     numSharedMultX += tclObjsShared[0];
-    Tcl_AppendPrintfToObj(objPtr, "  Total shared objects\t\t\t%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Total shared objects\t\t\t%" TCL_Z_MODIFIER "u\n",
 	    numSharedMultX);
 
     /*
@@ -9293,20 +9300,20 @@ EvalStatsCmd(
     sharingBytesSaved = (objBytesIfUnshared + strBytesIfUnshared)
 	    - currentLiteralBytes;
 
-    Tcl_AppendPrintfToObj(objPtr, "\nTotal objects (all interps)\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal objects (all interps)\t%" TCL_Z_MODIFIER "u\n",
 	    tclObjsAlloced);
-    Tcl_AppendPrintfToObj(objPtr, "Current objects\t\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Current objects\t\t\t%" TCL_Z_MODIFIER "u\n",
 	    (tclObjsAlloced - tclObjsFreed));
-    Tcl_AppendPrintfToObj(objPtr, "Total literal objects\t\t%" TCL_Z_MODIFIER "d\n",
+    Tcl_AppendPrintfToObj(objPtr, "Total literal objects\t\t%" TCL_Z_MODIFIER "u\n",
 	    statsPtr->numLiteralsCreated);
 
-    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal objects\t\t%" TCL_Z_MODIFIER "d (%0.1f%% of current objects)\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal objects\t\t%" TCL_Z_MODIFIER "u (%0.1f%% of current objects)\n",
 	    globalTablePtr->numEntries,
 	    Percent(globalTablePtr->numEntries, tclObjsAlloced-tclObjsFreed));
-    Tcl_AppendPrintfToObj(objPtr, "  ByteCode literals\t\t%ld (%0.1f%% of current literals)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  ByteCode literals\t\t%" TCL_Z_MODIFIER "u (%0.1f%% of current literals)\n",
 	    numByteCodeLits,
 	    Percent(numByteCodeLits, globalTablePtr->numEntries));
-    Tcl_AppendPrintfToObj(objPtr, "  Literals reused > 1x\t\t%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literals reused > 1x\t\t%" TCL_Z_MODIFIER "u\n",
 	    numSharedMultX);
     Tcl_AppendPrintfToObj(objPtr, "  Mean reference count\t\t%.2f\n",
 	    ((double) refCountSum) / globalTablePtr->numEntries);
@@ -9331,7 +9338,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "  String sharing savings \t%.6g = unshared %.6g - shared %.6g\n",
 	    (strBytesIfUnshared - statsPtr->currentLitStringBytes),
 	    strBytesIfUnshared, statsPtr->currentLitStringBytes);
-    Tcl_AppendPrintfToObj(objPtr, "  Literal mgmt overhead\t\t%ld (%0.1f%% of bytes with sharing)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literal mgmt overhead\t\t%" TCL_Z_MODIFIER "u (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    Percent(literalMgmtBytes, currentLiteralBytes));
     Tcl_AppendPrintfToObj(objPtr, "    table %lu + buckets %lu + entries %lu\n",
@@ -9381,7 +9388,8 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "\nLiteral string sizes:\n");
     Tcl_AppendPrintfToObj(objPtr, "\t Up to length\t\tPercentage\n");
     maxSizeDecade = 0;
-    for (i = 31;  i >= 0;  i--) {
+    i = 32;
+    while (i-- > 0) {
 	if (statsPtr->literalCount[i] > 0) {
 	    maxSizeDecade = i;
 	    break;
@@ -9391,7 +9399,7 @@ EvalStatsCmd(
     for (i = 0;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->literalCount[i];
-	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "u\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
 
@@ -9423,7 +9431,7 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->srcCount[i];
-	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "u\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
@@ -9446,7 +9454,7 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->byteCodeCount[i];
-	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_Z_MODIFIER "u\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
@@ -9479,7 +9487,7 @@ EvalStatsCmd(
 
     Tcl_AppendPrintfToObj(objPtr, "\nInstruction counts:\n");
     for (i = 0;  i < LAST_INST_OPCODE;  i++) {
-	Tcl_AppendPrintfToObj(objPtr, "%20s %8" TCL_Z_MODIFIER "d ",
+	Tcl_AppendPrintfToObj(objPtr, "%20s %8" TCL_Z_MODIFIER "u ",
 		tclInstructionTable[i].name, statsPtr->instructionCount[i]);
 	if (statsPtr->instructionCount[i]) {
 	    Tcl_AppendPrintfToObj(objPtr, "%6.1f%%\n",

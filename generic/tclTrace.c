@@ -471,7 +471,7 @@ TraceExecutionObjCmd(
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = Tcl_Alloc(
-		    TclOffset(TraceCommandInfo, command) + 1 + length);
+		    offsetof(TraceCommandInfo, command) + 1 + length);
 
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
@@ -708,7 +708,7 @@ TraceCommandObjCmd(
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = Tcl_Alloc(
-		    TclOffset(TraceCommandInfo, command) + 1 + length);
+		    offsetof(TraceCommandInfo, command) + 1 + length);
 
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
@@ -911,7 +911,7 @@ TraceVariableObjCmd(
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = Tcl_Alloc(
-		    TclOffset(CombinedTraceVarInfo, traceCmdInfo.command)
+		    offsetof(CombinedTraceVarInfo, traceCmdInfo.command)
 		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;

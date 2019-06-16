@@ -55,6 +55,16 @@ package require \fBTcl 8.5\fR
 .br
 \fB::tcl::mathop::ne\fR \fIarg arg\fR
 .br
+.VS "8.7, TIP461"
+\fB::tcl::mathop::lt\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathop::le\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathop::gt\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathop::ge\fR ?\fIarg\fR ...?
+.VE "8.7, TIP461"
+.br
 \fB::tcl::mathop::in\fR \fIarg list\fR
 .br
 \fB::tcl::mathop::ni\fR \fIarg list\fR
@@ -76,7 +86,8 @@ The following operator commands are supported:
 \fB/\fR	\fB%\fR	\fB**\fR	\fB&\fR	\fB|\fR
 \fB^\fR	\fB>>\fR	\fB<<\fR	\fB==\fR	\fBeq\fR
 \fB!=\fR	\fBne\fR	\fB<\fR	\fB<=\fR	\fB>\fR
-\fB>=\fR	\fBin\fR	\fBni\fR
+\fB>=\fR	\fBin\fR	\fBni\fR	\fBlt\fR	\fBle\fR
+\fBgt\fR	\fBge\fR
 .DE
 .SS "MATHEMATICAL OPERATORS"
 .PP
@@ -192,8 +203,8 @@ after the first having to be strictly more than the one preceding it.
 Comparisons are performed preferentially on the numeric values, and are
 otherwise performed using UNICODE string comparison. If fewer than two
 arguments are present, this operation always returns a true value. When the
-arguments are numeric but should be compared as strings, the \fBstring
-compare\fR command should be used instead.
+arguments are numeric but should be compared as strings, the \fBlt\fR
+operator or the \fBstring compare\fR command should be used instead.
 .TP
 \fB<=\fR ?\fIarg\fR ...?
 .
@@ -202,8 +213,8 @@ after the first having to be equal to or more than the one preceding it.
 Comparisons are performed preferentially on the numeric values, and are
 otherwise performed using UNICODE string comparison. If fewer than two
 arguments are present, this operation always returns a true value. When the
-arguments are numeric but should be compared as strings, the \fBstring
-compare\fR command should be used instead.
+arguments are numeric but should be compared as strings,  the \fBle\fR
+operator or the \fBstring compare\fR command should be used instead.
 .TP
 \fB>\fR ?\fIarg\fR ...?
 .
@@ -212,8 +223,8 @@ after the first having to be strictly less than the one preceding it.
 Comparisons are performed preferentially on the numeric values, and are
 otherwise performed using UNICODE string comparison. If fewer than two
 arguments are present, this operation always returns a true value. When the
-arguments are numeric but should be compared as strings, the \fBstring
-compare\fR command should be used instead.
+arguments are numeric but should be compared as strings, the \fBgt\fR
+operator or the \fBstring compare\fR command should be used instead.
 .TP
 \fB>=\fR ?\fIarg\fR ...?
 .
@@ -222,8 +233,40 @@ after the first having to be equal to or less than the one preceding it.
 Comparisons are performed preferentially on the numeric values, and are
 otherwise performed using UNICODE string comparison. If fewer than two
 arguments are present, this operation always returns a true value. When the
-arguments are numeric but should be compared as strings, the \fBstring
-compare\fR command should be used instead.
+arguments are numeric but should be compared as strings, the \fBge\fR
+operator or the \fBstring compare\fR command should be used instead.
+.TP
+\fBlt\fR ?\fIarg\fR ...?
+.VS "8.7, TIP461"
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be strictly more than the one preceding it.
+Comparisons are performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value.
+.VE "8.7, TIP461"
+.TP
+\fBle\fR ?\fIarg\fR ...?
+.VS "8.7, TIP461"
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be equal to or strictly more than the one preceding it.
+Comparisons are performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value.
+.VE "8.7, TIP461"
+.TP
+\fBgt\fR ?\fIarg\fR ...?
+.VS "8.7, TIP461"
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be strictly less than the one preceding it.
+Comparisons are performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value.
+.VE "8.7, TIP461"
+.TP
+\fBge\fR ?\fIarg\fR ...?
+.VS "8.7, TIP461"
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be equal to or strictly less than the one preceding it.
+Comparisons are performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value.
+.VE "8.7, TIP461"
 .SS "BIT-WISE OPERATORS"
 .PP
 The behaviors of the bit-wise operator commands (all of which only operate on
@@ -299,8 +342,12 @@ set gotIt [\fBin\fR 3 $list]
 \fI# Test to see if a value is within some defined range\fR
 set inRange [\fB<=\fR 1 $x 5]
 
-\fI# Test to see if a list is sorted\fR
+\fI# Test to see if a list is numerically sorted\fR
 set sorted [\fB<=\fR {*}$list]
+
+\fI# Test to see if a list is lexically sorted\fR
+set alphaList {a b c d e f}
+set sorted [\fBle\fR {*}$alphaList]
 .CE
 .SH "SEE ALSO"
 expr(n), mathfunc(n), namespace(n)

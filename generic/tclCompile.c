@@ -649,6 +649,15 @@ InstructionDesc const tclInstructionTable[] = {
 	 * default is pushed instead.
 	 * Stack:  ... dict key1 ... keyN default => ... value */
 
+    {"strlt",		  1,   -1,         0,	{OPERAND_NONE}},
+	/* String Less:			push (stknext < stktop) */
+    {"strgt",		  1,   -1,         0,	{OPERAND_NONE}},
+	/* String Greater:		push (stknext > stktop) */
+    {"strle",		  1,   -1,         0,	{OPERAND_NONE}},
+	/* String Less or equal:	push (stknext <= stktop) */
+    {"strge",		  1,   -1,         0,	{OPERAND_NONE}},
+	/* String Greater or equal:	push (stknext >= stktop) */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -3012,7 +3021,7 @@ TclFindCompiledLocal(
 
     if (create || (name == NULL)) {
 	localVar = procPtr->numCompiledLocals;
-	localPtr = Tcl_Alloc(TclOffset(CompiledLocal, name) + nameBytes + 1);
+	localPtr = Tcl_Alloc(offsetof(CompiledLocal, name) + nameBytes + 1);
 	if (procPtr->firstLocalPtr == NULL) {
 	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	} else {
