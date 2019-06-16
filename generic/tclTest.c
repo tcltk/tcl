@@ -7710,7 +7710,7 @@ MyCompiledVarFree(
 }
 
 #define TclVarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
+    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 static Tcl_Var
 MyCompiledVarFetch(
