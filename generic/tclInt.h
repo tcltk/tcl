@@ -3958,6 +3958,18 @@ MODULE_SCOPE int	TclCompileEqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStrLtOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStrLeOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStrGtOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStrGeOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
