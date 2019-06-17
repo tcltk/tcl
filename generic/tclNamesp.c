@@ -1567,7 +1567,7 @@ TclFillTableWithExports(
 		if (isNew) {
 		    Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-#if 0
+#if 1
 		    TclNewObj(cmdObj);
 		    Tcl_AppendStringsToObj(cmdObj, nsPtr->fullName,
 			    (nsPtr->parentPtr ? "::" : ""), nsCmdName, NULL);

@@ -157,7 +157,18 @@ A right shift always propagates the sign bit.
 .TP 20
 \fB<\0\0>\0\0<=\0\0>=\fR
 .
-Boolean less than, greater than, less than or equal, and greater than or equal.
+Boolean numeric-preferring comparisons: less than, greater than, less than or
+equal, and greater than or equal. If either argument is not numeric, the
+comparison is done using UNICODE string comparison, as with the string
+comparison operators below, which have the same precedence.
+.TP 20
+\fBlt\0\0gt\0\0le\0\0ge\fR
+.VS "8.7, TIP461"
+Boolean string comparisons: less than, greater than, less than or equal, and
+greater than or equal. These always compare values using their UNICODE strings
+(also see \fBstring compare\fR), unlike with the numeric-preferring
+comparisons abov, which have the same precedence.
+.VE "8.7, TIP461"
 .TP 20
 \fB==\0\0!=\fR
 .
@@ -401,6 +412,14 @@ A string comparison whose result is 1:
 \fBexpr\fR {"0y" > "0x12"}
 .CE
 .PP
+.VS "8.7, TIP461"
+A forced string comparison whose result is 0:
+.PP
+.CS
+\fBexpr\fR {"0x03" gt "2"}
+.CE
+.VE "8.7, TIP461"
+.PP
 Define a procedure that computes an
 .QW interesting
 mathematical function:
@@ -456,9 +475,9 @@ string(n), Tcl(n), while(n)
 arithmetic, boolean, compare, expression, fuzzy comparison
 .SH COPYRIGHT
 .nf
-Copyright (c) 1993 The Regents of the University of California.
-Copyright (c) 1994-2000 Sun Microsystems Incorporated.
-Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 1993 The Regents of the University of California.
+Copyright \(co 1994-2000 Sun Microsystems Incorporated.
+Copyright \(co 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff

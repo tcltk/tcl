@@ -790,6 +790,12 @@ enum TclInstruction {
 
     INST_DICT_GET_DEF,
 
+	/* TIP 461 */
+	INST_STR_LT,
+	INST_STR_GT,
+	INST_STR_LE,
+	INST_STR_GE,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
