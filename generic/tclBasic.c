@@ -23,6 +23,9 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
+#ifndef fpclassify /* Older MSVC */
+#include <float.h>
+#endif /* !fpclassify */
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -117,6 +120,12 @@ static Tcl_ObjCmdProc	ExprDoubleFunc;
 static Tcl_ObjCmdProc	ExprFloorFunc;
 static Tcl_ObjCmdProc	ExprIntFunc;
 static Tcl_ObjCmdProc	ExprIsqrtFunc;
+static Tcl_ObjCmdProc   ExprIsFiniteFunc;
+static Tcl_ObjCmdProc   ExprIsInfinityFunc;
+static Tcl_ObjCmdProc   ExprIsNaNFunc;
+static Tcl_ObjCmdProc   ExprIsNormalFunc;
+static Tcl_ObjCmdProc   ExprIsSubnormalFunc;
+static Tcl_ObjCmdProc   ExprIsUnorderedFunc;
 static Tcl_ObjCmdProc	ExprMaxFunc;
 static Tcl_ObjCmdProc	ExprMinFunc;
 static Tcl_ObjCmdProc	ExprRandFunc;
@@ -125,6 +134,7 @@ static Tcl_ObjCmdProc	ExprSqrtFunc;
 static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
+static Tcl_ObjCmdProc   FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
@@ -237,6 +247,7 @@ static const CmdInfo builtInCmds[] = {
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	CMD_IS_SAFE},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	CMD_IS_SAFE},
     {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	CMD_IS_SAFE},
+    {"fpclassify",      FloatClassifyObjCmd,    NULL,                   NULL,   CMD_IS_SAFE},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	CMD_IS_SAFE},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
@@ -405,7 +416,13 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
     { "hypot",	ExprBinaryFunc,	(ClientData) hypot	},
     { "int",	ExprIntFunc,	NULL			},
+    { "isfinite", ExprIsFiniteFunc, NULL        	},
+    { "isinf",	ExprIsInfinityFunc, NULL        	},
+    { "isnan",	ExprIsNaNFunc,	NULL            	},
+    { "isnormal", ExprIsNormalFunc, NULL        	},
     { "isqrt",	ExprIsqrtFunc,	NULL			},
+    { "issubnormal", ExprIsSubnormalFunc, NULL,         },
+    { "isunordered", ExprIsUnorderedFunc, NULL,         },
     { "log",	ExprUnaryFunc,	(ClientData) log	},
     { "log10",	ExprUnaryFunc,	(ClientData) log10	},
     { "max",	ExprMaxFunc,	NULL			},
@@ -484,6 +501,14 @@ static const OpCmdInfo mathOpCmds[] = {
     { "==",	TclSortingOpCmd,	TclCompileEqOpCmd,
 		/* unused */ {0},	NULL},
     { "eq",	TclSortingOpCmd,	TclCompileStreqOpCmd,
+		/* unused */ {0},	NULL},
+    { "lt",	TclSortingOpCmd,	TclCompileStrLtOpCmd,
+		/* unused */ {0},	NULL},
+    { "le",	TclSortingOpCmd,	TclCompileStrLeOpCmd,
+		/* unused */ {0},	NULL},
+    { "gt",	TclSortingOpCmd,	TclCompileStrGtOpCmd,
+		/* unused */ {0},	NULL},
+    { "ge",	TclSortingOpCmd,	TclCompileStrGeOpCmd,
 		/* unused */ {0},	NULL},
     { NULL,	NULL,			NULL,
 		{0},			NULL}
@@ -7470,6 +7495,315 @@ ExprSrandFunc(
      */
 
     return ExprRandFunc(clientData, interp, 1, objv);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Double Classification Functions --
+ *
+ *	This page contains the functions that implement all of the built-in
+ *	math functions for classifying IEEE doubles.
+ *
+ *      These have to be a little bit careful while Tcl_GetDoubleFromObj()
+ *      rejects NaN values, which these functions *explicitly* accept.
+ *
+ * Results:
+ *	Each function returns TCL_OK if it succeeds and pushes an Tcl object
+ *	holding the result. If it fails it returns TCL_ERROR and leaves an
+ *	error message in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
+ * But it does have _fpclass() which does almost the same job.
+ *
+ * This makes it conform to the C99 standard API, and just delegates to the
+ * standard macro on platforms that do it correctly.
+ */
+
+static inline int
+ClassifyDouble(
+    double d)
+{
+#ifdef fpclassify
+    return fpclassify(d);
+#else /* !fpclassify */
+#define FP_ZERO 0
+#define FP_NORMAL 1
+#define FP_SUBNORMAL 2
+#define FP_INFINITE 3
+#define FP_NAN 4
+
+    switch (_fpclass(d)) {
+    case _FPCLASS_NZ:
+    case _FPCLASS_PZ:
+        return FP_ZERO;
+    case _FPCLASS_NN:
+    case _FPCLASS_PN:
+        return FP_NORMAL;
+    case _FPCLASS_ND:
+    case _FPCLASS_PD:
+        return FP_SUBNORMAL;
+    case _FPCLASS_NINF:
+    case _FPCLASS_PINF:
+        return FP_INFINITE;
+    default:
+        Tcl_Panic("result of _fpclass() outside documented range!");
+    case _FPCLASS_QNAN:
+    case _FPCLASS_SNAN:
+        return FP_NAN;
+    }
+#endif /* fpclassify */
+}
+
+static int
+ExprIsFiniteFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 0;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type != TCL_NUMBER_NAN) {
+        if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        type = ClassifyDouble(d);
+        result = (type != FP_INFINITE && type != FP_NAN);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+ExprIsInfinityFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 0;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type != TCL_NUMBER_NAN) {
+        if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        result = (ClassifyDouble(d) == FP_INFINITE);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+ExprIsNaNFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 1;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type != TCL_NUMBER_NAN) {
+        if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        result = (ClassifyDouble(d) == FP_NAN);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+ExprIsNormalFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 0;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type != TCL_NUMBER_NAN) {
+        if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        result = (ClassifyDouble(d) == FP_NORMAL);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+ExprIsSubnormalFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 0;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type != TCL_NUMBER_NAN) {
+        if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        result = (ClassifyDouble(d) == FP_SUBNORMAL);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+ExprIsUnorderedFunc(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    ClientData ptr;
+    int type, result = 0;
+
+    if (objc != 3) {
+	MathFuncWrongNumArgs(interp, 3, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type == TCL_NUMBER_NAN) {
+        result = 1;
+    } else {
+        d = *((const double *) ptr);
+        result = (ClassifyDouble(d) == FP_NAN);
+    }
+
+    if (TclGetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type == TCL_NUMBER_NAN) {
+        result |= 1;
+    } else {
+        d = *((const double *) ptr);
+        result |= (ClassifyDouble(d) == FP_NAN);
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+static int
+FloatClassifyObjCmd(
+    ClientData ignored,
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d;
+    Tcl_Obj *objPtr;
+    ClientData ptr;
+    int type;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (type == TCL_NUMBER_NAN) {
+        goto gotNaN;
+    } else if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    switch (ClassifyDouble(d)) {
+    case FP_INFINITE:
+        TclNewLiteralStringObj(objPtr, "infinite");
+        break;
+    case FP_NAN:
+    gotNaN:
+        TclNewLiteralStringObj(objPtr, "nan");
+        break;
+    case FP_NORMAL:
+        TclNewLiteralStringObj(objPtr, "normal");
+        break;
+    case FP_SUBNORMAL:
+        TclNewLiteralStringObj(objPtr, "subnormal");
+        break;
+    case FP_ZERO:
+        TclNewLiteralStringObj(objPtr, "zero");
+        break;
+    default:
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "unable to classify number: %f", d));
+        return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
 }
 
 /*
