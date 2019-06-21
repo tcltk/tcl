@@ -1797,7 +1797,7 @@ test namespace-42.7 {ensembles: nested} -body {
     list [ns x0 z] [ns x1] [ns x2] [ns x3]
 } -cleanup {
     namespace delete ns
-} -result {{1 ::ns::x0::z} 1 2 3}
+} -result {{1 z} 1 2 3}
 test namespace-42.8 {
     ensembles: [Bug 1670091], panic due to pointer to a deallocated List
     struct.
@@ -2128,7 +2128,7 @@ test namespace-47.1 {ensemble: unknown handler} {
     lappend result [catch {ns c d e} msg] $msg
     lappend result [catch {ns Magic foo bar spong wibble} msg] $msg
     list $result [lsort [info commands ::ns::*]] $log [namespace delete ns]
-} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running ::ns::a b c} {running ::ns::a b c} {making b} {running ::ns::b c d} {making c} {running ::ns::c d e} {unknown Magic - args = foo bar spong wibble}} {}}
+} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running a b c} {running a b c} {making b} {running b c d} {making c} {running c d e} {unknown Magic - args = foo bar spong wibble}} {}}
 test namespace-47.2 {ensemble: unknown handler} {
     namespace eval ns {
 	namespace export {[a-z]*}
@@ -3227,7 +3227,7 @@ test namespace-53.10 {ensembles: nested rewrite} -setup {
     1 {wrong # args: should be "ns z1 x a1"}\
     1 {wrong # args: should be "ns z2 x a1 a2"}\
     1 {wrong # args: should be "ns z2 x a1 a2"}\
-    1 {wrong # args: should be "::ns::x::z0"}\
+    1 {wrong # args: should be "z0"}\
     0 {1 v}\
     1 {wrong # args: should be "ns v x z2 a2"}\
     0 {2 v v2}}
@@ -3312,7 +3312,7 @@ test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
     }
 } {::testing::abc::def ::testing::abc::ghi}
 
-test namespace-56.4 {bug 16fe1b5807: names starting with ":"} knownBug {
+test namespace-56.4 {bug 16fe1b5807: names starting with ":"} {
 namespace eval : {
     namespace ensemble create
     namespace export *
@@ -3323,19 +3323,6 @@ namespace eval : {
 
 : p1
 } 16fe1b5807
-
-test namespace-56.5 {Bug 8b9854c3d8} -setup {
-    namespace eval namespace-56.5 {
-	proc cmd {} {string match ::* [lindex [[string cat info] level 0] 0]}
-	namespace export *
-	namespace ensemble create
-    }
-} -body {
-    namespace-56.5 cmd
-} -cleanup {
-    namespace delete namespace-56.5
-} -result 1
-
 
 # cleanup
 catch {rename cmd1 {}}

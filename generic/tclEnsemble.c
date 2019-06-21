@@ -2694,11 +2694,7 @@ BuildEnsembleConfig(
 		    if (isNew) {
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj,
-				ensemblePtr->nsPtr->fullName,
-				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
-				nsCmdName, NULL);
+			cmdObj = Tcl_NewStringObj(nsCmdName, -1);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);
