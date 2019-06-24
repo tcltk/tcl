@@ -24,7 +24,11 @@
 #include <math.h>
 #include <assert.h>
 #ifndef fpclassify /* Older MSVC */
+#ifdef _M_IX86
+#define REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK
+#else /* !_M_IX86 */
 #include <float.h>
+#endif /* _M_IX86 */
 #endif /* !fpclassify */
 
 #define INTERP_STACK_INITIAL_SIZE 2000
@@ -8329,10 +8333,13 @@ ExprSrandFunc(
 
 /*
  * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
- * But it does have _fpclass() which does almost the same job.
+ * But it does sometimes have _fpclass() which does almost the same job; if
+ * even that is absent, we grobble around directly in the platform's binary
+ * representation of double.
  *
- * This makes it conform to the C99 standard API, and just delegates to the
- * standard macro on platforms that do it correctly.
+ * This function makes all that conform to a common API (effectively the C99
+ * standard API renamed), and just delegates to the standard macro on
+ * platforms that do it correctly.
  */
 
 static inline int
@@ -8342,12 +8349,69 @@ ClassifyDouble(
 #ifdef fpclassify
     return fpclassify(d);
 #else /* !fpclassify */
-#define FP_ZERO 0
-#define FP_NORMAL 1
-#define FP_SUBNORMAL 2
-#define FP_INFINITE 3
-#define FP_NAN 4
+#define FP_NAN          1
+#define FP_INFINITE     2
+#define FP_ZERO         3
+#define FP_NORMAL       4
+#define FP_SUBNORMAL    5
 
+#ifdef REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK
+    /*
+     * We assume this hack is only needed on little-endian systems.
+     * Specifically, x86 running Windows.  It's fairly easy to enable for
+     * others if they need it (because their libc/libm is broken) but we'll
+     * jump that hurdle when requred.  We can solve the word ordering then.
+     */
+
+    union {
+        double d;
+        struct {
+            unsigned int low;
+            unsigned int high;
+        } w;
+    } doubleMeaning;
+    unsigned int exponent, mantissaLow, mantissaHigh;
+    int zeroMantissa;
+#define EXPONENT_MASK   0x7ff;
+#define EXPONENT_SHIFT  20
+#define MANTISSA_MASK   0xfffff
+
+    /*
+     * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
+     * totally ignore the sign bit.
+     */
+
+    doubleMeaning.d = d;
+    exponent = (doubleMeaning.w.high >> EXPONENT_SHIFT) & EXPONENT_MASK;
+    mantissaLow = doubleMeaning.w.low;
+    mantissaHigh = doubleMeaning.w.high & MANTISSA_MASK;
+    zeroMantissa = (mantissaHigh == 0 && mantissaLow == 0);
+
+    /*
+     * Look for the special cases of exponent.
+     */
+
+    switch (exponent) {
+    case 0:
+        /*
+         * When the exponent is all zeros, it's a ZERO or a SUBNORMAL.
+         */
+
+        return zeroMantissa ? FP_ZERO : FP_SUBNORMAL;
+    case EXPONENT_MASK:
+        /*
+         * When the exponent is all ones, it's an INF or a NAN.
+         */
+
+        return zeroMantissa ? FP_INF : FP_NAN;
+    default:
+        /*
+         * Everything else is a NORMAL double precision float.
+         */
+
+        return FP_NORMAL;
+    }
+#else /* !REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
     switch (_fpclass(d)) {
     case _FPCLASS_NZ:
     case _FPCLASS_PZ:
@@ -8367,6 +8431,7 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
+#endif /* REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
 #endif /* fpclassify */
 }
 
