@@ -8329,17 +8329,15 @@ ExprSrandFunc(
  *	None.
  *
  *----------------------------------------------------------------------
- */
-
-/*
+ *
  * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
  * But it does sometimes have _fpclass() which does almost the same job; if
  * even that is absent, we grobble around directly in the platform's binary
  * representation of double.
  *
- * This function makes all that conform to a common API (effectively the C99
- * standard API renamed), and just delegates to the standard macro on
- * platforms that do it correctly.
+ * The ClassifyDouble() function makes all that conform to a common API
+ * (effectively the C99 standard API renamed), and just delegates to the
+ * standard macro on platforms that do it correctly.
  */
 
 static inline int
@@ -8349,11 +8347,16 @@ ClassifyDouble(
 #ifdef fpclassify
     return fpclassify(d);
 #else /* !fpclassify */
-#define FP_NAN          1
-#define FP_INFINITE     2
-#define FP_ZERO         3
-#define FP_NORMAL       4
-#define FP_SUBNORMAL    5
+    /*
+     * If we don't have fpclassify(), we also don't have the values it returns.
+     * Hence we define those here.
+     */
+
+#define FP_NAN          1       /* Value is NaN */
+#define FP_INFINITE     2       /* Value is an infinity */
+#define FP_ZERO         3       /* Value is a zero */
+#define FP_NORMAL       4       /* Value is a normal float */
+#define FP_SUBNORMAL    5       /* Value has lost accuracy */
 
 #ifdef REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK
     /*
@@ -8364,17 +8367,27 @@ ClassifyDouble(
      */
 
     union {
-        double d;
+        double d;               /* Interpret as double */
         struct {
-            unsigned int low;
-            unsigned int high;
-        } w;
-    } doubleMeaning;
+            unsigned int low;   /* Lower 32 bits */
+            unsigned int high;  /* Upper 32 bits */
+        } w;                    /* Interpret as unsigned integer words */
+    } doubleMeaning;            /* So we can look at the representation of a
+                                 * double directly. Platform (i.e., processor)
+                                 * specific; this is for x86 (and most other
+                                 * little-endian processors, but those are
+                                 * untested). */
     unsigned int exponent, mantissaLow, mantissaHigh;
-    int zeroMantissa;
-#define EXPONENT_MASK   0x7ff;
-#define EXPONENT_SHIFT  20
-#define MANTISSA_MASK   0xfffff
+                                /* The pieces extracted from the double. */
+    int zeroMantissa;           /* Was the mantissa zero? That's special. */
+
+    /*
+     * Shifts and masks to use with the doubleMeaning variable above.
+     */
+
+#define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
+#define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
 
     /*
      * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
