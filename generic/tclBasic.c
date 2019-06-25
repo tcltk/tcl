@@ -32,9 +32,6 @@
  *	3  - __builtin_fpclassify
  */
 
-#define TCL_FPCLASSIFY_MODE 3
-#warning mode: TCL_FPCLASSIFY_MODE
-
 #ifndef TCL_FPCLASSIFY_MODE
 /*
  * MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
