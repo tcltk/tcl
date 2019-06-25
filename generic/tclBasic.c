@@ -24,7 +24,22 @@
 #include <math.h>
 #include <assert.h>
 
+/*
+ * TCL_FPCLASSIFY_MODE:
+ *	0  - fpclassify
+ *	1  - _fpclass
+ *	2  - simulate
+ *	3  - __builtin_fpclassify
+ */
+
+#define TCL_FPCLASSIFY_MODE 3
+#warning mode: TCL_FPCLASSIFY_MODE
+
 #ifndef TCL_FPCLASSIFY_MODE
+/*
+ * MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
+ * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to _fpclass
+ */
 # if ( defined(__MINGW32__) && defined(_X86_) ) /* mingw 32-bit */
 #   define TCL_FPCLASSIFY_MODE 1
 # elif defined(fpclassify)		/* fpclassify */
@@ -35,6 +50,7 @@
 # else	/* !fpclassify && !_fpclass (older MSVC), simulate */
 #   define TCL_FPCLASSIFY_MODE 2
 # endif /* !fpclassify */
+/* actually there is no fallback to builtin fpclassify */
 #endif /* !TCL_FPCLASSIFY_MODE */
 
 
@@ -8366,7 +8382,9 @@ ClassifyDouble(
 #   define FP_SUBNORMAL    5	/* Value has lost accuracy */
 #endif
 
-# if TCL_FPCLASSIFY_MODE == 2
+# if TCL_FPCLASSIFY_MODE == 3
+    return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+# elif TCL_FPCLASSIFY_MODE == 2
     /*
      * We assume this hack is only needed on little-endian systems.
      * Specifically, x86 running Windows.  It's fairly easy to enable for
@@ -8452,8 +8470,10 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-# endif /* REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
-#endif /* fpclassify */
+# else /* unknown TCL_FPCLASSIFY_MODE */
+#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"   
+# endif /* TCL_FPCLASSIFY_MODE */
+#endif /* !fpclassify */
 }
 
 static int
