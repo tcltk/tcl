@@ -23,13 +23,20 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
-#ifndef fpclassify /* Older MSVC */
-#ifdef _M_IX86
-#define REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK
-#else /* !_M_IX86 */
-#include <float.h>
-#endif /* _M_IX86 */
-#endif /* !fpclassify */
+
+#ifndef TCL_FPCLASSIFY_MODE
+# if ( defined(__MINGW32__) && defined(_X86_) ) /* mingw 32-bit */
+#   define TCL_FPCLASSIFY_MODE 1
+# elif defined(fpclassify)		/* fpclassify */
+#   include <float.h>
+#   define TCL_FPCLASSIFY_MODE 0
+# elif defined(_FPCLASS_NN)		/* _fpclass */
+#   define TCL_FPCLASSIFY_MODE 1
+# else	/* !fpclassify && !_fpclass (older MSVC), simulate */
+#   define TCL_FPCLASSIFY_MODE 2
+# endif /* !fpclassify */
+#endif /* !TCL_FPCLASSIFY_MODE */
+
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -8344,21 +8351,22 @@ static inline int
 ClassifyDouble(
     double d)
 {
-#ifdef fpclassify
+#if TCL_FPCLASSIFY_MODE == 0
     return fpclassify(d);
 #else /* !fpclassify */
     /*
      * If we don't have fpclassify(), we also don't have the values it returns.
      * Hence we define those here.
      */
+# ifndef FP_NAN
+#   define FP_NAN          1	/* Value is NaN */
+#   define FP_INFINITE     2	/* Value is an infinity */
+#   define FP_ZERO         3	/* Value is a zero */
+#   define FP_NORMAL       4	/* Value is a normal float */
+#   define FP_SUBNORMAL    5	/* Value has lost accuracy */
+#endif
 
-#define FP_NAN          1       /* Value is NaN */
-#define FP_INFINITE     2       /* Value is an infinity */
-#define FP_ZERO         3       /* Value is a zero */
-#define FP_NORMAL       4       /* Value is a normal float */
-#define FP_SUBNORMAL    5       /* Value has lost accuracy */
-
-#ifdef REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK
+# if TCL_FPCLASSIFY_MODE == 2
     /*
      * We assume this hack is only needed on little-endian systems.
      * Specifically, x86 running Windows.  It's fairly easy to enable for
@@ -8385,9 +8393,9 @@ ClassifyDouble(
      * Shifts and masks to use with the doubleMeaning variable above.
      */
 
-#define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
-#define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
-#define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
+#   define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#   define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
+#   define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
 
     /*
      * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
@@ -8416,7 +8424,7 @@ ClassifyDouble(
          * When the exponent is all ones, it's an INF or a NAN.
          */
 
-        return zeroMantissa ? FP_INF : FP_NAN;
+        return zeroMantissa ? FP_INFINITE : FP_NAN;
     default:
         /*
          * Everything else is a NORMAL double precision float.
@@ -8424,7 +8432,7 @@ ClassifyDouble(
 
         return FP_NORMAL;
     }
-#else /* !REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
+# elif TCL_FPCLASSIFY_MODE == 1
     switch (_fpclass(d)) {
     case _FPCLASS_NZ:
     case _FPCLASS_PZ:
@@ -8444,7 +8452,7 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-#endif /* REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
+# endif /* REQUIRE_ANCIENT_WIN32_FPCLASSIFY_HACK */
 #endif /* fpclassify */
 }
 
