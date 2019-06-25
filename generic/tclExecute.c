@@ -4938,7 +4938,7 @@ TclExecuteByteCode(
 		}
 #endif
 		{
-		    mp_int big2;
+		    mp_int big1, big2;
 
 		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
@@ -4955,8 +4955,6 @@ TclExecuteByteCode(
 		    /*
 		     * Arguments are opposite sign; remainder is sum.
 		     */
-
-		    mp_int big1;
 
 		    TclBNInitBignumFromLong(&big1, l1);
 		    mp_add(&big2, &big1, &big2);
@@ -4994,7 +4992,8 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 2, 1);
 		}
 		{
-		    mp_int big2;
+		    mp_int big1, big2;
+
 		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 		    /* TODO: internals intrusion */
@@ -5010,8 +5009,6 @@ TclExecuteByteCode(
 		    /*
 		     * Arguments are opposite sign; remainder is sum.
 		     */
-
-		    mp_int big1;
 
 		    TclBNInitBignumFromWideInt(&big1, w1);
 		    mp_add(&big2, &big1, &big2);
