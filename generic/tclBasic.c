@@ -8340,7 +8340,13 @@ ClassifyDouble(
     double d)
 {
 #ifdef fpclassify
+/* MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
+ * [fpclassify 1e-314], x86 => normal, x64 => subnormal */
+#  if defined(__MINGW32__) && defined(_X86_)
+    return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+#  else
     return fpclassify(d);
+#  endif
 #else /* !fpclassify */
 #define FP_ZERO 0
 #define FP_NORMAL 1
