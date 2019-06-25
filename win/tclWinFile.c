@@ -17,6 +17,7 @@
 #include <winioctl.h>
 #include <shlobj.h>
 #include <lm.h>		        /* For TclpGetUserHome(). */
+#include <userenv.h>		/* For TclpGetUserHome(). */
 #include <aclapi.h>             /* For GetNamedSecurityInfo */
 
 #ifdef _MSC_VER
