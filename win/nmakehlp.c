@@ -74,7 +74,7 @@ main(
     char msg[300];
     DWORD dwWritten;
     int chars;
-    char *s;
+    const char *s;
 
     /*
      * Make sure children (cl.exe and link.exe) are kept quiet.
