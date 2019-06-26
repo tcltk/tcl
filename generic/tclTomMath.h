@@ -84,7 +84,11 @@ typedef unsigned int         mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #ifndef MP_WORD_DECLARED
+#ifdef _WIN32
+typedef unsigned __int64   mp_word;
+#else
 typedef unsigned long long   mp_word;
+#endif
 #define MP_WORD_DECLARED
 #endif
 
