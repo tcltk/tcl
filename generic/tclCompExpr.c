@@ -2024,7 +2024,7 @@ ParseLexeme(
 	    }
 	}
 	break;
-	
+
     case 'g':
 	if ((numBytes > 1)
 		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(UCHAR(start[2])))) {
