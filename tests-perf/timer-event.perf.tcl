@@ -3,17 +3,17 @@
 # ------------------------------------------------------------------------
 #
 # timer-event.perf.tcl --
-# 
+#
 #  This file provides performance tests for comparison of tcl-speed
 #  of timer events (event-driven tcl-handling).
 #
 # ------------------------------------------------------------------------
-# 
+#
 # Copyright (c) 2014 Serg G. Brester (aka sebres)
-# 
+#
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
-# 
+#
 
 
 if {![namespace exists ::tclTestPerf]} {
@@ -40,7 +40,7 @@ proc test-queue {{reptime {1000 10000}}} {
     {after idle {set foo bar}}
     # update / after idle:
     {update; if {![llength [after info]]} break}
-    
+
     # generate up to $howmuch idle-events:
     {after idle {set foo bar}}
     # update idletasks / after idle:
@@ -50,7 +50,7 @@ proc test-queue {{reptime {1000 10000}}} {
     {after 0 {set foo bar}}
     # update / after 0:
     {update; if {![llength [after info]]} break}
-    
+
     # generate up to $howmuch 1-ms events:
     {after 1 {set foo bar}}
     setup {after 1}
@@ -83,7 +83,7 @@ proc test-queue {{reptime {1000 10000}}} {
     setup {set le $i; incr i; list $le .. 1; # cancel up to $howmuch events}
     {after cancel $ev([incr i -1]); if {$i <= 1} break}
     cleanup {update; unset -nocomplain ev}
-    
+
     # end $howmuch events.
     cleanup {if [llength [after info]] {error "unexpected: [llength [after info]] events are still there."}}
   }]
@@ -149,7 +149,7 @@ proc test-long {{reptime 1000}} {
     {time {after idle {after 30}} 10; after 1 {set important 1}; vwait important;}
     cleanup {foreach i [after info] {after cancel $i}}
     # in-between important event (of new generation) by amount of idle events:
-    {time {after idle {after 30}} 10; after 1 {after 0 {set important 1}}; vwait important;} 
+    {time {after idle {after 30}} 10; after 1 {after 0 {set important 1}}; vwait important;}
     cleanup {foreach i [after info] {after cancel $i}}
   }
 }

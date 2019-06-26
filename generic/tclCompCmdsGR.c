@@ -35,7 +35,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  * TclGetIndexFromToken --
  *
  *	Parse a token to determine if an index value is known at
- *	compile time. 
+ *	compile time.
  *
  * Returns:
  *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
@@ -1536,7 +1536,7 @@ TclCompileLreplaceCmd(
 
 	emptyPrefix = 0;
     }
-     
+
     if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
 	/*
 	 * This is a "no-op". Example: [lreplace {a b c} 2 0]
