@@ -1002,13 +1002,13 @@ TclCompileStringReplaceCmd(
     if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
 	return TCL_ERROR;
     }
- 
+
     /* Bytecode to compute/push string argument being replaced */
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, valueTokenPtr, interp, 1);
 
     /*
-     * Check for first index known and useful at compile time. 
+     * Check for first index known and useful at compile time.
      */
     tokenPtr = TokenAfter(valueTokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
@@ -1017,7 +1017,7 @@ TclCompileStringReplaceCmd(
     }
 
     /*
-     * Check for last index known and useful at compile time. 
+     * Check for last index known and useful at compile time.
      */
     tokenPtr = TokenAfter(tokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_AFTER,
@@ -1025,7 +1025,7 @@ TclCompileStringReplaceCmd(
 	goto genericReplace;
     }
 
-    /* 
+    /*
      * [string replace] is an odd bird.  For many arguments it is
      * a conventional substring replacer.  However it also goes out
      * of its way to become a no-op for many cases where it would be
@@ -1108,12 +1108,12 @@ TclCompileStringReplaceCmd(
      * Finally we need, third:
      *
      *		(first <= last)
-     * 
+     *
      * Considered in combination with the constraints we already have,
      * we see that we can proceed when (first == TCL_INDEX_BEFORE)
      * or (last == TCL_INDEX_AFTER). These also permit simplification
      * of the prefix|replace|suffix construction. The other constraints,
-     * though, interfere with getting a guarantee that first <= last. 
+     * though, interfere with getting a guarantee that first <= last.
      */
 
     if ((first == TCL_INDEX_BEFORE) && (last >= TCL_INDEX_START)) {
@@ -1141,7 +1141,7 @@ TclCompileStringReplaceCmd(
 	/* FLOW THROUGH TO genericReplace */
 
     } else {
-	/* 
+	/*
 	 * When we have no replacement string to worry about, we may
 	 * have more luck, because the forbidden empty string replacements
 	 * are harmless when they are replaced by another empty string.
