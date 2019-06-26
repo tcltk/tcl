@@ -33,7 +33,7 @@ namespace eval ::tcl {
 	# Every OptProc give usage information on "procname -help".
 	# Try "tcl::OptParseTest -help" and "tcl::OptParseTest -a" and
 	# then other arguments.
-	# 
+	#
 	# example of 'valid' call:
 	# ::tcl::OptParseTest save -4 -pr 23 -libsok SybTcl\
 	#		-nostatics false ch1
@@ -84,8 +84,8 @@ namespace eval ::tcl {
 #
 # The general structure of a "program" is
 # notation (pseudo bnf like)
-#    name :== definition        defines "name" as being "definition" 
-#    { x y z }                  means list of x, y, and z  
+#    name :== definition        defines "name" as being "definition"
+#    { x y z }                  means list of x, y, and z
 #    x*                         means x repeated 0 or more time
 #    x+                         means "x x*"
 #    x?                         means optionally x
@@ -110,7 +110,7 @@ namespace eval ::tcl {
 #
 # And for this application:
 #
-#    singleStep     :== { instruction varname {hasBeenSet currentValue} type 
+#    singleStep     :== { instruction varname {hasBeenSet currentValue} type
 #                         typeArgs help }
 #    instruction    :== "flags" | "value"
 #    type           :== knowType | anyword
@@ -343,7 +343,7 @@ proc ::tcl::OptProcArgGiven {argname} {
     proc OptState {item} {
         lindex $item 0
     }
-    
+
     # current state
     proc OptCurState {descriptions} {
         OptState [OptCurDesc $descriptions];
@@ -535,7 +535,7 @@ proc ::tcl::OptKeyParse {descKey arglist} {
     if {![Lempty $arglist]} {
 	return -code error [OptTooManyArgs $desc $arglist];
     }
-    
+
     # Analyse the result
     # Walk through the tree:
     OptTreeVars $desc "#[expr {[info level]-1}]" ;
@@ -781,7 +781,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
             3 {
                 # varname type value
                 # varname value comment
-		
+
                 if {[regexp {^-(.+)$} $arg1 x type]} {
 		    # flags/optValue as they are optional, need a "value",
 		    # on the contrary, for a variable (non optional),
@@ -919,7 +919,7 @@ proc ::tcl::OptError {prefix desc {header 0}} {
 	set desc [concat $h $desc]
     }
     OptLengths $desc nl tl dl
-    # actually output 
+    # actually output
     return "$prefix[OptTree $desc $nl $tl $dl]"
 }
 
@@ -952,7 +952,7 @@ proc ::tcl::Lget {list indexLst} {
 #  it would be even slower... needs to be written in C !)
 # (nb: there is a non trivial recursive problem with indexes 0,
 #  which appear because there is no difference between a list
-#  of 1 element and 1 element alone : [list "a"] == "a" while 
+#  of 1 element and 1 element alone : [list "a"] == "a" while
 #  it should be {a} and [listp a] should be 0 while [listp {a b}] would be 1
 #  and [listp "a b"] maybe 0. listp does not exist either...)
 proc ::tcl::Lvarset {listName indexLst newValue} {

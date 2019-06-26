@@ -39,7 +39,6 @@
 #endif
 
 
-
 /* protos */
 
 static int CheckForCompilerFeature(const char *option);
