@@ -7717,7 +7717,7 @@ ClassifyDouble(
         return FP_NAN;
     }
 # else /* unknown TCL_FPCLASSIFY_MODE */
-#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"   
+#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"
 # endif /* TCL_FPCLASSIFY_MODE */
 #endif /* !fpclassify */
 }
