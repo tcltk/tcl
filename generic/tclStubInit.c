@@ -259,6 +259,7 @@ TclpGetPid(Tcl_Pid pid)
 }
 
 #if (TCL_UTF_MAX <= 4) && !defined(TCL_NO_DEPRECATED)
+#undef Tcl_WinUtfToTChar
 char *
 Tcl_WinUtfToTChar(
     const char *string,
@@ -271,7 +272,7 @@ Tcl_WinUtfToTChar(
     }
     return (char *)Tcl_UtfToUtf16DString(string, len, dsPtr);
 }
-
+#undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
     const char *string,
@@ -282,10 +283,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    if (len > 0) {
-	len /= 2;
-    }
-    return Tcl_Utf16ToUtfDString((const unsigned short *)string, len, dsPtr);
+    return Tcl_Utf16ToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
