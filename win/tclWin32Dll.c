@@ -464,6 +464,7 @@ TclWinDriveLetterForVolMountPoint(
  */
 
 #if (TCL_UTF_MAX == 3) && !defined(TCL_NO_DEPRECATED)
+#undef Tcl_WinUtfToTChar
 WCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
@@ -478,7 +479,7 @@ Tcl_WinUtfToTChar(
     }
     return Tcl_UtfToUtf16DString(string, len, dsPtr);
 }
-
+#undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
     const WCHAR *string,	/* Source string in Unicode. */

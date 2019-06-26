@@ -842,8 +842,14 @@ typedef struct ByteCode {
 
 #define INST_DICT_GET_DEF		190
 
+/* TIP 461 */
+#define INST_STR_LT			191
+#define INST_STR_GT			192
+#define INST_STR_LE			193
+#define INST_STR_GE			194
+
 /* The last opcode */
-#define LAST_INST_OPCODE		190
+#define LAST_INST_OPCODE		194
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

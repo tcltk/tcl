@@ -121,7 +121,7 @@ static const Tcl_MethodType fwdMethodType = {
 #define TclVarTable(contextNs) \
     ((Tcl_HashTable *) (&((Namespace *) (contextNs))->varTable))
 #define TclVarHashGetValue(hPtr) \
-    ((Tcl_Var) ((char *)hPtr - TclOffset(VarInHash, entry)))
+    ((Tcl_Var) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 /*
  * ----------------------------------------------------------------------

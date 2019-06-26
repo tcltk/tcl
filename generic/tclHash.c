@@ -809,7 +809,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    hPtr = ckalloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
     return hPtr;

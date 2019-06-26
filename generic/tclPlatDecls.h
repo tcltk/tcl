@@ -117,6 +117,19 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#if defined(USE_TCL_STUBS) && defined(_WIN32) \
+	&& ((TCL_UTF_MAX > 4) || defined(TCL_NO_DEPRECATED))
+#undef Tcl_WinUtfToTChar
+#undef Tcl_WinTCharToUtf
+
+#define Tcl_WinUtfToTChar(string, len, dsPtr) (((string) != NULL) \
+		? (Tcl_DStringInit(dsPtr), (TCHAR *)Tcl_UtfToUtf16DString((string), (len), (dsPtr))) \
+		: (Tcl_DStringInit(dsPtr), (void)(len), NULL))
+#define Tcl_WinTCharToUtf(string, len, dsPtr) (((string) != NULL) \
+		? (Tcl_DStringInit(dsPtr), (char *)Tcl_Utf16ToUtfDString((string), ((int)(len) >> 1), (dsPtr))) \
+		: (Tcl_DStringInit(dsPtr), (void)(len), NULL))
+#endif
+
 #endif /* _TCLPLATDECLS */
 
 
