@@ -63,7 +63,7 @@ proc findversion {top name useversion} {
 	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
 	    set v [getversion $tclh $upper]
 	    if {[llength $v]} {
-		lassign $v major minor	    	
+		lassign $v major minor
 		# to do
 		#     use glob matching instead of string matching or add
 		#     brace handling to [string matcch]
