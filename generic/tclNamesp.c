@@ -430,7 +430,7 @@ Tcl_PopCallFrame(
      */
 
     nsPtr = framePtr->nsPtr;
-    if ((--nsPtr->activationCount <= (nsPtr == iPtr->globalNsPtr))
+    if ((--nsPtr->activationCount <= (unsigned)(nsPtr == iPtr->globalNsPtr))
 	    && (nsPtr->flags & NS_DYING)) {
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
@@ -1023,7 +1023,7 @@ Tcl_DeleteNamespace(
      * refCount reaches 0.
      */
 
-    if (nsPtr->activationCount > (nsPtr == globalNsPtr)) {
+    if (nsPtr->activationCount > (unsigned)(nsPtr == globalNsPtr)) {
 	nsPtr->flags |= NS_DYING;
 	if (nsPtr->parentPtr != NULL) {
 	    entryPtr = Tcl_FindHashEntry(
