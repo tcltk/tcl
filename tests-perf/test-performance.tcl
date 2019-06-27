@@ -1,19 +1,19 @@
 # ------------------------------------------------------------------------
 #
 # test-performance.tcl --
-# 
+#
 #  This file provides common performance tests for comparison of tcl-speed
 #  degradation or regression by switching between branches.
 #
 #  To execute test case evaluate direct corresponding file "tests-perf\*.perf.tcl".
 #
 # ------------------------------------------------------------------------
-# 
+#
 # Copyright (c) 2014 Serg G. Brester (aka sebres)
-# 
+#
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
-# 
+#
 
 namespace eval ::tclTestPerf {
 # warm-up interpeter compiler env, calibrate timerate measurement functionality:
@@ -33,7 +33,7 @@ if {[lindex [timerate {} 10] 6] >= (10-1)} {
 }
 
 proc {**STOP**} {args} {
-  return -code error -level 4 "**STOP** in [info level [expr {[info level]-2}]] [join $args { }]" 
+  return -code error -level 4 "**STOP** in [info level [expr {[info level]-2}]] [join $args { }]"
 }
 
 proc _test_get_commands {lst} {
