@@ -563,7 +563,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define FOREACH(var,ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
-    } else if (var = (ary).list[i], 1) 
+    } else if (var = (ary).list[i], 1)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
