@@ -23,9 +23,33 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
-#ifndef fpclassify /* Older MSVC */
-#include <float.h>
-#endif /* !fpclassify */
+
+/*
+ * TCL_FPCLASSIFY_MODE:
+ *	0  - fpclassify
+ *	1  - _fpclass
+ *	2  - simulate
+ *	3  - __builtin_fpclassify
+ */
+
+#ifndef TCL_FPCLASSIFY_MODE
+/*
+ * MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
+ * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to _fpclass
+ */
+# if ( defined(__MINGW32__) && defined(_X86_) ) /* mingw 32-bit */
+#   define TCL_FPCLASSIFY_MODE 1
+# elif defined(fpclassify)		/* fpclassify */
+#   include <float.h>
+#   define TCL_FPCLASSIFY_MODE 0
+# elif defined(_FPCLASS_NN)		/* _fpclass */
+#   define TCL_FPCLASSIFY_MODE 1
+# else	/* !fpclassify && !_fpclass (older MSVC), simulate */
+#   define TCL_FPCLASSIFY_MODE 2
+# endif /* !fpclassify */
+/* actually there is no fallback to builtin fpclassify */
+#endif /* !TCL_FPCLASSIFY_MODE */
+
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -7556,13 +7580,14 @@ ExprSrandFunc(
  *	None.
  *
  *----------------------------------------------------------------------
- */
-
-/*
- * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
- * But it does have _fpclass() which does almost the same job.
  *
- * This makes it conform to the C99 standard API, and just delegates to the
+ * Older MSVC is supported by Tcl, but doesn't have fpclassify(). Of course.
+ * But it does sometimes have _fpclass() which does almost the same job; if
+ * even that is absent, we grobble around directly in the platform's binary
+ * representation of double.
+ *
+ * The ClassifyDouble() function makes all that conform to a common API
+ * (effectively the C99 standard API renamed), and just delegates to the
  * standard macro on platforms that do it correctly.
  */
 
@@ -7570,15 +7595,90 @@ static inline int
 ClassifyDouble(
     double d)
 {
-#ifdef fpclassify
+#if TCL_FPCLASSIFY_MODE == 0
     return fpclassify(d);
 #else /* !fpclassify */
-#define FP_ZERO 0
-#define FP_NORMAL 1
-#define FP_SUBNORMAL 2
-#define FP_INFINITE 3
-#define FP_NAN 4
+    /*
+     * If we don't have fpclassify(), we also don't have the values it returns.
+     * Hence we define those here.
+     */
+# ifndef FP_NAN
+#   define FP_NAN          1	/* Value is NaN */
+#   define FP_INFINITE     2	/* Value is an infinity */
+#   define FP_ZERO         3	/* Value is a zero */
+#   define FP_NORMAL       4	/* Value is a normal float */
+#   define FP_SUBNORMAL    5	/* Value has lost accuracy */
+#endif
 
+# if TCL_FPCLASSIFY_MODE == 3
+    return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+# elif TCL_FPCLASSIFY_MODE == 2
+    /*
+     * We assume this hack is only needed on little-endian systems.
+     * Specifically, x86 running Windows.  It's fairly easy to enable for
+     * others if they need it (because their libc/libm is broken) but we'll
+     * jump that hurdle when requred.  We can solve the word ordering then.
+     */
+
+    union {
+        double d;               /* Interpret as double */
+        struct {
+            unsigned int low;   /* Lower 32 bits */
+            unsigned int high;  /* Upper 32 bits */
+        } w;                    /* Interpret as unsigned integer words */
+    } doubleMeaning;            /* So we can look at the representation of a
+                                 * double directly. Platform (i.e., processor)
+                                 * specific; this is for x86 (and most other
+                                 * little-endian processors, but those are
+                                 * untested). */
+    unsigned int exponent, mantissaLow, mantissaHigh;
+                                /* The pieces extracted from the double. */
+    int zeroMantissa;           /* Was the mantissa zero? That's special. */
+
+    /*
+     * Shifts and masks to use with the doubleMeaning variable above.
+     */
+
+#   define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#   define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
+#   define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
+
+    /*
+     * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
+     * totally ignore the sign bit.
+     */
+
+    doubleMeaning.d = d;
+    exponent = (doubleMeaning.w.high >> EXPONENT_SHIFT) & EXPONENT_MASK;
+    mantissaLow = doubleMeaning.w.low;
+    mantissaHigh = doubleMeaning.w.high & MANTISSA_MASK;
+    zeroMantissa = (mantissaHigh == 0 && mantissaLow == 0);
+
+    /*
+     * Look for the special cases of exponent.
+     */
+
+    switch (exponent) {
+    case 0:
+        /*
+         * When the exponent is all zeros, it's a ZERO or a SUBNORMAL.
+         */
+
+        return zeroMantissa ? FP_ZERO : FP_SUBNORMAL;
+    case EXPONENT_MASK:
+        /*
+         * When the exponent is all ones, it's an INF or a NAN.
+         */
+
+        return zeroMantissa ? FP_INFINITE : FP_NAN;
+    default:
+        /*
+         * Everything else is a NORMAL double precision float.
+         */
+
+        return FP_NORMAL;
+    }
+# elif TCL_FPCLASSIFY_MODE == 1
     switch (_fpclass(d)) {
     case _FPCLASS_NZ:
     case _FPCLASS_PZ:
@@ -7598,7 +7698,10 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-#endif /* fpclassify */
+# else /* unknown TCL_FPCLASSIFY_MODE */
+#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"
+# endif /* TCL_FPCLASSIFY_MODE */
+#endif /* !fpclassify */
 }
 
 static int
