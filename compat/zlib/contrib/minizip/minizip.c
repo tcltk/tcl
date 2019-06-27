@@ -70,8 +70,8 @@
 
 #ifdef _WIN32
 uLong filetime(f, tmzip, dt)
-    char *f;                /* name of file to get info on */
-    tm_zip *tmzip;             /* return value: access, modific. and creation times */
+    const char *f;         /* name of file to get info on */
+    tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
   int ret = 0;
@@ -94,7 +94,7 @@ uLong filetime(f, tmzip, dt)
 #else
 #if defined(unix) || defined(__APPLE__)
 uLong filetime(f, tmzip, dt)
-    char *f;               /* name of file to get info on */
+    const char *f;         /* name of file to get info on */
     tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
@@ -136,8 +136,8 @@ uLong filetime(f, tmzip, dt)
 }
 #else
 uLong filetime(f, tmzip, dt)
-    char *f;                /* name of file to get info on */
-    tm_zip *tmzip;             /* return value: access, modific. and creation times */
+    const char *f;         /* name of file to get info on */
+    tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
     return 0;
