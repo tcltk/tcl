@@ -492,10 +492,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    if (len > 0) {
-	len /= 2;
-    }
-    return Tcl_Utf16ToUtfDString((unsigned short *)string, len, dsPtr);
+    return Tcl_Utf16ToUtfDString((unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
