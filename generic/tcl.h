@@ -2135,12 +2135,11 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values are 4 and 6
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 4,
- * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
+ * Unicode character in UTF-8. The valid values are 3 and 4 (or 6)
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If 3,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If > 3,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
- * is the default and recommended mode. UCS-4 is experimental and not
- * recommended. It works for the core, but most extensions expect UCS-2.
+ * is the default and recommended mode.
  */
 
 #ifndef TCL_UTF_MAX
