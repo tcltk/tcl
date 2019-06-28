@@ -918,7 +918,7 @@ test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio test
 
     set f [open "|[list [interpreter] $path(cat)]" w+]
     fconfigure $f -translation {auto lf} -buffering none
-    fconfigure $f -encoding unicode
+    fconfigure $f -encoding utf-16
     puts -nonewline $f "bbbbbbbbbbbbbbb\n123456789abcdef\r"
     fconfigure $f -buffersize 16
     gets $f
@@ -1162,7 +1162,7 @@ test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio testcha
 	variable x
 	lappend x [gets $f line] $line [testchannel inputbuffered $f]
     }
-    fconfigure $f -encoding unicode -buffersize 16 -blocking 0
+    fconfigure $f -encoding utf-16 -buffersize 16 -blocking 0
     vwait [namespace which -variable x]
     fconfigure $f -translation auto -encoding ascii -blocking 1
     # here
