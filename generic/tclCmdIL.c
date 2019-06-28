@@ -1958,7 +1958,7 @@ InfoProcsCmd(
 	/*
 	 * If "info procs" worked like "info commands", returning the commands
 	 * also seen in the global namespace, then you would include this
-	 * code. As this could break backwards compatibilty with 8.0-8.2, we
+	 * code. As this could break backwards compatibility with 8.0-8.2, we
 	 * decided not to "fix" it in 8.3, leaving the behavior slightly
 	 * different.
 	 */
