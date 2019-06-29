@@ -33,20 +33,33 @@
  */
 
 #ifndef TCL_FPCLASSIFY_MODE
+#if defined(__MINGW32__) && defined(_X86_) /* mingw 32-bit */
 /*
  * MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
- * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to _fpclass
+ * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to using a
+ * version using a compiler built-in.
  */
-# if ( defined(__MINGW32__) && defined(_X86_) ) /* mingw 32-bit */
-#   define TCL_FPCLASSIFY_MODE 1
-# elif defined(fpclassify)		/* fpclassify */
-#   include <float.h>
-#   define TCL_FPCLASSIFY_MODE 0
-# elif defined(_FPCLASS_NN)		/* _fpclass */
-#   define TCL_FPCLASSIFY_MODE 1
-# else	/* !fpclassify && !_fpclass (older MSVC), simulate */
-#   define TCL_FPCLASSIFY_MODE 2
-# endif /* !fpclassify */
+#define TCL_FPCLASSIFY_MODE 1
+#elif defined(fpclassify)		/* fpclassify */
+/*
+ * This is the C99 standard.
+ */
+#include <float.h>
+#define TCL_FPCLASSIFY_MODE 0
+#elif defined(_FPCLASS_NN)		/* _fpclass */
+/*
+ * This case handles newer MSVC on Windows, which doesn't have the standard
+ * operation but does have something that can tell us the same thing.
+ */
+#define TCL_FPCLASSIFY_MODE 1
+#else	/* !fpclassify && !_fpclass (older MSVC), simulate */
+/*
+ * Older MSVC on Windows. So broken that we just have to do it our way. This
+ * assumes that we're on x86 (or at least a system with classic little-endian
+ * double layout and a 32-bit 'int' type).
+ */
+#define TCL_FPCLASSIFY_MODE 2
+#endif /* !fpclassify */
 /* actually there is no fallback to builtin fpclassify */
 #endif /* !TCL_FPCLASSIFY_MODE */
 
@@ -8366,22 +8379,23 @@ ClassifyDouble(
 {
 #if TCL_FPCLASSIFY_MODE == 0
     return fpclassify(d);
-#else /* !fpclassify */
+#else /* TCL_FPCLASSIFY_MODE != 0 */
     /*
      * If we don't have fpclassify(), we also don't have the values it returns.
      * Hence we define those here.
      */
-# ifndef FP_NAN
+#ifndef FP_NAN
 #   define FP_NAN          1	/* Value is NaN */
 #   define FP_INFINITE     2	/* Value is an infinity */
 #   define FP_ZERO         3	/* Value is a zero */
 #   define FP_NORMAL       4	/* Value is a normal float */
 #   define FP_SUBNORMAL    5	/* Value has lost accuracy */
-#endif
+#endif /* !FP_NAN */
 
-# if TCL_FPCLASSIFY_MODE == 3
-    return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
-# elif TCL_FPCLASSIFY_MODE == 2
+#if TCL_FPCLASSIFY_MODE == 3
+    return __builtin_fpclassify(
+            FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+#elif TCL_FPCLASSIFY_MODE == 2
     /*
      * We assume this hack is only needed on little-endian systems.
      * Specifically, x86 running Windows.  It's fairly easy to enable for
@@ -8408,9 +8422,9 @@ ClassifyDouble(
      * Shifts and masks to use with the doubleMeaning variable above.
      */
 
-#   define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
-#   define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
-#   define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
+#define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
+#define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
 
     /*
      * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
@@ -8447,7 +8461,7 @@ ClassifyDouble(
 
         return FP_NORMAL;
     }
-# elif TCL_FPCLASSIFY_MODE == 1
+#elif TCL_FPCLASSIFY_MODE == 1
     switch (_fpclass(d)) {
     case _FPCLASS_NZ:
     case _FPCLASS_PZ:
@@ -8467,9 +8481,9 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-# else /* unknown TCL_FPCLASSIFY_MODE */
-#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"
-# endif /* TCL_FPCLASSIFY_MODE */
+#else /* TCL_FPCLASSIFY_MODE not in (0..3) */
+#error "unknown or unexpected TCL_FPCLASSIFY_MODE"
+#endif /* TCL_FPCLASSIFY_MODE */
 #endif /* !fpclassify */
 }
 
