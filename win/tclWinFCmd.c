@@ -455,7 +455,7 @@ DoRenameFile(
 		    return TCL_ERROR;
 		}
 		nativeTmp = (WCHAR *) tempBuf;
-		nativeRest[0] = L'\0';
+		nativeRest[0] = '\0';
 
 		result = TCL_ERROR;
 		nativePrefix = (WCHAR *) L"tclr";

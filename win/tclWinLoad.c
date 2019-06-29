@@ -64,7 +64,7 @@ TclpDlopen(
     int flags)
 {
     HINSTANCE hInstance = NULL;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
 
