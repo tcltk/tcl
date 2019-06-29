@@ -49,7 +49,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
-static const TCHAR className[] = TEXT("TclNotifier");
+static const WCHAR className[] = L"TclNotifier";
 static int initialized = 0;
 static CRITICAL_SECTION notifierMutex;
 
