@@ -92,8 +92,13 @@ if {[testConstraint testvolumetype]} {
 # NB: filename is chosen to be short but unlikely to clash with other apps
 if {[file exists c:/] && [file exists d:/]} {
     catch {file delete d:/TclTmpF.1}
-    if {[catch {createfile d:/TclTmpF.1 {}}] == 0} {
-	file delete d:/TclTmpF.1
+    catch {file delete d:/TclTmpD.1}
+    catch {file delete c:/TclTmpC.1}
+    if {![catch {createfile d:/TclTmpF.1 {}}] && [file isfile d:/TclTmpF.1]
+	&& ![catch {file mkdir d:/TclTmpD.1}] && [file isdirectory d:/TclTmpD.1]
+	&& ![catch {file mkdir c:/TclTmpC.1}] && [file isdirectory c:/TclTmpC.1]
+    } {
+	file delete d:/TclTmpF.1 d:/TclTmpD.1 c:/TclTmpC.1
 	testConstraint exdev 1
     }
 }
@@ -173,12 +178,12 @@ test winFCmd-1.9 {TclpRenameFile: errno: ENOTDIR} -setup {
     testfile mv td1 tf1
 } -returnCodes error -result ENOTDIR
 test winFCmd-1.10 {TclpRenameFile: errno: EXDEV} -setup {
-    file delete -force d:/tf1
+    file delete -force d:/TclTmpD.1
 } -constraints {win exdev testfile} -body {
-    file mkdir c:/tf1
-    testfile mv c:/tf1 d:/tf1
+    file mkdir c:/TclTmpC.1
+    testfile mv c:/TclTmpC.1 d:/TclTmpD.1
 } -cleanup {
-    file delete -force c:/tf1
+    file delete -force c:/TclTmpC.1
 } -returnCodes error -result EXDEV
 test winFCmd-1.11 {TclpRenameFile: errno: EACCES} -setup {
     cleanup
@@ -316,15 +321,15 @@ test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} -setup {
 } -result {0 1 1}
 test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} \
 	-constraints {win exdev testfile testchmod} -body {
-    file mkdir d:/td1
-    testchmod 0 d:/td1
-    file mkdir c:/tf1
-    catch {testfile mv c:/tf1 d:/td1} msg
-    list $msg [file writable d:/td1]
+    file mkdir d:/TclTmpD.1
+    testchmod 0 d:/TclTmpD.1
+    file mkdir c:/TclTmpC.1
+    catch {testfile mv c:/TclTmpC.1 d:/TclTmpD.1} msg
+    list $msg [file writable d:/TclTmpD.1]
 } -cleanup {
-    catch {testchmod 0o666 d:/td1}
-    file delete d:/td1
-    file delete -force c:/tf1
+    catch {testchmod 0o666 d:/TclTmpD.1}
+    file delete d:/TclTmpD.1
+    file delete -force c:/TclTmpC.1
 } -result {EXDEV 0}
 test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} -setup {
     cleanup
@@ -1048,13 +1053,13 @@ test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
     list [file attributes / -longname] [file attributes \\ -longname]
 } -constraints {win} -result {/ /}
 test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
-    catch {file delete -force -- c:/td1}
+    catch {file delete -force -- c:/TclTmpC.1}
 } -constraints {win winXP} -body {
-    createfile c:/td1 {}
-    string tolower [file attributes c:/td1 -longname]
+    createfile c:/TclTmpC.1 {}
+    string tolower [file attributes c:/TclTmpC.1 -longname]
 } -cleanup {
-    file delete -force -- c:/td1
-} -result {c:/td1}
+    file delete -force -- c:/TclTmpC.1
+} -result [string tolower {c:/TclTmpC.1}]
 test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
     catch {file delete -force -- $::env(TEMP)/td1}
 } -constraints {win} -body {
