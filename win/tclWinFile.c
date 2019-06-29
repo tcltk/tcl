@@ -395,11 +395,11 @@ WinSymLinkDirectory(
      */
 
     for (loop = nativeTarget; *loop != 0; loop++) {
-	if (*loop == L'/') {
-	    *loop = L'\\';
+	if (*loop == '/') {
+	    *loop = '\\';
 	}
     }
-    if ((nativeTarget[len-1] == L'\\') && (nativeTarget[len-2] != L':')) {
+    if ((nativeTarget[len-1] == '\\') && (nativeTarget[len-2] != ':')) {
 	nativeTarget[len-1] = 0;
     }
 
@@ -572,7 +572,7 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
-	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == L'\\') {
+	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == '\\') {
 	    /*
 	     * Check whether this is a mounted volume.
 	     */
@@ -586,7 +586,7 @@ WinReadLinkDirectory(
 		 * to fix here. It doesn't seem very well documented.
 		 */
 
-		reparseBuffer->MountPointReparseBuffer.PathBuffer[1]=L'\\';
+		reparseBuffer->MountPointReparseBuffer.PathBuffer[1] = '\\';
 
 		/*
 		 * Check if a corresponding drive letter exists, and use that
@@ -815,7 +815,7 @@ tclWinDebugPanic(
     va_start(argList, format);
     vsnprintf(buf, sizeof(buf), format, argList);
 
-    msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+    msgString[TCL_MAX_WARN_LEN-1] = '\0';
     MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
 
     /*
@@ -823,7 +823,7 @@ tclWinDebugPanic(
      * and cause possible oversized window error.
      */
 
-    if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+    if (msgString[TCL_MAX_WARN_LEN-1] != '\0') {
 	memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
     }
     if (IsDebuggerPresent()) {
@@ -1507,7 +1507,7 @@ TclpGetUserHome(
 	    DWORD i, size = MAX_PATH;
 
 	    wHomeDir = uiPtr->usri1_home_dir;
-	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
+	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
 		size = lstrlenW(wHomeDir);
 		Tcl_Utf16ToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
@@ -2593,8 +2593,8 @@ TclpObjNormalizePath(
 			for (i=0 ; i<len ; i++) {
 			    WCHAR wc = ((WCHAR *) nativePath)[i];
 
-			    if (wc >= L'a') {
-				wc -= (L'a' - L'A');
+			    if (wc >= 'a') {
+				wc -= ('a' - 'A');
 				((WCHAR *) nativePath)[i] = wc;
 			    }
 			}
@@ -2684,8 +2684,8 @@ TclpObjNormalizePath(
 	    if (isDrive) {
 		WCHAR drive = ((WCHAR *) nativePath)[0];
 
-		if (drive >= L'a') {
-		    drive -= (L'a' - L'A');
+		if (drive >= 'a') {
+		    drive -= ('a' - 'A');
 		    ((WCHAR *) nativePath)[0] = drive;
 		}
 		Tcl_DStringAppend(&dsNorm, (const char *)nativePath,
@@ -2785,8 +2785,8 @@ TclpObjNormalizePath(
 	     * We have to make the drive letter uppercase.
 	     */
 
-	    if (wpath[0] >= L'a') {
-		wpath[0] -= (L'a' - L'A');
+	    if (wpath[0] >= 'a') {
+		wpath[0] -= ('a' - 'A');
 	    }
 	    Tcl_DStringAppend(&dsNorm, (const char *) wpath,
 		    wpathlen * sizeof(WCHAR));
