@@ -290,7 +290,7 @@ TclWinDriveLetterForVolMountPoint(
 {
     MountPointMap *dlIter, *dlPtr2;
     WCHAR Target[55];		/* Target of mount at mount point */
-    WCHAR drive[4] = TEXT("A:\\");
+    WCHAR drive[4] = L"A:\\";
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -368,7 +368,7 @@ TclWinDriveLetterForVolMountPoint(
      * We couldn't find it, so we must iterate over the letters.
      */
 
-    for (drive[0] = L'A'; drive[0] <= L'Z'; drive[0]++) {
+    for (drive[0] = 'A'; drive[0] <= 'Z'; drive[0]++) {
 	/*
 	 * Try to read the volume mount point and see where it points.
 	 */
