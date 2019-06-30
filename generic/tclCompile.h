@@ -529,7 +529,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
