@@ -172,7 +172,7 @@ TOOM_SQR_CUTOFF;
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * (int)sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
 #define MP_WARRAY (MP_DEPRECATED_PRAGMA("MP_WARRAY is an internal macro") PRIVATE_MP_WARRAY)
 
 #if defined(__GNUC__) && __GNUC__ >= 4
