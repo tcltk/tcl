@@ -176,7 +176,7 @@ typedef private_mp_word mp_word;
 #endif
 
 /* Minimum number of available digits in mp_int, MP_PREC >= MP_MIN_PREC */
-#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(long long) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
+#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(Tcl_WideInt) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
 
 MP_STATIC_ASSERT(prec_geq_min_prec, MP_PREC >= MP_MIN_PREC)
 
@@ -210,7 +210,7 @@ MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
-MP_PRIVATE void s_mp_rand_jenkins_init(unsigned long long seed);
+MP_PRIVATE void s_mp_rand_jenkins_init(Tcl_WideUInt seed);
 
 extern MP_PRIVATE const char *const mp_s_rmap;
 extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
@@ -289,7 +289,7 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 #define MP_GET_SIGNED(type, name, mag)                        \
     type name(const mp_int* a)                                \
     {                                                         \
-        unsigned long long res = mag(a);                      \
+        Tcl_WideUInt res = mag(a);                      \
         return (a->sign == MP_NEG) ? (type)-res : (type)res;  \
     }
 
