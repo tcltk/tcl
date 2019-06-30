@@ -69,7 +69,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
-static MP_SET_UNSIGNED(bn_mp_set_ull, unsigned long long)
+static MP_SET_UNSIGNED(bn_mp_set_ull, Tcl_WideUInt)
 
 
 int TclBN_mp_set_long(mp_int *a, unsigned long i)
