@@ -135,8 +135,8 @@ typedef struct {
 #define	REG_USHORTEST		020000
     char *re_endp;		/* backward compatibility kludge */
     /* the rest is opaque pointers to hidden innards */
-    char *re_guts;		/* `char *' is more portable than `void *' */
-    char *re_fns;
+    void *re_guts;
+    void *re_fns;
 } regex_t;
 
 /* result reporting (may acquire more fields later) */
