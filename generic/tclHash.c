@@ -853,6 +853,7 @@ AllocStringEntry(
 	allocsize = sizeof(hPtr->key);
     }
     hPtr = (Tcl_HashEntry *) ckalloc(sizeof(Tcl_HashEntry) + allocsize - sizeof(hPtr->key));
+    memset(hPtr, 0, sizeof(Tcl_HashEntry) + allocsize - sizeof(hPtr->key));
     memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
     return hPtr;
