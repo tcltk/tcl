@@ -157,6 +157,12 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --disable-shared"
         - NO_DIRECT_TEST=1
+    - os: windows
+      env:
+        - BUILD_DIR=win
+	- NO_DIRECT_CONFIGURE=1
+      script:
+        - nmake -f makefile.vc test
 
 before_install:
   - export ERROR_ON_FAILURES=1
