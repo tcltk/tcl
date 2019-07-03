@@ -160,8 +160,8 @@ matrix:
     - os: windows
       env:
         - BUILD_DIR=win
-	- NO_DIRECT_CONFIGURE=1
-	- MAKE="nmake -f makefile.vc"
+        - NO_DIRECT_CONFIGURE=1
+        - MAKE="nmake -f makefile.vc"
 
 before_install:
   - export ERROR_ON_FAILURES=1
