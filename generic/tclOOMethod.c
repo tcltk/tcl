@@ -692,7 +692,7 @@ InvokeProcedureMethod(
      * Allocate the special frame data.
      */
 
-    fdPtr = TclStackAlloc(interp, sizeof(PMFrameData));
+    fdPtr = (PMFrameData *)TclStackAlloc(interp, sizeof(PMFrameData));
 
     /*
      * Create a call frame for this method.
@@ -1620,7 +1620,7 @@ InitEnsembleRewrite(
 				 * array of rewritten arguments. */
 {
     unsigned len = rewriteLength + objc - toRewrite;
-    Tcl_Obj **argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
+    Tcl_Obj **argObjs = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
 
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,

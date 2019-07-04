@@ -738,7 +738,7 @@ TclOOUnknownDefinition(
 	 * Got one match, and only one match!
 	 */
 
-	Tcl_Obj **newObjv =
+	Tcl_Obj **newObjv = (Tcl_Obj **)
 		TclStackAlloc(interp, sizeof(Tcl_Obj*) * (objc - 1));
 	int result;
 
@@ -2461,7 +2461,7 @@ ClassMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
@@ -2908,7 +2908,7 @@ ObjMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],

@@ -215,7 +215,7 @@ Registry_Unload(
      * Delete the originally registered command.
      */
 
-    cmd = Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
+    cmd = (Tcl_Command)Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
     if (cmd != NULL) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
     }
@@ -244,7 +244,7 @@ static void
 DeleteCmd(
     ClientData clientData)
 {
-    Tcl_Interp *interp = clientData;
+    Tcl_Interp *interp = (Tcl_Interp *)clientData;
 
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, NULL);
 }
@@ -1168,7 +1168,7 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    static FARPROC regDeleteKeyExProc = NULL;
+    static LSTATUS (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LSTATUS (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
 
     /*
      * Do not allow NULL or empty key name.
@@ -1208,7 +1208,7 @@ RecursiveDeleteKey(
 
 		checkExProc = 1;
 		handle = GetModuleHandle(TEXT("ADVAPI32"));
-		regDeleteKeyExProc = (FARPROC)
+		regDeleteKeyExProc = (LSTATUS (*) (HKEY, LPCWSTR, REGSAM, DWORD))
 			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
 	    if (mode && regDeleteKeyExProc) {

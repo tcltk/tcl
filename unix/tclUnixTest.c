@@ -331,7 +331,7 @@ TestFileHandlerProc(
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
-    Pipe *pipePtr = clientData;
+    Pipe *pipePtr = (Pipe *)clientData;
 
     if (mask & TCL_READABLE) {
 	pipePtr->readCount++;

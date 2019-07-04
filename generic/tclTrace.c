@@ -1689,7 +1689,7 @@ CallTraceFunction(
      * Copy the command characters into a new string.
      */
 
-    commandCopy = TclStackAlloc(interp, numChars + 1);
+    commandCopy = (char *)TclStackAlloc(interp, numChars + 1);
     memcpy(commandCopy, command, numChars);
     commandCopy[numChars] = '\0';
 

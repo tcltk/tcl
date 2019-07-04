@@ -577,7 +577,7 @@ Tcl_MutexLock(
 	     * Double inside master lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = ckalloc(sizeof(PMutex));
+	    pmutexPtr = (PMutex *)ckalloc(sizeof(PMutex));
 	    PMutexInit(pmutexPtr);
 	    *mutexPtr = (Tcl_Mutex) pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -687,7 +687,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = (pthread_cond_t *)ckalloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -846,7 +846,7 @@ TclpNewAllocMutex(void)
     AllocMutex *lockPtr;
     register PMutex *plockPtr;
 
-    lockPtr = malloc(sizeof(AllocMutex));
+    lockPtr = (AllocMutex *)malloc(sizeof(AllocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -917,7 +917,7 @@ TclpThreadCreateKey(void)
 {
     pthread_key_t *ptkeyPtr;
 
-    ptkeyPtr = TclpSysAlloc(sizeof(pthread_key_t), 0);
+    ptkeyPtr = (pthread_key_t *)TclpSysAlloc(sizeof(pthread_key_t), 0);
     if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }
@@ -933,7 +933,7 @@ void
 TclpThreadDeleteKey(
     void *keyPtr)
 {
-    pthread_key_t *ptkeyPtr = keyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)keyPtr;
 
     if (pthread_key_delete(*ptkeyPtr)) {
 	Tcl_Panic("unable to delete key!");
@@ -947,7 +947,7 @@ TclpThreadSetMasterTSD(
     void *tsdKeyPtr,
     void *ptr)
 {
-    pthread_key_t *ptkeyPtr = tsdKeyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)tsdKeyPtr;
 
     if (pthread_setspecific(*ptkeyPtr, ptr)) {
 	Tcl_Panic("unable to set master TSD value");
@@ -958,7 +958,7 @@ void *
 TclpThreadGetMasterTSD(
     void *tsdKeyPtr)
 {
-    pthread_key_t *ptkeyPtr = tsdKeyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t*)tsdKeyPtr;
 
     return pthread_getspecific(*ptkeyPtr);
 }

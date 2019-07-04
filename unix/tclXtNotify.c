@@ -359,7 +359,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -525,7 +525,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = (FileHandlerEvent *)ckalloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
