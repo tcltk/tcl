@@ -196,6 +196,18 @@ matrix:
       script:
         - make all tcltest
         - echo "SKIPPED TEST: CROSS COMPILING"
+    - name: "Windows/GCC/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-threads"
+    - name: "Windows/GCC/Unshared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-threads --disable-shared"
     - name: "Windows/MSVC/Shared"
       os: windows
       compiler: msvc
