@@ -453,24 +453,24 @@ typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
-    ClientData clientData;	/* Client data for the function */
+    void *clientData;	/* Client data for the function */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "abs",	ExprAbsFunc,	NULL			},
-    { "acos",	ExprUnaryFunc,	(ClientData) acos	},
-    { "asin",	ExprUnaryFunc,	(ClientData) asin	},
-    { "atan",	ExprUnaryFunc,	(ClientData) atan	},
-    { "atan2",	ExprBinaryFunc,	(ClientData) atan2	},
+    { "acos",	ExprUnaryFunc,	(void *) acos	},
+    { "asin",	ExprUnaryFunc,	(void *) asin	},
+    { "atan",	ExprUnaryFunc,	(void *) atan	},
+    { "atan2",	ExprBinaryFunc,	(void *) atan2	},
     { "bool",	ExprBoolFunc,	NULL			},
     { "ceil",	ExprCeilFunc,	NULL			},
-    { "cos",	ExprUnaryFunc,	(ClientData) cos	},
-    { "cosh",	ExprUnaryFunc,	(ClientData) cosh	},
+    { "cos",	ExprUnaryFunc,	(void *) cos	},
+    { "cosh",	ExprUnaryFunc,	(void *) cosh	},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
-    { "exp",	ExprUnaryFunc,	(ClientData) exp	},
+    { "exp",	ExprUnaryFunc,	(void *) exp	},
     { "floor",	ExprFloorFunc,	NULL			},
-    { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
-    { "hypot",	ExprBinaryFunc,	(ClientData) hypot	},
+    { "fmod",	ExprBinaryFunc,	(void *) fmod	},
+    { "hypot",	ExprBinaryFunc,	(void *) hypot	},
     { "int",	ExprIntFunc,	NULL			},
     { "isfinite", ExprIsFiniteFunc, NULL        	},
     { "isinf",	ExprIsInfinityFunc, NULL        	},
@@ -479,19 +479,19 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,         },
     { "isunordered", ExprIsUnorderedFunc, NULL,         },
-    { "log",	ExprUnaryFunc,	(ClientData) log	},
-    { "log10",	ExprUnaryFunc,	(ClientData) log10	},
+    { "log",	ExprUnaryFunc,	(void *) log	},
+    { "log10",	ExprUnaryFunc,	(void *) log10	},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
-    { "pow",	ExprBinaryFunc,	(ClientData) pow	},
+    { "pow",	ExprBinaryFunc,	(void *) pow	},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
-    { "sin",	ExprUnaryFunc,	(ClientData) sin	},
-    { "sinh",	ExprUnaryFunc,	(ClientData) sinh	},
+    { "sin",	ExprUnaryFunc,	(void *) sin	},
+    { "sinh",	ExprUnaryFunc,	(void *) sinh	},
     { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
-    { "tan",	ExprUnaryFunc,	(ClientData) tan	},
-    { "tanh",	ExprUnaryFunc,	(ClientData) tanh	},
+    { "tan",	ExprUnaryFunc,	(void *) tan	},
+    { "tanh",	ExprUnaryFunc,	(void *) tanh	},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
@@ -1330,7 +1330,7 @@ TclHideUnsafeCommands(
                         Tcl_GetString(Tcl_GetObjResult(interp)));
             }
             Tcl_CreateObjCommand(interp, TclGetString(cmdName),
-                    BadEnsembleSubcommand, (ClientData) unsafePtr, NULL);
+                    BadEnsembleSubcommand, (void *)unsafePtr, NULL);
             TclDecrRefCount(cmdName);
             TclDecrRefCount(hideName);
         } else {
@@ -2829,7 +2829,7 @@ TclInvokeStringCommand(
 {
     Command *cmdPtr = clientData;
     int i, result;
-    const char **argv =
+    const char **argv = (const char **)
 	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
@@ -2875,10 +2875,10 @@ TclInvokeObjectCommand(
     int argc,			/* Number of arguments. */
     register const char **argv)	/* Argument strings. */
 {
-    Command *cmdPtr = clientData;
+    Command *cmdPtr = ( Command *) clientData;
     Tcl_Obj *objPtr;
     int i, length, result;
-    Tcl_Obj **objv =
+    Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
 
     for (i = 0; i < argc; i++) {
@@ -3330,7 +3330,7 @@ Tcl_GetCommandName(
 	return "";
     }
 
-    return Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
+    return (const char *)Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
 }
 
 /*
@@ -3380,7 +3380,7 @@ Tcl_GetCommandFullName(
 	    }
 	}
 	if (cmdPtr->hPtr != NULL) {
-	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
+	    name = (char *)Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
 	    Tcl_AppendToObj(objPtr, name, -1);
 	}
     }
@@ -5064,7 +5064,7 @@ TEOV_NotFound(
     Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
-    newObjv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
+    newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
 
     /*
      * Copy command prefix from unknown handler and add on the real command's
@@ -5431,12 +5431,12 @@ TclEvalEx(
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
-    CmdFrame *eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
-    Tcl_Obj **stackObjArray =
+    Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
+    CmdFrame *eeFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
+    Tcl_Obj **stackObjArray = (Tcl_Obj **)
 	    TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = TclStackAlloc(interp, minObjs * sizeof(int));
-    int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
+    int *expandStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
+    int *linesStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
     int *clNext = NULL;		/* Pointer for the tracking of invisible
@@ -6486,7 +6486,7 @@ TclNREvalObjEx(
 	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
 
-	    eoFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    eoFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 	    eoFramePtr->nline = 0;
 	    eoFramePtr->line = NULL;
 

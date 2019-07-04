@@ -1695,7 +1695,7 @@ TclCompileObj(
 
 	    eclPtr = Tcl_GetHashValue(hePtr);
 	    redo = 0;
-	    ctxCopyPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    ctxCopyPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 	    *ctxCopyPtr = *invoker;
 
 	    if (invoker->type == TCL_LOCATION_BC) {

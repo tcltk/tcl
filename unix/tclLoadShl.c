@@ -97,7 +97,7 @@ TclpDlopen(
 		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;

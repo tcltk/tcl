@@ -126,7 +126,7 @@ Tcl_GetIndexFromObj(
     const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &indexType);
 
     if (irPtr) {
-	IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
+	IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
 	/*
 	 * Here's hoping we don't get hit by unfortunate packing constraints
@@ -200,7 +200,7 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = ckalloc((objc + 1) * sizeof(char *));
+    tablePtr = (const char **)ckalloc((objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
@@ -284,7 +284,7 @@ Tcl_GetIndexFromObjStruct(
     if (!(flags & INDEX_TEMP_TABLE)) {
     irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
-	indexRep = irPtr->twoPtrValue.ptr1;
+	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -308,7 +308,7 @@ Tcl_GetIndexFromObjStruct(
      *  - Several abbreviations (never allowed, but overridden by exact match)
      */
 
-    for (entryPtr = tablePtr, idx = 0; *entryPtr != NULL;
+    for (entryPtr = (const char* const*)tablePtr, idx = 0; *entryPtr != NULL;
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
@@ -352,7 +352,7 @@ Tcl_GetIndexFromObjStruct(
     } else {
 	Tcl_ObjIntRep ir;
 
-	indexRep = ckalloc(sizeof(IndexRep));
+	indexRep = (IndexRep*)ckalloc(sizeof(IndexRep));
 	ir.twoPtrValue.ptr1 = indexRep;
 	Tcl_StoreIntRep(objPtr, &indexType, &ir);
     }
@@ -978,7 +978,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp, len + 1);
+		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1029,7 +1029,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp, len + 1);
+		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1319,7 +1319,7 @@ Tcl_ParseArgsObjv(
     }
     leftovers[nrem] = NULL;
     *objcPtr = nrem++;
-    *remObjv = ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
+    *remObjv = (Tcl_Obj **)ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
     return TCL_OK;
 
     /*

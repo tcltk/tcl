@@ -1146,7 +1146,7 @@ TclTeardownNamespace(
 
     while (nsPtr->cmdTable.numEntries > 0) {
 	int length = nsPtr->cmdTable.numEntries;
-	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
+	Command **cmds = (Command **)TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Command *) * length);
 
 	i = 0;
@@ -1218,7 +1218,7 @@ TclTeardownNamespace(
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
 	int length = nsPtr->childTable.numEntries;
-	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+	Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Namespace *) * length);
 
 	i = 0;
@@ -1239,7 +1239,7 @@ TclTeardownNamespace(
     if (nsPtr->childTablePtr != NULL) {
 	while (nsPtr->childTablePtr->numEntries > 0) {
 	    int length = nsPtr->childTablePtr->numEntries;
-	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+	    Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
 		    sizeof(Namespace *) * length);
 
 	    i = 0;
@@ -2764,7 +2764,7 @@ TclResetShadowedCmdRefs(
     int found, i;
     int trailFront = -1;
     int trailSize = 5;		/* Formerly NUM_TRAIL_ELEMS. */
-    Namespace **trailPtr = TclStackAlloc(interp,
+    Namespace **trailPtr = (Namespace **)TclStackAlloc(interp,
 	    trailSize * sizeof(Namespace *));
 
     /*
@@ -4063,7 +4063,7 @@ NamespacePathCmd(
 	goto badNamespace;
     }
     if (nsObjc != 0) {
-	namespaceList = TclStackAlloc(interp,
+	namespaceList = (Tcl_Namespace **)TclStackAlloc(interp,
 		sizeof(Tcl_Namespace *) * nsObjc);
 
 	for (i=0 ; i<nsObjc ; i++) {

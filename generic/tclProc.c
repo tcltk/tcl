@@ -232,7 +232,7 @@ Tcl_ProcObjCmd(
      */
 
     if (iPtr->cmdFramePtr) {
-	CmdFrame *contextPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	CmdFrame *contextPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 
 	*contextPtr = *iPtr->cmdFramePtr;
 	if (contextPtr->type == TCL_LOCATION_BC) {
@@ -1048,8 +1048,8 @@ ProcWrongNumArgs(
      */
 
     numArgs = framePtr->procPtr->numArgs;
-    desiredObjs = TclStackAlloc(interp,
-	    (int) sizeof(Tcl_Obj *) * (numArgs+1));
+    desiredObjs = (Tcl_Obj **)TclStackAlloc(interp,
+	    sizeof(Tcl_Obj *) * (numArgs+1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
@@ -1400,7 +1400,7 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    varPtr = TclStackAlloc(interp, (int)(localCt * sizeof(Var)));
+    varPtr = (Var *)TclStackAlloc(interp, localCt * sizeof(Var));
     framePtr->compiledLocals = varPtr;
     framePtr->numCompiledLocals = localCt;
 
@@ -2475,7 +2475,7 @@ SetLambdaFromAny(
      */
 
     if (iPtr->cmdFramePtr) {
-	CmdFrame *contextPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	CmdFrame *contextPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 
 	*contextPtr = *iPtr->cmdFramePtr;
 	if (contextPtr->type == TCL_LOCATION_BC) {
@@ -2663,7 +2663,7 @@ TclNRApplyObjCmd(
 	return TCL_ERROR;
     }
 
-    extraPtr = TclStackAlloc(interp, sizeof(ApplyExtraData));
+    extraPtr = (ApplyExtraData *)TclStackAlloc(interp, sizeof(ApplyExtraData));
     memset(&extraPtr->cmd, 0, sizeof(Command));
     procPtr->cmdPtr = &extraPtr->cmd;
     extraPtr->cmd.nsPtr = (Namespace *) nsPtr;

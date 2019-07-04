@@ -238,7 +238,7 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = ckalloc(sizeof(*newPedPtr));
+        newPedPtr = (struct PlatformEventData *)ckalloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
@@ -370,7 +370,7 @@ PlatformEventsInit(void)
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
-    filePtr = ckalloc(sizeof(*filePtr));
+    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if (tsdPtr->triggerEventFd <= 0) {
@@ -391,7 +391,7 @@ PlatformEventsInit(void)
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = ckalloc(
+	tsdPtr->readyEvents = (struct epoll_event *)ckalloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -550,7 +550,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = ckalloc(sizeof(FileHandler));
+	    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -733,7 +733,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
@@ -810,7 +810,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;

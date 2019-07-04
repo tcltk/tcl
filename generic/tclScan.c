@@ -260,7 +260,7 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
+    int *nassign = (int *)TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX + 1] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do

@@ -122,7 +122,7 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 
@@ -916,7 +916,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = ckalloc(sizeof(TclRegexp));
+    regexpPtr = (TclRegexp*)ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -971,7 +971,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    (regmatch_t*)ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -997,7 +997,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc(length + 1);
+    tsdPtr->patterns[0] = (char *)ckalloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
