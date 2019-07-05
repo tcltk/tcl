@@ -62,17 +62,7 @@
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
-
-#if TCL_UTF_MAX <= 4
-static void uniCodePanic() {
-    Tcl_Panic("This extension is compiled with -DTCL_UTF_MAX>4, but Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
-}
-#endif
-
-#if TCL_UTF_MAX <= 4
-#   define Tcl_UniCharToUtfDString (char *(*)(const Tcl_UniChar *, int, Tcl_DString *)) uniCodePanic
-#   define Tcl_UtfToUniCharDString (Tcl_UniChar *(*)(const char *, int, Tcl_DString *)) uniCodePanic
-#endif
+#undef Tcl_UtfToUniChar
 
 #undef TclBN_mp_tc_and
 #undef TclBN_mp_tc_or
@@ -270,7 +260,7 @@ Tcl_WinUtfToTChar(
     if (!string) {
 	return NULL;
     }
-    return (char *)Tcl_UtfToUtf16DString(string, len, dsPtr);
+    return (char *)Tcl_UtfToWCharDString(string, len, dsPtr);
 }
 #undef Tcl_WinTCharToUtf
 char *
@@ -283,7 +273,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    return Tcl_Utf16ToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
+    return Tcl_WCharToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
@@ -1348,7 +1338,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToWChar, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1366,8 +1356,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_Utf16ToUtfDString, /* 354 */
-    Tcl_UtfToUtf16DString, /* 355 */
+    Tcl_WCharToUtfDString, /* 354 */
+    Tcl_UtfToWCharDString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     Tcl_EvalTokens, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1658,7 +1648,7 @@ const TclStubs tclStubs = {
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
     Tcl_GetIntForIndex, /* 645 */
-    0, /* 646 */
+    Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
 };

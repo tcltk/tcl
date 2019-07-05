@@ -123,10 +123,10 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #undef Tcl_WinTCharToUtf
 #ifdef _WIN32
 #define Tcl_WinUtfToTChar(string, len, dsPtr) ((Tcl_DStringInit(dsPtr), (string) != NULL) \
-		? (TCHAR *)Tcl_UtfToUtf16DString((string), (len), (dsPtr)) \
+		? (TCHAR *)Tcl_UtfToWCharDString((string), (len), (dsPtr)) \
 		: ((void)(len), NULL))
 #define Tcl_WinTCharToUtf(string, len, dsPtr) ((Tcl_DStringInit(dsPtr), (string) != NULL) \
-		? (char *)Tcl_Utf16ToUtfDString((string), ((int)(len) >> 1), (dsPtr)) \
+		? (char *)Tcl_WCharToUtfDString((string), ((int)(len) >> 1), (dsPtr)) \
 		: ((void)(len), NULL))
 #endif
 #endif

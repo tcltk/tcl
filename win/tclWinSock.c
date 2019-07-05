@@ -373,7 +373,7 @@ InitializeHostName(
 	 */
 
 	Tcl_DStringInit(&ds);
-	Tcl_UtfToLower(Tcl_Utf16ToUtfDString(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(tbuf, -1, &ds));
 
     } else {
 	Tcl_DStringInit(&ds);
