@@ -64,10 +64,12 @@ mp_err mp_reduce(mp_int *x, const mp_int *m, const mp_int *mu)
    /* If x < 0, add b**(k+1) to it */
    if (mp_cmp_d(x, 0uL) == MP_LT) {
       mp_set(&q, 1uL);
-      if ((err = mp_lshd(&q, um + 1)) != MP_OKAY)
+      if ((err = mp_lshd(&q, um + 1)) != MP_OKAY) {
          goto CLEANUP;
-      if ((err = mp_add(x, &q, x)) != MP_OKAY)
+      }
+      if ((err = mp_add(x, &q, x)) != MP_OKAY) {
          goto CLEANUP;
+      }
    }
 
    /* Back off if it's too big */
