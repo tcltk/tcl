@@ -125,8 +125,9 @@ top:
    }
 
    /* if not zero goto step 4 */
-   if (!MP_IS_ZERO(&u))
+   if (!MP_IS_ZERO(&u)) {
       goto top;
+   }
 
    /* now a = C, b = D, gcd == g*v */
 

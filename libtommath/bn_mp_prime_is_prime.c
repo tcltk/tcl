@@ -145,7 +145,6 @@ mp_err mp_prime_is_prime(const mp_int *a, int t, mp_bool *result)
       TODO: can be made a bit finer grained but comparing is not free.
    */
    if (t < 0) {
-      t = -t;
       /*
           Sorenson, Jonathan; Webster, Jonathan (2015).
            "Strong Pseudoprimes to Twelve Prime Bases".

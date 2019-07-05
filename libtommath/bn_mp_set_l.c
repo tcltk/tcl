@@ -1,7 +1,7 @@
 #include "tommath_private.h"
-#ifdef BN_MP_GET_MAG32_C
+#ifdef BN_MP_SET_L_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
-MP_GET_MAG(uint32_t, mp_get_mag32)
+MP_SET_SIGNED(mp_set_l, mp_set_ul, long, unsigned long)
 #endif

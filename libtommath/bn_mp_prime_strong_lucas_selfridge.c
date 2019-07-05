@@ -177,26 +177,12 @@ mp_err mp_prime_strong_lucas_selfridge(const mp_int *a, mp_bool *result)
    mp_set(&U2mz, 1uL);  /* U_1 */
    mp_set(&V2mz, (mp_digit)P);  /* V_1 */
 
-   if (Q < 0) {
-      Q = -Q;
-      mp_set_u32(&Qmz, (uint32_t)Q);
-      if ((err = mp_mul_2(&Qmz, &Q2mz)) != MP_OKAY) {
-         goto LBL_LS_ERR;
-      }
-      /* Initializes calculation of Q^d */
-      mp_set_u32(&Qkdz, (uint32_t)Q);
-      Qmz.sign = MP_NEG;
-      Q2mz.sign = MP_NEG;
-      Qkdz.sign = MP_NEG;
-      Q = -Q;
-   } else {
-      mp_set_u32(&Qmz, (uint32_t)Q);
-      if ((err = mp_mul_2(&Qmz, &Q2mz)) != MP_OKAY) {
-         goto LBL_LS_ERR;
-      }
-      /* Initializes calculation of Q^d */
-      mp_set_u32(&Qkdz, (uint32_t)Q);
+   mp_set_i32(&Qmz, Q);
+   if ((err = mp_mul_2(&Qmz, &Q2mz)) != MP_OKAY) {
+      goto LBL_LS_ERR;
    }
+   /* Initializes calculation of Q^d */
+   mp_set_i32(&Qkdz, Q);
 
    Nbits = mp_count_bits(&Dz);
 

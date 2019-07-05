@@ -170,19 +170,19 @@ mp_err mp_set_long_long(mp_int *a, unsigned long long b)
 #ifdef BN_MP_GET_INT_C
 unsigned long mp_get_int(const mp_int *a)
 {
-   return mp_get_mag32(a);
+   return (unsigned long)mp_get_mag_u32(a);
 }
 #endif
 #ifdef BN_MP_GET_LONG_C
 unsigned long mp_get_long(const mp_int *a)
 {
-   return (sizeof(long) > sizeof(int32_t)) ? (unsigned long)mp_get_mag64(a) : (unsigned long)mp_get_mag32(a);
+   return (unsigned long)mp_get_mag_ul(a);
 }
 #endif
 #ifdef BN_MP_GET_LONG_LONG_C
 unsigned long long mp_get_long_long(const mp_int *a)
 {
-   return (unsigned long long)mp_get_mag64(a);
+   return mp_get_mag_ull(a);
 }
 #endif
 #ifdef BN_MP_PRIME_IS_DIVISIBLE_C
