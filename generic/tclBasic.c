@@ -639,14 +639,14 @@ Tcl_CreateInterp(void)
     }
 
 #if defined(_WIN32) && !defined(_WIN64)
-    if (sizeof(time_t) != 4) {
+    if (sizeof(time_t) != 8) {
 	/*NOTREACHED*/
-	Tcl_Panic("<time.h> is not compatible with MSVC");
+	Tcl_Panic("<time.h> is not compatible with VS2005+");
     }
     if ((offsetof(Tcl_StatBuf,st_atime) != 32)
-	    || (offsetof(Tcl_StatBuf,st_ctime) != 40)) {
+	    || (offsetof(Tcl_StatBuf,st_ctime) != 48)) {
 	/*NOTREACHED*/
-	Tcl_Panic("<sys/stat.h> is not compatible with MSVC");
+	Tcl_Panic("<sys/stat.h> is not compatible with VS2005+");
     }
 #endif
 
