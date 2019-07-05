@@ -78,12 +78,12 @@
 #else
 #include <string.h>
 #endif
-#if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
-     || defined(__cplusplus) || defined(_MSC_VER) || defined(__ICC)
-#include <stddef.h>
-#else
+#if !defined(STDC_HEADERS) && !defined(__STDC__) && !defined(__C99__FUNC__) \
+     && !defined(__cplusplus) && !defined(_MSC_VER) && !defined(__ICC)
 typedef int ptrdiff_t;
 #endif
+#include <stddef.h>
+#include <locale.h>
 
 /*
  * Ensure WORDS_BIGENDIAN is defined correctly:
@@ -4620,10 +4620,17 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX > 4
 #define TclUtfToUniChar(str, chPtr) \
 	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+#else
+#define TclUtfToUniChar(str, chPtr) \
+	((((unsigned char) *(str)) < 0x80) ?		\
+	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	    : Tcl_UtfToWChar(str, chPtr))
+#endif
 
 /*
  *----------------------------------------------------------------

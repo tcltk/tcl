@@ -105,6 +105,22 @@ SC_MISSING_POSIX_HEADERS
 AC_EXEEXT
 
 #------------------------------------------------------------------------
+# If we're using GCC, see if the compiler understands -fshort-wchar.  If so, use it.
+# It makes sure you can use the wchar_t type interchangable with Tcl_UniChar
+#------------------------------------------------------------------------
+
+if test -z "$no_short_wchar" && test -n "$GCC"; then
+    AC_CACHE_CHECK([if the compiler understands -fshort-wchar],
+	tcl_cv_cc_short_wchar, [
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fshort-wchar"
+	AC_TRY_COMPILE(,, tcl_cv_cc_short_wchar=yes, tcl_cv_cc_short_wchar=no)
+	CFLAGS=$hold_cflags])
+    if test $tcl_cv_cc_short_wchar = yes; then
+	CFLAGS="$CFLAGS -fshort-wchar"
+    fi
+fi
+
+#------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.
 # It makes compiling go faster.  (This is only a performance feature.)
 #------------------------------------------------------------------------
