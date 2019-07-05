@@ -21,7 +21,7 @@ Tcl_Preserve, Tcl_Release, Tcl_EventuallyFree \- avoid freeing storage while it 
 \fBTcl_EventuallyFree\fR(\fIclientData, freeProc\fR)
 .SH ARGUMENTS
 .AS Tcl_FreeProc clientData
-.AP ClientData clientData in
+.AP void *clientData in
 Token describing structure to be freed or reallocated.  Usually a pointer
 to memory for structure.
 .AP Tcl_FreeProc *freeProc in
@@ -91,7 +91,7 @@ reasons, but the value is the same.
 .PP
 When the \fIclientData\fR argument to \fBTcl_EventuallyFree\fR
 refers to storage allocated and returned by a prior call to
-\fBTcl_Alloc\fR, \fBckalloc\fR, or another function of the Tcl library,
+\fBTcl_Alloc\fR or another function of the Tcl library,
 then the \fIfreeProc\fR argument should be given the special value of
 \fBTCL_DYNAMIC\fR.
 .PP

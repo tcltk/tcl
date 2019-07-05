@@ -118,7 +118,7 @@ Tcl_AsyncCreate(
     AsyncHandler *asyncPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    asyncPtr = ckalloc(sizeof(AsyncHandler));
+    asyncPtr = (AsyncHandler*)Tcl_Alloc(sizeof(AsyncHandler));
     asyncPtr->ready = 0;
     asyncPtr->nextPtr = NULL;
     asyncPtr->proc = proc;
@@ -310,7 +310,7 @@ Tcl_AsyncDelete(
 	}
     }
     Tcl_MutexUnlock(&tsdPtr->asyncMutex);
-    ckfree(asyncPtr);
+    Tcl_Free(asyncPtr);
 }
 
 /*

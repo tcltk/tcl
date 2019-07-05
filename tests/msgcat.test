@@ -693,18 +693,18 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     set msgdir3 [makeDirectory msgdir3]
     makeFile "::msgcat::mcflset k2 v2 ; ::msgcat::mcload [list $msgdir3]"\
 	    l2.msg $msgdir2
-    makeFile {::msgcat::mcflset k3 v3} l2.msg $msgdir3
+    makeFile {::msgcat::mcflset k3 v3 ; ::msgcat::mcflmset {k4 v4 k5 v5}} l2.msg $msgdir3
 
 	# chained mcload
-	test msgcat-8.2 {mcflset} -setup {
+	test msgcat-8.2 {mcflset/mcflmset} -setup {
 	    variable locale [mclocale]
 	    mclocale l2
 	    mcload $msgdir2
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    return [mc k2][mc k3]
-	} -result v2v3
+	    return [mc k2][mc k3]--[mc k4][mc k5]
+	} -result v2v3--v4v5
 
     removeFile l2.msg $msgdir2
     removeDirectory msgdir2
@@ -999,7 +999,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	    mcpackagelocale isset
 	} -result {0}
 
-	
+
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
 	test msgcat-13.1 {mcpackageconfig no subcommand} -body {
@@ -1153,7 +1153,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 
     # Tests msgcat-15.*: tcloo coverage
-    
+
     # There are 4 use-cases, where 3 must be tested now:
     # - namespace defined, in class definition, class defined oo, classless
 
@@ -1210,7 +1210,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     } -body {
 	bar::ObjCur method1
     } -result con2bar
-    
+
     test msgcat-15.4 {mc in classless object with explicite namespace eval}\
     -setup {
 	# full namespace is ::msgcat::test:bar
@@ -1236,7 +1236,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     } -body {
 	bar::ObjCur method1
     } -result con2baz
-    
+
     # Test msgcat-16.*: command mcpackagenamespaceget
 
     test msgcat-16.1 {mcpackagenamespaceget in namespace procedure} -body {
@@ -1298,7 +1298,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 
     # Test msgcat-17.*: mcn command
-    
+
     test msgcat-17.1 {mcn no parameters} -body {
 	mcn
     } -returnCodes 1\
@@ -1328,26 +1328,26 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	mcutil junk
     } -returnCodes 1\
     -result {unknown subcommand "junk": must be getpreferences, or getsystemlocale}
-    
+
     test msgcat-18.3 {mcutil - partial argument} -body {
 	mcutil getsystem
     } -returnCodes 1\
     -result {unknown subcommand "getsystem": must be getpreferences, or getsystemlocale}
-    
+
     test msgcat-18.4 {mcutil getpreferences - no argument} -body {
 	mcutil getpreferences
     } -returnCodes 1\
     -result {wrong # args: should be "mcutil getpreferences locale"}
-    
+
     test msgcat-18.5 {mcutil getpreferences - DE_de} -body {
 	mcutil getpreferences DE_de
     } -result {de_de de {}}
-    
+
     test msgcat-18.6 {mcutil getsystemlocale - wrong argument} -body {
 	mcutil getsystemlocale DE_de
     } -returnCodes 1\
     -result {wrong # args: should be "mcutil getsystemlocale"}
-    
+
     # The result is system dependent
     # So just test if it runs
     # The environment variable version was test with test 0.x
@@ -1355,8 +1355,8 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	mcutil getsystemlocale
 	set ok ok
     } -result {ok}
-    
-    
+
+
     cleanupTests
 }
 namespace delete ::msgcat::test

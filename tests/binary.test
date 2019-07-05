@@ -1647,22 +1647,6 @@ test binary-43.2 {Tcl_BinaryObjCmd: format wide int} {} {
     binary format W 7810179016327718216
 } lcTolleH
 
-test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
-    binary scan HelloTcl W x
-    set x
-} 5216694956358656876
-test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
-    binary scan lcTolleH w x
-    set x
-} 5216694956358656876
-test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
-    binary scan [binary format w [expr {wide(3) << 31}]] w x
-    set x
-} 6442450944
-test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
-    binary scan [binary format W [expr {wide(3) << 31}]] W x
-    set x
-} 6442450944
 test binary-43.5 {Tcl_BinaryObjCmd: scan wide int} {} {
     unset -nocomplain arg1
     list [binary scan \x80[string repeat \x00 7] W arg1] $arg1
@@ -1683,6 +1667,31 @@ test binary-43.9 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
     unset -nocomplain arg1 arg2
     list [binary scan [string repeat \x00 7]\x80[string repeat \x00 7]\x80 wuw arg1 arg2] $arg1 $arg2
 } {2 9223372036854775808 -9223372036854775808}
+
+test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan HelloTcl W x
+    set x
+} 5216694956358656876
+test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan lcTolleH w x
+    set x
+} 5216694956358656876
+test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format w [expr {wide(3) << 31}]] w x
+    set x
+} 6442450944
+test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format W [expr {wide(3) << 31}]] W x
+    set x
+} 6442450944
+test binary-44.5 {Tcl_BinaryObjCmd: scan wide int with bit 31 and 64 set} {} {
+    binary scan [binary format w [expr {(wide(3) << 31) + (wide(3) << 64)}]] w x
+    set x
+} 6442450944
+test binary-44.6 {Tcl_BinaryObjCmd: scan wide int with bit 31 and 64 set} {} {
+    binary scan [binary format W [expr {(wide(3) << 31) + (wide(3) << 64)}]] W x
+    set x
+} 6442450944
 
 test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
     binary scan [binary format sws 16450 -1 19521] c* x
@@ -2711,6 +2720,46 @@ test binary-73.30 {binary decode base64} -body {
 test binary-73.31 {binary decode base64} -body {
     list [string length [set r [binary decode base64 WA==WFla]]] $r
 } -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.32 {binary decode base64, bug [00d04c4f12]} -body {
+    list \
+	[string length [binary decode base64 =]] \
+	[string length [binary decode base64 " ="]] \
+	[string length [binary decode base64 "   ="]] \
+	[string length [binary decode base64 "\r\n\t="]] \
+} -result [lrepeat 4 0]
+test binary-73.33 {binary decode base64, bug [00d04c4f12]} -body {
+    list \
+	[string length [binary decode base64 ==]] \
+	[string length [binary decode base64 " =="]] \
+	[string length [binary decode base64 "  =="]] \
+	[string length [binary decode base64 "   =="]] \
+} -result [lrepeat 4 0]
+test binary-73.34 {binary decode base64, (compatibility) unfulfilled base64 (single char) in non-strict mode} -body {
+    list \
+	[expr {[binary decode base64 a] eq [binary decode base64 ""]}] \
+	[expr {[binary decode base64 abcda] eq [binary decode base64 "abcd"]}]
+} -result [lrepeat 2 1]
+test binary-73.35 {binary decode base64, bad base64 in strict mode} -body {
+    set r {}
+    foreach c {a " a" "  a" "   a" "    a" abcda abcdabcda a= a== abcda= abcda==} {
+	lappend r \
+	    [catch {binary decode base64 $c}] \
+	    [catch {binary decode base64 -strict $c}]
+    }
+    set r
+} -result [lrepeat 11 0 1]
+test binary-73.36 {binary decode base64: check encoded & decoded equals original} -body {
+    set r {}
+    for {set i 0} {$i < 255 && [llength $r] < 20} {incr i} {
+	foreach c {1 2 3 4 5 6 7 8} {
+	    set c [string repeat [format %c $i] $c]
+	    if {[set a [binary decode base64 [set x [binary encode base64 $c]]]] ne $c} {
+		lappend r "encode & decode is wrong on string `$c` (encoded: $x): `$a` != `$c`"
+	    }
+	}
+    }
+    join $r \n
+} -result {}
 
 test binary-74.1 {binary encode uuencode} -body {
     binary encode uuencode
@@ -2862,6 +2911,12 @@ test binary-77.2 {string cat ops on all bytearrays} {
     }} ab cd
 } [binary format H* abcd]
 
+test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678]} -body {
+    # just test for BO-segfault (high surrogate w/o advance source pointer for out of BMP char if TCL_UTF_MAX == 3):
+    binary encode hex \U0001f415
+    binary scan \U0001f415 a* v; set v
+    set str {}
+} -result {}
 
 # ----------------------------------------------------------------------
 # cleanup

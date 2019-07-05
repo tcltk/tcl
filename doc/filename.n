@@ -176,3 +176,7 @@ file(n), glob(n)
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

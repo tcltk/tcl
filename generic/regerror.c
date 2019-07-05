@@ -88,7 +88,7 @@ regerror(
 	if (r->code >= 0) {
 	    msg = r->name;
 	} else {		/* Unknown; tell him the number */
-	    sprintf(convbuf, "REG_%u", (unsigned)icode);
+	    sprintf(convbuf, "REG_%u", icode);
 	    msg = convbuf;
 	}
 	break;

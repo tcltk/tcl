@@ -154,7 +154,7 @@ The following is a minimal extension:
 .CS
 #include <tcl.h>
 #include <stdio.h>
-static int fooCmd(ClientData clientData,
+static int fooCmd(void *clientData,
         Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
     printf("called with %d arguments\en", objc);
     return TCL_OK;

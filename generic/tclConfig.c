@@ -79,11 +79,11 @@ Tcl_RegisterConfig(
     Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
-    QCCD *cdPtr = ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = Tcl_Alloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     if (valEncoding) {
-	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	cdPtr->encoding = Tcl_Alloc(strlen(valEncoding)+1);
 	strcpy(cdPtr->encoding, valEncoding);
     } else {
 	cdPtr->encoding = NULL;
@@ -202,7 +202,8 @@ QueryConfigObjCmd(
     QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, index;
+    size_t n = 0;
+    int index, m;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -261,7 +262,7 @@ QueryConfigObjCmd(
 	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
 	 * so we have to decode it first.
 	 */
-	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
+	value = (const char *) TclGetByteArrayFromObj(val, &n);
 	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
 		Tcl_DStringLength(&conv)));
@@ -274,8 +275,8 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_DictObjSize(interp, pkgDict, &n);
-	listPtr = Tcl_NewListObj(n, NULL);
+	Tcl_DictObjSize(interp, pkgDict, &m);
+	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -284,7 +285,7 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (n) {
+	if (m) {
 	    Tcl_DictSearch s;
 	    Tcl_Obj *key;
 	    int done;
@@ -333,9 +334,9 @@ QueryConfigDelete(
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
     if (cdPtr->encoding) {
-	ckfree(cdPtr->encoding);
+	Tcl_Free(cdPtr->encoding);
     }
-    ckfree(cdPtr);
+    Tcl_Free(cdPtr);
 }
 
 /*

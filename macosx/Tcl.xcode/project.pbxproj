@@ -145,7 +145,6 @@
 		F96D495108F272C3004A47F5 /* bn_s_mp_mul_digs.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */; };
 		F96D495308F272C3004A47F5 /* bn_s_mp_sqr.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */; };
 		F96D495408F272C3004A47F5 /* bn_s_mp_sub.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D608F272B3004A47F5 /* bn_s_mp_sub.c */; };
-		F96D495508F272C3004A47F5 /* bncore.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D708F272B3004A47F5 /* bncore.c */; };
 		F96D49A908F272C4004A47F5 /* tclMacOSXBundle.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D433908F272B5004A47F5 /* tclMacOSXBundle.c */; };
 		F96D49AD08F272C4004A47F5 /* tclMacOSXFCmd.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D433D08F272B5004A47F5 /* tclMacOSXFCmd.c */; };
 		F96D49AE08F272C4004A47F5 /* tclMacOSXNotify.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D433E08F272B5004A47F5 /* tclMacOSXNotify.c */; };
@@ -620,7 +619,6 @@
 		F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_mul_digs.c; sourceTree = "<group>"; };
 		F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_sqr.c; sourceTree = "<group>"; };
 		F96D42D608F272B3004A47F5 /* bn_s_mp_sub.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_sub.c; sourceTree = "<group>"; };
-		F96D42D708F272B3004A47F5 /* bncore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bncore.c; sourceTree = "<group>"; };
 		F96D432908F272B4004A47F5 /* tommath_class.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tommath_class.h; sourceTree = "<group>"; };
 		F96D432A08F272B4004A47F5 /* tommath_superclass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tommath_superclass.h; sourceTree = "<group>"; };
 		F96D432B08F272B4004A47F5 /* license.terms */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = license.terms; sourceTree = "<group>"; };
@@ -870,7 +868,6 @@
 		F96D449608F272BA004A47F5 /* tclWinSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinSock.c; sourceTree = "<group>"; };
 		F96D449708F272BA004A47F5 /* tclWinTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTest.c; sourceTree = "<group>"; };
 		F96D449808F272BA004A47F5 /* tclWinThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinThrd.c; sourceTree = "<group>"; };
-		F96D449908F272BA004A47F5 /* tclWinThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclWinThrd.h; sourceTree = "<group>"; };
 		F96D449A08F272BA004A47F5 /* tclWinTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTime.c; sourceTree = "<group>"; };
 		F974D56C0FBE7D6300BF728B /* http11.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = http11.test; sourceTree = "<group>"; };
 		F974D56D0FBE7D6300BF728B /* httpd11.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = httpd11.tcl; sourceTree = "<group>"; };
@@ -1341,7 +1338,6 @@
 				F96D3F3B08F272A8004A47F5 /* dde */,
 				F96D3F8C08F272A8004A47F5 /* history.tcl */,
 				F96D3F8D08F272A8004A47F5 /* http */,
-				F96D3F9008F272A8004A47F5 /* http1.0 */,
 				F96D3F9308F272A8004A47F5 /* init.tcl */,
 				F96D3F9408F272A8004A47F5 /* msgcat */,
 				F96D401708F272AA004A47F5 /* opt */,
@@ -1373,15 +1369,6 @@
 				F96D3F8F08F272A8004A47F5 /* pkgIndex.tcl */,
 			);
 			path = http;
-			sourceTree = "<group>";
-		};
-		F96D3F9008F272A8004A47F5 /* http1.0 */ = {
-			isa = PBXGroup;
-			children = (
-				F96D3F9108F272A8004A47F5 /* http.tcl */,
-				F96D3F9208F272A8004A47F5 /* pkgIndex.tcl */,
-			);
-			path = http1.0;
 			sourceTree = "<group>";
 		};
 		F96D3F9408F272A8004A47F5 /* msgcat */ = {
@@ -1483,7 +1470,6 @@
 				F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */,
 				F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */,
 				F96D42D608F272B3004A47F5 /* bn_s_mp_sub.c */,
-				F96D42D708F272B3004A47F5 /* bncore.c */,
 				F96D432908F272B4004A47F5 /* tommath_class.h */,
 				F96D432A08F272B4004A47F5 /* tommath_superclass.h */,
 			);
@@ -1792,7 +1778,6 @@
 				F96D449608F272BA004A47F5 /* tclWinSock.c */,
 				F96D449708F272BA004A47F5 /* tclWinTest.c */,
 				F96D449808F272BA004A47F5 /* tclWinThrd.c */,
-				F96D449908F272BA004A47F5 /* tclWinThrd.h */,
 				F96D449A08F272BA004A47F5 /* tclWinTime.c */,
 			);
 			path = win;
@@ -2116,7 +2101,6 @@
 				F96D495108F272C3004A47F5 /* bn_s_mp_mul_digs.c in Sources */,
 				F96D495308F272C3004A47F5 /* bn_s_mp_sqr.c in Sources */,
 				F96D495408F272C3004A47F5 /* bn_s_mp_sub.c in Sources */,
-				F96D495508F272C3004A47F5 /* bncore.c in Sources */,
 				F96D49A908F272C4004A47F5 /* tclMacOSXBundle.c in Sources */,
 				F96D49AD08F272C4004A47F5 /* tclMacOSXFCmd.c in Sources */,
 				F96D49AE08F272C4004A47F5 /* tclMacOSXNotify.c in Sources */,

@@ -96,7 +96,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(const TCHAR *nativeName);
+static int		NativeIsComPort(const WCHAR *nativeName);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -267,7 +267,7 @@ FileCheckProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !TEST_FLAG(infoPtr->flags, FILE_PENDING)) {
 	    SET_FLAG(infoPtr->flags, FILE_PENDING);
-	    evPtr = ckalloc(sizeof(FileEvent));
+	    evPtr = Tcl_Alloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -434,7 +434,7 @@ FileCloseProc(
 	    break;
 	}
     }
-    ckfree(fileInfoPtr);
+    Tcl_Free(fileInfoPtr);
     return errorCode;
 }
 
@@ -554,8 +554,8 @@ FileWideSeekProc(
 	moveMethod = FILE_END;
     }
 
-    newPosHigh = Tcl_WideAsLong(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
+    newPosHigh = (LONG)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)offset,
 	    &newPosHigh, moveMethod);
     if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -567,7 +567,7 @@ FileWideSeekProc(
 	}
     }
     return (((Tcl_WideInt)((unsigned)newPos))
-	    | (Tcl_LongAsWide(newPosHigh) << 32));
+	    | ((Tcl_WideInt)newPosHigh << 32));
 }
 
 /*
@@ -613,8 +613,8 @@ FileTruncateProc(
      * Move to where we want to truncate
      */
 
-    newPosHigh = Tcl_WideAsLong(length >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
+    newPosHigh = (LONG)(length >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG)length,
 	    &newPosHigh, FILE_BEGIN);
     if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -849,7 +849,7 @@ TclpOpenFileChannel(
     Tcl_Channel channel = 0;
     int channelPermissions = 0;
     DWORD accessMode = 0, createMode, shareMode, flags;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
@@ -1365,7 +1365,7 @@ TclWinOpenFileChannel(
 	}
     }
 
-    infoPtr = ckalloc(sizeof(FileInfo));
+    infoPtr = Tcl_Alloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global
@@ -1557,7 +1557,7 @@ FileGetType(
 
 static int
 NativeIsComPort(
-    const TCHAR *nativePath)	/* Path of file to access, native encoding. */
+    const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
     int i, len = wcslen(p);
@@ -1571,7 +1571,7 @@ NativeIsComPort(
 	 * The 4th character must be a digit 1..9
 	 */
 
-	if ((p[3] < L'1') || (p[3] > L'9')) {
+	if ((p[3] < '1') || (p[3] > '9')) {
 	    return 0;
 	}
 	return 1;

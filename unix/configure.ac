@@ -86,6 +86,7 @@ fi
 AC_PROG_CC
 AC_C_INLINE
 
+
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
@@ -118,12 +119,6 @@ if test -z "$no_pipe" && test -n "$GCC"; then
 	CFLAGS="$CFLAGS -pipe"
     fi
 fi
-
-#------------------------------------------------------------------------
-# Threads support
-#------------------------------------------------------------------------
-
-SC_ENABLE_THREADS
 
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
@@ -215,7 +210,7 @@ AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
 
-if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
+if test "`uname -s`" = "Darwin" && \
 	test "`uname -r | awk -F. '{print [$]1}'`" -lt 7; then
     # prior to Darwin 7, realpath is not threadsafe, so don't
     # use it when threads are enabled, c.f. bug # 711232
@@ -229,35 +224,33 @@ SC_TCL_IPV6
 #	Look for thread-safe variants of some library functions.
 #--------------------------------------------------------------------
 
-if test "${TCL_THREADS}" = 1; then
-    SC_TCL_GETPWUID_R
-    SC_TCL_GETPWNAM_R
-    SC_TCL_GETGRGID_R
-    SC_TCL_GETGRNAM_R
-    if test "`uname -s`" = "Darwin" && \
-	    test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
-	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
-	# are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+SC_TCL_GETPWUID_R
+SC_TCL_GETPWNAM_R
+SC_TCL_GETGRGID_R
+SC_TCL_GETGRNAM_R
+if test "`uname -s`" = "Darwin" && \
+	test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
+    # Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    elif test "`uname -s`" = "HP-UX" && \
-	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
-        # Starting with HPUX 11.00 (we believe), gethostbyX
-        # are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+elif test "`uname -s`" = "HP-UX" && \
+	test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+    # Starting with HPUX 11.00 (we believe), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    else
-	SC_TCL_GETHOSTBYNAME_R
-	SC_TCL_GETHOSTBYADDR_R
-    fi
+else
+    SC_TCL_GETHOSTBYNAME_R
+    SC_TCL_GETHOSTBYADDR_R
 fi
 
 #---------------------------------------------------------------------------
@@ -327,7 +320,6 @@ case x`uname -s` in
 	# of wider impact).
 	AC_MSG_RESULT([OSX]);;
   *)
-	AC_DEFINE_UNQUOTED(NOTIFIER_SELECT)
 	AC_MSG_RESULT([none]);;
 esac
 
@@ -387,26 +379,6 @@ SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 ])
-
-#--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strtod, [
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-])
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-SC_BUGGY_STRTOD
 
 #--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
@@ -581,10 +553,10 @@ fi
 SC_ENABLE_LANGINFO
 
 #--------------------------------------------------------------------
-# Check for support of chflags and mkstemps functions
+# Check for support of cfmakeraw, chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNCS(chflags mkstemps)
+AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
 
 #--------------------------------------------------------------------
 # Check for support of isnan() function or macro
@@ -791,6 +763,52 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(zipfs,
+    AC_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test "$tcl_ok" = "yes" ; then
+    #
+    # Find a native compiler
+    #
+    AX_CC_FOR_BUILD
+    #
+    # Find a native zip implementation
+    #
+    SC_ZIPFS_SUPPORT
+	ZIPFS_BUILD=1
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
+	ZIPFS_BUILD=0
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+AC_MSG_CHECKING([for building with zipfs])
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       AC_MSG_RESULT([yes])
+     else
+       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       AC_MSG_RESULT([yes])
+    fi
+else
+AC_MSG_RESULT([no])
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+AC_SUBST(ZIPFS_BUILD)
+AC_SUBST(TCL_ZIP_FILE)
+AC_SUBST(INSTALL_LIBRARIES)
+AC_SUBST(INSTALL_MSGS)
+
+
+#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -960,6 +978,7 @@ AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_YEAR)
 AC_SUBST(PKG_CFG_ARGS)
 
+AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_LIB_SPEC)

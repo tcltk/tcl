@@ -43,6 +43,9 @@ close $pipeline
 
 .SH "SEE ALSO"
 exec(n), open(n)
-
 .SH KEYWORDS
 file, pipeline, process identifier
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

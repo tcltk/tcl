@@ -1,7 +1,7 @@
 /*
  * tclProcess.c --
  *
- *	This file implements the "tcl::process" ensemble for subprocess 
+ *	This file implements the "tcl::process" ensemble for subprocess
  *	management as defined by TIP #462.
  *
  * Copyright (c) 2017 Frederic Bonnet.
@@ -13,14 +13,14 @@
 #include "tclInt.h"
 
 /*
- * Autopurge flag. Process-global because of the way Tcl manages child 
+ * Autopurge flag. Process-global because of the way Tcl manages child
  * processes (see tclPipe.c).
  */
 
 static int autopurge = 1;	/* Autopurge flag. */
 
 /*
- * Hash tables that keeps track of all child process statuses. Keys are the 
+ * Hash tables that keeps track of all child process statuses. Keys are the
  * child process ids and resolved pids, values are (ProcessInfo *).
  */
 
@@ -29,7 +29,7 @@ typedef struct ProcessInfo {
     int resolvedPid;		/* Resolved process id. */
     int purge;			/* Purge eventualy. */
     TclProcessWaitStatus status;/* Process status. */
-    int code;			/* Error code, exit status or signal 
+    int code;			/* Error code, exit status or signal
 				   number. */
     Tcl_Obj *msg;		/* Error message. */
     Tcl_Obj *error;		/* Error code. */
@@ -47,7 +47,7 @@ static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
 			    int resolvedPid);
 static void		FreeProcessInfo(ProcessInfo *info);
 static int		RefreshProcessInfo(ProcessInfo *info, int options);
-static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, int resolvedPid, 
+static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, size_t resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
@@ -130,7 +130,7 @@ FreeProcessInfo(
      * Free allocated structure.
      */
 
-    ckfree(info);
+    Tcl_Free(info);
 }
 
 /*
@@ -160,7 +160,7 @@ RefreshProcessInfo(
 	 * Refresh & store status.
 	 */
 
-	info->status = WaitProcessStatus(info->pid, info->resolvedPid, 
+	info->status = WaitProcessStatus(info->pid, info->resolvedPid,
 		options, &info->code, &info->msg, &info->error);
 	if (info->msg) Tcl_IncrRefCount(info->msg);
 	if (info->error) Tcl_IncrRefCount(info->error);
@@ -193,7 +193,7 @@ RefreshProcessInfo(
 TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
-    int resolvedPid,		/* Resolved process id. */
+    size_t resolvedPid,		/* Resolved process id. */
     int options,		/* Options passed to Tcl_WaitPid. */
     int *codePtr,		/* If non-NULL, will receive either:
 				 *  - 0 for normal exit.
@@ -214,7 +214,7 @@ WaitProcessStatus(
 	/*
 	 * No change.
 	 */
-	
+
 	return TCL_PROCESS_UNCHANGED;
     }
 
@@ -370,7 +370,7 @@ BuildProcessStatusObj(
 	/*
 	 * Normal exit, return TCL_OK.
 	 */
-	
+
 	return Tcl_NewIntObj(TCL_OK);
     }
 
@@ -388,7 +388,7 @@ BuildProcessStatusObj(
  *
  * ProcessListObjCmd --
  *
- *	This function implements the 'tcl::process list' Tcl command. 
+ *	This function implements the 'tcl::process list' Tcl command.
  *	Refer to the user documentation for details on what it does.
  *
  * Results:
@@ -423,10 +423,10 @@ ProcessListObjCmd(
 
     list = Tcl_NewListObj(0, NULL);
     Tcl_MutexLock(&infoTablesMutex);
-    for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search); 
+    for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	info = (ProcessInfo *) Tcl_GetHashValue(entry);
-	Tcl_ListObjAppendElement(interp, list, 
+	Tcl_ListObjAppendElement(interp, list,
 		Tcl_NewIntObj(info->resolvedPid));
     }
     Tcl_MutexUnlock(&infoTablesMutex);
@@ -438,7 +438,7 @@ ProcessListObjCmd(
  *
  * ProcessStatusObjCmd --
  *
- *	This function implements the 'tcl::process status' Tcl command. 
+ *	This function implements the 'tcl::process status' Tcl command.
  *	Refer to the user documentation for details on what it does.
  *
  * Results:
@@ -504,7 +504,7 @@ ProcessStatusObjCmd(
 
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);
-	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search); 
+	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	    RefreshProcessInfo(info, options);
@@ -513,7 +513,7 @@ ProcessStatusObjCmd(
 		/*
 		 * Purge entry.
 		 */
-		
+
 		Tcl_DeleteHashEntry(entry);
 		entry = Tcl_FindHashEntry(&infoTablePerPid, info->pid);
 		Tcl_DeleteHashEntry(entry);
@@ -523,7 +523,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid), 
+		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -532,7 +532,7 @@ ProcessStatusObjCmd(
 	/*
 	 * Only return statuses of provided processes.
 	 */
-	
+
 	result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
@@ -540,7 +540,7 @@ ProcessStatusObjCmd(
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);
 	for (i = 0; i < numPids; i++) {
-	    result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
+	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);
 		Tcl_DecrRefCount(dict);
@@ -552,10 +552,10 @@ ProcessStatusObjCmd(
 		/*
 		 * Skip unknown process.
 		 */
-		
+
 		continue;
 	    }
-	    
+
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	    RefreshProcessInfo(info, options);
 
@@ -563,7 +563,7 @@ ProcessStatusObjCmd(
 		/*
 		 * Purge entry.
 		 */
-		
+
 		Tcl_DeleteHashEntry(entry);
 		entry = Tcl_FindHashEntry(&infoTablePerPid, info->pid);
 		Tcl_DeleteHashEntry(entry);
@@ -573,7 +573,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid), 
+		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -587,7 +587,7 @@ ProcessStatusObjCmd(
  *
  * ProcessPurgeObjCmd --
  *
- *	This function implements the 'tcl::process purge' Tcl command. 
+ *	This function implements the 'tcl::process purge' Tcl command.
  *	Refer to the user documentation for details on what it does.
  *
  * Results:
@@ -632,7 +632,7 @@ ProcessPurgeObjCmd(
 	 */
 
 	Tcl_MutexLock(&infoTablesMutex);
-	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search); 
+	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	    if (info->purge) {
@@ -647,14 +647,14 @@ ProcessPurgeObjCmd(
 	/*
 	 * Purge only provided processes.
 	 */
-	
+
 	result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
 	Tcl_MutexLock(&infoTablesMutex);
 	for (i = 0; i < numPids; i++) {
-	    result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
+	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);
 		return result;
@@ -665,7 +665,7 @@ ProcessPurgeObjCmd(
 		/*
 		 * Skip unknown process.
 		 */
-		
+
 		continue;
 	    }
 
@@ -687,7 +687,7 @@ ProcessPurgeObjCmd(
  *
  * ProcessAutopurgeObjCmd --
  *
- *	This function implements the 'tcl::process autopurge' Tcl command. 
+ *	This function implements the 'tcl::process autopurge' Tcl command.
  *	Refer to the user documentation for details on what it does.
  *
  * Results:
@@ -715,7 +715,7 @@ ProcessAutopurgeObjCmd(
 	/*
 	 * Set given value.
 	 */
-	
+
 	int flag;
 	int result = Tcl_GetBooleanFromObj(interp, objv[1], &flag);
 	if (result != TCL_OK) {
@@ -725,8 +725,8 @@ ProcessAutopurgeObjCmd(
 	autopurge = !!flag;
     }
 
-    /* 
-     * Return current value. 
+    /*
+     * Return current value.
      */
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(autopurge));
@@ -799,7 +799,7 @@ void
 TclProcessCreated(
     Tcl_Pid pid)		/* Process id. */
 {
-    int resolvedPid;
+    size_t resolvedPid;
     Tcl_HashEntry *entry, *entry2;
     int isNew;
     ProcessInfo *info;
@@ -821,9 +821,9 @@ TclProcessCreated(
 	/*
 	 * Pid was reused, free old info and reuse structure.
 	 */
-	
+
 	info = (ProcessInfo *) Tcl_GetHashValue(entry);
-	entry2 = Tcl_FindHashEntry(&infoTablePerResolvedPid, 
+	entry2 = Tcl_FindHashEntry(&infoTablePerResolvedPid,
 		INT2PTR(resolvedPid));
 	if (entry2) Tcl_DeleteHashEntry(entry2);
 	FreeProcessInfo(info);
@@ -833,7 +833,7 @@ TclProcessCreated(
      * Allocate and initialize info structure.
      */
 
-    info = (ProcessInfo *) ckalloc(sizeof(ProcessInfo));
+    info = (ProcessInfo *) Tcl_Alloc(sizeof(ProcessInfo));
     InitProcessInfo(info, pid, resolvedPid);
 
     /*
@@ -893,8 +893,8 @@ TclProcessWait(
 	/*
 	 * Unknown process, just call WaitProcessStatus and return.
 	 */
-	
-	result = WaitProcessStatus(pid, TclpGetPid(pid), options, codePtr, 
+
+	result = WaitProcessStatus(pid, TclpGetPid(pid), options, codePtr,
 		msgObjPtr, errorObjPtr);
 	if (msgObjPtr && *msgObjPtr) Tcl_IncrRefCount(*msgObjPtr);
 	if (errorObjPtr && *errorObjPtr) Tcl_IncrRefCount(*errorObjPtr);
@@ -909,7 +909,7 @@ TclProcessWait(
 	 * so report no change.
 	 */
     Tcl_MutexUnlock(&infoTablesMutex);
-	
+
 	return TCL_PROCESS_UNCHANGED;
     }
 
@@ -919,7 +919,7 @@ TclProcessWait(
 	 * No change, stop there.
 	 */
     Tcl_MutexUnlock(&infoTablesMutex);
-	
+
 	return TCL_PROCESS_UNCHANGED;
     }
 
@@ -940,7 +940,7 @@ TclProcessWait(
 	 */
 
 	Tcl_DeleteHashEntry(entry);
-	entry = Tcl_FindHashEntry(&infoTablePerResolvedPid, 
+	entry = Tcl_FindHashEntry(&infoTablePerResolvedPid,
 		INT2PTR(info->resolvedPid));
 	Tcl_DeleteHashEntry(entry);
 	FreeProcessInfo(info);

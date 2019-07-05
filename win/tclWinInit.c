@@ -107,7 +107,6 @@ static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
-static int		ToUtf(const WCHAR *wSrc, char *dst);
 
 /*
  *---------------------------------------------------------------------------
@@ -156,7 +155,7 @@ TclpInitPlatform(void)
     /*
      * Fill available functions depending on windows version
      */
-    handle = GetModuleHandle(TEXT("KERNEL32"));
+    handle = GetModuleHandle(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
@@ -189,6 +188,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
     const char *bytes;
+    size_t length;
 
     pathPtr = Tcl_NewObj();
 
@@ -224,10 +224,10 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, bytes, *lengthPtr + 1);
+    bytes = TclGetStringFromObj(pathPtr, &length);
+    *lengthPtr = length++;
+    *valuePtr = Tcl_Alloc(length);
+    memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -257,7 +257,7 @@ AppendEnvironment(
 {
     int pathc;
     WCHAR wBuf[MAX_PATH];
-    char buf[MAX_PATH * TCL_UTF_MAX];
+    char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
     Tcl_DString ds;
     const char **pathv;
@@ -270,7 +270,7 @@ AppendEnvironment(
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
+	    if ((size_t)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;
@@ -286,12 +286,8 @@ AppendEnvironment(
      * this is a unicode string.
      */
 
-    if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
-	buf[0] = '\0';
-	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
-    } else {
-	ToUtf(wBuf, buf);
-    }
+    GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
 	objPtr = Tcl_NewStringObj(buf, -1);
@@ -321,7 +317,7 @@ AppendEnvironment(
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	ckfree(pathv);
+	Tcl_Free((void *)pathv);
     }
 }
 
@@ -350,14 +346,11 @@ InitializeDefaultLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -370,7 +363,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -401,14 +394,11 @@ InitializeSourceLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -421,41 +411,9 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ToUtf --
- *
- *	Convert a char string to a UTF string.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-ToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start;
-
-    start = dst;
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
 }
 
 /*
@@ -503,6 +461,27 @@ Tcl_GetEncodingNameFromEnvironment(
     return Tcl_DStringValue(bufPtr);
 }
 
+const char *
+TclpGetUserName(
+    Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
+				 * the name of user. */
+{
+    Tcl_DStringInit(bufferPtr);
+
+    if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
+	WCHAR szUserName[UNLEN+1];
+	DWORD cchUserNameLen = UNLEN;
+
+	if (!GetUserName(szUserName, &cchUserNameLen)) {
+	    return NULL;
+	}
+	cchUserNameLen--;
+	cchUserNameLen *= sizeof(WCHAR);
+	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+    }
+    return Tcl_DStringValue(bufferPtr);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -533,14 +512,12 @@ TclpSetVariables(
     static OSVERSIONINFOW osInfo;
     static int osInfoInitialized = 0;
     Tcl_DString ds;
-    TCHAR szUserName[UNLEN+1];
-    DWORD cchUserNameLen = UNLEN;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
+	HMODULE handle = GetModuleHandle(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
@@ -609,15 +586,8 @@ TclpSetVariables(
      * Note: cchUserNameLen is number of characters including nul terminator.
      */
 
-    Tcl_DStringInit(&ds);
-    if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (GetUserName(szUserName, &cchUserNameLen) != 0) {
-	    int cbUserNameLen = cchUserNameLen - 1;
-	    cbUserNameLen *= sizeof(TCHAR);
-	    Tcl_WinTCharToUtf(szUserName, cbUserNameLen, &ds);
-	}
-    }
-    Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+    ptr = TclpGetUserName(&ds);
+    Tcl_SetVar2(interp, "tcl_platform", "user", ptr ? ptr : "",
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 
@@ -634,13 +604,14 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensitive, on Windows this matches mioxed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
- *	filled in with the length of name (if a matching entry is found) or
- *	the length of the environ array (if no matching entry is found).
+ *	"name", or TCL_IO_FAILURE if there is no such entry. The integer
+ *	at *lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no
+ *	matching entry is found).
  *
  * Side effects:
  *	None.
@@ -648,16 +619,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    int *lengthPtr)		/* Used to return length of name (for
+    size_t *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, length, result = -1;
+    size_t i, length, result = TCL_IO_FAILURE;
     register const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
@@ -667,8 +638,8 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = ckalloc(length + 1);
-    memcpy(nameUpper, name, (size_t) length+1);
+    nameUpper = Tcl_Alloc(length + 1);
+    memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
@@ -684,7 +655,7 @@ TclpFindVariable(
 	if (p1 == NULL) {
 	    continue;
 	}
-	length = (int) (p1 - envUpper);
+	length = p1 - envUpper;
 	Tcl_DStringSetLength(&envString, length+1);
 	Tcl_UtfToUpper(envUpper);
 
@@ -706,7 +677,7 @@ TclpFindVariable(
 
   done:
     Tcl_DStringFree(&envString);
-    ckfree(nameUpper);
+    Tcl_Free(nameUpper);
     return result;
 }
 

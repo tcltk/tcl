@@ -89,9 +89,6 @@ extern "C" {
 #ifdef __REG_WIDE_EXEC
 #undef __REG_WIDE_EXEC
 #endif
-#ifdef __REG_REGOFF_T
-#undef __REG_REGOFF_T
-#endif
 #ifdef __REG_NOFRONT
 #undef __REG_NOFRONT
 #endif
@@ -100,7 +97,6 @@ extern "C" {
 #endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
-#define	__REG_REGOFF_T	long	/* not really right, but good enough... */
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
@@ -115,25 +111,14 @@ extern "C" {
  */
 
 /*
- * regoff_t has to be large enough to hold either off_t or ssize_t, and must
- * be signed; it's only a guess that long is suitable, so we offer
- * <sys/types.h> an override.
- */
-#ifdef __REG_REGOFF_T
-typedef __REG_REGOFF_T regoff_t;
-#else
-typedef long regoff_t;
-#endif
-
-/*
  * other interface types
  */
 
 /* the biggie, a compiled RE (or rather, a front end to same) */
 typedef struct {
     int re_magic;		/* magic number */
-    size_t re_nsub;		/* number of subexpressions */
     long re_info;		/* information about RE */
+    size_t re_nsub;		/* number of subexpressions */
 #define	REG_UBACKREF		000001
 #define	REG_ULOOKAHEAD		000002
 #define	REG_UBOUNDS		000004
@@ -148,17 +133,16 @@ typedef struct {
 #define	REG_UEMPTYMATCH		004000
 #define	REG_UIMPOSSIBLE		010000
 #define	REG_USHORTEST		020000
-    int re_csize;		/* sizeof(character) */
     char *re_endp;		/* backward compatibility kludge */
     /* the rest is opaque pointers to hidden innards */
-    char *re_guts;		/* `char *' is more portable than `void *' */
-    char *re_fns;
+    void *re_guts;
+    void *re_fns;
 } regex_t;
 
 /* result reporting (may acquire more fields later) */
 typedef struct {
-    regoff_t rm_so;		/* start of substring */
-    regoff_t rm_eo;		/* end of substring */
+    size_t rm_so;		/* start of substring */
+    size_t rm_eo;		/* end of substring */
 } regmatch_t;
 
 /* supplementary control and reporting */

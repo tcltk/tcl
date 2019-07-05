@@ -41,12 +41,12 @@ Tcl_Object
 int
 \fBTcl_ObjectDeleted\fR(\fIobject\fR)
 .sp
-ClientData
+void *
 \fBTcl_ObjectGetMetadata\fR(\fIobject, metaTypePtr\fR)
 .sp
 \fBTcl_ObjectSetMetadata\fR(\fIobject, metaTypePtr, metadata\fR)
 .sp
-ClientData
+void *
 \fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
 .sp
 \fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
@@ -56,7 +56,7 @@ Tcl_ObjectMapMethodNameProc
 .sp
 \fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImethodNameMapper\fR)
 .SH ARGUMENTS
-.AS ClientData metadata in/out
+.AS void *metadata in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -79,11 +79,13 @@ The number of elements in the \fIobjv\fR array.
 The arguments to the command to create the instance of the class.
 .AP int skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
-are not arguments to any constructors.
+are not arguments to any constructors. This allows the generation of correct
+error messages even when complicated calling patterns are used (e.g., via the
+\fBnext\fR command).
 .AP Tcl_ObjectMetadataType *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
-.AP ClientData metadata in
+.AP void *metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
 associated with a particular \fImetaTypePtr\fR.
 .AP "Tcl_ObjectMapMethodNameProc" "methodNameMapper" in
@@ -109,7 +111,9 @@ may be retrieved using the \fBTcl_GetObjectCommand\fR function, the name of
 the object (and hence the name of the command) with \fBTcl_GetObjectName\fR,
 and the namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR
 function. Note that the Tcl_Obj reference returned by \fBTcl_GetObjectName\fR
-is a shared reference.
+is a shared reference. You can also get whether the object has been marked for
+deletion with \fBTcl_ObjectDeleted\fR (it returns true if deletion of the
+object has begun); this can be useful during the processing of methods.
 .PP
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 creates an object from any class (and which is internally called by both
@@ -121,6 +125,16 @@ created object, or NULL if the creation failed (when an error message will be
 left in the interpreter result). In addition, objects may be copied by using
 \fBTcl_CopyObjectInstance\fR which creates a copy of an object without running
 any constructors.
+.PP
+Note that the lifetime management of objects is handled internally within
+TclOO, and does not use \fBTcl_Preserve\fR. \fIIt is not safe to put a
+Tcl_Object handle in a C structure with a lifespan different to the object;\fR
+you should use the object's command name (as retrieved with
+\fBTcl_GetObjectName\fR) instead. It is safe to use a Tcl_Object handle for
+the lifespan of a call of a method on that object; handles do not become
+invalid while there is an outstanding call on their object (even if the only
+operation guaranteed to be safe on them is \fBTcl_ObjectDeleted\fR; the other
+operations are only guaranteed to work on non-deleted objects).
 .SH "OBJECT AND CLASS METADATA"
 .PP
 Every object and every class may have arbitrary amounts of metadata attached
@@ -171,7 +185,7 @@ a class or object.
 .PP
 .CS
 typedef void \fBTcl_ObjectMetadataDeleteProc\fR(
-        ClientData \fImetadata\fR);
+        void *\fImetadata\fR);
 .CE
 .PP
 The \fImetadata\fR argument gives the address of the metadata to be
@@ -184,8 +198,8 @@ associated with a class or object.
 .CS
 typedef int \fBTcl_CloneProc\fR(
         Tcl_Interp *\fIinterp\fR,
-        ClientData \fIsrcMetadata\fR,
-        ClientData *\fIdstMetadataPtr\fR);
+        void *\fIsrcMetadata\fR,
+        void **\fIdstMetadataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the

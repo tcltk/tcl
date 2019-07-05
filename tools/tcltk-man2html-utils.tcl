@@ -149,6 +149,7 @@ proc process-text {text} {
 	    {\(em}	"&#8212;" \
 	    {\(en}	"&#8211;" \
 	    {\(fm}	"&#8242;" \
+	    {\(mc}	"&#181;" \
 	    {\(mu}	"&#215;" \
 	    {\(mi}	"&#8722;" \
 	    {\(->}	"<font size=\"+1\">&#8594;</font>" \
@@ -1563,6 +1564,10 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     }
     if {!$verbose} {
 	puts stderr ""
+    }
+
+    if {![llength $manual(wing-toc)]} {
+	fatal "not table of contents."
     }
 
     #

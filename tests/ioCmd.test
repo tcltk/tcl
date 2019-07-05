@@ -14,17 +14,17 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
+package require tcltests
+
 # Custom constraints used in this file
-testConstraint fcopy		[llength [info commands fcopy]]
 testConstraint testchannel	[llength [info commands testchannel]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 #----------------------------------------------------------------------
 
@@ -154,10 +154,10 @@ test iocmd-4.11 {read command} {
 test iocmd-4.12 {read command} -setup {
     set f [open $path(test1)]
 } -body {
-    list [catch {read $f 12z} msg] $msg $::errorCode
+    read $f 12z
 } -cleanup {
     close $f
-} -result {1 {expected non-negative integer but got "12z"} {TCL VALUE NUMBER}}
+} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
@@ -206,78 +206,90 @@ test iocmd-7.5 {close command} -setup {
     close $chan
 } -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
 
-test iocmd-8.1 {fconfigure command} {
-    list [catch {fconfigure} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
-test iocmd-8.2 {fconfigure command} {
-    list [catch {fconfigure a b c d e f} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
-test iocmd-8.3 {fconfigure command} {
-    list [catch {fconfigure a b} msg] $msg
-} {1 {can not find channel named "a"}}
-test iocmd-8.4 {fconfigure command} {
+proc expectedOpts {got extra} {
+    set basicOpts {
+	-blocking -buffering -buffersize -encoding -eofchar -translation
+    }
+    set opts [list {*}$basicOpts {*}$extra]
+    lset opts end [string cat "or " [lindex $opts end]]
+    return [format {bad option "%s": should be one of %s} $got [join $opts ", "]]
+}
+test iocmd-8.1 {fconfigure command} -returnCodes error -body {
+    fconfigure
+} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+test iocmd-8.2 {fconfigure command} -returnCodes error -body {
+    fconfigure a b c d e f
+} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+test iocmd-8.3 {fconfigure command} -returnCodes error -body {
+    fconfigure a b
+} -result {can not find channel named "a"}
+test iocmd-8.4 {fconfigure command} -setup {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    set x [list [catch {fconfigure $f1 froboz} msg] $msg]
+} -body {
+    fconfigure $f1 froboz
+} -returnCodes error -cleanup {
     close $f1
-    set x
-} {1 {bad option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.5 {fconfigure command} {
-    list [catch {fconfigure stdin -buffering froboz} msg] $msg
-} {1 {bad value for -buffering: must be one of full, line, or none}}
-test iocmd-8.6 {fconfigure command} {
-    list [catch {fconfigure stdin -translation froboz} msg] $msg
-} {1 {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}}
-test iocmd-8.7 {fconfigure command} {
+} -result [expectedOpts "froboz" {}]
+test iocmd-8.5 {fconfigure command} -returnCodes error -body {
+    fconfigure stdin -buffering froboz
+} -result {bad value for -buffering: must be one of full, line, or none}
+test iocmd-8.6 {fconfigure command} -returnCodes error -body {
+    fconfigure stdin -translation froboz
+} -result {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}
+test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
+} -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding unicode
-    set x [fconfigure $f1]
-    close $f1
-    set x
-} {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
-test iocmd-8.8 {fconfigure command} {
+    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
+    fconfigure $f1
+} -cleanup {
+    catch {close $f1}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -translation lf}
+test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
+    set x {}
+} -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding unicode
-    set x ""
+		-eofchar {} -encoding utf-16
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
-    close $f1
-    set x
-} {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
-test iocmd-8.9 {fconfigure command} {
+} -cleanup {
+    catch {close $f1}
+} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -translation lf}}
+test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
+} -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
 		-eofchar {} -encoding binary
-    set x [fconfigure $f1]
-    close $f1
-    set x
-} {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
-test iocmd-8.10 {fconfigure command} {
-    list [catch {fconfigure a b} msg] $msg
-} {1 {can not find channel named "a"}}
+    fconfigure $f1
+} -cleanup {
+    catch {close $f1}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
+test iocmd-8.10 {fconfigure command} -returnCodes error -body {
+    fconfigure a b
+} -result {can not find channel named "a"}
 set path(fconfigure.dummy) [makeFile {} fconfigure.dummy]
-test iocmd-8.11 {fconfigure command} {
+test iocmd-8.11 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.12 {fconfigure command} {
+    fconfigure $chan -froboz blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-froboz" {}]
+test iocmd-8.12 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-test iocmd-8.13 {fconfigure command} {
+    fconfigure $chan -b blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-b" {}]
+test iocmd-8.13 {fconfigure command} -body {
     set chan [open $path(fconfigure.dummy) r]
-    set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
-    close $chan
-    set res
-} {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+    fconfigure $chan -buffer blarfo
+} -returnCodes error -cleanup {
+    catch {close $chan}
+} -result [expectedOpts "-buffer" {}]
 removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
@@ -294,7 +306,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -connecting, -peername, or -sockname}
+} -returnCodes error -result [expectedOpts "-blah" {-connecting -peername -sockname}]
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
@@ -337,7 +349,7 @@ test iocmd-8.18 {fconfigure command / unix tty channel} -constraints {nonPortabl
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}
+} -returnCodes error -result [expectedOpts "-blah" {-closemode -inputmode -mode -queue -ttystatus -xchar}]
 test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable win} -setup {
     set tty ""
 } -body {
@@ -348,7 +360,13 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
+} -returnCodes error -result [expectedOpts "-blah" {-closemode -mode -handshake -pollinterval -sysbuffer -timeout -ttycontrol -xchar}]
+test iocmd-8.20 {fconfigure command / win console channel} -constraints {nonPortable win} -setup {
+    # I don't know how else to open the console, but this is non-portable
+    set console stdin
+} -body {
+    fconfigure $console -blah blih
+} -returnCodes error -result [expectedOpts "-blah" {-inputmode}]
 # TODO: Test parsing of serial channel options (nonPortable, since requires an
 # open channel to work with).
 
@@ -395,7 +413,7 @@ test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.4 {I/O to command pipelines} unixOrPc {
+test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrPc} {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
 } {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 
@@ -912,6 +930,17 @@ proc onfinal {} {
     if {[lindex $hargs 0] ne "finalize"} {return}
     return -code return ""
 }
+
+proc onwatch {} {
+    upvar args hargs
+    lassign $hargs watch chan eventspec
+    if {$watch ne "watch"} return
+    foreach spec $eventspec {
+	chan postevent $chan $spec
+    }
+    return
+}
+
 }
 
 # Set everything up in the main thread.
@@ -1984,28 +2013,29 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c readable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    set tock {}
+    note [fileevent $c readable {lappend res TOCK; set tock 1}]
+    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c r]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* read} {} {} TOCK {watch rc* {}}}
 test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c writable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    note [fileevent $c writable {lappend res TOCK; set tock 1}]
+    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c w]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* write} {} {} TOCK {watch rc* {}}}
 test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     proc foo {args} {oninit; onfinal; track; return}
     proc dummy args { return }
@@ -2018,6 +2048,31 @@ test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     rename foo   {}
     rename dummy {}
 } -returnCodes error -result {can not find reflected channel named "rc*"}
+test iocmd-31.9 {
+    chan postevent
+
+    call to current coroutine
+
+    see 67a5eabbd3d1
+} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onwatch; onfinal; track; return}
+    set c [chan create {r w} foo]
+    after 0 [list ::apply [list c {
+	coroutine c1 ::apply [list c {
+	    chan event $c readable [list [info coroutine]]
+	    yield
+	    set ::done READING
+	} [namespace current]] $c
+    } [namespace current]] $c]
+    set stop [after 10000 {set done TIMEOUT}]
+    vwait ::done
+    catch {after cancel $stop}
+    lappend res $done
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* read} READING {watch rc* {}}}
 
 # --- === *** ###########################
 # 'Pull the rug' tests. Create channel in a interpreter A, move to
@@ -3781,7 +3836,6 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 # Use constraints to skip this test while valgrinding so this expected leak
 # doesn't prevent a finding of "leak-free".
 #
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
 test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -match glob -body {
 
     #puts <<$tcltest::mainThread>>main
@@ -3834,6 +3888,16 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
 
 rename track {}
 # cleanup
+
+
+# Eliminate valgrind "still reachable" reports on outstanding "Detached"
+# structures in the detached list which stem from PipeClose2Proc not waiting
+# around for background processes to complete, meaning that previous calls to
+# Tcl_ReapDetachedProcs might not have had a chance to reap all processes.
+after 10
+exec [info nameofexecutable] << {}
+
+
 foreach file [list test1 test2 test3 test4] {
     removeFile $file
 }

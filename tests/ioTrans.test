@@ -1240,8 +1240,8 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	set res
     }]
 } -cleanup {
-    tempdone
     interp delete $idb
+    tempdone
 } -result {Owner lost}
 test iortrans-11.2 {delete interp of reflected transform} -setup {
     interp create slave

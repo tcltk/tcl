@@ -13,7 +13,7 @@
  */
 
 #include "tclInt.h"
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
 
 /*
  * If range checking is enabled, an additional byte will be allocated to store
@@ -85,15 +85,15 @@ typedef union Block {
 typedef struct {
     Block *firstPtr;		/* First block available */
     Block *lastPtr;		/* End of block list */
-    long numFree;		/* Number of blocks available */
+    size_t numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
 
-    long numRemoves;		/* Number of removes from bucket */
-    long numInserts;		/* Number of inserts into bucket */
-    long numWaits;		/* Number of waits to acquire a lock */
-    long numLocks;		/* Number of locks acquired */
-    long totalAssigned;		/* Total space assigned to bucket */
+    size_t numRemoves;		/* Number of removes from bucket */
+    size_t numInserts;		/* Number of inserts into bucket */
+    size_t numWaits;		/* Number of waits to acquire a lock */
+    size_t numLocks;		/* Number of locks acquired */
+    size_t totalAssigned;	/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -120,8 +120,8 @@ typedef struct Cache {
 
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
-    int maxBlocks;		/* Max blocks before move to share. */
-    int numMove;		/* Num blocks to move to share. */
+    size_t maxBlocks;		/* Max blocks before move to share. */
+    size_t numMove;			/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -211,7 +211,7 @@ GetCache(void)
 
     cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
-	cachePtr = TclpSysAlloc(sizeof(Cache), 0);
+	cachePtr = TclpSysAlloc(sizeof(Cache));
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
@@ -299,27 +299,14 @@ TclFreeAllocCache(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
     register int bucket;
     size_t size;
-
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
 
     GETCACHE(cachePtr);
 
@@ -337,7 +324,7 @@ TclpAlloc(
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
-	blockPtr = TclpSysAlloc(size, 0);
+	blockPtr = TclpSysAlloc(size);
 	if (blockPtr != NULL) {
 	    cachePtr->totalAssigned += reqSize;
 	}
@@ -378,7 +365,7 @@ TclpAlloc(
 
 void
 TclpFree(
-    char *ptr)
+    void *ptr)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -435,10 +422,10 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *ptr,
-    unsigned int reqSize)
+    void *ptr,
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -449,19 +436,6 @@ TclpRealloc(
     if (ptr == NULL) {
 	return TclpAlloc(reqSize);
     }
-
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
 
     GETCACHE(cachePtr);
 
@@ -563,7 +537,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
+	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
@@ -671,8 +645,8 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
-		    (unsigned long) bucketInfo[n].blockSize,
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
+		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
 		    cachePtr->buckets[n].numInserts,
@@ -961,7 +935,7 @@ GetBlocks(
     int bucket)
 {
     register Block *blockPtr;
-    register int n;
+    register size_t n;
 
     /*
      * First, atttempt to move blocks from the shared cache. Note the
@@ -1016,7 +990,7 @@ GetBlocks(
 	blockPtr = NULL;
 	n = NBUCKETS;
 	size = 0; /* lint */
-	while (--n > bucket) {
+	while (--n > (size_t)bucket) {
 	    if (cachePtr->buckets[n].numFree > 0) {
 		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;
@@ -1032,7 +1006,7 @@ GetBlocks(
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-	    blockPtr = TclpSysAlloc(size, 0);
+	    blockPtr = TclpSysAlloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }
@@ -1082,7 +1056,7 @@ TclInitThreadAlloc(void)
     objLockPtr = TclpNewAllocMutex();
     for (i = 0; i < NBUCKETS; ++i) {
 	bucketInfo[i].blockSize = MINALLOC << i;
-	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
+	bucketInfo[i].maxBlocks = ((size_t)1) << (NBUCKETS - 1 - i);
 	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
 		1 << (NBUCKETS - 2 - i) : 1;
 	bucketInfo[i].lockPtr = TclpNewAllocMutex();

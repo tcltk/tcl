@@ -455,37 +455,35 @@ proc ::safe::InterpInit {
     foreach {command alias} {
 	source   AliasSource
 	load     AliasLoad
-	encoding AliasEncoding
 	exit     interpDelete
 	glob     AliasGlob
     } {
 	::interp alias $slave $command {} [namespace current]::$alias $slave
     }
 
+    # UGLY POINT! These commands are safe (they're ensembles with unsafe
+    # subcommands), but is assumed to not be by existing policies so it is
+    # hidden by default. Hack it...
+    foreach command {encoding file} {
+	::interp alias $slave $command {} interp invokehidden $slave $command
+    }
+
     # This alias lets the slave have access to a subset of the 'file'
     # command functionality.
 
-    ::interp expose $slave file
     foreach subcommand {dirname extension rootname tail} {
 	::interp alias $slave ::tcl::file::$subcommand {} \
 	    ::safe::AliasFileSubcommand $slave $subcommand
     }
-    foreach subcommand {
-	atime attributes copy delete executable exists isdirectory isfile
-	link lstat mtime mkdir nativename normalize owned readable readlink
-	rename size stat tempfile type volumes writable
-    } {
-	::interp alias $slave ::tcl::file::$subcommand {} \
-	    ::safe::BadSubcommand $slave file $subcommand
-    }
+
+    # Subcommand of 'encoding' that has special handling; [encoding system] is
+    # OK provided it has no other arguments passed to it.
+    ::interp alias $slave ::tcl::encoding::system {} \
+	::safe::AliasEncodingSystem $slave
 
     # Subcommands of info
-    foreach {subcommand alias} {
-	nameofexecutable   AliasExeName
-    } {
-	::interp alias $slave ::tcl::info::$subcommand \
-	    {} [namespace current]::$alias $slave
-    }
+    ::interp alias $slave ::tcl::info::nameofexecutable {} \
+	::safe::AliasExeName $slave
 
     # The allowed slave variables already have been set by Tcl_MakeSafe(3)
 
@@ -1027,16 +1025,13 @@ proc ::safe::BadSubcommand {slave command subcommand args} {
     return -code error -errorcode {TCL SAFE SUBCOMMAND} $msg
 }
 
-# AliasEncoding is the target of the "encoding" alias in safe interpreters.
-
-proc ::safe::AliasEncoding {slave option args} {
-    # Note that [encoding dirs] is not supported in safe slaves at all
-    set subcommands {convertfrom convertto names system}
+# AliasEncodingSystem is the target of the "encoding system" alias in safe
+# interpreters.
+proc ::safe::AliasEncodingSystem {slave args} {
     try {
-	set option [tcl::prefix match -error [list -level 1 -errorcode \
-		[list TCL LOOKUP INDEX option $option]] $subcommands $option]
-	# Special case: [encoding system] ok, but [encoding system foo] not
-	if {$option eq "system" && [llength $args]} {
+	# Must not pass extra arguments; safe slaves may not set the system
+	# encoding but they may read it.
+	if {[llength $args]} {
 	    return -code error -errorcode {TCL WRONGARGS} \
 		"wrong # args: should be \"encoding system\""
 	}
@@ -1044,7 +1039,7 @@ proc ::safe::AliasEncoding {slave option args} {
 	Log $slave $msg
 	return -options $options $msg
     }
-    tailcall ::interp invokehidden $slave encoding $option {*}$args
+    tailcall ::interp invokehidden $slave tcl:encoding:system
 }
 
 # Various minor hiding of platform features. [Bug 2913625]

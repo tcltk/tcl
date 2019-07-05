@@ -181,7 +181,7 @@ TclFinalizeNotifier(void)
     for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL; ) {
 	hold = evPtr;
 	evPtr = evPtr->nextPtr;
-	ckfree(hold);
+	Tcl_Free(hold);
     }
     tsdPtr->firstEventPtr = NULL;
     tsdPtr->lastEventPtr = NULL;
@@ -276,7 +276,7 @@ Tcl_CreateEventSource(
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    EventSource *sourcePtr = ckalloc(sizeof(EventSource));
+    EventSource *sourcePtr = Tcl_Alloc(sizeof(EventSource));
 
     sourcePtr->setupProc = setupProc;
     sourcePtr->checkProc = checkProc;
@@ -330,7 +330,7 @@ Tcl_DeleteEventSource(
 	} else {
 	    prevPtr->nextPtr = sourcePtr->nextPtr;
 	}
-	ckfree(sourcePtr);
+	Tcl_Free(sourcePtr);
 	return;
     }
 }
@@ -355,7 +355,7 @@ void
 Tcl_QueueEvent(
     Tcl_Event *evPtr,		/* Event to add to queue. The storage space
 				 * must have been allocated the caller with
-				 * malloc (ckalloc), and it becomes the
+				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
@@ -387,7 +387,7 @@ Tcl_ThreadQueueEvent(
     Tcl_ThreadId threadId,	/* Identifier for thread to use. */
     Tcl_Event *evPtr,		/* Event to add to queue. The storage space
 				 * must have been allocated the caller with
-				 * malloc (ckalloc), and it becomes the
+				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
@@ -412,7 +412,7 @@ Tcl_ThreadQueueEvent(
     if (tsdPtr) {
 	QueueEvent(tsdPtr, evPtr, position);
     } else {
-	ckfree(evPtr);
+	Tcl_Free(evPtr);
     }
     Tcl_MutexUnlock(&listLock);
 }
@@ -444,7 +444,7 @@ QueueEvent(
 				 * which event queue to use. */
     Tcl_Event *evPtr,		/* Event to add to queue.  The storage space
 				 * must have been allocated the caller with
-				 * malloc (ckalloc), and it becomes the
+				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
@@ -563,7 +563,7 @@ Tcl_DeleteEvents(
 
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
-	    ckfree(hold);
+	    Tcl_Free(hold);
 	} else {
 	    /*
 	     * Event is to be retained.
@@ -702,7 +702,7 @@ Tcl_ServiceEvent(
 		}
 	    }
 	    if (evPtr) {
-		ckfree(evPtr);
+		Tcl_Free(evPtr);
 	    }
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;

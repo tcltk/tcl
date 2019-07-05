@@ -1,33 +1,21 @@
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://math.libtomcrypt.com
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
+
 #ifndef BN_H_
 #define BN_H_
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <limits.h>
 
-#include <tommath_class.h>
+#include "tommath_class.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__)
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -38,8 +26,14 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT) || defined(_MSC_VER))
-#      define MP_64BIT
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#      if defined(__GNUC__)
+/* we support 128bit integers only via: __attribute__((mode(TI))) */
+#         define MP_64BIT
+#      else
+/* otherwise we fall back to MP_32BIT even on 64bit platforms */
+#         define MP_32BIT
+#      endif
 #   endif
 #endif
 
@@ -54,37 +48,30 @@ typedef unsigned long long Tcl_WideUInt;
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
-typedef uint8_t              mp_digit;
-typedef uint16_t             mp_word;
+typedef unsigned char        mp_digit;
+typedef unsigned short       mp_word;
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
-typedef uint16_t             mp_digit;
-typedef uint32_t             mp_word;
+typedef unsigned short       mp_digit;
+typedef unsigned int         mp_word;
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef DIGIT_BIT
 #      error You must not define DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-typedef uint64_t mp_digit;
-#   if defined(__GNUC__)
+typedef unsigned long long   mp_digit;
 typedef unsigned long        mp_word __attribute__((mode(TI)));
-#   else
-/* it seems you have a problem
- * but we assume you can somewhere define your own uint128_t */
-typedef uint128_t            mp_word;
-#   endif
-
 #   define DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
-typedef uint32_t             mp_digit;
-typedef uint64_t             mp_word;
+typedef unsigned int         mp_digit;
+typedef unsigned long long   mp_word;
 
 #   ifdef MP_31BIT
 /* this is an extension that uses 31-bit digits */
@@ -96,29 +83,7 @@ typedef uint64_t             mp_word;
 #   endif
 #endif
 
-/* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
-#ifndef DIGIT_BIT
-#   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef uint_least32_t mp_min_u32;
-#else
-typedef mp_digit mp_min_u32;
-#endif
-
-/* use arc4random on platforms that support it */
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-#   define MP_GEN_RANDOM()    arc4random()
-#   define MP_GEN_RANDOM_MAX  0xffffffffu
-#endif
-
-/* use rand() as fall-back if there's no better rand function */
-#ifndef MP_GEN_RANDOM
-#   define MP_GEN_RANDOM()    rand()
-#   define MP_GEN_RANDOM_MAX  RAND_MAX
-#endif
-
-#define MP_DIGIT_BIT     DIGIT_BIT
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
-#define MP_DIGIT_MAX     MP_MASK
 
 /* equalities */
 #define MP_LT        -1   /* less than */
@@ -132,6 +97,7 @@ typedef mp_digit mp_min_u32;
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      MP_VAL
+#define MP_ITER       -4  /* Max. iterations reached */
 
 #define MP_YES        1   /* yes response */
 #define MP_NO         0   /* no response */
@@ -142,12 +108,6 @@ typedef mp_digit mp_min_u32;
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
 typedef int           mp_err;
-
-/* you'll have to tune these... */
-extern int KARATSUBA_MUL_CUTOFF,
-       KARATSUBA_SQR_CUTOFF,
-       TOOM_MUL_CUTOFF,
-       TOOM_SQR_CUTOFF;
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
@@ -161,9 +121,6 @@ extern int KARATSUBA_MUL_CUTOFF,
 #   endif
 #endif
 
-/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
-
 /* the infamous mp_int structure */
 typedef struct  {
    int used, alloc, sign;
@@ -173,10 +130,6 @@ typedef struct  {
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
-
-#define USED(m)     ((m)->used)
-#define DIGIT(m, k) ((m)->dp[(k)])
-#define SIGN(m)     ((m)->sign)
 
 /* error code to char* string */
 const char *mp_error_to_string(int code);
@@ -198,18 +151,18 @@ void mp_clear_multi(mp_int *mp, ...);
 void mp_exch(mp_int *a, mp_int *b);
 
 /* shrink ram required for a bignum */
-int mp_shrink(mp_int *a);
+mp_err mp_shrink(mp_int *a);
 
 /* grow an int to a given size */
-int mp_grow(mp_int *a, int size);
+mp_err mp_grow(mp_int *a, int size);
 
 /* init to a given number of digits */
-int mp_init_size(mp_int *a, int size);
+mp_err mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -218,6 +171,9 @@ void mp_zero(mp_int *a);
 /* set to a digit */
 void mp_set(mp_int *a, mp_digit b);
 
+/* set a double */
+int mp_set_double(mp_int *a, double b);
+
 /* set a 32-bit const */
 int mp_set_int(mp_int *a, unsigned long b);
 
@@ -225,7 +181,10 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
-int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
+int mp_set_long_long(mp_int *a, unsigned long long b);
+
+/* get a double */
+double mp_get_double(const mp_int *a);
 
 /* get a 32-bit value */
 unsigned long mp_get_int(const mp_int *a);
@@ -234,7 +193,7 @@ unsigned long mp_get_int(const mp_int *a);
 unsigned long mp_get_long(const mp_int *a);
 
 /* get a platform dependent unsigned long long value */
-Tcl_WideUInt mp_get_long_long(const mp_int *a);
+unsigned long long mp_get_long_long(const mp_int *a);
 
 /* initialize and set a digit */
 int mp_init_set(mp_int *a, mp_digit b);
@@ -288,8 +247,19 @@ int mp_cnt_lsb(const mp_int *a);
 
 /* I Love Earth! */
 
-/* makes a pseudo-random int of a given size */
+/* makes a pseudo-random mp_int of a given size */
 int mp_rand(mp_int *a, int digits);
+/* makes a pseudo-random small int of a given size */
+int mp_rand_digit(mp_digit *r);
+
+#ifdef MP_PRNG_ENABLE_LTM_RNG
+/* A last resort to provide random data on systems without any of the other
+ * implemented ways to gather entropy.
+ * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
+ * provide that one and then set `ltm_rng = rng_get_bytes;` */
+extern unsigned long (*ltm_rng)(unsigned char *out, unsigned long outlen, void (*callback)(void));
+extern void (*ltm_rng_callback)(void);
+#endif
 
 /* ---> binary operations <--- */
 /* c = a XOR b  */
@@ -301,7 +271,27 @@ int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 /* c = a AND b */
 int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 
+/* Checks the bit at position b and returns MP_YES
+   if the bit is 1, MP_NO if it is 0 and MP_VAL
+   in case of error */
+int mp_get_bit(const mp_int *a, int b);
+
+/* c = a XOR b (two complement) */
+int mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* c = a OR b (two complement) */
+int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* c = a AND b (two complement) */
+int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
+
+/* right shift (two complement) */
+int mp_signed_rsh(const mp_int *a, int b, mp_int *c);
+
 /* ---> Basic arithmetic <--- */
+
+/* b = ~a */
+int mp_complement(const mp_int *a, mp_int *b);
 
 /* b = -a */
 int mp_neg(const mp_int *a, mp_int *b);
@@ -405,6 +395,9 @@ int mp_is_square(const mp_int *arg, int *ret);
 /* computes the jacobi c = (a | n) (or Legendre if b is prime)  */
 int mp_jacobi(const mp_int *a, const mp_int *n, int *c);
 
+/* computes the Kronecker symbol c = (a | p) (like jacobi() but with {a,p} in Z */
+int mp_kronecker(const mp_int *a, const mp_int *p, int *c);
+
 /* used to setup the Barrett reduction for a given modulus b */
 int mp_reduce_setup(mp_int *a, const mp_int *b);
 
@@ -486,10 +479,27 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
  */
 int mp_prime_rabin_miller_trials(int size);
 
-/* performs t rounds of Miller-Rabin on "a" using the first
- * t prime bases.  Also performs an initial sieve of trial
+/* performs one strong Lucas-Selfridge test of "a".
+ * Sets result to 0 if composite or 1 if probable prime
+ */
+int mp_prime_strong_lucas_selfridge(const mp_int *a, int *result);
+
+/* performs one Frobenius test of "a" as described by Paul Underwood.
+ * Sets result to 0 if composite or 1 if probable prime
+ */
+int mp_prime_frobenius_underwood(const mp_int *N, int *result);
+
+/* performs t random rounds of Miller-Rabin on "a" additional to
+ * bases 2 and 3.  Also performs an initial sieve of trial
  * division.  Determines if "a" is prime with probability
  * of error no more than (1/4)**t.
+ * Both a strong Lucas-Selfridge to complete the BPSW test
+ * and a separate Frobenius test are available at compile time.
+ * With t<0 a deterministic test is run for primes up to
+ * 318665857834031151167461. With t<13 (abs(t)-13) additional
+ * tests with sequential small primes are run starting at 43.
+ * Is Fips 186.4 compliant if called with t as computed by
+ * mp_prime_rabin_miller_trials();
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */

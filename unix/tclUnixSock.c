@@ -239,12 +239,12 @@ InitializeHostName(
 	    char *dot = strchr(u.nodename, '.');
 
 	    if (dot != NULL) {
-		char *node = ckalloc(dot - u.nodename + 1);
+		char *node = Tcl_Alloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
-		ckfree(node);
+		Tcl_Free(node);
 	    }
 	}
         if (hp != NULL) {
@@ -252,9 +252,6 @@ InitializeHostName(
         } else {
 	    native = u.nodename;
         }
-    }
-    if (native == NULL) {
-	native = &tclEmptyString;
     }
 #else /* !NO_UNAME */
     /*
@@ -284,9 +281,15 @@ InitializeHostName(
 #endif /* NO_UNAME */
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    *lengthPtr = strlen(native);
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, native, *lengthPtr + 1);
+    if (native) {
+	*lengthPtr = strlen(native);
+	*valuePtr = Tcl_Alloc(*lengthPtr + 1);
+	memcpy(*valuePtr, native, *lengthPtr + 1);
+    } else {
+	*lengthPtr = 0;
+	*valuePtr = Tcl_Alloc(1);
+	*valuePtr[0] = '\0';
+    }
 }
 
 /*
@@ -310,7 +313,8 @@ InitializeHostName(
 const char *
 Tcl_GetHostName(void)
 {
-    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+    Tcl_Obj *tclObj = TclGetProcessGlobalValue(&hostName);
+    return TclGetString(tclObj);
 }
 
 /*
@@ -537,7 +541,7 @@ TcpInputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
+    bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead > -1) {
 	return bytesRead;
     }
@@ -587,7 +591,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written > -1) {
 	return written;
@@ -646,7 +650,7 @@ TcpCloseProc(
     while (fds != NULL) {
 	TcpFdList *next = fds->next;
 
-	ckfree(fds);
+	Tcl_Free(fds);
 	fds = next;
     }
     if (statePtr->addrlist != NULL) {
@@ -655,7 +659,7 @@ TcpCloseProc(
     if (statePtr->myaddrlist != NULL) {
         freeaddrinfo(statePtr->myaddrlist);
     }
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
     return errorCode;
 }
 
@@ -1124,7 +1128,7 @@ TcpGetHandleProc(
  * TcpAsyncCallback --
  *
  *	Called by the event handler that TcpConnect sets up internally for
- *	[socket -async] to get notified when the asyncronous connection
+ *	[socket -async] to get notified when the asynchronous connection
  *	attempt has succeeded or failed.
  *
  * ----------------------------------------------------------------------
@@ -1157,7 +1161,7 @@ TcpAsyncCallback(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1165,7 +1169,7 @@ TcpAsyncCallback(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  * ----------------------------------------------------------------------
  */
@@ -1396,7 +1400,7 @@ Tcl_OpenTcpClient(
      * Allocate a new TcpState for this socket.
      */
 
-    statePtr = ckalloc(sizeof(TcpState));
+    statePtr = Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
     statePtr->cachedBlocking = TCL_MODE_BLOCKING;
@@ -1475,7 +1479,7 @@ TclpMakeTcpClientChannelMode(
     TcpState *statePtr;
     char channelName[SOCK_CHAN_LENGTH];
 
-    statePtr = ckalloc(sizeof(TcpState));
+    statePtr = Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
@@ -1698,14 +1702,14 @@ Tcl_OpenTcpServerEx(
              * Allocate a new TcpState for this socket.
              */
 
-            statePtr = ckalloc(sizeof(TcpState));
+            statePtr = Tcl_Alloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
             sprintf(channelName, SOCK_TEMPLATE, (long) statePtr);
             newfds = &statePtr->fds;
         } else {
-            newfds = ckalloc(sizeof(TcpFdList));
+            newfds = Tcl_Alloc(sizeof(TcpFdList));
             memset(newfds, (int) 0, sizeof(TcpFdList));
             fds->next = newfds;
         }
@@ -1790,7 +1794,7 @@ TcpAccept(
 
     (void) fcntl(newsock, F_SETFD, FD_CLOEXEC);
 
-    newSockState = ckalloc(sizeof(TcpState));
+    newSockState = Tcl_Alloc(sizeof(TcpState));
     memset(newSockState, 0, sizeof(TcpState));
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;

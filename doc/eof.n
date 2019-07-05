@@ -59,3 +59,7 @@ while {1} {
 file(n), open(n), close(n), fblocked(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 channel, end of file
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

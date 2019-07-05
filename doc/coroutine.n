@@ -14,10 +14,13 @@ coroutine, yield, yieldto \- Create and produce values from coroutines
 .nf
 \fBcoroutine \fIname command\fR ?\fIarg...\fR?
 \fByield\fR ?\fIvalue\fR?
-.VS TIP396
 \fByieldto\fR \fIcommand\fR ?\fIarg...\fR?
 \fIname\fR ?\fIvalue...\fR?
-.VE TIP396
+.sp
+.VS "8.7, TIP383"
+\fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
+\fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?
+.VE "8.7, TIP383"
 .fi
 .BE
 .SH DESCRIPTION
@@ -39,7 +42,6 @@ the context to be suspended. If the coroutine context never yields and instead
 returns conventionally, the result of the \fBcoroutine\fR command will be the
 result of the evaluation of the context.
 .PP
-.VS TIP396
 The coroutine may also suspend its execution by use of the \fByieldto\fR
 command, which instead of returning, cedes execution to some command called
 \fIcommand\fR (resolved in the context of the coroutine) and to which \fIany
@@ -58,11 +60,10 @@ with multiple arguments is by using \fByieldto\fR and the \fBreturn\fR
 command, like this:
 .PP
 .CS
-proc yieldm {value} {
-    \fByieldto\fR return -level 0 $value
+proc yieldMultiple {value} {
+    tailcall \fByieldto\fR string cat $value
 }
 .CE
-.VE TIP396
 .PP
 The coroutine can also be deleted by destroying the command \fIname\fR, and
 the name of the current coroutine can be retrieved by using
@@ -75,6 +76,51 @@ At the point when \fIcommand\fR is called, the current namespace will be the
 global namespace and there will be no stack frames above it (in the sense of
 \fBupvar\fR and \fBuplevel\fR). However, which command to call will be
 determined in the namespace that the \fBcoroutine\fR command was called from.
+.PP
+.VS "8.7, TIP383"
+A suspended coroutine (i.e., one that has \fByield\fRed or \fByieldto\fR-d)
+may have its state inspected (or modified) at that point by using
+\fBcoroprobe\fR to run a command at the point where the coroutine is at. The
+command takes the name of the coroutine to run the command in, \fIcoroName\fR,
+and the name of a command (any any arguments it requires) to immediately run
+at that point. The result of that command is the result of the \fBcoroprobe\fR
+command, and the gross state of the coroutine remains the same afterwards
+(i.e., the coroutine is still expecting the results of a \fByield\fR or
+\fByieldto\fR as before) though variables may have been changed.
+.PP
+Similarly, the \fBcoroinject\fR command may be used to place a command to be
+run inside a suspended coroutine (when it is resumed) to process arguments,
+with quite a bit of similarity to \fBcoroprobe\fR. However, with
+\fBcoroinject\fR there are several key differences:
+.VE "8.7, TIP383"
+.IP \(bu
+.VS "8.7, TIP383"
+The coroutine is not immediately resumed after the injection has been done.  A
+consequence of this is that multiple injections may be done before the
+coroutine is resumed. There injected commands are performed in \fIreverse
+order of definition\fR (that is, they are internally stored on a stack).
+.VE "8.7, TIP383"
+.IP \(bu
+.VS "8.7, TIP383"
+An additional two arguments are appended to the list of arguments to be run
+(that is, the \fIcommand\fR and its \fIargs\fR are extended by two elements).
+The first is the name of the command that suspended the coroutine (\fByield\fR
+or \fByieldto\fR), and the second is the argument (or list of arguments, in
+the case of \fByieldto\fR) that is the current resumption value.
+.VE "8.7, TIP383"
+.IP \(bu
+.VS "8.7, TIP383"
+The result of the injected command is used as the result of the \fByield\fR or
+\fByieldto\fR that caused the coroutine to become suspended. Where there are
+multiple injected commands, the result of one becomes the resumption value
+processed by the next.
+.PP
+The injection is a one-off. It is not retained once it has been executed. It
+may \fByield\fR or \fByieldto\fR as part of its execution.
+.PP
+Note that running coroutines may be neither probed nor injected; the
+operations may only be applied to
+.VE "8.7, TIP383"
 .SH EXAMPLES
 .PP
 This example shows a coroutine that will produce an infinite sequence of
@@ -138,7 +184,6 @@ for {set i 1} {$i <= 20} {incr i} {
 }
 .CE
 .PP
-.VS TIP396
 This example shows how a value can be passed around a group of three
 coroutines that yield to each other:
 .PP
@@ -150,14 +195,57 @@ proc juggler {name target {value ""}} {
     while {$value ne ""} {
         puts "$name : $value"
         set value [string range $value 0 end-1]
-        lassign [\fByieldto\fR $target $value] value
+        lassign [\fByieldto\fR \fI$target\fR $value] value
     }
 }
 \fBcoroutine\fR j1 juggler Larry [
     \fBcoroutine\fR j2 juggler Curly [
         \fBcoroutine\fR j3 juggler Moe j1]] "Nyuck!Nyuck!Nyuck!"
 .CE
-.VE TIP396
+.PP
+.VS "8.7, TIP383"
+This example shows a simple coroutine that collects non-empty values and
+returns a list of them when not given an argument. It also shows how we can
+look inside the coroutine to find out what it is doing, and how we can modify
+the input on a one-off basis.
+.PP
+.CS
+proc collectorImpl {} {
+    set me [info coroutine]
+    set accumulator {}
+    for {set val [\fByield\fR $me]} {$val ne ""} {set val [\fByield\fR]} {
+        lappend accumulator $val
+    }
+    return $accumulator
+}
+
+\fBcoroutine\fR collect collectorImpl
+\fIcollect\fR 123
+\fIcollect\fR "abc def"
+\fIcollect\fR 456
+
+puts [\fBcoroprobe \fIcollect\fR set accumulator]
+# ==> 123 {abc def} 456
+
+\fIcollect\fR "pqr"
+
+\fBcoroinject \fIcollect\fR apply {{type value} {
+    puts "Received '$value' at a $type in [info coroutine]"
+    return [string toupper $value]
+}}
+
+\fIcollect\fR rst
+# ==> Received 'rst' at a yield in ::collect
+\fIcollect\fR xyz
+
+puts [\fIcollect\fR]
+# ==> 123 {abc def} 456 pqr RST xyz
+.CE
+.PP
+This example shows a simple coroutine that collects non-empty values and
+returns a list of them when not given an argument. It also shows how we can
+look inside the coroutine to find out what it is doing.
+.VE "8.7, TIP383"
 .SS "DETAILED SEMANTICS"
 .PP
 This example demonstrates that coroutines start from the global namespace, and

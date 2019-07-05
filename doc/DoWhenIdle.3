@@ -21,7 +21,7 @@ Tcl_DoWhenIdle, Tcl_CancelIdleCall \- invoke a procedure when there are no pendi
 .AS Tcl_IdleProc clientData
 .AP Tcl_IdleProc *proc in
 Procedure to invoke.
-.AP ClientData clientData in
+.AP coid *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -43,7 +43,7 @@ type \fBTcl_IdleProc\fR:
 .PP
 .CS
 typedef void \fBTcl_IdleProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR parameter to \fIproc\fR is a copy of the \fIclientData\fR

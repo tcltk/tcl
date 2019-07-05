@@ -20,16 +20,16 @@ int
 char *
 \fBTcl_Merge\fR(\fIargc, argv\fR)
 .sp
-int
+size_t
 \fBTcl_ScanElement\fR(\fIsrc, flagsPtr\fR)
 .sp
-int
+size_t
 \fBTcl_ScanCountedElement\fR(\fIsrc, length, flagsPtr\fR)
 .sp
-int
+size_t
 \fBTcl_ConvertElement\fR(\fIsrc, dst, flags\fR)
 .sp
-int
+size_t
 \fBTcl_ConvertCountedElement\fR(\fIsrc, length, dst, flags\fR)
 .SH ARGUMENTS
 .AS "const char *const" ***argvPtr out
@@ -55,7 +55,7 @@ String that is to become an element of a list.
 .AP int *flagsPtr in
 Pointer to word to fill in with information about \fIsrc\fR.
 The value of *\fIflagsPtr\fR must be passed to \fBTcl_ConvertElement\fR.
-.AP int length in
+.AP size_t length in
 Number of bytes in string \fIsrc\fR.
 .AP char *dst in
 Place to copy converted list element.  Must contain enough characters

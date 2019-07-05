@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_FAST_MP_INVMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* computes the modular inverse via binary extended euclidean algorithm,
@@ -140,6 +137,14 @@ top:
          goto LBL_ERR;
       }
    }
+
+   /* too big */
+   while (mp_cmp_mag(&D, b) != MP_LT) {
+      if ((res = mp_sub(&D, b, &D)) != MP_OKAY) {
+         goto LBL_ERR;
+      }
+   }
+
    mp_exch(&D, c);
    c->sign = neg;
    res = MP_OKAY;

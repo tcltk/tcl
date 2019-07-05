@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include "tommath_private.h"
 #ifdef BN_MP_PRIME_NEXT_PRIME_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -9,10 +9,7 @@
  * Michael Fromberger but has been written from scratch with
  * additional optimizations in place.
  *
- * The library is free for all purposes without any express
- * guarantee it works.
- *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * SPDX-License-Identifier: Unlicense
  */
 
 /* finds the next prime after the number "a" using "t" trials
@@ -25,11 +22,6 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
    int      err, res = MP_NO, x, y;
    mp_digit res_tab[PRIME_SIZE], step, kstep;
    mp_int   b;
-
-   /* ensure t is valid */
-   if ((t <= 0) || (t > PRIME_SIZE)) {
-      return MP_VAL;
-   }
 
    /* force positive */
    a->sign = MP_ZPOS;
@@ -143,17 +135,9 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
          continue;
       }
 
-      /* is this prime? */
-      for (x = 0; x < t; x++) {
-         mp_set(&b, ltm_prime_tab[x]);
-         if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
-            goto LBL_ERR;
-         }
-         if (res == MP_NO) {
-            break;
-         }
+      if ((err = mp_prime_is_prime(a, t, &res)) != MP_OKAY) {
+         goto LBL_ERR;
       }
-
       if (res == MP_YES) {
          break;
       }

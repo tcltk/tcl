@@ -42,7 +42,7 @@ usually means that an error occurred.
 Procedure to invoke before exiting application, or (for
 \fBTcl_SetExitProc\fR) NULL to uninstall the current application exit
 procedure.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 
@@ -64,7 +64,7 @@ otherwise causes the application to terminate without calling
 returns control to its caller.
 If an application exit handler has been installed (see
 \fBTcl_SetExitProc\fR), that handler is invoked with an argument
-consisting of the exit status (cast to ClientData); the application
+consisting of the exit status (cast to void *); the application
 exit handler should not return control to Tcl.
 .PP
 \fBTcl_Finalize\fR is similar to \fBTcl_Exit\fR except that it does not
@@ -93,7 +93,7 @@ and freeing global memory.
 .PP
 .CS
 typedef void \fBTcl_ExitProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR parameter to \fIproc\fR is a
@@ -133,7 +133,9 @@ installed, that exit handler takes over complete responsibility for
 finalization of Tcl's subsystems via \fBTcl_Finalize\fR at an
 appropriate time.  The argument passed to \fIproc\fR when it is
 invoked will be the exit status code (as passed to \fBTcl_Exit\fR)
-cast to a ClientData value.
+cast to a void *value.
+.PP
+\fBTcl_SetExitProc\fR can not be used in stub-enabled extensions.
 .SH "SEE ALSO"
 exit(n)
 .SH KEYWORDS

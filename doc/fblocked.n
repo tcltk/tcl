@@ -65,3 +65,7 @@ vwait forever
 gets(n), open(n), read(n), socket(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, nonblocking
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

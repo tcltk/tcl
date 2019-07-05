@@ -106,7 +106,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = TclGetString(pathPtr);
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
 	/*
@@ -127,11 +127,11 @@ TclpDlopen(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
-		    Tcl_GetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr));
 	}
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -232,7 +232,7 @@ UnloadFile(
     void *handle = loadHandle->clientData;
 
     dlclose(handle);
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*

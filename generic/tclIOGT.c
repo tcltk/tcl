@@ -230,7 +230,7 @@ ReleaseData(
     }
     ResultClear(&dataPtr->result);
     Tcl_DecrRefCount(dataPtr->command);
-    ckfree(dataPtr);
+    Tcl_Free(dataPtr);
 }
 
 /*
@@ -287,7 +287,7 @@ TclChannelTransform(
      * regime of the underlying channel and to use the same for us too.
      */
 
-    dataPtr = ckalloc(sizeof(TransformChannelData));
+    dataPtr = Tcl_Alloc(sizeof(TransformChannelData));
 
     dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
@@ -378,7 +378,7 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    int resLen;
+    size_t resLen = 0;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
@@ -443,7 +443,7 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
+	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
 		resLen);
 	break;
@@ -453,13 +453,13 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
+	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
 	break;
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
+	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
 	ResultAdd(&dataPtr->result, resBuf, resLen);
 	break;
 
@@ -910,7 +910,7 @@ TransformWideSeekProc(
 	    Tcl_ChannelWideSeekProc(parentType);
     ClientData parentData = Tcl_GetChannelInstanceData(parent);
 
-    if ((offset == Tcl_LongAsWide(0)) && (mode == SEEK_CUR)) {
+    if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
 	 * This is no seek but a request to tell the caller the current
 	 * location. Simply pass the request down.
@@ -920,8 +920,7 @@ TransformWideSeekProc(
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 	}
 
-	return Tcl_LongAsWide(parentSeekProc(parentData, 0, mode,
-		errorCodePtr));
+	return parentSeekProc(parentData, 0, mode, errorCodePtr);
     }
 
     /*
@@ -961,13 +960,13 @@ TransformWideSeekProc(
      * to go out of the representable range.
      */
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+    if (offset<LONG_MIN || offset>LONG_MAX) {
 	*errorCodePtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
-    return Tcl_LongAsWide(parentSeekProc(parentData, Tcl_WideAsLong(offset),
-	    mode, errorCodePtr));
+    return parentSeekProc(parentData, offset,
+	    mode, errorCodePtr);
 }
 
 /*
@@ -1273,7 +1272,7 @@ ResultClear(
     r->used = 0;
 
     if (r->allocated) {
-	ckfree(r->buf);
+	Tcl_Free(r->buf);
 	r->buf = NULL;
 	r->allocated = 0;
     }
@@ -1417,10 +1416,10 @@ ResultAdd(
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = ckalloc(r->allocated);
+	    r->buf = Tcl_Alloc(r->allocated);
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = ckrealloc(r->buf, r->allocated);
+	    r->buf = Tcl_Realloc(r->buf, r->allocated);
 	}
     }
 

@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_Alloc, Tcl_Free, Tcl_Realloc, Tcl_AttemptAlloc, Tcl_AttemptRealloc, ckalloc, ckfree, ckrealloc, attemptckalloc, attemptckrealloc \- allocate or free heap memory
+Tcl_Alloc, Tcl_Free, Tcl_Realloc, Tcl_AttemptAlloc, Tcl_AttemptRealloc \- allocate or free heap memory
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -19,29 +19,14 @@ char *
 void
 \fBTcl_Free\fR(\fIptr\fR)
 .sp
-char *
+void *
 \fBTcl_Realloc\fR(\fIptr, size\fR)
 .sp
-char *
+void *
 \fBTcl_AttemptAlloc\fR(\fIsize\fR)
 .sp
-char *
+void *
 \fBTcl_AttemptRealloc\fR(\fIptr, size\fR)
-.sp
-char *
-\fBckalloc\fR(\fIsize\fR)
-.sp
-void
-\fBckfree\fR(\fIptr\fR)
-.sp
-char *
-\fBckrealloc\fR(\fIptr, size\fR)
-.sp
-char *
-\fBattemptckalloc\fR(\fIsize\fR)
-.sp
-char *
-\fBattemptckrealloc\fR(\fIptr, size\fR)
 .SH ARGUMENTS
 .AS char *size
 .AP "unsigned int" size in
@@ -79,14 +64,10 @@ allocation fails, these functions will return NULL.  Note that on some
 platforms, but not all, attempting to allocate a zero-sized block of
 memory will also cause these functions to return NULL.
 .PP
-The procedures \fBckalloc\fR, \fBckfree\fR, \fBckrealloc\fR,
-\fBattemptckalloc\fR, and \fBattemptckrealloc\fR are implemented
-as macros.  Normally, they are synonyms for the corresponding
-procedures documented on this page.  When Tcl and all modules
-calling Tcl are compiled with \fBTCL_MEM_DEBUG\fR defined, however,
-these macros are redefined to be special debugging versions
-of these procedures.  To support Tcl's memory debugging within a
-module, use the macros rather than direct calls to \fBTcl_Alloc\fR, etc.
+When a module or Tcl itself is compiled with \fBTCL_MEM_DEBUG\fR defined,
+the procedures \fBTcl_Alloc\fR, \fBTcl_Free\fR, \fBTcl_Realloc\fR,
+\fBTcl_AttemptAlloc\fR, and \fBTcl_AttempRealloc\fR are implemented
+as macros, redefined to be special debugging versions of these procedures.
 
 .SH KEYWORDS
 alloc, allocation, free, malloc, memory, realloc, TCL_MEM_DEBUG

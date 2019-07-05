@@ -167,7 +167,7 @@ Tcl_MacOSXOpenBundleResources(
     Tcl_Interp *interp,
     const char *bundleName,
     int hasResourceFile,
-    int maxPathLen,
+    size_t maxPathLen,
     char *libraryPath)
 {
     return Tcl_MacOSXOpenVersionedBundleResources(interp, bundleName, NULL,
@@ -201,7 +201,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,
-    int maxPathLen,
+    size_t maxPathLen,
     char *libraryPath)
 {
 #ifdef HAVE_COREFOUNDATION

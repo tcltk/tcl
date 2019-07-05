@@ -32,7 +32,7 @@ Tcl_Channel
 Interpreter for error reporting.
 .AP "const Tcl_ChannelType" *typePtr in
 The new channel I/O procedures to use for \fIchannel\fR.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to channel I/O procedures.
 .AP int mask in
 Conditions under which \fIchannel\fR will be used: OR-ed combination of

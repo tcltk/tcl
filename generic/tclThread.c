@@ -41,21 +41,6 @@ static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
 
 /*
- * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
- * specified. Here we undo that so the functions are defined in the stubs
- * table.
- */
-
-#ifndef TCL_THREADS
-#undef Tcl_MutexLock
-#undef Tcl_MutexUnlock
-#undef Tcl_MutexFinalize
-#undef Tcl_ConditionNotify
-#undef Tcl_ConditionWait
-#undef Tcl_ConditionFinalize
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_GetThreadData --
@@ -76,10 +61,10 @@ static void		RememberSyncObject(void *objPtr,
 void *
 Tcl_GetThreadData(
     Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk */
-    int size)			/* Size of storage block */
+    size_t size)		/* Size of storage block */
 {
     void *result;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Initialize the key for this thread.
      */
@@ -87,14 +72,14 @@ Tcl_GetThreadData(
     result = TclThreadStorageKeyGet(keyPtr);
 
     if (result == NULL) {
-	result = ckalloc(size);
-	memset(result, 0, (size_t) size);
+	result = Tcl_Alloc(size);
+	memset(result, 0, size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
-	result = ckalloc(size);
-	memset(result, 0, (size_t)size);
+	result = Tcl_Alloc(size);
+	memset(result, 0, size);
 	*keyPtr = result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {
@@ -126,7 +111,7 @@ TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
 
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
 #else /* TCL_THREADS */
     return *keyPtr;
@@ -179,14 +164,14 @@ RememberSyncObject(
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
-	newList = ckalloc(recPtr->max * sizeof(void *));
+	newList = Tcl_Alloc(recPtr->max * sizeof(void *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
 	    }
 	}
 	if (recPtr->list != NULL) {
-	    ckfree(recPtr->list);
+	    Tcl_Free(recPtr->list);
 	}
 	recPtr->list = newList;
 	recPtr->num = j;
@@ -269,11 +254,12 @@ TclRememberMutex(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_MutexFinalize
 void
 Tcl_MutexFinalize(
     Tcl_Mutex *mutexPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
     TclpMasterLock();
@@ -322,11 +308,12 @@ TclRememberCondition(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ConditionFinalize
 void
 Tcl_ConditionFinalize(
     Tcl_Condition *condPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
     TclpMasterLock();
@@ -356,7 +343,7 @@ void
 TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
     if (!quick) {
 	/*
 	 * Quick exit principle makes it useless to terminate allocators
@@ -389,7 +376,7 @@ TclFinalizeSynchronization(void)
     int i;
     void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
 
@@ -405,15 +392,15 @@ TclFinalizeSynchronization(void)
 	for (i=0 ; i<keyRecord.num ; i++) {
 	    keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
 	    blockPtr = *keyPtr;
-	    ckfree(blockPtr);
+	    Tcl_Free(blockPtr);
 	}
-	ckfree(keyRecord.list);
+	Tcl_Free(keyRecord.list);
 	keyRecord.list = NULL;
     }
     keyRecord.max = 0;
     keyRecord.num = 0;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Call thread storage master cleanup.
      */
@@ -427,7 +414,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (mutexRecord.list != NULL) {
-	ckfree(mutexRecord.list);
+	Tcl_Free(mutexRecord.list);
 	mutexRecord.list = NULL;
     }
     mutexRecord.max = 0;
@@ -440,7 +427,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (condRecord.list != NULL) {
-	ckfree(condRecord.list);
+	Tcl_Free(condRecord.list);
 	condRecord.list = NULL;
     }
     condRecord.max = 0;
@@ -473,12 +460,10 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
-#ifdef TCL_THREADS
     TclpThreadExit(status);
-#endif
 }
 
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 
 /*
  *----------------------------------------------------------------------

@@ -82,7 +82,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR className[] = TEXT("TclSocket");
+static const WCHAR className[] = L"TclSocket";
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -363,7 +363,7 @@ InitializeHostName(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
@@ -397,7 +397,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
@@ -738,8 +738,8 @@ WaitForConnect(
 	}
 
 	/*
-	 * A non blocking socket waiting for an asyncronous connect returns
-	 * directly the error EWOULDBLOCK.
+	 * A non blocking socket waiting for an asynchronous connect
+	 * returns directly the error EWOULDBLOCK
 	 */
 
 	if (GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
@@ -1066,7 +1066,7 @@ TcpCloseProc(
 		TclWinConvertError((DWORD) WSAGetLastError());
 		errorCode = Tcl_GetErrno();
 	    }
-	    ckfree(thisfd);
+	    Tcl_Free(thisfd);
 	}
     }
 
@@ -1108,7 +1108,7 @@ TcpCloseProc(
      * fear of damaging the list.
      */
 
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
     return errorCode;
 }
 
@@ -1690,9 +1690,9 @@ TcpGetHandleProc(
  *
  *	This might be called in 3 circumstances:
  *	-   By a regular socket command
- *	-   By the event handler to continue an asynchroneous connect
+ *	-   By the event handler to continue an asynchronously connect
  *	-   By a blocking socket function (gets/puts) to terminate the
- *	    connect synchroneously
+ *	    connect synchronously
  *
  * Results:
  *      TCL_OK, if the socket was successfully connected or an asynchronous
@@ -1704,7 +1704,7 @@ TcpGetHandleProc(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1712,7 +1712,7 @@ TcpGetHandleProc(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  *----------------------------------------------------------------------
  */
@@ -1816,7 +1816,7 @@ TcpConnect(
 	    }
 
 	    /*
-	     * For asyncroneous connect set the socket in nonblocking mode
+	     * For asynchroneous connect set the socket in nonblocking mode
 	     * and activate connect notification
 	     */
 
@@ -1930,8 +1930,8 @@ TcpConnect(
 	    }
 
 	    /*
-	     * Clear the tsd socket list pointer if we did not wait for the
-	     * FD_CONNECT asynchronously.
+	     * Clear the tsd socket list pointer if we did not wait for
+	     * the FD_CONNECT asynchroneously
 	     */
 
 	    tsdPtr->pendingTcpState = NULL;
@@ -2014,7 +2014,7 @@ TcpConnect(
 	}
 
 	/*
-	 * Error message on syncroneous connect
+	 * Error message on synchroneous connect
 	 */
 
 	if (interp != NULL) {
@@ -2722,7 +2722,7 @@ SocketCheckProc(
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
                 && !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
-	    evPtr = ckalloc(sizeof(SocketEvent));
+	    evPtr = Tcl_Alloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = statePtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -2997,7 +2997,7 @@ AddSocketInfoFd(
          * Add the first FD.
          */
 
-	statePtr->sockets = ckalloc(sizeof(TcpFdList));
+	statePtr->sockets = Tcl_Alloc(sizeof(TcpFdList));
 	fds = statePtr->sockets;
     } else {
 	/*
@@ -3008,7 +3008,7 @@ AddSocketInfoFd(
 	    fds = fds->next;
 	}
 
-	fds->next = ckalloc(sizeof(TcpFdList));
+	fds->next = Tcl_Alloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
 
@@ -3041,7 +3041,7 @@ AddSocketInfoFd(
 static TcpState *
 NewSocketInfo(SOCKET socket)
 {
-    TcpState *statePtr = ckalloc(sizeof(TcpState));
+    TcpState *statePtr = Tcl_Alloc(sizeof(TcpState));
 
     memset(statePtr, 0, sizeof(TcpState));
 

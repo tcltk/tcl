@@ -186,8 +186,8 @@ to be treated as conventional null character-terminated C strings.
 These restrictions are easily met by using Tcl's internal UTF encoding
 for the string representation, same as one would do for other
 Tcl routines accepting string values as arguments.
-Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR
-or \fBckalloc\fR.  Note that \fIupdateStringProc\fRs must allocate
+Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR.
+Note that \fIupdateStringProc\fRs must allocate
 enough storage for the string's bytes and the terminating null byte.
 .PP
 The \fIupdateStringProc\fR for Tcl's built-in double type, for example,

@@ -16,11 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # %u output depends on word length, so this test is not portable.
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
-testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
+testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 
 test format-1.1 {integer formatting} {
@@ -547,7 +545,7 @@ for {set i 290} {$i < 400} {incr i} {
     append b "x"
 }
 
-test format-17.1 {testing %d with wide} {wideIs64bit wideBiggerThanInt} {
+test format-17.1 {testing %d with wide} {longIs32bit wideIs64bit} {
     format %d 7810179016327718216
 } 1819043144
 test format-17.2 {testing %ld with wide} {wideIs64bit} {
@@ -580,7 +578,7 @@ test format-18.1 {do not demote existing numeric values} {
     format %08x $b
     lappend result [expr {$a == $b}]
 } {1 1 1 1}
-test format-18.2 {do not demote existing numeric values} {wideBiggerThanInt} {
+test format-18.2 {do not demote existing numeric values} {longIs32bit wideIs64bit} {
     set a [expr {0xaaaaaaaaaa + 1}]
     set b 0xaaaaaaaaab
     list [format %08x $a] [expr {$a == $b}]
@@ -596,6 +594,20 @@ test format-19.2 {Bug 1867855} {
 test format-19.3 {Bug 2830354} {
     string length [format %340f 0]
 } 340
+
+test format-19.4.1 {Bug d498578df4: width overflow should cause limit exceeded} \
+-constraints {longIs32bit} -body {
+    # in case of overflow into negative, it produces width -2 (and limit exceeded),
+    # in case of width will be unsigned, it will be outside limit (2GB for 32bit)...
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
+test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} -body {
+    # limit should exceeds in any case,
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffffffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
 
 # Note that this test may fail in future versions
 test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {

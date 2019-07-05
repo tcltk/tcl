@@ -13,7 +13,7 @@ Tcl_GetAssocData, Tcl_SetAssocData, Tcl_DeleteAssocData \- manage associations o
 .nf
 \fB#include <tcl.h>\fR
 .sp
-ClientData
+void *
 \fBTcl_GetAssocData\fR(\fIinterp, key, delProcPtr\fR)
 .sp
 \fBTcl_SetAssocData\fR(\fIinterp, key, delProc, clientData\fR)
@@ -31,7 +31,7 @@ Procedure to call when \fIinterp\fR is deleted.
 .AP Tcl_InterpDeleteProc **delProcPtr in
 Pointer to location in which to store address of current deletion procedure
 for association.  Ignored if NULL.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value associated with the given key in this
 interpreter.  This data is owned by the caller.
 .BE
@@ -64,7 +64,7 @@ the type \fBTcl_InterpDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_InterpDeleteProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP

@@ -36,7 +36,6 @@ typedef struct {
     int pending;		/* Alert message pending, this field is locked
 				 * by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
-    int timeout;		/* Current timeout value. */
     int timerActive;		/* 1 if interval timer is running. */
 } ThreadSpecificData;
 
@@ -50,7 +49,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
-static const TCHAR className[] = TEXT("TclNotifier");
+static const WCHAR className[] = L"TclNotifier";
 static int initialized = 0;
 static CRITICAL_SECTION notifierMutex;
 
@@ -309,11 +308,10 @@ Tcl_SetTimer(
 		timeout = 1;
 	    }
 	}
-	tsdPtr->timeout = timeout;
 	if (timeout != 0) {
 	    tsdPtr->timerActive = 1;
 	    SetTimer(tsdPtr->hwnd, INTERVAL_TIMER,
-		    (unsigned long) tsdPtr->timeout, NULL);
+		    timeout, NULL);
 	} else {
 	    tsdPtr->timerActive = 0;
 	    KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);

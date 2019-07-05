@@ -53,28 +53,28 @@ int
 int
 \fBTcl_Read\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-int
+size_t
 \fBTcl_GetsObj\fR(\fIchannel, lineObjPtr\fR)
 .sp
-int
+size_t
 \fBTcl_Gets\fR(\fIchannel, lineRead\fR)
 .sp
-int
+size_t
 \fBTcl_Ungets\fR(\fIchannel, input, inputLen, addAtEnd\fR)
 .sp
-int
+size_t
 \fBTcl_WriteObj\fR(\fIchannel, writeObjPtr\fR)
 .sp
-int
+size_t
 \fBTcl_WriteChars\fR(\fIchannel, charBuf, bytesToWrite\fR)
 .sp
-int
+size_t
 \fBTcl_Write\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
-int
+size_t
 \fBTcl_ReadRaw\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-int
+size_t
 \fBTcl_WriteRaw\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
 int
@@ -134,7 +134,7 @@ input of the invoking process; likewise for \fBTCL_STDOUT\fR and
 redirect stdio handles to override the stdio handles for which
 \fBTCL_STDIN\fR, \fBTCL_STDOUT\fR and \fBTCL_STDERR\fR have been set.  If it
 is set, then such redirections cause an error.
-.AP ClientData handle in
+.AP void *handle in
 Operating system specific handle for I/O to a file. For Unix this is a
 file descriptor, for Windows it is a HANDLE.
 .AP int readOrWrite in
@@ -154,7 +154,7 @@ from a procedure such as \fBTcl_OpenFileChannel\fR.
 .AP Tcl_Obj *readObjPtr in/out
 A pointer to a Tcl value in which to store the characters read from the
 channel.
-.AP int charsToRead in
+.AP size_t charsToRead in
 The number of characters to read from the channel.  If the channel's encoding
 is \fBbinary\fR, this is equivalent to the number of bytes to read from the
 channel.
@@ -163,7 +163,7 @@ If non-zero, data read from the channel will be appended to the value.
 Otherwise, the data will replace the existing contents of the value.
 .AP char *readBuf out
 A buffer in which to store the bytes read from the channel.
-.AP int bytesToRead in
+.AP size_t bytesToRead in
 The number of bytes to read from the channel.  The buffer \fIreadBuf\fR must
 be large enough to hold this many bytes.
 .AP Tcl_Obj *lineObjPtr in/out
@@ -176,7 +176,7 @@ channel.  Must have been initialized by the caller.  The line read will be
 appended to any data already in the dynamic string.
 .AP "const char" *input in
 The input to add to a channel buffer.
-.AP int inputLen in
+.AP size_t inputLen in
 Length of the input
 .AP int addAtEnd in
 Flag indicating whether the input should be added to the end or
@@ -187,7 +187,7 @@ A pointer to a Tcl value whose contents will be output to the channel.
 A buffer containing the characters to output to the channel.
 .AP "const char" *byteBuf in
 A buffer containing the bytes to output to the channel.
-.AP int bytesToWrite in
+.AP size_t bytesToWrite in
 The number of bytes to consume from \fIcharBuf\fR or \fIbyteBuf\fR and
 output to the channel.
 .AP Tcl_WideInt offset in

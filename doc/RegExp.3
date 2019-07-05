@@ -64,7 +64,7 @@ identifies the beginning of the larger string.
 If it is not the same as \fItext\fR, then no
 .QW \fB^\fR
 matches will be allowed.
-.AP int index in
+.AP size_t index in
 Specifies which range is desired:  0 means the range of the entire
 match, 1 or greater means the range that matched a parenthesized
 sub-expression.
@@ -80,14 +80,14 @@ OR-ed combination of the compilation flags \fBTCL_REG_ADVANCED\fR,
 \fBTCL_REG_QUOTE\fR, \fBTCL_REG_NOCASE\fR, \fBTCL_REG_NEWLINE\fR,
 \fBTCL_REG_NLSTOP\fR, \fBTCL_REG_NLANCH\fR, \fBTCL_REG_NOSUB\fR, and
 \fBTCL_REG_CANMATCH\fR. See below for more information.
-.AP int offset in
+.AP size_t offset in
 The character offset into the text where matching should begin.
 The value of the offset has no impact on \fB^\fR matches.  This
 behavior is controlled by \fIeflags\fR.
-.AP int nmatches in
+.AP size_t nmatches in
 The number of matching subexpressions that should be remembered for
 later use.  If this value is 0, then no subexpression match
-information will be computed.  If the value is \-1, then
+information will be computed.  If the value is TCL_INDEX_NONE, then
 all of the matching subexpressions will be remembered.  Any other
 value will be taken as the maximum number of subexpressions to
 remember.
@@ -337,9 +337,9 @@ defined as follows:
 .PP
 .CS
 typedef struct Tcl_RegExpInfo {
-    int \fInsubs\fR;
+    size_t \fInsubs\fR;
     Tcl_RegExpIndices *\fImatches\fR;
-    long \fIextendStart\fR;
+    size_t \fIextendStart\fR;
 } \fBTcl_RegExpInfo\fR;
 .CE
 .PP
@@ -355,8 +355,8 @@ follows:
 .PP
 .CS
 typedef struct Tcl_RegExpIndices {
-    long \fIstart\fR;
-    long \fIend\fR;
+    size_t \fIstart\fR;
+    size_t \fIend\fR;
 } \fBTcl_RegExpIndices\fR;
 .CE
 .PP

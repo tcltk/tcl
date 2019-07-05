@@ -79,7 +79,7 @@ TclpDlopen(
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
     char *pkg;
-    char *fileName = Tcl_GetString(pathPtr);
+    char *fileName = TclGetString(pathPtr);
     const char *native;
 
     /*
@@ -128,7 +128,7 @@ TclpDlopen(
     } else {
 	pkg++;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -193,7 +193,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*

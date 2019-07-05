@@ -64,7 +64,7 @@ TclpDlopen(
     int flags)
 {
     HINSTANCE hInstance = NULL;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
 
@@ -95,7 +95,7 @@ TclpDlopen(
         firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
-	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
+	nativeName = Tcl_WinUtfToTChar(TclGetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -117,7 +117,7 @@ TclpDlopen(
             lastError = firstError;
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
-		Tcl_GetString(pathPtr));
+		TclGetString(pathPtr));
 
 	/*
 	 * Check for possible DLL errors. This doesn't work quite right,
@@ -170,7 +170,7 @@ TclpDlopen(
      * Succeded; package everything up for Tcl.
      */
 
-    handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr = Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = (ClientData) hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
@@ -255,7 +255,7 @@ UnloadFile(
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
 
     FreeLibrary(hInstance);
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*
@@ -416,7 +416,7 @@ InitDLLDirectoryName(void)
      */
 
   copyToGlobalBuffer:
-    dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
+    dllDirectoryName = Tcl_Alloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
     return TCL_OK;
 }

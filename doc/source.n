@@ -43,7 +43,7 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
-A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, unicode).
+A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, utf-16, ucs-2).
 .PP
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
@@ -69,3 +69,7 @@ foreach scriptFile {foo.tcl bar.tcl} {
 file(n), cd(n), encoding(n), info(n)
 .SH KEYWORDS
 file, script
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

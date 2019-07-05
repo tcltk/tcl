@@ -21,7 +21,7 @@
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0501 means Windows XP and above
  */
 
 #ifndef WINVER
@@ -50,15 +50,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifdef HAVE_WSPIAPI_H
 #   include <wspiapi.h>
 #endif
-
-#ifdef CHECK_UNICODE_CALLS
-#   define _UNICODE
-#   define UNICODE
-#   define __TCHAR_DEFINED
-    typedef float *_TCHAR;
-#   define _TCHAR_DEFINED
-    typedef float *TCHAR;
-#endif /* CHECK_UNICODE_CALLS */
 
 /*
  *  Pull in the typedef of TCHAR for windows.
@@ -479,10 +470,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * including the *printf family and others. Tell it to shut up.
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#if defined(_MSC_VER)
 #   pragma warning(disable:4244)
-#   pragma warning(disable:4267)
-#   pragma warning(disable:4996)
+#   if _MSC_VER >= 1400
+#	pragma warning(disable:4267)
+#	pragma warning(disable:4996)
+#   endif
 #endif
 
 /*
@@ -534,7 +527,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size)		((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
 #define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
@@ -550,7 +543,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * address platform-specific issues.
  */
 
-#define TclpReleaseFile(file)	ckfree(file)
+#define TclpReleaseFile(file)	Tcl_Free(file)
 
 /*
  * The following macros and declarations wrap the C runtime library

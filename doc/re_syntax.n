@@ -375,7 +375,7 @@ value of \fBU+\fI10ffff\fR.
 .TP
 \fB\ev\fR
 .
-vertical tab, as in C are all available.
+vertical tab, as in C
 .TP
 \fB\ex\fIhh\fR
 .

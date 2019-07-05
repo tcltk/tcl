@@ -29,8 +29,8 @@ unsigned char *
 .AP "const unsigned char" *bytes in
 The array of bytes used to initialize or set a byte-array value. May be NULL
 even if \fIlength\fR is non-zero.
-.AP int length in
-The length of the array of bytes.  It must be >= 0.
+.AP size_t length in
+The length of the array of bytes.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetByteArrayObj\fR, this points to the value to be converted to
 byte-array type.  For \fBTcl_GetByteArrayFromObj\fR and

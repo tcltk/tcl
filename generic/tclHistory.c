@@ -130,7 +130,7 @@ Tcl_RecordAndEvalObj(
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = Tcl_Alloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -210,7 +210,7 @@ DeleteHistoryObjs(
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);
-    ckfree(histObjsPtr);
+    Tcl_Free(histObjsPtr);
 }
 
 /*

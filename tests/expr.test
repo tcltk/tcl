@@ -16,15 +16,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
 
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
+testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -134,7 +132,7 @@ proc do_twelve_days {} {
     unset xxx
     return $result
 }
-
+
 # start of tests
 
 catch {unset a b i x}
@@ -412,17 +410,34 @@ test expr-8.34 {expr edge cases} -body {
 test expr-8.35 {expr edge cases} -body {
     expr {1ea}
 } -returnCodes error -match glob -result *
+test expr-8.36 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x < $y}] [expr {$x lt $y}] [expr {$x lt $x}]
+} {0 1 0}
+test expr-8.37 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x <= $y}] [expr {$x le $y}] [expr {$x le $x}]
+} {0 1 1}
+test expr-8.38 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x > $y}] [expr {$x gt $y}] [expr {$x gt $x}]
+} {1 0 0}
+test expr-8.39 {CompileEqualtyExpr: string comparison ops} {
+    set x 012
+    set y 0x0
+    list [expr {$x >= $y}] [expr {$x ge $y}] [expr {$x ge $x}]
+} {1 0 1}
 
 test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test expr-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test expr-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-test expr-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+test expr-9.5 {CompileRelationalExpr: shift expr producing LONG_MIN} {
     expr {int(1<<63)}
-} -9223372036854775808
-test expr-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
-    expr {int(1<<31)}
-} -2147483648
+} 9223372036854775808
 test expr-9.6 {CompileRelationalExpr: error in shift expr} -body {
     expr x>>3
 } -returnCodes error -match glob -result *
@@ -1111,7 +1126,7 @@ test expr-23.54.11 {INST_EXPON: Bug 2798543} {
     expr {3**9 == 3**131081}
 } 0
 test expr-23.54.12 {INST_EXPON: Bug 2798543} -body {
-    expr {3**9 == 3**268435465}
+    expr {3**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.54.13 {INST_EXPON: Bug 2798543} {
     expr {(-3)**9 == (-3)**65545}
@@ -1126,7 +1141,7 @@ test expr-23.55.2 {INST_EXPON: Bug 2798543} {
     expr {4**9 == 4**131081}
 } 0
 test expr-23.55.3 {INST_EXPON: Bug 2798543} -body {
-    expr {4**9 == 4**268435465}
+    expr {4**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.55.4 {INST_EXPON: Bug 2798543} {
     expr {(-4)**9 == (-4)**65545}
@@ -1141,7 +1156,7 @@ test expr-23.56.2 {INST_EXPON: Bug 2798543} {
     expr {5**9 == 5**131081}
 } 0
 test expr-23.56.3 {INST_EXPON: Bug 2798543} -body {
-    expr {5**9 == 5**268435465}
+    expr {5**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.56.4 {INST_EXPON: Bug 2798543} {
     expr {(-5)**9 == (-5)**65545}
@@ -1156,7 +1171,7 @@ test expr-23.57.2 {INST_EXPON: Bug 2798543} {
     expr {6**9 == 6**131081}
 } 0
 test expr-23.57.3 {INST_EXPON: Bug 2798543} -body {
-    expr {6**9 == 6**268435465}
+    expr {6**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.57.4 {INST_EXPON: Bug 2798543} {
     expr {(-6)**9 == (-6)**65545}
@@ -1171,7 +1186,7 @@ test expr-23.58.2 {INST_EXPON: Bug 2798543} {
     expr {7**9 == 7**131081}
 } 0
 test expr-23.58.3 {INST_EXPON: Bug 2798543} -body {
-    expr {7**9 == 7**268435465}
+    expr {7**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.58.4 {INST_EXPON: Bug 2798543} {
     expr {(-7)**9 == (-7)**65545}
@@ -1186,7 +1201,7 @@ test expr-23.59.2 {INST_EXPON: Bug 2798543} {
     expr {8**9 == 8**131081}
 } 0
 test expr-23.59.3 {INST_EXPON: Bug 2798543} -body {
-    expr {8**9 == 8**268435465}
+    expr {8**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.59.4 {INST_EXPON: Bug 2798543} {
     expr {(-8)**9 == (-8)**65545}
@@ -1198,7 +1213,7 @@ test expr-23.60.1 {INST_EXPON: Bug 2798543} {
     expr {9**9 == 9**131081}
 } 0
 test expr-23.60.2 {INST_EXPON: Bug 2798543} -body {
-    expr {9**9 == 9**268435465}
+    expr {9**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.60.3 {INST_EXPON: Bug 2798543} {
     expr {(-9)**9 == (-9)**65545}
@@ -1210,7 +1225,7 @@ test expr-23.61.1 {INST_EXPON: Bug 2798543} {
     expr {10**9 == 10**131081}
 } 0
 test expr-23.61.2 {INST_EXPON: Bug 2798543} -body {
-    expr {10**9 == 10**268435465}
+    expr {10**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.61.3 {INST_EXPON: Bug 2798543} {
     expr {(-10)**9 == (-10)**65545}
@@ -1222,7 +1237,7 @@ test expr-23.62.1 {INST_EXPON: Bug 2798543} {
     expr {11**9 == 11**131081}
 } 0
 test expr-23.62.2 {INST_EXPON: Bug 2798543} -body {
-    expr {11**9 == 11**268435465}
+    expr {11**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.62.3 {INST_EXPON: Bug 2798543} {
     expr {(-11)**9 == (-11)**65545}
@@ -1237,7 +1252,7 @@ test expr-23.63.2 {INST_EXPON: Bug 2798543} {
     expr {3**20 == 3**131092}
 } 0
 test expr-23.63.3 {INST_EXPON: Bug 2798543} -body {
-    expr {3**20 == 3**268435476}
+    expr {3**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.63.4 {INST_EXPON: Bug 2798543} {
     expr {(-3)**20 == (-3)**65556}
@@ -1252,7 +1267,7 @@ test expr-23.64.2 {INST_EXPON: Bug 2798543} {
     expr {4**17 == 4**131089}
 } 0
 test expr-23.64.3 {INST_EXPON: Bug 2798543} -body {
-    expr {4**17 == 4**268435473}
+    expr {4**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.64.4 {INST_EXPON: Bug 2798543} {
     expr {(-4)**17 == (-4)**65553}
@@ -1267,7 +1282,7 @@ test expr-23.65.2 {INST_EXPON: Bug 2798543} {
     expr {5**17 == 5**131089}
 } 0
 test expr-23.65.3 {INST_EXPON: Bug 2798543} -body {
-    expr {5**17 == 5**268435473}
+    expr {5**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.65.4 {INST_EXPON: Bug 2798543} {
     expr {(-5)**17 == (-5)**65553}
@@ -1282,7 +1297,7 @@ test expr-23.66.2 {INST_EXPON: Bug 2798543} {
     expr {6**17 == 6**131089}
 } 0
 test expr-23.66.3 {INST_EXPON: Bug 2798543} -body {
-    expr {6**17 == 6**268435473}
+    expr {6**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.66.4 {INST_EXPON: Bug 2798543} {
     expr {(-6)**17 == (-6)**65553}
@@ -1297,7 +1312,7 @@ test expr-23.67.2 {INST_EXPON: Bug 2798543} {
     expr {7**17 == 7**131089}
 } 0
 test expr-23.67.3 {INST_EXPON: Bug 2798543} -body {
-    expr {7**17 == 7**268435473}
+    expr {7**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.67.4 {INST_EXPON: Bug 2798543} {
     expr {(-7)**17 == (-7)**65553}
@@ -1312,7 +1327,7 @@ test expr-23.68.2 {INST_EXPON: Bug 2798543} {
     expr {8**17 == 8**131089}
 } 0
 test expr-23.68.3 {INST_EXPON: Bug 2798543} -body {
-    expr {8**17 == 8**268435473}
+    expr {8**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.68.4 {INST_EXPON: Bug 2798543} {
     expr {(-8)**17 == (-8)**65553}
@@ -1327,7 +1342,7 @@ test expr-23.69.2 {INST_EXPON: Bug 2798543} {
     expr {9**17 == 9**131089}
 } 0
 test expr-23.69.3 {INST_EXPON: Bug 2798543} -body {
-    expr {9**17 == 9**268435473}
+    expr {9**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.69.4 {INST_EXPON: Bug 2798543} {
     expr {(-9)**17 == (-9)**65553}
@@ -1342,7 +1357,7 @@ test expr-23.70.2 {INST_EXPON: Bug 2798543} {
     expr {10**17 == 10**131089}
 } 0
 test expr-23.70.3 {INST_EXPON: Bug 2798543} -body {
-    expr {10**17 == 10**268435473}
+    expr {10**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.70.4 {INST_EXPON: Bug 2798543} {
     expr {(-10)**17 == (-10)**65553}
@@ -1357,7 +1372,7 @@ test expr-23.71.2 {INST_EXPON: Bug 2798543} {
     expr {11**17 == 11**131089}
 } 0
 test expr-23.71.3 {INST_EXPON: Bug 2798543} -body {
-    expr {11**17 == 11**268435473}
+    expr {11**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.71.4 {INST_EXPON: Bug 2798543} {
     expr {(-11)**17 == (-11)**65553}
@@ -1369,7 +1384,7 @@ test expr-23.72.1 {INST_EXPON: Bug 2798543} {
     expr {12**17 == 12**131089}
 } 0
 test expr-23.72.2 {INST_EXPON: Bug 2798543} -body {
-    expr {12**17 == 12**268435473}
+    expr {12**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.72.3 {INST_EXPON: Bug 2798543} {
     expr {(-12)**17 == (-12)**65553}
@@ -1381,7 +1396,7 @@ test expr-23.73.1 {INST_EXPON: Bug 2798543} {
     expr {13**17 == 13**131089}
 } 0
 test expr-23.73.2 {INST_EXPON: Bug 2798543} -body {
-    expr {13**17 == 13**268435473}
+    expr {13**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.73.3 {INST_EXPON: Bug 2798543} {
     expr {(-13)**17 == (-13)**65553}
@@ -1393,7 +1408,7 @@ test expr-23.74.1 {INST_EXPON: Bug 2798543} {
     expr {14**17 == 14**131089}
 } 0
 test expr-23.74.2 {INST_EXPON: Bug 2798543} -body {
-    expr {14**17 == 14**268435473}
+    expr {14**268435456}
 } -returnCodes error -result {exponent too large}
 test expr-23.74.3 {INST_EXPON: Bug 2798543} {
     expr {(-14)**17 == (-14)**65553}
@@ -1405,8 +1420,8 @@ test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
 test expr-24.2 {expr edge cases; shifting} {expr int(5)>>63} 0
 test expr-24.3 {expr edge cases; shifting} {expr wide(5)>>32} 0
 test expr-24.4 {expr edge cases; shifting} {expr wide(5)>>63} 0
-test expr-24.5 {expr edge cases; shifting} longIs32bit {expr int(5<<32)} 0
-test expr-24.6 {expr edge cases; shifting} longIs32bit {expr int(5<<63)} 0
+test expr-24.5 {expr edge cases; shifting} {expr int(5<<32)} 21474836480
+test expr-24.6 {expr edge cases; shifting} {expr int(5<<63)} 46116860184273879040
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
 test expr-24.8 {expr edge cases; shifting} {expr wide(10<<63)} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
@@ -5809,7 +5824,7 @@ test expr-32.9 {bignum regression} {
     expr {0%-(1+(1<<63))}
 } 0
 
-test expr-33.1 {parse largest long value} longIs32bit {
+test expr-33.1 {parse largest long value} {
     set max_long_str 2147483647
     set max_long_hex "0x7FFFFFFF "
 
@@ -5823,7 +5838,7 @@ test expr-33.1 {parse largest long value} longIs32bit {
         [expr {$max_long + 0}] \
         [expr {2147483647 + 0}] \
         [expr {$max_long == $max_long_hex}] \
-        [expr {int(2147483647 + 1) < 0}] \
+        [expr {int(2147483647 + 1) > 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
 test expr-33.2 {parse smallest long value} longIs32bit {
@@ -5843,7 +5858,7 @@ test expr-33.2 {parse smallest long value} longIs32bit {
         [expr {$min_long + 0}] \
         [expr {-2147483648 + 0}] \
         [expr {$min_long == $min_long_hex}] \
-        [expr {int(-2147483648 - 1) == 0x7FFFFFFF}] \
+        [expr {int(-2147483648 - 1) == -0x80000001}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
 test expr-33.3 {parse largest wide value} wideIs64bit {
@@ -5923,17 +5938,17 @@ test expr-34.11 {expr edge cases} {
 test expr-34.12 {expr edge cases} {
     expr {$min % -2}
 } {0}
-test expr-34.13 {expr edge cases} longIs32bit {
+test expr-34.13 {expr edge cases} {
     expr {int($min / -1)}
-} {-2147483648}
+} {2147483648}
 test expr-34.14 {expr edge cases} {
     expr {$min % -1}
 } {0}
-test expr-34.15 {expr edge cases} longIs32bit {
-    expr {int($min * -1)}
+test expr-34.15 {expr edge cases} {
+    expr {-int($min * -1)}
 } $min
-test expr-34.16 {expr edge cases} longIs32bit {
-    expr {int(-$min)}
+test expr-34.16 {expr edge cases} {
+    expr {-int(-$min)}
 } $min
 test expr-34.17 {expr edge cases} {
     expr {$min / 1}
@@ -6720,8 +6735,8 @@ test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -0x80000000
 } {This is a result: -2147483648}
 test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -0xffffffff
-} {This is a result: 1}
+    testexprlongobj -0x7fffffff
+} {This is a result: -2147483647}
 test expr-39.10 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
@@ -6746,8 +6761,8 @@ test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -2147483648.
 } {This is a result: -2147483648}
 test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
-    testexprlongobj -4294967295.
-} {This is a result: 1}
+    testexprlongobj -2147483648.
+} {This is a result: -2147483648}
 test expr-39.16 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
@@ -7157,14 +7172,156 @@ test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
 
+test expr-52.1 {
+	comparison with empty string does not generate string representation
+} {
+	set a [list one two three]
+	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
+		string match {*no string representation*} [
+		::tcl::unsupported::representation $a]]
+} {0 0 1 1}
 
-
-# cleanup
-if {[info exists a]} {
-    unset a
+foreach func {isfinite isinf isnan isnormal issubnormal} {
+    test expr-53.1.$func {float classification: basic arg handling} -body {
+	expr ${func}()
+    } -returnCodes error -result "too few arguments for math function \"$func\""
+    test expr-53.2.$func {float classification: basic arg handling} -body {
+	expr ${func}(1,2)
+    } -returnCodes error -result "too many arguments for math function \"$func\""
+    test expr-53.3.$func {float classification: basic arg handling} -body {
+	expr ${func}(true)
+    } -returnCodes error -result {expected number but got "true"}
+    test expr-53.4.$func {float classification: basic arg handling} -body {
+	expr ${func}("gorp")
+    } -returnCodes error -result {expected number but got "gorp"}
+    test expr-53.5.$func {float classification: basic arg handling} -body {
+	expr ${func}(1.0)
+    } -match glob -result *
+    test expr-53.6.$func {float classification: basic arg handling} -body {
+	expr ${func}(0x123)
+    } -match glob -result *
 }
-catch {unset min}
-catch {unset max}
+
+test expr-54.0 {float classification: isfinite} {expr {isfinite(1.0)}} 1
+test expr-54.1 {float classification: isfinite} {expr {isfinite(-1.0)}} 1
+test expr-54.2 {float classification: isfinite} {expr {isfinite(0.0)}} 1
+test expr-54.3 {float classification: isfinite} {expr {isfinite(-0.0)}} 1
+test expr-54.4 {float classification: isfinite} {expr {isfinite(1/Inf)}} 1
+test expr-54.5 {float classification: isfinite} {expr {isfinite(-1/Inf)}} 1
+test expr-54.6 {float classification: isfinite} {expr {isfinite(1e-314)}} 1
+test expr-54.7 {float classification: isfinite} {expr {isfinite(inf)}} 0
+test expr-54.8 {float classification: isfinite} {expr {isfinite(-inf)}} 0
+test expr-54.9 {float classification: isfinite} {expr {isfinite(NaN)}} 0
+
+test expr-55.0 {float classification: isinf} {expr {isinf(1.0)}} 0
+test expr-55.1 {float classification: isinf} {expr {isinf(-1.0)}} 0
+test expr-55.2 {float classification: isinf} {expr {isinf(0.0)}} 0
+test expr-55.3 {float classification: isinf} {expr {isinf(-0.0)}} 0
+test expr-55.4 {float classification: isinf} {expr {isinf(1/Inf)}} 0
+test expr-55.5 {float classification: isinf} {expr {isinf(-1/Inf)}} 0
+test expr-55.6 {float classification: isinf} {expr {isinf(1e-314)}} 0
+test expr-55.7 {float classification: isinf} {expr {isinf(inf)}} 1
+test expr-55.8 {float classification: isinf} {expr {isinf(-inf)}} 1
+test expr-55.9 {float classification: isinf} {expr {isinf(NaN)}} 0
+
+test expr-56.0 {float classification: isnan} {expr {isnan(1.0)}} 0
+test expr-56.1 {float classification: isnan} {expr {isnan(-1.0)}} 0
+test expr-56.2 {float classification: isnan} {expr {isnan(0.0)}} 0
+test expr-56.3 {float classification: isnan} {expr {isnan(-0.0)}} 0
+test expr-56.4 {float classification: isnan} {expr {isnan(1/Inf)}} 0
+test expr-56.5 {float classification: isnan} {expr {isnan(-1/Inf)}} 0
+test expr-56.6 {float classification: isnan} {expr {isnan(1e-314)}} 0
+test expr-56.7 {float classification: isnan} {expr {isnan(inf)}} 0
+test expr-56.8 {float classification: isnan} {expr {isnan(-inf)}} 0
+test expr-56.9 {float classification: isnan} {expr {isnan(NaN)}} 1
+
+test expr-57.0 {float classification: isnormal} {expr {isnormal(1.0)}} 1
+test expr-57.1 {float classification: isnormal} {expr {isnormal(-1.0)}} 1
+test expr-57.2 {float classification: isnormal} {expr {isnormal(0.0)}} 0
+test expr-57.3 {float classification: isnormal} {expr {isnormal(-0.0)}} 0
+test expr-57.4 {float classification: isnormal} {expr {isnormal(1/Inf)}} 0
+test expr-57.5 {float classification: isnormal} {expr {isnormal(-1/Inf)}} 0
+test expr-57.6 {float classification: isnormal} {expr {isnormal(1e-314)}} 0
+test expr-57.7 {float classification: isnormal} {expr {isnormal(inf)}} 0
+test expr-57.8 {float classification: isnormal} {expr {isnormal(-inf)}} 0
+test expr-57.9 {float classification: isnormal} {expr {isnormal(NaN)}} 0
+
+test expr-58.0 {float classification: issubnormal} {expr {issubnormal(1.0)}} 0
+test expr-58.1 {float classification: issubnormal} {expr {issubnormal(-1.0)}} 0
+test expr-58.2 {float classification: issubnormal} {expr {issubnormal(0.0)}} 0
+test expr-58.3 {float classification: issubnormal} {expr {issubnormal(-0.0)}} 0
+test expr-58.4 {float classification: issubnormal} {expr {issubnormal(1/Inf)}} 0
+test expr-58.5 {float classification: issubnormal} {expr {issubnormal(-1/Inf)}} 0
+test expr-58.6 {float classification: issubnormal} {expr {issubnormal(1e-314)}} 1
+test expr-58.7 {float classification: issubnormal} {expr {issubnormal(inf)}} 0
+test expr-58.8 {float classification: issubnormal} {expr {issubnormal(-inf)}} 0
+test expr-58.9 {float classification: issubnormal} {expr {issubnormal(NaN)}} 0
+
+test expr-59.0 {float classification: fpclassify} {fpclassify 1.0} normal
+test expr-59.1 {float classification: fpclassify} {fpclassify -1.0} normal
+test expr-59.2 {float classification: fpclassify} {fpclassify 0.0} zero
+test expr-59.3 {float classification: fpclassify} {fpclassify -0.0} zero
+test expr-59.4 {float classification: fpclassify} {fpclassify [expr 1/Inf]} zero
+test expr-59.5 {float classification: fpclassify} {fpclassify [expr -1/Inf]} zero
+test expr-59.6 {float classification: fpclassify} {fpclassify 1e-314} subnormal
+test expr-59.7 {float classification: fpclassify} {fpclassify inf} infinite
+test expr-59.8 {float classification: fpclassify} {fpclassify -inf} infinite
+test expr-59.9 {float classification: fpclassify} {fpclassify NaN} nan
+test expr-59.10 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify
+} -result {wrong # args: should be "fpclassify floatValue"}
+test expr-59.11 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify a b
+} -result {wrong # args: should be "fpclassify floatValue"}
+test expr-59.12 {float classification: fpclassify} -returnCodes error -body {
+    fpclassify gorp
+} -result {expected number but got "gorp"}
+
+test expr-60.1 {float classification: basic arg handling} -body {
+    expr isunordered()
+} -returnCodes error -result {too few arguments for math function "isunordered"}
+test expr-60.2 {float classification: basic arg handling} -body {
+    expr isunordered(1)
+} -returnCodes error -result {too few arguments for math function "isunordered"}
+test expr-60.3 {float classification: basic arg handling} -body {
+    expr {isunordered(1, 2, 3)}
+} -returnCodes error -result {too many arguments for math function "isunordered"}
+test expr-60.4 {float classification: basic arg handling} -body {
+    expr {isunordered(true, 1.0)}
+} -returnCodes error -result {expected number but got "true"}
+test expr-60.5 {float classification: basic arg handling} -body {
+    expr {isunordered("gorp", 1.0)}
+} -returnCodes error -result {expected number but got "gorp"}
+test expr-60.6 {float classification: basic arg handling} -body {
+    expr {isunordered(0x123, 1.0)}
+} -match glob -result *
+test expr-60.7 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, true)}
+} -returnCodes error -result {expected number but got "true"}
+test expr-60.8 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, "gorp")}
+} -returnCodes error -result {expected number but got "gorp"}
+test expr-60.9 {float classification: basic arg handling} -body {
+    expr {isunordered(1.0, 0x123)}
+} -match glob -result *
+
+# Big matrix of comparisons, but it's just a binary isinf()
+set values {1.0 -1.0 0.0 -0.0 1e-314 Inf -Inf NaN}
+set results {0 0 0 0 0 0 0 1}
+set ctr 0
+foreach v1 $values r1 $results {
+    foreach v2 $values r2 $results {
+	test expr-61.[incr ctr] "float classification: isunordered($v1,$v2)" {
+	    expr {isunordered($v1, $v2)}
+	} [expr {$r1 || $r2}]
+    }
+}
+unset -nocomplain values results ctr
+
+# cleanup
+unset -nocomplain a
+unset -nocomplain min
+unset -nocomplain max
 ::tcltest::cleanupTests
 return
 

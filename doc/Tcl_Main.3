@@ -189,6 +189,8 @@ procedure (if any) returns.  In non-interactive mode, after
 \fBTcl_Main\fR evaluates the startup script, and the main loop
 procedure (if any) returns, \fBTcl_Main\fR will also evaluate
 the \fBexit\fR command.
+.PP
+This function can not be used in stub-enabled extensions.
 .SH "SEE ALSO"
 tclsh(1), Tcl_GetStdChannel(3), Tcl_StandardChannels(3), Tcl_AppInit(3),
 exit(n), encoding(n)

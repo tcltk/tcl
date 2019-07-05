@@ -6,7 +6,10 @@
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2004 by Kevin B. Kenny.
+# Copyright (c) 2018 by Sean Woods
+#
+# All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -77,42 +80,6 @@ namespace eval tcl {
 
 namespace eval tcl::Pkg {}
 
-# Windows specific end of initialization
-
-if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
-    namespace eval tcl {
-	proc EnvTraceProc {lo n1 n2 op} {
-	    global env
-	    set x $env($n2)
-	    set env($lo) $x
-	    set env([string toupper $lo]) $x
-	}
-	proc InitWinEnv {} {
-	    global env tcl_platform
-	    foreach p [array names env] {
-		set u [string toupper $p]
-		if {$u ne $p} {
-		    switch -- $u {
-			COMSPEC -
-			PATH {
-			    set temp $env($p)
-			    unset env($p)
-			    set env($u) $temp
-			    trace add variable env($p) write \
-				    [namespace code [list EnvTraceProc $p]]
-			    trace add variable env($u) write \
-				    [namespace code [list EnvTraceProc $p]]
-			}
-		    }
-		}
-	    }
-	    if {![info exists env(COMSPEC)]} {
-		set env(COMSPEC) cmd.exe
-	    }
-	}
-	InitWinEnv
-    }
-}
 
 # Setup the unknown package handler
 

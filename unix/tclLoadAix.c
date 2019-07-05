@@ -134,7 +134,7 @@ dlopen(
 	return NULL;
     }
 
-    mp->name = malloc((unsigned) (strlen(path) + 1));
+    mp->name = malloc(strlen(path) + 1);
     strcpy(mp->name, path);
 
     /*
@@ -541,7 +541,7 @@ readExports(
 	    tmpsym[SYMNMLEN] = '\0';
 	    symname = tmpsym;
 	}
-	ep->name = malloc((unsigned) (strlen(symname) + 1));
+	ep->name = malloc(strlen(symname) + 1);
 	strcpy(ep->name, symname);
 	ep->addr = (void *)((unsigned long)
 		mp->entry + ls->l_value - shdata.s_vaddr);

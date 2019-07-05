@@ -15,13 +15,7 @@
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
-    namespace import -force ::tcltest::*
 }
-
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -35,15 +29,19 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    catch {
+	::tcltest::loadTestedCommands
+	package require -exact Tcltest [info patchlevel]
+	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+    }
+    package require tcltests
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
-testConstraint exec             [llength [info commands exec]]
 testConstraint openpipe         1
-testConstraint fileevent        [llength [info commands fileevent]]
-testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testobj		[llength [info commands testobj]]
 
 # You need a *very* special environment to do some tests.  In
@@ -920,7 +918,7 @@ test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio test
 
     set f [open "|[list [interpreter] $path(cat)]" w+]
     fconfigure $f -translation {auto lf} -buffering none
-    fconfigure $f -encoding unicode
+    fconfigure $f -encoding utf-16
     puts -nonewline $f "bbbbbbbbbbbbbbb\n123456789abcdef\r"
     fconfigure $f -buffersize 16
     gets $f
@@ -1164,7 +1162,7 @@ test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio testcha
 	variable x
 	lappend x [gets $f line] $line [testchannel inputbuffered $f]
     }
-    fconfigure $f -encoding unicode -buffersize 16 -blocking 0
+    fconfigure $f -encoding utf-16 -buffersize 16 -blocking 0
     vwait [namespace which -variable x]
     fconfigure $f -translation auto -encoding ascii -blocking 1
     # here
@@ -5965,6 +5963,69 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
 } {initial foo eof}
 
 close $f
+
+test chan-io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
+} -constraints {stdio unixExecs fileevent openpipe} -body {
+
+    namespace eval refchan {
+	namespace ensemble create
+	namespace export *
+
+
+	proc finalize {chan args} {
+	    namespace delete c_$chan
+	}
+
+	proc initialize {chan args} {
+	    namespace eval c_$chan {}
+	    namespace upvar c_$chan watching watching
+	    set watching {}
+	    list finalize initialize seek watch write
+	}
+
+
+	proc watch {chan args} {
+	    namespace upvar c_$chan watching watching
+	    foreach arg $args {
+		switch $arg {
+		    write {
+			if {$arg ni $watching} {
+			    lappend watching $arg
+			}
+			chan postevent $chan $arg
+		    }
+		}
+	    }
+	}
+
+
+	proc write {chan args} {
+	    chan postevent $chan write
+	    return 1
+	}
+    }
+    set f [chan create w [namespace which refchan]]
+    chan configure $f -blocking 0
+    set data "some data"
+    set x 0
+    chan event $f writable [namespace code {
+	puts $f $data
+	incr count [string length $data]
+	if {$count > 262144} {
+	    chan event $f writable {}
+	    set x done
+	}
+    }]
+    after 10000 [namespace code {
+	set x timeout
+    }]
+    vwait [namespace which -variable x]
+    return $x
+} -cleanup {
+    catch {chan close $f}
+} -result done
+
+
 makeFile "foo bar" foo
 
 test io-45.1 {DeleteFileEvent, cleanup on close} {fileevent} {
@@ -8275,6 +8336,7 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring}
     # This test will hang in older revisions of the core.
 
     set out [open $path(script) w]
+    puts $out "catch {load $::tcltestlib Tcltest}"
     puts $out {
 	puts [testbytestring \xe2]
 	exit 1
