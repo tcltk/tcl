@@ -4,9 +4,19 @@ This is the git repository for [LibTomMath](http://www.libtom.net/LibTomMath/), 
 
 ## Build Status
 
+### Travis CI
+
 master: [![Build Status](https://api.travis-ci.org/libtom/libtommath.png?branch=master)](https://travis-ci.org/libtom/libtommath)
 
 develop: [![Build Status](https://api.travis-ci.org/libtom/libtommath.png?branch=develop)](https://travis-ci.org/libtom/libtommath)
+
+### AppVeyor
+
+master: [![Build status](https://ci.appveyor.com/api/projects/status/b80lpolw3i8m6hsh/branch/master?svg=true)](https://ci.appveyor.com/project/libtom/libtommath/branch/master)
+
+develop: [![Build status](https://ci.appveyor.com/api/projects/status/b80lpolw3i8m6hsh/branch/develop?svg=true)](https://ci.appveyor.com/project/libtom/libtommath/branch/develop)
+
+### ABI Laboratory
 
 API/ABI changes: [check here](https://abi-laboratory.pro/tracker/timeline/libtommath/)
 
