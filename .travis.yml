@@ -139,7 +139,7 @@ matrix:
         - CFGOPT="--host=i686-w64-mingw32 --enable-threads"
       script:
         - make all tcltest
-        - echo "SKIPPED TEST: CROSS COMPILING"
+        - 'echo SKIPPED TEST: CROSS COMPILING'
     - name: "Linux-cross-Windows-32/GCC/Static/no test"
       os: linux
       dist: xenial
@@ -158,7 +158,7 @@ matrix:
         - CFGOPT="--host=i686-w64-mingw32 --disable-shared --enable-threads"
       script:
         - make all tcltest
-        - echo "SKIPPED TEST: CROSS COMPILING"
+        - 'echo SKIPPED TEST: CROSS COMPILING'
 # Test with mingw-w64 (64 bit)
     - name: "Linux-cross-Windows-64/GCC/Shared/no test"
       os: linux
@@ -177,7 +177,7 @@ matrix:
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads"
       script:
         - make all tcltest
-        - echo "SKIPPED TEST: CROSS COMPILING"
+        - 'echo SKIPPED TEST: CROSS COMPILING'
     - name: "Linux-cross-Windows-64/GCC/Static/no test"
       os: linux
       dist: xenial
@@ -195,36 +195,45 @@ matrix:
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --disable-shared"
       script:
         - make all tcltest
-        - echo "SKIPPED TEST: CROSS COMPILING"
+        - 'echo SKIPPED TEST: CROSS COMPILING'
     - name: "Windows/GCC/Shared"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
     - name: "Windows/GCC/Unshared"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads --disable-shared"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
     - name: "Windows/MSVC/Shared"
       os: windows
-      compiler: msvc
+      compiler: cl
       env:
         - BUILD_DIR=win
+      before_install:
+        - PATH=$PATH:"/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - cd ${BUILD_DIR}
       install:
         - echo skipping configure
       script:
-        # This is very ugly!
-        - cmd.exe /C '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64 && nmake -f makefile.vc all tcltest'
-        - cmd.exe /C '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64 && nmake -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
 
 before_install:
-  - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
   - ./configure ${CFGOPT}
+before_script:
+  - export ERROR_ON_FAILURES=1
 script:
   - make all
   - make tcltest
