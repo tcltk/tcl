@@ -201,9 +201,11 @@ MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, pr
 MP_PRIVATE void s_mp_reverse(unsigned char *s, int len);
 MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
+#if 0
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
 MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
+#endif
 
 extern MP_PRIVATE const char *const mp_s_rmap;
 extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
@@ -264,7 +266,7 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
         return MP_OKAY;                                  \
     }
 
-#define MP_GET_MAG(type, name)                                                         \
+#define MP_GET_MAG(name, type)                                                         \
     type name(const mp_int* a)                                                         \
     {                                                                                  \
         unsigned i = MP_MIN((unsigned)a->used, (unsigned)((MP_SIZEOF_BITS(type) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT)); \
@@ -277,10 +279,10 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
         return res;                                                                    \
     }
 
-#define MP_GET_SIGNED(type, name, mag)                        \
+#define MP_GET_SIGNED(name, mag, type, utype)                 \
     type name(const mp_int* a)                                \
     {                                                         \
-        uint64_t res = mag(a);                                \
+        utype res = mag(a);                                   \
         return (a->sign == MP_NEG) ? (type)-res : (type)res;  \
     }
 
