@@ -517,7 +517,7 @@ Tcl_UtfToWChar(
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
-	    WCHAR high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
+	    unsigned short high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high >= 0x400) {
 		/* out of range, < 0x10000 or > 0x10ffff */
