@@ -327,9 +327,9 @@ Tcl_Stat(
 	oldStyleBuf->st_uid	= buf.st_uid;
 	oldStyleBuf->st_gid	= buf.st_gid;
 	oldStyleBuf->st_size	= (off_t) buf.st_size;
-	oldStyleBuf->st_atime	= buf.st_atime;
-	oldStyleBuf->st_mtime	= buf.st_mtime;
-	oldStyleBuf->st_ctime	= buf.st_ctime;
+	oldStyleBuf->st_atime	= Tcl_GetAccessTimeFromStat(&buf);
+	oldStyleBuf->st_mtime	= Tcl_GetModificationTimeFromStat(&buf);
+	oldStyleBuf->st_ctime	= Tcl_GetChangeTimeFromStat(&buf);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	oldStyleBuf->st_blksize	= buf.st_blksize;
 #endif
@@ -4422,8 +4422,8 @@ TclCrossFilesystemCopy(
      */
 
     if (Tcl_FSLstat(source, &sourceStatBuf) == 0) {
-	tval.actime = sourceStatBuf.st_atime;
-	tval.modtime = sourceStatBuf.st_mtime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&sourceStatBuf);
+	tval.modtime = Tcl_GetModificationTimeFromStat(&sourceStatBuf);
 	Tcl_FSUtime(target, &tval);
     }
 

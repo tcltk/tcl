@@ -248,7 +248,7 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-#if (TCL_UTF_MAX <= 4) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #undef Tcl_WinUtfToTChar
 char *
 Tcl_WinUtfToTChar(
@@ -480,7 +480,7 @@ tellOld(
 }
 #endif /* !TCL_NO_DEPRECATED */
 
-#if (TCL_UTF_MAX > 4) || defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #define Tcl_WinUtfToTChar 0
 #define Tcl_WinTCharToUtf 0
 #endif
