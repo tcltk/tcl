@@ -3930,45 +3930,6 @@ done
 
 
 #------------------------------------------------------------------------
-# If we're using GCC, see if the compiler understands -fshort-wchar.  If so, use it.
-# It makes sure you can use the wchar_t type interchangable with Tcl_UniChar
-#------------------------------------------------------------------------
-
-if test -z "$no_short_wchar" && test -n "$GCC"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the compiler understands -fshort-wchar" >&5
-$as_echo_n "checking if the compiler understands -fshort-wchar... " >&6; }
-if ${tcl_cv_cc_short_wchar+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fshort-wchar"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_cc_short_wchar=yes
-else
-  tcl_cv_cc_short_wchar=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	CFLAGS=$hold_cflags
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_short_wchar" >&5
-$as_echo "$tcl_cv_cc_short_wchar" >&6; }
-    if test $tcl_cv_cc_short_wchar = yes; then
-	CFLAGS="$CFLAGS -fshort-wchar"
-    fi
-fi
-
-#------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.
 # It makes compiling go faster.  (This is only a performance feature.)
 #------------------------------------------------------------------------
