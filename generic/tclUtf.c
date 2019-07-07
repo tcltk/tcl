@@ -260,6 +260,7 @@ Tcl_UniCharToUtfDString(
     return string;
 }
 
+#undef Tcl_WCharToUtfDString
 char *
 Tcl_WCharToUtfDString(
     const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
@@ -608,6 +609,7 @@ Tcl_UtfToUniCharDString(
     return wString;
 }
 
+#undef Tcl_UtfToWCharDString
 unsigned short *
 Tcl_UtfToWCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
