@@ -414,14 +414,19 @@ Tcl_CreateInterp(void)
     }
 
 #if defined(_WIN32) && !defined(_WIN64)
-    if (sizeof(time_t) != 4) {
+    if (sizeof(time_t) == 4 || sizeof(time_t) == 8) {
+	Tcl_StatBuf buf;
+	if (
+	    sizeof(buf.st_atime) != sizeof(time_t) ||
+	    sizeof(buf.st_mtime) != sizeof(time_t) ||
+	    sizeof(buf.st_ctime) != sizeof(time_t)
+	) {
+	    /*NOTREACHED*/
+	    Tcl_Panic("<sys/stat.h> is not compatible with MSVC");
+	}
+    } else {
 	/*NOTREACHED*/
 	Tcl_Panic("<time.h> is not compatible with MSVC");
-    }
-    if ((TclOffset(Tcl_StatBuf,st_atime) != 32)
-	    || (TclOffset(Tcl_StatBuf,st_ctime) != 40)) {
-	/*NOTREACHED*/
-	Tcl_Panic("<sys/stat.h> is not compatible with MSVC");
     }
 #endif
 
