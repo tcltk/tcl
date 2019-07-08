@@ -870,25 +870,11 @@ Tcl_FileObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objc == 4) {
-	    /*
-	     * Need separate variable for reading longs from an object on
-	     * 64-bit platforms. [Bug #698146]
-	     */
+	    Tcl_WideInt newTime;
 
-	    time_t newTime;
-
-	    if ((time_t)WIDE_MAX < WIDE_MAX) {
-		long i;
-		if (TclGetLongFromObj(interp, objv[3], &i) != TCL_OK) {
-		   return TCL_ERROR;
-		}
-		newTime = i;
-	    } else {
-		Tcl_WideInt i;
-		if (Tcl_GetWideIntFromObj(interp, objv[3], &i) != TCL_OK) {
-		   return TCL_ERROR;
-		}
-		newTime = i;
+	    
+	    if (Tcl_GetWideIntFromObj(interp, objv[3], &newTime) != TCL_OK) {
+		    return TCL_ERROR;
 	    }
 
 	    if (index == FCMD_ATIME) {
