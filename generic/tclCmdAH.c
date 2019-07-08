@@ -875,10 +875,20 @@ Tcl_FileObjCmd(
 	     * 64-bit platforms. [Bug #698146]
 	     */
 
-	    long newTime;
+	    time_t newTime;
 
-	    if (TclGetLongFromObj(interp, objv[3], &newTime) != TCL_OK) {
-		return TCL_ERROR;
+	    if ((time_t)WIDE_MAX < WIDE_MAX) {
+		long i;
+		if (TclGetLongFromObj(interp, objv[3], &i) != TCL_OK) {
+		   return TCL_ERROR;
+		}
+		newTime = i;
+	    } else {
+		Tcl_WideInt i;
+		if (Tcl_GetWideIntFromObj(interp, objv[3], &i) != TCL_OK) {
+		   return TCL_ERROR;
+		}
+		newTime = i;
 	    }
 
 	    if (index == FCMD_ATIME) {
