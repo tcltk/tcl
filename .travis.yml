@@ -93,7 +93,6 @@ matrix:
       install: []
       script: &mactest
         - make all
-        - make tcltest
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
     - name: "macOS/Xcode 9/Shared/Mac-like"
@@ -132,7 +131,8 @@ matrix:
         - make all
         - make tcltest
         # Include a high visibility marker that tests are skipped outright
-        - echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
+        - >
+          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
     - name: "Linux-cross-Windows-32/GCC/Static/no test"
       os: linux
       dist: xenial
