@@ -85,6 +85,10 @@ testConstraint hasLinks [expr {![catch {
     cd ..
 }]}]
 
+testConstraint haveDdeDll [llength \
+	[glob -nocomplain -directory [file dirname [info nameof]] \
+		*dde*[info sharedlib]]]
+
 if {[testConstraint testsetplatform]} {
     set platform [testgetplatform]
 }
@@ -357,7 +361,7 @@ test filesystem-1.39 {file normalisation with volume relative} {win} {
 test filesystem-1.40 {file normalisation with repeated separators} {
     set a [file norm foo////bar]
     set b [file norm foo/bar]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -367,7 +371,7 @@ test filesystem-1.40 {file normalisation with repeated separators} {
 test filesystem-1.41 {file normalisation with repeated separators} {win} {
     set a [file norm foo\\\\\\bar]
     set b [file norm foo/bar]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -377,7 +381,7 @@ test filesystem-1.41 {file normalisation with repeated separators} {win} {
 test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/..]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -387,7 +391,7 @@ test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/../]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -397,7 +401,7 @@ test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/foo/../..]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -407,7 +411,7 @@ test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/foo/../../]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -417,7 +421,7 @@ test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/foo/../../bar]
     set b [file norm /bar]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -427,7 +431,7 @@ test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/../../bar]
     set b [file norm /bar]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -437,7 +441,7 @@ test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /xxx/../bar]
     set b [file norm /bar]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -447,7 +451,7 @@ test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.47 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /..]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -457,7 +461,7 @@ test filesystem-1.47 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.48 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /../]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -467,7 +471,7 @@ test filesystem-1.48 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.49 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /.]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -477,7 +481,7 @@ test filesystem-1.49 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.50 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /./]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -487,7 +491,7 @@ test filesystem-1.50 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /../..]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -497,7 +501,7 @@ test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
 test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
     set a [file norm /../../]
     set b [file norm /]
-    
+
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
     } else {
@@ -749,7 +753,7 @@ if {[testConstraint testfilesystem]} {
     while {![catch {testfilesystem 0}]} {}
 }
 
-test filesystem-7.1 {load from vfs} {win testsimplefilesystem} {
+test filesystem-7.1 {load from vfs} {win testsimplefilesystem haveDdeDll} {
     # This may cause a crash on exit
     set dir [pwd]
     cd [file dirname [info nameof]]
@@ -975,7 +979,7 @@ test filesystem-8.1 {relative path objects and caching of pwd} {
     lappend res [file exists $f]
     cd ..
     cd def
-    # If we haven't cleared the object's cwd cache, Tcl 
+    # If we haven't cleared the object's cwd cache, Tcl
     # will think it still exists.
     lappend res [file exists $f]
     lappend res [file exists $f]
@@ -1079,7 +1083,7 @@ test filesystem-9.5 {path objects and file tail and object rep} {
 	set absolute [file join [pwd] $relative]
 	set res [list [file tail $absolute] "test"]
     }
-    file delete -force dgp 
+    file delete -force dgp
     cd $origdir
     set res
 } {test test}
