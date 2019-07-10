@@ -15,10 +15,12 @@
 #define _TCLWINPORT
 
 #if !defined(_WIN64) && !defined(_USE_32BIT_TIME_T) && !defined(__MINGW_USE_VC2005_COMPAT)
-#   if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-#	define __MINGW_USE_VC2005_COMPAT
-	/* define _USE_64BIT_TIME_T to force 64-bit time_t */
-#   elif !defined(_USE_64BIT_TIME_T)
+    /* define _USE_64BIT_TIME_T (or make/configure option time64bit) to force 64-bit time_t */
+#   if defined(_USE_64BIT_TIME_T)
+#	if defined(__MINGW32__)
+#	    define __MINGW_USE_VC2005_COMPAT
+#	endif
+#   else
 	/* See [Bug 3354324]: file mtime sets wrong time */
 #	define _USE_32BIT_TIME_T
 #   endif
