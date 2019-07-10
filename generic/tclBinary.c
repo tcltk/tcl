@@ -411,7 +411,7 @@ Tcl_SetByteArrayObj(
     if (length < 0) {
 	length = 0;
     }
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
@@ -520,7 +520,7 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(irPtr);
     if (newLength > byteArrayPtr->allocated) {
-	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
+	byteArrayPtr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
 	byteArrayPtr->allocated = newLength;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -569,7 +569,7 @@ SetByteArrayFromAny(
     length = objPtr->length;
     srcEnd = src + length;
 
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
@@ -645,7 +645,7 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &tclByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -666,7 +666,7 @@ DupProperByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &properByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -809,7 +809,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = 2 * needed;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -821,7 +821,7 @@ TclAppendBytesToByteArray(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -829,7 +829,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = needed;
-	    ptr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
@@ -1946,8 +1946,8 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	switch (length) {
 	case 4:
@@ -1970,8 +1970,8 @@ CopyNumber(
 	break;
     }
     case 2: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[4];
 	toPtr[1] = fromPtr[5];
@@ -1984,8 +1984,8 @@ CopyNumber(
 	break;
     }
     case 3: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[3];
 	toPtr[1] = fromPtr[2];
@@ -2294,7 +2294,7 @@ ScanNumber(
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
 	    if (!isNew) {
-		return Tcl_GetHashValue(hPtr);
+		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		register Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
@@ -2416,7 +2416,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	register Tcl_Obj *value = Tcl_GetHashValue(hEntry);
+	Tcl_Obj *value = (Tcl_Obj *)Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);

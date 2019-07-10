@@ -327,9 +327,9 @@ Tcl_Stat(
 	oldStyleBuf->st_uid	= buf.st_uid;
 	oldStyleBuf->st_gid	= buf.st_gid;
 	oldStyleBuf->st_size	= (off_t) buf.st_size;
-	oldStyleBuf->st_atime	= buf.st_atime;
-	oldStyleBuf->st_mtime	= buf.st_mtime;
-	oldStyleBuf->st_ctime	= buf.st_ctime;
+	oldStyleBuf->st_atime	= Tcl_GetAccessTimeFromStat(&buf);
+	oldStyleBuf->st_mtime	= Tcl_GetModificationTimeFromStat(&buf);
+	oldStyleBuf->st_ctime	= Tcl_GetChangeTimeFromStat(&buf);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	oldStyleBuf->st_blksize	= buf.st_blksize;
 #endif
@@ -434,7 +434,7 @@ static void
 FsThrExitProc(
     ClientData cd)
 {
-    ThreadSpecificData *tsdPtr = cd;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
 
     /*
@@ -596,7 +596,7 @@ FsRecacheFilesystemList(void)
     list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = ckalloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -872,7 +872,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = ckalloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -1994,9 +1994,9 @@ EvalFileCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *oldScriptFile = data[0];
-    Tcl_Obj *pathPtr = data[1];
-    Tcl_Obj *objPtr = data[2];
+    Tcl_Obj *oldScriptFile = (Tcl_Obj *)data[0];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *objPtr = (Tcl_Obj *)data[2];
 
     /*
      * Now we have to be careful; the script may have changed the
@@ -3466,7 +3466,7 @@ Tcl_LoadFile(
      * unload and cleanup the temporary file correctly.
      */
 
-    tvdlPtr = ckalloc(sizeof(FsDivertLoad));
+    tvdlPtr = (FsDivertLoad *)ckalloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information. This allows us to cleanup the
@@ -3512,7 +3512,7 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    divertedLoadHandle = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -4422,8 +4422,8 @@ TclCrossFilesystemCopy(
      */
 
     if (Tcl_FSLstat(source, &sourceStatBuf) == 0) {
-	tval.actime = sourceStatBuf.st_atime;
-	tval.modtime = sourceStatBuf.st_mtime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&sourceStatBuf);
+	tval.modtime = Tcl_GetModificationTimeFromStat(&sourceStatBuf);
 	Tcl_FSUtime(target, &tval);
     }
 

@@ -1230,13 +1230,13 @@ TcpAcceptCallbacksDeleteProc(
 				 * was registered. */
     Tcl_Interp *interp)		/* Interpreter being deleted - not used. */
 {
-    Tcl_HashTable *hTblPtr = clientData;
+    Tcl_HashTable *hTblPtr = (Tcl_HashTable *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	AcceptCallback *acceptCallbackPtr = Tcl_GetHashValue(hPtr);
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)Tcl_GetHashValue(hPtr);
 
 	acceptCallbackPtr->interp = NULL;
     }
@@ -1278,10 +1278,10 @@ RegisterTcpServerInterpCleanup(
     Tcl_HashEntry *hPtr;	/* Entry for this record. */
     int isNew;			/* Is the entry new? */
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
 
     if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
@@ -1324,7 +1324,7 @@ UnregisterTcpServerInterpCleanupProc(
     Tcl_HashTable *hTblPtr;
     Tcl_HashEntry *hPtr;
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
     if (hTblPtr == NULL) {
 	return;
     }
@@ -1362,7 +1362,7 @@ AcceptCallbackProc(
     char *address,		/* Address of client that was accepted. */
     int port)			/* Port of client that was accepted. */
 {
-    AcceptCallback *acceptCallbackPtr = callbackData;
+    AcceptCallback *acceptCallbackPtr = (AcceptCallback *)callbackData;
 
     /*
      * Check if the callback is still valid; the interpreter may have gone
@@ -1448,7 +1448,7 @@ TcpServerCloseProc(
     ClientData callbackData)	/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
-    AcceptCallback *acceptCallbackPtr = callbackData;
+    AcceptCallback *acceptCallbackPtr = (AcceptCallback *)callbackData;
 				/* The actual data. */
 
     if (acceptCallbackPtr->interp != NULL) {
@@ -1652,7 +1652,7 @@ Tcl_SocketObjCmd(
     port = TclGetString(objv[a]);
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr = ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)ckalloc(sizeof(AcceptCallback));
 
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;

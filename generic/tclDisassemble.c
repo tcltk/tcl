@@ -1577,7 +1577,7 @@ Tcl_DisassembleObjCmd(
 		    TclGetString(objv[3]), NULL);
 	    return TCL_ERROR;
 	}
-	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of method", -1));

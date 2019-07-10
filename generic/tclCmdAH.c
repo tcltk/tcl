@@ -350,8 +350,8 @@ CatchObjCmdCallback(
 {
     Interp *iPtr = (Interp *) interp;
     int objc = PTR2INT(data[0]);
-    Tcl_Obj *varNamePtr = data[1];
-    Tcl_Obj *optionVarNamePtr = data[2];
+    Tcl_Obj *varNamePtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *optionVarNamePtr = (Tcl_Obj *)data[2];
     int rewind = iPtr->execEnvPtr->rewind;
 
     /*
@@ -1017,8 +1017,8 @@ ExprCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultPtr = data[0];
-    Tcl_Obj *objPtr = data[1];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[0];
+    Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
 
     if (objPtr != NULL) {
 	Tcl_DecrRefCount(objPtr);
@@ -1139,7 +1139,7 @@ FileAttrAccessTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the access time not available */
-    if (buf.st_atime == 0) {
+    if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get access time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1160,7 +1160,7 @@ FileAttrAccessTimeCmd(
 	}
 
 	tval.actime = newTime;
-	tval.modtime = buf.st_mtime;
+	tval.modtime = Tcl_GetModificationTimeFromStat(&buf);
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1180,7 +1180,7 @@ FileAttrAccessTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_atime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -1221,7 +1221,7 @@ FileAttrModifyTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the modification time not available */
-    if (buf.st_mtime == 0) {
+    if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get modification time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1240,7 +1240,7 @@ FileAttrModifyTimeCmd(
 	    return TCL_ERROR;
 	}
 
-	tval.actime = buf.st_atime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&buf);
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
@@ -1260,7 +1260,7 @@ FileAttrModifyTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_mtime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -2291,9 +2291,9 @@ StoreStatData(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-    STORE_ARY("atime",	Tcl_NewWideIntObj((long)statPtr->st_atime));
-    STORE_ARY("mtime",	Tcl_NewWideIntObj((long)statPtr->st_mtime));
-    STORE_ARY("ctime",	Tcl_NewWideIntObj((long)statPtr->st_ctime));
+    STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
@@ -2433,7 +2433,7 @@ ForSetupCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
+    ForIterData *iterPtr = (ForIterData *)data[0];
 
     if (result != TCL_OK) {
 	if (result == TCL_ERROR) {
@@ -2452,7 +2452,7 @@ TclNRForIterCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
+    ForIterData *iterPtr = (ForIterData *)data[0];
     Tcl_Obj *boolObj;
 
     switch (result) {
@@ -2488,8 +2488,8 @@ ForCondCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *boolObj = data[1];
+    ForIterData *iterPtr = (ForIterData *)data[0];
+    Tcl_Obj *boolObj = (Tcl_Obj *)data[1];
     int value;
 
     if (result != TCL_OK) {
@@ -2526,7 +2526,7 @@ ForNextCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    ForIterData *iterPtr = data[0];
+    ForIterData *iterPtr = (ForIterData *)data[0];
     Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
@@ -2550,7 +2550,7 @@ ForPostNextCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
+    ForIterData *iterPtr = (ForIterData *)data[0];
 
     if ((result != TCL_BREAK) && (result != TCL_OK)) {
 	if (result == TCL_ERROR) {
@@ -2631,7 +2631,7 @@ EachloopCmd(
     Tcl_Obj *const objv[])
 {
     int numLists = (objc-2) / 2;
-    register struct ForeachState *statePtr;
+    struct ForeachState *statePtr;
     int i, j, result;
 
     if (objc < 4 || (objc%2 != 0)) {
@@ -2655,7 +2655,7 @@ EachloopCmd(
      * allocation for better performance.
      */
 
-    statePtr = TclStackAlloc(interp,
+    statePtr = (struct ForeachState *)TclStackAlloc(interp,
 	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     memset(statePtr, 0,
@@ -2756,7 +2756,7 @@ ForeachLoopStep(
     Tcl_Interp *interp,
     int result)
 {
-    register struct ForeachState *statePtr = data[0];
+    struct ForeachState *statePtr = (struct ForeachState *)data[0];
 
     /*
      * Process the result code from this run of the [foreach] body. Note that

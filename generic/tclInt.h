@@ -4541,7 +4541,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
 	} else {							\
-	    (bignum).dp = bignumObj->internalRep.twoPtrValue.ptr1;	\
+	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
 	    (bignum).sign = bignumPayload >> 30;			\
 	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
 	    (bignum).used = bignumPayload & 0x7fff;			\
@@ -4982,7 +4982,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (_objPtr));			\
-	memPtr = (ClientData) (_objPtr);					\
+	*(void **)&memPtr = (void *) (_objPtr);					\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
@@ -4997,7 +4997,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	memPtr = (ClientData) _objPtr;					\
+	*(void **)memPtr = (void *) _objPtr;					\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \

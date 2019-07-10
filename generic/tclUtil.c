@@ -876,7 +876,7 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
-    argv = ckalloc((size * sizeof(char *)) + length + 1);
+    argv = (const char **)ckalloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -1581,7 +1581,7 @@ Tcl_Merge(
      */
 
     if (argc == 0) {
-	result = ckalloc(1);
+	result = (char *)ckalloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -1593,7 +1593,7 @@ Tcl_Merge(
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = ckalloc(argc);
+	flagPtr = (char *)ckalloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1611,7 +1611,7 @@ Tcl_Merge(
      * Pass two: copy into the result area.
      */
 
-    result = ckalloc(bytesNeeded);
+    result = (char *)ckalloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -2016,7 +2016,7 @@ Tcl_Concat(
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = ckalloc(bytesNeeded + argc);
+    result = (char *)ckalloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	int triml, trimr, elemLength;
@@ -2751,7 +2751,7 @@ Tcl_DStringAppend(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = (char *)ckalloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2764,7 +2764,7 @@ Tcl_DStringAppend(
 		offset = bytes - dsPtr->string;
 	    }
 
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)ckrealloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		bytes = dsPtr->string + offset;
@@ -2854,7 +2854,7 @@ Tcl_DStringAppendElement(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = (char *)ckalloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2867,7 +2867,7 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)ckrealloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
@@ -2948,12 +2948,12 @@ Tcl_DStringSetLength(
 	    dsPtr->spaceAvl = length + 1;
 	}
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = ckalloc(dsPtr->spaceAvl);
+	    char *newString = (char *)ckalloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)ckrealloc(dsPtr->string, dsPtr->spaceAvl);
 	}
     }
     dsPtr->length = length;
@@ -3105,7 +3105,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = iPtr->result;
 	    dsPtr->spaceAvl = dsPtr->length+1;
 	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
+	    dsPtr->string = (char *)ckalloc(dsPtr->length+1);
 	    memcpy(dsPtr->string, iPtr->result, dsPtr->length+1);
 	    iPtr->freeProc(iPtr->result);
 	}
@@ -3116,7 +3116,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = dsPtr->staticSpace;
 	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
 	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
+	    dsPtr->string = (char *)ckalloc(dsPtr->length+1);
 	    dsPtr->spaceAvl = dsPtr->length + 1;
 	}
 	memcpy(dsPtr->string, iPtr->result, dsPtr->length+1);
@@ -3275,7 +3275,7 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
+    int *precisionPtr = (int *)Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * Handle NaN.
@@ -3449,7 +3449,7 @@ TclPrecTraceProc(
 {
     Tcl_Obj *value;
     Tcl_WideInt prec;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
+    int *precisionPtr = (int *)Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * If the variable is unset, then recreate the trace.
@@ -4254,7 +4254,7 @@ ClearHash(
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *objPtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	Tcl_DecrRefCount(objPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -4284,10 +4284,10 @@ GetThreadHash(
     Tcl_ThreadDataKey *keyPtr)
 {
     Tcl_HashTable **tablePtrPtr =
-	    Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
+	    (Tcl_HashTable **)Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
 
     if (NULL == *tablePtrPtr) {
-	*tablePtrPtr = ckalloc(sizeof(Tcl_HashTable));
+	*tablePtrPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_CreateThreadExitHandler(FreeThreadHash, *tablePtrPtr);
 	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
     }
@@ -4312,7 +4312,7 @@ static void
 FreeThreadHash(
     ClientData clientData)
 {
-    Tcl_HashTable *tablePtr = clientData;
+    Tcl_HashTable *tablePtr = (Tcl_HashTable *)clientData;
 
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
@@ -4334,7 +4334,7 @@ static void
 FreeProcessGlobalValue(
     ClientData clientData)
 {
-    ProcessGlobalValue *pgvPtr = clientData;
+    ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *)clientData;
 
     pgvPtr->epoch++;
     pgvPtr->numBytes = 0;
@@ -4383,7 +4383,7 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
-    pgvPtr->value = ckalloc(pgvPtr->numBytes + 1);
+    pgvPtr->value = (char *)ckalloc(pgvPtr->numBytes + 1);
     memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -4447,7 +4447,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    ckfree(pgvPtr->value);
-	    pgvPtr->value = ckalloc(Tcl_DStringLength(&newValue) + 1);
+	    pgvPtr->value = (char *)ckalloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
@@ -4497,7 +4497,7 @@ TclGetProcessGlobalValue(
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
     }
-    return Tcl_GetHashValue(hPtr);
+    return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 }
 
 /*

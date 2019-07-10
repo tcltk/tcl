@@ -219,7 +219,7 @@ Tcl_FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const void *key)		/* Key to use to find matching entry. */
 {
-    return (*((tablePtr)->findProc))(tablePtr, key);
+    return (*((tablePtr)->findProc))(tablePtr, (const char *)key);
 }
 
 static Tcl_HashEntry *
@@ -260,7 +260,7 @@ Tcl_CreateHashEntry(
     int *newPtr)		/* Store info here telling whether a new entry
 				 * was created. */
 {
-    return (*((tablePtr)->createProc))(tablePtr, key, newPtr);
+    return (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
 }
 
 static Tcl_HashEntry *
@@ -348,7 +348,7 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = ckalloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *)ckalloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	hPtr->clientData = 0;
     }
@@ -648,7 +648,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = ckalloc((NUM_COUNTERS * 60) + 300);
+    result = (char *)ckalloc((NUM_COUNTERS * 60) + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
@@ -697,7 +697,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = ckalloc(size);
+    hPtr = (Tcl_HashEntry *)ckalloc(size);
 
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -809,7 +809,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = ckalloc(offsetof(Tcl_HashEntry, key) + allocsize);
+    hPtr = (Tcl_HashEntry *)ckalloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memset(hPtr, 0, sizeof(Tcl_HashEntry) + allocsize - sizeof(hPtr->key));
     memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
@@ -866,9 +866,9 @@ HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    register const char *string = keyPtr;
-    register unsigned int result;
-    register char c;
+    const char *string = (const char *)keyPtr;
+    unsigned int result;
+    char c;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -1023,7 +1023,7 @@ RebuildTable(
 		tablePtr->numBuckets * sizeof(Tcl_HashEntry *), 0);
     } else {
 	tablePtr->buckets =
-		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+		(Tcl_HashEntry **)ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {

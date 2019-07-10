@@ -2142,7 +2142,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = ckalloc(maxNumCL * sizeof(int));
+	clPosition = (int *)ckalloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2192,7 +2192,7 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = ckrealloc(clPosition,
+			clPosition = (int *)ckrealloc(clPosition,
 				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;

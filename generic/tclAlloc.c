@@ -304,7 +304,7 @@ TclpAlloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (void *)(overPtr+1);
+	return (char *)(overPtr+1);
     }
 
     /*

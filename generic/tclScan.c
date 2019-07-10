@@ -29,15 +29,17 @@
  * character set.
  */
 
+typedef struct {
+    Tcl_UniChar start;
+    Tcl_UniChar end;
+} Range;
+
 typedef struct CharSet {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;
     int nranges;
-    struct Range {
-	Tcl_UniChar start;
-	Tcl_UniChar end;
-    } *ranges;
+    Range *ranges;
 } CharSet;
 
 /*
@@ -102,9 +104,9 @@ BuildCharSet(
 	end += TclUtfToUniChar(end, &ch);
     }
 
-    cset->chars = ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = (Tcl_UniChar *)ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = ckalloc(sizeof(struct Range) * nranges);
+	cset->ranges = (Range *)ckalloc(sizeof(Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -477,7 +479,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = TclStackRealloc(interp, nassign,
+		nassign = (int *)TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
@@ -605,7 +607,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = ckalloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}

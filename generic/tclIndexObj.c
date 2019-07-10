@@ -348,7 +348,7 @@ Tcl_GetIndexFromObjStruct(
     if (!(flags & INDEX_TEMP_TABLE)) {
     irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
-	indexRep = irPtr->twoPtrValue.ptr1;
+	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
     } else {
 	Tcl_ObjIntRep ir;
 
@@ -373,7 +373,7 @@ Tcl_GetIndexFromObjStruct(
 	int count = 0;
 
 	TclNewObj(resultPtr);
-	entryPtr = tablePtr;
+	entryPtr = (const char* const *)tablePtr;
 	while ((*entryPtr != NULL) && !**entryPtr) {
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
@@ -457,7 +457,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
     register const char *indexStr = EXPAND_OF(indexRep);
 
     Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
@@ -487,7 +487,7 @@ DupIndex(
     Tcl_Obj *dupPtr)
 {
     Tcl_ObjIntRep ir;
-    IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
+    IndexRep *dupIndexRep = (IndexRep *)ckalloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, TclFetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
 	    sizeof(IndexRep));
@@ -967,7 +967,7 @@ Tcl_WrongNumArgs(
 	    const Tcl_ObjIntRep *irPtr;
 
 	    if ((irPtr = TclFetchIntRep(origObjv[i], &indexType))) {
-		register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
+		IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
@@ -1016,7 +1016,7 @@ Tcl_WrongNumArgs(
 	const Tcl_ObjIntRep *irPtr;
 
 	if ((irPtr = TclFetchIntRep(objv[i], &indexType))) {
-	    register IndexRep *indexRep = irPtr->twoPtrValue.ptr1;
+	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
 	} else {
@@ -1135,7 +1135,7 @@ Tcl_ParseArgsObjv(
 	 */
 
 	nrem = 1;
-	leftovers = ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
+	leftovers = (Tcl_Obj **)ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
 	leftovers[0] = objv[0];
     } else {
 	nrem = 0;

@@ -287,7 +287,7 @@ TclChannelTransform(
      * regime of the underlying channel and to use the same for us too.
      */
 
-    dataPtr = ckalloc(sizeof(TransformChannelData));
+    dataPtr = (TransformChannelData *)ckalloc(sizeof(TransformChannelData));
 
     dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
@@ -503,7 +503,7 @@ TransformBlockModeProc(
     ClientData instanceData,	/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
 	dataPtr->flags |= CHANNEL_ASYNC;
@@ -535,7 +535,7 @@ TransformCloseProc(
     ClientData instanceData,
     Tcl_Interp *interp)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Important: In this procedure 'dataPtr->self' already points to the
@@ -616,7 +616,7 @@ TransformInputProc(
     int toRead,
     int *errorCodePtr)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     int gotBytes, read, copied;
     Tcl_Channel downChan;
 
@@ -783,7 +783,7 @@ TransformOutputProc(
     int toWrite,
     int *errorCodePtr)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Should assert(dataPtr->mode & TCL_WRITABLE);
@@ -835,7 +835,7 @@ TransformSeekProc(
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
     Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
@@ -902,7 +902,7 @@ TransformWideSeekProc(
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
     Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
@@ -994,7 +994,7 @@ TransformSetOptionProc(
     const char *optionName,
     const char *value)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan = Tcl_GetStackedChannel(dataPtr->self);
     Tcl_DriverSetOptionProc *setOptionProc;
 
@@ -1032,7 +1032,7 @@ TransformGetOptionProc(
     const char *optionName,
     Tcl_DString *dsPtr)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan = Tcl_GetStackedChannel(dataPtr->self);
     Tcl_DriverGetOptionProc *getOptionProc;
 
@@ -1078,7 +1078,7 @@ TransformWatchProc(
     ClientData instanceData,	/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan;
 
     /*
@@ -1157,7 +1157,7 @@ TransformGetFileHandleProc(
     int direction,		/* Direction of interest. */
     ClientData *handlePtr)	/* Place to store the handle into. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Return the handle belonging to parent channel. IOW, pass the request
@@ -1191,7 +1191,7 @@ TransformNotifyProc(
 				 * transformation. */
     int mask)			/* The mask of occuring events. */
 {
-    TransformChannelData *dataPtr = clientData;
+    TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     /*
      * An event occured in the underlying channel. This transformation doesn't
@@ -1234,7 +1234,7 @@ static void
 TransformChannelHandlerTimer(
     ClientData clientData)	/* Transformation to query. */
 {
-    TransformChannelData *dataPtr = clientData;
+    TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     dataPtr->timer = NULL;
     if (!(dataPtr->watchMask&TCL_READABLE) || ResultEmpty(&dataPtr->result)) {
@@ -1416,10 +1416,10 @@ ResultAdd(
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = ckalloc(r->allocated);
+	    r->buf = (unsigned char *)ckalloc(r->allocated);
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = ckrealloc(r->buf, r->allocated);
+	    r->buf = (unsigned char *)ckrealloc(r->buf, r->allocated);
 	}
     }
 

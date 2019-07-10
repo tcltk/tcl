@@ -144,7 +144,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
+	refArray = (Reference *)ckrealloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -226,7 +226,7 @@ Tcl_Release(
 	    if (freeProc == TCL_DYNAMIC) {
 		ckfree(clientData);
 	    } else {
-		freeProc(clientData);
+		freeProc((char *)clientData);
 	    }
 	}
 	return;
@@ -293,7 +293,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	ckfree(clientData);
     } else {
-	freeProc(clientData);
+	freeProc((char *)clientData);
     }
 }
 
@@ -327,7 +327,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = ckalloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)ckalloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG

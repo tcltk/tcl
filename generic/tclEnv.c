@@ -172,7 +172,7 @@ TclSetupEnv(
 
     for (hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr!=NULL;
 	    hPtr=Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *elemName = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *elemName = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclObjUnsetVar2(interp, varNamePtr, elemName, TCL_GLOBAL_ONLY);
     }
@@ -239,7 +239,7 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = ckalloc((length + 5) * sizeof(char *));
+	    char **newEnviron = (char **)ckalloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
@@ -283,7 +283,7 @@ TclSetEnv(
      */
 
     valueLength = strlen(value);
-    p = ckalloc(nameLength + valueLength + 2);
+    p = (char *)ckalloc(nameLength + valueLength + 2);
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
@@ -293,7 +293,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
+    p = (char *)ckrealloc(p, Tcl_DStringLength(&envString) + 1);
     memcpy(p, p2, Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
@@ -701,7 +701,7 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = ckrealloc(env.cache,
+	env.cache = (char **)ckrealloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
 	(void) memset(env.cache+env.cacheSize+1, 0,

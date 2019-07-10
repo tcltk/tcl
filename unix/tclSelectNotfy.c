@@ -257,7 +257,7 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  * Threaded-cygwin specific constants and functions in this file:
  */
 
-static const WCHAR className[] = L"TclNotifier";
+static const wchar_t className[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
@@ -297,22 +297,22 @@ Tcl_InitNotifier(void)
 	 */
 	if (tsdPtr->waitCVinitialized == 0) {
 #ifdef __CYGWIN__
-	    WNDCLASS class;
+	    WNDCLASS clazz;
 
-	    class.style = 0;
-	    class.cbClsExtra = 0;
-	    class.cbWndExtra = 0;
-	    class.hInstance = TclWinGetTclInstance();
-	    class.hbrBackground = NULL;
-	    class.lpszMenuName = NULL;
-	    class.lpszClassName = className;
-	    class.lpfnWndProc = NotifierProc;
-	    class.hIcon = NULL;
-	    class.hCursor = NULL;
+	    clazz.style = 0;
+	    clazz.cbClsExtra = 0;
+	    clazz.cbWndExtra = 0;
+	    clazz.hInstance = TclWinGetTclInstance();
+	    clazz.hbrBackground = NULL;
+	    clazz.lpszMenuName = NULL;
+	    clazz.lpszClassName = className;
+	    clazz.lpfnWndProc = (void *)NotifierProc;
+	    clazz.hIcon = NULL;
+	    clazz.hCursor = NULL;
 
-	    RegisterClassW(&class);
-	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName,
-		    class.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
+	    RegisterClassW(&clazz);
+	    tsdPtr->hwnd = CreateWindowExW(NULL, clazz.lpszClassName,
+		    clazz.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
 	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
 		    0 /* !signaled */, NULL);
@@ -877,7 +877,7 @@ Tcl_WaitForEvent(
 
 	    if (filePtr->readyMask == 0) {
 		FileHandlerEvent *fileEvPtr =
-			ckalloc(sizeof(FileHandlerEvent));
+			(FileHandlerEvent *)ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
 		fileEvPtr->fd = filePtr->fd;
@@ -928,7 +928,7 @@ NotifierThreadProc(
     int i;
     int fds[2], receivePipe;
     long found;
-    struct timeval poll = {0., 0.}, *timePtr;
+    struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
     int numFdBits = 0;
 

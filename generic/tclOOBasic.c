@@ -55,7 +55,7 @@ FinalizeConstruction(
     Tcl_Interp *interp,
     int result)
 {
-    Object *oPtr = data[0];
+    Object *oPtr = (Object *)data[0];
 
     if (result != TCL_OK) {
 	return result;
@@ -108,7 +108,7 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
-    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
+    invoke = (Tcl_Obj **)ckalloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc-1];
@@ -138,8 +138,8 @@ DecrRefsPostClassConstructor(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **invoke = data[0];
-    Object *oPtr = data[1];
+    Tcl_Obj **invoke = (Tcl_Obj **)data[0];
+    Object *oPtr = (Object *)data[1];
     Tcl_InterpState saved;
     int code;
 
@@ -396,7 +396,7 @@ AfterNRDestructor(
     Tcl_Interp *interp,
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *)data[0];
 
     if (contextPtr->oPtr->command) {
 	Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
@@ -483,7 +483,7 @@ FinalizeEval(
     int result)
 {
     if (result == TCL_ERROR) {
-	Object *oPtr = data[0];
+	Object *oPtr = (Object *)data[0];
 	const char *namePtr;
 
 	if (oPtr) {
@@ -551,7 +551,7 @@ TclOO_Object_Unknown(
      */
 
     if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	CallContext *callerContext = framePtr->clientData;
+	CallContext *callerContext = (CallContext *)framePtr->clientData;
 	Method *mPtr = callerContext->callPtr->chain[
 		    callerContext->index].mPtr;
 
@@ -773,7 +773,7 @@ TclOO_Object_VarName(
 
 	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-	    CallContext *callerContext = framePtr->clientData;
+	    CallContext *callerContext = (CallContext *)framePtr->clientData;
 	    Method *mPtr = callerContext->callPtr->chain[
 		    callerContext->index].mPtr;
 	    PrivateVariableMapping *pvPtr;
@@ -886,7 +886,7 @@ TclOONextObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
-    context = framePtr->clientData;
+    context = (Tcl_ObjectContext)framePtr->clientData;
 
     /*
      * Invoke the (advanced) method call context in the caller context. Note
@@ -926,7 +926,7 @@ TclOONextToObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
-    contextPtr = framePtr->clientData;
+    contextPtr = (CallContext *)framePtr->clientData;
 
     /*
      * Sanity check the arguments; we need the first one to refer to a class.
@@ -1011,9 +1011,9 @@ NextRestoreFrame(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    CallContext *contextPtr = data[1];
+    CallContext *contextPtr = (CallContext *)data[1];
 
-    iPtr->varFramePtr = data[0];
+    iPtr->varFramePtr = (CallFrame *)data[0];
     if (contextPtr != NULL) {
 	contextPtr->index = PTR2INT(data[2]);
     }
@@ -1067,7 +1067,7 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     }
 
-    contextPtr = framePtr->clientData;
+    contextPtr = (CallContext*)framePtr->clientData;
 
     /*
      * Now we do "conventional" argument parsing for a while. Note that no
@@ -1122,7 +1122,7 @@ TclOOSelfObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
-	    register struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
+	    struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
 	    Object *oPtr;
 	    const char *type;
 
@@ -1148,7 +1148,7 @@ TclOOSelfObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	    return TCL_ERROR;
 	} else {
-	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
+	    CallContext *callerPtr = (CallContext *)framePtr->callerVarPtr->clientData;
 	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
 	    Object *declarerPtr;
 

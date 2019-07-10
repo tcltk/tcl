@@ -79,11 +79,11 @@ Tcl_RegisterConfig(
     Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
-    QCCD *cdPtr = ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = (QCCD *)ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     if (valEncoding) {
-	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	cdPtr->encoding = (char *)ckalloc(strlen(valEncoding)+1);
 	strcpy(cdPtr->encoding, valEncoding);
     } else {
 	cdPtr->encoding = NULL;
@@ -199,7 +199,7 @@ QueryConfigObjCmd(
     int objc,
     struct Tcl_Obj *const *objv)
 {
-    QCCD *cdPtr = clientData;
+    QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     int n, index;
@@ -326,7 +326,7 @@ static void
 QueryConfigDelete(
     ClientData clientData)
 {
-    QCCD *cdPtr = clientData;
+    QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
 
@@ -359,7 +359,7 @@ static Tcl_Obj *
 GetConfigDict(
     Tcl_Interp *interp)
 {
-    Tcl_Obj *pDB = Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    Tcl_Obj *pDB = (Tcl_Obj *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (pDB == NULL) {
 	pDB = Tcl_NewDictObj();
@@ -394,7 +394,7 @@ ConfigDictDeleteProc(
     ClientData clientData,	/* Pointer to Tcl_Obj. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
-    Tcl_Obj *pDB = clientData;
+    Tcl_Obj *pDB = (Tcl_Obj *)clientData;
 
     Tcl_DecrRefCount(pDB);
 }

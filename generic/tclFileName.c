@@ -587,7 +587,7 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = ckalloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = (const char **)ckalloc((((*argcPtr) + 1) * sizeof(char *)) + size);
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -821,7 +821,7 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(2, pair, 0);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj *));
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)ckalloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
@@ -2523,7 +2523,7 @@ DoGlob(
 Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
-    return ckalloc(sizeof(Tcl_StatBuf));
+    return (Tcl_StatBuf *)ckalloc(sizeof(Tcl_StatBuf));
 }
 
 /*

@@ -631,7 +631,7 @@ ParseExpr(
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
-    nodes = attemptckalloc(nodesAvailable * sizeof(OpNode));
+    nodes = (OpNode *)attemptckalloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	errCode = "NOMEM";
@@ -675,7 +675,7 @@ ParseExpr(
 
 	    do {
 	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
+		newPtr = (OpNode *)attemptckrealloc(nodes, size * sizeof(OpNode));
 	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
@@ -2573,7 +2573,7 @@ TclSingleOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
     OpNode nodes[2];
     Tcl_Obj *const *litObjv = objv + 1;
@@ -2631,7 +2631,7 @@ TclSortingOpCmd(
     if (objc < 3) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
-	TclOpCmdClientData *occdPtr = clientData;
+	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
 	Tcl_Obj **litObjv = (Tcl_Obj **)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(Tcl_Obj *));
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
@@ -2706,7 +2706,7 @@ TclVariadicOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
     int code;
 
@@ -2825,7 +2825,7 @@ TclNoIdentOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);

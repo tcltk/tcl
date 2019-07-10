@@ -2858,7 +2858,7 @@ TclClockOldscanObjCmd(
 
     if (yyHaveTime) {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj((int)
-		ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian)));
+		ToSeconds(yyHour, yyMinutes, yySeconds, (MERIDIAN)yyMeridian)));
     } else {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
     }
