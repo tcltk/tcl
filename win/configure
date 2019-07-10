@@ -842,6 +842,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-threads        build with threads (default: off)
   --enable-shared         build and link with shared libraries (default: on)
+  --enable-time64bit      force 64-bit time_t for 32-bit build (default: off)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
   --enable-symbols        build with debugging symbols (default: off)
@@ -3146,6 +3147,25 @@ _ACEOF
 
     fi
 
+
+#--------------------------------------------------------------------
+# Check whether --enable-time64bit was given.
+#--------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking force of 64-bit time_t" >&5
+echo $ECHO_N "checking force of 64-bit time_t... $ECHO_C" >&6
+# Check whether --enable-time64bit or --disable-time64bit was given.
+if test "${enable_time64bit+set}" = set; then
+  enableval="$enable_time64bit"
+  tcl_ok=$enableval
+else
+  tcl_ok=no
+fi;
+echo "$as_me:$LINENO: result: \"$tcl_ok\"" >&5
+echo "${ECHO_T}\"$tcl_ok\"" >&6
+if test "$tcl_ok" = "yes"; then
+    CFLAGS="${CFLAGS} -D_USE_64BIT_TIME_T"
+fi
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
