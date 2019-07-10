@@ -350,7 +350,7 @@ static const Tcl_ObjType chanObjType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define BUSY_STATE(st, fl) \
@@ -860,7 +860,7 @@ Tcl_CreateCloseHandler(
     ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr;
 
-    cbPtr = ckalloc(sizeof(CloseCallback));
+    cbPtr = (CloseCallback *)ckalloc(sizeof(CloseCallback));
     cbPtr->proc = proc;
     cbPtr->clientData = clientData;
 
@@ -939,9 +939,9 @@ GetChannelTable(
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_Channel stdinChan, stdoutChan, stderrChan;
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, "tclIO",
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
@@ -1009,10 +1009,10 @@ DeleteChannelTable(
      * refcount reaches zero.
      */
 
-    hTblPtr = clientData;
+    hTblPtr = (Tcl_HashTable *)clientData;
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch)) {
-	chanPtr = Tcl_GetHashValue(hPtr);
+	chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
 	statePtr = chanPtr->state;
 
 	/*
@@ -1379,7 +1379,7 @@ DetachChannel(
     statePtr = chanPtr->state;
 
     if (interp != NULL) {
-	hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
 	if (hTblPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1482,7 +1482,7 @@ Tcl_GetChannel(
      * compensate where necessary to retrieve the topmost channel again.
      */
 
-    chanPtr = Tcl_GetHashValue(hPtr);
+    chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
     chanPtr = chanPtr->state->bottomChanPtr;
     if (modePtr != NULL) {
 	*modePtr = chanPtr->state->flags & (TCL_READABLE|TCL_WRITABLE);
@@ -1649,8 +1649,8 @@ Tcl_CreateChannel(
      * assignments to 0/NULL below.
      */
 
-    chanPtr = ckalloc(sizeof(Channel));
-    statePtr = ckalloc(sizeof(ChannelState));
+    chanPtr = (Channel *)ckalloc(sizeof(Channel));
+    statePtr = (ChannelState *)ckalloc(sizeof(ChannelState));
     chanPtr->state = statePtr;
 
     chanPtr->instanceData = instanceData;
@@ -1669,10 +1669,10 @@ Tcl_CreateChannel(
          * later.
          */
 
-	tmp = ckalloc((len < 7) ? 7 : len);
+	tmp = (char *)ckalloc((len < 7) ? 7 : len);
 	strcpy(tmp, chanName);
     } else {
-	tmp = ckalloc(7);
+	tmp = (char *)ckalloc(7);
 	tmp[0] = '\0';
     }
     statePtr->channelName = tmp;
@@ -1945,7 +1945,7 @@ Tcl_StackChannel(
 	statePtr->inQueueTail = NULL;
     }
 
-    chanPtr = ckalloc(sizeof(Channel));
+    chanPtr = (Channel *)ckalloc(sizeof(Channel));
 
     /*
      * Save some of the current state into the new structure, reinitialize the
@@ -2474,7 +2474,7 @@ AllocChannelBuffer(
     int n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
-    bufPtr = ckalloc(n);
+    bufPtr = (ChannelBuffer *)ckalloc(n);
     bufPtr->nextAdded	= BUFFER_PADDING;
     bufPtr->nextRemoved	= BUFFER_PADDING;
     bufPtr->bufLength	= length + BUFFER_PADDING;
@@ -4301,7 +4301,7 @@ Write(
 
     if (GotFlag(statePtr, CHANNEL_LINEBUFFERED)
 	    || (statePtr->outputTranslation != TCL_TRANSLATE_LF)) {
-	nextNewLine = memchr(src, '\n', srcLen);
+	nextNewLine = (char *)memchr(src, '\n', srcLen);
     }
 
     while (srcLen + saved + endEncoding > 0) {
@@ -4399,7 +4399,7 @@ Write(
 	    total += dstWrote;
 	    dst += dstWrote;
 	    dstLen -= dstWrote;
-	    nextNewLine = memchr(src, '\n', srcLen);
+	    nextNewLine = (char *)memchr(src, '\n', srcLen);
 	    needNlFlush = 1;
 	}
 
@@ -6506,7 +6506,7 @@ TranslateInputEOL(
 	 * created by the presence of the input eof char.
 	 */
 
-	if ((eof = memchr(srcStart, inEofChar, srcLen))) {
+	if ((eof = (const char *)memchr(srcStart, inEofChar, srcLen))) {
 	    srcLen = eof - srcStart;
 	}
     }
@@ -6521,7 +6521,7 @@ TranslateInputEOL(
 	    char *dst = dstStart;
 	    char *dstEnd = dstStart + srcLen;
 
-	    while ((dst = memchr(dst, '\r', dstEnd - dst))) {
+	    while ((dst = (char *)memchr(dst, '\r', dstEnd - dst))) {
 		*dst++ = '\n';
 	    }
 	}
@@ -6532,7 +6532,7 @@ TranslateInputEOL(
 	char *dst = dstStart;
 	int lesser = (dstLen < srcLen) ? dstLen : srcLen;
 
-	while ((crFound = memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
@@ -6572,7 +6572,7 @@ TranslateInputEOL(
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
-	while ((crFound = memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
@@ -8544,7 +8544,7 @@ static void
 ChannelTimerProc(
     ClientData clientData)
 {
-    Channel *chanPtr = clientData;
+    Channel *chanPtr = (Channel *)clientData;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
@@ -8632,7 +8632,7 @@ Tcl_CreateChannelHandler(
 	}
     }
     if (chPtr == NULL) {
-	chPtr = ckalloc(sizeof(ChannelHandler));
+	chPtr = (ChannelHandler *)ckalloc(sizeof(ChannelHandler));
 	chPtr->mask = 0;
 	chPtr->proc = proc;
 	chPtr->clientData = clientData;
@@ -8844,7 +8844,7 @@ CreateScriptRecord(
     makeCH = (esPtr == NULL);
 
     if (makeCH) {
-	esPtr = ckalloc(sizeof(EventScriptRecord));
+	esPtr = (EventScriptRecord *)ckalloc(sizeof(EventScriptRecord));
     }
 
     /*
@@ -8900,7 +8900,7 @@ TclChannelEventScriptInvoker(
 				 * in. */
     int result;			/* Result of call to eval script. */
 
-    esPtr = clientData;
+    esPtr = (EventScriptRecord *)clientData;
     chanPtr = esPtr->chanPtr;
     mask = esPtr->mask;
     interp = esPtr->interp;
@@ -9054,7 +9054,7 @@ ZeroTransferTimerProc(
     /* calling CopyData with mask==0 still implies immediate invocation of the
      *  -command callback, and completion of the fcopy.
      */
-    CopyData(clientData, 0);
+    CopyData((CopyState *)clientData, 0);
 }
 
 /*
@@ -9174,7 +9174,7 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
+    csPtr = (CopyState *)ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -10032,7 +10032,7 @@ CopyEventProc(
     ClientData clientData,
     int mask)
 {
-    (void) CopyData(clientData, mask);
+    (void) CopyData((CopyState *)clientData, mask);
 }
 
 /*
@@ -10365,7 +10365,7 @@ Tcl_IsChannelRegistered(
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     statePtr = chanPtr->state;
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
 	return 0;
     }
@@ -11074,7 +11074,7 @@ FixLevelCode(
 	lcn += 2;
     }
 
-    lvn = ckalloc(lcn * sizeof(Tcl_Obj *));
+    lvn = (Tcl_Obj **)ckalloc(lcn * sizeof(Tcl_Obj *));
 
     /*
      * New level/code information is spliced into the first occurence of

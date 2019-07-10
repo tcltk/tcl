@@ -261,7 +261,7 @@ InfoObjectDefnCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method", -1));
@@ -285,7 +285,7 @@ InfoObjectDefnCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
 	}
     }
-    resultObjs[1] = TclOOGetMethodBody(Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody((Method *)Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
 }
@@ -372,7 +372,7 @@ InfoObjectForwardCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
+    prefixObj = TclOOGetFwdFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (prefixObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
@@ -668,7 +668,7 @@ InfoObjectMethodTypeCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    mPtr = Tcl_GetHashValue(hPtr);
+    mPtr = (Method *)Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
@@ -809,7 +809,7 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    int i, private = 0;
+    int i, isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -819,7 +819,7 @@ InfoObjectVariablesCmd(
 	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
-	private = 1;
+	isPrivate = 1;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
@@ -827,7 +827,7 @@ InfoObjectVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    if (private) {
+    if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 
 	FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
@@ -1005,7 +1005,7 @@ InfoClassDefnCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method", -1));
@@ -1029,7 +1029,7 @@ InfoClassDefnCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
 	}
     }
-    resultObjs[1] = TclOOGetMethodBody(Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody((Method *)Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
 }
@@ -1203,7 +1203,7 @@ InfoClassForwardCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
+    prefixObj = TclOOGetFwdFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (prefixObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
@@ -1420,7 +1420,7 @@ InfoClassMethodTypeCmd(
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
-    mPtr = Tcl_GetHashValue(hPtr);
+    mPtr = (Method *)Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
@@ -1588,7 +1588,7 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    int i, private = 0;
+    int i, isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
@@ -1598,7 +1598,7 @@ InfoClassVariablesCmd(
 	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
-	private = 1;
+	isPrivate = 1;
     }
     clsPtr = GetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {
@@ -1606,7 +1606,7 @@ InfoClassVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    if (private) {
+    if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 
 	FOREACH_STRUCT(privatePtr, clsPtr->privateVariables) {

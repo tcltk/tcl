@@ -299,8 +299,8 @@ InitFoundation(
 {
     static Tcl_ThreadDataKey tsdKey;
     ThreadLocalData *tsdPtr =
-	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = ckalloc(sizeof(Foundation));
+	    (ThreadLocalData *)Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
+    Foundation *fPtr = (Foundation *)ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
@@ -533,7 +533,7 @@ static void
 DeletedDefineNamespace(
     ClientData clientData)
 {
-    Foundation *fPtr = clientData;
+    Foundation *fPtr = (Foundation *)clientData;
 
     fPtr->defineNs = NULL;
 }
@@ -542,7 +542,7 @@ static void
 DeletedObjdefNamespace(
     ClientData clientData)
 {
-    Foundation *fPtr = clientData;
+    Foundation *fPtr = (Foundation *)clientData;
 
     fPtr->objdefNs = NULL;
 }
@@ -551,7 +551,7 @@ static void
 DeletedHelpersNamespace(
     ClientData clientData)
 {
-    Foundation *fPtr = clientData;
+    Foundation *fPtr = (Foundation *)clientData;
 
     fPtr->helpersNs = NULL;
 }
@@ -624,7 +624,7 @@ AllocObject(
     CommandTrace *tracePtr;
     int creationEpoch;
 
-    oPtr = ckalloc(sizeof(Object));
+    oPtr = (Object *)ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -735,7 +735,7 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
+    cmdPtr->tracePtr = tracePtr = (CommandTrace *)ckalloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
@@ -789,7 +789,7 @@ MyDeleted(
     ClientData clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
 {
-    register Object *oPtr = clientData;
+    Object *oPtr = (Object *)clientData;
 
     oPtr->myCommand = NULL;
 }
@@ -798,7 +798,7 @@ static void
 MyClassDeleted(
     ClientData clientData)
 {
-    Object *oPtr = clientData;
+    Object *oPtr = (Object *)clientData;
     oPtr->myclassCommand = NULL;
 }
 
@@ -823,7 +823,7 @@ ObjectRenamedTrace(
     const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
-    Object *oPtr = clientData;
+    Object *oPtr = (Object *)clientData;
 
     /*
      * If this is a rename and not a delete of the object, we just flush the
@@ -1110,7 +1110,7 @@ ObjectNamespaceDeleted(
     ClientData clientData)	/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
-    Object *oPtr = clientData;
+    Object *oPtr = (Object *)clientData;
     Foundation *fPtr = oPtr->fPtr;
     FOREACH_HASH_DECLS;
     Class *mixinPtr;
@@ -1380,9 +1380,9 @@ TclOOAddToInstances(
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
-	    clsPtr->instances.list = ckalloc(sizeof(Object *) * ALLOC_CHUNK);
+	    clsPtr->instances.list = (Object **)ckalloc(sizeof(Object *) * ALLOC_CHUNK);
 	} else {
-	    clsPtr->instances.list = ckrealloc(clsPtr->instances.list,
+	    clsPtr->instances.list = (Object **)ckrealloc(clsPtr->instances.list,
 		    sizeof(Object *) * clsPtr->instances.size);
 	}
     }
@@ -1479,9 +1479,9 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = (Class **)ckalloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list,
+	    superPtr->subclasses.list = (Class **)ckrealloc(superPtr->subclasses.list,
 		    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
@@ -1544,9 +1544,9 @@ TclOOAddToMixinSubs(
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
-	    superPtr->mixinSubs.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->mixinSubs.list = (Class **)ckalloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->mixinSubs.list = ckrealloc(superPtr->mixinSubs.list,
+	    superPtr->mixinSubs.list = (Class **)ckrealloc(superPtr->mixinSubs.list,
 		    sizeof(Class *) * superPtr->mixinSubs.size);
 	}
     }
@@ -1592,7 +1592,7 @@ TclOOAllocClass(
 				 * representation. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Class *clsPtr = ckalloc(sizeof(Class));
+    Class *clsPtr = (Class *)ckalloc(sizeof(Class));
 
     memset(clsPtr, 0, sizeof(Class));
     clsPtr->thisPtr = useThisObj;
@@ -1609,7 +1609,7 @@ TclOOAllocClass(
      */
 
     clsPtr->superclasses.num = 1;
-    clsPtr->superclasses.list = ckalloc(sizeof(Class *));
+    clsPtr->superclasses.list = (Class **)ckalloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
     AddRef(fPtr->objectCls->thisPtr);
 
@@ -1837,10 +1837,10 @@ FinalizeAlloc(
     Tcl_Interp *interp,
     int result)
 {
-    CallContext *contextPtr = data[0];
-    Object *oPtr = data[1];
-    Tcl_InterpState state = data[2];
-    Tcl_Object *objectPtr = data[3];
+    CallContext *contextPtr = (CallContext *)data[0];
+    Object *oPtr = (Object *)data[1];
+    Tcl_InterpState state = (Tcl_InterpState)data[2];
+    Tcl_Object *objectPtr = (Tcl_Object *)data[3];
 
     /*
      * Ensure an error if the object was deleted in the constructor. Don't
@@ -2060,11 +2060,11 @@ Tcl_CopyObjectInstance(
 	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = ckrealloc(cls2Ptr->superclasses.list,
+	    cls2Ptr->superclasses.list = (Class **) ckrealloc(cls2Ptr->superclasses.list,
 		    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
 	    cls2Ptr->superclasses.list =
-		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
+		    (Class **)ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
 	}
 	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
 		sizeof(Class *) * clsPtr->superclasses.num);
@@ -2358,7 +2358,7 @@ Tcl_ClassSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	clsPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
+	clsPtr->metadataPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(clsPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2438,7 +2438,7 @@ Tcl_ObjectSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	oPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
+	oPtr->metadataPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(oPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2497,7 +2497,7 @@ PublicNRObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
+    return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, PUBLIC_METHOD,
 	    NULL);
 }
 
@@ -2518,7 +2518,7 @@ PrivateNRObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return TclOOObjectCmdCore(clientData, interp, objc, objv, 0, NULL);
+    return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, 0, NULL);
 }
 
 int
@@ -2579,7 +2579,7 @@ MyClassNRObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = clientData;
+    Object *oPtr = (Object *)clientData;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "methodName ?arg ...?");
@@ -2638,7 +2638,7 @@ TclOOObjectCmdCore(
      */
 
     if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	CallContext *callerContextPtr = framePtr->clientData;
+	CallContext *callerContextPtr = (CallContext *)framePtr->clientData;
 	Method *callerMethodPtr =
 		callerContextPtr->callPtr->chain[callerContextPtr->index].mPtr;
 
@@ -2715,7 +2715,7 @@ TclOOObjectCmdCore(
     if (startCls != NULL) {
 	for (; contextPtr->index < contextPtr->callPtr->numChain;
 		contextPtr->index++) {
-	    register struct MInvoke *miPtr =
+	    struct MInvoke *miPtr =
 		    &contextPtr->callPtr->chain[contextPtr->index];
 
 	    if (miPtr->isFilter) {
@@ -2755,7 +2755,7 @@ FinalizeObjectCall(
      * structure.
      */
 
-    TclOODeleteContext(data[0]);
+    TclOODeleteContext((CallContext *)data[0]);
     return result;
 }
 
@@ -2911,7 +2911,7 @@ FinalizeNext(
     Tcl_Interp *interp,
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *)data[0];
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -2952,7 +2952,7 @@ Tcl_GetObjectFromObj(
 	    goto notAnObject;
 	}
     }
-    return cmdPtr->objClientData;
+    return (Tcl_Object)cmdPtr->objClientData;
 
   notAnObject:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

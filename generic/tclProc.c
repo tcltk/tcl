@@ -81,7 +81,7 @@ const Tcl_ObjType tclProcBodyType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclProcBodyType);		\
-	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -127,8 +127,8 @@ static const Tcl_ObjType lambdaType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &lambdaType);			\
-	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
-	(nsObjPtr) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
     } while (0)
 
 
@@ -263,11 +263,11 @@ Tcl_ProcObjCmd(
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
 		int isNew;
 		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = (CmdFrame *)ckalloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = (int *)ckalloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -289,7 +289,7 @@ Tcl_ProcObjCmd(
 		     * is able to trigger this situation.
 		     */
 
-		    CmdFrame *cfOldPtr = Tcl_GetHashValue(hePtr);
+		    CmdFrame *cfOldPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
 
 		    if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
@@ -405,9 +405,9 @@ TclCreateProc(
 {
     Interp *iPtr = (Interp *) interp;
 
-    register Proc *procPtr = NULL;
+    Proc *procPtr = NULL;
     int i, result, numArgs;
-    register CompiledLocal *localPtr = NULL;
+    CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0;
 
@@ -469,7 +469,7 @@ TclCreateProc(
 
 	Tcl_IncrRefCount(bodyPtr);
 
-	procPtr = ckalloc(sizeof(Proc));
+	procPtr = (Proc *)ckalloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
@@ -634,7 +634,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = ckalloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = (CompiledLocal *)ckalloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -864,7 +864,7 @@ Uplevel_Callback(
     Tcl_Interp *interp,
     int result)
 {
-    CallFrame *savedVarFramePtr = data[0];
+    CallFrame *savedVarFramePtr = (CallFrame *)data[0];
 
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -1027,7 +1027,7 @@ TclIsProc(
 	cmdPtr = (Command *) origCmd;
     }
     if (cmdPtr->deleteProc == TclProcDeleteProc) {
-	return cmdPtr->objClientData;
+	return (Proc *)cmdPtr->objClientData;
     }
     return NULL;
 }
@@ -1300,7 +1300,7 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int new;
+    int isNew;
 
     ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1310,7 +1310,7 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = ckalloc(sizeof(LocalCache)
+    localCachePtr = (LocalCache *)ckalloc(sizeof(LocalCache)
 	    + (localCt - 1) * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
@@ -1323,7 +1323,7 @@ InitLocalCache(
 	} else {
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
 		    localPtr->nameLength, /* hash */ (unsigned int) -1,
-		    &new, /* nsPtr */ NULL, 0, NULL);
+		    &isNew, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 
@@ -1538,7 +1538,7 @@ TclPushProcCallFrame(
     int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
 				 * needs special rules for error msg */
 {
-    Proc *procPtr = clientData;
+    Proc *procPtr = (Proc *)clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
     int result;
@@ -1778,7 +1778,7 @@ InterpProcNR2(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = iPtr->varFramePtr->procPtr;
     CallFrame *freePtr;
-    Tcl_Obj *procNameObj = data[0];
+    Tcl_Obj *procNameObj = (Tcl_Obj *)data[0];
     ProcErrorProc *errorProc = (ProcErrorProc *)data[1];
 
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
@@ -2018,7 +2018,7 @@ TclProcCompileProc(
 	 */
 
 	iPtr->invokeWord = 0;
-	iPtr->invokeCmdFramePtr = (hePtr ? Tcl_GetHashValue(hePtr) : NULL);
+	iPtr->invokeCmdFramePtr = hePtr ? (CmdFrame *)Tcl_GetHashValue(hePtr) : NULL;
 	TclSetByteCodeFromAny(interp, bodyPtr, NULL, NULL);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
@@ -2093,7 +2093,7 @@ void
 TclProcDeleteProc(
     ClientData clientData)	/* Procedure to be deleted. */
 {
-    Proc *procPtr = clientData;
+    Proc *procPtr = (Proc *)clientData;
 
     if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
@@ -2168,7 +2168,7 @@ TclProcCleanupProc(
 	return;
     }
 
-    cfPtr = Tcl_GetHashValue(hePtr);
+    cfPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
 
     if (cfPtr) {
 	if (cfPtr->type == TCL_LOCATION_SOURCE) {
@@ -2511,12 +2511,12 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		cfPtr = ckalloc(sizeof(CmdFrame));
+		cfPtr = (CmdFrame *)ckalloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = (int *)ckalloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2698,7 +2698,7 @@ ApplyNR2(
     Tcl_Interp *interp,
     int result)
 {
-    ApplyExtraData *extraPtr = data[0];
+    ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
 
     TclStackFree(interp, extraPtr);
     return result;

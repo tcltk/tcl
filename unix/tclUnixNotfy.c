@@ -108,7 +108,7 @@ Tcl_AlertNotifier(
     } else {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
-	ThreadSpecificData *tsdPtr = clientData;
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
 	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
