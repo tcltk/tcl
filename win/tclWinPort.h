@@ -14,16 +14,13 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && !defined(_USE_32BIT_TIME_T) && !defined(__MINGW_USE_VC2005_COMPAT)
-    /* define _USE_64BIT_TIME_T (or make/configure option time64bit) to force 64-bit time_t */
-#   if defined(_USE_64BIT_TIME_T)
-#	if defined(__MINGW32__)
-#	    define __MINGW_USE_VC2005_COMPAT
-#	endif
-#   else
-	/* See [Bug 3354324]: file mtime sets wrong time */
-#	define _USE_32BIT_TIME_T
-#   endif
+/* define _USE_64BIT_TIME_T (or make/configure option time64bit) to force 64-bit time_t */
+#if defined(_USE_64BIT_TIME_T)
+#define __MINGW_USE_VC2005_COMPAT
+#endif
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
+/* See [Bug 3354324]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
 #endif
 
 #define WIN32_LEAN_AND_MEAN
