@@ -3,6 +3,7 @@ language: c
 
 matrix:
   include:
+# Testing on Linux with various compilers
     - name: "Linux/Clang/Shared"
       os: linux
       dist: xenial
@@ -16,6 +17,34 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
+    - name: "Linux/Clang/Shared: UTF_MAX=6"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+    - name: "Linux/Clang/Shared: UTF_MAX=3"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/Clang/Shared: NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
+    - name: "Linux/Clang/Shared: full-debug"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
     - name: "Linux/GCC/Shared"
       os: linux
       dist: xenial
@@ -29,6 +58,7 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
+# Older versions of GCC...
     - name: "Linux/GCC 4.9/Shared"
       os: linux
       dist: xenial
@@ -69,7 +99,7 @@ matrix:
       os: linux
       dist: xenial
       compiler: gcc-7
-      addons:
+      addons: &gcc7deps
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -77,45 +107,31 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC 7/Shared/UTF_MAX=6"
+    - name: "Linux/GCC 7/Shared: UTF_MAX=6"
       os: linux
       dist: xenial
       compiler: gcc-7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
+      addons: *gcc7deps
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
-    - name: "Linux/GCC 7/Shared/UTF_MAX=3"
+    - name: "Linux/GCC 7/Shared: UTF_MAX=3"
       os: linux
       dist: xenial
       compiler: gcc-7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
+      addons: *gcc7deps
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
-    - name: "Linux/GCC 7/Shared/NO_DEPRECATED"
+    - name: "Linux/GCC 7/Shared: NO_DEPRECATED"
       os: linux
       dist: xenial
       compiler: gcc-7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
+      addons: *gcc7deps
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
+# Testing on Mac, various styles
     - name: "macOS/Xcode 8/Shared/Unix-like"
       os: osx
       osx_image: xcode8
@@ -126,30 +142,32 @@ matrix:
       osx_image: xcode8
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
+      install: []
+      script: &mactest
+        - make all
+        # The styles=develop avoids some weird problems on OSX
+        - make test styles=develop
     - name: "macOS/Xcode 9/Shared/Mac-like"
       os: osx
       osx_image: xcode9
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
+      install: []
+      script: *mactest
     - name: "macOS/Xcode 10/Shared/Mac-like"
       os: osx
       osx_image: xcode10.2
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
-### C builds not currently supported on Windows instances
-#    - os: windows
-#      env:
-#        - BUILD_DIR=win
-### ... so proxy with a Mingw cross-compile
-# Test with mingw-w64 (32 bit)
+      install: []
+      script: *mactest
+# Test with mingw-w64 (32 bit) cross-compile
+# Doesn't run tests because wine is only an imperfect Windows emulation 
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
+      addons: &mingw32
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -161,81 +179,55 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
-        - NO_DIRECT_TEST=1
+      script: &crosstest
+        - make all
+        - make tcltest
+        # Include a high visibility marker that tests are skipped outright
+        - >
+          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
     - name: "Linux-cross-Windows-32/GCC/Static/no test"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
-            - wine
+      addons: *mingw32
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test/UTF_MAX=6"
+      script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=6"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
-            - wine
+      addons: *mingw32
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test/UTF_MAX=3"
+      script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=3"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
-            - wine
+      addons: *mingw32
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test/NO_DEPRECATED"
+      script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Shared/no test: NO_DEPRECATED"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
-            - wine
+      addons: *mingw32
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
-        - NO_DIRECT_TEST=1
+      script: *crosstest
 # Test with mingw-w64 (64 bit)
+# Doesn't run tests because wine is only an imperfect Windows emulation 
     - name: "Linux-cross-Windows-64/GCC/Shared/no test"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
+      addons: &mingw64
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -246,77 +238,94 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
-        - NO_DIRECT_TEST=1
+      script: *crosstest
     - name: "Linux-cross-Windows-64/GCC/Static/no test"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
+      addons: *mingw64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test/UTF_MAX=6"
+      script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Shared/no test: UTF_MAX=6"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
+      addons: *mingw64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test/UTF_MAX=3"
+      script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Shared/no test: UTF_MAX=3"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
+      addons: *mingw64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-        - NO_DIRECT_TEST=1
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test/NO_DEPRECATED"
+      script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Shared/no test: NO_DEPRECATED"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
+      addons: *mingw64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
-        - NO_DIRECT_TEST=1
+      script: *crosstest
+# Test on Windows with GCC native
+    - name: "Windows/GCC/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-threads"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Unshared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-threads --disable-shared"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+# Test on Windows with MSVC native
+    - name: "Windows/MSVC/Shared"
+      os: windows
+      compiler: cl
+      env: &vcenv
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+      before_install: &vcpreinst
+        - PATH="$PATH:$VCDIR"
+        - cd ${BUILD_DIR}
+      install: []
+      script: &vctest
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC/Unshared"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script: &vctest
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc test'
 before_install:
-  - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
-  - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
+  - ./configure ${CFGOPT} --prefix=$HOME
+before_script:
+  - export ERROR_ON_FAILURES=1
 script:
-  - make
-  # The styles=develop avoids some weird problems on OSX
-  - test -n "$NO_DIRECT_TEST" || make test styles=develop
+  - make all
+  - make tcltest
+  - make test
