@@ -96,7 +96,7 @@ TclpDlopen(
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
 	Tcl_DStringInit(&ds);
-	nativeName = Tcl_UtfToWCharDString(Tcl_GetString(pathPtr), -1, &ds);
+	nativeName = Tcl_UtfToChar16DString(Tcl_GetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);

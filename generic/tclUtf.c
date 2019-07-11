@@ -224,12 +224,12 @@ three:
 #undef Tcl_UniCharToUtfDString
 char *
 Tcl_UniCharToUtfDString(
-    const unsigned int *uniStr,	/* Unicode string to convert to UTF-8. */
+    const int *uniStr,	/* Unicode string to convert to UTF-8. */
     int uniLength,		/* Length of Unicode string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
-    const unsigned int *w, *wEnd;
+    const int *w, *wEnd;
     char *p, *string;
     int oldLength;
 
@@ -237,6 +237,9 @@ Tcl_UniCharToUtfDString(
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
      */
 
+    if (uniStr == NULL) {
+	return NULL;
+    }
     if (uniLength < 0) {
 	uniLength = 0;
 	w = uniStr;
@@ -260,9 +263,8 @@ Tcl_UniCharToUtfDString(
     return string;
 }
 
-#undef Tcl_WCharToUtfDString
 char *
-Tcl_WCharToUtfDString(
+Tcl_Char16ToUtfDString(
     const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
     int uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
@@ -276,6 +278,9 @@ Tcl_WCharToUtfDString(
      * UTF-8 string length in bytes will be <= Utf16 string length * 3.
      */
 
+    if (uniStr == NULL) {
+	return NULL;
+    }
     if (uniLength < 0) {
 
 	uniLength = 0;
@@ -357,10 +362,10 @@ static const unsigned short cp1252[32] = {
 int
 Tcl_UtfToUniChar(
     register const char *src,	/* The UTF-8 string. */
-    register unsigned int *chPtr)/* Filled with the unsigned int represented by
+    register int *chPtr)/* Filled with the unsigned int represented by
 				 * the UTF-8 string. */
 {
-    unsigned int byte;
+    int byte;
 
     /*
      * Unroll 1 to 4 byte UTF-8 sequences.
@@ -438,9 +443,8 @@ Tcl_UtfToUniChar(
     return 1;
 }
 
-#undef Tcl_UtfToWChar
 int
-Tcl_UtfToWChar(
+Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
     unsigned short *chPtr)/* Filled with the unsigned short represented by
 				 * the UTF-8 string. */
@@ -558,7 +562,7 @@ Tcl_UtfToWChar(
  */
 
 #undef Tcl_UtfToUniCharDString
-unsigned int *
+int *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
     int length,			/* Length of UTF-8 string in bytes, or -1 for
@@ -567,10 +571,13 @@ Tcl_UtfToUniCharDString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    unsigned int ch = 0, *w, *wString;
+    int ch = 0, *w, *wString;
     const char *p, *end;
     int oldLength;
 
+    if (src == NULL) {
+	return NULL;
+    }
     if (length < 0) {
 	length = strlen(src);
     }
@@ -584,7 +591,7 @@ Tcl_UtfToUniCharDString(
 
     Tcl_DStringSetLength(dsPtr,
 	    oldLength + ((length + 1) * sizeof(unsigned int)));
-    wString = (unsigned int *) (Tcl_DStringValue(dsPtr) + oldLength);
+    wString = (int *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;
     p = src;
@@ -609,9 +616,8 @@ Tcl_UtfToUniCharDString(
     return wString;
 }
 
-#undef Tcl_UtfToWCharDString
 unsigned short *
-Tcl_UtfToWCharDString(
+Tcl_UtfToChar16DString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
     int length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
@@ -624,6 +630,9 @@ Tcl_UtfToWCharDString(
     const char *p, *end;
     int oldLength;
 
+    if (src == NULL) {
+	return NULL;
+    }
     if (length < 0) {
 	length = strlen(src);
     }
@@ -643,13 +652,13 @@ Tcl_UtfToWCharDString(
     p = src;
     end = src + length - 4;
     while (p < end) {
-	p += Tcl_UtfToWChar(p, &ch);
+	p += Tcl_UtfToChar16(p, &ch);
 	*w++ = ch;
     }
     end += 4;
     while (p < end) {
 	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += Tcl_UtfToWChar(p, &ch);
+	    p += Tcl_UtfToChar16(p, &ch);
 	} else {
 	    ch = UCHAR(*p++);
 	}

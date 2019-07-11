@@ -4629,7 +4629,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclUtfToUniChar(str, chPtr) \
 	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
-	    : Tcl_UtfToWChar(str, chPtr))
+	    : Tcl_UtfToChar16(str, chPtr))
 #endif
 
 /*

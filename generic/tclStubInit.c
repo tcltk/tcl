@@ -260,7 +260,7 @@ Tcl_WinUtfToTChar(
     if (!string) {
 	return NULL;
     }
-    return (char *)Tcl_UtfToWCharDString(string, len, dsPtr);
+    return (char *)Tcl_UtfToChar16DString(string, len, dsPtr);
 }
 #undef Tcl_WinTCharToUtf
 char *
@@ -273,7 +273,7 @@ Tcl_WinTCharToUtf(
     if (!string) {
 	return NULL;
     }
-    return Tcl_WCharToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
+    return Tcl_Char16ToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
@@ -1338,7 +1338,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToWChar, /* 336 */
+    Tcl_UtfToChar16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1356,8 +1356,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_WCharToUtfDString, /* 354 */
-    Tcl_UtfToWCharDString, /* 355 */
+    Tcl_Char16ToUtfDString, /* 354 */
+    Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     Tcl_EvalTokens, /* 357 */
     Tcl_FreeParse, /* 358 */
