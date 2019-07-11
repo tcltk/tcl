@@ -1670,7 +1670,7 @@ SerialSetOptionProc(
 	    goto getStateFailed;
 	}
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToWCharDString(value, -1, &ds);
+	native = Tcl_UtfToChar16DString(value, -1, &ds);
 	result = BuildCommDCB(native, &dcb);
 	Tcl_DStringFree(&ds);
 

@@ -1198,7 +1198,7 @@ declare 335 {
     int Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToWChar(const char *src, unsigned short *chPtr)
+    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
     int Tcl_UtfToUpper(char *src)
@@ -1253,11 +1253,11 @@ declare 353 {
 	    unsigned long numChars)
 }
 declare 354 {
-    char *Tcl_WCharToUtfDString(const unsigned short *uniStr,
+    char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
-    unsigned short *Tcl_UtfToWCharDString(const char *src,
+    unsigned short *Tcl_UtfToChar16DString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 {
@@ -2392,14 +2392,14 @@ declare 645 {
 
 # TIP #548
 declare 646 {
-    int Tcl_UtfToUniChar(const char *src, unsigned int *chPtr)
+    int Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
 declare 647 {
-    char *Tcl_UniCharToUtfDString(const unsigned int *uniStr,
+    char *Tcl_UniCharToUtfDString(const int *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 648 {
-    unsigned int *Tcl_UtfToUniCharDString(const char *src,
+    int *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 

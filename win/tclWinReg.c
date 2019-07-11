@@ -217,7 +217,7 @@ Registry_Unload(
      * Delete the originally registered command.
      */
 
-    cmd = Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
+    cmd = (Tcl_Command)Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
     if (cmd != NULL) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
     }
@@ -246,7 +246,7 @@ static void
 DeleteCmd(
     ClientData clientData)
 {
-    Tcl_Interp *interp = clientData;
+    Tcl_Interp *interp = (Tcl_Interp *)clientData;
 
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, NULL);
 }
