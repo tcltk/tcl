@@ -179,6 +179,10 @@ matrix:
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
+      install:
+        - ./configure ${CFGOPT} --prefix=$HOME
+        # for debugging only
+        - cat Makefile
     - name: "Windows/GCC/Unshared"
       os: windows
       compiler: gcc
