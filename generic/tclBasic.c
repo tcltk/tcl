@@ -657,7 +657,15 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(_WIN32) && !defined(_WIN64) && !defined(_USE_64BIT_TIME_T) \
+	    && !defined(__MINGW_USE_VC2005_COMPAT)
+    /* If Tcl is compiled on Win32 using -D_USE_64BIT_TIME_T or
+     * -D__MINGW_USE_VC2005_COMPAT, the result is a binary incompatible
+     * with the 'standard' build of Tcl: All extensions using Tcl_StatBuf
+     * or interal functions like TclpGetDate() need to be recompiled in
+     * the same way. Therefore, this is not officially supported.
+     * In stead, it is recommended to use Win64 or Tcl 9.0 (not released yet)
+     */
     if (sizeof(time_t) != 4) {
 	/*NOTREACHED*/
 	Tcl_Panic("<time.h> is not compatible with MSVC");
