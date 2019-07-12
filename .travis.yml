@@ -188,32 +188,6 @@ matrix:
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
-# Test on Windows with MSVC native
-    - name: "Windows/MSVC/Shared"
-      os: windows
-      compiler: cl
-      env: &vcenv
-        - BUILD_DIR=win
-        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
-      before_install: &vcpreinst
-        - PATH="$PATH:$VCDIR"
-        - cd ${BUILD_DIR}
-      install: []
-      script: &vctest
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
-    - name: "Windows/MSVC/Unshared"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script: &vctest
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc test'
-
 before_install:
   - cd ${BUILD_DIR}
 install:
