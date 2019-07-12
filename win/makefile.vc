@@ -70,7 +70,7 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=loimpact,msvcrt,static,staticpkg,symbols,threads,profile,unchecked,none
+#	OPTS=loimpact,msvcrt,static,staticpkg,symbols,threads,profile,unchecked,time64bit,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -94,6 +94,8 @@ the build instructions.
 #		unchecked = Allows a symbols build to not use the debug
 #			   enabled runtime (msvcrt.dll not msvcrtd.dll
 #			   or libcmt.lib not libcmtd.lib).
+#		time64bit = Forces a build using 64-bit time_t for 32-bit build
+#			   (CRT library should support this).
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
