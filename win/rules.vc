@@ -253,11 +253,15 @@ TCL_USE_STATIC_PACKAGES	= 0
 !endif
 !if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
-TCL_THREADS	= 1
+TCL_THREADS = 1
 USE_THREAD_ALLOC = 1
 !else
-TCL_THREADS	= 0
+TCL_THREADS = 0
 USE_THREAD_ALLOC = 0
+!endif
+!if [nmakehlp -f $(OPTS) "time64bit"]
+!message *** Force 64-bit time_t
+_USE_64BIT_TIME_T = 1
 !endif
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
@@ -486,6 +490,10 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+!endif
+
+!if "$(_USE_64BIT_TIME_T)" == "1"
+OPTDEFINES	= $(OPTDEFINES) -D_USE_64BIT_TIME_T
 !endif
 
 #----------------------------------------------------------
