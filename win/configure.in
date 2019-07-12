@@ -98,6 +98,20 @@ SC_TCL_CFG_ENCODING
 SC_ENABLE_SHARED
 
 #--------------------------------------------------------------------
+# Check whether --enable-time64bit was given.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([force of 64-bit time_t])
+AC_ARG_ENABLE(time64bit,
+    AC_HELP_STRING([--enable-time64bit],
+	[force 64-bit time_t for 32-bit build (default: off)]),
+    [tcl_ok=$enableval], [tcl_ok=no])
+AC_MSG_RESULT("$tcl_ok")
+if test "$tcl_ok" = "yes"; then
+    CFLAGS="${CFLAGS} -D_USE_64BIT_TIME_T"
+fi
+
+#--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
 # after SC_ENABLE_SHARED checks the configure switches.
