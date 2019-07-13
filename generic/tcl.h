@@ -406,7 +406,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #if defined(_WIN32)
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
-#   elif defined(_WIN64)
+#   elif defined(_WIN64) || defined(__MINGW_USE_VC2005_COMPAT) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
