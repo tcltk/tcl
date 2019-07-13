@@ -51,6 +51,69 @@
 # vcvars32.bat according to the instructions for it.  This can also
 # turn on the 64-bit compiler, if your SDK has it.
 #
+# Basic macros and options usable on the commandline (see rules.vc for more info):
+#	OPTS=msvcrt,static,staticpkg,symbols,profile,unchecked,time64bit,none
+#		Sets special options for the core.  The default is for none.
+#		Any combination of the above may be used (comma separated).
+#		'none' will over-ride everything to nothing.
+#
+#		msvcrt   = Affects the static option only to switch it from
+#			   using libcmt(d) as the C runtime [by default] to
+#			   msvcrt(d). This is useful for static embedding
+#			   support.
+#		static   = Builds a static library of the core instead of a
+#			   dll.  The shell will be static (and large), as well.
+#		staticpkg= Affects the static option only to switch
+#			   tclshXX.exe to have the dde and reg extension linked
+#			   inside it.
+#		thrdalloc = Use the thread allocator (shared global free pool).
+#		symbols =  Adds symbols for step debugging.
+#		profile =  Adds profiling hooks.  Map file is assumed.
+#		unchecked = Allows a symbols build to not use the debug
+#			   enabled runtime (msvcrt.dll not msvcrtd.dll
+#			   or libcmt.lib not libcmtd.lib).
+#		time64bit = Forces a build using 64-bit time_t for 32-bit build
+#			   (CRT library should support this).
+#
+#	STATS=compdbg,memdbg,none
+#		Sets optional memory and bytecode compiler debugging code added
+#		to the core.  The default is for none.  Any combination of the
+#		above may be used (comma separated).  'none' will over-ride
+#		everything to nothing.
+#
+#		compdbg  = Enables byte compilation logging.
+#		memdbg   = Enables the debugging memory allocator.
+#
+#	CHECKS=64bit,fullwarn,nodep,none
+#		Sets special macros for checking compatibility.
+#
+#		64bit    = Enable 64bit portability warnings (if available)
+#		fullwarn = Builds with full compiler and link warnings enabled.
+#			    Very verbose.
+#		nodep	 = Turns off compatibility macros to ensure the core
+#			    isn't being built with deprecated functions.
+#
+#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#		Set the machine type used for the compiler, linker, and
+#		resource compiler.  This hook is needed to tell the tools
+#		when alternate platforms are requested.  IX86 is the default
+#		when not specified. If the CPU environment variable has been
+#		set (ie: recent Platform SDK) then MACHINE is set from CPU.
+#
+#	TMP_DIR=<path>
+#	OUT_DIR=<path>
+#		Hooks to allow the intermediate and output directories to be
+#		changed.  $(OUT_DIR) is assumed to be
+#		$(BINROOT)\(Release|Debug) based on if symbols are requested.
+#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#
+#	TESTPAT=<file>
+#		Reads the tests requested to be run from this file.
+#
+#	CFG_ENCODING=encoding
+#		name of encoding for configuration information. Defaults
+#		to cp1252
+#
 # Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
