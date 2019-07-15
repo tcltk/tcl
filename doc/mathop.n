@@ -151,10 +151,11 @@ is the same as
 .QW "\fB** 2 [** 3 4]\fR" .
 Each \fInumber\fR may be
 any numeric value, though the second number must not be fractional if the
-first is negative. If no arguments are given, the result will be one, and if
-only one argument is given, the result will be that argument. The
-result will have an integral value only when all arguments are
-integral values.
+first is negative.  The maximum exponent value that Tcl can handle if the
+first number is an integer > 1 is 268435455. If no arguments are given,
+the result will be one, and if only one argument is given, the result will
+be that argument. The result will have an integral value only when all
+arguments are integral values.
 .SS "COMPARISON OPERATORS"
 .PP
 The behaviors of the comparison operator commands (most of which operate

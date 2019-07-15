@@ -394,7 +394,7 @@ MSG = ^
 
 
 # If INSTALLDIR set to Tcl installation root dir then reset to the
-# lib dir for installing extensions 
+# lib dir for installing extensions
 !if exist("$(_INSTALLDIR)\include\tcl.h")
 _INSTALLDIR=$(_INSTALLDIR)\lib
 !endif
@@ -561,7 +561,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 # The following macros are set:
 # OPTIMIZATIONS - the compiler flags to be used for optimized builds
 # DEBUGFLAGS - the compiler flags to be used for debug builds
-# LINKERFLAGS - Flags passed to the linker 
+# LINKERFLAGS - Flags passed to the linker
 #
 # Note that these are the compiler settings *available*, not those
 # that will be *used*. The latter depends on the OPTS macro settings
@@ -686,6 +686,8 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
 # CONFIG_CHECK - 1 -> check current build configuration against Tcl
 #           configuration (ignored for Tcl itself)
+# _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
+#           (CRT library should support this)
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -747,11 +749,16 @@ TCL_USE_STATIC_PACKAGES	= 0
 
 !if [nmakehlp -f $(OPTS) "nothreads"]
 !message *** Compile explicitly for non-threaded tcl
-TCL_THREADS	= 0
+TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !else
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "time64bit"]
+!message *** Force 64-bit time_t
+_USE_64BIT_TIME_T = 1
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1326,6 +1333,10 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !endif
 
+!if "$(_USE_64BIT_TIME_T)" == "1"
+OPTDEFINES	= $(OPTDEFINES) -D_USE_64BIT_TIME_T
+!endif
+
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 COMPILERFLAGS  = /D_ATL_XP_TARGETING
 
@@ -1343,7 +1354,7 @@ USE_WIDECHAR_API = 0
 !endif
 
 !if $(USE_WIDECHAR_API)
-COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE 
+COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
@@ -1353,7 +1364,7 @@ COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               -DMODULE_SCOPE=extern 
+               -DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1446,7 +1457,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # compiled with another VC version. Check for this and fix accordingly.
 stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
 
-# Link flags 
+# Link flags
 
 !if $(DEBUG)
 ldebug	= -debug -debugtype:cv
@@ -1462,7 +1473,7 @@ ldebug	= $(ldebug) -debug -debugtype:cv
 ldebug= $(ldebug) -profile
 !endif
 
-### Declarations common to all linker versions 
+### Declarations common to all linker versions
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
@@ -1527,7 +1538,7 @@ RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    -DVERSION=\"$(VERSION)\" \
 	    -DSUFX=\"$(SUFX)\" \
             -DPROJECT=\"$(PROJECT)\" \
-            -DPRJLIBNAME=\"$(PRJLIBNAME)\" 
+            -DPRJLIBNAME=\"$(PRJLIBNAME)\"
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = $(PROJECT)
@@ -1646,7 +1657,7 @@ default-shell: default-setup $(PROJECT)
 	@if exist $(LIBDIR) for %f in ("$(LIBDIR)\*.tcl") do @$(COPY) %f "$(OUT_DIR)"
 	$(DEBUGGER) $(TCLSH)
 
-# Generation of Windows version resource 
+# Generation of Windows version resource
 !ifdef RCFILE
 
 # Note: don't use $** in below rule because there may be other dependencies
@@ -1685,7 +1696,7 @@ BEGIN
             VALUE "OriginalFilename", PRJLIBNAME
             VALUE "FileVersion",      DOTVERSION
             VALUE "ProductName",      "Package " PROJECT " for Tcl"
-            VALUE "ProductVersion",   DOTVERSION 
+            VALUE "ProductVersion",   DOTVERSION
         END
     END
     BLOCK "VarFileInfo"

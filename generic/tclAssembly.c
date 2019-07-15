@@ -513,6 +513,7 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP4,					/* 34-35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
+    INST_STR_EQ, INST_STR_NEQ, INST_STR_CMP, INST_STR_LEN,	/* 73-76 */
     INST_LIST,							/* 79 */
     INST_OVER,							/* 95 */
     INST_PUSH_RETURN_OPTIONS,					/* 108 */
@@ -2255,7 +2256,7 @@ GetListIndexOperand(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-     
+
     /* Convert to an integer, advance to the next token and return. */
     /*
      * NOTE: Indexing a list with an index before it yields the

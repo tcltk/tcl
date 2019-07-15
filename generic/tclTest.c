@@ -952,8 +952,10 @@ AsyncHandlerProc(
 
     Tcl_MutexLock(&asyncTestMutex);
     for (asyncPtr = firstHandler; asyncPtr != NULL;
-         asyncPtr = asyncPtr->nextPtr) {
-        if (asyncPtr->id == id) break;
+            asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) {
+            break;
+        }
     }
     Tcl_MutexUnlock(&asyncTestMutex);
 
@@ -4347,7 +4349,7 @@ TesttranslatefilenameCmd(
  *
  * TestupvarCmd --
  *
- *	This procedure implements the "testupvar2" command.  It is used
+ *	This procedure implements the "testupvar" command.  It is used
  *	to test Tcl_UpVar and Tcl_UpVar2.
  *
  * Results:
@@ -4969,7 +4971,7 @@ NoopObjCmd(
  *	without type and with internal representation containing NULL's.
  *
  *	If no argument supplied it returns empty object with tclEmptyStringRep,
- *	otherwise it returns this as pure bytes object with bytes value equal 
+ *	otherwise it returns this as pure bytes object with bytes value equal
  *	string.
  *
  * Results:

@@ -3716,31 +3716,36 @@ TEBCresume(
 
 	{
 	    int createdNewObj = 0;
+	    Tcl_Obj *valueToAssign;
 
 	    if (!objResultPtr) {
-		objResultPtr = valuePtr;
+		valueToAssign = valuePtr;
 	    } else if (TclListObjLength(interp, objResultPtr, &len)!=TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    objResultPtr = Tcl_DuplicateObj(objResultPtr);
+		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    createdNewObj = 1;
+		} else {
+		    valueToAssign = objResultPtr;
 		}
-		if (Tcl_ListObjReplace(interp, objResultPtr, len,0, objc,objv)
-			!= TCL_OK) {
+		if (Tcl_ListObjReplace(interp, valueToAssign, len, 0,
+			objc, objv) != TCL_OK) {
+		    if (createdNewObj) {
+			TclDecrRefCount(valueToAssign);
+		    }
 		    goto errorInLappendListPtr;
 		}
 	    }
 	    DECACHE_STACK_INFO();
+	    Tcl_IncrRefCount(valueToAssign);
 	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr,
-		    part2Ptr, objResultPtr, TCL_LEAVE_ERR_MSG, opnd);
+		    part2Ptr, valueToAssign, TCL_LEAVE_ERR_MSG, opnd);
+	    TclDecrRefCount(valueToAssign);
 	    CACHE_STACK_INFO();
 	    if (!objResultPtr) {
 	    errorInLappendListPtr:
-		if (createdNewObj) {
-		    TclDecrRefCount(objResultPtr);
-		}
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
@@ -5247,7 +5252,7 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	/* 
+	/*
 	assert ( toIdx != TCL_INDEX_AFTER);
 	 *
 	 * Extra safety for legacy bytecodes:
@@ -6032,7 +6037,7 @@ TEBCresume(
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
 	    int i;
 
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
+	    if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -6040,7 +6045,7 @@ TEBCresume(
 	    /* value is between WIDE_MIN and WIDE_MAX */
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    int i;
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
+	    if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
 		type1 = TCL_NUMBER_LONG;
 	    }
 #endif
@@ -6049,7 +6054,7 @@ TEBCresume(
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    Tcl_WideInt w;
 
-	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
+	    if (TclGetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
@@ -8222,6 +8227,128 @@ FinalizeOONextFilter(
 }
 
 /*
+ * LongPwrSmallExpon -- , WidePwrSmallExpon --
+ *
+ * Helpers to calculate small powers of integers whose result is long or wide.
+ */
+#if (LONG_MAX == 0x7fffffff)
+static inline long
+LongPwrSmallExpon(long l1, long exponent) {
+
+    long lResult;
+
+    lResult = l1 * l1;		/* b**2 */
+    switch (exponent) {
+    case 2:
+	break;
+    case 3:
+	lResult *= l1;		/* b**3 */
+	break;
+    case 4:
+	lResult *= lResult;	/* b**4 */
+	break;
+    case 5:
+	lResult *= lResult;	/* b**4 */
+	lResult *= l1;		/* b**5 */
+	break;
+    case 6:
+	lResult *= l1;		/* b**3 */
+	lResult *= lResult;	/* b**6 */
+	break;
+    case 7:
+	lResult *= l1;		/* b**3 */
+	lResult *= lResult;	/* b**6 */
+	lResult *= l1;		/* b**7 */
+	break;
+    case 8:
+	lResult *= lResult;	/* b**4 */
+	lResult *= lResult;	/* b**8 */
+	break;
+    }
+    return lResult;
+}
+#endif
+static inline Tcl_WideInt
+WidePwrSmallExpon(Tcl_WideInt w1, long exponent) {
+
+    Tcl_WideInt wResult;
+
+    wResult = w1 * w1;		/* b**2 */
+    switch (exponent) {
+    case 2:
+	break;
+    case 3:
+	wResult *= w1;		/* b**3 */
+	break;
+    case 4:
+	wResult *= wResult;	/* b**4 */
+	break;
+    case 5:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	break;
+    case 6:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	break;
+    case 7:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	break;
+    case 8:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	break;
+    case 9:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	wResult *= w1;		/* b**9 */
+	break;
+    case 10:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	wResult *= wResult;	/* b**10 */
+	break;
+    case 11:
+	wResult *= wResult;	/* b**4 */
+	wResult *= w1;		/* b**5 */
+	wResult *= wResult;	/* b**10 */
+	wResult *= w1;		/* b**11 */
+	break;
+    case 12:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= wResult;	/* b**12 */
+	break;
+    case 13:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= wResult;	/* b**12 */
+	wResult *= w1;		/* b**13 */
+	break;
+    case 14:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	wResult *= wResult;	/* b**14 */
+	break;
+    case 15:
+	wResult *= w1;		/* b**3 */
+	wResult *= wResult;	/* b**6 */
+	wResult *= w1;		/* b**7 */
+	wResult *= wResult;	/* b**14 */
+	wResult *= w1;		/* b**15 */
+	break;
+    case 16:
+	wResult *= wResult;	/* b**4 */
+	wResult *= wResult;	/* b**8 */
+	wResult *= wResult;	/* b**16 */
+	break;
+    }
+    return wResult;
+}
+/*
  *----------------------------------------------------------------------
  *
  * ExecuteExtendedBinaryMathOp, ExecuteExtendedUnaryMathOp --
@@ -8292,7 +8419,7 @@ ExecuteExtendedBinaryMathOp(
     Tcl_WideInt w1, w2, wResult;
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
-    int invalid, numPos, zero;
+    int invalid, zero;
     long shift;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
@@ -8321,7 +8448,7 @@ ExecuteExtendedBinaryMathOp(
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    if (type2 != TCL_NUMBER_BIG) {
 		Tcl_WideInt wQuotient, wRemainder;
-		Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+		TclGetWideIntFromObj(NULL, value2Ptr, &w2);
 		wQuotient = w1 / w2;
 
 		/*
@@ -8367,7 +8494,7 @@ ExecuteExtendedBinaryMathOp(
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
 	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	if ((bigRemainder.used) != 0 && (bigRemainder.sign != big2.sign)) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
@@ -8520,16 +8647,7 @@ ExecuteExtendedBinaryMathOp(
 	if (opcode == INST_LSHIFT) {
 	    mp_mul_2d(&big1, shift, &bigResult);
 	} else {
-	    mp_init(&bigRemainder);
-	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
-		/*
-		 * Convert to Tcl's integer division rules.
-		 */
-
-		mp_sub_d(&bigResult, 1, &bigResult);
-	    }
-	    mp_clear(&bigRemainder);
+	    mp_signed_rsh(&big1, shift, &bigResult);
 	}
 	mp_clear(&big1);
 	BIG_RESULT(&bigResult);
@@ -8539,138 +8657,22 @@ ExecuteExtendedBinaryMathOp(
     case INST_BITXOR:
     case INST_BITAND:
 	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
-	    mp_int *First, *Second;
-
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
-	    /*
-	     * Count how many positive arguments we have. If only one of the
-	     * arguments is negative, store it in 'Second'.
-	     */
-
-	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
-		First = &big1;
-		Second = &big2;
-	    } else {
-		First = &big2;
-		Second = &big1;
-		numPos = (mp_cmp_d(First, 0) != MP_LT);
-	    }
 	    mp_init(&bigResult);
 
 	    switch (opcode) {
 	    case INST_BITAND:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_and(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1))
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(First, &bigResult, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_or(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_and(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_or(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_and(Second, &bigResult, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_and(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		}
+		mp_or(&big1, &big2, &bigResult);
 		break;
 
 	    case INST_BITXOR:
-		switch (numPos) {
-		case 2:
-		    /*
-		     * Both arguments positive, base case.
-		     */
-
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		case 1:
-		    /*
-		     * First is positive; second negative:
-		     * P^N = ~(P^~N) = -(P^(-N-1))-1
-		     */
-
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    mp_neg(&bigResult, &bigResult);
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    break;
-		case 0:
-		    /*
-		     * Both arguments negative:
-		     * a ^ b = (~a ^ ~b) = (-a-1^-b-1)
-		     */
-
-		    mp_neg(First, First);
-		    mp_sub_d(First, 1, First);
-		    mp_neg(Second, Second);
-		    mp_sub_d(Second, 1, Second);
-		    mp_xor(First, Second, &bigResult);
-		    break;
-		}
+		mp_xor(&big1, &big2, &bigResult);
 		break;
 	    }
 
@@ -8735,8 +8737,13 @@ ExecuteExtendedBinaryMathOp(
 	    goto doubleResult;
 	}
 	l1 = l2 = 0;
-	if (type2 == TCL_NUMBER_LONG) {
+	w1 = w2 = 0; /* to silence compiler warning (maybe-uninitialized) */
+	switch (type2) {
+	case TCL_NUMBER_LONG:
 	    l2 = *((const long *) ptr2);
+#ifndef TCL_WIDE_INT_IS_LONG
+    pwrLongExpon:
+#endif
 	    if (l2 == 0) {
 		/*
 		 * Anything to the zero power is 1.
@@ -8750,16 +8757,18 @@ ExecuteExtendedBinaryMathOp(
 
 		return NULL;
 	    }
-	}
-
-	switch (type2) {
-	case TCL_NUMBER_LONG:
 	    negativeExponent = (l2 < 0);
 	    oddExponent = (int) (l2 & 1);
 	    break;
 #ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
+	    /* check it fits in long */
+	    l2 = (long)w2;
+	    if (w2 == l2) {
+		type2 = TCL_NUMBER_LONG;
+		goto pwrLongExpon;
+	    }
 	    negativeExponent = (w2 < 0);
 	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
 	    break;
@@ -8768,36 +8777,58 @@ ExecuteExtendedBinaryMathOp(
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
 	    mp_mod_2d(&big2, 1, &big2);
-	    oddExponent = !mp_iszero(&big2);
+	    oddExponent = big2.used != 0;
 	    mp_clear(&big2);
 	    break;
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
+	switch (type1) {
+	case TCL_NUMBER_LONG:
 	    l1 = *((const long *)ptr1);
+#ifndef TCL_WIDE_INT_IS_LONG
+    pwrLongBase:
+#endif
+	    switch (l1) {
+	    case 0:
+		/*
+		 * Zero to a positive power is zero.
+		 * Zero to a negative power is div by zero error.
+		 */
+
+		return (!negativeExponent) ? constants[0] : EXPONENT_OF_ZERO;
+	    case 1:
+		/*
+		 * 1 to any power is 1.
+		 */
+
+		return constants[1];
+	    case -1:
+		if (!negativeExponent) {
+		    if (!oddExponent) {
+			return constants[1];
+		    }
+		    LONG_RESULT(-1);
+		}
+		/* negativeExponent */
+		if (oddExponent) {
+		    LONG_RESULT(-1);
+		}
+		return constants[1];
+	    }
+	break;
+#ifndef TCL_WIDE_INT_IS_LONG
+	case TCL_NUMBER_WIDE:
+	    w1 = *((const Tcl_WideInt *) ptr1);
+	    /* check it fits in long */
+	    l1 = (long)w1;
+	    if (w1 == l1) {
+		type1 = TCL_NUMBER_LONG;
+		goto pwrLongBase;
+	    }
+	break;
+#endif
 	}
 	if (negativeExponent) {
-	    if (type1 == TCL_NUMBER_LONG) {
-		switch (l1) {
-		case 0:
-		    /*
-		     * Zero to a negative power is div by zero error.
-		     */
-
-		    return EXPONENT_OF_ZERO;
-		case -1:
-		    if (oddExponent) {
-			LONG_RESULT(-1);
-		    }
-		    /* fallthrough */
-		case 1:
-		    /*
-		     * 1 to any power is 1.
-		     */
-
-		    return constants[1];
-		}
-	    }
 
 	    /*
 	     * Integers with magnitude greater than 1 raise to a negative
@@ -8807,26 +8838,9 @@ ExecuteExtendedBinaryMathOp(
 	    return constants[0];
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
-	    switch (l1) {
-	    case 0:
-		/*
-		 * Zero to a positive power is zero.
-		 */
 
-		return constants[0];
-	    case 1:
-		/*
-		 * 1 to any power is 1.
-		 */
-
-		return constants[1];
-	    case -1:
-		if (!oddExponent) {
-		    return constants[1];
-		}
-		LONG_RESULT(-1);
-	    }
+	if (type1 == TCL_NUMBER_BIG) {
+	    goto overflowExpon;
 	}
 
 	/*
@@ -8843,6 +8857,8 @@ ExecuteExtendedBinaryMathOp(
 		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
+
+	/* From here (up to overflowExpon) exponent is long (l2). */
 
 	if (type1 == TCL_NUMBER_LONG) {
 	    if (l1 == 2) {
@@ -8884,35 +8900,8 @@ ExecuteExtendedBinaryMathOp(
 		/*
 		 * Small powers of 32-bit integers.
 		 */
+		lResult = LongPwrSmallExpon(l1, l2);
 
-		lResult = l1 * l1;		/* b**2 */
-		switch (l2) {
-		case 2:
-		    break;
-		case 3:
-		    lResult *= l1;		/* b**3 */
-		    break;
-		case 4:
-		    lResult *= lResult;		/* b**4 */
-		    break;
-		case 5:
-		    lResult *= lResult;		/* b**4 */
-		    lResult *= l1;		/* b**5 */
-		    break;
-		case 6:
-		    lResult *= l1;		/* b**3 */
-		    lResult *= lResult;		/* b**6 */
-		    break;
-		case 7:
-		    lResult *= l1;		/* b**3 */
-		    lResult *= lResult;		/* b**6 */
-		    lResult *= l1;		/* b**7 */
-		    break;
-		case 8:
-		    lResult *= lResult;		/* b**4 */
-		    lResult *= lResult;		/* b**8 */
-		    break;
-		}
 		LONG_RESULT(lResult);
 	    }
 
@@ -8945,97 +8934,24 @@ ExecuteExtendedBinaryMathOp(
 		}
 	    }
 #endif
-	}
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-	if (type1 == TCL_NUMBER_LONG) {
+	    /* Code below (up to overflowExpon) works with wide-int base */
 	    w1 = l1;
-#ifndef TCL_WIDE_INT_IS_LONG
-	} else if (type1 == TCL_NUMBER_WIDE) {
-	    w1 = *((const Tcl_WideInt *) ptr1);
 #endif
-	} else {
-	    goto overflowExpon;
 	}
+
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+
+	/* From here (up to overflowExpon) base is wide-int (w1). */
+
 	if (l2 - 2 < (long)MaxBase64Size
 		&& w1 <=  MaxBase64[l2 - 2]
 		&& w1 >= -MaxBase64[l2 - 2]) {
 	    /*
 	     * Small powers of integers whose result is wide.
 	     */
+	    wResult = WidePwrSmallExpon(w1, l2);
 
-	    wResult = w1 * w1;		/* b**2 */
-	    switch (l2) {
-	    case 2:
-		break;
-	    case 3:
-		wResult *= l1;		/* b**3 */
-		break;
-	    case 4:
-		wResult *= wResult;	/* b**4 */
-		break;
-	    case 5:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		break;
-	    case 6:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		break;
-	    case 7:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		break;
-	    case 8:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		break;
-	    case 9:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		wResult *= w1;		/* b**9 */
-		break;
-	    case 10:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		wResult *= wResult;	/* b**10 */
-		break;
-	    case 11:
-		wResult *= wResult;	/* b**4 */
-		wResult *= w1;		/* b**5 */
-		wResult *= wResult;	/* b**10 */
-		wResult *= w1;		/* b**11 */
-		break;
-	    case 12:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= wResult;	/* b**12 */
-		break;
-	    case 13:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= wResult;	/* b**12 */
-		wResult *= w1;		/* b**13 */
-		break;
-	    case 14:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		wResult *= wResult;	/* b**14 */
-		break;
-	    case 15:
-		wResult *= w1;		/* b**3 */
-		wResult *= wResult;	/* b**6 */
-		wResult *= w1;		/* b**7 */
-		wResult *= wResult;	/* b**14 */
-		wResult *= w1;		/* b**15 */
-		break;
-	    case 16:
-		wResult *= wResult;	/* b**4 */
-		wResult *= wResult;	/* b**8 */
-		wResult *= wResult;	/* b**16 */
-		break;
-	    }
 	    WIDE_RESULT(wResult);
 	}
 
@@ -9075,18 +8991,18 @@ ExecuteExtendedBinaryMathOp(
 #endif
 
     overflowExpon:
-	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	if (big2.used > 1) {
-	    mp_clear(&big2);
+
+	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
+		|| (value2Ptr->typePtr != &tclIntType)
+		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	mp_init(&bigResult);
-	mp_expt_d(&big1, big2.dp[0], &bigResult);
+	mp_expt_d(&big1, (mp_digit)w2, &bigResult);
 	mp_clear(&big1);
-	mp_clear(&big2);
 	BIG_RESULT(&bigResult);
     }
 
@@ -9249,7 +9165,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_mul(&big1, &big2, &bigResult);
 	    break;
 	case INST_DIV:
-	    if (mp_iszero(&big2)) {
+	    if (big2.used == 0) {
 		mp_clear(&big1);
 		mp_clear(&big2);
 		mp_clear(&bigResult);
@@ -9258,7 +9174,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_init(&bigRemainder);
 	    mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	    /* TODO: internals intrusion */
-	    if (!mp_iszero(&bigRemainder)
+	    if (bigRemainder.used != 0
 		    && (bigRemainder.sign != big2.sign)) {
 		/*
 		 * Convert to Tcl's integer division rules.

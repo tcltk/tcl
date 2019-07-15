@@ -510,7 +510,7 @@ SelectPackage(ClientData data[], Tcl_Interp *interp, int result) {
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
     char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
-    int availStable, satisfies; 
+    int availStable, satisfies;
     Require *reqPtr = data[0];
     int reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = data[2];

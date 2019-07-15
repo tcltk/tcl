@@ -657,12 +657,12 @@ TclNamespaceEnsembleCmd(
 
 Tcl_Command
 TclCreateEnsembleInNs(
-    Tcl_Interp *interp, 
-			
+    Tcl_Interp *interp,
+
     const char *name,   /* Simple name of command to create (no */
 			/* namespace components). */
-    Tcl_Namespace       /* Name of namespace to create the command in. */ 
-    *nameNsPtr,	
+    Tcl_Namespace       /* Name of namespace to create the command in. */
+    *nameNsPtr,
     Tcl_Namespace
     *ensembleNsPtr,	/* Name of the namespace for the ensemble. */
     int flags
@@ -2702,7 +2702,11 @@ BuildEnsembleConfig(
 		    if (isNew) {
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-			cmdObj = Tcl_NewStringObj(nsCmdName, -1);
+			TclNewObj(cmdObj);
+			Tcl_AppendStringsToObj(cmdObj,
+				ensemblePtr->nsPtr->fullName,
+				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
+				nsCmdName, NULL);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);

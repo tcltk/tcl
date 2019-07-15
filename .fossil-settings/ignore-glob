@@ -24,9 +24,11 @@ libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build
 libtommath/tommath.src
+libtommath/*.log
 libtommath/*.pdf
 libtommath/*.pl
 libtommath/*.sh
+libtommath/doc/*
 libtommath/tombc/*
 libtommath/pre_gen/*
 libtommath/pics/*

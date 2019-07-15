@@ -1480,6 +1480,30 @@ test oo-10.3 {OO: invoke and modify} -setup {
     oo::define B deletemethod b c
     lappend result [C a] [C b] [C c]
 } -result {A.a,B.a A.b,B.b A.c,B.c - A.a,B.a A.b A.c,B.c - A.a A.b,B.a A.c,B.c - A.a A.b A.c}
+test oo-10.4 {OO: invoke and modify} -setup {
+    oo::class create A {
+	method a {} {return A.a}
+	method b {} {return A.b}
+	method c {} {return A.c}
+    }
+    A create B
+    oo::objdefine B {
+	method a {} {return [next],B.a}
+	method b {} {return [next],B.b}
+	method c {} {return [next],B.c}
+    }
+    set result {}
+} -cleanup {
+    A destroy
+} -body {
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B deletemethod b
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B renamemethod a b
+    lappend result [B a] [B b] [B c] -
+    oo::objdefine B deletemethod b c
+    lappend result [B a] [B b] [B c]
+} -result {A.a,B.a A.b,B.b A.c,B.c - A.a,B.a A.b A.c,B.c - A.a A.b,B.a A.c,B.c - A.a A.b A.c}
 
 test oo-11.1 {OO: cleanup} {
     oo::object create foo

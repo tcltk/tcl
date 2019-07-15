@@ -2476,7 +2476,7 @@ Tcl_SetIntObj(
  *	    Success.
  *
  *	TCL_ERROR
- *	
+ *
  *	    An error occurred during conversion or the integral value can not
  *	    be represented as an integer (it might be too large). An error
  *	    message is left in the interpreter's result if 'interp' is not
@@ -2804,8 +2804,8 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1)
+		    / MP_DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
 		unsigned char *bytes = (unsigned char *) &scratch;
@@ -3104,7 +3104,7 @@ Tcl_GetWideIntFromObj(
 
 	    UNPACK_BIGNUM(objPtr, big);
 	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
-		     + DIGIT_BIT - 1) / DIGIT_BIT) {
+		     + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
 		Tcl_WideInt scratch;
@@ -3523,7 +3523,7 @@ Tcl_SetBignumObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
     if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	    <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
 	unsigned char *bytes = (unsigned char *) &scratch;
@@ -3548,7 +3548,7 @@ Tcl_SetBignumObj(
   tooLargeForLong:
 #ifndef TCL_WIDE_INT_IS_LONG
     if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
 	Tcl_WideInt scratch;

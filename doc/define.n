@@ -55,7 +55,8 @@ string, the constructor will be deleted.
 This deletes each of the methods called \fIname\fR from a class. The methods
 must have previously existed in that class. Does not affect the superclasses
 of the class, nor does it affect the subclasses or instances of the class
-(except when they have a call chain through the class being modified).
+(except when they have a call chain through the class being modified) or the
+class object itself.
 .TP
 \fBdestructor\fI bodyScript\fR
 .
@@ -135,7 +136,8 @@ This renames the method called \fIfromName\fR in a class to \fItoName\fR. The
 method must have previously existed in the class, and \fItoName\fR must not
 previously refer to a method in that class. Does not affect the superclasses
 of the class, nor does it affect the subclasses or instances of the class
-(except when they have a call chain through the class being modified). Does
+(except when they have a call chain through the class being modified), or the
+class object itself. Does
 not change the export status of the method; if it was exported before, it will
 be afterwards.
 .TP
@@ -203,8 +205,10 @@ well be in an inconsistent state unless additional configuration work is done.
 \fBdeletemethod\fI name\fR ?\fIname ...\fR
 .
 This deletes each of the methods called \fIname\fR from an object. The methods
-must have previously existed in that object. Does not affect the classes that
-the object is an instance of.
+must have previously existed in that object (e.g., because it was created
+through \fBoo::objdefine method\fR). Does not affect the classes that the
+object is an instance of, or remove the exposure of those class-provided
+methods in the instance of that class.
 .TP
 \fBexport\fI name \fR?\fIname ...\fR?
 .
@@ -262,8 +266,10 @@ By default, this slot works by replacement.
 This renames the method called \fIfromName\fR in an object to \fItoName\fR.
 The method must have previously existed in the object, and \fItoName\fR must
 not previously refer to a method in that object. Does not affect the classes
-that the object is an instance of. Does not change the export status of the
-method; if it was exported before, it will be afterwards.
+that the object is an instance of and cannot rename in an instance object the
+methods provided by those classes (though a \fBoo::objdefine forward\fRed
+method may provide an equivalent capability). Does not change the export
+status of the method; if it was exported before, it will be afterwards.
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .

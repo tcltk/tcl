@@ -1,14 +1,6 @@
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
+
 #ifndef BN_H_
 #define BN_H_
 
@@ -23,7 +15,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
+#if defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)
 #   define MP_32BIT
 #endif
 
@@ -89,17 +81,7 @@ typedef unsigned long long   mp_word;
 #   endif
 #endif
 
-/* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
-#ifndef DIGIT_BIT
-#   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-typedef unsigned long mp_min_u32;
-#else
-typedef mp_digit mp_min_u32;
-#endif
-
-#define MP_DIGIT_BIT     DIGIT_BIT
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
-#define MP_DIGIT_MAX     MP_MASK
 
 /* equalities */
 #define MP_LT        -1   /* less than */
@@ -125,12 +107,6 @@ typedef mp_digit mp_min_u32;
 
 typedef int           mp_err;
 
-/* you'll have to tune these... */
-extern int KARATSUBA_MUL_CUTOFF,
-       KARATSUBA_SQR_CUTOFF,
-       TOOM_MUL_CUTOFF,
-       TOOM_SQR_CUTOFF;
-
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
 
@@ -143,9 +119,6 @@ extern int KARATSUBA_MUL_CUTOFF,
 #   endif
 #endif
 
-/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
-
 /* the infamous mp_int structure */
 typedef struct  {
    int used, alloc, sign;
@@ -155,10 +128,6 @@ typedef struct  {
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
-
-#define USED(m)     ((m)->used)
-#define DIGIT(m, k) ((m)->dp[(k)])
-#define SIGN(m)     ((m)->sign)
 
 /* error code to char* string */
 const char *mp_error_to_string(int code);
@@ -180,18 +149,18 @@ void mp_clear_multi(mp_int *mp, ...);
 void mp_exch(mp_int *a, mp_int *b);
 
 /* shrink ram required for a bignum */
-int mp_shrink(mp_int *a);
+mp_err mp_shrink(mp_int *a);
 
 /* grow an int to a given size */
-int mp_grow(mp_int *a, int size);
+mp_err mp_grow(mp_int *a, int size);
 
 /* init to a given number of digits */
-int mp_init_size(mp_int *a, int size);
+mp_err mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -315,7 +284,7 @@ int mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c);
 int mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* right shift (two complement) */
-int mp_tc_div_2d(const mp_int *a, int b, mp_int *c);
+int mp_signed_rsh(const mp_int *a, int b, mp_int *c);
 
 /* ---> Basic arithmetic <--- */
 

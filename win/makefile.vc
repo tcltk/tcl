@@ -51,11 +51,75 @@
 # vcvars32.bat according to the instructions for it.  This can also
 # turn on the 64-bit compiler, if your SDK has it.
 #
+# Basic macros and options usable on the commandline (see rules.vc for more info):
+#	OPTS=msvcrt,static,staticpkg,symbols,nothreads,profile,unchecked,time64bit,none
+#		Sets special options for the core.  The default is for none.
+#		Any combination of the above may be used (comma separated).
+#		'none' will over-ride everything to nothing.
+#
+#		msvcrt   = Affects the static option only to switch it from
+#			   using libcmt(d) as the C runtime [by default] to
+#			   msvcrt(d). This is useful for static embedding
+#			   support.
+#		static   = Builds a static library of the core instead of a
+#			   dll.  The shell will be static (and large), as well.
+#		staticpkg= Affects the static option only to switch
+#			   tclshXX.exe to have the dde and reg extension linked
+#			   inside it.
+#		nothreads  = Turns off full multithreading support (default on).
+#		thrdalloc = Use the thread allocator (shared global free pool).
+#		symbols =  Adds symbols for step debugging.
+#		profile =  Adds profiling hooks.  Map file is assumed.
+#		unchecked = Allows a symbols build to not use the debug
+#			   enabled runtime (msvcrt.dll not msvcrtd.dll
+#			   or libcmt.lib not libcmtd.lib).
+#		time64bit = Forces a build using 64-bit time_t for 32-bit build
+#			   (CRT library should support this).
+#
+#	STATS=compdbg,memdbg,none
+#		Sets optional memory and bytecode compiler debugging code added
+#		to the core.  The default is for none.  Any combination of the
+#		above may be used (comma separated).  'none' will over-ride
+#		everything to nothing.
+#
+#		compdbg  = Enables byte compilation logging.
+#		memdbg   = Enables the debugging memory allocator.
+#
+#	CHECKS=64bit,fullwarn,nodep,none
+#		Sets special macros for checking compatibility.
+#
+#		64bit    = Enable 64bit portability warnings (if available)
+#		fullwarn = Builds with full compiler and link warnings enabled.
+#			    Very verbose.
+#		nodep	 = Turns off compatibility macros to ensure the core
+#			    isn't being built with deprecated functions.
+#
+#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#		Set the machine type used for the compiler, linker, and
+#		resource compiler.  This hook is needed to tell the tools
+#		when alternate platforms are requested.  IX86 is the default
+#		when not specified. If the CPU environment variable has been
+#		set (ie: recent Platform SDK) then MACHINE is set from CPU.
+#
+#	TMP_DIR=<path>
+#	OUT_DIR=<path>
+#		Hooks to allow the intermediate and output directories to be
+#		changed.  $(OUT_DIR) is assumed to be
+#		$(BINROOT)\(Release|Debug) based on if symbols are requested.
+#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#
+#	TESTPAT=<file>
+#		Reads the tests requested to be run from this file.
+#
+#	CFG_ENCODING=encoding
+#		name of encoding for configuration information. Defaults
+#		to cp1252
+#
 # Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 
@@ -253,7 +317,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
@@ -277,6 +340,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_s_mp_get_bit.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
@@ -301,11 +365,13 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_int.obj \
+	$(TMP_DIR)\bn_mp_set_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_signed_rsh.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
 	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \

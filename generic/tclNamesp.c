@@ -1071,6 +1071,13 @@ Tcl_DeleteNamespace(
     }
     TclNsDecrRefCount(nsPtr);
 }
+
+int
+TclNamespaceDeleted(
+    Namespace *nsPtr)
+{
+    return (nsPtr->flags & NS_DYING) ? 1 : 0;
+}
 
 /*
  *----------------------------------------------------------------------

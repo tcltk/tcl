@@ -51,6 +51,12 @@
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
+#undef TclBN_mp_tc_and
+#undef TclBN_mp_tc_or
+#undef TclBN_mp_tc_xor
+#define TclBN_mp_tc_and TclBN_mp_and
+#define TclBN_mp_tc_or TclBN_mp_or
+#define TclBN_mp_tc_xor TclBN_mp_xor
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -854,6 +860,16 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
+    0, /* 68 */
+    0, /* 69 */
+    TclBN_mp_set_long, /* 70 */
+    0, /* 71 */
+    0, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_signed_rsh, /* 76 */
+    TclBN_mp_get_bit, /* 77 */
 };
 
 static const TclStubHooks tclStubHooks = {
