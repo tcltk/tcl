@@ -48,7 +48,7 @@
 #define CLF_ISO8601WEAK	       (1 << 13)
 #define CLF_ISO8601CENTURY     (1 << 14)
 
-#define CLF_SIGNED	       (1 << 16)
+#define CLF_SIGNED	       (1 << 15)
 
 /* extra flags used outside of scan/format-tokens too (int, not a short int) */
 #define CLF_RELCONV	       (1 << 17)
@@ -59,7 +59,7 @@
 #define CLF_ASSEMBLE_JULIANDAY (1 << 29) /* assemble julianDay using year, month, etc. */
 #define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
 
-#define CLF_HAVEDATE	       (CLF_DAYOFMONTH|CLF_MONTH|CLF_YEAR|CLF_ISO8601YEAR)
+#define CLF_HAVEDATE	       (CLF_DAYOFMONTH|CLF_MONTH|CLF_YEAR)
 #define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
 				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | \
 				CLF_DAYOFWEEK | CLF_ISO8601WEAK)

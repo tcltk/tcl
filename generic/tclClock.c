@@ -3817,15 +3817,13 @@ ClockValidDate(
 	}
     }
     /* and month (used later in hath) */
-    if (info->flags & (CLF_MONTH|CLF_DATE)) {
-    	info->flags |= CLF_MONTH;
+    if (info->flags & CLF_MONTH) {
 	if ( yyMonth < 1 || yyMonth > 12 ) {
 	    errMsg = "invalid month"; errCode = "month"; goto error;
 	}
     }
     /* day of month */
     if (info->flags & (CLF_DAYOFMONTH|CLF_DAYOFWEEK)) {
-    	info->flags |= CLF_DAYOFMONTH;
 	if ( yyDay < 1 || yyDay > 31 ) {
 	    errMsg = "invalid day"; errCode = "day"; goto error;
 	}

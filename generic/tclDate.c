@@ -559,12 +559,12 @@ static const yytype_uint8 yytranslate[] =
 static const yytype_uint16 yyrline[] =
 {
        0,   167,   167,   168,   169,   172,   175,   178,   181,   184,
-     187,   190,   193,   196,   199,   205,   211,   219,   223,   227,
-     231,   235,   239,   245,   246,   249,   253,   257,   261,   265,
-     269,   275,   279,   284,   289,   294,   299,   303,   308,   312,
-     317,   324,   328,   334,   343,   351,   359,   368,   378,   392,
-     397,   400,   403,   406,   409,   412,   415,   420,   423,   428,
-     432,   436,   442,   445,   450,   468,   471
+     187,   190,   193,   197,   200,   206,   212,   220,   224,   228,
+     232,   236,   240,   246,   247,   250,   254,   258,   262,   266,
+     270,   276,   280,   285,   290,   295,   300,   304,   309,   313,
+     318,   325,   329,   335,   344,   352,   360,   369,   379,   393,
+     398,   401,   404,   407,   410,   413,   416,   421,   424,   429,
+     433,   437,   443,   446,   451,   469,   472
 };
 #endif
 
@@ -1548,7 +1548,7 @@ yyreduce:
   case 10:
 
     {
-	    yyIncrFlags(CLF_RELCONV);
+	    info->flags |= CLF_RELCONV;
 	}
 
     break;
@@ -1564,7 +1564,8 @@ yyreduce:
   case 12:
 
     {
-	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE|CLF_RELCONV);
+	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
+	    info->flags |= CLF_RELCONV;
 	}
 
     break;
@@ -2524,6 +2525,9 @@ TclDateerror(
     const char *s)
 {
     Tcl_Obj* t;
+    if (!infoPtr->messages) {
+	infoPtr->messages = Tcl_NewObj();
+    }
     Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
     Tcl_AppendToObj(infoPtr->messages, s, -1);
     Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
@@ -2821,9 +2825,7 @@ TclClockFreeScan(
 
     yyDSTmode = DSTmaybe;
 
-    info->messages = Tcl_NewObj();
     info->separatrix = "";
-    Tcl_IncrRefCount(info->messages);
 
     info->dateStart = yyInput;
 
@@ -2833,58 +2835,44 @@ TclClockFreeScan(
     /* parse */
     status = yyparse(info);
     if (status == 1) {
-	Tcl_SetObjResult(interp, info->messages);
-	Tcl_DecrRefCount(info->messages);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
-	return TCL_ERROR;
+    	const char *msg = NULL;
+	if (info->errFlags & CLF_HAVEDATE) {
+	    msg = "more than one date in string";
+	} else if (info->errFlags & CLF_TIME) {
+	    msg = "more than one time of day in string";
+	} else if (info->errFlags & CLF_ZONE) {
+	    msg = "more than one time zone in string";
+	} else if (info->errFlags & CLF_DAYOFWEEK) {
+	    msg = "more than one weekday in string";
+	} else if (info->errFlags & CLF_ORDINALMONTH) {
+	    msg = "more than one ordinal month in string";
+	}
+	if (msg) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	} else {
+	    Tcl_SetObjResult(interp,
+		info->messages ? info->messages : Tcl_NewObj());
+	    info->messages = NULL;
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
+	}
+	status = TCL_ERROR;
     } else if (status == 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
-	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
+	status = TCL_ERROR;
     } else if (status != 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
 						  "from date parser. Please "
 						  "report this error as a "
 						  "bug in Tcl.", -1));
-	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
-	return TCL_ERROR;
+	status = TCL_ERROR;
     }
-    Tcl_DecrRefCount(info->messages);
-
-    if (info->errFlags & CLF_HAVEDATE) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one date in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
+    if (info->messages) {
+	Tcl_DecrRefCount(info->messages);
     }
-    if (info->errFlags & CLF_TIME) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time of day in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (info->errFlags & CLF_ZONE) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time zone in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (info->errFlags & CLF_DAYOFWEEK) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one weekday in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (info->errFlags & CLF_ORDINALMONTH) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one ordinal month in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-
-    return TCL_OK;
+    return status;
 }
 
 /*
