@@ -18687,10 +18687,34 @@ test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
 } 2
 
-test clock-6.12 {input of unambiguous short locale token (%b)} {
+test clock-6.12.0 {input of unambiguous short locale token (%b)} {
     list [clock scan "12 Ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
 	 [clock scan "12 Au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
 } {979257600 997574400}
+test clock-6.12.1 {input of all forms of unambiguous short locale token (%b)} {
+    # find all unambiguous short forms and check it'll be scanned successful and correctly:
+    set months {January February March April May June July August September October November December}
+    set res {}
+    foreach mon $months {
+	set i 0
+	while {[incr i] < [string length $mon]} {
+	    # short month form:
+	    set shm [string range $mon 0 $i]
+	    # ignore ambiguous:
+	    if {[llength [lsearch -all -glob $months "${shm}*"]] > 1} continue
+	    set s "12 $shm 2001"
+	    # scan and format with full month name:
+	    set t [clock format \
+			[clock scan $s -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	          -format "%d %B %Y" -locale en_US_roman -gmt 1]
+	    # check it corresponds the full form:
+	    if {$t ne "12 $mon 2001"} {
+		lappend res "unexpected result converting $s, expected \"12 $mon 2001\", got \"$t\""
+	    }
+	}
+    }
+    set res
+} {}
 test clock-6.13 {input of lowercase locale token (%b)} {
     list [clock scan "12 ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
 	 [clock scan "12 au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]

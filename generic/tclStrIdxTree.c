@@ -96,7 +96,7 @@ TclStrIdxTreeSearch(
     /* search in tree */
     do {
 	cinf = cin = TclGetString(item->key) + offs;
-	f = TclUtfFindEqualNCInLwr(s, end, cin, cin + item->length, &cinf);
+	f = TclUtfFindEqualNCInLwr(s, end, cin, cin + item->length - offs, &cinf);
 	/* if something was found */
 	if (f > s) {
 	    /* if whole string was found */
