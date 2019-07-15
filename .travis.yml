@@ -3,29 +3,36 @@ language: c
 
 matrix:
   include:
-    - os: linux
+# Testing on Linux with various compilers
+    - name: "Linux/Clang/Shared"
+      os: linux
       dist: xenial
       compiler: clang
       env:
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/Clang/Static"
+      os: linux
       dist: xenial
       compiler: clang
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/GCC/Shared"
+      os: linux
       dist: xenial
       compiler: gcc
       env:
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/GCC/Static"
+      os: linux
       dist: xenial
       compiler: gcc
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-    - os: linux
+# Older versions of GCC...
+    - name: "Linux/GCC 4.9/Shared"
+      os: linux
       dist: xenial
       compiler: gcc-4.9
       addons:
@@ -36,7 +43,8 @@ matrix:
             - g++-4.9
       env:
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/GCC 5/Shared"
+      os: linux
       dist: xenial
       compiler: gcc-5
       addons:
@@ -47,7 +55,8 @@ matrix:
             - g++-5
       env:
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/GCC 6/Shared"
+      os: linux
       dist: xenial
       compiler: gcc-6
       addons:
@@ -58,7 +67,8 @@ matrix:
             - g++-6
       env:
         - BUILD_DIR=unix
-    - os: linux
+    - name: "Linux/GCC 7/Shared"
+      os: linux
       dist: xenial
       compiler: gcc-7
       addons:
@@ -69,35 +79,43 @@ matrix:
             - g++-7
       env:
         - BUILD_DIR=unix
-    - os: osx
+# Testing on Mac, various styles
+    - name: "macOS/Xcode 8/Shared/Unix-like"
+      os: osx
       osx_image: xcode8
       env:
         - BUILD_DIR=unix
-    - os: osx
+    - name: "macOS/Xcode 8/Shared/Mac-like"
+      os: osx
       osx_image: xcode8
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
-    - os: osx
+      install: []
+      script: &mactest
+        - make all
+        # The styles=develop avoids some weird problems on OSX
+        - make test styles=develop
+    - name: "macOS/Xcode 9/Shared/Mac-like"
+      os: osx
       osx_image: xcode9
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
-    - os: osx
+      install: []
+      script: *mactest
+    - name: "macOS/Xcode 10/Shared/Mac-like"
+      os: osx
       osx_image: xcode10.2
       env:
         - BUILD_DIR=macosx
-        - NO_DIRECT_CONFIGURE=1
-### C builds not currently supported on Windows instances
-#    - os: windows
-#      env:
-#        - BUILD_DIR=win
-### ... so proxy with a Mingw cross-compile
-# Test with mingw-w64 (32 bit)
-    - os: linux
+      install: []
+      script: *mactest
+# Test with mingw-w64 (32 bit) cross-compile
+# Doesn't run tests because wine is only an imperfect Windows emulation 
+    - name: "Linux-cross-Windows-32/GCC/Shared/no test"
+      os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
+      addons: &mingw32
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -109,28 +127,28 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
-        - NO_DIRECT_TEST=1
-    - os: linux
+      script: &crosstest
+        - make all
+        - make tcltest
+        # Include a high visibility marker that tests are skipped outright
+        - >
+          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
+    - name: "Linux-cross-Windows-32/GCC/Static/no test"
+      os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
-            - wine
+      addons: *mingw32
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-        - NO_DIRECT_TEST=1
+      script: *crosstest
 # Test with mingw-w64 (64 bit)
-    - os: linux
+# Doesn't run tests because wine is only an imperfect Windows emulation 
+    - name: "Linux-cross-Windows-64/GCC/Shared/no test"
+      os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
+      addons: &mingw64
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -141,29 +159,23 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
-        - NO_DIRECT_TEST=1
-    - os: linux
+      script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Static/no test"
+      os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
+      addons: *mingw64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-        - NO_DIRECT_TEST=1
-
+      script: *crosstest
 before_install:
-  - export ERROR_ON_FAILURES=1
   - cd ${BUILD_DIR}
 install:
-  - test -n "$NO_DIRECT_CONFIGURE" || ./configure ${CFGOPT}
+  - ./configure ${CFGOPT} --prefix=$HOME
+before_script:
+  - export ERROR_ON_FAILURES=1
 script:
-  - make
-  # The styles=develop avoids some weird problems on OSX
-  - test -n "$NO_DIRECT_TEST" || make test styles=develop
+  - make all
+  - make tcltest
+  - make test
