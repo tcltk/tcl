@@ -127,15 +127,23 @@ proc _adjust_maxcount {reptime maxcount} {
 proc _test_run {args} {
   upvar _ _
   # parse args:
-  array set _ [set _opts {-no-result 0 -uplevel 0}]
+  array set _ {-no-result 0 -uplevel 0 -convert-result {}}
   while {[llength $args] > 2} {
-    if {[set o [lindex $args 0]] ni $_opts || $_($o)} {
+    if {![info exists _([set o [lindex $args 0]])]} {
       break
     }
-    set _($o) 1
-    set args [lrange $args 1 end]
+    if {[string is boolean -strict $_($o)]} {
+      set _($o) [expr {! $_($o)}]
+      set args [lrange $args 1 end]
+    } else {
+      if {[llength $args] <= 2} {
+        return -code error "value expected for option $o"
+      }
+      set _($o) [lindex $args 1]
+      set args [lrange $args 2 end]
+    }
   }
-  unset -nocomplain _opts o
+  unset -nocomplain o
   if {[llength $args] < 2 || [llength $args] > 3} {
     return -code error "wrong # args: should be \"[lindex [info level [info level]] 0] ?-no-result? reptime lst ?outcmd?\""
   }
@@ -173,7 +181,8 @@ proc _test_run {args} {
     # if output result (and not once):
     if {!$_(-no-result)} {
       set _(r) [if 1 $_(c)]
-      if {$_(outcmd) ne {}} {{*}$_(outcmd) $_(r)}
+      if {$_(-convert-result) ne ""} { set _(r) [if 1 $_(-convert-result)] }
+      {*}$_(outcmd) $_(r)
       if {[llength $_(ittime)] > 1} { # decrement max-count
         lset _(ittime) 1 [expr {[lindex $_(ittime) 1] - 1}]
       }

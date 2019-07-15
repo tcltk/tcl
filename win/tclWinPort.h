@@ -14,7 +14,12 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && defined(BUILD_tcl)
+/* define _USE_64BIT_TIME_T (or make/configure option time64bit) to force 64-bit time_t */
+#if defined(_USE_64BIT_TIME_T)
+#define __MINGW_USE_VC2005_COMPAT
+#endif
+
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT) && defined(BUILD_tcl)
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define _USE_32BIT_TIME_T
 #endif

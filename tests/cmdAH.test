@@ -21,6 +21,10 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint time64bit [expr {
+    $::tcl_platform(pointerSize) >= 8 ||
+    [llength [info command testsize]] && [testsize time_t] >= 8
+}]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
     ($::tcl_platform(osVersion) >= 5.0
@@ -1289,6 +1293,22 @@ test cmdAH-24.14.1 {
 } -constraints {win} -body {
     file mtime [file join [temporaryDirectory] CON.txt]
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
+
+# 3155760000 is 64-bit unix time, Wed Jan 01 00:00:00 GMT 2070:
+test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file atime $filename 3155760000] [file atime $filename]
+} -cleanup {
+    removeFile $filename
+} -result {3155760000 3155760000}
+test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file mtime $filename 3155760000] [file mtime $filename]
+} -cleanup {
+    file delete -force $filename
+} -result {3155760000 3155760000}
 
 # owned
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
