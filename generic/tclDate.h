@@ -37,6 +37,7 @@
 #define CLF_LOCALSEC	       (1 << 2)
 #define CLF_JULIANDAY	       (1 << 3)
 #define CLF_TIME	       (1 << 4)
+#define CLF_ZONE	       (1 << 5)
 #define CLF_CENTURY	       (1 << 6)
 #define CLF_DAYOFMONTH	       (1 << 7)
 #define CLF_DAYOFYEAR	       (1 << 8)
@@ -46,12 +47,19 @@
 #define CLF_ISO8601YEAR	       (1 << 12)
 #define CLF_ISO8601WEAK	       (1 << 13)
 #define CLF_ISO8601CENTURY     (1 << 14)
-#define CLF_SIGNED	       (1 << 15)
+
+#define CLF_SIGNED	       (1 << 16)
+
+/* extra flags used outside of scan/format-tokens too (int, not a short int) */
+#define CLF_RELCONV	       (1 << 17)
+#define CLF_ORDINALMONTH       (1 << 18)
+
 /* On demand (lazy) assemble flags */
 #define CLF_ASSEMBLE_DATE      (1 << 28) /* assemble year, month, etc. using julianDay */
 #define CLF_ASSEMBLE_JULIANDAY (1 << 29) /* assemble julianDay using year, month, etc. */
 #define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
 
+#define CLF_HAVEDATE	       (CLF_DAYOFMONTH|CLF_MONTH|CLF_YEAR|CLF_ISO8601YEAR)
 #define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
 				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | \
 				CLF_DAYOFWEEK | CLF_ISO8601WEAK)
@@ -185,28 +193,22 @@ typedef struct DateInfo {
 
     TclDateFields date;
 
-    int		flags;
-
-    int dateHaveDate;
+    int		flags;		/* Signals parts of date/time get found */
+    int		errFlags;	/* Signals error (part of date/time found twice) */
 
     int dateMeridian;
-    int dateHaveTime;
 
     int dateTimezone;
     int dateDSTmode;
-    int dateHaveZone;
 
     int dateRelMonth;
     int dateRelDay;
     int dateRelSeconds;
-    int dateHaveRel;
 
     int dateMonthOrdinalIncr;
     int dateMonthOrdinal;
-    int dateHaveOrdinalMonth;
 
     int dateDayOrdinal;
-    int dateHaveDay;
 
     int *dateRelPointer;
 
@@ -235,12 +237,6 @@ typedef struct DateInfo {
 #define yyDayOfWeek (info->date.dayOfWeek)
 #define yyMonthOrdinalIncr  (info->dateMonthOrdinalIncr)
 #define yyMonthOrdinal	(info->dateMonthOrdinal)
-#define yyHaveDate  (info->dateHaveDate)
-#define yyHaveDay   (info->dateHaveDay)
-#define yyHaveOrdinalMonth (info->dateHaveOrdinalMonth)
-#define yyHaveRel   (info->dateHaveRel)
-#define yyHaveTime  (info->dateHaveTime)
-#define yyHaveZone  (info->dateHaveZone)
 #define yyTimezone  (info->dateTimezone)
 #define yyMeridian  (info->dateMeridian)
 #define yyRelMonth  (info->dateRelMonth)
