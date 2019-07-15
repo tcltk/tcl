@@ -176,8 +176,8 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads"
-      before_install:
-        - choco install make
+      before_install: &cygwinSetup
+        - choco install cygwin
         - cd ${BUILD_DIR}
       install:
         - ./configure ${CFGOPT} --prefix=$HOME
@@ -189,9 +189,7 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads --disable-shared"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *cygwinSetup
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
       os: windows
