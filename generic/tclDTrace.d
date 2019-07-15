@@ -173,7 +173,7 @@ provider tcl {
  */
 
 typedef struct Tcl_ObjType {
-    char *name;
+    const char *name;
     void *freeIntRepProc;
     void *dupIntRepProc;
     void *updateStringProc;
@@ -184,7 +184,7 @@ struct Tcl_Obj {
     int refCount;
     char *bytes;
     int length;
-    Tcl_ObjType *typePtr;
+    const Tcl_ObjType *typePtr;
     union {
 	long longValue;
 	double doubleValue;
