@@ -91,7 +91,10 @@ matrix:
       env:
         - BUILD_DIR=macosx
       install: []
-      script: *mactest
+      script: &mactest
+        - make all
+        # The styles=develop avoids some weird problems on OSX
+        - make test styles=develop
     - name: "macOS/Xcode 10/Shared/Mac-like"
       os: osx
       osx_image: xcode10.2
@@ -112,10 +115,7 @@ matrix:
       env:
         - BUILD_DIR=macosx
       install: []
-      script: &mactest
-        - make all
-        # The styles=develop avoids some weird problems on OSX
-        - make test styles=develop
+      script: *mactest
 # Test with mingw-w64 (32 bit) cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation 
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
