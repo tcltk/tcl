@@ -75,6 +75,13 @@
 #define SECSPERDAY	(24L * 60L * 60L)
 #define IsLeapYear(x)	((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
+#define yyIncrFlags(f)				\
+    do {					\
+	info->errFlags |= (info->flags & (f));	\
+	if (info->errFlags) { YYABORT; }	\
+	info->flags |= (f);			\
+    } while (0);
+
 /*
  * An entry in the lexical lookup table.
  */
@@ -163,31 +170,29 @@ spec	: /* NULL */
 	;
 
 item	: time {
-	    yyHaveTime++;
+	    yyIncrFlags(CLF_TIME);
 	}
 	| zone {
-	    yyHaveZone++;
+	    yyIncrFlags(CLF_ZONE);
 	}
 	| date {
-	    yyHaveDate++;
+	    yyIncrFlags(CLF_HAVEDATE);
 	}
 	| ordMonth {
-	    yyHaveOrdinalMonth++;
+	    yyIncrFlags(CLF_ORDINALMONTH);
 	}
 	| day {
-	    yyHaveDay++;
+	    yyIncrFlags(CLF_DAYOFWEEK);
 	}
 	| relspec {
-	    yyHaveRel++;
+	    info->flags |= CLF_RELCONV;
 	}
 	| iso {
-	    yyHaveTime++;
-	    yyHaveDate++;
+	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
 	}
 	| trek {
-	    yyHaveTime++;
-	    yyHaveDate++;
-	    yyHaveRel++;
+	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
+	    info->flags |= CLF_RELCONV;
 	}
 	| number
 	;
@@ -245,32 +250,26 @@ comma	: ','
 day	: tDAY {
 	    yyDayOrdinal = 1;
 	    yyDayOfWeek = $1;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tDAY comma {
 	    yyDayOrdinal = 1;
 	    yyDayOfWeek = $1;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tUNUMBER tDAY {
 	    yyDayOrdinal = $1;
 	    yyDayOfWeek = $2;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| sign SP tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $3;
 	    yyDayOfWeek = $4;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| sign tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $2;
 	    yyDayOfWeek = $3;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tNEXT tDAY {
 	    yyDayOrdinal = 2;
 	    yyDayOfWeek = $2;
-	    info->flags |= CLF_DAYOFWEEK;
 	}
 	;
 
@@ -450,10 +449,10 @@ INTNUM	: tUNUMBER {
 	;
 
 number	: INTNUM {
-	    if (yyHaveTime && yyHaveDate && !yyHaveRel) {
+	    if ((info->flags & (CLF_TIME|CLF_HAVEDATE|CLF_RELCONV)) == (CLF_TIME|CLF_HAVEDATE)) {
 		yyYear = $1;
 	    } else {
-		yyHaveTime++;
+		yyIncrFlags(CLF_TIME);
 		if (yyDigitCount <= 2) {
 		    yyHour = $1;
 		    yyMinutes = 0;
@@ -700,6 +699,9 @@ TclDateerror(
     const char *s)
 {
     Tcl_Obj* t;
+    if (!infoPtr->messages) {
+	infoPtr->messages = Tcl_NewObj();
+    }
     Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
     Tcl_AppendToObj(infoPtr->messages, s, -1);
     Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
@@ -997,9 +999,7 @@ TclClockFreeScan(
 
     yyDSTmode = DSTmaybe;
 
-    info->messages = Tcl_NewObj();
     info->separatrix = "";
-    Tcl_IncrRefCount(info->messages);
 
     info->dateStart = yyInput;
 
@@ -1009,58 +1009,44 @@ TclClockFreeScan(
     /* parse */
     status = yyparse(info);
     if (status == 1) {
-	Tcl_SetObjResult(interp, info->messages);
-	Tcl_DecrRefCount(info->messages);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
-	return TCL_ERROR;
+    	const char *msg = NULL;
+	if (info->errFlags & CLF_HAVEDATE) {
+	    msg = "more than one date in string";
+	} else if (info->errFlags & CLF_TIME) {
+	    msg = "more than one time of day in string";
+	} else if (info->errFlags & CLF_ZONE) {
+	    msg = "more than one time zone in string";
+	} else if (info->errFlags & CLF_DAYOFWEEK) {
+	    msg = "more than one weekday in string";
+	} else if (info->errFlags & CLF_ORDINALMONTH) {
+	    msg = "more than one ordinal month in string";
+	}
+	if (msg) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	} else {
+	    Tcl_SetObjResult(interp,
+		info->messages ? info->messages : Tcl_NewObj());
+	    info->messages = NULL;
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
+	}
+	status = TCL_ERROR;
     } else if (status == 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
-	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
+	status = TCL_ERROR;
     } else if (status != 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
 						  "from date parser. Please "
 						  "report this error as a "
 						  "bug in Tcl.", -1));
-	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
-	return TCL_ERROR;
+	status = TCL_ERROR;
     }
-    Tcl_DecrRefCount(info->messages);
-
-    if (yyHaveDate > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one date in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
+    if (info->messages) {
+	Tcl_DecrRefCount(info->messages);
     }
-    if (yyHaveTime > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time of day in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (yyHaveZone > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time zone in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (yyHaveDay > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one weekday in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-    if (yyHaveOrdinalMonth > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one ordinal month in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
-	return TCL_ERROR;
-    }
-
-    return TCL_OK;
+    return status;
 }
 
 /*
