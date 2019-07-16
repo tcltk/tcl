@@ -177,7 +177,8 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads"
       before_install: &cygwinSetup
-        - choco install cygwin
+        - choco install cyg-get
+	- cyg-get make
         - cd ${BUILD_DIR}
       install:
         - ./configure ${CFGOPT} --prefix=$HOME
