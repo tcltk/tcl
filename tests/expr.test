@@ -728,7 +728,7 @@ test expr-18.1 {expr and conversion of operands to numbers} {
     catch {expr int($x)}
     expr {$x}
 } 11
-test expr-18.2 {whitespace strings should not be == 0 (buggy strtod)} {
+test expr-18.2 {whitespace strings should not be == 0 (buggy strtol/strtoul)} {
     expr {" "}
 } { }
 
