@@ -4071,7 +4071,6 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
 #ifdef USE_DTRACE
 #ifndef _TCLDTRACE_H
-typedef const char *TclDTraceStr;
 #include "tclDTrace.h"
 #endif
 #define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
