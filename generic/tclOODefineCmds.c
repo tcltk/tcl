@@ -779,7 +779,7 @@ FindCommand(
 {
     int length;
     const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
-    register Namespace *const nsPtr = (Namespace *) namespacePtr;
+    Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
     Tcl_Command cmd, cmd2;
 

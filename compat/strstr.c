@@ -36,10 +36,10 @@
 
 char *
 strstr(
-    register char *string,	/* String to search. */
+    char *string,	/* String to search. */
     char *substring)		/* Substring to try to find in string. */
 {
-    register char *a, *b;
+    char *a, *b;
 
     /*
      * First scan quickly through the two strings looking for a

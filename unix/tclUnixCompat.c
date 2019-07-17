@@ -685,8 +685,8 @@ CopyGrp(
     char *buf,
     int buflen)
 {
-    register char *p = buf;
-    register int copied, len = 0;
+    char *p = buf;
+    int copied, len = 0;
 
     /*
      * Copy username.
