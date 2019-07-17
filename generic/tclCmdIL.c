@@ -475,7 +475,7 @@ InfoArgsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     const char *name;
     Proc *procPtr;
     CompiledLocal *localPtr;
@@ -538,7 +538,7 @@ InfoBodyCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     const char *name, *bytes;
     Proc *procPtr;
     int numBytes;
@@ -643,7 +643,7 @@ InfoCommandsCmd(
 {
     const char *cmdName, *pattern;
     const char *simplePattern;
-    register Tcl_HashEntry *entryPtr;
+    Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
@@ -1843,7 +1843,7 @@ InfoProcsCmd(
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
-    register Tcl_HashEntry *entryPtr;
+    Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
 
@@ -2415,7 +2415,7 @@ int
 Tcl_LinsertObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
@@ -2497,8 +2497,8 @@ int
 Tcl_ListObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
-    register Tcl_Obj *const objv[])
+    int objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
     /*
@@ -2534,7 +2534,7 @@ Tcl_LlengthObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    register Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
     int listLen, result;
@@ -2580,7 +2580,7 @@ Tcl_LpopObjCmd(
     ClientData notUsed,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    register Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
     int listLen, result;
@@ -2673,7 +2673,7 @@ Tcl_LrangeObjCmd(
     ClientData notUsed,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    register Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
     int listLen, first, last, result;
@@ -2859,8 +2859,8 @@ int
 Tcl_LrepeatObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
-    register Tcl_Obj *const objv[])
+    int objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
     int elementCount, i, totalElems;
@@ -2925,7 +2925,7 @@ Tcl_LrepeatObjCmd(
 
     CLANG_ASSERT(dataArray || totalElems == 0 );
     if (objc == 1) {
-	register Tcl_Obj *tmpPtr = objv[0];
+	Tcl_Obj *tmpPtr = objv[0];
 
 	tmpPtr->refCount += elementCount;
 	for (i=0 ; i<elementCount ; i++) {
@@ -2971,7 +2971,7 @@ Tcl_LreplaceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *listPtr;
+    Tcl_Obj *listPtr;
     int first, last, listLen, numToDelete, result;
 
     if (objc < 4) {

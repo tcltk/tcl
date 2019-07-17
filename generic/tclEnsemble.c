@@ -119,7 +119,7 @@ static inline Tcl_Obj *
 NewNsObj(
     Tcl_Namespace *namespacePtr)
 {
-    register Namespace *nsPtr = (Namespace *) namespacePtr;
+    Namespace *nsPtr = (Namespace *) namespacePtr;
 
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
@@ -1813,7 +1813,7 @@ NsEnsembleImplementationCmdNR(
 
 	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
-	    register int cmp = strncmp(subcmdName,
+	    int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
 		    stringLength);
 
@@ -2404,7 +2404,7 @@ MakeCachedEnsembleCommand(
     Tcl_HashEntry *hPtr,
     Tcl_Obj *fix)
 {
-    register EnsembleCmdRep *ensembleCmd;
+    EnsembleCmdRep *ensembleCmd;
 
     ECRGetIntRep(objPtr, ensembleCmd);
     if (ensembleCmd) {

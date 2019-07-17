@@ -689,7 +689,7 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    register Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
     const int size = TCL_UTF_MAX * 4;
