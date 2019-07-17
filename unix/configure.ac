@@ -89,8 +89,8 @@ AC_C_INLINE
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
-#	- stdlib.h doesn't define strtol, strtoul, or
-#	  strtod insome versions of SunOS
+#	- stdlib.h doesn't define strtol or strtoul in some versions
+#	  of SunOS
 #	- some versions of string.h don't declare procedures such
 #	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure

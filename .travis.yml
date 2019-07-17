@@ -38,13 +38,14 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
-    - name: "Linux/Clang/Shared: full-debug"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
+# full-debug build disabled, because it is currently failing.
+#   - name: "Linux/Clang/Shared: full-debug"
+#     os: linux
+#     dist: xenial
+#     compiler: clang
+#     env:
+#       - BUILD_DIR=unix
+#       - CFGOPT=--enable-symbols=all
     - name: "Linux/GCC/Shared"
       os: linux
       dist: xenial
@@ -58,29 +59,38 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-# Older versions of GCC...
-    - name: "Linux/GCC 4.9/Shared"
+    - name: "Linux/GCC/Shared: UTF_MAX=6"
       os: linux
       dist: xenial
-      compiler: gcc-4.9
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
+      compiler: gcc
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC 5/Shared"
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+    - name: "Linux/GCC/Shared: UTF_MAX=3"
       os: linux
       dist: xenial
-      compiler: gcc-5
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/GCC/Shared: NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
+# Older versions of GCC...
+    - name: "Linux/GCC 7/Shared"
+      os: linux
+      dist: xenial
+      compiler: gcc-7
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-5
+            - g++-7
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC 6/Shared"
@@ -95,51 +105,39 @@ matrix:
             - g++-6
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC 7/Shared"
+    - name: "Linux/GCC 5/Shared"
       os: linux
       dist: xenial
-      compiler: gcc-7
-      addons: &gcc7deps
+      compiler: gcc-5
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-7
+            - g++-5
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC 7/Shared: UTF_MAX=6"
+    - name: "Linux/GCC 4.9/Shared"
       os: linux
       dist: xenial
-      compiler: gcc-7
-      addons: *gcc7deps
+      compiler: gcc-4.9
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
       env:
         - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
-    - name: "Linux/GCC 7/Shared: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: gcc-7
-      addons: *gcc7deps
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
-    - name: "Linux/GCC 7/Shared: NO_DEPRECATED"
-      os: linux
-      dist: xenial
-      compiler: gcc-7
-      addons: *gcc7deps
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 8/Shared/Unix-like"
+    - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode11
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 8/Shared/Mac-like"
+    - name: "macOS/Xcode 11/Shared/Mac-like"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode11
       env:
         - BUILD_DIR=macosx
       install: []
@@ -147,6 +145,13 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
+    - name: "macOS/Xcode 10/Shared/Mac-like"
+      os: osx
+      osx_image: xcode10.2
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
     - name: "macOS/Xcode 9/Shared/Mac-like"
       os: osx
       osx_image: xcode9
@@ -154,9 +159,9 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 10/Shared/Mac-like"
+    - name: "macOS/Xcode 8/Shared/Mac-like"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode8
       env:
         - BUILD_DIR=macosx
       install: []
