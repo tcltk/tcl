@@ -249,5 +249,5 @@ install:
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
-  - cd tcltest
+  - make all tcltest
   - make test
