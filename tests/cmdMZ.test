@@ -353,6 +353,11 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
 "error foo"
     invoked from within
 "time {error foo}"}}
+test cmdMZ-5.7.1 {Tcl_TimeObjCmd: return from time} {
+    set x 0
+    proc r1 {} {upvar x x; time {incr x; return "r1"; incr x} 10}
+    list [r1] $x
+} {r1 1}
 
 test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} {
     list [catch {timerate} msg] $msg
@@ -399,6 +404,11 @@ test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
 "error foo"
     invoked from within
 "timerate {error foo} 1"}}
+test cmdMZ-6.7.1 {Tcl_TimeRateObjCmd: return from timerate} {
+    set x 0
+    proc r1 {} {upvar x x; timerate {incr x; return "r1"; incr x} 1000 10}
+    list [r1] $x
+} {r1 1}
 test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
     set m1 [timerate {break}]
     list \
