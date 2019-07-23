@@ -408,7 +408,7 @@ TclRegisterLiteral(
     Tcl_Obj *objPtr;
     unsigned hash;
     unsigned int localHash;
-    int objIndex, new;
+    int objIndex, isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -462,7 +462,7 @@ TclRegisterLiteral(
      */
 
     globalPtr = NULL;
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
+    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
