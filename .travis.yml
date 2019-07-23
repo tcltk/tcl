@@ -30,6 +30,25 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
+# Debug builds. Running test-cases disabled, because it is currently failing.
+    - name: "Linux/Clang/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
+      script:
+        - make all tcltest
+    - name: "Linux/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
+      script:
+        - make all tcltest
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -117,7 +136,7 @@ matrix:
       install: []
       script: *mactest
 # Test with mingw-w64 (32 bit) cross-compile
-# Doesn't run tests because wine is only an imperfect Windows emulation 
+# Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
@@ -135,8 +154,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
       script: &crosstest
-        - make all
-        - make tcltest
+        - make all tcltest.exe
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
@@ -149,8 +167,17 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
       script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons: *mingw32
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
+      script: *crosstest
 # Test with mingw-w64 (64 bit)
-# Doesn't run tests because wine is only an imperfect Windows emulation 
+# Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-64/GCC/Shared/no test"
       os: linux
       dist: xenial
@@ -176,6 +203,45 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
       script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
+      script: *crosstest
+# Test on Windows with MSVC native
+# Doesn't run tests because not all tests work in this environment. TODO: either fix or disable those test-cases!
+    - name: "Windows/MSVC/Shared/no test"
+      os: windows
+      compiler: cl
+      env: &vcenv
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+      before_install: &vcpreinst
+        - PATH="$PATH:$VCDIR"
+        - cd ${BUILD_DIR}
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
+    - name: "Windows/MSVC/Static/no test"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all tcltest'
+    - name: "Windows/MSVC/Debug/no test"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
 before_install:
   - cd ${BUILD_DIR}
 install:
@@ -183,6 +249,5 @@ install:
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
-  - make all
-  - make tcltest
+  - make all tcltest
   - make test
