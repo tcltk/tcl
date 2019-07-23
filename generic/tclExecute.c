@@ -2624,6 +2624,14 @@ TEBCresume(
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
+
+	    if ((iPtr->evalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
+		/* simulate pop & fast done (like it does continue in loop) */
+		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
+		objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
+		goto abnormalReturn;
+	    }
 	    /*
 	     * Set the interpreter's object result to point to the topmost
 	     * object from the stack, and check for a possible [catch]. The
@@ -8084,7 +8092,7 @@ TEBCresume(
 	 */
 
 	/*
-	 * Abnormal return code. Restore the stack to state it had when
+	 * Done or abnormal return code. Restore the stack to state it had when
 	 * starting to execute the ByteCode. Panic if the stack is below the
 	 * initial level.
 	 */
