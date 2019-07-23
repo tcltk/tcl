@@ -4553,6 +4553,11 @@ Tcl_TimeRateObjCmd(
 	    count++;
 	    if (!direct) {		/* precompiled */
 		rootPtr = TOP_CB(interp);
+		/*
+		 * Use loop optimized TEBC call (TCL_EVAL_DISCARD_RESULT): it's a part of
+		 * iteration, this way evaluation will be more similar to a cycle (also
+		 * avoids extra overhead to set result to interp, etc.)
+		 */
 		((Interp *)interp)->evalFlags |= TCL_EVAL_DISCARD_RESULT;
 		result = TclNRExecuteByteCode(interp, codePtr);
 		result = TclNRRunCallbacks(interp, result, rootPtr);
