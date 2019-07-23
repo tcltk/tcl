@@ -4556,7 +4556,6 @@ Tcl_TimeRateObjCmd(
 		((Interp *)interp)->evalFlags |= TCL_EVAL_DISCARD_RESULT;
 		result = TclNRExecuteByteCode(interp, codePtr);
 		result = TclNRRunCallbacks(interp, result, rootPtr);
-		((Interp *)interp)->evalFlags &= ~TCL_EVAL_DISCARD_RESULT;
 	    } else {			/* eval */
 		result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	    }
