@@ -4,19 +4,6 @@ language: c
 matrix:
   include:
 # Testing on Linux with various compilers
-    - name: "Linux/Clang/Shared"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-    - name: "Linux/Clang/Static"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - CFGOPT=--disable-shared
-        - BUILD_DIR=unix
     - name: "Linux/GCC/Shared"
       os: linux
       dist: xenial
@@ -30,16 +17,7 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-# Debug builds. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/Clang/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
+# Debug build. Running test-cases disabled, because it is currently failing.
     - name: "Linux/GCC/Debug/no test"
       os: linux
       dist: xenial
@@ -98,13 +76,37 @@ matrix:
             - g++-4.9
       env:
         - BUILD_DIR=unix
+# Clang
+    - name: "Linux/Clang/Shared"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+    - name: "Linux/Clang/Static"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
+# Debug build. Running test-cases disabled, because it is currently failing.
+    - name: "Linux/Clang/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
+      script:
+        - make all tcltest
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
       osx_image: xcode11
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 11/Shared/Mac-like"
+    - name: "macOS/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
       env:
@@ -114,21 +116,21 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 10/Shared/Mac-like"
+    - name: "macOS/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.2
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 9/Shared/Mac-like"
+    - name: "macOS/Xcode 9/Shared"
       os: osx
       osx_image: xcode9
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 8/Shared/Mac-like"
+    - name: "macOS/Xcode 8/Shared"
       os: osx
       osx_image: xcode8
       env:
@@ -154,7 +156,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
       script: &crosstest
-        - make all tcltest.exe
+        - make all tcltest
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
