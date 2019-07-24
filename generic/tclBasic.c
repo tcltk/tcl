@@ -2586,7 +2586,7 @@ TclCreateObjCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
-    Tcl_Namespace *namespace,   /* The namespace to create the command in */
+    Tcl_Namespace *namesp,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
@@ -2600,7 +2600,7 @@ TclCreateObjCommandInNs(
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
     Tcl_HashEntry *hPtr;
-    Namespace *nsPtr = (Namespace *) namespace;
+    Namespace *nsPtr = (Namespace *) namesp;
 
     /*
      * If the command name we seek to create already exists, we need to delete
@@ -5452,7 +5452,7 @@ TclArgumentEnter(
     CmdFrame *cfPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    int new, i;
+    int isNew, i;
     Tcl_HashEntry *hPtr;
     CFWord *cfwPtr;
 
@@ -5468,8 +5468,8 @@ TclArgumentEnter(
 	if (cfPtr->line[i] < 0) {
 	    continue;
 	}
-	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &new);
-	if (new) {
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &isNew);
+	if (isNew) {
 	    /*
 	     * The word is not on the stack yet, remember the current location
 	     * and initialize references.

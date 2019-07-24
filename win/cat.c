@@ -35,7 +35,7 @@ _tmain(void)
         write(1, buf, n);
     }
     err = (sizeof(int) == 2) ? "stderr16" : "stderr32";
-    write(2, err, strlen(err));
+    write(2, err, (unsigned int)strlen(err));
 
     return 0;
 }
