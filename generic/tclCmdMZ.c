@@ -4188,7 +4188,6 @@ Tcl_TimeRateObjCmd(
     };
     NRE_callback *rootPtr;
     ByteCode *codePtr = NULL;
-    int codeOptimized = 0;
 
     for (i = 1; i < objc - 1; i++) {
 	int index;
@@ -4373,15 +4372,6 @@ Tcl_TimeRateObjCmd(
 	}
 	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
 	TclPreserveByteCode(codePtr);
-	/*
-	 * Replace last compiled done instruction with continue: it's a part of
-	 * iteration, this way evaluation will be more similar to a cycle (also
-	 * avoids extra overhead to set result to interp, etc.)
-	 */
-	if (codePtr->codeStart[codePtr->numCodeBytes-1] == INST_DONE) {
-	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_CONTINUE;
-	    codeOptimized = 1;
-	}
     }
 
     /*
@@ -4423,6 +4413,12 @@ Tcl_TimeRateObjCmd(
 	    count++;
 	    if (!direct) {		/* precompiled */
 		rootPtr = TOP_CB(interp);
+		/*
+		 * Use loop optimized TEBC call (TCL_EVAL_DISCARD_RESULT): it's a part of
+		 * iteration, this way evaluation will be more similar to a cycle (also
+		 * avoids extra overhead to set result to interp, etc.)
+		 */
+		((Interp *)interp)->evalFlags |= TCL_EVAL_DISCARD_RESULT;
 		result = TclNRExecuteByteCode(interp, codePtr);
 		result = TclNRRunCallbacks(interp, result, rootPtr);
 	    } else {			/* eval */
@@ -4675,11 +4671,6 @@ Tcl_TimeRateObjCmd(
 
   done:
     if (codePtr != NULL) {
-	if ( codeOptimized
-	  && codePtr->codeStart[codePtr->numCodeBytes-1] == INST_CONTINUE
-	) {
-	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_DONE;
-	}
 	TclReleaseByteCode(codePtr);
     }
     return result;
