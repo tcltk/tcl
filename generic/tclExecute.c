@@ -2088,7 +2088,7 @@ TclNRExecuteByteCode(
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
 	    /* cleanup */ INT2PTR(0), INT2PTR(iPtr->evalFlags));
 
-    /* 
+    /*
      * Reset discard result flag - because it is applicable for this call only,
      * and should not affect all the nested invocations may return result.
      */
