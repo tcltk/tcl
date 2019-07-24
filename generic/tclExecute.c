@@ -1790,6 +1790,7 @@ TclExecuteByteCode(
     Tcl_Obj *expandNestList = NULL;
     int checkInterp = 0;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
+    int curEvalFlags = iPtr->evalFlags;
 
     /*
      * Transfer variables - needed only between opcodes, but not while
@@ -1817,6 +1818,12 @@ TclExecuteByteCode(
     char cmdNameBuf[21];
 #endif
     const char *curInstName = NULL;
+
+    /*
+     * Reset discard result flag - because it is applicable for this call only,
+     * and should not affect all the nested invocations may return result.
+     */
+     iPtr->evalFlags &= ~TCL_EVAL_DISCARD_RESULT;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -2051,6 +2058,15 @@ TclExecuteByteCode(
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
+
+	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
+		/* simulate pop & fast done (like it does continue in loop) */
+		Tcl_Obj *objPtr;
+		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
+		objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
+		goto abnormalReturn;
+	    }
 	    /*
 	     * Set the interpreter's object result to point to the topmost
 	     * object from the stack, and check for a possible [catch]. The
@@ -7403,7 +7419,7 @@ TclExecuteByteCode(
 	 */
 
 	/*
-	 * Abnormal return code. Restore the stack to state it had when
+	 * Done or abnormal return code. Restore the stack to state it had when
 	 * starting to execute the ByteCode. Panic if the stack is below the
 	 * initial level.
 	 */

@@ -358,6 +358,24 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
 "error foo"
     invoked from within
 "time {error foo}"}}
+test cmdMZ-5.7.1 {Tcl_TimeObjCmd: return from time} {
+    set x 0
+    proc r1 {} {upvar x x; time {incr x; return "r1"; incr x} 10}
+    list [r1] $x
+} {r1 1}
+test cmdMZ-5.8 {Tcl_TimeObjCmd: done optimization: nested call of self inside time (if compiled)} {
+    set x [set y 0]
+    set m1 {
+	if {[incr x] <= 5} {
+	    # nested call should return result, so covering that:
+	    if {![string is integer -strict [eval $m1]]} {error unexpected}
+	}
+	# increase again (no "continue" from nested call):
+	incr x
+    }
+    time {incr y; eval $m1} 5
+    list $y $x
+} {5 20}
 
 test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} {
     list [catch {timerate} msg] $msg
@@ -404,6 +422,11 @@ test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
 "error foo"
     invoked from within
 "timerate {error foo} 1"}}
+test cmdMZ-6.7.1 {Tcl_TimeRateObjCmd: return from timerate} {
+    set x 0
+    proc r1 {} {upvar x x; timerate {incr x; return "r1"; incr x} 1000 10}
+    list [r1] $x
+} {r1 1}
 test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
     set m1 [timerate {break}]
     list \
@@ -415,10 +438,10 @@ test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
 test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} {
     set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
     list \
-    [expr {[lindex $m1 0] < 1000}] \
-    [expr {[lindex $m1 2] == 10}] \
-    [expr {[lindex $m1 4] > 1000}] \
-    [expr {[lindex $m1 6] < 100}]
+	[expr {[lindex $m1 0] < 1000}] \
+	[expr {[lindex $m1 2] == 10}] \
+	[expr {[lindex $m1 4] > 1000}] \
+	[expr {[lindex $m1 6] < 100}]
 } {1 1 1 1}
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
@@ -439,6 +462,18 @@ test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
     timerate $m1 1000 10
     if 1 $m1; # if rollback is missing throws an error: invoked "continue" outside of a loop
 } ok
+test cmdMZ-6.12 {Tcl_TimeRateObjCmd: done optimization: nested call of self inside timerate} {
+    set x 0
+    set m1 {
+	if {[incr x] <= 5} {
+	    # nested call should return result, so covering that:
+	    if {![string is integer -strict [eval $m1]]} {error unexpected}
+	}
+	# increase again (no "continue" from nested call):
+	incr x
+    }
+    list [lindex [timerate $m1 1000 5] 2] $x
+} {5 20}
 
 # The tests for Tcl_WhileObjCmd are in while.test
 
