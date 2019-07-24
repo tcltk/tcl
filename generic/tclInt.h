@@ -1976,10 +1976,10 @@ typedef struct Interp {
  *			other than these should be turned into errors.
  */
 
-#define TCL_ALLOW_EXCEPTIONS	4
-#define TCL_EVAL_FILE		2
-#define TCL_EVAL_CTX		8
-#define TCL_EVAL_DISCARD_RESULT		0X40
+#define TCL_ALLOW_EXCEPTIONS		0x04
+#define TCL_EVAL_FILE			0x02
+#define TCL_EVAL_CTX			0x08
+#define TCL_EVAL_DISCARD_RESULT		0x40
 
 /*
  * Flag bits for Interp structures:
