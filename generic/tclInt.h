@@ -4535,8 +4535,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclUnpackBignum(objPtr, bignum) \
     do {								\
-	register Tcl_Obj *bignumObj = (objPtr);				\
-	register int bignumPayload =					\
+	Tcl_Obj *bignumObj = (objPtr);				\
+	int bignumPayload =					\
 		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
