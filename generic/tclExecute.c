@@ -1924,7 +1924,14 @@ TclNRExecuteByteCode(
      */
 
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
-	    /* cleanup */ INT2PTR(0), NULL);
+	    /* cleanup */ INT2PTR(0), INT2PTR(iPtr->evalFlags));
+
+    /*
+     * Reset discard result flag - because it is applicable for this call only,
+     * and should not affect all the nested invocations may return result.
+     */
+    iPtr->evalFlags &= ~TCL_EVAL_DISCARD_RESULT;
+
     return TCL_OK;
 }
 
@@ -1986,6 +1993,7 @@ TEBCresume(
 #define auxObjList	(TD->auxObjList)
 #define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
+#define curEvalFlags	PTR2INT(data[3])  /* calling iPtr->evalFlags */
 
     /*
      * Globals: variables that store state, must remain valid at all times.
@@ -2469,6 +2477,14 @@ TEBCresume(
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
+
+	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
+		/* simulate pop & fast done (like it does continue in loop) */
+		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
+		objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
+		goto abnormalReturn;
+	    }
 	    /*
 	     * Set the interpreter's object result to point to the topmost
 	     * object from the stack, and check for a possible [catch]. The
@@ -7324,7 +7340,7 @@ TEBCresume(
 	 */
 
 	/*
-	 * Abnormal return code. Restore the stack to state it had when
+	 * Done or abnormal return code. Restore the stack to state it had when
 	 * starting to execute the ByteCode. Panic if the stack is below the
 	 * initial level.
 	 */
