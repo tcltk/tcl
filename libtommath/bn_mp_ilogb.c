@@ -70,7 +70,7 @@ static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
          as is the output of mp_bitcount.
          With the same problem: max size is INT_MAX * MP_DIGIT not INT_MAX only!
 */
-mp_err mp_ilogb(const mp_int *a, mp_digit base, mp_int *c)
+mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
 {
    mp_err err;
    mp_ord cmp;
@@ -145,7 +145,7 @@ mp_err mp_ilogb(const mp_int *a, mp_digit base, mp_int *c)
          err = MP_VAL;
          goto LBL_ERR;
       }
-      if ((err = mp_expt_d(&bi_base, (mp_digit)(mid - low), &t)) != MP_OKAY) {
+      if ((err = mp_expt_u32(&bi_base, (uint32_t)(mid - low), &t)) != MP_OKAY) {
          goto LBL_ERR;
       }
       if ((err = mp_mul(&bracket_low, &t, &bracket_mid)) != MP_OKAY) {

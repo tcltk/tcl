@@ -5,6 +5,7 @@
 #define BN_H_
 
 #include <stdint.h>
+#include <stddef.h>
 #include <limits.h>
 
 #ifdef LTM_NO_FILE
@@ -362,6 +363,9 @@ mp_err mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d) MP_WUR;
 /* b = a/2 */
 mp_err mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
 
+/* a/3 => 3c + d == a */
+mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
+
 /* c = a * 2**b, implemented as c = a << b */
 mp_err mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
 
@@ -455,6 +459,12 @@ mp_err mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d) MP_WUR;
 /* c = a mod b, 0 <= c < b  */
 mp_err mp_mod(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
 
+/* Increment "a" by one like "a++". Changes input! */
+mp_err mp_incr(mp_int *a) MP_WUR;
+
+/* Decrement "a" by one like "a--". Changes input! */
+mp_err mp_decr(mp_int *a) MP_WUR;
+
 /* ---> single digit functions <--- */
 
 /* compare against a single digit */
@@ -463,27 +473,14 @@ mp_ord mp_cmp_d(const mp_int *a, mp_digit b) MP_WUR;
 /* c = a + b */
 mp_err mp_add_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 
-/* Increment "a" by one like "a++". Changes input! */
-mp_err mp_incr(mp_int *a) MP_WUR;
-
 /* c = a - b */
 mp_err mp_sub_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-
-/* Decrement "a" by one like "a--". Changes input! */
-mp_err mp_decr(mp_int *a) MP_WUR;
 
 /* c = a * b */
 mp_err mp_mul_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 
 /* a/b => cb + d == a */
 mp_err mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d) MP_WUR;
-
-/* a/3 => 3c + d == a */
-mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
-
-/* c = a**b */
-mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_d) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* c = a mod b, 0 <= c < b  */
 mp_err mp_mod_d(const mp_int *a, mp_digit b, mp_digit *c) MP_WUR;
@@ -518,7 +515,8 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
  *
  * returns error if a < 0 and b is even
  */
-mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_n_root_ex) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* special sqrt algo */
@@ -680,7 +678,12 @@ MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int siz
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 
 /* Integer logarithm to integer base */
-mp_err mp_ilogb(const mp_int *a, mp_digit base, mp_int *c) MP_WUR;
+mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c) MP_WUR;
+
+/* c = a**b */
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_d) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a) MP_WUR;

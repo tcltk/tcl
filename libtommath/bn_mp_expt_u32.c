@@ -1,10 +1,10 @@
 #include "tommath_private.h"
-#ifdef BN_MP_EXPT_D_C
+#ifdef BN_MP_EXPT_U32_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
 /* calculate c = a**b  using a square-multiply algorithm */
-mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c)
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
 {
    mp_err err;
 

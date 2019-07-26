@@ -195,14 +195,38 @@ mp_err mp_prime_is_divisible(const mp_int *a, mp_bool *result)
 mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
    (void)fast;
-   return mp_expt_d(a, b, c);
+   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+      return MP_VAL;
+   }
+   return mp_expt_u32(a, (uint32_t)b, c);
+}
+#endif
+#ifdef BN_MP_EXPT_D_C
+mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c)
+{
+   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+      return MP_VAL;
+   }
+   return mp_expt_u32(a, (uint32_t)b, c);
 }
 #endif
 #ifdef BN_MP_N_ROOT_EX_C
 mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
    (void)fast;
-   return mp_n_root(a, b, c);
+   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+      return MP_VAL;
+   }
+   return mp_root_u32(a, (uint32_t)b, c);
+}
+#endif
+#ifdef BN_MP_N_ROOT_C
+mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
+{
+   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+      return MP_VAL;
+   }
+   return mp_root_u32(a, (uint32_t)b, c);
 }
 #endif
 #endif
