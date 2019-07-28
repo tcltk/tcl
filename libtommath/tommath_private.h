@@ -208,11 +208,9 @@ MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, pr
 MP_PRIVATE void s_mp_reverse(unsigned char *s, int len);
 MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
-#if 0
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
 MP_PRIVATE void s_mp_rand_jenkins_init(Tcl_WideUInt seed);
-#endif
 
 extern MP_PRIVATE const char *const mp_s_rmap;
 extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];

@@ -433,7 +433,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_expt_d.c"
+			RelativePath="bn_mp_expt_u32.c"
 			>
 		</File>
 		<File
@@ -633,10 +633,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_n_root.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_neg.c"
 			>
 		</File>
@@ -730,6 +726,10 @@
 		</File>
 		<File
 			RelativePath="bn_mp_reduce_setup.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_root_u32.c"
 			>
 		</File>
 		<File

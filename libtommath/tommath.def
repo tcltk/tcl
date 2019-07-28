@@ -34,7 +34,7 @@ EXPORTS
     mp_error_to_string
     mp_exch
     mp_export
-    mp_expt_d
+    mp_expt_u32
     mp_exptmod
     mp_exteuclid
     mp_fread
@@ -88,7 +88,6 @@ EXPORTS
     mp_mul_2d
     mp_mul_d
     mp_mulmod
-    mp_n_root
     mp_neg
     mp_or
     mp_prime_fermat
@@ -112,6 +111,7 @@ EXPORTS
     mp_reduce_is_2k
     mp_reduce_is_2k_l
     mp_reduce_setup
+    mp_root_u32
     mp_rshd
     mp_set
     mp_set_double
