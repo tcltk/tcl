@@ -58,7 +58,7 @@ mp_err mp_is_square(const mp_int *arg, mp_bool *ret)
    }
 
 
-   if ((err = mp_init_ul(&t, 11u*13u*17u*19u*23u*29u*31u)) != MP_OKAY) {
+   if ((err = mp_init_u32(&t, 11u*13u*17u*19u*23u*29u*31u)) != MP_OKAY) {
       return err;
    }
    if ((err = mp_mod(arg, &t, &t)) != MP_OKAY) {

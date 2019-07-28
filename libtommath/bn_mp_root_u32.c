@@ -1,5 +1,5 @@
 #include "tommath_private.h"
-#ifdef BN_MP_N_ROOT_C
+#ifdef BN_MP_ROOT_U32_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
@@ -12,7 +12,7 @@
  * which will find the root in log(N) time where
  * each step involves a fair bit.
  */
-mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
 {
    mp_int t1, t2, t3, a_;
    mp_ord cmp;
@@ -36,26 +36,17 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    ilog2 = mp_count_bits(a);
 
    /*
-      GCC and clang do not understand the sizeof tests and complain,
-      icc (the Intel compiler) seems to understand, at least it doesn't complain.
-      2 of 3 say these macros are necessary, so there they are.
+     If "b" is larger than INT_MAX it is also larger than
+     log_2(n) because the bit-length of the "n" is measured
+     with an int and hence the root is always < 2 (two).
    */
-#if ( !(defined MP_8BIT) && !(defined MP_16BIT) )
-   /*
-       The type of mp_digit might be larger than an int.
-       If "b" is larger than INT_MAX it is also larger than
-       log_2(n) because the bit-length of the "n" is measured
-       with an int and hence the root is always < 2 (two).
-    */
-   if (sizeof(mp_digit) >= sizeof(int)) {
-      if (b > (mp_digit)(INT_MAX/2)) {
-         mp_set(c, 1uL);
-         c->sign = a->sign;
-         err = MP_OKAY;
-         goto LBL_ERR;
-      }
+   if (b > (uint32_t)(INT_MAX/2)) {
+      mp_set(c, 1uL);
+      c->sign = a->sign;
+      err = MP_OKAY;
+      goto LBL_ERR;
    }
-#endif
+
    /* "b" is smaller than INT_MAX, we can cast safely */
    if (ilog2 < (int)b) {
       mp_set(c, 1uL);
@@ -84,7 +75,7 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
       /* t2 = t1 - ((t1**b - a) / (b * t1**(b-1))) */
 
       /* t3 = t1**(b-1) */
-      if ((err = mp_expt_d(&t1, b - 1u, &t3)) != MP_OKAY) {
+      if ((err = mp_expt_u32(&t1, b - 1u, &t3)) != MP_OKAY) {
          goto LBL_ERR;
       }
       /* numerator */
@@ -124,7 +115,7 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    /* result can be off by a few so check */
    /* Loop beneath can overshoot by one if found root is smaller than actual root */
    for (;;) {
-      if ((err = mp_expt_d(&t1, b, &t2)) != MP_OKAY) {
+      if ((err = mp_expt_u32(&t1, b, &t2)) != MP_OKAY) {
          goto LBL_ERR;
       }
       cmp = mp_cmp(&t2, &a_);
@@ -142,7 +133,7 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    }
    /* correct overshoot from above or from recurrence */
    for (;;) {
-      if ((err = mp_expt_d(&t1, b, &t2)) != MP_OKAY) {
+      if ((err = mp_expt_u32(&t1, b, &t2)) != MP_OKAY) {
          goto LBL_ERR;
       }
       if (mp_cmp(&t2, &a_) == MP_GT) {

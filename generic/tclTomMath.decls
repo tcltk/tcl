@@ -81,7 +81,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    int TclBN_mp_expt_d(const mp_int *a, mp_digit b, mp_int *c)
+    int TclBN_mp_expt_d(const mp_int *a, unsigned int b, mp_int *c)
 }
 declare 20 {
     int TclBN_mp_grow(mp_int *a, int size)

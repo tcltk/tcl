@@ -91,7 +91,7 @@ int TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 
 int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
-	return mp_expt_d(a, b, c);
+	return mp_expt_u32(a, b, c);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath

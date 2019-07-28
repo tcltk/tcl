@@ -1392,14 +1392,9 @@ FileAttrAccessTimeCmd(
 #endif
 
     if (objc == 3) {
-	/*
-	 * Need separate variable for reading longs from an object on 64-bit
-	 * platforms. [Bug 698146]
-	 */
+	Tcl_WideInt newTime;
 
-	long newTime;
-
-	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &newTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -1478,9 +1473,9 @@ FileAttrModifyTimeCmd(
 	 * platforms. [Bug 698146]
 	 */
 
-	long newTime;
+	Tcl_WideInt newTime;
 
-	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &newTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 

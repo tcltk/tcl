@@ -4,6 +4,10 @@
 #ifndef BN_H_
 #define BN_H_
 
+#ifndef MP_NO_STDINT
+#  include <stdint.h>
+#endif
+#include <stddef.h>
 #include <limits.h>
 
 #ifdef LTM_NO_FILE
@@ -273,29 +277,31 @@ void mp_zero(mp_int *a);
 double mp_get_double(const mp_int *a) MP_WUR;
 mp_err mp_set_double(mp_int *a, double b) MP_WUR;
 
-/* get integer, set integer and init with integer () */
-long mp_get_i32(const mp_int *a) MP_WUR;
-void mp_set_i32(mp_int *a, long b);
-mp_err mp_init_i32(mp_int *a, long b) MP_WUR;
+#ifndef MP_NO_STDINT
+/* get integer, set integer and init with integer (int32_t) */
+int32_t mp_get_i32(const mp_int *a) MP_WUR;
+void mp_set_i32(mp_int *a, int32_t b);
+mp_err mp_init_i32(mp_int *a, int32_t b) MP_WUR;
 
-/* get integer, set integer and init with integer, behaves like two complement for negative numbers (unsigned int) */
-#define mp_get_u32(a) ((unsigned long)mp_get_i32(a))
-void mp_set_u32(mp_int *a, unsigned long b);
-mp_err mp_init_u32(mp_int *a, unsigned long b) MP_WUR;
+/* get integer, set integer and init with integer, behaves like two complement for negative numbers (uint32_t) */
+#define mp_get_u32(a) ((uint32_t)mp_get_i32(a))
+void mp_set_u32(mp_int *a, uint32_t b);
+mp_err mp_init_u32(mp_int *a, uint32_t b) MP_WUR;
 
-/* get integer, set integer and init with integer (long long) */
-long long mp_get_i64(const mp_int *a) MP_WUR;
-void mp_set_i64(mp_int *a, long long b);
-mp_err mp_init_i64(mp_int *a, long long b) MP_WUR;
+/* get integer, set integer and init with integer (int64_t) */
+int64_t mp_get_i64(const mp_int *a) MP_WUR;
+void mp_set_i64(mp_int *a, int64_t b);
+mp_err mp_init_i64(mp_int *a, int64_t b) MP_WUR;
 
-/* get integer, set integer and init with integer, behaves like two complement for negative numbers (unsigned long long) */
-#define mp_get_u64(a) ((unsigned long long)mp_get_i64(a))
-void mp_set_u64(mp_int *a, unsigned long long b);
-mp_err mp_init_u64(mp_int *a, unsigned long long b) MP_WUR;
+/* get integer, set integer and init with integer, behaves like two complement for negative numbers (uint64_t) */
+#define mp_get_u64(a) ((uint64_t)mp_get_i64(a))
+void mp_set_u64(mp_int *a, uint64_t b);
+mp_err mp_init_u64(mp_int *a, uint64_t b) MP_WUR;
 
 /* get magnitude */
-unsigned long mp_get_mag_u32(const mp_int *a) MP_WUR;
-unsigned long long mp_get_mag_u64(const mp_int *a) MP_WUR;
+uint32_t mp_get_mag_u32(const mp_int *a) MP_WUR;
+uint64_t mp_get_mag_u64(const mp_int *a) MP_WUR;
+#endif
 unsigned long mp_get_mag_ul(const mp_int *a) MP_WUR;
 unsigned long long mp_get_mag_ull(const mp_int *a) MP_WUR;
 
@@ -360,6 +366,9 @@ mp_err mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d) MP_WUR;
 
 /* b = a/2 */
 mp_err mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
+
+/* a/3 => 3c + d == a */
+mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
 
 /* c = a * 2**b, implemented as c = a << b */
 mp_err mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
@@ -454,6 +463,12 @@ mp_err mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d) MP_WUR;
 /* c = a mod b, 0 <= c < b  */
 mp_err mp_mod(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
 
+/* Increment "a" by one like "a++". Changes input! */
+mp_err mp_incr(mp_int *a) MP_WUR;
+
+/* Decrement "a" by one like "a--". Changes input! */
+mp_err mp_decr(mp_int *a) MP_WUR;
+
 /* ---> single digit functions <--- */
 
 /* compare against a single digit */
@@ -462,27 +477,14 @@ mp_ord mp_cmp_d(const mp_int *a, mp_digit b) MP_WUR;
 /* c = a + b */
 mp_err mp_add_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 
-/* Increment "a" by one like "a++". Changes input! */
-mp_err mp_incr(mp_int *a) MP_WUR;
-
 /* c = a - b */
 mp_err mp_sub_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-
-/* Decrement "a" by one like "a--". Changes input! */
-mp_err mp_decr(mp_int *a) MP_WUR;
 
 /* c = a * b */
 mp_err mp_mul_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 
 /* a/b => cb + d == a */
 mp_err mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d) MP_WUR;
-
-/* a/3 => 3c + d == a */
-mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
-
-/* c = a**b */
-mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_d) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* c = a mod b, 0 <= c < b  */
 mp_err mp_mod_d(const mp_int *a, mp_digit b, mp_digit *c) MP_WUR;
@@ -517,7 +519,10 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
  *
  * returns error if a < 0 and b is even
  */
-mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+#ifndef MP_NO_STDINT
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+#endif
+MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_n_root_ex) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* special sqrt algo */
@@ -679,7 +684,16 @@ MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int siz
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 
 /* Integer logarithm to integer base */
-mp_err mp_ilogb(const mp_int *a, mp_digit base, mp_int *c) MP_WUR;
+#ifndef MP_NO_STDINT
+mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c) MP_WUR;
+#endif
+
+/* c = a**b */
+#ifndef MP_NO_STDINT
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+#endif
+MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_d) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a) MP_WUR;
