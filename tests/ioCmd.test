@@ -25,6 +25,7 @@ package require tcltests
 
 # Custom constraints used in this file
 testConstraint testchannel	[llength [info commands testchannel]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 #----------------------------------------------------------------------
 
@@ -792,7 +793,7 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
     rename foo {}
     set res
 } -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
-test iocmd-21.20 {Bug 88aef05cda} -setup {
+test iocmd-21.20 {Bug 88aef05cda} -constraints knownMsvcBug -setup {
     proc foo {method chan args} {
 	switch -- $method blocking {
 	    chan configure $chan -blocking [lindex $args 0]
