@@ -20,6 +20,7 @@ testConstraint testasync [llength [info commands testasync]]
 testConstraint threaded [expr {
     [info exists ::tcl_platform(threaded)] && $::tcl_platform(threaded)
 }]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 proc async1 {result code} {
     global aresult acode
@@ -189,7 +190,7 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    testasync threaded
+    testasync threaded knownMsvcBug
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -198,7 +199,7 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync threaded
+    testasync threaded knownMsvcBug
 } -setup {
     set hm [testasync create async3]
 } -body {
