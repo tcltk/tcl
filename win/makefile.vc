@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,static,staticpkg,symbols,profile,unchecked,time64bit,none
+#	OPTS=msvcrt,static,staticpkg,symbols,profile,unchecked,time64bit,utfmax,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -74,6 +74,8 @@
 #			   or libcmt.lib not libcmtd.lib).
 #		time64bit = Forces a build using 64-bit time_t for 32-bit build
 #			   (CRT library should support this).
+#		utfmax =   Forces Tcl_UniChar to be a 32-bit quantity in stead
+#			   of 16-bits
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
