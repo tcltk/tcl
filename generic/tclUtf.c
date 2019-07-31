@@ -857,7 +857,7 @@ Tcl_UtfToUpper(
 	 */
 
 	if (bytes < UtfCount(upChar)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memmove(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(upChar, dst);
@@ -910,7 +910,7 @@ Tcl_UtfToLower(
 	 */
 
 	if (bytes < UtfCount(lowChar)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memmove(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);
@@ -960,7 +960,7 @@ Tcl_UtfToTitle(
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if (bytes < UtfCount(titleChar)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memmove(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(titleChar, dst);
@@ -976,7 +976,7 @@ Tcl_UtfToTitle(
 	}
 
 	if (bytes < UtfCount(lowChar)) {
-	    memcpy(dst, src, (size_t) bytes);
+	    memmove(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
 	    dst += Tcl_UniCharToUtf(lowChar, dst);
