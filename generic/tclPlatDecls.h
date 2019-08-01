@@ -128,6 +128,6 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
 		(char *)Tcl_Char16ToUtfDString((string), ((((len) + 2) >> 1) - 1), (dsPtr)))
 
-#endif#endif
+#endif
 #endif
 #endif /* _TCLPLATDECLS */
