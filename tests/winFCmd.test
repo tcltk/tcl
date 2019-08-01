@@ -394,7 +394,7 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes} -body {
+} -constraints {win winNonZeroInodes knownMsvcBug} -body {
     file mkdir td1
     foreach {a b} [MakeFiles td1] break
     file rename -force $a $b
