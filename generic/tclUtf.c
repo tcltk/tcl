@@ -237,6 +237,9 @@ Tcl_UniCharToUtfDString(
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
      */
 
+    if (uniStr == NULL) {
+	return NULL;
+    }
     if (uniLength < 0) {
 	uniLength = 0;
 	w = uniStr;
@@ -276,6 +279,9 @@ Tcl_Char16ToUtfDString(
      * UTF-8 string length in bytes will be <= Utf16 string length * 3.
      */
 
+    if (uniStr == NULL) {
+	return NULL;
+    }
     if (uniLength < 0) {
 
 	uniLength = 0;
@@ -571,6 +577,9 @@ Tcl_UtfToUniCharDString(
     const char *p, *end;
     int oldLength;
 
+    if (src == NULL) {
+	return NULL;
+    }
     if (length < 0) {
 	length = strlen(src);
     }
@@ -623,6 +632,9 @@ Tcl_UtfToChar16DString(
     const char *p, *end;
     int oldLength;
 
+    if (src == NULL) {
+	return NULL;
+    }
     if (length < 0) {
 	length = strlen(src);
     }
