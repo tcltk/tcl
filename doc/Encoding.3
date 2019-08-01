@@ -259,13 +259,13 @@ is filled with the corresponding number of bytes that were stored in
 convenience functions for converting between UTF-8 and Windows strings
 based on the TCHAR type which is by convention a Unicode character on
 Windows NT. Those functions are deprecated. You can use
-\fBTcl_UtfToChar16DString\fR resp. \fBTcl_Char16ToUtfDString\fR as replacement.
+\fBTcl_UtfToWCharDString\fR resp. \fBTcl_WCharToUtfDString\fR as replacement.
 If you want compatibility with earlier Tcl releases than 8.7, use
 \fBTcl_UtfToUniCharDString\fR resp. \fBTcl_UniCharToUtfDString\fR as
 replacement, and make sure you compile your extension with -DTCL_UTF_MAX=3.
 Beware: Those replacement functions don't initialize their Tcl_DString (you'll
-have to do that yourself), and \fBTcl_UniCharToUtfDString\fR doesn't accept -1
-as length parameter (but \fBTcl_Char16ToUtfDString\fR does!).
+have to do that yourself), and \fBTcl_UniCharToUtfDString\fR from Tcl 8.6
+doesn't accept -1 as length parameter.
 .PP
 \fBTcl_GetEncodingName\fR is roughly the inverse of \fBTcl_GetEncoding\fR.
 Given an \fIencoding\fR, the return value is the \fIname\fR argument that

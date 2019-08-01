@@ -4,34 +4,6 @@ language: c
 matrix:
   include:
 # Testing on Linux with various compilers
-    - name: "Linux/Clang/Shared"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-    - name: "Linux/Clang/Shared: UTF_MAX=4"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
-    - name: "Linux/Clang/Shared: NO_DEPRECATED"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
-# full-debug build disabled, because it is currently failing.
-#   - name: "Linux/Clang/Shared: full-debug"
-#     os: linux
-#     dist: xenial
-#     compiler: clang
-#     env:
-#       - BUILD_DIR=unix
-#       - CFGOPT=--enable-symbols=all
     - name: "Linux/GCC/Shared"
       os: linux
       dist: xenial
