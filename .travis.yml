@@ -287,8 +287,7 @@ matrix:
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
       script: *crosstest
 # Test on Windows with MSVC native
-# Doesn't run tests because not all tests work in this environment. TODO: either fix or disable those test-cases!
-    - name: "Windows/MSVC/Shared/no test"
+    - name: "Windows/MSVC/Shared"
       os: windows
       compiler: cl
       env: &vcenv
@@ -300,7 +299,17 @@ matrix:
       install: []
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
-    - name: "Windows/MSVC/Static/no test"
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: UTF_MAX=6"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
       env: *vcenv
@@ -308,7 +317,8 @@ matrix:
       install: []
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all tcltest'
-    - name: "Windows/MSVC/Debug/no test"
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc test'
+    - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
       env: *vcenv
@@ -316,6 +326,7 @@ matrix:
       install: []
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc test'
 before_install:
   - cd ${BUILD_DIR}
 install:
