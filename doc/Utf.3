@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -22,19 +22,28 @@ int
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .sp
 int
-\fBTcl_UtfToChar16\fR(\fIsrc, utf16Ptr\fR)
+\fBTcl_UtfToChar16\fR(\fIsrc, uPtr\fR)
+.sp
+int
+\fBTcl_UtfToWChar\fR(\fIsrc, wPtr\fR)
 .sp
 char *
 \fBTcl_UniCharToUtfDString\fR(\fIuniStr, uniLength, dsPtr\fR)
 .sp
 char *
-\fBTcl_Char16ToUtfDString\fR(\fIutf16Str, uniLength, dsPtr\fR)
+\fBTcl_Char16ToUtfDString\fR(\fIuStr, uniLength, dsPtr\fR)
+.sp
+char *
+\fBTcl_WCharToUtfDString\fR(\fIwStr, uniLength, dsPtr\fR)
 .sp
 Tcl_UniChar *
 \fBTcl_UtfToUniCharDString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 unsigned short *
 \fBTcl_UtfToChar16DString\fR(\fIsrc, length, dsPtr\fR)
+.sp
+wchar_t *
+\fBTcl_UtfToWCharDString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
@@ -89,8 +98,10 @@ Buffer in which the UTF-8 representation of the Tcl_UniChar is stored.  At most
 The Unicode character to be converted or examined.
 .AP Tcl_UniChar *chPtr out
 Filled with the Tcl_UniChar represented by the head of the UTF-8 string.
-.AP unsigned short *utf16Ptr out
+.AP unsigned short *uPtr out
 Filled with the utf-16 represented by the head of the UTF-8 string.
+.AP wchar_t *wPtr out
+Filled with the wchar_t represented by the head of the UTF-8 string.
 .AP "const char" *src in
 Pointer to a UTF-8 string.
 .AP "const char" *cs in
@@ -105,8 +116,10 @@ A null-terminated Unicode string.
 A null-terminated Unicode string.
 .AP "const Tcl_UniChar" *uniPattern in
 A null-terminated Unicode string.
-.AP "const unsigned short" *utf16Str in
-A null-terminated utf-16 string.
+.AP "const unsigned short" *uStr in
+A null-terminated UTF-16 string.
+.AP "const wchar_t" *wStr in
+A null-terminated wchar_t string.
 .AP "const unsigned short" *utf16s in
 A null-terminated utf-16 string.
 .AP "const unsigned short" *utf16t in
