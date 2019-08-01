@@ -75,6 +75,7 @@ if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
@@ -2285,7 +2286,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
 	removeFile script
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
-    -constraints {socket} \
+    -constraints {socket knownMsvcBug} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0

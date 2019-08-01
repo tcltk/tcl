@@ -131,7 +131,7 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #if 1
 #define AllocVars(vPtr) \
     static Tcl_ThreadDataKey varsKey; \
-    register struct vars *vPtr = (struct vars *) \
+    struct vars *vPtr = (struct vars *) \
 	    Tcl_GetThreadData(&varsKey, sizeof(struct vars))
 #else
 /*
@@ -140,7 +140,7 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
  * faster in practice (measured!)
  */
 #define AllocVars(vPtr) \
-    register struct vars *vPtr = (struct vars *) MALLOC(sizeof(struct vars))
+    struct vars *vPtr = (struct vars *) MALLOC(sizeof(struct vars))
 #define FreeVars(vPtr) \
     FREE(vPtr)
 #endif

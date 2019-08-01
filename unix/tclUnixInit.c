@@ -411,7 +411,7 @@ TclpInitPlatform(void)
     /*
      * In case the initial locale is not "C", ensure that the numeric
      * processing is done in "C" locale regardless. This is needed because Tcl
-     * relies on routines like strtod, but should not have locale dependent
+     * relies on routines like strtol/strtoul, but should not have locale dependent
      * behavior.
      */
 
@@ -1001,7 +1001,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);

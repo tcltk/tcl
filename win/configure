@@ -778,6 +778,7 @@ ac_user_opts='
 enable_option_checking
 with_encoding
 enable_shared
+enable_time64bit
 enable_64bit
 enable_zipfs
 enable_symbols
@@ -1400,6 +1401,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-shared         build and link with shared libraries (default: on)
+  --enable-time64bit      force 64-bit time_t for 32-bit build (default: off)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-zipfs          build with Zipfs support (default: on)
   --enable-symbols        build with debugging symbols (default: off)
@@ -3747,6 +3749,25 @@ $as_echo "#define STATIC_BUILD 1" >>confdefs.h
     fi
 
 
+
+#--------------------------------------------------------------------
+# Check whether --enable-time64bit was given.
+#--------------------------------------------------------------------
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking force of 64-bit time_t" >&5
+$as_echo_n "checking force of 64-bit time_t... " >&6; }
+# Check whether --enable-time64bit was given.
+if test "${enable_time64bit+set}" = set; then :
+  enableval=$enable_time64bit; tcl_ok=$enableval
+else
+  tcl_ok=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$tcl_ok\"" >&5
+$as_echo "\"$tcl_ok\"" >&6; }
+if test "$tcl_ok" = "yes"; then
+    CFLAGS="${CFLAGS} -D_USE_64BIT_TIME_T"
+fi
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

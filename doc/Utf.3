@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToUtf16, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Utf16ToUtfDString, Tcl_UtfToUtf16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -22,19 +22,19 @@ int
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .sp
 int
-\fBTcl_UtfToUtf16\fR(\fIsrc, utf16Ptr\fR)
+\fBTcl_UtfToChar16\fR(\fIsrc, utf16Ptr\fR)
 .sp
 char *
 \fBTcl_UniCharToUtfDString\fR(\fIuniStr, uniLength, dsPtr\fR)
 .sp
 char *
-\fBTcl_Utf16ToUtfDString\fR(\fIutf16Str, uniLength, dsPtr\fR)
+\fBTcl_Char16ToUtfDString\fR(\fIutf16Str, uniLength, dsPtr\fR)
 .sp
 Tcl_UniChar *
 \fBTcl_UtfToUniCharDString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 unsigned short *
-\fBTcl_UtfToUtf16DString\fR(\fIsrc, length, dsPtr\fR)
+\fBTcl_UtfToChar16DString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)

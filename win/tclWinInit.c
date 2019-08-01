@@ -477,7 +477,7 @@ TclpGetUserName(
 	}
 	cchUserNameLen--;
 	Tcl_DStringInit(bufferPtr);
-	Tcl_Utf16ToUtfDString(szUserName, cchUserNameLen, bufferPtr);
+	Tcl_Char16ToUtfDString(szUserName, cchUserNameLen, bufferPtr);
     }
     return Tcl_DStringValue(bufferPtr);
 }
@@ -628,7 +628,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 

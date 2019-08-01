@@ -4930,7 +4930,7 @@ TclZipfs_AppHook(
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
-	archive = Tcl_Utf16ToUtfDString((*argvPtr)[1], -1, &ds);
+	archive = Tcl_Char16ToUtfDString((*argvPtr)[1], -1, &ds);
 #else /* !_WIN32 */
 	archive = (*argvPtr)[1];
 #endif /* _WIN32 */

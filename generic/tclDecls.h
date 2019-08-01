@@ -1027,7 +1027,7 @@ EXTERN int		Tcl_UtfToLower(char *src);
 /* 335 */
 EXTERN int		Tcl_UtfToTitle(char *src);
 /* 336 */
-EXTERN int		Tcl_UtfToUtf16(const char *src,
+EXTERN int		Tcl_UtfToChar16(const char *src,
 				unsigned short *chPtr);
 /* 337 */
 EXTERN int		Tcl_UtfToUpper(char *src);
@@ -1071,10 +1071,10 @@ int			Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
 				const Tcl_UniChar *uct,
 				unsigned long numChars);
 /* 354 */
-EXTERN char *		Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
+EXTERN char *		Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 				int uniLength, Tcl_DString *dsPtr);
 /* 355 */
-EXTERN unsigned short *	 Tcl_UtfToUtf16DString(const char *src, int length,
+EXTERN unsigned short *	 Tcl_UtfToChar16DString(const char *src, int length,
 				Tcl_DString *dsPtr);
 /* 356 */
 EXTERN Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp,
@@ -2298,7 +2298,7 @@ typedef struct TclStubs {
     char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 333 */
     int (*tcl_UtfToLower) (char *src); /* 334 */
     int (*tcl_UtfToTitle) (char *src); /* 335 */
-    int (*tcl_UtfToUtf16) (const char *src, unsigned short *chPtr); /* 336 */
+    int (*tcl_UtfToChar16) (const char *src, unsigned short *chPtr); /* 336 */
     int (*tcl_UtfToUpper) (char *src); /* 337 */
     int (*tcl_WriteChars) (Tcl_Channel chan, const char *src, int srcLen); /* 338 */
     int (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
@@ -2316,8 +2316,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
     TCL_DEPRECATED_API("Use Tcl_GetCharLength") int (*tcl_UniCharLen) (const unsigned short *uniStr); /* 352 */
     TCL_DEPRECATED_API("Use Tcl_UtfNcmp") int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 353 */
-    char * (*tcl_Utf16ToUtfDString) (const unsigned short *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
-    unsigned short * (*tcl_UtfToUtf16DString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
+    char * (*tcl_Char16ToUtfDString) (const unsigned short *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
+    unsigned short * (*tcl_UtfToChar16DString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
     TCL_DEPRECATED_API("Use Tcl_EvalTokensStandard") Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 357 */
     void (*tcl_FreeParse) (Tcl_Parse *parsePtr); /* 358 */
@@ -3317,8 +3317,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToLower) /* 334 */
 #define Tcl_UtfToTitle \
 	(tclStubsPtr->tcl_UtfToTitle) /* 335 */
-#define Tcl_UtfToUtf16 \
-	(tclStubsPtr->tcl_UtfToUtf16) /* 336 */
+#define Tcl_UtfToChar16 \
+	(tclStubsPtr->tcl_UtfToChar16) /* 336 */
 #define Tcl_UtfToUpper \
 	(tclStubsPtr->tcl_UtfToUpper) /* 337 */
 #define Tcl_WriteChars \
@@ -3353,10 +3353,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharLen) /* 352 */
 #define Tcl_UniCharNcmp \
 	(tclStubsPtr->tcl_UniCharNcmp) /* 353 */
-#define Tcl_Utf16ToUtfDString \
-	(tclStubsPtr->tcl_Utf16ToUtfDString) /* 354 */
-#define Tcl_UtfToUtf16DString \
-	(tclStubsPtr->tcl_UtfToUtf16DString) /* 355 */
+#define Tcl_Char16ToUtfDString \
+	(tclStubsPtr->tcl_Char16ToUtfDString) /* 354 */
+#define Tcl_UtfToChar16DString \
+	(tclStubsPtr->tcl_UtfToChar16DString) /* 355 */
 #define Tcl_GetRegExpFromObj \
 	(tclStubsPtr->tcl_GetRegExpFromObj) /* 356 */
 #define Tcl_EvalTokens \
@@ -4146,11 +4146,11 @@ extern const TclStubs *tclStubsPtr;
 #   undef TclAppendUnicodeToObj
 #	define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
 #   undef Tcl_UniCharToUtfDString
-#   define Tcl_UniCharToUtfDString Tcl_Utf16ToUtfDString
+#   define Tcl_UniCharToUtfDString Tcl_Char16ToUtfDString
 #   undef Tcl_UtfToUniCharDString
-#   define Tcl_UtfToUniCharDString Tcl_UtfToUtf16DString
+#   define Tcl_UtfToUniCharDString Tcl_UtfToChar16DString
 #	undef Tcl_UtfToUniChar
-#	define Tcl_UtfToUniChar Tcl_UtfToUtf16
+#	define Tcl_UtfToUniChar Tcl_UtfToChar16
 #endif
 
 #if TCL_UTF_MAX > 3 || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
