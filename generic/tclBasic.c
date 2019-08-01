@@ -657,7 +657,15 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(_WIN32) && !defined(_WIN64) && !defined(_USE_64BIT_TIME_T) \
+	    && !defined(__MINGW_USE_VC2005_COMPAT)
+    /* If Tcl is compiled on Win32 using -D_USE_64BIT_TIME_T or
+     * -D__MINGW_USE_VC2005_COMPAT, the result is a binary incompatible
+     * with the 'standard' build of Tcl: All extensions using Tcl_StatBuf
+     * or interal functions like TclpGetDate() need to be recompiled in
+     * the same way. Therefore, this is not officially supported.
+     * In stead, it is recommended to use Win64 or Tcl 9.0 (not released yet)
+     */
     if (sizeof(time_t) != 4) {
 	/*NOTREACHED*/
 	Tcl_Panic("<time.h> is not compatible with MSVC");
@@ -2635,7 +2643,7 @@ TclCreateObjCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
-    Tcl_Namespace *namespace,   /* The namespace to create the command in */
+    Tcl_Namespace *namesp,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
@@ -2649,7 +2657,7 @@ TclCreateObjCommandInNs(
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
     Tcl_HashEntry *hPtr;
-    Namespace *nsPtr = (Namespace *) namespace;
+    Namespace *nsPtr = (Namespace *) namesp;
 
     /*
      * If the command name we seek to create already exists, we need to delete
@@ -5959,7 +5967,7 @@ TclArgumentEnter(
     CmdFrame *cfPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    int new, i;
+    int isNew, i;
     Tcl_HashEntry *hPtr;
     CFWord *cfwPtr;
 
@@ -5975,8 +5983,8 @@ TclArgumentEnter(
 	if (cfPtr->line[i] < 0) {
 	    continue;
 	}
-	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &new);
-	if (new) {
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &isNew);
+	if (isNew) {
 	    /*
 	     * The word is not on the stack yet, remember the current location
 	     * and initialize references.

@@ -529,7 +529,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -1217,7 +1217,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1405,7 +1405,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

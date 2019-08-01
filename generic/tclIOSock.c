@@ -35,7 +35,7 @@ gai_strerror(
 	tsdPtr->initialized = 1;
     }
     Tcl_DStringInit(&tsdPtr->errorMsg);
-    Tcl_Utf16ToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    Tcl_Char16ToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
 }
 #endif

@@ -74,7 +74,7 @@ NewNativeObj(
 	length *= sizeof(WCHAR);
     }
     Tcl_DStringInit(&ds);
-    Tcl_Utf16ToUtfDString(string, length, &ds);
+    Tcl_Char16ToUtfDString(string, length, &ds);
 #else
     Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
 #endif

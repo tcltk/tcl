@@ -1198,7 +1198,7 @@ declare 335 {
     int Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToUtf16(const char *src, unsigned short *chPtr)
+    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
     int Tcl_UtfToUpper(char *src)
@@ -1253,11 +1253,11 @@ declare 353 {deprecated {Use Tcl_UtfNcmp}} {
 	    unsigned long numChars)
 }
 declare 354 {
-    char *Tcl_Utf16ToUtfDString(const unsigned short *uniStr,
+    char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
-    unsigned short *Tcl_UtfToUtf16DString(const char *src,
+    unsigned short *Tcl_UtfToChar16DString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 {

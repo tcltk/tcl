@@ -686,6 +686,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
 # CONFIG_CHECK - 1 -> check current build configuration against Tcl
 #           configuration (ignored for Tcl itself)
+# _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
+#           (CRT library should support this)
+# TCL_UTF_MAX=4 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -743,6 +746,16 @@ MSVCRT		= 0
 TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "time64bit"]
+!message *** Force 64-bit time_t
+_USE_64BIT_TIME_T = 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "utfmax"]
+!message *** Force 32-bit Tcl_UniChar
+TCL_UTF_MAX = 4
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1303,6 +1316,13 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+!endif
+
+!if "$(_USE_64BIT_TIME_T)" == "1"
+OPTDEFINES	= $(OPTDEFINES) -D_USE_64BIT_TIME_T
+!endif
+!if "$(TCL_UTF_MAX)" == "4"
+OPTDEFINES	= $(OPTDEFINES) -DTCL_UTF_MAX=4
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP

@@ -262,7 +262,7 @@ Tcl_UniCharToUtfDString(
 #endif /* TCL_UTF_MAX > 3 */
 
 char *
-Tcl_Utf16ToUtfDString(
+Tcl_Char16ToUtfDString(
     const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
     int uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
@@ -440,7 +440,7 @@ Tcl_UtfToUniChar(
 #endif /* TCL_UTF_MAX > 3 */
 
 int
-Tcl_UtfToUtf16(
+Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
     unsigned short *chPtr)/* Filled with the Utf-16 representation of
 				 * the UTF-8 string. */
@@ -611,7 +611,7 @@ Tcl_UtfToUniCharDString(
 #endif /* TCL_UTF_MAX > 3 */
 
 unsigned short *
-Tcl_UtfToUtf16DString(
+Tcl_UtfToChar16DString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
     int length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
@@ -642,13 +642,13 @@ Tcl_UtfToUtf16DString(
     p = src;
     end = src + length - 4;
     while (p < end) {
-	p += Tcl_UtfToUtf16(p, &ch);
+	p += Tcl_UtfToChar16(p, &ch);
 	*w++ = ch;
     }
     end += 4;
     while (p < end) {
 	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += Tcl_UtfToUtf16(p, &ch);
+	    p += Tcl_UtfToChar16(p, &ch);
 	} else {
 	    ch = UCHAR(*p++);
 	}
@@ -708,7 +708,7 @@ Tcl_UtfCharComplete(
 
 #if TCL_UTF_MAX == 3
 #	undef Tcl_UtfToUniChar
-#	define Tcl_UtfToUniChar Tcl_UtfToUtf16
+#	define Tcl_UtfToUniChar Tcl_UtfToChar16
 #endif
 
 int
