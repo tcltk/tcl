@@ -264,8 +264,8 @@ If you want compatibility with earlier Tcl releases than 8.7, use
 \fBTcl_UtfToUniCharDString\fR resp. \fBTcl_UniCharToUtfDString\fR as
 replacement, and make sure you compile your extension with -DTCL_UTF_MAX=3.
 Beware: Those replacement functions don't initialize their Tcl_DString (you'll
-have to do that yourself), and \fBTcl_UniCharToUtfDString\fR doesn't accept -1
-as length parameter (but \fBTcl_WCharToUtfDString\fR does!).
+have to do that yourself), and \fBTcl_UniCharToUtfDString\fR from Tcl 8.6
+doesn't accept -1 as length parameter.
 .PP
 \fBTcl_GetEncodingName\fR is roughly the inverse of \fBTcl_GetEncoding\fR.
 Given an \fIencoding\fR, the return value is the \fIname\fR argument that
