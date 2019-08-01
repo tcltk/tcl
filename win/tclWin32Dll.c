@@ -474,9 +474,6 @@ Tcl_WinUtfToTChar(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
     return Tcl_UtfToChar16DString(string, len, dsPtr);
 }
 #undef Tcl_WinTCharToUtf
@@ -489,9 +486,6 @@ Tcl_WinTCharToUtf(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
     return Tcl_Char16ToUtfDString((unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */

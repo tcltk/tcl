@@ -257,9 +257,6 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
     return (char *)Tcl_UtfToChar16DString(string, len, dsPtr);
 }
 #undef Tcl_WinTCharToUtf
@@ -270,9 +267,6 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
     return Tcl_Char16ToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */

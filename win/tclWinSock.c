@@ -367,16 +367,15 @@ InitializeHostName(
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
+    Tcl_DStringInit(&ds);
     if (GetComputerName(tbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_DStringInit(&ds);
 	Tcl_UtfToLower(Tcl_Char16ToUtfDString(tbuf, -1, &ds));
 
     } else {
-	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
 	    /*
 	     * The buffer size of 256 is recommended by the MSDN page that
