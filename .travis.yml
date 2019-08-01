@@ -4,19 +4,6 @@ language: c
 matrix:
   include:
 # Testing on Linux with various compilers
-    - name: "Linux/Clang/Shared"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-    - name: "Linux/Clang/Static"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - CFGOPT=--disable-shared
-        - BUILD_DIR=unix
     - name: "Linux/Clang/Shared: UTF_MAX=6"
       os: linux
       dist: xenial
@@ -80,6 +67,16 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
+# Debug build. Running test-cases disabled, because it is currently failing.
+    - name: "Linux/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
+      script:
+        - make all tcltest
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -129,13 +126,37 @@ matrix:
             - g++-4.9
       env:
         - BUILD_DIR=unix
+# Clang
+    - name: "Linux/Clang/Shared"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+    - name: "Linux/Clang/Static"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - CFGOPT=--disable-shared
+        - BUILD_DIR=unix
+# Debug build. Running test-cases disabled, because it is currently failing.
+    - name: "Linux/Clang/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=--enable-symbols=all
+      script:
+        - make all tcltest
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
       osx_image: xcode11
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 11/Shared/Mac-like"
+    - name: "macOS/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
       env:
@@ -145,21 +166,21 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 10/Shared/Mac-like"
+    - name: "macOS/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.2
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 9/Shared/Mac-like"
+    - name: "macOS/Xcode 9/Shared"
       os: osx
       osx_image: xcode9
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 8/Shared/Mac-like"
+    - name: "macOS/Xcode 8/Shared"
       os: osx
       osx_image: xcode8
       env:
@@ -167,7 +188,7 @@ matrix:
       install: []
       script: *mactest
 # Test with mingw-w64 (32 bit) cross-compile
-# Doesn't run tests because wine is only an imperfect Windows emulation 
+# Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
@@ -185,8 +206,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
       script: &crosstest
-        - make all
-        - make tcltest
+        - make all tcltest
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
@@ -226,8 +246,17 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
       script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons: *mingw32
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
+      script: *crosstest
 # Test with mingw-w64 (64 bit)
-# Doesn't run tests because wine is only an imperfect Windows emulation 
+# Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-64/GCC/Shared/no test"
       os: linux
       dist: xenial
@@ -280,6 +309,65 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
       script: *crosstest
+    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
+      script: *crosstest
+# Test on Windows with MSVC native
+    - name: "Windows/MSVC/Shared"
+      os: windows
+      compiler: cl
+      env: &vcenv
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+      before_install: &vcpreinst
+        - PATH="$PATH:$VCDIR"
+        - cd ${BUILD_DIR}
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: UTF_MAX=6"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Static"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc test'
+    - name: "Windows/MSVC/Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc test'
 before_install:
   - cd ${BUILD_DIR}
 install:
@@ -287,6 +375,5 @@ install:
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
-  - make all
-  - make tcltest
+  - make all tcltest
   - make test

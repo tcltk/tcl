@@ -999,7 +999,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);

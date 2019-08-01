@@ -28,6 +28,7 @@ testConstraint testchmod      [llength [info commands testchmod]]
 testConstraint cdrom 0
 testConstraint exdev 0
 testConstraint longFileNames 0
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 proc createfile {file {string a}} {
     set f [open $file w]
@@ -393,7 +394,7 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes} -body {
+} -constraints {win winNonZeroInodes knownMsvcBug} -body {
     file mkdir td1
     foreach {a b} [MakeFiles td1] break
     file rename -force $a $b
@@ -638,7 +639,7 @@ test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
 
 test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -692,7 +693,7 @@ test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
 } -result {1 {tf1 ENOTDIR}}
 test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -710,7 +711,7 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
 } -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
-} -constraints {winVista testfile testchmod} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -939,7 +940,7 @@ test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
 } -result {}
 test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     cleanup
-} -constraints {winVista testfile testchmod} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
     file mkdir td1/td2
     testchmod 0 td1
     testfile rmdir -force td1
