@@ -280,11 +280,11 @@ TclPkgFileSeen(
     if (pkgFiles && pkgFiles->names) {
 	const char *name = pkgFiles->names->name;
 	Tcl_HashTable *table = &pkgFiles->table;
-	int new;
-	Tcl_HashEntry *entry = Tcl_CreateHashEntry(table, name, &new);
+	int isNew;
+	Tcl_HashEntry *entry = Tcl_CreateHashEntry(table, name, &isNew);
 	Tcl_Obj *list;
 
-	if (new) {
+	if (isNew) {
 	    list = Tcl_NewObj();
 	    Tcl_SetHashValue(entry, list);
 	    Tcl_IncrRefCount(list);
