@@ -83,7 +83,6 @@ Tcl_InitNotifier(void)
 	return tclNotifierHooks.initNotifierProc();
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	WNDCLASS class;
 
 	TclpMasterLock();
 	if (!initialized) {
@@ -99,18 +98,20 @@ Tcl_InitNotifier(void)
 
 	EnterCriticalSection(&notifierMutex);
 	if (notifierCount == 0) {
-	    class.style = 0;
-	    class.cbClsExtra = 0;
-	    class.cbWndExtra = 0;
-	    class.hInstance = TclWinGetTclInstance();
-	    class.hbrBackground = NULL;
-	    class.lpszMenuName = NULL;
-	    class.lpszClassName = className;
-	    class.lpfnWndProc = NotifierProc;
-	    class.hIcon = NULL;
-	    class.hCursor = NULL;
+	    WNDCLASS clazz;
 
-	    if (!RegisterClass(&class)) {
+	    clazz.style = 0;
+	    clazz.cbClsExtra = 0;
+	    clazz.cbWndExtra = 0;
+	    clazz.hInstance = TclWinGetTclInstance();
+	    clazz.hbrBackground = NULL;
+	    clazz.lpszMenuName = NULL;
+	    clazz.lpszClassName = className;
+	    clazz.lpfnWndProc = NotifierProc;
+	    clazz.hIcon = NULL;
+	    clazz.hCursor = NULL;
+
+	    if (!RegisterClass(&clazz)) {
 		Tcl_Panic("Unable to register TclNotifier window class");
 	    }
 	}

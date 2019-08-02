@@ -86,16 +86,6 @@ static void		Disclaim(void);
 static void *		DivertFindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		DivertUnloadFile(Tcl_LoadHandle loadHandle);
-
-/*
- * These form part of the native filesystem support. They are needed here
- * because we have a few native filesystem functions (which are the same for
- * win/unix) in this file. There is no need to place them in tclInt.h, because
- * they are not (and should not be) used anywhere else.
- */
-
-MODULE_SCOPE const char *const		tclpFileAttrStrings[];
-MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  * Declare the native filesystem support. These functions should be considered
@@ -1392,7 +1382,7 @@ TclFSNormalizeToUniquePath(
 
     int i;
     int isVfsPath = 0;
-    char *path;
+    const char *path;
 
     /*
      * Paths starting with a UNC prefix whose final character is a colon

@@ -453,24 +453,24 @@ typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
-    void *clientData;	/* Client data for the function */
+    double (*fn)(double x);	/* Real function pointer */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "abs",	ExprAbsFunc,	NULL			},
-    { "acos",	ExprUnaryFunc,	(void *) acos	},
-    { "asin",	ExprUnaryFunc,	(void *) asin	},
-    { "atan",	ExprUnaryFunc,	(void *) atan	},
-    { "atan2",	ExprBinaryFunc,	(void *) atan2	},
+    { "acos",	ExprUnaryFunc,	acos			},
+    { "asin",	ExprUnaryFunc,	asin			},
+    { "atan",	ExprUnaryFunc,	atan			},
+    { "atan2",	ExprBinaryFunc,	(double (*)(double)) (double (*)(double, double)) atan2},
     { "bool",	ExprBoolFunc,	NULL			},
     { "ceil",	ExprCeilFunc,	NULL			},
-    { "cos",	ExprUnaryFunc,	(void *) cos	},
-    { "cosh",	ExprUnaryFunc,	(void *) cosh	},
+    { "cos",	ExprUnaryFunc,	cos				},
+    { "cosh",	ExprUnaryFunc,	cosh			},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
-    { "exp",	ExprUnaryFunc,	(void *) exp	},
+    { "exp",	ExprUnaryFunc,	exp				},
     { "floor",	ExprFloorFunc,	NULL			},
-    { "fmod",	ExprBinaryFunc,	(void *) fmod	},
-    { "hypot",	ExprBinaryFunc,	(void *) hypot	},
+    { "fmod",	ExprBinaryFunc,	(double (*)(double)) (double (*)(double, double)) fmod},
+    { "hypot",	ExprBinaryFunc,	(double (*)(double)) (double (*)(double, double)) hypot},
     { "int",	ExprIntFunc,	NULL			},
     { "isfinite", ExprIsFiniteFunc, NULL        	},
     { "isinf",	ExprIsInfinityFunc, NULL        	},
@@ -479,19 +479,19 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,         },
     { "isunordered", ExprIsUnorderedFunc, NULL,         },
-    { "log",	ExprUnaryFunc,	(void *) log	},
-    { "log10",	ExprUnaryFunc,	(void *) log10	},
+    { "log",	ExprUnaryFunc,	log				},
+    { "log10",	ExprUnaryFunc,	log10			},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
-    { "pow",	ExprBinaryFunc,	(void *) pow	},
+    { "pow",	ExprBinaryFunc,	(double (*)(double)) (double (*)(double, double)) pow},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
-    { "sin",	ExprUnaryFunc,	(void *) sin	},
-    { "sinh",	ExprUnaryFunc,	(void *) sinh	},
+    { "sin",	ExprUnaryFunc,	sin				},
+    { "sinh",	ExprUnaryFunc,	sinh			},
     { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
-    { "tan",	ExprUnaryFunc,	(void *) tan	},
-    { "tanh",	ExprUnaryFunc,	(void *) tanh	},
+    { "tan",	ExprUnaryFunc,	tan				},
+    { "tanh",	ExprUnaryFunc,	tanh			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
@@ -657,7 +657,15 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(_WIN32) && !defined(_WIN64) && !defined(_USE_64BIT_TIME_T) \
+	    && !defined(__MINGW_USE_VC2005_COMPAT)
+    /* If Tcl is compiled on Win32 using -D_USE_64BIT_TIME_T or
+     * -D__MINGW_USE_VC2005_COMPAT, the result is a binary incompatible
+     * with the 'standard' build of Tcl: All extensions using Tcl_StatBuf
+     * or interal functions like TclpGetDate() need to be recompiled in
+     * the same way. Therefore, this is not officially supported.
+     * In stead, it is recommended to use Win64 or Tcl 9.0 (not released yet)
+     */
     if (sizeof(time_t) != 4) {
 	/*NOTREACHED*/
 	Tcl_Panic("<time.h> is not compatible with MSVC");
@@ -1078,7 +1086,7 @@ Tcl_CreateInterp(void)
 	    builtinFuncPtr++) {
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
 	Tcl_CreateObjCommand(interp, mathFuncName,
-		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData, NULL);
+		builtinFuncPtr->objCmdProc, (void *)builtinFuncPtr->fn, NULL);
 	Tcl_Export(interp, nsPtr, builtinFuncPtr->name, 0);
     }
 
@@ -2635,7 +2643,7 @@ TclCreateObjCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
-    Tcl_Namespace *ns,   /* The namespace to create the command in */
+    Tcl_Namespace *namesp,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
@@ -2649,7 +2657,7 @@ TclCreateObjCommandInNs(
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
     Tcl_HashEntry *hPtr;
-    Namespace *nsPtr = (Namespace *) ns;
+    Namespace *nsPtr = (Namespace *) namesp;
 
     /*
      * If the command name we seek to create already exists, we need to delete

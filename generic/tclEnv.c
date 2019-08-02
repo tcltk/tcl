@@ -454,18 +454,18 @@ TclUnsetEnv(
      */
 
 #if defined(_WIN32)
-    string = ckalloc(length + 2);
+    string = (char *)ckalloc(length + 2);
     memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = ckalloc(length + 1);
+    string = (char *)ckalloc(length + 1);
     memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
+    string = (char *)ckrealloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);

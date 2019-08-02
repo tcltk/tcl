@@ -87,6 +87,9 @@ typedef off_t		Tcl_SeekOffset;
 
 #ifdef __CYGWIN__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
     /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
 #   define CP_UTF8 65001
@@ -117,6 +120,9 @@ typedef off_t		Tcl_SeekOffset;
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
+#ifdef __cplusplus
+}
+#endif
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64

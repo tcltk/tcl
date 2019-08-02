@@ -397,7 +397,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
@@ -489,7 +489,7 @@ TclpHasSockets(
 void
 TclpFinalizeSockets(void)
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Careful! This is a finalizer!
@@ -550,7 +550,7 @@ TcpBlockModeProc(
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
 	SET_BITS(statePtr->flags, TCP_NONBLOCKING);
@@ -646,10 +646,10 @@ WaitForConnect(
 
     while (1) {
 	/*
-         * Get the statePtr lock.
-         */
+	 * Get the statePtr lock.
+	 */
 
-        tsdPtr = TclThreadDataKeyGet(&dataKey);
+	tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 
 	/*
@@ -783,10 +783,10 @@ TcpInputProc(
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int bytesRead;
     DWORD error;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
 
@@ -926,10 +926,10 @@ TcpOutputProc(
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int written;
     DWORD error;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
 
@@ -1040,7 +1040,7 @@ TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
     Tcl_Interp *interp)		/* Unused. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     /* TIP #218 */
     int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1135,7 +1135,7 @@ TcpClose2Proc(
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
     int sd;
 
@@ -1300,7 +1300,7 @@ TcpGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store the computed value;
 				 * initialized by caller. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
@@ -1619,7 +1619,7 @@ TcpWatchProc(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     /*
      * Update the watch events mask. Only if the socket is not a server
@@ -1673,7 +1673,7 @@ TcpGetHandleProc(
     int direction,		/* Not used. */
     ClientData *handlePtr)	/* Where to store the handle. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     *handlePtr = INT2PTR(statePtr->sockets->fd);
     return TCL_OK;
@@ -1730,7 +1730,7 @@ TcpConnect(
     int async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING);
                                 /* We were called by the event procedure and
                                  * continue our loop. */
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (async_callback) {
         goto reenter;
@@ -2149,7 +2149,7 @@ Tcl_MakeTcpClientChannel(
 	return NULL;
     }
 
-    tsdPtr = TclThreadDataKeyGet(&dataKey);
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Set kernel space buffering and non-blocking.
@@ -2341,7 +2341,7 @@ Tcl_OpenTcpServerEx(
     }
 
     if (statePtr != NULL) {
-	ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;
@@ -2409,7 +2409,7 @@ TcpAccept(
     int len = sizeof(addr);
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Win-NT has a misfeature that sockets are inherited in child processes
@@ -2480,7 +2480,7 @@ static void
 InitSockets(void)
 {
     DWORD id;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (!initialized) {
 	initialized = 1;
@@ -2722,7 +2722,7 @@ SocketCheckProc(
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
                 && !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
-	    evPtr = ckalloc(sizeof(SocketEvent));
+	    evPtr = (SocketEvent *)ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = statePtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -2997,7 +2997,7 @@ AddSocketInfoFd(
          * Add the first FD.
          */
 
-	statePtr->sockets = ckalloc(sizeof(TcpFdList));
+	statePtr->sockets = (TcpFdList *)ckalloc(sizeof(TcpFdList));
 	fds = statePtr->sockets;
     } else {
 	/*
@@ -3008,7 +3008,7 @@ AddSocketInfoFd(
 	    fds = fds->next;
 	}
 
-	fds->next = ckalloc(sizeof(TcpFdList));
+	fds->next = (TcpFdList *)ckalloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
 
@@ -3041,7 +3041,7 @@ AddSocketInfoFd(
 static TcpState *
 NewSocketInfo(SOCKET socket)
 {
-    TcpState *statePtr = ckalloc(sizeof(TcpState));
+    TcpState *statePtr = (TcpState *)ckalloc(sizeof(TcpState));
 
     memset(statePtr, 0, sizeof(TcpState));
 
@@ -3084,7 +3084,7 @@ WaitForSocketEvent(
 {
     int result = 1;
     int oldMode;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -3170,7 +3170,7 @@ SocketThread(
     LPVOID arg)
 {
     MSG msg;
-    ThreadSpecificData *tsdPtr = arg;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)arg;
 
     /*
      * Create a dummy window receiving socket events.
@@ -3485,7 +3485,7 @@ TcpThreadActionProc(
     int action)
 {
     ThreadSpecificData *tsdPtr;
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int notifyCmd;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {

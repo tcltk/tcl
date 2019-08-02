@@ -1167,7 +1167,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	    goto error;
 	}
-	zf->data = MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0,
+	zf->data = (unsigned char *)MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0,
 		zf->length);
 	if (!zf->data) {
 	    ZIPFS_POSIX_ERROR(interp, "file mapping failed");

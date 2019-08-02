@@ -2259,6 +2259,7 @@ typedef struct Interp {
 #define TCL_EVAL_FILE			0x02
 #define TCL_EVAL_SOURCE_IN_FRAME	0x10
 #define TCL_EVAL_NORESOLVE		0x20
+#define TCL_EVAL_DISCARD_RESULT		0x40
 
 /*
  * Flag bits for Interp structures:
@@ -4234,7 +4235,6 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
 #ifdef USE_DTRACE
 #ifndef _TCLDTRACE_H
-typedef const char *TclDTraceStr;
 #include "tclDTrace.h"
 #endif
 #define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
@@ -4512,6 +4512,21 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     }
 
 /*
+ * These form part of the native filesystem support. They are needed here
+ * because we have a few native filesystem functions (which are the same for
+ * win/unix) in this file.
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+MODULE_SCOPE const char *const		tclpFileAttrStrings[];
+MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
+#ifdef __cplusplus
+}
+#endif
+
+/*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to test whether an object has a
  * string representation (or is a 'pure' internal value).
@@ -4535,8 +4550,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclUnpackBignum(objPtr, bignum) \
     do {								\
-	register Tcl_Obj *bignumObj = (objPtr);				\
-	register int bignumPayload =					\
+	Tcl_Obj *bignumObj = (objPtr);				\
+	int bignumPayload =					\
 		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \

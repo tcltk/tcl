@@ -226,7 +226,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
-    *valuePtr = ckalloc(length);
+    *valuePtr = (char *)ckalloc(length);
     memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -363,7 +363,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -411,7 +411,7 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -628,7 +628,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 
@@ -637,7 +637,7 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = ckalloc(length + 1);
+    nameUpper = (char *)ckalloc(length + 1);
     memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
