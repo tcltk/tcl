@@ -126,6 +126,11 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
+#if (TCL_MAJOR_VERSION < 9) && (TCL_MAJOR_VERSION < 7)
+#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
+#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+#endif
+
 static unsigned char *
 getByteArrayFromObj(
 	Tcl_Obj *objPtr,
@@ -145,8 +150,14 @@ getByteArrayFromObj(
     return result;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
+#ifdef __cplusplus
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -471,7 +482,7 @@ DeleteKey(
      */
 
     Tcl_DStringInit(&buf);
-    nativeTail = (const WCHAR *)Tcl_UtfToUniCharDString(tail, -1, &buf);
+    nativeTail = Tcl_UtfToWCharDString(tail, -1, &buf);
     result = RecursiveDeleteKey(subkey, nativeTail, saveMode);
     Tcl_DStringFree(&buf);
 
@@ -528,7 +539,7 @@ DeleteValue(
 
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&ds);
-    Tcl_UtfToUniCharDString(valueName, valueNameObj->length, &ds);
+    Tcl_UtfToWCharDString(valueName, valueNameObj->length, &ds);
     result = RegDeleteValue(key, (const WCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
@@ -618,7 +629,7 @@ GetKeyNames(
 	    break;
 	}
 	Tcl_DStringInit(&ds);
-	name = Tcl_UniCharToUtfDString((const Tcl_UniChar *)buffer, bufSize, &ds);
+	name = Tcl_WCharToUtfDString(buffer, bufSize, &ds);
 	if (pattern && !Tcl_StringMatch(name, pattern)) {
 	    Tcl_DStringFree(&ds);
 	    continue;
@@ -685,7 +696,7 @@ GetType(
 
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&ds);
-    nativeValue = (const WCHAR *)Tcl_UtfToUniCharDString(valueName, valueNameObj->length, &ds);
+    nativeValue = Tcl_UtfToWCharDString(valueName, valueNameObj->length, &ds);
     result = RegQueryValueEx(key, nativeValue, NULL, &type,
 	    NULL, NULL);
     Tcl_DStringFree(&ds);
@@ -767,7 +778,7 @@ GetValue(
 
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&buf);
-    nativeValue = (const WCHAR *)Tcl_UtfToUniCharDString(valueName, valueNameObj->length, &buf);
+    nativeValue = Tcl_UtfToWCharDString(valueName, valueNameObj->length, &buf);
 
     result = RegQueryValueEx(key, nativeValue, NULL, &type,
 	    (BYTE *) Tcl_DStringValue(&data), &length);
@@ -819,7 +830,7 @@ GetValue(
 	    WCHAR *wp = (WCHAR *) p;
 
 	    Tcl_DStringInit(&buf);
-	    Tcl_UniCharToUtfDString((const Tcl_UniChar *)wp, wcslen(wp), &buf);
+	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
@@ -832,7 +843,7 @@ GetValue(
     } else if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
 	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&data);
 	Tcl_DStringInit(&buf);
-	Tcl_UniCharToUtfDString((const Tcl_UniChar *)Tcl_DStringValue(&data), wcslen(wp), &buf);
+	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&data), wcslen(wp), &buf);
 	Tcl_DStringResult(interp, &buf);
     } else {
 	/*
@@ -910,7 +921,7 @@ GetValueNames(
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 
 	Tcl_DStringInit(&ds);
-	Tcl_UniCharToUtfDString((const Tcl_UniChar *)Tcl_DStringValue(&buffer), size, &ds);
+	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);
 	name = Tcl_DStringValue(&ds);
 	if (!pattern || Tcl_StringMatch(name, pattern)) {
 	    result = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1017,7 +1028,7 @@ OpenSubKey(
 
     if (hostName) {
 	Tcl_DStringInit(&buf);
-	hostName = (char *) Tcl_UtfToUniCharDString(hostName, -1, &buf);
+	hostName = (char *) Tcl_UtfToWCharDString(hostName, -1, &buf);
 	result = RegConnectRegistry((WCHAR *)hostName, rootKey,
 		&rootKey);
 	Tcl_DStringFree(&buf);
@@ -1033,7 +1044,7 @@ OpenSubKey(
 
     if (keyName) {
 	Tcl_DStringInit(&buf);
-	keyName = (char *) Tcl_UtfToUniCharDString(keyName, -1, &buf);
+	keyName = (char *) Tcl_UtfToWCharDString(keyName, -1, &buf);
     }
     if (flags & REG_CREATE) {
 	DWORD create;
@@ -1286,7 +1297,7 @@ SetValue(
 
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&nameBuf);
-    valueName = (char *) Tcl_UtfToUniCharDString(valueName, valueNameObj->length, &nameBuf);
+    valueName = (char *) Tcl_UtfToWCharDString(valueName, valueNameObj->length, &nameBuf);
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
 	int value;
@@ -1331,7 +1342,7 @@ SetValue(
 	}
 
 	Tcl_DStringInit(&buf);
-	Tcl_UtfToUniCharDString(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
+	Tcl_UtfToWCharDString(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
 	result = RegSetValueEx(key, (WCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
@@ -1343,7 +1354,7 @@ SetValue(
 	const char *data = Tcl_GetString(dataObj);
 
 	Tcl_DStringInit(&buf);
-	data = (char *) Tcl_UtfToUniCharDString(data, dataObj->length, &buf);
+	data = (char *) Tcl_UtfToWCharDString(data, dataObj->length, &buf);
 
 	/*
 	 * Include the null in the length, padding if needed for WCHAR.
@@ -1424,7 +1435,7 @@ BroadcastValue(
 
     str = Tcl_GetString(objv[0]);
     Tcl_DStringInit(&ds);
-    wstr = (WCHAR *) Tcl_UtfToUniCharDString(str, objv[0]->length, &ds);
+    wstr = Tcl_UtfToWCharDString(str, objv[0]->length, &ds);
     if (Tcl_DStringLength(&ds) == 0) {
 	wstr = NULL;
     }
@@ -1488,7 +1499,7 @@ AppendSystemError(
 	char *msgPtr;
 
 	Tcl_DStringInit(&ds);
-	Tcl_UniCharToUtfDString((const Tcl_UniChar *)tMsgPtr, wcslen(tMsgPtr), &ds);
+	Tcl_WCharToUtfDString(tMsgPtr, wcslen(tMsgPtr), &ds);
 	LocalFree(tMsgPtr);
 
 	msgPtr = Tcl_DStringValue(&ds);
