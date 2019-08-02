@@ -303,15 +303,6 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
-    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC/Shared: UTF_MAX=6"
       os: windows
       compiler: cl
@@ -321,6 +312,15 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
