@@ -1178,7 +1178,7 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    static FARPROC regDeleteKeyExProc = NULL;
+    static LSTATUS (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LSTATUS (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
 
     /*
      * Do not allow NULL or empty key name.
@@ -1218,7 +1218,7 @@ RecursiveDeleteKey(
 
 		checkExProc = 1;
 		handle = GetModuleHandle(TEXT("ADVAPI32"));
-		regDeleteKeyExProc = (FARPROC)
+		regDeleteKeyExProc = (LSTATUS (*) (HKEY, LPCWSTR, REGSAM, DWORD))
 			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
 	    if (mode && regDeleteKeyExProc) {

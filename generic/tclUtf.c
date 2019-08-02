@@ -265,7 +265,7 @@ Tcl_UniCharToUtfDString(
 
 char *
 Tcl_Char16ToUtfDString(
-    const unsigned short *uniStr,	/* Utf-16 string to convert to UTF-8. */
+    const unsigned short *uniStr,/* Utf-16 string to convert to UTF-8. */
     int uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
@@ -590,7 +590,7 @@ Tcl_UtfToUniCharDString(
     oldLength = Tcl_DStringLength(dsPtr);
 
     Tcl_DStringSetLength(dsPtr,
-	    oldLength + ((length + 1) * sizeof(unsigned int)));
+	    oldLength + ((length + 1) * sizeof(int)));
     wString = (int *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;

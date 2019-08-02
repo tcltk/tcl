@@ -36,7 +36,7 @@ typedef struct RegisteredInterp {
     struct RegisteredInterp *nextPtr;
 				/* The next interp this application knows
 				 * about. */
-    WCHAR *name;			/* Interpreter's name (malloc-ed). */
+    WCHAR *name;		/* Interpreter's name (malloc-ed). */
     Tcl_Obj *handlerPtr;	/* The server handler command */
     Tcl_Interp *interp;		/* The interpreter attached to this name. */
 } RegisteredInterp;
@@ -1486,7 +1486,7 @@ DdeObjCmd(
     if (length == 0) {
 	serviceName = NULL;
     } else if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-	ddeService = DdeCreateStringHandle(ddeInstance, (void *) serviceName,
+	ddeService = DdeCreateStringHandle(ddeInstance, serviceName,
 		CP_WINUNICODE);
     }
 
@@ -1500,7 +1500,7 @@ DdeObjCmd(
 	if (length == 0) {
 	    topicName = NULL;
 	} else {
-	    ddeTopic = DdeCreateStringHandle(ddeInstance, (void *) topicName,
+	    ddeTopic = DdeCreateStringHandle(ddeInstance, topicName,
 		    CP_WINUNICODE);
 	}
     }
@@ -1610,7 +1610,7 @@ DdeObjCmd(
 	    result = TCL_ERROR;
 	} else {
 	    Tcl_Obj *returnObjPtr;
-	    ddeItem = DdeCreateStringHandle(ddeInstance, (void *) itemString,
+	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(NULL, 0, hConv, ddeItem,
@@ -1690,7 +1690,7 @@ DdeObjCmd(
 	    SetDdeError(interp);
 	    result = TCL_ERROR;
 	} else {
-	    ddeItem = DdeCreateStringHandle(ddeInstance, (void *) itemString,
+	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(dataString, (DWORD) length,
