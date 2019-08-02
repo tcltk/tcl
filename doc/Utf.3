@@ -93,7 +93,7 @@ int
 .AS "const Tcl_UniChar" *uniPattern in/out
 .AP char *buf out
 Buffer in which the UTF-8 representation of the Tcl_UniChar is stored.  At most
-\fBTCL_UTF_MAX\fR bytes are stored in the buffer.
+4 bytes are stored in the buffer.
 .AP int ch in
 The Unicode character to be converted or examined.
 .AP Tcl_UniChar *chPtr out
