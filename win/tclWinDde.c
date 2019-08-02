@@ -119,7 +119,7 @@ static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-#if (TCL_MAJOR_VERSION < 9) && (TCL_MAJOR_VERSION < 7)
+#if (TCL_MAJOR_VERSION < 9) && (TCL_MINOR_VERSION < 7)
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
 #endif

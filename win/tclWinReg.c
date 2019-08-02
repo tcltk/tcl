@@ -126,7 +126,7 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-#if (TCL_MAJOR_VERSION < 9) && (TCL_MAJOR_VERSION < 7)
+#if (TCL_MAJOR_VERSION < 9) && (TCL_MINOR_VERSION < 7)
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
 #endif
