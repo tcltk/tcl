@@ -771,7 +771,7 @@ DdeServerProc(
 		    Tcl_Obj *variableObjPtr;
 
 		    Tcl_DStringInit(&ds);
-		    Tcl_UniCharToUtfDString(utilString, wcslen(utilString), &ds);
+		    Tcl_UniCharToUtfDString((Tcl_UniChar *)utilString, wcslen(utilString), &ds);
 		    variableObjPtr = Tcl_GetVar2Ex(
 			    convPtr->riPtr->interp, Tcl_DStringValue(&ds), NULL,
 			    TCL_GLOBAL_ONLY);
@@ -830,12 +830,12 @@ DdeServerProc(
 	    DdeQueryString(ddeInstance, ddeItem, utilString, (DWORD) len + 1,
 		    CP_WINUNICODE);
 	    Tcl_DStringInit(&ds);
-	    Tcl_UniCharToUtfDString(utilString, wcslen(utilString), &ds);
+	    Tcl_UniCharToUtfDString((Tcl_UniChar *)utilString, wcslen(utilString), &ds);
 	    utilString = (WCHAR *) DdeAccessData(hData, &len2);
 	    len = len2;
 	    if (uFmt != CF_TEXT) {
 		Tcl_DStringInit(&ds2);
-		Tcl_UniCharToUtfDString(utilString, wcslen(utilString), &ds2);
+		Tcl_UniCharToUtfDString((Tcl_UniChar *)utilString, wcslen(utilString), &ds2);
 		utilString = (WCHAR *) Tcl_DStringValue(&ds2);
 	    }
 	    variableObjPtr = Tcl_NewStringObj((char *)utilString, -1);
@@ -887,7 +887,7 @@ DdeServerProc(
 	    Tcl_DString dsBuf;
 
 	    Tcl_DStringInit(&dsBuf);
-	    Tcl_UniCharToUtfDString(utilString, (dlen>>1) - 1, &dsBuf);
+	    Tcl_UniCharToUtfDString((Tcl_UniChar *)utilString, (dlen>>1) - 1, &dsBuf);
 	    ddeObjectPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
 		    Tcl_DStringLength(&dsBuf));
 	    Tcl_DStringFree(&dsBuf);
@@ -1021,7 +1021,7 @@ MakeDdeConnection(
 	    Tcl_DString dString;
 
 	    Tcl_DStringInit(&dString);
-	    Tcl_UniCharToUtfDString(name, wcslen(name), &dString);
+	    Tcl_UniCharToUtfDString((Tcl_UniChar *)name, wcslen(name), &dString);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no registered server named \"%s\"", Tcl_DStringValue(&dString)));
 	    Tcl_DStringFree(&dString);
@@ -1131,12 +1131,12 @@ DdeServicesOnAck(
 
 	GlobalGetAtomName(service, sz, 255);
 	Tcl_DStringInit(&dString);
-	Tcl_UniCharToUtfDString(sz, wcslen(sz), &dString);
+	Tcl_UniCharToUtfDString((Tcl_UniChar *)sz, wcslen(sz), &dString);
 	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
 	Tcl_DStringFree(&dString);
 	GlobalGetAtomName(topic, sz, 255);
 	Tcl_DStringInit(&dString);
-	Tcl_UniCharToUtfDString(sz, wcslen(sz), &dString);
+	Tcl_UniCharToUtfDString((Tcl_UniChar *)sz, wcslen(sz), &dString);
 	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
 	Tcl_DStringFree(&dString);
 
@@ -1495,7 +1495,7 @@ DdeObjCmd(
 
 	length = objv[firstArg + 1]->length;
 	Tcl_DStringInit(&topicBuf);
-	topicName = Tcl_UtfToUniCharDString(src, length, &topicBuf);
+	topicName = (const WCHAR *)Tcl_UtfToUniCharDString(src, length, &topicBuf);
 	length = Tcl_DStringLength(&topicBuf) / sizeof(WCHAR);
 	if (length == 0) {
 	    topicName = NULL;
@@ -1513,7 +1513,7 @@ DdeObjCmd(
 	    Tcl_DString dsBuf;
 
 	    Tcl_DStringInit(&dsBuf);
-	    Tcl_UniCharToUtfDString(serviceName, wcslen(serviceName), &dsBuf);
+	    Tcl_UniCharToUtfDString((Tcl_UniChar *)serviceName, wcslen(serviceName), &dsBuf);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
 		    Tcl_DStringLength(&dsBuf)));
 	    Tcl_DStringFree(&dsBuf);
@@ -1591,7 +1591,7 @@ DdeObjCmd(
 	src = Tcl_GetString(objv[firstArg + 2]);
 	length = objv[firstArg + 2]->length;
 	Tcl_DStringInit(&itemBuf);
-	itemString = Tcl_UtfToUniCharDString(src, length, &itemBuf);
+	itemString = (const WCHAR *)Tcl_UtfToUniCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 
 	if (length == 0) {
@@ -1633,7 +1633,7 @@ DdeObjCmd(
 			    tmp -= sizeof(WCHAR);
 			}
 			Tcl_DStringInit(&dsBuf);
-			Tcl_UniCharToUtfDString(dataString, tmp>>1, &dsBuf);
+			Tcl_UniCharToUtfDString((Tcl_UniChar *)dataString, tmp>>1, &dsBuf);
 			returnObjPtr =
 			    Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
 				    Tcl_DStringLength(&dsBuf));
@@ -1659,7 +1659,7 @@ DdeObjCmd(
 	src = Tcl_GetString(objv[firstArg + 2]);
 	length = objv[firstArg + 2]->length;
 	Tcl_DStringInit(&itemBuf);
-	itemString = Tcl_UtfToUniCharDString(src, length, &itemBuf);
+	itemString = (const WCHAR *)Tcl_UtfToUniCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1894,7 +1894,7 @@ DdeObjCmd(
 		    length -= sizeof(WCHAR);
 		}
 		Tcl_DStringInit(&dsBuf);
-		Tcl_UniCharToUtfDString(ddeDataString, length>>1, &dsBuf);
+		Tcl_UniCharToUtfDString((Tcl_UniChar *)ddeDataString, length>>1, &dsBuf);
 		resultPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
 			Tcl_DStringLength(&dsBuf));
 		Tcl_DStringFree(&dsBuf);
