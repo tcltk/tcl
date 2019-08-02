@@ -210,6 +210,9 @@ static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  */
 
 #if defined(__CYGWIN__)
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct {
     void *hwnd;			/* Messaging window. */
     unsigned int *message;	/* Message payload. */
@@ -260,6 +263,9 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
 static const wchar_t className[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
+#ifdef __cplusplus
+}
+#endif
 #endif /* TCL_THREADS && __CYGWIN__ */
 
 

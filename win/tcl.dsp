@@ -148,10 +148,6 @@ SOURCE=..\compat\dlfcn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\fixstrtod.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\gettod.c
 # End Source File
 # Begin Source File
@@ -185,10 +181,6 @@ SOURCE=..\compat\strncasecmp.c
 # Begin Source File
 
 SOURCE=..\compat\strstr.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\strtod.c
 # End Source File
 # Begin Source File
 

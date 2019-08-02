@@ -937,7 +937,7 @@ TclpMatchInDirectory(
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = TclGetStringFromObj(norm, &len);
 
-	    native = Tcl_FSGetNativePath(pathPtr);
+	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesEx(native,
 		    GetFileExInfoStandard, &data) != TRUE) {
@@ -978,7 +978,7 @@ TclpMatchInDirectory(
 	 * Verify that the specified path exists and is actually a directory.
 	 */
 
-	native = Tcl_FSGetNativePath(pathPtr);
+	native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	if (native == NULL) {
 	    return TCL_OK;
 	}
@@ -1471,14 +1471,14 @@ TclpGetUserHome(
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(domain + 1, -1, &ds);
+	wName = (WCHAR *)TclUtfToWCharDString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
 	Tcl_DStringInit(&ds);
-	wName = TclUtfToWCharDString(name, nameLen, &ds);
+	wName = (WCHAR *)TclUtfToWCharDString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * User does not exist; if domain was not specified, try again
@@ -1498,7 +1498,7 @@ TclpGetUserHome(
 	    if (rc != 0) {
 		break;
 	    }
-	    domain = INT2PTR(-1); /* repeat once */
+	    domain = (const char *)INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
 	    DWORD i, size = MAX_PATH;
@@ -1506,7 +1506,7 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
 		size = lstrlenW(wHomeDir);
-		TclWCharToUtfDString(wHomeDir, size, bufferPtr);
+		TclWCharToUtfDString((const unsigned short *)wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
@@ -1514,7 +1514,7 @@ TclpGetUserHome(
 		 */
 
 		GetProfilesDirectoryW(buf, &size);
-		TclWCharToUtfDString(buf, size-1, bufferPtr);
+		TclWCharToUtfDString((const unsigned short *)buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
@@ -1917,7 +1917,7 @@ TclpObjChdir(
     int result;
     const WCHAR *nativePath;
 
-    nativePath = Tcl_FSGetNativePath(pathPtr);
+    nativePath = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     if (!nativePath) {
 	return -1;
@@ -2009,7 +2009,7 @@ TclpObjStat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat(Tcl_FSGetNativePath(pathPtr), statPtr, 0);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 0);
 }
 
 /*
@@ -2378,7 +2378,7 @@ TclpObjAccess(
     Tcl_Obj *pathPtr,
     int mode)
 {
-    return NativeAccess(Tcl_FSGetNativePath(pathPtr), mode);
+    return NativeAccess((const WCHAR *)Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int
@@ -2394,7 +2394,7 @@ TclpObjLstat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat(Tcl_FSGetNativePath(pathPtr), statPtr, 1);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 1);
 }
 
 #ifdef S_IFLNK
@@ -2407,14 +2407,14 @@ TclpObjLink(
     if (toPtr != NULL) {
 	int res;
 	const WCHAR *LinkTarget;
-	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
 	if (normalizedToPtr == NULL) {
 	    return NULL;
 	}
 
-	LinkTarget = Tcl_FSGetNativePath(normalizedToPtr);
+	LinkTarget = (const WCHAR *)Tcl_FSGetNativePath(normalizedToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
@@ -2426,7 +2426,7 @@ TclpObjLink(
 	    return NULL;
 	}
     } else {
-	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	if (LinkSource == NULL) {
 	    return NULL;
@@ -2475,13 +2475,13 @@ TclpFilesystemPathType(
 
     firstSeparator = strchr(path, '/');
     if (firstSeparator == NULL) {
-	found = GetVolumeInformation(Tcl_FSGetNativePath(pathPtr),
+	found = GetVolumeInformation((const WCHAR *)Tcl_FSGetNativePath(pathPtr),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
     } else {
 	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
 
 	Tcl_IncrRefCount(driveName);
-	found = GetVolumeInformation(Tcl_FSGetNativePath(driveName),
+	found = GetVolumeInformation((const WCHAR *)Tcl_FSGetNativePath(driveName),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
 	Tcl_DecrRefCount(driveName);
     }
@@ -3097,7 +3097,7 @@ TclNativeCreateNativeRep(
      * Overallocate 6 chars, making some room for extended paths
      */
 
-    wp = nativePathPtr = ckalloc((len + 6) * sizeof(WCHAR));
+    wp = nativePathPtr = (WCHAR *)ckalloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
       goto done;
     }
@@ -3195,7 +3195,7 @@ TclNativeDupInternalRep(
 
     len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
 
-    copy = ckalloc(len);
+    copy = (char *)ckalloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }
@@ -3232,7 +3232,7 @@ TclpUtime(
     FromCTime(tval->actime, &lastAccessTime);
     FromCTime(tval->modtime, &lastModTime);
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     attr = GetFileAttributes(native);
 
@@ -3283,7 +3283,7 @@ TclWinFileOwned(
     DWORD bufsz;
     int owned = 0;
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     if (GetNamedSecurityInfo((LPTSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
@@ -3311,7 +3311,7 @@ TclWinFileOwned(
         bufsz = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
         if (bufsz) {
-            buf = ckalloc(bufsz);
+            buf = (LPBYTE)ckalloc(bufsz);
             if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
                 owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
             }

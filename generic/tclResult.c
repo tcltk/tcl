@@ -832,19 +832,19 @@ SetupAppendBuffer(
 
     totalSpace = newSpace + iPtr->appendUsed;
     if (totalSpace >= iPtr->appendAvl) {
-	char *newStr;
+	char *newSpace;
 
 	if (totalSpace < 100) {
 	    totalSpace = 200;
 	} else {
 	    totalSpace *= 2;
 	}
-	newStr = (char *)ckalloc(totalSpace);
-	strcpy(newStr, iPtr->result);
+	newSpace = (char *)ckalloc(totalSpace);
+	strcpy(newSpace, iPtr->result);
 	if (iPtr->appendResult != NULL) {
 	    ckfree(iPtr->appendResult);
 	}
-	iPtr->appendResult = newStr;
+	iPtr->appendResult = newSpace;
 	iPtr->appendAvl = totalSpace;
     } else if (iPtr->result != iPtr->appendResult) {
 	strcpy(iPtr->appendResult, iPtr->result);

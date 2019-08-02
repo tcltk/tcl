@@ -60,7 +60,7 @@
  */
 
 #if defined(UNICODE) && (TCL_UTF_MAX <= 4)
-#   define NewNativeObj Tcl_NewUnicodeObj
+#   define NewNativeObj(a,b) Tcl_NewUnicodeObj((const Tcl_UniChar *)a,b)
 #else /* !UNICODE || (TCL_UTF_MAX > 4) */
 static inline Tcl_Obj *
 NewNativeObj(

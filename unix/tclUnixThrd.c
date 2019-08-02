@@ -844,7 +844,7 @@ Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
     AllocMutex *lockPtr;
-    register PMutex *plockPtr;
+    PMutex *plockPtr;
 
     lockPtr = (AllocMutex *)malloc(sizeof(AllocMutex));
     if (lockPtr == NULL) {

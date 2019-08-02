@@ -3018,6 +3018,7 @@ Tcl_GetLongFromObj(
 	     * values in the unsigned long range will fit in a long.
 	     */
 
+		{
 	    mp_int big;
 	    unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
 	    unsigned char *bytes = (unsigned char *) &scratch;
@@ -3038,6 +3039,7 @@ Tcl_GetLongFromObj(
 			return TCL_OK;
 		    }
 		}
+	    }
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
 	tooLarge:

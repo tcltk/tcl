@@ -113,16 +113,8 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
  * elsewhere in Tcl's core.
  */
 
-#ifdef DJGPP
+#ifndef DJGPP
 
-/*
- * See contrib/djgpp/tclDjgppFCmd.c for definition.
- */
-
-extern TclFileAttrProcs tclpFileAttrProcs[];
-extern const char *const tclpFileAttrStrings[];
-
-#else /* !DJGPP */
 enum {
 #if defined(__CYGWIN__)
     UNIX_ARCHIVE_ATTRIBUTE,
@@ -145,7 +137,6 @@ enum {
     UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
-MODULE_SCOPE const char *const tclpFileAttrStrings[];
 const char *const tclpFileAttrStrings[] = {
 #if defined(__CYGWIN__)
     "-archive",
@@ -167,7 +158,6 @@ const char *const tclpFileAttrStrings[] = {
     NULL
 };
 
-MODULE_SCOPE const TclFileAttrProcs tclpFileAttrProcs[];
 const TclFileAttrProcs tclpFileAttrProcs[] = {
 #if defined(__CYGWIN__)
     {GetUnixFileAttributes, SetUnixFileAttributes},

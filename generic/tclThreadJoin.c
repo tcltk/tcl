@@ -230,7 +230,7 @@ TclRememberJoinableThread(
 {
     JoinableThread *threadPtr;
 
-    threadPtr = ckalloc(sizeof(JoinableThread));
+    threadPtr = (JoinableThread *)ckalloc(sizeof(JoinableThread));
     threadPtr->id = id;
     threadPtr->done = 0;
     threadPtr->waitedUpon = 0;

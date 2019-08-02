@@ -3333,8 +3333,8 @@ esac
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
-#	- stdlib.h doesn't define strtol, strtoul, or
-#	  strtod insome versions of SunOS
+#	- stdlib.h doesn't define strtol or strtoul in some versions
+#	  of SunOS
 #	- some versions of string.h don't declare procedures such
 #	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure
@@ -3819,19 +3819,6 @@ rm -f conftest*
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "strtoul" >/dev/null 2>&1; then :
-
-else
-  tcl_ok=0
-fi
-rm -f conftest*
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "strtod" >/dev/null 2>&1; then :
 
 else
   tcl_ok=0
@@ -5660,7 +5647,7 @@ fi
 fi
 
 	    # The combo of gcc + glibc has a bug related to inlining of
-	    # functions like strtod(). The -fno-builtin flag should address
+	    # functions like strtol()/strtoul(). The -fno-builtin flag should address
 	    # this problem but it does not work. The -fno-inline flag is kind
 	    # of overkill but it works. Disable inlining only when one of the
 	    # files in compat/*.c is being linked in.

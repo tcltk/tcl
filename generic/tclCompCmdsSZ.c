@@ -925,7 +925,7 @@ TclCompileStringMapCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
-    char *bytes;
+    const char *bytes;
     int len;
 
     /*

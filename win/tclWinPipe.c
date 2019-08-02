@@ -402,7 +402,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = ckalloc(sizeof(PipeEvent));
+	    evPtr = (PipeEvent *)ckalloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -433,7 +433,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = ckalloc(sizeof(WinFile));
+    filePtr = (WinFile *)ckalloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -1758,7 +1758,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = (PipeInfo *)ckalloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1912,7 +1912,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
@@ -2298,7 +2298,7 @@ PipeOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = (char *)ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2706,7 +2706,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     unsigned long id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo*)ckalloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2807,7 +2807,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3279,9 +3279,9 @@ TclPipeThreadCreateTI(
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)ckalloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
     pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
