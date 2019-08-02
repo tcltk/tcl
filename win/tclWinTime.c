@@ -99,7 +99,7 @@ static struct {
     int initialized;		/* 1 if initialized, 0 otherwise */
     int perfCounter;		/* 1 if performance counter usable for wide clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
-} wideClick = {0, 0.0};
+} wideClick = {0, 0, 0.0};
 
 
 /*
