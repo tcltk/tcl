@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testasync [llength [info commands testasync]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 proc async1 {result code} {
     global aresult acode
@@ -202,7 +203,7 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync
+    testasync knownMsvcBug
 } -setup {
     set hm [testasync create async3]
 } -body {
