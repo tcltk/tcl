@@ -4119,13 +4119,25 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #endif
 #if defined(USE_TCL_STUBS)
-#   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) ? (char *(*)(const wchar_t *, int, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString : (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
-#   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) ? (wchar_t *(*)(const char *, int, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString : (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
-#   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) ? tclStubsPtr->tcl_UtfToChar16 : Tcl_UtfToUniChar)
+#   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
+		? (char *(*)(const wchar_t *, int, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+#   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
+		? (wchar_t *(*)(const char *, int, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+#   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
+		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToChar16 \
+		: (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar)
 #else
-#   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) ? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString : (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
-#   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) ? (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToUniCharDString : (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
-#   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) ? Tcl_UtfToChar16 : Tcl_UtfToUniChar)
+#   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
+		? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+#   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
+		? (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+#   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
+		? (int (*)(const char *, wchar_t *))Tcl_UtfToChar16 \
+		: (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar)
 #endif
 
 /*
