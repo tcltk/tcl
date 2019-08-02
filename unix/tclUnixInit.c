@@ -9,8 +9,6 @@
  */
 
 #include "tclInt.h"
-#include <stddef.h>
-#include <locale.h>
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
