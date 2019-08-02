@@ -22,12 +22,15 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::makeFile
     namespace import ::tcltest::removeFile
     namespace import ::tcltest::temporaryDirectory
+    namespace import ::tcltest::testConstraint
     namespace import ::tcltest::test
 
     if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
 	namespace import ::tcl::unsupported::timerate
     }
 
+    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+    
     proc ListGlobMatch {expected actual} {
 	if {[llength $expected] != [llength $actual]} {
 	    return 0
@@ -343,7 +346,7 @@ test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} 
 test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
     time {format 1}
 } -match regexp -result {^\d+ microseconds per iteration}
-test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} {
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} knownMsvcBug {
     expr {[lindex [time {_nrt_sleep 1}] 0] < [lindex [time {_nrt_sleep 20}] 0]}
 } 1
 test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
