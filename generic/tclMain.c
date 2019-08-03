@@ -71,7 +71,7 @@ NewNativeObj(
 
 #ifdef UNICODE
     Tcl_DStringInit(&ds);
-    Tcl_Char16ToUtfDString(string, length, &ds);
+    Tcl_WCharToUtfDString(string, length, &ds);
 #else
     Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
 #endif
