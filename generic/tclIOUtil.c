@@ -3333,7 +3333,7 @@ Tcl_LoadFile(
 	    Tcl_Close(interp, data);
 	    goto mustCopyToTempAnyway;
 	}
-	ret = Tcl_Read(data, buffer, size);
+	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_Close(interp, data);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);

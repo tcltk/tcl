@@ -29,11 +29,6 @@
 #include "tclRegexp.h"
 
 /*
- * Required for TestlocaleCmd
- */
-#include <locale.h>
-
-/*
  * Required for the TestChannelCmd and TestChannelEventCmd
  */
 #include "tclIO.h"

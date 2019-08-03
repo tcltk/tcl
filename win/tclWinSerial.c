@@ -1673,7 +1673,8 @@ SerialSetOptionProc(
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
-	native = Tcl_WinUtfToTChar(value, -1, &ds);
+	Tcl_DStringInit(&ds);
+	native = Tcl_UtfToWCharDString(value, -1, &ds);
 	result = BuildCommDCB(native, &dcb);
 	Tcl_DStringFree(&ds);
 
