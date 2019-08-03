@@ -1900,8 +1900,8 @@ LoadTableEncoding(
 	 */
 
 	if (dataPtr->fromUnicode[0] != NULL) {
-	    if (dataPtr->fromUnicode[0]['\\'] == '\0') {
-		dataPtr->fromUnicode[0]['\\'] = '\\';
+	    if (dataPtr->fromUnicode[0][(int)'\\'] == '\0') {
+		dataPtr->fromUnicode[0][(int)'\\'] = '\\';
 	    }
 	}
     }

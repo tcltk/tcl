@@ -183,7 +183,7 @@ TclpDlopen(
      * relative path.
      */
 
-    nativePath = Tcl_FSGetNativePath(pathPtr);
+    nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
     nativeFileName = Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr),
 	    -1, &ds);
 
@@ -278,13 +278,13 @@ TclpDlopen(
 	    || dyldLibHeader || modulePtr
 #endif /* TCL_DYLD_USE_NSMODULE */
     ) {
-	dyldLoadHandle = (Tcl_DyldModuleHandle *)ckalloc(sizeof(Tcl_DyldLoadHandle));
+	dyldLoadHandle = (Tcl_DyldLoadHandle *)ckalloc(sizeof(Tcl_DyldLoadHandle));
 	dyldLoadHandle->dlHandle = dlHandle;
 #if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
 	dyldLoadHandle->dyldLibHeader = dyldLibHeader;
 	dyldLoadHandle->modulePtr = modulePtr;
 #endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
-	newHandle = (Tcl_DyldModuleHandle *)ckalloc(sizeof(*newHandle));
+	newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
 	newHandle->clientData = dyldLoadHandle;
 	newHandle->findSymbolProcPtr = &FindSymbol;
 	newHandle->unloadFileProcPtr = &UnloadFile;
@@ -334,7 +334,7 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
     const char *symbol)		/* Symbol name to look up. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
     Tcl_PackageInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
@@ -343,7 +343,7 @@ FindSymbol(
     native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
-	proc = dlsym(dyldLoadHandle->dlHandle, native);
+	proc = (Tcl_PackageInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
 	if (!proc) {
 	    errMsg = dlerror();
 	}
@@ -399,7 +399,7 @@ FindSymbol(
 		    dyldLoadHandle->modulePtr->module, native);
 	}
 	if (nsSymbol) {
-	    proc = NSAddressOfSymbol(nsSymbol);
+	    proc = (Tcl_PackageInitProc *)NSAddressOfSymbol(nsSymbol);
 	}
 	Tcl_DStringFree(&newName);
 #endif /* TCL_DYLD_USE_NSMODULE */
@@ -411,7 +411,7 @@ FindSymbol(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }
-    return proc;
+    return (void *)proc;
 }
 
 /*
@@ -440,7 +440,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
 
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
@@ -588,7 +588,7 @@ TclpLoadMemory(
 
     if (codeSize >= 0) {
 	NSObjectFileImageReturnCode err = NSObjectFileImageSuccess;
-	const struct fat_header *fh = buffer;
+	const struct fat_header *fh = (const struct fat_header *)buffer;
 	uint32_t ms = 0;
 #ifndef __LP64__
 	const struct mach_header *mh = NULL;
@@ -617,18 +617,18 @@ TclpLoadMemory(
 		struct fat_arch *fa;
 
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
 		}
 		fa = NXFindBestFatArch(arch->cputype | arch_abi,
-			arch->cpusubtype, fatarchs, fh_nfat_arch);
+			arch->cpusubtype, (struct fat_arch *)fatarchs, fh_nfat_arch);
 		if (fa) {
-		    mh = (void *)((char *) buffer + fa->offset);
+		    mh = (const struct mach_header_64 *)((char *) buffer + fa->offset);
 		    ms = fa->size;
 		} else {
 		    err = NSObjectFileImageInappropriateFile;
 		}
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
 		}
 	    } else {
 		err = NSObjectFileImageInappropriateFile;
@@ -638,7 +638,7 @@ TclpLoadMemory(
 	     * Thin binary
 	     */
 
-	    mh = buffer;
+	    mh = (const struct mach_header_64 *)buffer;
 	    ms = codeSize;
 	}
 	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
@@ -696,7 +696,7 @@ TclpLoadMemory(
     modulePtr = (Tcl_DyldModuleHandle *)ckalloc(sizeof(Tcl_DyldModuleHandle));
     modulePtr->module = module;
     modulePtr->nextPtr = NULL;
-    dyldLoadHandle = (Tcl_DyldModuleHandle *)ckalloc(sizeof(Tcl_DyldLoadHandle));
+    dyldLoadHandle = (Tcl_DyldLoadHandle *)ckalloc(sizeof(Tcl_DyldLoadHandle));
     dyldLoadHandle->dlHandle = NULL;
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;

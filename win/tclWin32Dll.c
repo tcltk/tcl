@@ -463,6 +463,8 @@ TclWinDriveLetterForVolMountPoint(
  *---------------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef Tcl_WinUtfToTChar
 WCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
@@ -472,12 +474,9 @@ Tcl_WinUtfToTChar(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    return (WCHAR *)TclUtfToWCharDString(string, len, dsPtr);
+    return Tcl_UtfToWCharDString(string, len, dsPtr);
 }
-
+#undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
     const WCHAR *string,	/* Source string in Unicode. */
@@ -487,16 +486,9 @@ Tcl_WinTCharToUtf(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len < 0) {
-	len = wcslen((WCHAR *)string);
-    } else {
-	len /= 2;
-    }
-    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
+    return Tcl_WCharToUtfDString(string, len >> 1, dsPtr);
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *------------------------------------------------------------------------

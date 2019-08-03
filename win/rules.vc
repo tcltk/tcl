@@ -688,7 +688,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 #           configuration (ignored for Tcl itself)
 # _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
 #           (CRT library should support this)
-# TCL_UTF_MAX=6 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
+# TCL_UTF_MAX=4 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -755,7 +755,7 @@ _USE_64BIT_TIME_T = 1
 
 !if [nmakehlp -f $(OPTS) "utfmax"]
 !message *** Force 32-bit Tcl_UniChar
-TCL_UTF_MAX = 6
+TCL_UTF_MAX = 4
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1321,8 +1321,8 @@ OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !if "$(_USE_64BIT_TIME_T)" == "1"
 OPTDEFINES	= $(OPTDEFINES) -D_USE_64BIT_TIME_T
 !endif
-!if "$(TCL_UTF_MAX)" == "6"
-OPTDEFINES	= $(OPTDEFINES) -DTCL_UTF_MAX=6
+!if "$(TCL_UTF_MAX)" == "4"
+OPTDEFINES	= $(OPTDEFINES) -DTCL_UTF_MAX=4
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP

@@ -1960,7 +1960,7 @@ TclpObjNormalizePath(
      */
 
     if (nextCheckpoint == 0 && haveRealpath) {
-	char *lastDir = strrchr(currentPathEndPosition, '/');
+	const char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
 	    nativePath = Tcl_UtfToExternalDString(NULL, path,
@@ -2561,7 +2561,7 @@ SetUnixFileAttributes(
 	statBuf.st_flags &= ~UF_IMMUTABLE;
     }
 
-    native = Tcl_FSGetNativePath(fileName);
+    native = (const char *)Tcl_FSGetNativePath(fileName);
     result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {

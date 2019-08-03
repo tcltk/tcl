@@ -123,7 +123,7 @@ TclSetupEnv(
 	    char *p2;
 
 	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], -1, &envString);
-	    p2 = strchr(p1, '=');
+	    p2 = (char *)strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
 		 * This condition seem to happen occasionally under some
@@ -379,7 +379,7 @@ Tcl_PutEnv(
      */
 
     name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
-    value = strchr(name, '=');
+    value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
 	value[0] = '\0';
