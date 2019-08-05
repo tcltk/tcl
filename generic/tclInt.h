@@ -3175,9 +3175,9 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
 MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
 MODULE_SCOPE char *	TclWCharToUtfDString(const WCHAR *uniStr,
-			    int uniLength, Tcl_DString *dsPtr);
+			    size_t uniLength, Tcl_DString *dsPtr);
 MODULE_SCOPE WCHAR * TclUtfToWCharDString(const char *src,
-			    int length, Tcl_DString *dsPtr);
+			    size_t length, Tcl_DString *dsPtr);
 #else
 #   define TclUtfToWChar TclUtfToUniChar
 #   define TclWCharToUtfDString Tcl_UniCharToUtfDString
