@@ -276,7 +276,8 @@ TclWCharToUtfDString(
 {
     const WCHAR *w, *wEnd;
     char *p, *string;
-    int oldLength, len = 1;
+    size_t oldLength;
+    int len = 1;
 
     /*
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
@@ -644,14 +645,14 @@ TclUtfToWCharDString(
 {
     WCHAR ch = 0, *w, *wString;
     const char *p, *end;
-    int oldLength;
+    size_t oldLength;
 
     if (length == TCL_AUTO_LENGTH) {
 	length = strlen(src);
     }
 
     /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * Unicode string length in WCHARs will be <= UTF-8 string length in
      * bytes.
      */
 
