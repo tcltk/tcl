@@ -2808,7 +2808,7 @@ TclpObjNormalizePath(
 	 */
 
 	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString((const wchar_t *)Tcl_DStringValue(&dsNorm),
+	Tcl_WCharToUtfDString((const WCHAR *) Tcl_DStringValue(&dsNorm),
 		Tcl_DStringLength(&dsNorm)>>1, &ds);
 	nextCheckpoint = Tcl_DStringLength(&ds);
 	if (*lastValidPathEnd != 0) {
@@ -2985,7 +2985,7 @@ TclpNativeToNormalized(
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
-    Tcl_WCharToUtfDString((const wchar_t *)clientData, -1, &ds);
+    Tcl_WCharToUtfDString((const WCHAR *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
