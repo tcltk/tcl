@@ -252,12 +252,18 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
     - name: "Windows/GCC/Shared 2"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
 before_install:
   - cd ${BUILD_DIR}
 install:
