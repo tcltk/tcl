@@ -2152,7 +2152,7 @@ SerialGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len) == 0)) {
-	char buf[4];
+	char buf[TCL_UTF_MAX];
 	valid = 1;
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
