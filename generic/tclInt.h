@@ -4620,10 +4620,17 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+#else
+#define TclUtfToUniChar(str, chPtr) \
+	((((unsigned char) *(str)) < 0x80) ?		\
+	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	    : Tcl_UtfToChar16(str, chPtr))
+#endif
 
 /*
  *----------------------------------------------------------------

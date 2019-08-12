@@ -53,15 +53,6 @@
 #   define _tcscmp strcmp
 #endif
 
-/*
- * Further on, in UNICODE mode we just use Tcl_NewUnicodeObj, otherwise
- * NewNativeObj is needed (which provides proper conversion from native
- * encoding to UTF-8).
- */
-
-#if defined(UNICODE) && (TCL_UTF_MAX == 3)
-#   define NewNativeObj TclNewUnicodeObj
-#else /* !UNICODE || (TCL_UTF_MAX > 3) */
 static inline Tcl_Obj *
 NewNativeObj(
     TCHAR *string,
@@ -71,13 +62,12 @@ NewNativeObj(
 
 #ifdef UNICODE
     Tcl_DStringInit(&ds);
-    Tcl_Char16ToUtfDString(string, length, &ds);
+    Tcl_WCharToUtfDString(string, length, &ds);
 #else
     Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
 #endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE || (TCL_UTF_MAX > 3) */
 
 /*
  * Declarations for various library functions and variables (don't want to

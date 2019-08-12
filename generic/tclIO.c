@@ -4712,7 +4712,7 @@ Tcl_GetsObj(
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[4];
+		    char tmp[TCL_UTF_MAX];
 		    int rawRead;
 
 		    bufPtr = gs.bufPtr;
@@ -6265,7 +6265,7 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[5];
+		char buffer[TCL_UTF_MAX + 1];
 		int read, decoded, count;
 
 		/*

@@ -354,7 +354,7 @@ Tcl_DbNewStringObj(
 /*
  *---------------------------------------------------------------------------
  *
- * TclNewUnicodeObj --
+ * Tcl_NewUnicodeObj --
  *
  *	This function is creates a new String object and initializes it from
  *	the given Unicode String. If the Utf String is the same size as the
@@ -371,7 +371,7 @@ Tcl_DbNewStringObj(
  */
 
 Tcl_Obj *
-TclNewUnicodeObj(
+Tcl_NewUnicodeObj(
     const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
 				 * new object. */
     int numChars)		/* Number of characters in the unicode
@@ -568,7 +568,7 @@ Tcl_GetUniChar(
 	return -1;
     }
     ch = stringPtr->unicode[index];
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
     if ((ch & 0xF800) == 0xD800) {
 	if (ch & 0x400) {
@@ -606,9 +606,9 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
-#if !defined(TCL_NO_DEPRECATED) && (TCL_UTF_MAX==3)
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetUnicode
-unsigned short *
+Tcl_UniChar *
 Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
@@ -620,7 +620,7 @@ Tcl_GetUnicode(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUnicodeFromObj --
+ * TclGetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
  *	is not already a String object, it will be converted to one. If the
@@ -752,7 +752,7 @@ Tcl_GetRange(
     if (last < first) {
 	return Tcl_NewObj();
     }
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
     if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
@@ -764,7 +764,7 @@ Tcl_GetRange(
 	++last;
     }
 #endif
-    return TclNewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
 }
 
 /*
@@ -1057,7 +1057,7 @@ Tcl_AttemptSetObjLength(
  */
 
 void
-TclSetUnicodeObj(
+Tcl_SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
     const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
 				 * object. */
@@ -1234,7 +1234,7 @@ Tcl_AppendToObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendUnicodeToObj --
+ * TclAppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
  *	efficient manner possible. Length must be >= 0.
@@ -2913,7 +2913,7 @@ TclStringRepeat(
 	 */
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objResultPtr = TclNewUnicodeObj(Tcl_GetUnicode(objPtr), length);
+	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
 	} else {
 	    TclInvalidateStringRep(objPtr);
 	    objResultPtr = objPtr;
@@ -3258,7 +3258,7 @@ TclStringCat(
 	    Tcl_UniChar ch = 0;
 
 	    /* Ugly interface! No scheme to init array size. */
-	    objResultPtr = TclNewUnicodeObj(&ch, 0);	/* PANIC? */
+	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
@@ -3789,7 +3789,7 @@ TclStringReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    objPtr = TclNewUnicodeObj(&ch, 1);
+	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
 	    while (--src >= from) {
@@ -3991,7 +3991,7 @@ TclStringReplace(
 
 	/* TODO: Is there an in-place option worth pursuing here? */
 
-	result = TclNewUnicodeObj(ustring, first);
+	result = Tcl_NewUnicodeObj(ustring, first);
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}

@@ -619,7 +619,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    if (wstring < wend) {
-		resultPtr = TclNewUnicodeObj(wstring, 0);
+		resultPtr = Tcl_NewUnicodeObj(wstring, 0);
 		Tcl_IncrRefCount(resultPtr);
 		for (; wstring < wend; wstring++) {
 		    TclAppendUnicodeToObj(resultPtr, wsubspec, wsublen);
@@ -636,7 +636,7 @@ Tcl_RegsubObjCmd(
 			(slen==1 || (strCmpFn(wstring, wsrc,
 				(unsigned long) slen) == 0))) {
 		    if (numMatches == 0) {
-			resultPtr = TclNewUnicodeObj(wstring, 0);
+			resultPtr = Tcl_NewUnicodeObj(wstring, 0);
 			Tcl_IncrRefCount(resultPtr);
 		    }
 		    if (p != wstring) {
@@ -742,7 +742,7 @@ Tcl_RegsubObjCmd(
 	    break;
 	}
 	if (numMatches == 0) {
-	    resultPtr = TclNewUnicodeObj(wstring, 0);
+	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
 	    Tcl_IncrRefCount(resultPtr);
 	    if (offset > 0) {
 		/*
@@ -785,7 +785,7 @@ Tcl_RegsubObjCmd(
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
-		    args[idx + numParts] = TclNewUnicodeObj(
+		    args[idx + numParts] = Tcl_NewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
 		    args[idx + numParts] = Tcl_NewObj();
@@ -1221,7 +1221,7 @@ Tcl_SplitObjCmd(
 	    len = TclUtfToUniChar(stringPtr, &ch);
 	    fullchar = ch;
 
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 	    if ((ch >= 0xD800) && (len < 3)) {
 		len += TclUtfToUniChar(stringPtr + len, &ch);
 		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
@@ -1911,7 +1911,7 @@ StringIsCmd(
 	    int fullchar;
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    fullchar = ch;
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 	    if ((ch >= 0xD800) && (length2 < 3)) {
 	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
 	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
@@ -2096,7 +2096,7 @@ StringMapCmd(
      * Force result to be Unicode
      */
 
-    resultPtr = TclNewUnicodeObj(ustring1, 0);
+    resultPtr = Tcl_NewUnicodeObj(ustring1, 0);
 
     if (mapElemc == 2) {
 	/*

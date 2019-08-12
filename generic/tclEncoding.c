@@ -2418,7 +2418,7 @@ UtfToUtfProc(
 	    int len = TclUtfToUniChar(src, chPtr);
 	    src += len;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 	    if ((*chPtr >= 0xD800) && (len < 3)) {
 		src += TclUtfToUniChar(src + len, chPtr);
 		dst += Tcl_UniCharToUtf(*chPtr, dst);
@@ -2691,7 +2691,7 @@ UtfToUcs2Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
     int len;
 #endif
     Tcl_UniChar ch = 0;
@@ -2721,7 +2721,7 @@ UtfToUcs2Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 	src += (len = TclUtfToUniChar(src, &ch));
 	if ((ch >= 0xD800) && (len < 3)) {
 	    src += TclUtfToUniChar(src, &ch);
@@ -3156,7 +3156,7 @@ Iso88591FromUtfProc(
 	 */
 
 	if (ch > 0xff
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
@@ -3164,7 +3164,7 @@ Iso88591FromUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-#if TCL_UTF_MAX == 3
+#if TCL_UTF_MAX <= 3
 	    if ((ch >= 0xD800) && (len < 3)) len = 4;
 #endif
 	    /*
