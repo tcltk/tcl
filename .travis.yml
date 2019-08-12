@@ -246,10 +246,22 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+    - name: "Windows/GCC/Shared 1"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit"
+    - name: "Windows/GCC/Shared 2"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME
+  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
