@@ -304,7 +304,7 @@ TclpAlloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (void *)(overPtr+1);
+	return (char *)(overPtr+1);
     }
 
     /*
@@ -592,7 +592,7 @@ TclpRealloc(
     }
 
     if (expensive) {
-	void *newPtr;
+	char *newPtr;
 
 	Tcl_MutexUnlock(allocMutexPtr);
 

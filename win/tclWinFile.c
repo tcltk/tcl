@@ -635,7 +635,7 @@ WinReadLinkDirectory(
 	}
 
 	Tcl_DStringInit(&ds);
-	Tcl_Char16ToUtfDString(
+	Tcl_WCharToUtfDString(
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
 		reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength>>1, &ds);
@@ -1025,7 +1025,7 @@ TclpMatchInDirectory(
 	}
 
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToChar16DString(dirName, -1, &ds);
+	native = Tcl_UtfToWCharDString(dirName, -1, &ds);
 	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
@@ -1099,7 +1099,7 @@ TclpMatchInDirectory(
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
 	    Tcl_DStringInit(&ds);
-	    utfname = Tcl_Char16ToUtfDString(native, -1, &ds);
+	    utfname = Tcl_WCharToUtfDString(native, -1, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1474,14 +1474,14 @@ TclpGetUserHome(
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToChar16DString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToWCharDString(domain + 1, -1, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (rc == 0) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToChar16DString(name, nameLen, &ds);
+	wName = Tcl_UtfToWCharDString(name, nameLen, &ds);
 	while (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) &uiPtr) != 0) {
 	    /*
 	     * User does not exist; if domain was not specified, try again
@@ -1509,7 +1509,7 @@ TclpGetUserHome(
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
 		size = lstrlenW(wHomeDir);
-		Tcl_Char16ToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
@@ -1517,7 +1517,7 @@ TclpGetUserHome(
 		 */
 
 		GetProfilesDirectoryW(buf, &size);
-		Tcl_Char16ToUtfDString(buf, size-1, bufferPtr);
+		Tcl_WCharToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", 1);
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
@@ -1986,7 +1986,7 @@ TclpGetCwd(
 	native += 2;
     }
     Tcl_DStringInit(bufferPtr);
-    Tcl_Char16ToUtfDString(native, -1, bufferPtr);
+    Tcl_WCharToUtfDString(native, -1, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2195,7 +2195,7 @@ NativeDev(
 
     GetFullPathName(nativePath, MAX_PATH, nativeFullPath, &nativePart);
     Tcl_DStringInit(&ds);
-    fullPath = Tcl_Char16ToUtfDString(nativeFullPath, -1, &ds);
+    fullPath = Tcl_WCharToUtfDString(nativeFullPath, -1, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2217,7 +2217,7 @@ NativeDev(
 	    p++;
 	}
 	Tcl_DStringInit(&volString);
-	nativeVol = Tcl_UtfToChar16DString(fullPath, p - fullPath, &volString);
+	nativeVol = Tcl_UtfToWCharDString(fullPath, p - fullPath, &volString);
 	dw = (DWORD) -1;
 	GetVolumeInformation(nativeVol, NULL, 0, &dw, NULL, NULL, NULL, 0);
 
@@ -2498,7 +2498,7 @@ TclpFilesystemPathType(
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
-	Tcl_Char16ToUtfDString(volType, -1, &ds);
+	Tcl_WCharToUtfDString(volType, -1, &ds);
 	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
@@ -2571,7 +2571,7 @@ TclpObjNormalizePath(
 	    const WCHAR *nativePath;
 
 	    Tcl_DStringInit(&ds);
-	    nativePath = Tcl_UtfToChar16DString(path,
+	    nativePath = Tcl_UtfToWCharDString(path,
 		    currentPathEndPosition - path, &ds);
 
 	    if (GetFileAttributesEx(nativePath,
@@ -2778,7 +2778,7 @@ TclpObjNormalizePath(
 
 	    Tcl_DStringInit(&ds);
 	    nativePath =
-		    Tcl_UtfToChar16DString(path, lastValidPathEnd - path, &ds);
+		    Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
 	    wpathlen = GetLongPathNameProc(nativePath,
 		    (WCHAR *) wpath, MAX_PATH);
 	    /*
@@ -2808,7 +2808,7 @@ TclpObjNormalizePath(
 	 */
 
 	Tcl_DStringInit(&ds);
-	Tcl_Char16ToUtfDString((const WCHAR *) Tcl_DStringValue(&dsNorm),
+	Tcl_WCharToUtfDString((const WCHAR *) Tcl_DStringValue(&dsNorm),
 		Tcl_DStringLength(&dsNorm)>>1, &ds);
 	nextCheckpoint = Tcl_DStringLength(&ds);
 	if (*lastValidPathEnd != 0) {
@@ -2985,7 +2985,7 @@ TclpNativeToNormalized(
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
-    Tcl_Char16ToUtfDString((const WCHAR *) clientData, -1, &ds);
+    Tcl_WCharToUtfDString((const WCHAR *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 

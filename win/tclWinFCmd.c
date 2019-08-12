@@ -330,8 +330,8 @@ DoRenameFile(
 
 	    Tcl_DStringInit(&srcString);
 	    Tcl_DStringInit(&dstString);
-	    src = Tcl_Char16ToUtfDString(nativeSrcPath, -1, &srcString);
-	    dst = Tcl_Char16ToUtfDString(nativeDstPath, -1, &dstString);
+	    src = Tcl_WCharToUtfDString(nativeSrcPath, -1, &srcString);
+	    dst = Tcl_WCharToUtfDString(nativeDstPath, -1, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -915,8 +915,8 @@ TclpObjCopyDirectory(
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
-    Tcl_UtfToChar16DString(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_UtfToChar16DString(Tcl_GetString(normDestPtr), -1, &dstString);
+    Tcl_UtfToWCharDString(Tcl_GetString(normSrcPtr), -1, &srcString);
+    Tcl_UtfToWCharDString(Tcl_GetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -989,7 +989,7 @@ TclpObjRemoveDirectory(
 	    return TCL_ERROR;
 	}
 	Tcl_DStringInit(&native);
-	Tcl_UtfToChar16DString(Tcl_GetString(normPtr), -1, &native);
+	Tcl_UtfToWCharDString(Tcl_GetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1117,7 +1117,7 @@ DoRemoveJustDirectory(
 	char *p;
 
 	Tcl_DStringInit(errorPtr);
-	p = Tcl_Char16ToUtfDString(nativePath, -1, errorPtr);
+	p = Tcl_WCharToUtfDString(nativePath, -1, errorPtr);
 	for (; *p; ++p) {
 	    if (*p == '\\') *p = '/';
 	}
@@ -1332,7 +1332,7 @@ TraverseWinTree(
 	TclWinConvertError(GetLastError());
 	if (errorPtr != NULL) {
 	    Tcl_DStringInit(errorPtr);
-	    Tcl_Char16ToUtfDString(nativeErrfile, -1, errorPtr);
+	    Tcl_WCharToUtfDString(nativeErrfile, -1, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1398,7 +1398,7 @@ TraversalCopy(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_Char16ToUtfDString(nativeDst, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeDst, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1454,7 +1454,7 @@ TraversalDelete(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_Char16ToUtfDString(nativeSrc, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeSrc, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1663,7 +1663,7 @@ ConvertFileNameFormat(
 
 	    tempString = TclGetStringFromObj(tempPath, &length);
 	    Tcl_DStringInit(&ds);
-	    nativeName = Tcl_UtfToChar16DString(tempString, length, &ds);
+	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
@@ -1700,7 +1700,7 @@ ConvertFileNameFormat(
 	    }
 
 	    /*
-	     * Purify reports a extraneous UMR in Tcl_Char16ToUtfDString() trying
+	     * Purify reports a extraneous UMR in Tcl_WCharToUtfDString() trying
 	     * to dereference nativeName as a Unicode string. I have proven to
 	     * myself that purify is wrong by running the following example
 	     * when nativeName == data.w.cAlternateFileName and noting that
@@ -1712,7 +1712,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_Char16ToUtfDString(nativeName, -1, &dsTemp);
+	    Tcl_WCharToUtfDString(nativeName, -1, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
 	    /*
@@ -2008,9 +2008,9 @@ TclpCreateTemporaryDirectory(
 	    goto useSystemTemp;
 	}
 	Tcl_DStringInit(&base);
-	Tcl_UtfToChar16DString(Tcl_GetString(dirObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), -1, &base);
 	if (dirObj->bytes[dirObj->length - 1] != '\\') {
-	    Tcl_UtfToChar16DString("\\", -1, &base);
+	    Tcl_UtfToWCharDString("\\", -1, &base);
 	}
     } else {
     useSystemTemp:
@@ -2026,11 +2026,11 @@ TclpCreateTemporaryDirectory(
 #define SUFFIX_LENGTH	8
 
     if (basenameObj) {
-	Tcl_UtfToChar16DString(Tcl_GetString(basenameObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), -1, &base);
     } else {
-	Tcl_UtfToChar16DString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
+	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
     }
-    Tcl_UtfToChar16DString("_", -1, &base);
+    Tcl_UtfToWCharDString("_", -1, &base);
 
     /*
      * Now we keep on trying random suffixes until we get one that works
@@ -2057,7 +2057,7 @@ TclpCreateTemporaryDirectory(
 	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
-	Tcl_UtfToChar16DString(tempbuf, -1, &base);
+	Tcl_UtfToWCharDString(tempbuf, -1, &base);
     } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL)
 	    && (error = GetLastError()) == ERROR_ALREADY_EXISTS);
 
@@ -2078,7 +2078,7 @@ TclpCreateTemporaryDirectory(
      */
 
     Tcl_DStringInit(&name);
-    Tcl_Char16ToUtfDString((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
+    Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
     Tcl_DStringFree(&base);
     return TclDStringToObj(&name);
 }

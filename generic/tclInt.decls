@@ -1034,6 +1034,15 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
+# TIP 548
+declare 259 {
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+}
+declare 260 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+	    int length)
+}
+
 
 ##############################################################################
 

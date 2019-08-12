@@ -1246,7 +1246,7 @@ declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 {deprecated {Use Tcl_GetCharLength}} {
-    int Tcl_UniCharLen(const unsigned short *uniStr)
+    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -1338,11 +1338,11 @@ declare 376 {
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
-declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned short *unicode, int numChars)
+declare 378 {deprecated {Use Tcl_UniCharToUtfDString}} {
+    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
 }
-declare 379 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,
+declare 379 {deprecated {Use Tcl_UniCharToUtfDString}} {
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    int numChars)
 }
 declare 380 {
@@ -1352,13 +1352,13 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {deprecated {No longer in use, changed to macro}} {
-    unsigned short *Tcl_GetUnicode(Tcl_Obj *objPtr)
+    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
+declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
+    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    int length)
 }
 declare 385 {
@@ -1541,8 +1541,8 @@ declare 433 {
 }
 
 # introduced in 8.4a3
-declare 434 {
-    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+declare 434 {deprecated {Use Tcl_UtfToUniCharDString}} {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2384,11 +2384,13 @@ declare 644 {
     int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type, int size)
 }
+
 declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
-# TIP #542
+
+# TIP #548
 declare 646 {
     int Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
@@ -2399,20 +2401,6 @@ declare 647 {
 declare 648 {
     int *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
-}
-declare 649 {
-    void TclSetUnicodeObj(Tcl_Obj *objPtr, const int *unicode,
-	    int numChars)
-}
-declare 650 {
-    Tcl_Obj *TclNewUnicodeObj(const int *unicode, int numChars)
-}
-declare 651 {
-    int *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
-}
-declare 652 {
-    void TclAppendUnicodeToObj(Tcl_Obj *objPtr, const int *unicode,
-	    int length)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

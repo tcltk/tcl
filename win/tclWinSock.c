@@ -373,7 +373,7 @@ InitializeHostName(
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_Char16ToUtfDString(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(tbuf, -1, &ds));
 
     } else {
 	if (TclpHasSockets(NULL) == TCL_OK) {
