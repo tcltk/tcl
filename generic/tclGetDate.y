@@ -46,6 +46,14 @@
 #endif /* _MSC_VER */
 
 /*
+ * Meridian: am, pm, or 24-hour style.
+ */
+
+typedef enum _MERIDIAN {
+    MERam, MERpm, MER24
+} MERIDIAN;
+
+/*
  * yyparse will accept a 'struct DateInfo' as its parameter; that's where the
  * parsed fields will be returned.
  */
@@ -63,7 +71,7 @@ typedef struct DateInfo {
     time_t dateHour;
     time_t dateMinutes;
     time_t dateSeconds;
-    int dateMeridian;
+    MERIDIAN dateMeridian;
     int dateHaveTime;
 
     time_t dateTimezone;
@@ -149,14 +157,6 @@ typedef struct _TABLE {
 typedef enum _DSTMODE {
     DSTon, DSToff, DSTmaybe
 } DSTMODE;
-
-/*
- * Meridian: am, pm, or 24-hour style.
- */
-
-typedef enum _MERIDIAN {
-    MERam, MERpm, MER24
-} MERIDIAN;
 
 %}
 
