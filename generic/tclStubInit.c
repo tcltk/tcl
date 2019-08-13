@@ -472,8 +472,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #   define TclOldFreeObj TclFreeObj
-#   define Tcl_GetUnicodeFromObj TclGetUnicodeFromObj
-#   define Tcl_AppendUnicodeToObj TclAppendUnicodeToObj
 
 static int
 seekOld(
@@ -779,8 +777,6 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclGetUnicodeFromObj, /* 259 */
-    TclAppendUnicodeToObj, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

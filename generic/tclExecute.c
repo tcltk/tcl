@@ -5420,12 +5420,12 @@ TEBCresume(
 	    objResultPtr = value3Ptr;
 	    goto doneStringMap;
 	}
-	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
 	if (length == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
 	}
-	ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
+	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	if (length2 > length || length2 == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
@@ -5437,7 +5437,7 @@ TEBCresume(
 	    }
 	    goto doneStringMap;
 	}
-	ustring3 = TclGetUnicodeFromObj(value3Ptr, &length3);
+	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
 
 	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
 	p = ustring1;
@@ -5447,14 +5447,14 @@ TEBCresume(
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
-		    TclAppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
 		    p = ustring1 + length2;
 		} else {
 		    p += length2;
 		}
 		ustring1 = p - 1;
 
-		TclAppendUnicodeToObj(objResultPtr, ustring3, length3);
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
 	    }
 	}
 	if (p != ustring1) {
@@ -5462,7 +5462,7 @@ TEBCresume(
 	     * Put the rest of the unmapped chars onto result.
 	     */
 
-	    TclAppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
 	}
     doneStringMap:
 	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
@@ -5490,7 +5490,7 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
 		O2S(valuePtr)));
-	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
 	match = 1;
 	if (length > 0) {
 	    end = ustring1 + length;
@@ -5519,8 +5519,8 @@ TEBCresume(
 		|| TclHasIntRep(value2Ptr, &tclStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
-	    ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
-	    ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
+	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length, ustring2, length2,
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
