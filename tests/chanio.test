@@ -43,6 +43,7 @@ namespace eval ::tcl::test::io {
     testConstraint testfevent       [llength [info commands testfevent]]
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
+    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
@@ -2790,7 +2791,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent} -body {
+} -constraints {socket tempNotMac fileevent knownMsvcBug} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]
