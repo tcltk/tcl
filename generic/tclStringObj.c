@@ -613,14 +613,14 @@ Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
 {
-    return TclGetUnicodeFromObj(objPtr, NULL);
+    return Tcl_GetUnicodeFromObj(objPtr, NULL);
 }
 #endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
  *
- * TclGetUnicodeFromObj --
+ * Tcl_GetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
  *	is not already a String object, it will be converted to one. If the
@@ -637,7 +637,7 @@ Tcl_GetUnicode(
  */
 
 Tcl_UniChar *
-TclGetUnicodeFromObj(
+Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
     int *lengthPtr)		/* If non-NULL, the location where the string
@@ -1234,7 +1234,7 @@ Tcl_AppendToObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendUnicodeToObj --
+ * Tcl_AppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
  *	efficient manner possible. Length must be >= 0.
@@ -1249,7 +1249,7 @@ Tcl_AppendToObj(
  */
 
 void
-TclAppendUnicodeToObj(
+Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
@@ -1393,7 +1393,7 @@ Tcl_AppendObjToObj(
 
 	if (TclHasIntRep(appendObjPtr, &tclStringType)) {
 	    Tcl_UniChar *unicode =
-		    TclGetUnicodeFromObj(appendObjPtr, &numChars);
+		    Tcl_GetUnicodeFromObj(appendObjPtr, &numChars);
 
 	    AppendUnicodeToUnicodeRep(objPtr, unicode, numChars);
 	} else {
@@ -2873,7 +2873,7 @@ TclStringRepeat(
 	Tcl_GetByteArrayFromObj(objPtr, &length);
     } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
-	TclGetUnicodeFromObj(objPtr, &length);
+	Tcl_GetUnicodeFromObj(objPtr, &length);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	Tcl_GetStringFromObj(objPtr, &length);
@@ -2934,7 +2934,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	TclAppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
 		(count - done) * length);
     } else {
 	/*
@@ -3091,7 +3091,7 @@ TclStringCat(
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
 
-		TclGetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
+		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
 		if (numChars) {
 		    last = objc - oc;
 		    if (length == 0) {
@@ -3241,7 +3241,7 @@ TclStringCat(
 	    objResultPtr = *objv++; objc--;
 
 	    /* Ugly interface! Force resize of the unicode array. */
-	    TclGetUnicodeFromObj(objResultPtr, &start);
+	    Tcl_GetUnicodeFromObj(objResultPtr, &start);
 	    Tcl_InvalidateStringRep(objResultPtr);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
@@ -3277,7 +3277,7 @@ TclStringCat(
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int more;
-		Tcl_UniChar *src = TclGetUnicodeFromObj(objPtr, &more);
+		Tcl_UniChar *src = Tcl_GetUnicodeFromObj(objPtr, &more);
 		memcpy(dst, src, more * sizeof(Tcl_UniChar));
 		dst += more;
 	    }
@@ -3400,8 +3400,8 @@ TclStringCmp(
 	     */
 
 	    if (nocase) {
-		s1 = (char *) TclGetUnicodeFromObj(value1Ptr, &s1len);
-		s2 = (char *) TclGetUnicodeFromObj(value2Ptr, &s2len);
+		s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
+		s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
 		memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
@@ -3611,9 +3611,9 @@ TclStringFirst(
 
     {
 	Tcl_UniChar *check, *end, *uh;
-	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
+	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 
-	uh = TclGetUnicodeFromObj(haystack, &lh);
+	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 	if ((lh < ln) || (start > lh - ln)) {
 	    /* Don't start the loop if there cannot be a valid answer */
 	    return -1;
@@ -3690,8 +3690,8 @@ TclStringLast(
     }
 
     {
-	Tcl_UniChar *check, *uh = TclGetUnicodeFromObj(haystack, &lh);
-	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
+	Tcl_UniChar *check, *uh = Tcl_GetUnicodeFromObj(haystack, &lh);
+	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 
 	if (last >= lh) {
 	    last = lh - 1;
@@ -3987,7 +3987,7 @@ TclStringReplace(
     /* The traditional implementation... */
     {
 	int numChars;
-	Tcl_UniChar *ustring = TclGetUnicodeFromObj(objPtr, &numChars);
+	Tcl_UniChar *ustring = Tcl_GetUnicodeFromObj(objPtr, &numChars);
 
 	/* TODO: Is there an in-place option worth pursuing here? */
 
@@ -3996,7 +3996,7 @@ TclStringReplace(
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
 	if (first + count < numChars) {
-	    TclAppendUnicodeToObj(result, ustring + first + count,
+	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}
 

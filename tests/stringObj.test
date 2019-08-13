@@ -439,9 +439,9 @@ test stringObj-13.8 {Tcl_GetCharLength with identity nulls} {testobj testbytestr
 
 test stringObj-14.1 {Tcl_SetObjLength on pure unicode object} testobj {
     teststringobj set 1 foo
-    teststringobj getunicode 1
+    teststringobj maxchars 1
     teststringobj append 1 bar -1
-    teststringobj getunicode 1
+    teststringobj maxchars 1
     teststringobj append 1 bar -1
     teststringobj setlength 1 0
     teststringobj append 1 bar -1
