@@ -22,7 +22,7 @@ opendir(
 {
     DIR *dirp;
     int fd;
-    char *myname;
+    const char *myname;
 
     myname = ((*name == '\0') ? "." : name);
     if ((fd = open(myname, 0, 0)) == -1) {

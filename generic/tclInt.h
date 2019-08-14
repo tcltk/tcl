@@ -78,12 +78,12 @@
 #else
 #include <string.h>
 #endif
-#if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
-     || defined(__cplusplus) || defined(_MSC_VER) || defined(__ICC)
-#include <stddef.h>
-#else
+#if !defined(STDC_HEADERS) && !defined(__STDC__) && !defined(__C99__FUNC__) \
+     && !defined(__cplusplus) && !defined(_MSC_VER) && !defined(__ICC)
 typedef int ptrdiff_t;
 #endif
+#include <stddef.h>
+#include <locale.h>
 
 /*
  * Ensure WORDS_BIGENDIAN is defined correctly:
@@ -2259,6 +2259,7 @@ typedef struct Interp {
 #define TCL_EVAL_FILE			0x02
 #define TCL_EVAL_SOURCE_IN_FRAME	0x10
 #define TCL_EVAL_NORESOLVE		0x20
+#define TCL_EVAL_DISCARD_RESULT		0x40
 
 /*
  * Flag bits for Interp structures:

@@ -209,7 +209,7 @@ TclCreateLiteral(
 	     */
 
 	    int objLength;
-	    char *objBytes = TclGetStringFromObj(objPtr, &objLength);
+	    const char *objBytes = TclGetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])
@@ -408,7 +408,7 @@ TclRegisterLiteral(
     Tcl_Obj *objPtr;
     unsigned hash;
     unsigned int localHash;
-    int objIndex, new;
+    int objIndex, isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -462,7 +462,7 @@ TclRegisterLiteral(
      */
 
     globalPtr = NULL;
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
+    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
