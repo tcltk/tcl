@@ -51,7 +51,7 @@ static int	ProcBodyTestCheckObjCmd(ClientData dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
-			const char *namespace, const CmdTable *cmdTablePtr);
+			const char *namesp, const CmdTable *cmdTablePtr);
 
 /*
  * List of commands to create when the package is loaded; must go after the
@@ -139,7 +139,7 @@ static int
 RegisterCommand(
     Tcl_Interp* interp,		/* the Tcl interpreter for which the operation
 				 * is performed */
-    const char *namespace,		/* the namespace in which the command is
+    const char *namesp,		/* the namespace in which the command is
 				 * registered */
     const CmdTable *cmdTablePtr)/* the command to register */
 {
@@ -147,13 +147,13 @@ RegisterCommand(
 
     if (cmdTablePtr->exportIt) {
 	sprintf(buf, "namespace eval %s { namespace export %s }",
-		namespace, cmdTablePtr->cmdName);
+		namesp, cmdTablePtr->cmdName);
 	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
 
-    sprintf(buf, "%s::%s", namespace, cmdTablePtr->cmdName);
+    sprintf(buf, "%s::%s", namesp, cmdTablePtr->cmdName);
     Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }

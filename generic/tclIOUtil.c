@@ -1392,7 +1392,7 @@ TclFSNormalizeToUniquePath(
 
     int i;
     int isVfsPath = 0;
-    char *path;
+    const char *path;
 
     /*
      * Paths starting with a UNC prefix whose final character is a colon

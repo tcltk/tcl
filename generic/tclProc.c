@@ -1300,7 +1300,7 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int new;
+    int isNew;
 
     ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1323,7 +1323,7 @@ InitLocalCache(
 	} else {
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
 		    localPtr->nameLength, /* hash */ (unsigned int) -1,
-		    &new, /* nsPtr */ NULL, 0, NULL);
+		    &isNew, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 

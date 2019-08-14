@@ -36,7 +36,7 @@
 
 char *
 strstr(
-    char *string,	/* String to search. */
+    char *string,		/* String to search. */
     char *substring)		/* Substring to try to find in string. */
 {
     char *a, *b;

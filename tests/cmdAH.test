@@ -30,6 +30,7 @@ testConstraint linkDirectory [expr {
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 global env
 set cmdAHwd [pwd]
@@ -1328,7 +1329,7 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
-test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints {win knownMsvcBug} -body {
     file owned $env(windir)
 } -result 0
 test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
