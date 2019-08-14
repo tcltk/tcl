@@ -1178,8 +1178,8 @@ TeststringobjCmd(
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "maxchars", "getunicode",
-	"appendself", "appendself2", NULL
+	"set", "set2", "setlength", "maxchars", "appendself",
+	"appendself2", NULL
     };
 
     if (objc < 3) {
@@ -1344,13 +1344,7 @@ TeststringobjCmd(
 	    }
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
 	    break;
-	case 10:			/* getunicode */
-	    if (objc != 3) {
-		goto wrongNumArgs;
-	    }
-	    Tcl_GetUnicode(varPtr[varIndex]);
-	    break;
-	case 11:			/* appendself */
+	case 10:			/* appendself */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
@@ -1381,7 +1375,7 @@ TeststringobjCmd(
 	    Tcl_AppendToObj(varPtr[varIndex], string + i, length - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
-	case 12:			/* appendself2 */
+	case 11:			/* appendself2 */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
