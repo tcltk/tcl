@@ -2242,7 +2242,7 @@ SetFsPathFromAny(
     int len;
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
-    char *name;
+    const char *name;
 
     if (TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;

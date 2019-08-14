@@ -41,6 +41,8 @@ static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		TestSizeCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *const objv[]);
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
@@ -78,6 +80,7 @@ TclplatformtestInit(
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testsize", TestSizeCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -308,6 +311,26 @@ TestwinsleepCmd(
     }
     Sleep((DWORD) ms);
     return TCL_OK;
+}
+
+static int
+TestSizeCmd(
+    ClientData clientData,	/* Unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
+{
+    if (objc != 2) {
+	goto syntax;
+    }
+    if (strcmp(Tcl_GetString(objv[1]), "time_t") == 0) {
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(time_t)));
+	return TCL_OK;
+    }
+
+syntax:
+    Tcl_WrongNumArgs(interp, 1, objv, "time_t");
+    return TCL_ERROR;
 }
 
 /*

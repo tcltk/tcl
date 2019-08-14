@@ -45,7 +45,7 @@ if {![string match ${ziproot}* $tcl_library]} {
     # archive
     ###
     set tclzip [file join $CWD [::tcl::pkgconfig get zipfile,runtime]]
-    testConstraint zipfslib [file exists $tclzip]
+    testConstraint zipfslib [file isfile $tclzip]
     if {[testConstraint zipfslib]} {
         zipfs mount /lib/tcl $tclzip
         set ::tcl_library ${ziproot}lib/tcl/tcl_library

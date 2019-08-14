@@ -529,7 +529,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -842,8 +842,14 @@ typedef struct ByteCode {
 
 #define INST_DICT_GET_DEF		190
 
+/* TIP 461 */
+#define INST_STR_LT			191
+#define INST_STR_GT			192
+#define INST_STR_LE			193
+#define INST_STR_GE			194
+
 /* The last opcode */
-#define LAST_INST_OPCODE		190
+#define LAST_INST_OPCODE		194
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1211,7 +1217,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1399,7 +1405,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

@@ -28,6 +28,7 @@
 #endif
 
 #if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
+#   define tclGetIntForIndex tcl_GetIntForIndex
 /* Those macro's are especially for Itcl 3.4 compatibility */
 #   define tclCreateNamespace tcl_CreateNamespace
 #   define tclDeleteNamespace tcl_DeleteNamespace
@@ -129,7 +130,8 @@ EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 				CallFrame **framePtrPtr);
 /* Slot 33 is reserved */
 /* 34 */
-EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_GetIntForIndex")
+int			TclGetIntForIndex(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int endValue, int *indexPtr);
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
@@ -653,6 +655,9 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 				const char *pkgName,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
+/* 258 */
+EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj);
 
 typedef struct TclIntStubs {
     int magic;
@@ -692,7 +697,7 @@ typedef struct TclIntStubs {
     const char * (*tclGetExtension) (const char *name); /* 31 */
     int (*tclGetFrame) (Tcl_Interp *interp, const char *str, CallFrame **framePtrPtr); /* 32 */
     void (*reserved33)(void);
-    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
+    TCL_DEPRECATED_API("Use Tcl_GetIntForIndex") int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
     void (*reserved35)(void);
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
@@ -916,6 +921,7 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
+    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1359,6 +1365,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticPackage \
 	(tclIntStubsPtr->tclStaticPackage) /* 257 */
+#define TclpCreateTemporaryDirectory \
+	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1375,6 +1383,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclBackgroundException
 #   undef TclSetStartupScript
 #   undef TclGetStartupScript
+#   undef TclGetIntForIndex
 #   undef TclCreateNamespace
 #   undef TclDeleteNamespace
 #   undef TclAppendExportList

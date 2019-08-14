@@ -29,11 +29,6 @@
 #include "tclRegexp.h"
 
 /*
- * Required for TestlocaleCmd
- */
-#include <locale.h>
-
-/*
  * Required for the TestChannelCmd and TestChannelEventCmd
  */
 #include "tclIO.h"
@@ -2404,11 +2399,11 @@ ExitProcOdd(
     void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "odd %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
+    sprintf(buf, "odd %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
@@ -2418,11 +2413,11 @@ ExitProcEven(
     void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "even %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
+    sprintf(buf, "even %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
@@ -3327,10 +3322,7 @@ TestlinkarrayCmd(
     };
     int optionIndex, typeIndex, readonly, i, size, length;
     char *name, *arg;
-    long addr;                  /* Wrong on Windows, but that's MS's fault for
-                                 * not supporting <stdint.h> correctly. They
-                                 * can suffer the warnings; the rest of us
-                                 * shouldn't have to! */
+    Tcl_WideInt addr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option args");
@@ -3388,7 +3380,7 @@ TestlinkarrayCmd(
 	 */
 
 	if (i < objc) {
-	    if (Tcl_GetLongFromObj(interp, objv[i], &addr) == TCL_ERROR) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
  		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong address value", -1));
 		return TCL_ERROR;
@@ -3396,7 +3388,7 @@ TestlinkarrayCmd(
 	} else {
 	    addr = 0;
 	}
-	return Tcl_LinkArray(interp, name, (void *) addr,
+	return Tcl_LinkArray(interp, name, INT2PTR(addr),
 		LinkTypes[typeIndex] | readonly, size);
     }
     return TCL_OK;
@@ -4420,7 +4412,7 @@ TesttranslatefilenameCmd(
  *
  * TestupvarCmd --
  *
- *	This procedure implements the "testupvar2" command.  It is used
+ *	This procedure implements the "testupvar" command.  It is used
  *	to test Tcl_UpVar and Tcl_UpVar2.
  *
  * Results:
@@ -7713,7 +7705,7 @@ MyCompiledVarFree(
 }
 
 #define TclVarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
+    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 static Tcl_Var
 MyCompiledVarFetch(
