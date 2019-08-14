@@ -793,7 +793,152 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     set result
 } -result {inject-executed}
 
-test coroutine-9.1 {coro type} {
+test coroutine-9.1 {coroprobe with yield} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    list [coroprobe demo set i] [demo] [coroprobe demo set i] [demo]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2 {}}
+test coroutine-9.2 {coroprobe with yieldto} -body {
+    coroutine demo apply {{} { lmap i {1 2} {yieldto string cat} }}
+    list [coroprobe demo set i] [demo a b] [coroprobe demo set i] [demo c d]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2 {{a b} {c d}}}
+test coroutine-9.3 {coroprobe errors} -setup {
+    catch {rename demo {}}
+} -body {
+    coroprobe demo set i
+} -returnCodes error -result {can only inject a probe command into a coroutine}
+test coroutine-9.4 {coroprobe errors} -body {
+    proc demo {} { foreach i {1 2} yield }
+    coroprobe demo set i
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {can only inject a probe command into a coroutine}
+test coroutine-9.5 {coroprobe errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroprobe coroName cmd ?arg1 arg2 ...?"}
+test coroutine-9.6 {coroprobe errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe demo
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroprobe coroName cmd ?arg1 arg2 ...?"}
+test coroutine-9.7 {coroprobe errors in probe command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroprobe demo set
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "set varName ?newValue?"}
+test coroutine-9.8 {coroprobe errors in probe command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    list [catch {coroprobe demo set}] [demo] [coroprobe demo set i]
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {} 2}
+test coroutine-9.9 {coroprobe: advanced features} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	coroutine demo apply {{} {
+	    set f [info level],[info frame]
+	    foreach i {1 2} yield
+	}}
+	coroprobe demo apply {{} {
+	    upvar 1 f f
+	    list [info coroutine] [info level] [info frame] $f
+	}}
+    }
+} -cleanup {
+    interp delete $i
+} -result {::demo 2 3 1,2}
+
+test coroutine-10.1 {coroinject with yield} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} yield }}
+    coroinject demo apply {{op val} {lappend ::result $op $val}}
+    list $result [demo x] [demo y] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {{yield x} y} {yield x}}
+test coroutine-10.2 {coroinject stacking} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} yield }}
+    coroinject demo apply {{op val} {lappend ::result $op $val A;return $val}}
+    coroinject demo apply {{op val} {lappend ::result $op $val B;return $val}}
+    list $result [demo x] [demo y] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {x y} {yield x B yield x A}}
+test coroutine-10.3 {coroinject with yieldto} -setup {
+    set result {}
+} -body {
+    coroutine demo apply {{} { lmap i {1 2} {yieldto string cat} }}
+    coroinject demo apply {{op val} {lappend ::result $op $val;return $val}}
+    list $result [demo x mp] [demo y le] $result
+} -cleanup {
+    catch {rename demo {}}
+} -result {{} {} {{x mp} {y le}} {yieldto {x mp}}}
+test coroutine-10.4 {coroinject errors} -setup {
+    catch {rename demo {}}
+} -body {
+    coroinject demo set i
+} -returnCodes error -result {can only inject a command into a coroutine}
+test coroutine-10.5 {coroinject errors} -body {
+    proc demo {} { foreach i {1 2} yield }
+    coroinject demo set i
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {can only inject a command into a coroutine}
+test coroutine-10.6 {coroinject errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroinject coroName cmd ?arg1 arg2 ...?"}
+test coroutine-10.7 {coroinject errors} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject demo
+} -returnCodes error -cleanup {
+    catch {rename demo {}}
+} -result {wrong # args: should be "coroinject coroName cmd ?arg1 arg2 ...?"}
+test coroutine-10.8 {coroinject errors in injected command} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    coroinject demo apply {args {error "ERR: $args"}}
+    list [catch demo msg] $msg [catch demo msg] $msg
+} -cleanup {
+    catch {rename demo {}}
+} -result {1 {ERR: yield {}} 1 {invalid command name "demo"}}
+test coroutine-10.9 {coroinject: advanced features} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	coroutine demo apply {{} {
+	    set l [info level]
+	    set f [info frame]
+	    lmap i {1 2} yield
+	}}
+	coroinject demo apply {{arg op val} {
+	    global result
+	    upvar 1 f f l l
+	    lappend result [info coroutine] $arg $op $val
+	    lappend result [info level] $l [info frame] $f
+	    lappend result [yield $arg]
+	    return [string toupper $val]
+	}} grill
+	list [demo ABC] [demo pqr] [demo def] $result
+    }
+} -cleanup {
+    interp delete $i
+} -result {grill {} {ABC def} {::demo grill yield ABC 2 1 3 2 pqr}}
+
+test coroutine-11.1 {coro type} {
     coroutine demo eval {
 	yield
 	yield "PHASE 1"
@@ -803,19 +948,19 @@ test coroutine-9.1 {coro type} {
     list [demo] [::tcl::unsupported::corotype demo] \
 	[demo] [::tcl::unsupported::corotype demo] [demo]
 } {{PHASE 1} yield {PHASE 2} yieldto active}
-test coroutine-9.2 {coro type} -setup {
+test coroutine-11.2 {coro type} -setup {
     catch {rename nosuchcommand ""}
 } -returnCodes error -body {
     ::tcl::unsupported::corotype nosuchcommand
 } -result {can only get coroutine type of a coroutine}
-test coroutine-9.3 {coro type} -returnCodes error -body {
+test coroutine-11.3 {coro type} -returnCodes error -body {
     proc notacoroutine {} {}
     ::tcl::unsupported::corotype notacoroutine
 } -returnCodes error -cleanup {
     rename notacoroutine {}
 } -result {can only get coroutine type of a coroutine}
 
-test coroutine-10.1 {coroutine general introspection} -setup {
+test coroutine-12.1 {coroutine general introspection} -setup {
     set i [interp create]
 } -body {
     $i eval {

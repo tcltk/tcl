@@ -1066,6 +1066,45 @@ test execute-11.3 {Bug a0ece9d6d4} -setup {
     trace remove execution crash enterstep {apply {args {info frame -2}}}
     rename crash {}
 } -result 1
+
+test execute-12.1 {failing multi-lappend to unshared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.2 {failing multi-lappend to shared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    set y $x
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.4 {failing multi-lappend to shared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	set y $x
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
 
 # cleanup
 if {[info commands testobj] != {}} {

@@ -75,7 +75,7 @@ int
 .AS "const Tcl_UniChar" *uniPattern in/out
 .AP char *buf out
 Buffer in which the UTF-8 representation of the Tcl_UniChar is stored.  At most
-\fBTCL_UTF_MAX\fR bytes are stored in the buffer.
+4 bytes are stored in the buffer.
 .AP int ch in
 The Unicode character to be converted or examined.
 .AP Tcl_UniChar *chPtr out
@@ -113,7 +113,7 @@ If non-NULL, filled with the number of bytes in the backslash sequence,
 including the backslash character.
 .AP char *dst out
 Buffer in which the bytes represented by the backslash sequence are stored.
-At most \fBTCL_UTF_MAX\fR bytes are stored in the buffer.
+At most 4 bytes are stored in the buffer.
 .AP int nocase in
 Specifies whether the match should be done case-sensitive (0) or
 case-insensitive (1).
@@ -148,8 +148,8 @@ a byte in the range 0x80 - 0x9F, \fBTcl_UtfToUniChar\fR assumes the
 cp1252 encoding, stores the corresponding Tcl_UniChar in \fI*chPtr\fR
 and returns 1. If the input is otherwise
 not in proper UTF-8 format, \fBTcl_UtfToUniChar\fR will store the first
-byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0000 and
-0x00ff and return 1.
+byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x00A0 and
+0x00FF and return 1.
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
 to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
@@ -253,7 +253,7 @@ the return pointer points to the first character in the source string.
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl
 commands.  It parses a backslash sequence and stores the properly formed
 UTF-8 character represented by the backslash sequence in the output
-buffer \fIdst\fR.  At most \fBTCL_UTF_MAX\fR bytes are stored in the buffer.
+buffer \fIdst\fR.  At most 4 bytes are stored in the buffer.
 \fBTcl_UtfBackslash\fR modifies \fI*readPtr\fR to contain the number
 of bytes in the backslash sequence, including the backslash character.
 The return value is the number of bytes stored in the output buffer.

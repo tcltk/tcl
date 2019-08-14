@@ -628,7 +628,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 

@@ -41,7 +41,7 @@ iterations is reached or the time is exceeded.
 It will then return a canonical tcl-list of the form:
 .PP
 .CS
-\fB0.095977 \(mcs/# 52095836 # 10419167 #/sec 5000.000 nett-ms\fR
+\fB0.095977 \(mcs/# 52095836 # 10419167 #/sec 5000.000 net-ms\fR
 .CE
 .PP
 which indicates:

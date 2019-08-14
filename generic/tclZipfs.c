@@ -283,10 +283,9 @@ static struct {
  * For password rotation.
  */
 
-static const char pwrot[16] = {
-    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
-    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0
-};
+static const char pwrot[16] =
+    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
+    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
 /*
  * Table to compute CRC32.

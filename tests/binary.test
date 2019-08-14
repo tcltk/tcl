@@ -2912,7 +2912,7 @@ test binary-77.2 {string cat ops on all bytearrays} {
 } [binary format H* abcd]
 
 test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678]} -body {
-    # just test for BO-segfault (high surrogate w/o advance source pointer for out of BMP char if TCL_UTF_MAX <= 4):
+    # just test for BO-segfault (high surrogate w/o advance source pointer for out of BMP char if TCL_UTF_MAX == 3):
     binary encode hex \U0001f415
     binary scan \U0001f415 a* v; set v
     set str {}

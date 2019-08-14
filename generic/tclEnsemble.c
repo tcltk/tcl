@@ -2580,7 +2580,7 @@ BuildEnsembleConfig(
     if (subList) {
         int subc;
         Tcl_Obj **subv, *target, *cmdObj, *cmdPrefixObj;
-        char *name;
+        const char *name;
 
         /*
          * There is a list of exactly what subcommands go in the table.
@@ -2665,7 +2665,7 @@ BuildEnsembleConfig(
         Tcl_DictObjFirst(NULL, ensemblePtr->subcommandDict, &dictSearch,
                 &keyObj, &valueObj, &done);
         while (!done) {
-            char *name = TclGetString(keyObj);
+            const char *name = TclGetString(keyObj);
 
             hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
             Tcl_SetHashValue(hPtr, valueObj);
@@ -2707,7 +2707,11 @@ BuildEnsembleConfig(
 		    if (isNew) {
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-			cmdObj = Tcl_NewStringObj(nsCmdName, -1);
+			TclNewObj(cmdObj);
+			Tcl_AppendStringsToObj(cmdObj,
+				ensemblePtr->nsPtr->fullName,
+				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
+				nsCmdName, NULL);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);
@@ -3375,7 +3379,7 @@ CompileToInvokedCommand(
 {
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
-    char *bytes;
+    const char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
     DefineLineInformation;
 

@@ -15,7 +15,6 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
-#include <locale.h>
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -1093,6 +1092,7 @@ TclInitFileCmd(
 	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
 	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
 	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"tempdir",	TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
 	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
@@ -1138,7 +1138,7 @@ FileAttrAccessTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the access time not available */
-    if (buf.st_atime == 0) {
+    if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get access time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1159,7 +1159,7 @@ FileAttrAccessTimeCmd(
 	}
 
 	tval.actime = newTime;
-	tval.modtime = buf.st_mtime;
+	tval.modtime = Tcl_GetModificationTimeFromStat(&buf);
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1179,7 +1179,7 @@ FileAttrAccessTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_atime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -1220,7 +1220,7 @@ FileAttrModifyTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the modification time not available */
-    if (buf.st_mtime == 0) {
+    if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get modification time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1239,7 +1239,7 @@ FileAttrModifyTimeCmd(
 	    return TCL_ERROR;
 	}
 
-	tval.actime = buf.st_atime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&buf);
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
@@ -1259,7 +1259,7 @@ FileAttrModifyTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((long) buf.st_mtime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -2290,9 +2290,9 @@ StoreStatData(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-    STORE_ARY("atime",	Tcl_NewWideIntObj((long)statPtr->st_atime));
-    STORE_ARY("mtime",	Tcl_NewWideIntObj((long)statPtr->st_mtime));
-    STORE_ARY("ctime",	Tcl_NewWideIntObj((long)statPtr->st_ctime));
+    STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));

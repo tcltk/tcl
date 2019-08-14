@@ -263,7 +263,7 @@ Tcl_RegExpRange(
 
     if ((size_t) index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so < 0) {
+    } else if (regexpPtr->matches[index].rm_so == TCL_INDEX_NONE) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -364,7 +364,7 @@ TclRegExpRangeUniChar(
 				 * passed to Tcl_RegExpExec. */
     int index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
-				 * subrange, -1 means the range of the
+				 * subrange, TCL_INDEX_NONE means the range of the
 				 * rm_extend field. */
     int *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
@@ -373,12 +373,12 @@ TclRegExpRangeUniChar(
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && index == -1) {
+    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
     } else if ((size_t) index > regexpPtr->re.re_nsub) {
-	*startPtr = -1;
-	*endPtr = -1;
+	*startPtr = TCL_INDEX_NONE;
+	*endPtr = TCL_INDEX_NONE;
     } else {
 	*startPtr = regexpPtr->matches[index].rm_so;
 	*endPtr = regexpPtr->matches[index].rm_eo;

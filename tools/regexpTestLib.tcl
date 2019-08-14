@@ -17,13 +17,13 @@ proc readInputFile {} {
 
 	set len [string length $line]
 
-	if {($len > 0) && ([string index $line [expr $len - 1]] == "\\")} {
+	if {($len > 0) && ([string index $line [expr {$len - 1}]] == "\\")} {
 	    if {[info exists lineArray(c$i)] == 0} {
 		set lineArray(c$i) 1
 	    } else {
 		incr lineArray(c$i)
 	    }
-	    set line [string range $line 0 [expr $len - 2]]
+	    set line [string range $line 0 [expr {$len - 2}]]
 	    append lineArray($i) $line
 	    continue
 	}
@@ -204,7 +204,7 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
 
     # find the test result
 
-    set numVars [expr $len - 3]
+    set numVars [expr {$len - 3}]
     set vars {}
     set vals {}
     set result 0
