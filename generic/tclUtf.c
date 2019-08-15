@@ -361,8 +361,8 @@ static const unsigned short cp1252[32] = {
 #undef Tcl_UtfToUniChar
 int
 Tcl_UtfToUniChar(
-    register const char *src,	/* The UTF-8 string. */
-    register int *chPtr)/* Filled with the unsigned int represented by
+    const char *src,	/* The UTF-8 string. */
+    int *chPtr)/* Filled with the unsigned int represented by
 				 * the UTF-8 string. */
 {
     int byte;
@@ -718,12 +718,12 @@ Tcl_UtfCharComplete(
 
 int
 Tcl_NumUtfChars(
-    register const char *src,	/* The UTF-8 string to measure. */
+    const char *src,	/* The UTF-8 string to measure. */
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
-    register int i = 0;
+    int i = 0;
 
     /*
      * The separate implementations are faster.
@@ -739,7 +739,7 @@ Tcl_NumUtfChars(
 	}
 	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	register const char *endPtr = src + length - 4;
+	const char *endPtr = src + length - 4;
 
 	while (src < endPtr) {
 	    src += TclUtfToUniChar(src, &ch);
@@ -955,8 +955,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    register const char *src,	/* The UTF-8 string to dereference. */
-    register int index)		/* The position of the desired character. */
+    const char *src,	/* The UTF-8 string to dereference. */
+    int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int fullchar = 0;
@@ -1003,8 +1003,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    register const char *src,	/* The UTF-8 string. */
-    register int index)		/* The position of the desired character. */
+    const char *src,	/* The UTF-8 string. */
+    int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int len = 0;
@@ -1310,7 +1310,7 @@ TclpUtfNcmp2(
      * fine in the strcmp manner.
      */
 
-    register int result = 0;
+    int result = 0;
 
     for ( ; numBytes != 0; numBytes--, cs++, ct++) {
 	if (*cs != *ct) {

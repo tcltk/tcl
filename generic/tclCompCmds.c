@@ -2912,9 +2912,9 @@ DupForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
-    register ForeachInfo *srcPtr = clientData;
+    ForeachInfo *srcPtr = clientData;
     ForeachInfo *dupPtr;
-    register ForeachVarList *srcListPtr, *dupListPtr;
+    ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = ckalloc(sizeof(ForeachInfo)
@@ -2961,10 +2961,10 @@ FreeForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *listPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *listPtr;
     int numLists = infoPtr->numLists;
-    register int i;
+    int i;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -2997,8 +2997,8 @@ PrintForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendToObj(appendObj, "data=[", -1);
@@ -3037,8 +3037,8 @@ PrintNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
@@ -3067,8 +3067,8 @@ DisassembleForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3114,8 +3114,8 @@ DisassembleNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3439,9 +3439,9 @@ TclPushVarName(
     int *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
-    register const char *p;
+    const char *p;
     const char *last, *name, *elName;
-    register int n;
+    int n;
     Tcl_Token *elemTokenPtr = NULL;
     int nameLen, elNameLen, simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
