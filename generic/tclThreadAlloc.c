@@ -248,7 +248,7 @@ TclFreeAllocCache(
 {
     Cache *cachePtr = arg;
     Cache **nextPtrPtr;
-    register unsigned int bucket;
+    unsigned int bucket;
 
     /*
      * Flush blocks.
@@ -305,7 +305,7 @@ TclpAlloc(
 {
     Cache *cachePtr;
     Block *blockPtr;
-    register int bucket;
+    int bucket;
     size_t size;
 
     GETCACHE(cachePtr);
@@ -511,8 +511,8 @@ TclpRealloc(
 Tcl_Obj *
 TclThreadAllocObj(void)
 {
-    register Cache *cachePtr;
-    register Tcl_Obj *objPtr;
+    Cache *cachePtr;
+    Tcl_Obj *objPtr;
 
     GETCACHE(cachePtr);
 
@@ -522,7 +522,7 @@ TclThreadAllocObj(void)
      */
 
     if (cachePtr->numObjects == 0) {
-	register int numMove;
+	int numMove;
 
 	Tcl_MutexLock(objLockPtr);
 	numMove = sharedPtr->numObjects;
@@ -683,7 +683,7 @@ MoveObjs(
     Cache *toPtr,
     int numMove)
 {
-    register Tcl_Obj *objPtr = fromPtr->firstObjPtr;
+    Tcl_Obj *objPtr = fromPtr->firstObjPtr;
     Tcl_Obj *fromFirstObjPtr = objPtr;
 
     toPtr->numObjects += numMove;
@@ -784,7 +784,7 @@ Block2Ptr(
     int bucket,
     unsigned int reqSize)
 {
-    register void *ptr;
+    void *ptr;
 
     blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
     blockPtr->sourceBucket = bucket;
@@ -800,7 +800,7 @@ static Block *
 Ptr2Block(
     char *ptr)
 {
-    register Block *blockPtr;
+    Block *blockPtr;
 
     blockPtr = (((Block *) ptr) - 1);
     if (blockPtr->magicNum1 != MAGIC || blockPtr->magicNum2 != MAGIC) {
@@ -934,8 +934,8 @@ GetBlocks(
     Cache *cachePtr,
     int bucket)
 {
-    register Block *blockPtr;
-    register size_t n;
+    Block *blockPtr;
+    size_t n;
 
     /*
      * First, atttempt to move blocks from the shared cache. Note the
@@ -980,7 +980,7 @@ GetBlocks(
     }
 
     if (cachePtr->buckets[bucket].numFree == 0) {
-	register size_t size;
+	size_t size;
 
 	/*
 	 * If no blocks could be moved from shared, first look for a larger

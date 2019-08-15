@@ -1256,8 +1256,8 @@ int
 TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
-    register const CmdInfo *cmdInfoPtr;
-    register const UnsafeEnsembleInfo *unsafePtr;
+    const CmdInfo *cmdInfoPtr;
+    const UnsafeEnsembleInfo *unsafePtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -2758,7 +2758,7 @@ int
 TclInvokeStringCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = clientData;
@@ -2807,7 +2807,7 @@ TclInvokeObjectCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    register const char **argv)	/* Argument strings. */
+    const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = clientData;
     Tcl_Obj *objPtr;
@@ -3291,7 +3291,7 @@ Tcl_GetCommandFullName(
 
 {
     Interp *iPtr = (Interp *) interp;
-    register Command *cmdPtr = (Command *) command;
+    Command *cmdPtr = (Command *) command;
     char *name;
 
     /*
@@ -3575,7 +3575,7 @@ CallCommandTraces(
 				 * trigger, either TCL_TRACE_DELETE or
 				 * TCL_TRACE_RENAME. */
 {
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
     ActiveCommandTrace active;
     char *result;
     Tcl_Obj *oldNamePtr = NULL;
@@ -3765,7 +3765,7 @@ CancelEvalProc(
 
 void
 TclCleanupCommand(
-    register Command *cmdPtr)	/* Points to the Command structure to
+    Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
     if (cmdPtr->refCount-- <= 1) {
@@ -3795,7 +3795,7 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Reset the interpreter's result and clear out any previous error
@@ -3867,7 +3867,7 @@ TclResetCancellation(
     Tcl_Interp *interp,
     int force)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
 	return TCL_ERROR;
@@ -3909,7 +3909,7 @@ Tcl_Canceled(
     Tcl_Interp *interp,
     int flags)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Has the current script in progress for this interpreter been canceled
@@ -5357,7 +5357,7 @@ TclAdvanceLines(
     const char *start,
     const char *end)
 {
-    register const char *p;
+    const char *p;
 
     for (p = start; p < end; p++) {
 	if (*p == '\n') {
@@ -5806,7 +5806,7 @@ int
 Tcl_EvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -5819,7 +5819,7 @@ int
 TclEvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -5838,7 +5838,7 @@ int
 TclNREvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6146,7 +6146,7 @@ Tcl_ExprLong(
     const char *exprstring,	/* Expression to evaluate. */
     long *ptr)			/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
     if (*exprstring == '\0') {
 	/*
@@ -6170,7 +6170,7 @@ Tcl_ExprDouble(
     const char *exprstring,	/* Expression to evaluate. */
     double *ptr)		/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
 
     if (*exprstring == '\0') {
@@ -6239,7 +6239,7 @@ int
 Tcl_ExprLongObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     long *ptr)			/* Where to store long result. */
 {
     Tcl_Obj *resultPtr;
@@ -6286,7 +6286,7 @@ int
 Tcl_ExprDoubleObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     double *ptr)		/* Where to store double result. */
 {
     Tcl_Obj *resultPtr;
@@ -6322,7 +6322,7 @@ int
 Tcl_ExprBooleanObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     int *ptr)			/* Where to store 0/1 result. */
 {
     Tcl_Obj *resultPtr;
@@ -6434,7 +6434,7 @@ TclNRInvoke(
     int objc,
     Tcl_Obj *const objv[])
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
@@ -6556,7 +6556,7 @@ Tcl_AppendObjToErrorInfo(
 {
     size_t length;
     const char *message = TclGetStringFromObj(objPtr, &length);
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     Tcl_IncrRefCount(objPtr);
 

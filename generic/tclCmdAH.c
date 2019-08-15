@@ -734,7 +734,7 @@ TclNREvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -2116,7 +2116,7 @@ StoreStatData(
 				 * store in varName. */
 {
     Tcl_Obj *field, *value;
-    register unsigned short mode;
+    unsigned short mode;
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
@@ -2493,7 +2493,7 @@ EachloopCmd(
     Tcl_Obj *const objv[])
 {
     int numLists = (objc-2) / 2;
-    register struct ForeachState *statePtr;
+    struct ForeachState *statePtr;
     int i, j, result;
 
     if (objc < 4 || (objc%2 != 0)) {
@@ -2618,7 +2618,7 @@ ForeachLoopStep(
     Tcl_Interp *interp,
     int result)
 {
-    register struct ForeachState *statePtr = data[0];
+    struct ForeachState *statePtr = data[0];
 
     /*
      * Process the result code from this run of the [foreach] body. Note that
