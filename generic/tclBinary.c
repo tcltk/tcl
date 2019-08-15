@@ -2288,8 +2288,8 @@ ScanNumber(
 	if (*numberCachePtrPtr == NULL) {
 	    return Tcl_NewWideIntObj(value);
 	} else {
-	    register Tcl_HashTable *tablePtr = *numberCachePtrPtr;
-	    register Tcl_HashEntry *hPtr;
+	    Tcl_HashTable *tablePtr = *numberCachePtrPtr;
+	    Tcl_HashEntry *hPtr;
 	    int isNew;
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
@@ -2297,7 +2297,7 @@ ScanNumber(
 		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
-		register Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
+		Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
 
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, objPtr);

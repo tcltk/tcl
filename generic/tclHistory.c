@@ -61,7 +61,7 @@ Tcl_RecordAndEval(
 				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
 				 * instead of Tcl_Eval. */
 {
-    register Tcl_Obj *cmdPtr;
+    Tcl_Obj *cmdPtr;
     int result;
 
     if (cmd[0]) {

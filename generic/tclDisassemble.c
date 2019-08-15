@@ -542,7 +542,7 @@ FormatInstruction(
 {
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
-    register const InstructionDesc *instDesc = &tclInstructionTable[opCode];
+    const InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
     int opnd = 0, i, j, numBytes = 1;
@@ -863,8 +863,8 @@ PrintSourceToObj(
     const char *stringPtr,	/* The string to print. */
     int maxChars)		/* Maximum number of chars to print. */
 {
-    register const char *p;
-    register int i = 0, len;
+    const char *p;
+    int i = 0, len;
     Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
