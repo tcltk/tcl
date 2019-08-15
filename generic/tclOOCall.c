@@ -168,7 +168,7 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
-    register Object *oPtr = contextPtr->oPtr;
+    Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
@@ -314,7 +314,7 @@ TclOOInvokeContext(
     int objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
-    register CallContext *const contextPtr = clientData;
+    CallContext *const contextPtr = clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const int isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
@@ -968,7 +968,7 @@ AddMethodToCallChain(
 				 * looking to add things from a mixin and have
 				 * not passed a mixin. */
 {
-    register CallChain *callPtr = cbPtr->callChainPtr;
+    CallChain *callPtr = cbPtr->callChainPtr;
     int i;
 
     /*
@@ -1656,7 +1656,7 @@ AddPrivatesFromClassChainToCallContext(
 		(char *) methodName);
 
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
@@ -1740,7 +1740,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= 1;
 	}
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
 	    if (!IS_PRIVATE(mPtr)) {
 		if (!(flags & KNOWN_STATE)) {

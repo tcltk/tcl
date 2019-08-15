@@ -627,8 +627,8 @@ ParseWhiteSpace(
     char *typePtr)		/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
-    register char type = TYPE_NORMAL;
-    register const char *p = src;
+    char type = TYPE_NORMAL;
+    const char *p = src;
 
     while (1) {
 	while (numBytes && ((type = CHAR_TYPE(*p)) & TYPE_SPACE)) {
@@ -730,7 +730,7 @@ TclParseHex(
 				 * conversion is to be written. */
 {
     int result = 0;
-    register const char *p = src;
+    const char *p = src;
 
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
@@ -787,7 +787,7 @@ TclParseBackslash(
 				 * encoding of the backslash sequence is to be
 				 * written. At most 4 bytes will be written there. */
 {
-    register const char *p = src+1;
+    const char *p = src+1;
     Tcl_UniChar unichar = 0;
     int result;
     size_t count;
@@ -972,7 +972,7 @@ ParseComment(
 				 * Updated if parsing indicates an incomplete
 				 * command. */
 {
-    register const char *p = src;
+    const char *p = src;
     int incomplete = parsePtr->incomplete;
 
     while (numBytes) {
@@ -1039,7 +1039,7 @@ ParseComment(
 
 static int
 ParseTokens(
-    register const char *src,	/* First character to parse. */
+    const char *src,	/* First character to parse. */
     size_t numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
@@ -1329,7 +1329,7 @@ Tcl_ParseVarName(
 				 * reinitialize it. */
 {
     Tcl_Token *tokenPtr;
-    register const char *src;
+    const char *src;
     int varIndex;
     unsigned array;
 
@@ -1511,13 +1511,13 @@ Tcl_ParseVarName(
 const char *
 Tcl_ParseVar(
     Tcl_Interp *interp,		/* Context for looking up variable. */
-    register const char *start,	/* Start of variable substitution. First
+    const char *start,	/* Start of variable substitution. First
 				 * character must be "$". */
     const char **termPtr)	/* If non-NULL, points to word to fill in with
 				 * character just after last one in the
 				 * variable specifier. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     int code;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 
@@ -1599,7 +1599,7 @@ Tcl_ParseBraces(
     size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    register Tcl_Parse *parsePtr,
+    Tcl_Parse *parsePtr,
 				/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
@@ -1612,7 +1612,7 @@ Tcl_ParseBraces(
 				 * successful. */
 {
     Tcl_Token *tokenPtr;
-    register const char *src;
+    const char *src;
     int startIndex, level;
     size_t length;
 
@@ -1739,7 +1739,7 @@ Tcl_ParseBraces(
      */
 
     {
-	register int openBrace = 0;
+	int openBrace = 0;
 
 	while (--src > start) {
 	    switch (*src) {
@@ -1802,7 +1802,7 @@ Tcl_ParseQuotedString(
     size_t numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    register Tcl_Parse *parsePtr,
+    Tcl_Parse *parsePtr,
 				/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing

@@ -7484,7 +7484,7 @@ Tcl_OutputBuffered(
 	bytesBuffered += BytesLeft(bufPtr);
     }
     if (statePtr->curOutPtr != NULL) {
-	register ChannelBuffer *curOutPtr = statePtr->curOutPtr;
+	ChannelBuffer *curOutPtr = statePtr->curOutPtr;
 
 	if (IsBufferReady(curOutPtr)) {
 	    bytesBuffered += BytesLeft(curOutPtr);
@@ -11224,9 +11224,9 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelIntRep(
-    register Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     ResolvedChanName *resPtr;

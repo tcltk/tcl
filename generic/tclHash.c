@@ -106,7 +106,7 @@ const Tcl_HashKeyType tclStringHashKeyType = {
 
 void
 Tcl_InitHashTable(
-    register Tcl_HashTable *tablePtr,
+    Tcl_HashTable *tablePtr,
 				/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType)		/* Type of keys to use in table:
@@ -144,7 +144,7 @@ Tcl_InitHashTable(
 
 void
 Tcl_InitCustomHashTable(
-    register Tcl_HashTable *tablePtr,
+    Tcl_HashTable *tablePtr,
 				/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType,		/* Type of keys to use in table:
@@ -245,7 +245,7 @@ CreateHashEntry(
     int *newPtr)		/* Store info here telling whether a new entry
 				 * was created. */
 {
-    register Tcl_HashEntry *hPtr;
+    Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
     size_t hash, index;
 
@@ -365,7 +365,7 @@ void
 Tcl_DeleteHashEntry(
     Tcl_HashEntry *entryPtr)
 {
-    register Tcl_HashEntry *prevPtr;
+    Tcl_HashEntry *prevPtr;
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
@@ -434,9 +434,9 @@ Tcl_DeleteHashEntry(
 
 void
 Tcl_DeleteHashTable(
-    register Tcl_HashTable *tablePtr)	/* Table to delete. */
+    Tcl_HashTable *tablePtr)	/* Table to delete. */
 {
-    register Tcl_HashEntry *hPtr, *nextPtr;
+    Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
     size_t i;
 
@@ -542,7 +542,7 @@ Tcl_FirstHashEntry(
 
 Tcl_HashEntry *
 Tcl_NextHashEntry(
-    register Tcl_HashSearch *searchPtr)
+    Tcl_HashSearch *searchPtr)
 				/* Place to store information about progress
 				 * through the table. Must have been
 				 * initialized by calling
@@ -589,7 +589,7 @@ Tcl_HashStats(
 #define NUM_COUNTERS 10
     size_t count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
-    register Tcl_HashEntry *hPtr;
+    Tcl_HashEntry *hPtr;
     char *result, *p;
 
     /*
@@ -659,7 +659,7 @@ AllocArrayEntry(
     void *keyPtr)			/* Key to store in the hash table entry. */
 {
     int *array = (int *) keyPtr;
-    register int *iPtr1, *iPtr2;
+    int *iPtr1, *iPtr2;
     Tcl_HashEntry *hPtr;
     int count;
     size_t size;
@@ -742,8 +742,8 @@ HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)				/* Key from which to compute hash value. */
 {
-    register const int *array = (const int *) keyPtr;
-    register TCL_HASH_TYPE result;
+    const int *array = (const int *) keyPtr;
+    TCL_HASH_TYPE result;
     int count;
 
     for (result = 0, count = tablePtr->keyType; count > 0;
@@ -836,9 +836,9 @@ HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)			/* Key from which to compute hash value. */
 {
-    register const char *string = keyPtr;
-    register TCL_HASH_TYPE result;
-    register char c;
+    const char *string = keyPtr;
+    TCL_HASH_TYPE result;
+    char c;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -957,12 +957,12 @@ BogusCreate(
 
 static void
 RebuildTable(
-    register Tcl_HashTable *tablePtr)	/* Table to enlarge. */
+    Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
     size_t count, index, oldSize = tablePtr->numBuckets;
     Tcl_HashEntry **oldBuckets = tablePtr->buckets;
-    register Tcl_HashEntry **oldChainPtr, **newChainPtr;
-    register Tcl_HashEntry *hPtr;
+    Tcl_HashEntry **oldChainPtr, **newChainPtr;
+    Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
 
     /* Avoid outgrowing capability of the memory allocators */

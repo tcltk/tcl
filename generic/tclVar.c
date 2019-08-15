@@ -532,7 +532,7 @@ TclLookupVar(
 Var *
 TclObjLookupVar(
     Tcl_Interp *interp,		/* Interpreter to use for lookup. */
-    register Tcl_Obj *part1Ptr,	/* If part2 isn't NULL, this is the name of an
+    Tcl_Obj *part1Ptr,	/* If part2 isn't NULL, this is the name of an
 				 * array. Otherwise, this is a full variable
 				 * name that could include a parenthesized
 				 * array element. */
@@ -605,7 +605,7 @@ TclObjLookupVarEx(
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
-    register Var *varPtr;	/* Points to the variable's in-frame Var
+    Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     const char *errMsg = NULL;
     int index, parsed = 0;
@@ -981,7 +981,7 @@ TclLookupSimpleVar(
 	    size_t localLen;
 
 	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
-		register Tcl_Obj *objPtr = *objPtrPtr;
+		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
 		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
@@ -1277,10 +1277,10 @@ Tcl_Obj *
 Tcl_ObjGetVar2(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
+    Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    register Tcl_Obj *part2Ptr,	/* If non-null, points to an object holding
+    Tcl_Obj *part2Ptr,	/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
@@ -1375,7 +1375,7 @@ Tcl_Obj *
 TclPtrGetVarIdx(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Var *varPtr,	/* The variable to be read.*/
+    Var *varPtr,	/* The variable to be read.*/
     Var *arrayPtr,		/* NULL for scalar variables, pointer to the
 				 * containing array otherwise. */
     Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
@@ -1481,7 +1481,7 @@ TclPtrGetVarIdx(
 int
 Tcl_SetObjCmd(
     ClientData dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -1658,10 +1658,10 @@ Tcl_Obj *
 Tcl_ObjSetVar2(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be found. */
-    register Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
+    Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    register Tcl_Obj *part2Ptr,	/* If non-NULL, points to an object holding
+    Tcl_Obj *part2Ptr,	/* If non-NULL, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
     Tcl_Obj *newValuePtr,	/* New value for variable. */
@@ -1898,7 +1898,7 @@ Tcl_Obj *
 TclPtrSetVarIdx(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Var *varPtr,	/* Reference to the variable to set. */
+    Var *varPtr,	/* Reference to the variable to set. */
     Var *arrayPtr,		/* Reference to the array containing the
 				 * variable, or NULL if the variable is a
 				 * scalar. */
@@ -2218,7 +2218,7 @@ TclPtrIncrObjVarIdx(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    register Tcl_Obj *varValuePtr;
+    Tcl_Obj *varValuePtr;
 
     if (TclIsVarInHash(varPtr)) {
 	VarHashRefCount(varPtr)++;
@@ -2428,7 +2428,7 @@ int
 TclPtrUnsetVarIdx(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    register Var *varPtr,	/* The variable to be unset. */
+    Var *varPtr,	/* The variable to be unset. */
     Var *arrayPtr,		/* NULL for scalar variables, pointer to the
 				 * containing array otherwise. */
     Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
@@ -2682,8 +2682,8 @@ Tcl_UnsetObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register int i, flags = TCL_LEAVE_ERR_MSG;
-    register const char *name;
+    int i, flags = TCL_LEAVE_ERR_MSG;
+    const char *name;
 
     if (objc == 1) {
 	/*
@@ -2751,7 +2751,7 @@ Tcl_AppendObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Var *varPtr, *arrayPtr;
-    register Tcl_Obj *varValuePtr = NULL;
+    Tcl_Obj *varValuePtr = NULL;
 				/* Initialized to avoid compiler warning. */
     int i;
 
@@ -4750,7 +4750,7 @@ Tcl_GetVariableFullName(
 				 * variable's full name is appended. */
 {
     Interp *iPtr = (Interp *) interp;
-    register Var *varPtr = (Var *) variable;
+    Var *varPtr = (Var *) variable;
     Tcl_Obj *namePtr;
     Namespace *nsPtr;
 
@@ -4810,9 +4810,9 @@ Tcl_GlobalObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    register Tcl_Obj *objPtr, *tailPtr;
+    Tcl_Obj *objPtr, *tailPtr;
     const char *varName;
-    register const char *tail;
+    const char *tail;
     int result, i;
 
     /*
@@ -5207,7 +5207,7 @@ ParseSearchId(
 static void
 DeleteSearches(
     Interp *iPtr,
-    register Var *arrayVarPtr)	/* Variable whose searches are to be
+    Var *arrayVarPtr)	/* Variable whose searches are to be
 				 * deleted. */
 {
     ArraySearch *searchPtr, *nextPtr;
@@ -5349,7 +5349,7 @@ TclDeleteVars(
 {
     Tcl_Interp *interp = (Tcl_Interp *) iPtr;
     Tcl_HashSearch search;
-    register Var *varPtr;
+    Var *varPtr;
     int flags;
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
 
@@ -5401,7 +5401,7 @@ TclDeleteCompiledLocalVars(
     CallFrame *framePtr)	/* Procedure call frame containing compiler-
 				 * assigned local variables to delete. */
 {
-    register Var *varPtr;
+    Var *varPtr;
     int numLocals, i;
     Tcl_Obj **namePtrPtr;
 
@@ -5450,7 +5450,7 @@ DeleteArray(
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *tPtr;
-    register Var *elPtr;
+    Var *elPtr;
     ActiveVarTrace *activePtr;
     Tcl_Obj *objPtr;
     VarTrace *tracePtr;
@@ -5639,7 +5639,7 @@ static void
 FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
-    register Tcl_Obj *arrayPtr, *elem;
+    Tcl_Obj *arrayPtr, *elem;
     int parsed;
 
     ParsedGetIntRep(objPtr, parsed, arrayPtr, elem);
@@ -5656,7 +5656,7 @@ DupParsedVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    register Tcl_Obj *arrayPtr, *elem;
+    Tcl_Obj *arrayPtr, *elem;
     int parsed;
 
     ParsedGetIntRep(srcPtr, parsed, arrayPtr, elem);
@@ -5745,7 +5745,7 @@ ObjFindNamespaceVar(
     Namespace *nsPtr[2], *cxtNsPtr;
     const char *simpleName;
     Var *varPtr;
-    register int search;
+    int search;
     int result;
     Tcl_Var var;
     Tcl_Obj *simpleNamePtr;
@@ -6401,8 +6401,8 @@ CompareVarKeys(
 {
     Tcl_Obj *objPtr1 = (Tcl_Obj *)keyPtr;
     Tcl_Obj *objPtr2 = hPtr->key.objPtr;
-    register const char *p1, *p2;
-    register size_t l1, l2;
+    const char *p1, *p2;
+    size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
