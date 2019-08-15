@@ -53,7 +53,7 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 
 static void VarPtrDeleteProc(ClientData clientData, Tcl_Interp *interp)
 {
-    register int i;
+    int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
@@ -91,7 +91,7 @@ int
 TclObjTest_Init(
     Tcl_Interp *interp)
 {
-    register int i;
+    int i;
     /*
      * An array of Tcl_Obj pointers used in the commands that operate on or get
      * the values of Tcl object-valued variables. varPtr[i] is the i-th variable's
@@ -1178,8 +1178,8 @@ TeststringobjCmd(
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "maxchars", "getunicode",
-	"appendself", "appendself2", NULL
+	"set", "set2", "setlength", "maxchars", "appendself",
+	"appendself2", NULL
     };
 
     if (objc < 3) {
@@ -1344,13 +1344,7 @@ TeststringobjCmd(
 	    }
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
 	    break;
-	case 10:			/* getunicode */
-	    if (objc != 3) {
-		goto wrongNumArgs;
-	    }
-	    Tcl_GetUnicode(varPtr[varIndex]);
-	    break;
-	case 11:			/* appendself */
+	case 10:			/* appendself */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
@@ -1381,7 +1375,7 @@ TeststringobjCmd(
 	    Tcl_AppendToObj(varPtr[varIndex], string + i, length - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
-	case 12:			/* appendself2 */
+	case 11:			/* appendself2 */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }

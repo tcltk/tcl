@@ -853,7 +853,7 @@ CompileAssembleObj(
     Interp *iPtr = (Interp *) interp;
 				/* Internals of the interpreter */
     CompileEnv compEnv;		/* Compilation environment structure */
-    register ByteCode *codePtr = NULL;
+    ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
