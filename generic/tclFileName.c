@@ -1072,7 +1072,7 @@ Tcl_TranslateFileName(
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	register char *p;
+	char *p;
 	for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	    if (*p == '/') {
 		*p = '\\';
@@ -2077,7 +2077,7 @@ SkipToChar(
     int match)			/* Character to find. */
 {
     int quoted, level;
-    register char *p;
+    char *p;
 
     quoted = 0;
     level = 0;
@@ -2628,7 +2628,7 @@ Tcl_GetBlocksFromStat(
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     return (Tcl_WideUInt) statPtr->st_blocks;
 #else
-    register unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
+    unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
 
     return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
 #endif
