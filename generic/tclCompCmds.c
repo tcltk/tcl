@@ -2914,7 +2914,7 @@ DupForeachInfo(
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
-    register ForeachVarList *srcListPtr, *dupListPtr;
+    ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)ckalloc(sizeof(ForeachInfo)
@@ -2964,7 +2964,7 @@ FreeForeachInfo(
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *listPtr;
     int numLists = infoPtr->numLists;
-    register int i;
+    int i;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -3439,9 +3439,9 @@ TclPushVarName(
     int *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
-    register const char *p;
+    const char *p;
     const char *last, *name, *elName;
-    register int n;
+    int n;
     Tcl_Token *elemTokenPtr = NULL;
     int nameLen, elNameLen, simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;

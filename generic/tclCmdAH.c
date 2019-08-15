@@ -168,7 +168,7 @@ Tcl_CaseObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register int i;
+    int i;
     int body, result, caseObjc;
     const char *stringPtr, *arg;
     Tcl_Obj *const *caseObjv;
@@ -871,7 +871,7 @@ TclNREvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -2253,7 +2253,7 @@ StoreStatData(
 				 * store in varName. */
 {
     Tcl_Obj *field, *value;
-    register unsigned short mode;
+    unsigned short mode;
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
