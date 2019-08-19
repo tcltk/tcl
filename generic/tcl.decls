@@ -2496,7 +2496,7 @@ export {
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 export {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)

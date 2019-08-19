@@ -3722,7 +3722,9 @@ extern const TclStubs *tclStubsPtr;
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
+#ifndef USE_TCL_STUBS
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
+#endif
 #   define Tcl_MainEx Tcl_MainExW
     EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);

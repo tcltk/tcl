@@ -1448,14 +1448,15 @@ Tcl_UtfToExternal(
  *---------------------------------------------------------------------------
  */
 #undef Tcl_FindExecutable
-void
+const char *
 Tcl_FindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    TclInitSubsystems();
+    const char *version = TclInitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
+    return version;
 }
 
 /*

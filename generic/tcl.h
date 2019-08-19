@@ -2188,6 +2188,7 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
+const char *		TclInitStubTable(const char *version);
 #if defined(_WIN32)
     TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
 #else
@@ -2230,9 +2231,15 @@ EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-EXTERN void		Tcl_FindExecutable(const char *argv0);
-EXTERN void		Tcl_SetPanicProc(
+EXTERN const char *	Tcl_FindExecutable(const char *argv0);
+EXTERN const char *	Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+#ifdef USE_TCL_STUBS
+#define Tcl_SetPanicProc(panicProc) \
+    TclInitStubTable((Tcl_SetPanicProc)(panicProc))
+#define Tcl_FindExecutable(argv0) \
+    TclInitStubTable((Tcl_FindExecutable)((const char *)argv0))
+#endif
 EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 			    const char *pkgName,
 			    Tcl_PackageInitProc *initProc,
