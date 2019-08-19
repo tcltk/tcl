@@ -345,7 +345,9 @@ TOMMATH_OBJS = bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o \
-	tclStubLibDl.o \
+	tclStubFindExecutable.o \
+	tclStubInitSubsystems.o \
+	tclStubSetPanicProc.o \
 	tclStubLibTbl.o \
 	tclTomMathStubLib.o \
 	tclOOStubLib.o \
@@ -489,7 +491,9 @@ OO_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
-	$(GENERIC_DIR)/tclStubLibDl.c \
+	$(GENERIC_DIR)/tclStubFindExecutable.c \
+	$(GENERIC_DIR)/tclStubInitSubsystems.c \
+	$(GENERIC_DIR)/tclStubSetPanicProc.c \
 	$(GENERIC_DIR)/tclStubLibTbl.c \
 	$(GENERIC_DIR)/tclTomMathStubLib.c \
 	$(GENERIC_DIR)/tclOOStubLib.c
@@ -1825,8 +1829,14 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
 
-tclStubLibDl.o: $(GENERIC_DIR)/tclStubLibDl.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubLibDl.c
+tclStubFindExecutable.o: $(GENERIC_DIR)/tclStubFindExecutable.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubFindExecutable.c
+
+tclStubInitSubsystems.o: $(GENERIC_DIR)/tclStubInitSubsystems.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubInitSubsystems.c
+
+tclStubSetPanicProc.o: $(GENERIC_DIR)/tclStubSetPanicProc.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubSetPanicProc.c
 
 tclStubLibTbl.o: $(GENERIC_DIR)/tclStubLibTbl.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLibTbl.c

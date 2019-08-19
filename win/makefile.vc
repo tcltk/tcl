@@ -413,7 +413,9 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
-	$(TMP_DIR)\tclStubLibDl.obj \
+	$(TMP_DIR)\tclStubFindExecutable.obj \
+	$(TMP_DIR)\tclStubInitSubsystems.obj \
+	$(TMP_DIR)\tclStubSetPanicProc.obj \
 	$(TMP_DIR)\tclStubLibTbl.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj \
@@ -802,7 +804,13 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
-$(TMP_DIR)\tclStubLibDl.obj: $(GENERICDIR)\tclStubLibDl.c
+$(TMP_DIR)\tclStubFindExecutable.obj: $(GENERICDIR)\tclStubFindExecutable.c
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
+
+$(TMP_DIR)\tclStubInitSubsystems.obj: $(GENERICDIR)\tclStubInitSubsystems.c
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
+
+$(TMP_DIR)\tclStubSetPanicProc.obj: $(GENERICDIR)\tclStubSetPanicProc.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclStubLibTbl.obj: $(GENERICDIR)\tclStubLibTbl.c

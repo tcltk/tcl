@@ -455,7 +455,9 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
-	tclStubLibDl.$(OBJEXT) \
+	tclStubFindExecutable.$(OBJEXT) \
+	tclStubInitSubsystems.$(OBJEXT) \
+	tclStubSetPanicProc.$(OBJEXT) \
 	tclStubLibTbl.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT) \
@@ -622,8 +624,8 @@ tclWinInit.${OBJEXT}: tclWinInit.c
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
-testMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST @DEPARG@ $(CC_OBJNAME)
+tclAppInit.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(CC_OBJNAME)
 
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
@@ -671,7 +673,13 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 tclStubLib.${OBJEXT}: tclStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
-tclStubLibDl.${OBJEXT}: tclStubLibDl.c
+tclStubFindExecutable.${OBJEXT}: tclStubFindExecutable.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_DLL_FILE)\"" @DEPARG@ $(CC_OBJNAME)
+
+tclStubInitSubsystems.${OBJEXT}: tclStubInitSubsystems.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_DLL_FILE)\"" @DEPARG@ $(CC_OBJNAME)
+
+tclStubSetPanicProc.${OBJEXT}: tclStubSetPanicProc.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_DLL_FILE)\"" @DEPARG@ $(CC_OBJNAME)
 
 tclStubLibTbl.${OBJEXT}: tclStubLibTbl.c

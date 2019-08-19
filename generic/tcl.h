@@ -2225,21 +2225,16 @@ const char *		TclInitStubTable(const char *version);
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
+	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
 EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_FindExecutable(const char *argv0);
+EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN const char *	Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
-#ifdef USE_TCL_STUBS
-#define Tcl_SetPanicProc(panicProc) \
-    TclInitStubTable((Tcl_SetPanicProc)(panicProc))
-#define Tcl_FindExecutable(argv0) \
-    TclInitStubTable((Tcl_FindExecutable)((const char *)argv0))
-#endif
 EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 			    const char *pkgName,
 			    Tcl_PackageInitProc *initProc,
@@ -2247,6 +2242,18 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifndef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#endif
+extern const char *TclStubFindExecutable(const char *argv0);
+extern const char *TclStubInitSubsystems(void);
+extern const char *TclStubSetPanicProc(
+	    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+#ifdef USE_TCL_STUBS
+#define Tcl_FindExecutable(argv0) \
+    TclInitStubTable((TclStubFindExecutable)((const char *)argv0))
+#define Tcl_InitSubsystems() \
+    TclInitStubTable((TclStubInitSubsystems)())
+#define Tcl_SetPanicProc(panicProc) \
+    TclInitStubTable((TclStubSetPanicProc)(panicProc))
 #endif
 
 /*

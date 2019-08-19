@@ -532,7 +532,7 @@ declare 143 {
 }
 # Removed in 9.0 (stub entry only)
 #declare 144 {
-#    void Tcl_FindExecutable(const char *argv0)
+#    const char *Tcl_FindExecutable(const char *argv0)
 #}
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
@@ -2502,7 +2502,7 @@ export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 export {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,

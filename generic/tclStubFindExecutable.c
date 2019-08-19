@@ -17,12 +17,13 @@
 #else
 #   define dlopen(a,b) (void *)LoadLibrary(TEXT(a))
 #   define dlsym(a,b) (void *)GetProcAddress((HANDLE)(a),b)
+#   define dlerror() ""
 #endif
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SetPanicProc --
+ * Tcl_FindExecutable --
  *
  *	Load the Tcl core dynamically, version "9.0" (or higher, in future versions)
  *
@@ -35,30 +36,27 @@
  *----------------------------------------------------------------------
  */
 
+static const char PROCNAME[] = "_Tcl_FindExecutable";
+
 MODULE_SCOPE const char *
-Tcl_SetPanicProc(
-	TCL_NORETURN1 Tcl_PanicProc *panicProc)
+TclStubFindExecutable(
+    const char *argv0)
 {
-    static const char *(*setPanicProc)(TCL_NORETURN1 Tcl_PanicProc *) = NULL;
+    static const char *(*findExecutable)(const char *argv0) = NULL;
     static const char *version = NULL;
 
-    if (!setPanicProc) {
+    if (!findExecutable) {
 	void *handle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
 	if (!handle) {
-	    if (panicProc) {
-		panicProc("Cannot find " TCL_DLL_FILE);
-	    } else {
-		fprintf(stderr, "Cannot find " TCL_DLL_FILE);
-		abort();
-	    }
-	    return NULL;
+	    fprintf(stderr, "Cannot find " TCL_DLL_FILE ": %s\n", dlerror());
+	    abort();
 	}
-	setPanicProc = dlsym(handle, "Tcl_SetPanicProc");
-	if (!setPanicProc) {
-		setPanicProc = dlsym(handle, "_Tcl_SetPanicProc");
+	findExecutable = dlsym(handle, PROCNAME + 1);
+	if (!findExecutable) {
+		findExecutable = dlsym(handle, PROCNAME);
 	}
-	if (setPanicProc) {
-	    version = setPanicProc(panicProc);
+	if (findExecutable) {
+	    version = findExecutable(argv0);
 	}
     }
     return version;

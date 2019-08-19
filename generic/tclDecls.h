@@ -3711,16 +3711,6 @@ extern const TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
-#   undef Tcl_Init
-#   undef Tcl_ObjSetVar2
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
-#endif
-
 #if defined(_WIN32) && defined(UNICODE)
 #ifndef USE_TCL_STUBS
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
