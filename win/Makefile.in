@@ -96,7 +96,7 @@ COMPILE_DEBUG_FLAGS =
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd -W || pwd -P)
+TOP_DIR			= $(shell cd @srcdir@/..; pwd -W 2>/dev/null || pwd -P)
 GENERIC_DIR		= $(TOP_DIR)/generic
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 WIN_DIR			= $(TOP_DIR)/win
@@ -116,7 +116,7 @@ GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
-ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
+ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
@@ -432,7 +432,7 @@ all: binaries libraries doc packages
 # or from mingw/msys shell:
 #   $ ./tcltest -verbose bps -file fileName.test
 
-tcltest-cmd:
+tcltest.cmd: Makefile
 	@echo 'Create tcltest.cmd helpers';
 	@(\
 	  echo '@echo off'; \
@@ -452,10 +452,10 @@ tcltest-cmd:
 	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
 	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_PRMS)" "$$@"'; \
 	) > tcltest.sh;
-tcltest.sh: tcltest-cmd
-tcltest.cmd: tcltest-cmd
 
-tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest-cmd
+tcltest.sh: tcltest.cmd
+
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH)
 
@@ -760,13 +760,13 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
+test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "$(TEST_LOAD_FACILITIES)" | ./$(CAT32)
+	-load "$(TEST_LOAD_FACILITIES)"
 
 # Useful target to launch a built tclsh with the proper path,...
-runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
+runtest: tcltest
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
 
@@ -792,7 +792,7 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest
+	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
 	$(RM) *.pch *.ilk *.pdb
 
 distclean: distclean-packages clean
