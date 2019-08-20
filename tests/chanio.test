@@ -2,16 +2,16 @@
 # Functionality covered: operation of all IO commands, and all procedures
 # defined in generic/tclIO.c.
 #
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -38,13 +38,14 @@ namespace eval ::tcl::test::io {
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
     testConstraint testthread       [llength [info commands testthread]]
+    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
-    # You need a *very* special environment to do some tests.  In
-    # particular, many file systems do not support large-files...
+    # You need a *very* special environment to do some tests.  In particular,
+    # many file systems do not support large-files...
     testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
-    # some tests can only be run is umask is 2
-    # if "umask" cannot be run, the tests will be skipped.
+    # some tests can only be run is umask is 2 if "umask" cannot be run, the
+    # tests will be skipped.
     set umaskValue 0
     testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
 
@@ -117,10 +118,10 @@ test chan-io-1.8 {Tcl_WriteChars: WriteChars} {
     # applied to tcl will cause tcl, more specifically WriteChars, to
     # go into an infinite loop.
 
-    set f [open $path(test2) w] 
-    chan configure      $f -encoding iso2022-jp 
-    chan puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
-    chan close           $f 
+    set f [open $path(test2) w]
+    chan configure      $f -encoding iso2022-jp
+    chan puts -nonewline $f [format %s%c [string repeat " " 4] 12399]
+    chan close           $f
     contents $path(test2)
 } "    \x1b\$B\$O\x1b(B"
 
@@ -186,7 +187,7 @@ test chan-io-1.9 {Tcl_WriteChars: WriteChars} {
 
 test chan-io-2.1 {WriteBytes} {
     # loop until all bytes are written
-    
+
     set f [open $path(test1) w]
     chan configure $f  -encoding binary -buffersize 16 -translation crlf
     chan puts $f "abcdefghijklmnopqrstuvwxyz"
@@ -208,7 +209,7 @@ test chan-io-2.3 {WriteBytes: flush on line} {
     # Tcl "line" buffering has weird behavior: if current buffer contains
     # a \n, entire buffer gets flushed.  Logical behavior would be to flush
     # only up to the \n.
-    
+
     set f [open $path(test1) w]
     chan configure $f -encoding binary -buffering line -translation crlf
     chan puts -nonewline $f "\n12"
@@ -228,7 +229,7 @@ test chan-io-2.4 {WriteBytes: reset sawLF after each buffer} {
 
 test chan-io-3.1 {WriteChars: compatibility with WriteBytes} {
     # loop until all bytes are written
-    
+
     set f [open $path(test1) w]
     chan configure $f -encoding ascii -buffersize 16 -translation crlf
     chan puts $f "abcdefghijklmnopqrstuvwxyz"
@@ -250,7 +251,7 @@ test chan-io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} {
     # Tcl "line" buffering has weird behavior: if current buffer contains
     # a \n, entire buffer gets flushed.  Logical behavior would be to flush
     # only up to the \n.
-    
+
     set f [open $path(test1) w]
     chan configure $f -encoding ascii -buffering line -translation crlf
     chan puts -nonewline $f "\n12"
@@ -262,7 +263,7 @@ test chan-io-3.4 {WriteChars: loop over stage buffer} {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 16 
+    chan configure $f -encoding jis0208 -buffersize 16
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -274,7 +275,7 @@ test chan-io-3.5 {WriteChars: saved != 0} {
     # requested buffersize.
 
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 
+    chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -305,7 +306,7 @@ test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
     # of the next channel buffer.
 
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 
+    chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -375,7 +376,7 @@ test chan-io-4.5 {TranslateOutputEOL: crlf} {
 
 test chan-io-5.1 {CheckFlush: not full} {
     set f [open $path(test1) w]
-    chan configure $f 
+    chan configure $f
     chan puts -nonewline $f "12345678901234567890"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -464,7 +465,7 @@ set a "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 append a $a
 append a $a
 test chan-io-6.6 {Tcl_GetsObj: loop test} {
-    # if (dst >= dstEnd) 
+    # if (dst >= dstEnd)
 
     set f [open $path(test1) w]
     chan puts $f $a
@@ -763,7 +764,7 @@ test chan-io-6.32 {Tcl_GetsObj: crlf mode: buffer exhausted, more data} {testcha
 } [list 15 "123456789012345" 17 3]
 test chan-io-6.33 {Tcl_GetsObj: crlf mode: buffer exhausted, at eof} {
     # eol still equals dstEnd
-    
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456789012345\r"
@@ -775,8 +776,8 @@ test chan-io-6.33 {Tcl_GetsObj: crlf mode: buffer exhausted, at eof} {
     set x
 } [list 16 "123456789012345\r" 1]
 test chan-io-6.34 {Tcl_GetsObj: crlf mode: buffer exhausted, not followed by \n} {
-    # not (*eol == '\n') 
-    
+    # not (*eol == '\n')
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456789012345\rabcd\r\nefg"
@@ -883,7 +884,7 @@ test chan-io-6.43 {Tcl_GetsObj: input saw cr} {stdio testchannel openpipe fileev
     chan configure $f -buffersize 16
     set x [list [chan gets $f]]
     chan configure $f -blocking 0
-    lappend x [chan gets $f line] $line [testchannel queuedcr $f] 
+    lappend x [chan gets $f line] $line [testchannel queuedcr $f]
     chan configure $f -blocking 1
     chan puts -nonewline $f "\nabcd\refg\x1a"
     lappend x [chan gets $f line] $line [testchannel queuedcr $f]
@@ -892,7 +893,7 @@ test chan-io-6.43 {Tcl_GetsObj: input saw cr} {stdio testchannel openpipe fileev
     set x
 } [list "bbbbbbbbbbbbbbb" 15 "123456789abcdef" 1 4 "abcd" 0 3 "efg"]
 test chan-io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio testchannel openpipe fileevent} {
-    # not (*eol == '\n') 
+    # not (*eol == '\n')
 
     set f [open "|[list [interpreter] $path(cat)]" w+]
     chan configure $f -translation {auto lf} -buffering none
@@ -900,7 +901,7 @@ test chan-io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio testcha
     chan configure $f -buffersize 16
     set x [list [chan gets $f]]
     chan configure $f -blocking 0
-    lappend x [chan gets $f line] $line [testchannel queuedcr $f] 
+    lappend x [chan gets $f line] $line [testchannel queuedcr $f]
     chan configure $f -blocking 1
     chan puts -nonewline $f "abcd\refg\x1a"
     lappend x [chan gets $f line] $line [testchannel queuedcr $f]
@@ -953,10 +954,10 @@ test chan-io-6.47 {Tcl_GetsObj: auto mode: \r at end of buffer, peek for \n} {te
     set x [list [chan gets $f] [testchannel inputbuffered $f]]
     chan close $f
     set x
-} [list "123456789012345" 15]    
+} [list "123456789012345" 15]
 test chan-io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {testchannel} {
     # PeekAhead() did not get any, so (eol >= dstEnd)
-    
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456789012345\r"
@@ -969,7 +970,7 @@ test chan-io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {
 } [list "123456789012345" 1]
 test chan-io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} {testchannel} {
     # if (*eol == '\n') {skip++}
-    
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456\r\n78901"
@@ -980,8 +981,8 @@ test chan-io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} {testchannel} {
     set x
 } [list "123456" 0 8 "78901"]
 test chan-io-6.50 {Tcl_GetsObj: auto mode: \r not followed by \n} {testchannel} {
-    # not (*eol == '\n') 
-    
+    # not (*eol == '\n')
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456\r78901"
@@ -993,7 +994,7 @@ test chan-io-6.50 {Tcl_GetsObj: auto mode: \r not followed by \n} {testchannel} 
 } [list "123456" 0 7 "78901"]
 test chan-io-6.51 {Tcl_GetsObj: auto mode: \n} {
     # else if (*eol == '\n') {goto gotoeol;}
-    
+
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456\n78901"
@@ -1086,7 +1087,7 @@ test chan-io-7.1 {FilterInputBytes: split up character at end of buffer} {
 } "1234567890123\uff10\uff11\uff12\uff13\uff14"
 test chan-io-7.2 {FilterInputBytes: split up character in middle of buffer} {
     # (bufPtr->nextAdded < bufPtr->bufLength)
-    
+
     set f [open $path(test1) w]
     chan configure $f -encoding binary
     chan puts -nonewline $f "1234567890\n123\x82\x4f\x82\x50\x82"
@@ -1195,7 +1196,7 @@ test chan-io-8.4 {PeekAhead: cached data available in this buffer} {
 
     set x [chan gets $f]
     chan close $f
-    set x    
+    set x
 } $a
 unset a
 test chan-io-8.5 {PeekAhead: don't peek if last read was short} {stdio testchannel openpipe fileevent} {
@@ -1211,7 +1212,7 @@ test chan-io-8.5 {PeekAhead: don't peek if last read was short} {stdio testchann
     set x
 } {15 abcdefghijklmno 1}
 test chan-io-8.6 {PeekAhead: change to non-blocking mode} {stdio testchannel openpipe fileevent} {
-    # ((chanPtr->flags & CHANNEL_NONBLOCKING) == 0) 
+    # ((chanPtr->flags & CHANNEL_NONBLOCKING) == 0)
 
     set f [open "|[list [interpreter] $path(cat)]" w+]
     chan configure $f -translation {auto binary} -buffersize 16
@@ -1469,7 +1470,7 @@ test chan-io-13.2 {TranslateInputEOL: crlf mode} {
     set x
 } "abcd\ndef\n"
 test chan-io-13.3 {TranslateInputEOL: crlf mode: naked cr} {
-    # (src >= srcMax) 
+    # (src >= srcMax)
 
     set f [open $path(test1) w]
     chan configure $f -translation lf
@@ -1482,7 +1483,7 @@ test chan-io-13.3 {TranslateInputEOL: crlf mode: naked cr} {
     set x
 } "abcd\ndef\r"
 test chan-io-13.4 {TranslateInputEOL: crlf mode: cr followed by not \n} {
-    # (src >= srcMax) 
+    # (src >= srcMax)
 
     set f [open $path(test1) w]
     chan configure $f -translation lf
@@ -1495,7 +1496,7 @@ test chan-io-13.4 {TranslateInputEOL: crlf mode: cr followed by not \n} {
     set x
 } "abcd\ndef\rfgh"
 test chan-io-13.5 {TranslateInputEOL: crlf mode: naked lf} {
-    # (src >= srcMax) 
+    # (src >= srcMax)
 
     set f [open $path(test1) w]
     chan configure $f -translation lf
@@ -1571,7 +1572,7 @@ test chan-io-13.9 {TranslateInputEOL: auto mode: \r followed by not \n} {
     set x
 } "abcd\ndef"
 test chan-io-13.10 {TranslateInputEOL: auto mode: \n} {
-    # not (*src == '\r') 
+    # not (*src == '\r')
 
     set f [open $path(test1) w]
     chan configure $f -translation lf
@@ -1920,7 +1921,7 @@ test chan-io-20.1 {Tcl_CreateChannel: initial settings} {
     encoding system $old
 	chan close $a
     set x
-} {ascii}    
+} {ascii}
 test chan-io-20.2 {Tcl_CreateChannel: initial settings} {win} {
     set f [open $path(test1) w+]
     set x [list [chan configure $f -eofchar] [chan configure $f -translation]]
@@ -2015,7 +2016,7 @@ test chan-io-26.1 {Tcl_GetChannelInstanceData} {stdio openpipe} {
     set f [open "|[list [interpreter] << exit]"]
     expr [pid $f]
     chan close $f
-} {}    
+} {}
 
 # Test flushing. The functions tested here are FlushChannel.
 
@@ -2736,7 +2737,7 @@ test chan-io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     chan close $f
     set r
 } "hello\nbye\nstrange\n"
-test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} {socket tempNotMac fileevent} {
+test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} {socket tempNotMac fileevent knownMsvcBug} {
     variable c 0
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
@@ -2755,7 +2756,6 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} {s
 	variable c
 	variable x
 	set l [chan gets $s]
-
 	if {[chan eof $s]} {
 	    chan close $s
 	    set x done
@@ -2887,7 +2887,7 @@ test chan-io-30.6 {Tcl_Write cr, Tcl_Read crlf} {
     chan configure $f -translation crlf
     set x [chan read $f]
     chan close $f
-    set x 
+    set x
 } "hello\rthere\rand\rhere\r"
 test chan-io-30.7 {Tcl_Write crlf, Tcl_Read crlf} {
     file delete $path(test1)
@@ -3815,7 +3815,7 @@ test chan-io-31.31 {Tcl_Write crlf on block boundary, Tcl_Gets crlf} {
     }
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf 
+    chan configure $f -translation crlf
     set c ""
     while {[chan gets $f line] >= 0} {
 	append c $line\n
@@ -5044,7 +5044,7 @@ test chan-io-39.13 {Tcl_SetChannelOption, Tcl_GetChannelOption, buffer size} {
 test chan-io-39.14 {Tcl_SetChannelOption: -encoding, binary & utf-8} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    chan configure $f -encoding {} 
+    chan configure $f -encoding {}
     chan puts -nonewline $f \xe7\x89\xa6
     chan close $f
     set f [open $path(test1) r]
@@ -5837,7 +5837,7 @@ test chan-io-48.3 {testing readability conditions} {stdio unix nonBlockFiles ope
     list $x $l
 } {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
 unset path(bar)
-removeFile bar 
+removeFile bar
 
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {fileevent} {
     file delete $path(test1)
