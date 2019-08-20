@@ -99,7 +99,7 @@ MAN2TCLFLAGS =		@MAN2TCLFLAGS@
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd -W || pwd -P)
+TOP_DIR			= $(shell cd @srcdir@/..; pwd -W 2>/dev/null || pwd -P)
 GENERIC_DIR		= $(TOP_DIR)/generic
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 WIN_DIR			= $(TOP_DIR)/win
@@ -117,7 +117,7 @@ GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
-ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
+ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
 #WIN_DIR_NATIVE		= $(WIN_DIR)
