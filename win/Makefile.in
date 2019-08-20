@@ -397,7 +397,7 @@ all: binaries libraries doc
 # or from mingw/msys shell:
 #   $ ./tcltest -verbose bps -file fileName.test
 
-tcltest-cmd:
+tcltest.cmd: Makefile
 	@echo 'Create tcltest.cmd helpers';
 	@(\
 	  echo '@echo off'; \
@@ -417,10 +417,10 @@ tcltest-cmd:
 	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
 	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_PRMS)" "$$@"'; \
 	) > tcltest.sh;
-tcltest.sh: tcltest-cmd
-tcltest.cmd: tcltest-cmd
 
-tcltest: binaries $(TEST_EXE_FILE) tcltest-cmd
+tcltest.sh: tcltest.cmd
+
+tcltest: binaries $(TEST_EXE_FILE) $(CAT32) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH)
 
@@ -709,13 +709,13 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: binaries $(TCLSH) $(TEST_EXE_FILE)
+test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TEST_EXE_FILE) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "$(TEST_LOAD_FACILITIES)"
 
 # Useful target to launch a built tclsh with the proper path,...
-runtest: binaries $(TCLSH) $(TEST_EXE_FILE)
+runtest: tcltest
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TEST_EXE_FILE) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
 
@@ -741,7 +741,7 @@ cleanhelp:
 
 clean: cleanhelp
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) tcltest.cmd tcltest
+	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) tcltest.cmd tcltest.sh
 	$(RM) *.pch *.ilk *.pdb
 
 distclean: clean
