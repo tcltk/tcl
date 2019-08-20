@@ -805,16 +805,16 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclStubFindExecutable.obj: $(GENERICDIR)\tclStubFindExecutable.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl90.dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclStubInitSubsystems.obj: $(GENERICDIR)\tclStubInitSubsystems.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl90.dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclStubSetPanicProc.obj: $(GENERICDIR)\tclStubSetPanicProc.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl90.dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclStubLibTbl.obj: $(GENERICDIR)\tclStubLibTbl.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
