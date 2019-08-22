@@ -113,7 +113,7 @@ static int		ToUtf(CONST WCHAR *wSrc, char *dst);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals,
+ *	Initialize all the platform-dependent things like signals,
  *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.

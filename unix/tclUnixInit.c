@@ -401,7 +401,7 @@ long tclMacOSXDarwinRelease = 0;
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals and
+ *	Initialize all the platform-dependent things like signals and
  *	floating-point error handling.
  *
  *	Called at process initialization time.
