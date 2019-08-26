@@ -411,7 +411,7 @@ struct guts {
 #ifndef AllocVars
 #define AllocVars(vPtr) \
     struct vars var; \
-    register struct vars *vPtr = &var
+    struct vars *vPtr = &var
 #endif
 #ifndef FreeVars
 #define FreeVars(vPtr) ((void) 0)

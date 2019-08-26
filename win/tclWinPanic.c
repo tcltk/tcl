@@ -42,14 +42,14 @@ Tcl_ConsolePanic(
     va_start(argList, format);
     vsnprintf(buf+3, sizeof(buf)-3, format, argList);
     buf[sizeof(buf)-1] = 0;
-    msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+    msgString[TCL_MAX_WARN_LEN-1] = '\0';
     MultiByteToWideChar(CP_UTF8, 0, buf+3, -1, msgString, TCL_MAX_WARN_LEN);
 
     /*
      * Truncate MessageBox string if it is too long to not overflow the buffer.
      */
 
-    if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+    if (msgString[TCL_MAX_WARN_LEN-1] != '\0') {
 	memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
     }
 

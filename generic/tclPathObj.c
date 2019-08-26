@@ -2242,7 +2242,7 @@ SetFsPathFromAny(
     int len;
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
-    char *name;
+    const char *name;
 
     if (TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
@@ -2501,7 +2501,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    register Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     int cwdLen;

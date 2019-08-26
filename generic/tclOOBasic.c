@@ -426,7 +426,7 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    register const int skip = Tcl_ObjectContextSkippedArgs(context);
+    const int skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
@@ -1122,7 +1122,7 @@ TclOOSelfObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
-	    register struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
+	    struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
 	    Object *oPtr;
 	    const char *type;
 

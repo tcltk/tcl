@@ -124,7 +124,7 @@ static struct {
     int initialized;		/* 1 if initialized, 0 otherwise */
     int perfCounter;		/* 1 if performance counter usable for wide clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
-} wideClick = {0, 0.0};
+} wideClick = {0, 0, 0.0};
 
 
 /*
@@ -198,7 +198,7 @@ TclpGetSeconds(void)
  *	This procedure returns a value that represents the highest resolution
  *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
- *	start time is also system dependant.
+ *	start time is also system dependent.
  *
  * Results:
  *	Number of clicks from some start time.

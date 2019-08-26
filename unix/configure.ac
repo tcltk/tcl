@@ -89,8 +89,8 @@ AC_C_INLINE
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
-#	- stdlib.h doesn't define strtol, strtoul, or
-#	  strtod insome versions of SunOS
+#	- stdlib.h doesn't define strtol or strtoul in some versions
+#	  of SunOS
 #	- some versions of string.h don't declare procedures such
 #	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure
@@ -677,7 +677,7 @@ AC_MSG_RESULT([$tcl_ok])
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
-#	be overriden on the configure command line either way.
+#	be overridden on the configure command line either way.
 #------------------------------------------------------------------------
 
 AC_MSG_CHECKING([for timezone data])
