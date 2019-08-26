@@ -1368,7 +1368,7 @@ MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
  */
 
 #define TCL_TSD_INIT(keyPtr) \
-	Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
+	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
 /*
  *----------------------------------------------------------------
@@ -4256,7 +4256,6 @@ MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 #ifdef USE_DTRACE
 #ifndef _TCLDTRACE_H
-typedef const char *TclDTraceStr;
 #include "tclDTrace.h"
 #endif
 #define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)

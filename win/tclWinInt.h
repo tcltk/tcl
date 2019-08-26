@@ -58,9 +58,9 @@ MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
 MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const WCHAR *name,
 			    DWORD access);
-MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
-			    const TCHAR *LinkCopy);
-MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR *LinkOriginal,
+MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const WCHAR *LinkOriginal,
+			    const WCHAR *LinkCopy);
+MODULE_SCOPE int	TclWinSymLinkDelete(const WCHAR *LinkOriginal,
 			    int linkOnly);
 MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
 

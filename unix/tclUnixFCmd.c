@@ -1313,8 +1313,8 @@ CopyFileAtts(
 	}
     }
 
-    tval.actime = statBufPtr->st_atime;
-    tval.modtime = statBufPtr->st_mtime;
+    tval.actime = Tcl_GetAccessTimeFromStat(statBufPtr);
+    tval.modtime = Tcl_GetModificationTimeFromStat(statBufPtr);
 
     if (utime(dst, &tval)) {				/* INTL: Native. */
 	return TCL_ERROR;
