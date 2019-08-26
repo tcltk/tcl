@@ -202,8 +202,8 @@ static const Tcl_ChannelType consoleChannelType = {
  *
  * ReadConsoleBytes, WriteConsoleBytes --
  *
- *	Wrapper for ReadConsole{A,W}, that takes and returns number of bytes
- *	instead of number of TCHARS.
+ *	Wrapper for ReadConsoleW, that takes and returns number of bytes
+ *	instead of number of WCHARS.
  *
  *----------------------------------------------------------------------
  */
@@ -217,7 +217,6 @@ ReadConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
     /*
      * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return
@@ -230,11 +229,11 @@ ReadConsoleBytes(
      * will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+        result = ReadConsole(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
                              NULL);
     } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
-	*nbytesread = ntchars * tcharsize;
+	*nbytesread = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -248,12 +247,11 @@ WriteConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
-    result = WriteConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+    result = WriteConsole(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
 	    NULL);
     if (nbyteswritten != NULL) {
-	*nbyteswritten = ntchars * tcharsize;
+	*nbyteswritten = ntchars * sizeof(WCHAR);
     }
     return result;
 }

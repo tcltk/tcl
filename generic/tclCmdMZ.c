@@ -1664,7 +1664,7 @@ StringIsCmd(
 	    const char *elemStart, *nextElem;
 	    int lenRemain;
 	    size_t elemSize;
-	    register const char *p;
+	    const char *p;
 
 	    string1 = TclGetStringFromObj(objPtr, &length1);
 	    end = string1 + length1;
@@ -1845,7 +1845,7 @@ StringIsCmd(
 	    const char *elemStart, *nextElem;
 	    size_t lenRemain;
 	    size_t elemSize;
-	    register const char *p;
+	    const char *p;
 
 	    string1 = TclGetStringFromObj(objPtr, &length1);
 	    end = string1 + length1;
@@ -4071,9 +4071,9 @@ Tcl_TimeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     Tcl_Obj *objs[4];
-    register int i, result;
+    int i, result;
     int count;
     double totalMicroSec;
 #ifndef TCL_WIDE_CLICKS
@@ -4172,8 +4172,8 @@ Tcl_TimeRateObjCmd(
     static double measureOverhead = 0;
 				/* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
-    register Tcl_Obj *objPtr;
-    register int result, i;
+    Tcl_Obj *objPtr;
+    int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideUInt count = 0;	/* Holds repetition count */
     Tcl_WideInt maxms = WIDE_MIN;
@@ -4187,7 +4187,7 @@ Tcl_TimeRateObjCmd(
 				 * zero (i.e., never < 1) */
     unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
 				 * growth of execution time. */
-    register Tcl_WideInt start, middle, stop;
+    Tcl_WideInt start, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
 #endif /* !TCL_WIDE_CLICKS */
@@ -4199,7 +4199,6 @@ Tcl_TimeRateObjCmd(
     };
     NRE_callback *rootPtr;
     ByteCode *codePtr = NULL;
-    int codeOptimized = 0;
 
     for (i = 1; i < objc - 1; i++) {
 	int index;
@@ -4384,15 +4383,6 @@ Tcl_TimeRateObjCmd(
 	}
 	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
 	TclPreserveByteCode(codePtr);
-	/*
-	 * Replace last compiled done instruction with continue: it's a part of
-	 * iteration, this way evaluation will be more similar to a cycle (also
-	 * avoids extra overhead to set result to interp, etc.)
-	 */
-	if (codePtr->codeStart[codePtr->numCodeBytes-1] == INST_DONE) {
-	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_CONTINUE;
-	    codeOptimized = 1;
-	}
     }
 
     /*
@@ -4434,6 +4424,12 @@ Tcl_TimeRateObjCmd(
 	    count++;
 	    if (!direct) {		/* precompiled */
 		rootPtr = TOP_CB(interp);
+		/*
+		 * Use loop optimized TEBC call (TCL_EVAL_DISCARD_RESULT): it's a part of
+		 * iteration, this way evaluation will be more similar to a cycle (also
+		 * avoids extra overhead to set result to interp, etc.)
+		 */
+		((Interp *)interp)->evalFlags |= TCL_EVAL_DISCARD_RESULT;
 		result = TclNRExecuteByteCode(interp, codePtr);
 		result = TclNRRunCallbacks(interp, result, rootPtr);
 	    } else {			/* eval */
@@ -4686,11 +4682,6 @@ Tcl_TimeRateObjCmd(
 
   done:
     if (codePtr != NULL) {
-	if ( codeOptimized
-	  && codePtr->codeStart[codePtr->numCodeBytes-1] == INST_CONTINUE
-	) {
-	    codePtr->codeStart[codePtr->numCodeBytes-1] = INST_DONE;
-	}
 	TclReleaseByteCode(codePtr);
     }
     return result;

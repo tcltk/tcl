@@ -1571,7 +1571,7 @@ NativeIsComPort(
 	 * The 4th character must be a digit 1..9
 	 */
 
-	if ((p[3] < L'1') || (p[3] > L'9')) {
+	if ((p[3] < '1') || (p[3] > '9')) {
 	    return 0;
 	}
 	return 1;

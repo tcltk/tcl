@@ -91,7 +91,6 @@ struct smalldfa {
     struct sset *outsarea[FEWSTATES*2 * FEWCOLORS];
     struct arcp incarea[FEWSTATES*2 * FEWCOLORS];
 };
-#define	DOMALLOC	((struct smalldfa *)NULL)	/* force malloc */
 
 /*
  * Internal variables, bundled for easy passing around.
@@ -295,7 +294,7 @@ getsubdfa(struct vars * v,
 	  struct subre * t)
 {
     if (v->subdfas[t->id] == NULL) {
-	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, DOMALLOC);
+	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, NULL);
 	if (ISERR())
 	    return NULL;
     }

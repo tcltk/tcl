@@ -789,7 +789,7 @@ MyDeleted(
     ClientData clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
 {
-    register Object *oPtr = clientData;
+    Object *oPtr = clientData;
 
     oPtr->myCommand = NULL;
 }
@@ -1652,7 +1652,7 @@ Tcl_NewObjectInstance(
     int skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
-    register Class *classPtr = (Class *) cls;
+    Class *classPtr = (Class *) cls;
     Object *oPtr;
     ClientData clientData[4];
 
@@ -1722,7 +1722,7 @@ TclNRNewObjectInstance(
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
 {
-    register Class *classPtr = (Class *) cls;
+    Class *classPtr = (Class *) cls;
     CallContext *contextPtr;
     Tcl_InterpState state;
     Object *oPtr;
@@ -2656,7 +2656,7 @@ TclOOObjectCmdCore(
 
     methodNamePtr = objv[1];
     if (oPtr->mapMethodNameProc != NULL) {
-	register Class **startClsPtr = &startCls;
+	Class **startClsPtr = &startCls;
 	Tcl_Obj *mappedMethodName = Tcl_DuplicateObj(methodNamePtr);
 
 	result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
@@ -2715,7 +2715,7 @@ TclOOObjectCmdCore(
     if (startCls != NULL) {
 	for (; contextPtr->index < contextPtr->callPtr->numChain;
 		contextPtr->index++) {
-	    register struct MInvoke *miPtr =
+	    struct MInvoke *miPtr =
 		    &contextPtr->callPtr->chain[contextPtr->index];
 
 	    if (miPtr->isFilter) {
@@ -2853,7 +2853,7 @@ TclNRObjectContextInvokeNext(
     Tcl_Obj *const *objv,
     int skip)
 {
-    register CallContext *contextPtr = (CallContext *) context;
+    CallContext *contextPtr = (CallContext *) context;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*

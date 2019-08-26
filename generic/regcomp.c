@@ -511,7 +511,7 @@ freev(
     struct vars *v,
     int err)
 {
-    register int ret;
+    int ret;
 
     if (v->re != NULL) {
 	rfree(v->re);

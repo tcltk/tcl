@@ -1342,7 +1342,7 @@ Tcl_ConvertElement(
 
 size_t
 Tcl_ConvertCountedElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1375,7 +1375,7 @@ Tcl_ConvertCountedElement(
 
 size_t
 TclConvertElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */

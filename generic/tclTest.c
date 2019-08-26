@@ -29,11 +29,6 @@
 #include "tclRegexp.h"
 
 /*
- * Required for TestlocaleCmd
- */
-#include <locale.h>
-
-/*
  * Required for the TestChannelCmd and TestChannelEventCmd
  */
 #include "tclIO.h"
@@ -2399,11 +2394,11 @@ ExitProcOdd(
     void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "odd %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
+    sprintf(buf, "odd %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
@@ -2413,11 +2408,11 @@ ExitProcEven(
     void *clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "even %" TCL_Z_MODIFIER "d\n", (size_t)PTR2INT(clientData));
+    sprintf(buf, "even %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
@@ -5173,7 +5168,7 @@ TestbytestringObjCmd(
 static int
 TestsetCmd(
     void *data,		/* Additional flags for Get/SetVar2. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5205,7 +5200,7 @@ TestsetCmd(
 static int
 Testset2Cmd(
     void *data,		/* Additional flags for Get/SetVar2. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5256,7 +5251,7 @@ Testset2Cmd(
 static int
 TestsaveresultCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
@@ -5383,7 +5378,7 @@ TestsaveresultFree(
 static int
 TestmainthreadCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5444,7 +5439,7 @@ MainLoop(void)
 static int
 TestsetmainloopCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5473,7 +5468,7 @@ TestsetmainloopCmd(
 static int
 TestexitmainloopCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
