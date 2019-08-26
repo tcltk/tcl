@@ -471,8 +471,8 @@ test utf-25.1 {Tcl_UniCharNcasecmp} -constraints teststringobj \
     -body {
 	teststringobj set 1 a
 	teststringobj set 2 b
-	teststringobj getunicode 1
-	teststringobj getunicode 2
+	teststringobj maxchars 1
+	teststringobj maxchars 2
 	string compare -nocase [teststringobj get 1] [teststringobj get 2]
     } \
     -cleanup {
@@ -486,8 +486,8 @@ test utf-25.2 {Tcl_UniCharNcasecmp} -constraints teststringobj \
     -body {
 	teststringobj set 1 b
 	teststringobj set 2 a
-	teststringobj getunicode 1
-	teststringobj getunicode 2
+	teststringobj maxchars 1
+	teststringobj maxchars 2
 	string compare -nocase [teststringobj get 1] [teststringobj get 2]
     } \
     -cleanup {
@@ -501,8 +501,8 @@ test utf-25.3 {Tcl_UniCharNcasecmp} -constraints teststringobj \
     -body {
 	teststringobj set 1 B
 	teststringobj set 2 a
-	teststringobj getunicode 1
-	teststringobj getunicode 2
+	teststringobj maxchars 1
+	teststringobj maxchars 2
 	string compare -nocase [teststringobj get 1] [teststringobj get 2]
     } \
     -cleanup {
@@ -517,8 +517,8 @@ test utf-25.4 {Tcl_UniCharNcasecmp} -constraints teststringobj \
     -body {
 	teststringobj set 1 aBcB
 	teststringobj set 2 abca
-	teststringobj getunicode 1
-	teststringobj getunicode 2
+	teststringobj maxchars 1
+	teststringobj maxchars 2
 	string compare -nocase [teststringobj get 1] [teststringobj get 2]
     } \
     -cleanup {

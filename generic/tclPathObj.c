@@ -2503,7 +2503,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    register Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     size_t cwdLen;

@@ -1872,8 +1872,8 @@ TclCompileSwitchCmd(
      */
 
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
-	register size_t size = tokenPtr[1].size;
-	register const char *chrs = tokenPtr[1].start;
+	size_t size = tokenPtr[1].size;
+	const char *chrs = tokenPtr[1].start;
 
 	/*
 	 * We only process literal options, and we assume that -e, -g and -n
@@ -2612,7 +2612,7 @@ PrintJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
@@ -2641,7 +2641,7 @@ DisassembleJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = clientData;
     Tcl_Obj *mapping = Tcl_NewObj();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
