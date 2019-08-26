@@ -18161,7 +18161,7 @@ echo "${ECHO_T}$tcl_ok" >&6
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
-#	be overriden on the configure command line either way.
+#	be overridden on the configure command line either way.
 #------------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for timezone data" >&5

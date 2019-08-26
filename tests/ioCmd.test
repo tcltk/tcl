@@ -25,6 +25,7 @@ package require tcltests
 
 # Custom constraints used in this file
 testConstraint testchannel	[llength [info commands testchannel]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 #----------------------------------------------------------------------
 
@@ -792,7 +793,7 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
     rename foo {}
     set res
 } -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
-test iocmd-21.20 {Bug 88aef05cda} -setup {
+test iocmd-21.20 {Bug 88aef05cda} -constraints knownMsvcBug -setup {
     proc foo {method chan args} {
 	switch -- $method blocking {
 	    chan configure $chan -blocking [lindex $args 0]
@@ -1985,7 +1986,7 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
     note [fileevent $c readable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    set stop [after 15000 {note TIMEOUT}]
     after  1000 {note [chan postevent $c r]}
     vwait ::res
     catch {after cancel $stop}
@@ -1998,7 +1999,7 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
     note [fileevent $c writable {note TOCK}]
-    set stop [after 10000 {note TIMEOUT}]
+    set stop [after 15000 {note TIMEOUT}]
     after  1000 {note [chan postevent $c w]}
     vwait ::res
     catch {after cancel $stop}

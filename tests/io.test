@@ -43,6 +43,7 @@ testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -2228,7 +2229,7 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
-	{stdio asyncPipeClose openpipe} {
+	{stdio asyncPipeClose openpipe knownMsvcBug} {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -2832,7 +2833,7 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
     set result
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
-	{stdio asyncPipeClose openpipe} {
+	{stdio asyncPipeClose openpipe knownMsvcBug} {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
