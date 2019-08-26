@@ -305,10 +305,56 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc test'
+# Test on Windows with GCC native
+    - name: "Windows/GCC/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Shared: UTF_MAX=6"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Shared: UTF_MAX=3"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Static"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --disable-shared"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-symbols"
+      before_install:
+        - choco install make
+        - cd ${BUILD_DIR}
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME
+  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
