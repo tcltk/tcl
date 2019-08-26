@@ -413,7 +413,7 @@ TclCreatePipeline(
 				 * at *inPipePtr. NULL means command specified
 				 * its own input source. */
     TclFile *outPipePtr,	/* If non-NULL, output to the pipeline goes to
-				 * a pipe, unless overriden by redirection in
+				 * a pipe, unless overridden by redirection in
 				 * the command. The file id with which to read
 				 * frome this pipe is stored at *outPipePtr.
 				 * NULL means command specified its own output

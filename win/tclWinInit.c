@@ -113,7 +113,7 @@ static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals,
+ *	Initialize all the platform-dependent things like signals,
  *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.
