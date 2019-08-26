@@ -324,7 +324,7 @@ matrix:
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: UTF_MAX=6"
+    - name: "Windows/GCC/Shared: UTF_MAX=3"
       os: windows
       compiler: gcc
       env:
