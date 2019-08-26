@@ -347,7 +347,7 @@ TclMacOSXSetFileAttribute(
 	    Tcl_DStringAppend(&ds, native, -1);
 	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
 
-	    result = truncate(Tcl_DStringValue(&ds), (off_t)0);
+	    result = truncate(Tcl_DStringValue(&ds), 0);
 	    if (result != 0) {
 		/*
 		 * truncate() on a valid resource fork path may fail with a
@@ -690,7 +690,7 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    register Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
     const int size = TCL_UTF_MAX * 4;
