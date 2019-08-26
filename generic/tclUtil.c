@@ -943,8 +943,8 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
+    const char *src,	/* String to convert to list element. */
+    int *flagPtr)	/* Where to store information to guide
 				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
@@ -1323,9 +1323,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1353,7 +1353,7 @@ Tcl_ConvertElement(
 
 int
 Tcl_ConvertCountedElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1386,7 +1386,7 @@ Tcl_ConvertCountedElement(
 
 int
 TclConvertElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -4192,7 +4192,7 @@ TclCheckBadOctal(
 				 * errors. */
     const char *value)		/* String to check. */
 {
-    register const char *p = value;
+    const char *p = value;
 
     /*
      * A frequent mistake is invalid octal values due to an unwanted leading
