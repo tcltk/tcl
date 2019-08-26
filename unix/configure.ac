@@ -677,7 +677,7 @@ AC_MSG_RESULT([$tcl_ok])
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
-#	be overriden on the configure command line either way.
+#	be overridden on the configure command line either way.
 #------------------------------------------------------------------------
 
 AC_MSG_CHECKING([for timezone data])

@@ -96,7 +96,7 @@ typedef struct {
 
 /*
  * The following structure is used to set or get the serial port attributes in
- * a platform-independant manner.
+ * a platform-independent manner.
  */
 
 typedef struct {
