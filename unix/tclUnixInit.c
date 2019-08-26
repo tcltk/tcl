@@ -9,8 +9,6 @@
  */
 
 #include "tclInt.h"
-#include <stddef.h>
-#include <locale.h>
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
@@ -1000,7 +998,7 @@ TclpFindVariable(
 				 * searches). */
 {
     size_t i, result = TCL_IO_FAILURE;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);

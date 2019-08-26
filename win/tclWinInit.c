@@ -629,7 +629,7 @@ TclpFindVariable(
 				 * searches). */
 {
     size_t i, length, result = TCL_IO_FAILURE;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 

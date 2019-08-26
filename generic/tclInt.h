@@ -64,12 +64,12 @@
 #else
 #include <string.h>
 #endif
-#if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
-     || defined(__cplusplus) || defined(_MSC_VER) || defined(__ICC)
-#include <stddef.h>
-#else
+#if !defined(STDC_HEADERS) && !defined(__STDC__) && !defined(__C99__FUNC__) \
+     && !defined(__cplusplus) && !defined(_MSC_VER) && !defined(__ICC)
 typedef int ptrdiff_t;
 #endif
+#include <stddef.h>
+#include <locale.h>
 
 /*
  * Ensure WORDS_BIGENDIAN is defined correctly:
@@ -2197,6 +2197,7 @@ typedef struct Interp {
 #define TCL_EVAL_FILE			0x02
 #define TCL_EVAL_SOURCE_IN_FRAME	0x10
 #define TCL_EVAL_NORESOLVE		0x20
+#define TCL_EVAL_DISCARD_RESULT		0x40
 
 /*
  * Flag bits for Interp structures:
@@ -3278,9 +3279,9 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 #if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
 MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
 MODULE_SCOPE char *	TclWCharToUtfDString(const WCHAR *uniStr,
-			    int uniLength, Tcl_DString *dsPtr);
+			    size_t uniLength, Tcl_DString *dsPtr);
 MODULE_SCOPE WCHAR * TclUtfToWCharDString(const char *src,
-			    int length, Tcl_DString *dsPtr);
+			    size_t length, Tcl_DString *dsPtr);
 #else
 #   define TclUtfToWChar TclUtfToUniChar
 #   define TclWCharToUtfDString Tcl_UniCharToUtfDString
@@ -4584,8 +4585,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclUnpackBignum(objPtr, bignum) \
     do {								\
-	register Tcl_Obj *bignumObj = (objPtr);				\
-	register int bignumPayload =					\
+	Tcl_Obj *bignumObj = (objPtr);				\
+	int bignumPayload =					\
 		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \

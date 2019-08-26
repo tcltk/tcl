@@ -269,14 +269,15 @@ Tcl_UniCharToUtfDString(
 char *
 TclWCharToUtfDString(
     const WCHAR *uniStr,	/* WCHAR string to convert to UTF-8. */
-    int uniLength,		/* Length of WCHAR string in Tcl_UniChars
+    size_t uniLength,		/* Length of WCHAR string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
     const WCHAR *w, *wEnd;
     char *p, *string;
-    int oldLength, len = 1;
+    size_t oldLength;
+    int len = 1;
 
     /*
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
@@ -636,7 +637,7 @@ Tcl_UtfToUniCharDString(
 WCHAR *
 TclUtfToWCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    int length,			/* Length of UTF-8 string in bytes, or -1 for
+    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -644,14 +645,14 @@ TclUtfToWCharDString(
 {
     WCHAR ch = 0, *w, *wString;
     const char *p, *end;
-    int oldLength;
+    size_t oldLength;
 
-    if (length < 0) {
+    if (length == TCL_AUTO_LENGTH) {
 	length = strlen(src);
     }
 
     /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * Unicode string length in WCHARs will be <= UTF-8 string length in
      * bytes.
      */
 
@@ -1054,7 +1055,7 @@ Tcl_UtfAtIndex(
  *
  * Results:
  *	Stores the bytes represented by the backslash sequence in dst and
- *	returns the number of bytes written to dst. At most TCL_UTF_MAX bytes
+ *	returns the number of bytes written to dst. At most 4 bytes
  *	are written to dst; dst must have been large enough to accept those
  *	bytes. If readPtr isn't NULL then it is filled in with a count of the
  *	number of bytes in the backslash sequence.

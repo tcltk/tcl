@@ -218,7 +218,7 @@ CreateLiteral(
 	     */
 
 	    size_t objLength;
-	    char *objBytes = TclGetStringFromObj(objPtr, &objLength);
+	    const char *objBytes = TclGetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])

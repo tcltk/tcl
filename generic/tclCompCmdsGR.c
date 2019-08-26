@@ -582,7 +582,7 @@ TclCompileInfoCommandsCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
-    char *bytes;
+    const char *bytes;
 
     /*
      * We require one compile-time known argument for the case we can compile.
