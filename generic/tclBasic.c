@@ -33,20 +33,33 @@
  */
 
 #ifndef TCL_FPCLASSIFY_MODE
+#if defined(__MINGW32__) && defined(_X86_) /* mingw 32-bit */
 /*
  * MINGW x86 (tested up to gcc 8.1) seems to have a bug in fpclassify,
- * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to _fpclass
+ * [fpclassify 1e-314], x86 => normal, x64 => subnormal, so switch to using a
+ * version using a compiler built-in.
  */
-# if ( defined(__MINGW32__) && defined(_X86_) ) /* mingw 32-bit */
-#   define TCL_FPCLASSIFY_MODE 1
-# elif defined(fpclassify)		/* fpclassify */
-#   include <float.h>
-#   define TCL_FPCLASSIFY_MODE 0
-# elif defined(_FPCLASS_NN)		/* _fpclass */
-#   define TCL_FPCLASSIFY_MODE 1
-# else	/* !fpclassify && !_fpclass (older MSVC), simulate */
-#   define TCL_FPCLASSIFY_MODE 2
-# endif /* !fpclassify */
+#define TCL_FPCLASSIFY_MODE 1
+#elif defined(fpclassify)		/* fpclassify */
+/*
+ * This is the C99 standard.
+ */
+#include <float.h>
+#define TCL_FPCLASSIFY_MODE 0
+#elif defined(_FPCLASS_NN)		/* _fpclass */
+/*
+ * This case handles newer MSVC on Windows, which doesn't have the standard
+ * operation but does have something that can tell us the same thing.
+ */
+#define TCL_FPCLASSIFY_MODE 1
+#else	/* !fpclassify && !_fpclass (older MSVC), simulate */
+/*
+ * Older MSVC on Windows. So broken that we just have to do it our way. This
+ * assumes that we're on x86 (or at least a system with classic little-endian
+ * double layout and a 32-bit 'int' type).
+ */
+#define TCL_FPCLASSIFY_MODE 2
+#endif /* !fpclassify */
 /* actually there is no fallback to builtin fpclassify */
 #endif /* !TCL_FPCLASSIFY_MODE */
 
@@ -644,7 +657,15 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if defined(_WIN32) && !defined(_WIN64) && !defined(_USE_64BIT_TIME_T) \
+	    && !defined(__MINGW_USE_VC2005_COMPAT)
+    /* If Tcl is compiled on Win32 using -D_USE_64BIT_TIME_T or
+     * -D__MINGW_USE_VC2005_COMPAT, the result is a binary incompatible
+     * with the 'standard' build of Tcl: All extensions using Tcl_StatBuf
+     * or interal functions like TclpGetDate() need to be recompiled in
+     * the same way. Therefore, this is not officially supported.
+     * In stead, it is recommended to use Win64 or Tcl 9.0 (not released yet)
+     */
     if (sizeof(time_t) != 4) {
 	/*NOTREACHED*/
 	Tcl_Panic("<time.h> is not compatible with MSVC");
@@ -1284,8 +1305,8 @@ int
 TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
-    register const CmdInfo *cmdInfoPtr;
-    register const UnsafeEnsembleInfo *unsafePtr;
+    const CmdInfo *cmdInfoPtr;
+    const UnsafeEnsembleInfo *unsafePtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -2622,7 +2643,7 @@ TclCreateObjCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
-    Tcl_Namespace *namespace,   /* The namespace to create the command in */
+    Tcl_Namespace *namesp,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
@@ -2636,7 +2657,7 @@ TclCreateObjCommandInNs(
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
     Tcl_HashEntry *hPtr;
-    Namespace *nsPtr = (Namespace *) namespace;
+    Namespace *nsPtr = (Namespace *) namesp;
 
     /*
      * If the command name we seek to create already exists, we need to delete
@@ -2811,7 +2832,7 @@ int
 TclInvokeStringCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = clientData;
@@ -2860,7 +2881,7 @@ TclInvokeObjectCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    register const char **argv)	/* Argument strings. */
+    const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = clientData;
     Tcl_Obj *objPtr;
@@ -3351,7 +3372,7 @@ Tcl_GetCommandFullName(
 
 {
     Interp *iPtr = (Interp *) interp;
-    register Command *cmdPtr = (Command *) command;
+    Command *cmdPtr = (Command *) command;
     char *name;
 
     /*
@@ -3635,7 +3656,7 @@ CallCommandTraces(
 				 * trigger, either TCL_TRACE_DELETE or
 				 * TCL_TRACE_RENAME. */
 {
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
     ActiveCommandTrace active;
     char *result;
     Tcl_Obj *oldNamePtr = NULL;
@@ -3825,7 +3846,7 @@ CancelEvalProc(
 
 void
 TclCleanupCommand(
-    register Command *cmdPtr)	/* Points to the Command structure to
+    Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
     if (cmdPtr->refCount-- <= 1) {
@@ -4216,7 +4237,7 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Reset both the interpreter's string and object results and clear out
@@ -4288,7 +4309,7 @@ TclResetCancellation(
     Tcl_Interp *interp,
     int force)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
 	return TCL_ERROR;
@@ -4330,7 +4351,7 @@ Tcl_Canceled(
     Tcl_Interp *interp,
     int flags)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Has the current script in progress for this interpreter been canceled
@@ -5851,7 +5872,7 @@ TclAdvanceLines(
     const char *start,
     const char *end)
 {
-    register const char *p;
+    const char *p;
 
     for (p = start; p < end; p++) {
 	if (*p == '\n') {
@@ -5946,7 +5967,7 @@ TclArgumentEnter(
     CmdFrame *cfPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    int new, i;
+    int isNew, i;
     Tcl_HashEntry *hPtr;
     CFWord *cfwPtr;
 
@@ -5962,8 +5983,8 @@ TclArgumentEnter(
 	if (cfPtr->line[i] < 0) {
 	    continue;
 	}
-	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &new);
-	if (new) {
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &isNew);
+	if (isNew) {
 	    /*
 	     * The word is not on the stack yet, remember the current location
 	     * and initialize references.
@@ -6377,7 +6398,7 @@ int
 Tcl_EvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6390,7 +6411,7 @@ int
 TclEvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6409,7 +6430,7 @@ int
 TclNREvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6717,7 +6738,7 @@ Tcl_ExprLong(
     const char *exprstring,	/* Expression to evaluate. */
     long *ptr)			/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
     if (*exprstring == '\0') {
 	/*
@@ -6744,7 +6765,7 @@ Tcl_ExprDouble(
     const char *exprstring,	/* Expression to evaluate. */
     double *ptr)		/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
 
     if (*exprstring == '\0') {
@@ -6824,7 +6845,7 @@ int
 Tcl_ExprLongObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     long *ptr)			/* Where to store long result. */
 {
     Tcl_Obj *resultPtr;
@@ -6871,7 +6892,7 @@ int
 Tcl_ExprDoubleObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     double *ptr)		/* Where to store double result. */
 {
     Tcl_Obj *resultPtr;
@@ -6907,7 +6928,7 @@ int
 Tcl_ExprBooleanObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     int *ptr)			/* Where to store 0/1 result. */
 {
     Tcl_Obj *resultPtr;
@@ -7019,7 +7040,7 @@ TclNRInvoke(
     int objc,
     Tcl_Obj *const objv[])
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
@@ -7214,7 +7235,7 @@ Tcl_AddObjErrorInfo(
     int length)			/* The number of bytes in the message. If < 0,
 				 * then append all bytes up to a NULL byte. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * If we are just starting to log an error, errorInfo is initialized from
@@ -7364,7 +7385,7 @@ Tcl_GlobalEval(
 				 * command. */
     const char *command)	/* Command to evaluate. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     int result;
     CallFrame *savedVarFramePtr;
 
@@ -8366,22 +8387,23 @@ ClassifyDouble(
 {
 #if TCL_FPCLASSIFY_MODE == 0
     return fpclassify(d);
-#else /* !fpclassify */
+#else /* TCL_FPCLASSIFY_MODE != 0 */
     /*
      * If we don't have fpclassify(), we also don't have the values it returns.
      * Hence we define those here.
      */
-# ifndef FP_NAN
+#ifndef FP_NAN
 #   define FP_NAN          1	/* Value is NaN */
 #   define FP_INFINITE     2	/* Value is an infinity */
 #   define FP_ZERO         3	/* Value is a zero */
 #   define FP_NORMAL       4	/* Value is a normal float */
 #   define FP_SUBNORMAL    5	/* Value has lost accuracy */
-#endif
+#endif /* !FP_NAN */
 
-# if TCL_FPCLASSIFY_MODE == 3
-    return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
-# elif TCL_FPCLASSIFY_MODE == 2
+#if TCL_FPCLASSIFY_MODE == 3
+    return __builtin_fpclassify(
+            FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+#elif TCL_FPCLASSIFY_MODE == 2
     /*
      * We assume this hack is only needed on little-endian systems.
      * Specifically, x86 running Windows.  It's fairly easy to enable for
@@ -8408,9 +8430,9 @@ ClassifyDouble(
      * Shifts and masks to use with the doubleMeaning variable above.
      */
 
-#   define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
-#   define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
-#   define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
+#define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
+#define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
 
     /*
      * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we
@@ -8447,7 +8469,7 @@ ClassifyDouble(
 
         return FP_NORMAL;
     }
-# elif TCL_FPCLASSIFY_MODE == 1
+#elif TCL_FPCLASSIFY_MODE == 1
     switch (_fpclass(d)) {
     case _FPCLASS_NZ:
     case _FPCLASS_PZ:
@@ -8467,9 +8489,9 @@ ClassifyDouble(
     case _FPCLASS_SNAN:
         return FP_NAN;
     }
-# else /* unknown TCL_FPCLASSIFY_MODE */
-#   error "unknown or unexpected TCL_FPCLASSIFY_MODE"
-# endif /* TCL_FPCLASSIFY_MODE */
+#else /* TCL_FPCLASSIFY_MODE not in (0..3) */
+#error "unknown or unexpected TCL_FPCLASSIFY_MODE"
+#endif /* TCL_FPCLASSIFY_MODE */
 #endif /* !fpclassify */
 }
 
