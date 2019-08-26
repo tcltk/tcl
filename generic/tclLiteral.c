@@ -178,8 +178,8 @@ TclCreateLiteral(
 				 * not a NUL-terminated string. */
     size_t length)		/* Number of bytes in the string. */
 {
-    int new;
-    return CreateLiteral(iPtr, bytes, length, &new, NULL, 0, NULL);
+    int isNew;
+    return CreateLiteral(iPtr, bytes, length, &isNew, NULL, 0, NULL);
 }
 
 static Tcl_Obj *
@@ -424,7 +424,7 @@ TclRegisterLiteral(
     Tcl_Obj *objPtr;
     LiteralEntry *globalPtr;
     Tcl_HashEntry *hePtr;
-    int objIndex, globalNew, new = 0;
+    int objIndex, globalNew, isNew = 0;
 
     /*
      * If the literal is a command name, avoid sharing it across namespaces,
@@ -444,8 +444,8 @@ TclRegisterLiteral(
     objPtr = CreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
 	    flags, &globalPtr);
 
-    hePtr = Tcl_CreateHashEntry(&envPtr->litMap, objPtr, &new);
-    if (new) {
+    hePtr = Tcl_CreateHashEntry(&envPtr->litMap, objPtr, &isNew);
+    if (isNew) {
 	objIndex = TclAddLiteralObj(envPtr, objPtr, NULL);
 	Tcl_SetHashValue(hePtr, INT2PTR(objIndex));
 	if (!globalNew && globalPtr) {

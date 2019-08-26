@@ -1244,7 +1244,7 @@ TclOODefineSelfObjCmd(
 {
     Tcl_Namespace *nsPtr;
     Object *oPtr;
-    int result, private;
+    int result, isPrivate;
 
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
@@ -1256,7 +1256,7 @@ TclOODefineSelfObjCmd(
 	return TCL_OK;
     }
 
-    private = IsPrivateDefine(interp);
+    isPrivate = IsPrivateDefine(interp);
 
     /*
      * Make the oo::objdefine namespace the current namespace and evaluate the
@@ -1267,7 +1267,7 @@ TclOODefineSelfObjCmd(
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (private) {
+    if (isPrivate) {
 	((Interp *) interp)->varFramePtr->isProcCallFrame = PRIVATE_FRAME;
     }
 
