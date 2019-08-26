@@ -190,7 +190,7 @@ test http-3.7 {http::geturl} -body {
 <h2>GET $tail</h2>
 </body></html>"
 test http-3.8 {http::geturl} -body {
-    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 2000]
+    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 3000]
     http::data $token
 } -cleanup {
     http::cleanup $token
@@ -356,7 +356,7 @@ test http-3.24 {http::geturl parse failures} -body {
 test http-3.25 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -timeout 2000]
+    set token [http::geturl $url -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -366,7 +366,7 @@ test http-3.25 {http::meta} -setup {
 test http-3.26 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
+    set token [http::geturl $url -headers {X-Check 1} -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -592,7 +592,7 @@ test http-4.14 {http::Event} -body {
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 1000 -command \#]
+    set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
     http::wait $token
     http::status $token
     # error codes vary among platforms.
