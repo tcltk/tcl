@@ -399,9 +399,7 @@ static int		ZipChannelWrite(void *instanceData,
  * Define the ZIP filesystem dispatch table.
  */
 
-MODULE_SCOPE const Tcl_Filesystem zipfsFilesystem;
-
-const Tcl_Filesystem zipfsFilesystem = {
+static const Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
@@ -4729,7 +4727,7 @@ ZipFSLoadFile(
  *-------------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {

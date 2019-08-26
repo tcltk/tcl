@@ -29,6 +29,7 @@
 *.dll binary
 *.exe binary
 *.gif binary
+*.gz binary
 *.jpg binary
 *.lib binary
 *.pdf binary
