@@ -37,6 +37,11 @@ testConstraint testobj [expr {
 testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
+
+if {[namespace which -command testbumpinterpepoch] eq ""} {
+  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+}
+
 # Tests for the omnibus TclExecuteByteCode function:
 
 # INST_DONE not tested
@@ -933,8 +938,7 @@ test execute-8.3 {Stack restoration} -setup {
     proc f {args} "f $arglst"
     proc run {} {
 	# bump the interp's epoch
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	catch f msg
 	set msg
     }
@@ -948,8 +952,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
     }
     proc FOO {} {
 	catch {error bar} m o
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	return -options $o $m
     }
 } -body {
@@ -977,6 +980,35 @@ test execute-8.5 {Bug 2038069} -setup {
 "error FOO"
     invoked from within
 "catch \[list error FOO\] m o"} -errorline 2}
+
+test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    slave eval {
+	lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+	}
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    }
+    slave eval {set res}
+} -cleanup {
+    interp delete slave
+} -result [lrepeat 3 A B]
 
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
