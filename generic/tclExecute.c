@@ -2976,13 +2976,17 @@ TEBCresume(
 	 */
 
     case INST_EVAL_STK:
+    instEvalStk:
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	cleanup = 1;
 	pc += 1;
+	/* yield next instruction */
 	TEBC_YIELD();
-	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
+	/* add TEBCResume for object at top of stack */
+	return TclNRExecuteByteCode(interp,
+		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
@@ -8178,16 +8182,7 @@ TEBCresume(
 	    pc += (opnd-1);
 	    assert(bytes);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
-	    
-	    bcFramePtr->data.tebc.pc = (char *) pc;
-	    iPtr->cmdFramePtr = bcFramePtr;
-	    cleanup = 1;
-	    pc += 1;
-	    /* yield next instruction */
-	    TEBC_YIELD();
-	    /* add TEBCResume for this command */
-	    return TclNRExecuteByteCode(interp,
-		TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
+	    goto instEvalStk;
 	}
 }
 
