@@ -1005,10 +1005,51 @@ test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup 
 	    lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
 	}
     }
+    slave eval {
+	catch {
+	    lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    }
     slave eval {set res}
 } -cleanup {
     interp delete slave
-} -result [lrepeat 3 A B]
+} -result [lrepeat 4 A B]
+test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), exception case} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    set res {}
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code return test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    } e] $e
+    list $res [slave eval {set res}]
+} -cleanup {
+    interp delete slave
+} -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
 
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
