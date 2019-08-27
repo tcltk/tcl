@@ -2400,12 +2400,12 @@ TEBCresume(
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
-	    checkInterp = 0;
 	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
 		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
 		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
+	    checkInterp = 0;
 	}
 	inst = *(pc += 9);
 	goto peepholeStart;
@@ -2975,7 +2975,6 @@ TEBCresume(
 	 * INVOCATION BLOCK
 	 */
 
-    instEvalStk:
     case INST_EVAL_STK:
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
@@ -8157,18 +8156,21 @@ TEBCresume(
 	{
 	    const char *bytes;
 
-	    checkInterp = 1;
 	    length = 0;
-
-	    /*
-	     * We used to switch to direct eval; for NRE-awareness we now
-	     * compile and eval the command so that this evaluation does not
-	     * add a new TEBC instance. [Bug 2910748]
-	     */
 
 	    if (TclInterpReady(interp) == TCL_ERROR) {
 		goto gotError;
 	    }
+
+	    /*
+	     * We used to switch to direct eval; for NRE-awareness we now
+	     * compile and eval the command so that this evaluation does not
+	     * add a new TEBC instance. Bug [2910748], bug [fa6bf38d07]
+	     *
+	     * TODO: recompile, search this command and eval a code starting from,
+	     * so that this evaluation does not add a new TEBC instance without
+	     * NRE-trampoline.
+	     */
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
@@ -8176,7 +8178,16 @@ TEBCresume(
 	    pc += (opnd-1);
 	    assert(bytes);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
-	    goto instEvalStk;
+	    
+	    bcFramePtr->data.tebc.pc = (char *) pc;
+	    iPtr->cmdFramePtr = bcFramePtr;
+	    cleanup = 1;
+	    pc += 1;
+	    /* yield next instruction */
+	    TEBC_YIELD();
+	    /* add TEBCResume for this command */
+	    return TclNRExecuteByteCode(interp,
+		TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 	}
 }
 
