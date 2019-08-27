@@ -22,6 +22,7 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::makeFile
     namespace import ::tcltest::removeFile
     namespace import ::tcltest::temporaryDirectory
+    namespace import ::tcltest::testConstraint
     namespace import ::tcltest::test
 
     if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {

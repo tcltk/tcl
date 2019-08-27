@@ -7893,7 +7893,7 @@ test io-53.15 {[ed29c4da21] DoRead: fblocked seen as error} -setup {
     removeFile out
 } -result 100
 
-test io-54.1 {Recursive channel events} {socket fileevent} {
+test io-54.1 {Recursive channel events} {socket fileevent knownMsvcBug} {
     # This test checks to see if file events are delivered during recursive
     # event loops when there is buffered data on the channel.
 
