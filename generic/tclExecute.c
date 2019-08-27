@@ -2168,7 +2168,7 @@ TEBCresume(
 
     int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    int checkInterp;            /* Indicates when a check of interp readyness
+    int checkInterp = 0;        /* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
@@ -2203,7 +2203,6 @@ TEBCresume(
 
     if (!pc) {
 	/* bytecode is starting from scratch */
-	checkInterp = 0;
 	pc = codePtr->codeStart;
 	goto cleanup0;
     } else {
@@ -2225,8 +2224,9 @@ TEBCresume(
 	    goto abnormalReturn;
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
+	    checkInterp = 1;
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
 
 	if (result != TCL_OK) {
@@ -2400,12 +2400,12 @@ TEBCresume(
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
-	    checkInterp = 0;
 	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
 		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
 		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
+	    checkInterp = 0;
 	}
 	inst = *(pc += 9);
 	goto peepholeStart;
@@ -2975,15 +2975,18 @@ TEBCresume(
 	 * INVOCATION BLOCK
 	 */
 
-    instEvalStk:
     case INST_EVAL_STK:
+    instEvalStk:
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	cleanup = 1;
 	pc += 1;
+	/* yield next instruction */
 	TEBC_YIELD();
-	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
+	/* add TEBCResume for object at top of stack */
+	return TclNRExecuteByteCode(interp,
+		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
@@ -8157,18 +8160,21 @@ TEBCresume(
 	{
 	    const char *bytes;
 
-	    checkInterp = 1;
 	    length = 0;
-
-	    /*
-	     * We used to switch to direct eval; for NRE-awareness we now
-	     * compile and eval the command so that this evaluation does not
-	     * add a new TEBC instance. [Bug 2910748]
-	     */
 
 	    if (TclInterpReady(interp) == TCL_ERROR) {
 		goto gotError;
 	    }
+
+	    /*
+	     * We used to switch to direct eval; for NRE-awareness we now
+	     * compile and eval the command so that this evaluation does not
+	     * add a new TEBC instance. Bug [2910748], bug [fa6bf38d07]
+	     *
+	     * TODO: recompile, search this command and eval a code starting from,
+	     * so that this evaluation does not add a new TEBC instance without
+	     * NRE-trampoline.
+	     */
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
