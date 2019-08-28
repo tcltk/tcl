@@ -2187,10 +2187,12 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
+	/* FALLTHRU */
     case 2:
     cleanup2_pushObjResultPtr:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 1:
     cleanup1_pushObjResultPtr:
 	objPtr = OBJ_AT_TOS;
@@ -2207,14 +2209,17 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
+	/* FALLTHRU */
     case 2:
     cleanup2:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 1:
     cleanup1:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 0:
 	/*
 	 * We really want to do nothing now, but this is needed for some
