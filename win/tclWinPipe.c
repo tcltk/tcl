@@ -3447,6 +3447,7 @@ TclPipeThreadStopSignal(
 
 	SetEvent(evControl);
 	*pipeTIPtr = NULL;
+	/* FALLTHRU */
     case PTI_STATE_DOWN:
 	return 1;
 
