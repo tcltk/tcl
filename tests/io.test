@@ -8021,7 +8021,7 @@ test io-53.17 {[7c187a3773] MBWrite: proper inQueueTail handling} -setup {
     removeFile out
 } -result {line 100 line}
 
-test io-54.1 {Recursive channel events} {socket fileevent} {
+test io-54.1 {Recursive channel events} {socket fileevent knownMsvcBug} {
     # This test checks to see if file events are delivered during recursive
     # event loops when there is buffered data on the channel.
 

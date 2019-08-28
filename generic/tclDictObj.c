@@ -3083,6 +3083,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    /* FALLTHRU */
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
