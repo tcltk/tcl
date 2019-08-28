@@ -6250,8 +6250,8 @@ Tcl_ExprLongObj(
 	    return TCL_ERROR;
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
-	/* FALLTHROUGH */
     }
+    /* FALLTHRU */
     case TCL_NUMBER_INT:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
