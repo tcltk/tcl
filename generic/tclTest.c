@@ -219,6 +219,9 @@ static void		SpecialFree(void *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestbumpinterpepochObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestbytestringObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -590,6 +593,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 	    TestGetIndexFromObjStructObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testbumpinterpepoch",
+	    TestbumpinterpepochObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
@@ -1030,6 +1035,22 @@ AsyncThreadProc(
     TCL_THREAD_CREATE_RETURN;
 }
 #endif
+
+static int
+TestbumpinterpepochObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Interp *iPtr = (Interp *)interp;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    iPtr->compileEpoch++;
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------

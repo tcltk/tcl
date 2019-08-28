@@ -724,12 +724,12 @@ TclRegError(
     const char *p;
 
     Tcl_ResetResult(interp);
-    n = TclReError(status, NULL, buf, sizeof(buf));
+    n = TclReError(status, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
     sprintf(cbuf, "%d", status);
-    (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));
+    (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
