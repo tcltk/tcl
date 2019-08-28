@@ -2019,6 +2019,7 @@ Tcl_AppendFormatToObj(
 		errCode = "BADUNSIGNED";
 		goto errorMsg;
 	    }
+	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'x':
@@ -2616,6 +2617,7 @@ AppendPrintfToObjVA(
 		break;
 	    case 'h':
 		size = -1;
+		/* FALLTHRU */
 	    default:
 		p++;
 	    }

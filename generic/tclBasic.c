@@ -6510,8 +6510,8 @@ Tcl_ExprLongObj(
 	    return TCL_ERROR;
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
-	/* FALLTHROUGH */
     }
+    /* FALLTHRU */
     case TCL_NUMBER_LONG:
     case TCL_NUMBER_WIDE:
     case TCL_NUMBER_BIG:

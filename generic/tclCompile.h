@@ -1164,14 +1164,14 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 
 static inline void
 TclPreserveByteCode(
-    register ByteCode *codePtr)
+    ByteCode *codePtr)
 {
     codePtr->refCount++;
 }
 
 static inline void
 TclReleaseByteCode(
-    register ByteCode *codePtr)
+    ByteCode *codePtr)
 {
     if (codePtr->refCount-- > 1) {
 	return;
@@ -1209,7 +1209,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1420,7 +1420,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

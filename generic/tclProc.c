@@ -1835,9 +1835,7 @@ InterpProcNR2(
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", NULL);
 	result = TCL_ERROR;
 
-	/*
-	 * Fall through to the TCL_ERROR handling code.
-	 */
+	/* FALLTHRU */
 
     case TCL_ERROR:
 	/*
