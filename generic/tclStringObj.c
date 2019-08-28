@@ -1962,6 +1962,7 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
+	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'p':
@@ -2614,6 +2615,7 @@ AppendPrintfToObjVA(
 		break;
 	    case 'h':
 		size = -1;
+		/* FALLTHRU */
 	    default:
 		p++;
 	    }
