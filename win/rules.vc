@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 3
+RULES_VERSION_MINOR = 4
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1439,8 +1439,8 @@ cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 # BUILD_$(PROJECT) macro which should be defined only for the shared
 # library *implementation* and not for its caller interface
 
-appcflags = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
 appcflags_nostubs = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
+appcflags = $(appcflags_nostubs) $(USE_STUBS_DEFS)
 pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 
@@ -1455,7 +1455,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
