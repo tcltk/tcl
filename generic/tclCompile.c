@@ -712,7 +712,7 @@ static void		StartExpanding(CompileEnv *envPtr);
  * commands.
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
-			    Tcl_Token *tokenPtr, const char *cmd, int len,
+			    Tcl_Token *tokenPtr, const char *cmd,
 			    int numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
@@ -965,6 +965,8 @@ DupByteCodeInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
+    (void)srcPtr;
+    (void)copyPtr;
     return;
 }
 
@@ -1174,11 +1176,12 @@ CleanupByteCode(
 
 static int
 IsCompactibleCompileEnv(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     CompileEnv *envPtr)
 {
     unsigned char *pc;
     int size;
+    (void)dummy;
 
     /*
      * Special: procedures in the '::tcl' namespace (or its children) are
@@ -2065,7 +2068,7 @@ CompileCommandTokens(
 
     EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
 	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    parsePtr->commandSize, parsePtr->numWords, cmdLine,
+	    parsePtr->numWords, cmdLine,
 	    clNext, &wlines, envPtr);
     wlineat = eclPtr->nuloc - 1;
 
@@ -2709,6 +2712,7 @@ TclCompileNoOp(
 {
     Tcl_Token *tokenPtr;
     int i;
+    (void)cmdPtr;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
@@ -3274,7 +3278,6 @@ EnterCmdWordData(
     int srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
     const char *cmd,
-    int len,
     int numWords,
     int line,
     int *clNext,

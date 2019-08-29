@@ -641,7 +641,7 @@ DdeServerProc(
     HSZ ddeTopic, HSZ ddeItem,	/* String handles. Transaction-type
 				 * dependent. */
     HDDEDATA hData,		/* DDE data. Transaction-type dependent. */
-    DWORD dwData1, DWORD dwData2)
+    DWORD unused1, DWORD unused2)
 				/* Transaction-dependent data. */
 {
     Tcl_DString dString;
@@ -653,6 +653,8 @@ DdeServerProc(
     RegisteredInterp *riPtr;
     Conversation *convPtr, *prevConvPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)unused1;
+    (void)unused2;
 
     switch(uType) {
     case XTYP_CONNECT:
@@ -986,8 +988,9 @@ DdeServerProc(
 
 static void
 DdeExitProc(
-    ClientData clientData)	    /* Not used in this handler. */
+    void *dummy)		/* Not used. */
 {
+    (void)dummy;
     DdeNameService(ddeInstance, NULL, 0, DNS_UNREGISTER);
     DdeUninitialize(ddeInstance);
     ddeInstance = 0;
@@ -1288,7 +1291,7 @@ SetDdeError(
 
 static int
 DdeObjCmd(
-    ClientData clientData,	/* Used only for deletion */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
@@ -1330,6 +1333,7 @@ DdeObjCmd(
     DWORD ddeResult;
     Tcl_Obj *objPtr, *handlerPtr = NULL;
     Tcl_DString serviceBuf, topicBuf, itemBuf;
+    (void)dummy;
 
     /*
      * Initialize DDE server/client

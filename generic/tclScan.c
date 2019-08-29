@@ -365,8 +365,10 @@ ValidateFormat(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -388,9 +390,7 @@ ValidateFormat(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
-	    /*
-	     * Fall through!
-	     */
+	    /* FALLTHRU */
 	case 'n':
 	case 's':
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
@@ -705,11 +705,10 @@ Tcl_ScanObjCmd(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
-	    /*
-	     * Fall through so we skip to the next character.
-	     */
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}

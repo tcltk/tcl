@@ -118,10 +118,10 @@ static int		CopyString(const char *src, char *buf, int buflen);
 #endif
 
 #ifdef NEED_PW_CLEANER
-static void		FreePwBuf(ClientData ignored);
+static void		FreePwBuf(ClientData dummy);
 #endif
 #ifdef NEED_GR_CLEANER
-static void		FreeGrBuf(ClientData ignored);
+static void		FreeGrBuf(ClientData dummy);
 #endif
 #endif /* TCL_THREADS */
 
@@ -336,9 +336,10 @@ TclpGetPwUid(
 #ifdef NEED_PW_CLEANER
 static void
 FreePwBuf(
-    ClientData ignored)
+    ClientData dummy)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     ckfree(tsdPtr->pbuf);
 }
@@ -519,9 +520,10 @@ TclpGetGrGid(
 #ifdef NEED_GR_CLEANER
 static void
 FreeGrBuf(
-    ClientData ignored)
+    ClientData dummy)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     ckfree(tsdPtr->gbuf);
 }

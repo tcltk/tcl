@@ -3173,7 +3173,7 @@ ArrayForObjCmd(
 
 static int
 ArrayForNRCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)

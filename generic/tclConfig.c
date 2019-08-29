@@ -392,9 +392,10 @@ GetConfigDict(
 static void
 ConfigDictDeleteProc(
     ClientData clientData,	/* Pointer to Tcl_Obj. */
-    Tcl_Interp *interp)		/* Interpreter being deleted. */
+    Tcl_Interp *dummy)		/* Interpreter being deleted. */
 {
     Tcl_Obj *pDB = (Tcl_Obj *)clientData;
+    (void)dummy;
 
     Tcl_DecrRefCount(pDB);
 }

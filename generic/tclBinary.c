@@ -370,6 +370,8 @@ Tcl_DbNewByteArrayObj(
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
 #else /* if not TCL_MEM_DEBUG */
+    (void)file;
+    (void)line;
     return Tcl_NewByteArrayObj(bytes, length);
 #endif /* TCL_MEM_DEBUG */
 }
@@ -547,7 +549,7 @@ Tcl_SetByteArrayLength(
 
 static int
 SetByteArrayFromAny(
-    Tcl_Interp *interp,		/* Not used. */
+    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     size_t length;
@@ -557,6 +559,7 @@ SetByteArrayFromAny(
     Tcl_UniChar ch = 0;
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
+    (void)dummy;
 
     if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
@@ -912,6 +915,7 @@ BinaryFormatCmd(
     const char *errorString;
     const char *errorValue, *str;
     int offset, size, length;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -1413,12 +1417,12 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, length;
+    int offset, size, length, i;
 
-    int i;
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
     Tcl_HashTable *numberCachePtr;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2462,7 +2466,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2471,6 +2475,7 @@ BinaryEncodeHex(
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
     int offset = 0, count = 0;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
@@ -2506,7 +2511,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2517,6 +2522,7 @@ BinaryDecodeHex(
     int i, index, value, size, count = 0, cut = 0, strict = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -2625,7 +2631,7 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2638,6 +2644,7 @@ BinaryEncode64(
     int offset, i, index, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2731,7 +2738,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2745,6 +2752,7 @@ BinaryEncodeUu(
     int wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2848,7 +2856,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2860,6 +2868,7 @@ BinaryDecodeUu(
     unsigned char c;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -3011,7 +3020,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3024,6 +3033,7 @@ BinaryDecode64(
     int i, index, size, cut = 0, count = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");

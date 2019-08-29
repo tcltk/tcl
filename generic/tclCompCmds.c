@@ -267,6 +267,7 @@ TclCompileArrayExistsCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int isScalar, localIndex;
+    (void)cmdPtr;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -522,7 +523,7 @@ TclCompileArrayUnsetCmd(
 
 int
 TclCompileBreakCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Interp *dummy,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
@@ -531,6 +532,8 @@ TclCompileBreakCmd(
 {
     ExceptionRange *rangePtr;
     ExceptionAux *auxPtr;
+    (void)dummy;
+    (void)cmdPtr;
 
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
@@ -592,6 +595,7 @@ TclCompileCatchCmd(
     int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
     int depth = TclGetStackDepth(envPtr);
+    (void)cmdPtr;
 
     /*
      * If syntax does not match what we expect for [catch], do not compile.
@@ -765,7 +769,7 @@ TclCompileCatchCmd(
 
 int
 TclCompileClockClicksCmd(
-    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Interp* dummy,		/* Tcl interpreter */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
@@ -773,6 +777,8 @@ TclCompileClockClicksCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token* tokenPtr;
+    (void)dummy;
+    (void)cmdPtr;
 
     switch (parsePtr->numWords) {
     case 1:
@@ -829,13 +835,15 @@ TclCompileClockClicksCmd(
 
 int
 TclCompileClockReadingCmd(
-    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Interp* dummy,		/* Tcl interpreter */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    (void)dummy;
+
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
@@ -876,6 +884,7 @@ TclCompileConcatCmd(
     Tcl_Obj *objPtr, *listObj;
     Tcl_Token *tokenPtr;
     int i;
+    (void)cmdPtr;
 
     /* TODO: Consider compiling expansion case. */
     if (parsePtr->numWords == 1) {
@@ -952,7 +961,7 @@ TclCompileConcatCmd(
 
 int
 TclCompileContinueCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Interp *dummy,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
@@ -961,6 +970,8 @@ TclCompileContinueCmd(
 {
     ExceptionRange *rangePtr;
     ExceptionAux *auxPtr;
+    (void)dummy;
+    (void)cmdPtr;
 
     /*
      * There should be no argument after the "continue".
@@ -1026,6 +1037,7 @@ TclCompileDictSetCmd(
     int i, dictVarIndex;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
+    (void)cmdPtr;
 
     /*
      * There must be at least one argument after the command.
@@ -1151,6 +1163,7 @@ TclCompileDictGetCmd(
     Tcl_Token *tokenPtr;
     int i;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1188,6 +1201,7 @@ TclCompileDictGetWithDefaultCmd(
     Tcl_Token *tokenPtr;
     int i;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     /*
      * There must be at least three arguments after the command.
@@ -1220,6 +1234,7 @@ TclCompileDictExistsCmd(
     Tcl_Token *tokenPtr;
     int i;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -2315,6 +2330,8 @@ PrintDictUpdateInfo(
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
     int i;
+    (void)codePtr;
+    (void)pcOffset;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
@@ -2334,6 +2351,8 @@ DisassembleDictUpdateInfo(
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
     int i;
     Tcl_Obj *variables = Tcl_NewObj();
+    (void)codePtr;
+    (void)pcOffset;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	Tcl_ListObjAppendElement(NULL, variables,
@@ -2376,6 +2395,7 @@ TclCompileErrorCmd(
 
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
@@ -2445,6 +2465,7 @@ TclCompileExprCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *firstWordPtr;
+    (void)cmdPtr;
 
     if (parsePtr->numWords == 1) {
 	return TCL_ERROR;
@@ -2494,6 +2515,7 @@ TclCompileForCmd(
     int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     if (parsePtr->numWords != 5) {
 	return TCL_ERROR;
@@ -2712,6 +2734,7 @@ CompileEachloopCmd(
     int numWords, numLists, i, j, code = TCL_OK;
     Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
+    (void)cmdPtr;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -3000,6 +3023,8 @@ PrintForeachInfo(
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
     int i, j;
+    (void)codePtr;
+    (void)pcOffset;
 
     Tcl_AppendToObj(appendObj, "data=[", -1);
 
@@ -3040,6 +3065,8 @@ PrintNewForeachInfo(
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
     int i, j;
+    (void)codePtr;
+    (void)pcOffset;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
 	    infoPtr->loopCtTemp);
@@ -3071,6 +3098,8 @@ DisassembleForeachInfo(
     ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
+    (void)codePtr;
+    (void)pcOffset;
 
     /*
      * Data stores.
@@ -3118,6 +3147,8 @@ DisassembleNewForeachInfo(
     ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
+    (void)codePtr;
+    (void)pcOffset;
 
     /*
      * Jump offset.
@@ -3176,6 +3207,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     int i, j, len;
+    (void)cmdPtr;
 
     /*
      * Don't handle any guaranteed-error cases.

@@ -26,7 +26,7 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::test
 
     testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
-    
+
     proc ListGlobMatch {expected actual} {
 	if {[llength $expected] != [llength $actual]} {
 	    return 0
