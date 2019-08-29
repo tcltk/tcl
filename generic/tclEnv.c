@@ -676,7 +676,7 @@ ReplaceString(
 	    if (*p == oldStr) {
 		pchar *lastPtr;
 
-		ckfree(*p);
+		Tcl_Free(*p);
 
 		if (newStr) {
 		    *p = newStr;

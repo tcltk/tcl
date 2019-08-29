@@ -113,7 +113,7 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    ckfree(l);
+    Tcl_Free(l);
 }
 
 static 
@@ -157,7 +157,7 @@ KVList KVLNew(
 {
     const TclHAMTKeyType *kt = hamt->kt;
     const TclHAMTValueType *vt = hamt->vt;
-    KVList new = ckalloc(sizeof(KVNode));
+    KVList new = Tcl_Alloc(sizeof(KVNode));
     new->claim = 0;
     if (kt && kt->makeRefProc) {
 	kt->makeRefProc(key);
@@ -193,7 +193,7 @@ void CNDisclaim(
 	CNDisclaim(hamt, c->next);
     }
     c->next = NULL;
-    ckfree(c);
+    Tcl_Free(c);
 }
 
 static
@@ -201,7 +201,7 @@ Collision CNNew(
     KVList l,
     Collision next)
 {
-    Collision new = ckalloc(sizeof(CNode));
+    Collision new = Tcl_Alloc(sizeof(CNode));
     new->claim = 0;
     if (next) {
 	CNClaim(next);
@@ -576,7 +576,7 @@ void AMDisclaim(
 	am->slot[i] = NULL;
     }
 
-    ckfree(am);
+    Tcl_Free(am);
 }
 
 /*
@@ -604,7 +604,7 @@ ArrayMap AMNew(
     size_t mask,
     size_t id)
 {
-    ArrayMap new = ckalloc(AMN_SIZE(numList, numSubnode));
+    ArrayMap new = Tcl_Alloc(AMN_SIZE(numList, numSubnode));
 
     new->canWrite = (hamt) ? hamt->id : 0;
     new->claim = 0;
@@ -2136,7 +2136,7 @@ TclHAMTCreate(
     const TclHAMTKeyType *kt,	/* Custom key handling functions */
     const TclHAMTValueType *vt)	/* Custom value handling functions */
 {
-    HAMT *hamt = ckalloc(sizeof(HAMT));
+    HAMT *hamt = Tcl_Alloc(sizeof(HAMT));
 
     hamt->id = 0;
     hamt->claim = 0;
@@ -2436,7 +2436,7 @@ TclHAMTDisclaim(
     }
     hamt->kt = NULL;
     hamt->vt = NULL;
-    ckfree(hamt);
+    Tcl_Free(hamt);
 }
 
 /*
@@ -2838,7 +2838,7 @@ TclHAMTFirst(
 	return NULL;
     }
 
-    i = ckalloc(sizeof(Idx) + depth*sizeof(ArrayMap));
+    i = Tcl_Alloc(sizeof(Idx) + depth*sizeof(ArrayMap));
 
     /*
      * We claim an interest in hamt.  After that we need not claim any
@@ -3039,7 +3039,7 @@ TclHAMTDone(
 
     TclHAMTDisclaim(i->hamt);
     i->hamt = NULL;
-    ckfree(i);
+    Tcl_Free(i);
 }
 
 /*
@@ -3061,7 +3061,7 @@ TclHAMTInfo(
 {
     const int branchShift = TclMSB(branchFactor);
     const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
-    size_t *accum = ckalloc(depth*sizeof(size_t));
+    size_t *accum = Tcl_Alloc(depth*sizeof(size_t));
     size_t size = TclHAMTSize(hamt);
     double avg = 0.0;
     int i, collisions = 0;
@@ -3144,7 +3144,7 @@ TclHAMTInfo(
     }
     Tcl_AppendPrintfToObj(result, "\naverage hops: %g ", avg);
     }
-    ckfree(accum);
+    Tcl_Free(accum);
 
     return result;
 }

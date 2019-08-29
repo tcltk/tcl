@@ -94,7 +94,7 @@ TclBrodnikArrayDefine(T,static)
 scope BA_ ## T *							\
 BA_ ## T ## _Create()							\
 {									\
-    BA_ ## T *newPtr = ckalloc(sizeof(BA_ ## T));			\
+    BA_ ## T *newPtr = Tcl_Alloc(sizeof(BA_ ## T));			\
 									\
     newPtr->hi = 0;							\
     newPtr->lo = 0;							\
@@ -102,8 +102,8 @@ BA_ ## T ## _Create()							\
     newPtr->count = 0;							\
     newPtr->dbused = 1;							\
     newPtr->dbavail = 1;						\
-    newPtr->store = ckalloc(sizeof(T *));				\
-    newPtr->store[0] = ckalloc(sizeof(T));				\
+    newPtr->store = Tcl_Alloc(sizeof(T *));				\
+    newPtr->store[0] = Tcl_Alloc(sizeof(T));				\
     return newPtr;							\
 }									\
 									\
@@ -114,10 +114,10 @@ BA_ ## T ## _Destroy(							\
     unsigned int i = a->dbused;						\
 									\
     while (i--) {							\
-	ckfree(a->store[i]);						\
+	Tcl_Free(a->store[i]);						\
     }									\
-    ckfree(a->store);							\
-    ckfree(a);								\
+    Tcl_Free(a->store);							\
+    Tcl_Free(a);								\
 }									\
 									\
 scope size_t								\
@@ -136,9 +136,9 @@ BA_ ## T ## _Grow(							\
 {									\
     if (a->dbused == a->dbavail) {					\
 	a->dbavail *= 2;						\
-	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
+	a->store = Tcl_Realloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
-    a->store[a->dbused] = ckalloc(a->dbsize * sizeof(T));		\
+    a->store[a->dbused] = Tcl_Alloc(a->dbsize * sizeof(T));		\
     a->dbused++;							\
 }									\
 									\
@@ -147,10 +147,10 @@ BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
     a->dbused--;							\
-    ckfree(a->store[a->dbused]);					\
+    Tcl_Free(a->store[a->dbused]);					\
     if (a->dbavail / a->dbused >= 4) {					\
 	a->dbavail /= 2;						\
-	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
+	a->store = Tcl_Realloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
 }									\
 									\

@@ -227,8 +227,8 @@ FreeTokensInternalRep(objPtr)
 	    }
 	}
     }
-    ckfree(tirPtr->tokenPtr);
-    ckfree(tirPtr);
+    Tcl_Free(tirPtr->tokenPtr);
+    Tcl_Free(tirPtr);
 }
 
 /*
@@ -298,7 +298,7 @@ SetTokensFromAny (interp, objPtr)
 {
     int numBytes;
     const char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
-    TokenIntRep *tirPtr = ckalloc(sizeof(TokenIntRep));
+    TokenIntRep *tirPtr = Tcl_Alloc(sizeof(TokenIntRep));
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
@@ -467,10 +467,10 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
      * We'll transfer the tokens to the caller.
      */
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	result = ckrealloc(parsePtr->tokenPtr,
+	result = Tcl_Realloc(parsePtr->tokenPtr,
 		parsePtr->numTokens * sizeof(Tcl_Token));
     } else {
-	result = ckalloc(parsePtr->numTokens * sizeof(Tcl_Token));
+	result = Tcl_Alloc(parsePtr->numTokens * sizeof(Tcl_Token));
 	memcpy(result, parsePtr->tokenPtr, 
 		(size_t) (parsePtr->numTokens * sizeof(Tcl_Token)));
     }
