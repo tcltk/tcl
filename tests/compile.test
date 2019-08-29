@@ -466,6 +466,37 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
+# Tests of nested compile (body in body compilation), should not generate stack overflow
+# (with abnormal program termination), bug [fec0c17d39]:
+test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup {
+    set i [interp create]
+    interp recursionlimit $i [expr {10000+50}]
+    $i eval {proc gencode {nr {cmd eval} {nl 0}} {
+	set code ""
+	set e ""; if {$nl} {set e "\n"}
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "$cmd \{$e"
+	}
+	append code "lappend result 1$e"
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "\}$e"
+	}
+	#puts [format "%% %.40s ... %d bytes" $code [string length $code]]
+	return $code
+    }}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 2000 nested scripts (bodies). If you get SO/SF exceptions on some low-stack
+    # boxes or systems, please don't decrease it (either provide a constraint)
+    $i eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode 2000 $cmd]
+	if 1 $c
+    }}
+    $i eval {set result}
+} -result {1 1 1 1} -cleanup {
+    interp delete $i
+}
+
 # Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
