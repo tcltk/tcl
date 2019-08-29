@@ -488,12 +488,12 @@ test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup 
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 2000 nested scripts (bodies). If you get SO/SF exceptions on some low-stack
     # boxes or systems, please don't decrease it (either provide a constraint)
-    $i eval {foreach cmd {eval "if 1" catch} {
+    $i eval {foreach cmd {eval "if 1" try catch} {
 	set c [gencode 2000 $cmd]
 	if 1 $c
     }}
     $i eval {set result}
-} -result {1 1 1} -cleanup {
+} -result {1 1 1 1} -cleanup {
     interp delete $i
 }
 
