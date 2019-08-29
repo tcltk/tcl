@@ -414,7 +414,6 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj \
 	$(TMP_DIR)\tclWinPanic.obj
 
 ### The following paths CANNOT have spaces in them as they appear on
@@ -645,7 +644,6 @@ $(OUT_DIR)\tcl.nmake:
 CORE_MACHINE = $(MACHINE)
 CORE_DEBUG = $(DEBUG)
 CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
-CORE_USE_WIDECHAR_API = $(USE_WIDECHAR_API)
 <<
 
 #---------------------------------------------------------------------
@@ -801,9 +799,6 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
-	$(cc32) $(stubscflags) -Fo$@ $?
-
-$(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclWinPanic.obj: $(WINDIR)\tclWinPanic.c
