@@ -245,6 +245,7 @@ AllocChainEntry(
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     ChainEntry *cPtr;
+    (void)tablePtr;
 
     cPtr = (ChainEntry *)ckalloc(sizeof(ChainEntry));
     cPtr->entry.key.objPtr = objPtr;
@@ -1480,6 +1481,8 @@ Tcl_DbNewDictObj(
     DictSetIntRep(dictPtr, dict);
     return dictPtr;
 #else /* !TCL_MEM_DEBUG */
+    (void)file;
+    (void)line;
     return Tcl_NewDictObj();
 #endif
 }
@@ -1506,13 +1509,14 @@ Tcl_DbNewDictObj(
 
 static int
 DictCreateCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictObj;
     int i;
+    (void)dummy;
 
     /*
      * Must have an even number of arguments; note that number of preceding
@@ -1556,13 +1560,14 @@ DictCreateCmd(
 
 static int
 DictGetCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr = NULL;
     int result;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1649,7 +1654,7 @@ DictGetCmd(
 
 static int
 DictGetDefCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1657,6 +1662,7 @@ DictGetDefCmd(
     Tcl_Obj *dictPtr, *keyPtr, *valuePtr, *defaultPtr;
     Tcl_Obj *const *keyPath;
     int numKeys;
+    (void)dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key default");
@@ -1714,13 +1720,14 @@ DictGetDefCmd(
 
 static int
 DictReplaceCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
     int i;
+    (void)dummy;
 
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
@@ -1762,13 +1769,14 @@ DictReplaceCmd(
 
 static int
 DictRemoveCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
     int i;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1810,7 +1818,7 @@ DictRemoveCmd(
 
 static int
 DictMergeCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1819,6 +1827,7 @@ DictMergeCmd(
     int allocatedDict = 0;
     int i, done;
     Tcl_DictSearch search;
+    (void)dummy;
 
     if (objc == 1) {
 	/*
@@ -1897,13 +1906,14 @@ DictMergeCmd(
 
 static int
 DictKeysCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *listPtr;
     const char *pattern = NULL;
+    (void)dummy;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -1976,7 +1986,7 @@ DictKeysCmd(
 
 static int
 DictValuesCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1985,6 +1995,7 @@ DictValuesCmd(
     Tcl_DictSearch search;
     int done;
     const char *pattern;
+    (void)dummy;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -2036,12 +2047,13 @@ DictValuesCmd(
 
 static int
 DictSizeCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     int result, size;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2074,12 +2086,13 @@ DictSizeCmd(
 
 static int
 DictExistsCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary key ?key ...?");
@@ -2116,13 +2129,14 @@ DictExistsCmd(
 
 static int
 DictInfoCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Dict *dict;
     char *statsStr;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2160,13 +2174,14 @@ DictInfoCmd(
 
 static int
 DictIncrCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     int code = TCL_OK;
     Tcl_Obj *dictPtr, *valuePtr = NULL;
+    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?increment?");
@@ -2280,13 +2295,14 @@ DictIncrCmd(
 
 static int
 DictLappendCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
     int i, allocatedDict = 0, allocatedValue = 0;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2367,13 +2383,14 @@ DictLappendCmd(
 
 static int
 DictAppendCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
     int allocatedDict = 0;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2469,7 +2486,7 @@ DictAppendCmd(
 
 static int
 DictForNRCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2479,6 +2496,7 @@ DictForNRCmd(
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
     int varc, done;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2664,7 +2682,7 @@ DictForLoopCallback(
 
 static int
 DictMapNRCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2673,6 +2691,7 @@ DictMapNRCmd(
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
     int varc, done;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2876,13 +2895,14 @@ DictMapLoopCallback(
 
 static int
 DictSetCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
     int result, allocatedDict = 0;
+    (void)dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
@@ -2936,13 +2956,14 @@ DictSetCmd(
 
 static int
 DictUnsetCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
     int result, allocatedDict = 0;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
@@ -2995,7 +3016,7 @@ DictUnsetCmd(
 
 static int
 DictFilterCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3012,6 +3033,7 @@ DictFilterCmd(
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
     const char *pattern;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
@@ -3211,6 +3233,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    /* FALLTHRU */
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3287,6 +3310,7 @@ DictUpdateCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
     int i, dummy;
+    (void)clientData;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3437,13 +3461,14 @@ FinalizeDictUpdate(
 
 static int
 DictWithCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *keysPtr, *pathPtr;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName ?key ...? script");

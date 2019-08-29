@@ -1232,7 +1232,7 @@ Tcl_ExternalToUtfDString(
 
 int
 Tcl_ExternalToUtf(
-    Tcl_Interp *interp,		/* Interp for error return, if not NULL. */
+    Tcl_Interp *dummy,		/* Interp for error return, if not NULL. */
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
@@ -1266,6 +1266,7 @@ Tcl_ExternalToUtf(
     int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && dstCharsPtr;
     int maxChars = INT_MAX;
     Tcl_EncodingState state;
+    (void)dummy;
 
     if (encoding == NULL) {
 	encoding = systemEncoding;
@@ -1424,7 +1425,7 @@ Tcl_UtfToExternalDString(
 
 int
 Tcl_UtfToExternal(
-    Tcl_Interp *interp,		/* Interp for error return, if not NULL. */
+    Tcl_Interp *dummy,		/* Interp for error return, if not NULL. */
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
@@ -1455,6 +1456,7 @@ Tcl_UtfToExternal(
     const Encoding *encodingPtr;
     int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
+    (void)dummy;
 
     if (encoding == NULL) {
 	encoding = systemEncoding;
@@ -2185,6 +2187,8 @@ BinaryProc(
 				 * output buffer. */
 {
     int result;
+    (void)clientData;
+    (void)statePtr;
 
     result = TCL_OK;
     dstLen -= TCL_UTF_MAX - 1;
@@ -2356,6 +2360,7 @@ UtfToUtfProc(
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
     Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    (void)clientData;
 
     if (flags & TCL_ENCODING_START) {
     	*statePtr = 0;
@@ -2480,6 +2485,7 @@ Utf16ToUtfProc(
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
     unsigned short ch;
+    (void)statePtr;
 
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2695,6 +2701,7 @@ UtfToUcs2Proc(
     int len;
 #endif
     Tcl_UniChar ch = 0;
+    (void)statePtr;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2805,6 +2812,7 @@ TableToUtfProc(
     const unsigned short *const *toUnicode;
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    (void)statePtr;
 
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2917,6 +2925,7 @@ TableFromUtfProc(
     int result, len, word, numChars;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
     const unsigned short *const *fromUnicode;
+    (void)statePtr;
 
     result = TCL_OK;
 
@@ -3039,6 +3048,8 @@ Iso88591ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
+    (void)clientData;
+    (void)statePtr;
 
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -3122,9 +3133,10 @@ Iso88591FromUtfProc(
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
-    int result, numChars;
-
-    result = TCL_OK;
+    int result = TCL_OK, numChars;
+	Tcl_UniChar ch = 0;
+    (void)clientData;
+    (void)statePtr;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -3137,7 +3149,6 @@ Iso88591FromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	Tcl_UniChar ch = 0;
 	int len;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {

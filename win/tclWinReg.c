@@ -214,6 +214,7 @@ Registry_Unload(
 {
     Tcl_Command cmd;
     Tcl_Obj *objv[3];
+    (void)flags;
 
     /*
      * Unregister the registry package. There is no Tcl_PkgForget()
@@ -280,7 +281,7 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -299,6 +300,7 @@ RegistryObjCmd(
     static const char *const modes[] = {
 	"-32bit", "-64bit", NULL
     };
+    (void)dummy;
 
     if (objc < 2) {
     wrongArgs:

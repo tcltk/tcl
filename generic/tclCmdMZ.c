@@ -88,6 +88,7 @@ Tcl_PwdObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *retVal;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -142,6 +143,7 @@ Tcl_RegexpObjCmd(
 	REGEXP_EXPANDED,REGEXP_LINE,	REGEXP_LINESTOP,REGEXP_LINEANCHOR,
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
     };
+    (void)dummy;
 
     indices = 0;
     about = 0;
@@ -504,6 +506,7 @@ Tcl_RegsubObjCmd(
 	REGSUB_LINESTOP, REGSUB_LINEANCHOR, REGSUB_NOCASE,   REGSUB_START,
 	REGSUB_LAST
     };
+    (void)dummy;
 
     cflags = TCL_REG_ADVANCED;
     all = 0;
@@ -1002,12 +1005,13 @@ Tcl_RegsubObjCmd(
 
 int
 Tcl_RenameObjCmd(
-    ClientData dummy,		/* Arbitrary value passed to the command. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *oldName, *newName;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "oldName newName");
@@ -1053,6 +1057,7 @@ Tcl_ReturnObjCmd(
 
     int explicitResult = (0 == (objc % 2));
     int numOptionWords = objc - 1 - explicitResult;
+    (void)dummy;
 
     if (TCL_ERROR == TclMergeReturnOptions(interp, numOptionWords, objv+1,
 	    &returnOpts, &code, &level)) {
@@ -1105,6 +1110,7 @@ TclNRSourceObjCmd(
     int result;
     void **pkgFiles = NULL;
     void *names = NULL;
+    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
@@ -1181,6 +1187,7 @@ Tcl_SplitObjCmd(
     const char *end;
     int splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
+    (void)dummy;
 
     if (objc == 2) {
 	splitChars = " \n\t\r";
@@ -1323,6 +1330,7 @@ StringFirstCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int start = 0;
+    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1368,6 +1376,7 @@ StringLastCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int last = INT_MAX - 1;
+    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1413,6 +1422,7 @@ StringIndexCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length, index;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string charIndex");
@@ -1485,6 +1495,7 @@ StringInsertCmd(
     int length;			/* String length */
     int index;			/* Insert index */
     Tcl_Obj *outObj;		/* Output object */
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index insertString");
@@ -1568,6 +1579,7 @@ StringIsCmd(
     enum isOptions {
 	OPT_STRICT, OPT_FAILIDX
     };
+    (void)dummy;
 
     if (objc < 3 || objc > 6) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1983,6 +1995,7 @@ StringMapCmd(
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
     int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, unsigned long);
+    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nocase? charMap string");
@@ -2250,6 +2263,7 @@ StringMatchCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int nocase = 0;
+    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nocase? pattern string");
@@ -2302,6 +2316,7 @@ StringRangeCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length, first, last;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last");
@@ -2359,6 +2374,7 @@ StringReptCmd(
 {
     int count;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string count");
@@ -2414,6 +2430,7 @@ StringRplcCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, last, length, end;
+    (void)dummy;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
@@ -2489,6 +2506,8 @@ StringRevCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
@@ -2527,6 +2546,7 @@ StringStartCmd(
     Tcl_UniChar ch = 0;
     const char *p, *string;
     int cur, index, length, numChars;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2588,6 +2608,7 @@ StringEndCmd(
     Tcl_UniChar ch = 0;
     const char *p, *end, *string;
     int cur, index, length, numChars;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2655,6 +2676,7 @@ StringEqualCmd(
 
     const char *string2;
     int length, i, match, nocase = 0, reqlength = -1;
+    (void)dummy;
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2729,6 +2751,7 @@ StringCmpCmd(
      */
 
     int match, nocase, reqlength, status;
+    (void)dummy;
 
     status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength);
     if (status != TCL_OK) {
@@ -2811,6 +2834,7 @@ StringCatCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *objResultPtr;
+    (void)dummy;
 
     if (objc < 2) {
 	/*
@@ -2856,6 +2880,7 @@ StringBytesCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -2892,6 +2917,8 @@ StringLenCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
@@ -2929,6 +2956,7 @@ StringLowerCmd(
     int length1, length2;
     const char *string1;
     char *string2;
+    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -3014,6 +3042,7 @@ StringUpperCmd(
     int length1, length2;
     const char *string1;
     char *string2;
+    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -3099,6 +3128,7 @@ StringTitleCmd(
     int length1, length2;
     const char *string1;
     char *string2;
+    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -3183,6 +3213,7 @@ StringTrimCmd(
 {
     const char *string1, *string2;
     int triml, trimr, length1, length2;
+    (void)dummy;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3230,6 +3261,7 @@ StringTrimLCmd(
 {
     const char *string1, *string2;
     int trim, length1, length2;
+    (void)dummy;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3276,6 +3308,7 @@ StringTrimRCmd(
 {
     const char *string1, *string2;
     int trim, length1, length2;
+    (void)dummy;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3428,6 +3461,7 @@ TclNRSubstObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3502,6 +3536,7 @@ TclNRSwitchObjCmd(
     };
     typedef int (*strCmpFn_t)(const char *, const char *);
     strCmpFn_t strCmpFn = TclUtfCmp;
+    (void)dummy;
 
     mode = OPT_EXACT;
     foundmode = 0;
@@ -4000,6 +4035,7 @@ Tcl_ThrowObjCmd(
 {
     Tcl_Obj *options;
     int len;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type message");
@@ -4070,6 +4106,7 @@ Tcl_TimeObjCmd(
 #else
     Tcl_WideInt start, stop;
 #endif
+    (void)dummy;
 
     if (objc == 2) {
 	count = 1;
@@ -4188,6 +4225,7 @@ Tcl_TimeRateObjCmd(
     };
     NRE_callback *rootPtr;
     ByteCode *codePtr = NULL;
+    (void)dummy;
 
     for (i = 1; i < objc - 1; i++) {
 	int index;
@@ -4438,6 +4476,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
+		    /* FALLTHRU */
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;
@@ -4718,6 +4757,7 @@ TclNRTryObjCmd(
     enum Handlers {
 	TryFinally, TryOn, TryTrap
     };
+    (void)clientData;
 
     /*
      * Parse the arguments. The handlers are passed to subsequent callbacks as
@@ -5287,6 +5327,7 @@ TclNRWhileObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ForIterData *iterPtr;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
