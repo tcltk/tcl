@@ -763,6 +763,7 @@ StdinProc(
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
+    (void)mask;
 
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);

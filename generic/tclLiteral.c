@@ -98,13 +98,14 @@ TclInitLiteralTable(
 
 void
 TclDeleteLiteralTable(
-    Tcl_Interp *interp,		/* Interpreter containing shared literals
+    Tcl_Interp *dummy,		/* Interpreter containing shared literals
 				 * referenced by the table to delete. */
     LiteralTable *tablePtr)	/* Points to the literal table to delete. */
 {
     LiteralEntry *entryPtr, *nextPtr;
     Tcl_Obj *objPtr;
     size_t i;
+    (void)dummy;
 
     /*
      * Release remaining literals in the table. Note that releasing a literal

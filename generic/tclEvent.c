@@ -320,6 +320,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_Obj *tempObjv[2];
     int result, code, level;
     Tcl_InterpState saved;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
@@ -597,10 +598,11 @@ TclGetBgErrorHandler(
 static void
 BgErrorDeleteProc(
     void *clientData,	/* Pointer to ErrAssocData structure. */
-    Tcl_Interp *interp)		/* Interpreter being deleted. */
+    Tcl_Interp *dummy)		/* Interpreter being deleted. */
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
     BgError *errPtr;
+    (void)dummy;
 
     while (assocPtr->firstBgPtr != NULL) {
 	errPtr = assocPtr->firstBgPtr;
@@ -1399,13 +1401,14 @@ TclInThreadExit(void)
 	/* ARGSUSED */
 int
 Tcl_VwaitObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int done, foundEvent;
     const char *nameString;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1470,9 +1473,10 @@ VwaitVarProc(
     int flags)			/* Information about what happened. */
 {
     int *donePtr = (int *)clientData;
+    (void)flags;
 
     *donePtr = 1;
-    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+    Tcl_UntraceVar2(interp, name1, name2, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, clientData);
     return NULL;
 }
@@ -1497,7 +1501,7 @@ VwaitVarProc(
 	/* ARGSUSED */
 int
 Tcl_UpdateObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1506,6 +1510,7 @@ Tcl_UpdateObjCmd(
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
     enum updateOptions {OPT_IDLETASKS};
+    (void)dummy;
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;

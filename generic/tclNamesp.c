@@ -514,12 +514,16 @@ TclPopStackFrame(
 
 static char *
 EstablishErrorCodeTraces(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     const char *name1,
     const char *name2,
     int flags)
 {
+    (void)dummy;
+    (void)name1;
+    (void)name2;
+    (void)flags;
     Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorCodeRead, NULL);
     Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
@@ -546,13 +550,17 @@ EstablishErrorCodeTraces(
 
 static char *
 ErrorCodeRead(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     const char *name1,
     const char *name2,
     int flags)
 {
     Interp *iPtr = (Interp *) interp;
+    (void)dummy;
+    (void)name1;
+    (void)name2;
+    (void)flags;
 
     if (Tcl_InterpDeleted(interp) || !(iPtr->flags & ERR_LEGACY_COPY)) {
 	return NULL;
@@ -588,12 +596,17 @@ ErrorCodeRead(
 
 static char *
 EstablishErrorInfoTraces(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     const char *name1,
     const char *name2,
     int flags)
 {
+    (void)dummy;
+    (void)name1;
+    (void)name2;
+    (void)flags;
+
     Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorInfoRead, NULL);
     Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
@@ -620,13 +633,17 @@ EstablishErrorInfoTraces(
 
 static char *
 ErrorInfoRead(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     const char *name1,
     const char *name2,
     int flags)
 {
     Interp *iPtr = (Interp *) interp;
+    (void)dummy;
+    (void)name1;
+    (void)name2;
+    (void)flags;
 
     if (Tcl_InterpDeleted(interp) || !(iPtr->flags & ERR_LEGACY_COPY)) {
 	return NULL;
@@ -3011,6 +3028,7 @@ NamespaceChildrenCmd(
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Tcl_Obj *listPtr, *elemPtr;
+    (void)dummy;
 
     /*
      * Get a pointer to the specified namespace, or the current namespace.
@@ -3136,6 +3154,7 @@ NamespaceCodeCmd(
     Tcl_Obj *listPtr, *objPtr;
     const char *arg;
     int length;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg");
@@ -3214,6 +3233,7 @@ NamespaceCurrentCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *currNsPtr;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -3279,6 +3299,7 @@ NamespaceDeleteCmd(
     Tcl_Namespace *namespacePtr;
     const char *name;
     int i;
+    (void)dummy;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?name name...?");
@@ -3371,6 +3392,7 @@ NRNamespaceEvalCmd(
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;
     int result;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name arg ?arg...?");
@@ -3497,6 +3519,7 @@ NamespaceExistsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -3552,6 +3575,7 @@ NamespaceExportCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int firstArg, i;
+    (void)dummy;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-clear? ?pattern pattern...?");
@@ -3634,6 +3658,7 @@ NamespaceForgetCmd(
 {
     const char *pattern;
     int i, result;
+    (void)dummy;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern pattern...?");
@@ -3701,6 +3726,7 @@ NamespaceImportCmd(
     const char *string, *pattern;
     int i, result;
     int firstArg;
+    (void)dummy;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
@@ -3816,6 +3842,7 @@ NRNamespaceInscopeCmd(
     CallFrame *framePtr, **framePtrPtr;
     int i;
     Tcl_Obj *cmdObjPtr;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name arg ?arg...?");
@@ -3911,6 +3938,7 @@ NamespaceOriginCmd(
 {
     Tcl_Command command, origCommand;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -3971,6 +3999,7 @@ NamespaceParentCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *nsPtr;
+    (void)dummy;
 
     if (objc == 1) {
 	nsPtr = TclGetCurrentNamespace(interp);
@@ -4032,6 +4061,7 @@ NamespacePathCmd(
     int i, nsObjc, result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pathList?");
@@ -4255,6 +4285,7 @@ NamespaceQualifiersCmd(
 {
     const char *name, *p;
     int length;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -4324,6 +4355,7 @@ NamespaceUnknownCmd(
     Tcl_Namespace *currNsPtr;
     Tcl_Obj *resultPtr;
     int rc;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?script?");
@@ -4509,6 +4541,7 @@ NamespaceTailCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *name, *p;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -4570,6 +4603,7 @@ NamespaceUpvarCmd(
     Tcl_Namespace *nsPtr, *savedNsPtr;
     Var *otherPtr, *arrayPtr;
     const char *myName;
+    (void)dummy;
 
     if (objc < 2 || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ns ?otherVar myVar ...?");
@@ -4645,6 +4679,7 @@ NamespaceWhichCmd(
     };
     int lookupType = 0;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
     badArgs:

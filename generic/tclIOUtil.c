@@ -2372,6 +2372,8 @@ NativeFileAttrStrings(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
+    (void)pathPtr;
+    (void)objPtrRef;
     return tclpFileAttrStrings;
 }
 
@@ -3100,6 +3102,7 @@ Tcl_FSLoadFile(
     const char *symbols[3];
     void *procPtrs[2];
     int res;
+    (void)unloadProcPtr;
 
     /*
      * Initialize the arrays.
@@ -3195,6 +3198,7 @@ skipUnlink(
      */
 
 #ifdef hpux
+    (void)shlibFile;
     return 1;
 #else
     char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
@@ -3203,7 +3207,9 @@ skipUnlink(
 	return atoi(skipstr);
     }
 
-#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef TCL_TEMPLOAD_NO_UNLINK
+    (void)shlibFile;
+#else
 #ifndef NO_FSTATFS
     {
 	struct statfs fs;
@@ -4851,6 +4857,7 @@ NativeFilesystemSeparator(
     Tcl_Obj *pathPtr)
 {
     const char *separator = NULL; /* lint */
+    (void)pathPtr;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:

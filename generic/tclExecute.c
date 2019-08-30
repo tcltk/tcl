@@ -799,7 +799,9 @@ InitByteCodeExecution(
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
 #endif
-#ifdef TCL_COMPILE_STATS
+#ifndef TCL_COMPILE_STATS
+    (void)interp;
+#else
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
@@ -1345,11 +1347,12 @@ Tcl_ExprObj(
 static int
 CopyCallback(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
     Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
+    (void)dummy;
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1543,6 +1546,8 @@ DupExprCodeInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
+    (void)srcPtr;
+    (void)copyPtr;
     return;
 }
 

@@ -525,7 +525,7 @@ TclInterpInit(
 
 static void
 InterpInfoDeleteProc(
-    ClientData clientData,	/* Ignored. */
+    ClientData dummy,	/* Ignored. */
     Tcl_Interp *interp)		/* Interp being deleted. All commands for
 				 * slave interps should already be deleted. */
 {
@@ -533,6 +533,7 @@ InterpInfoDeleteProc(
     Slave *slavePtr;
     Master *masterPtr;
     Target *targetPtr;
+    (void)dummy;
 
     interpInfoPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
 
@@ -614,7 +615,7 @@ Tcl_InterpObjCmd(
 
 static int
 NRInterpCmd(
-    ClientData clientData,		/* Unused. */
+    ClientData dummy,		/* Unused. */
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
@@ -638,6 +639,7 @@ NRInterpCmd(
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
 	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
@@ -4235,10 +4237,11 @@ DeleteScriptLimitCallback(
 static void
 CallScriptLimitCallback(
     ClientData clientData,
-    Tcl_Interp *interp)		/* Interpreter which failed the limit */
+    Tcl_Interp *dummy)		/* Interpreter which failed the limit */
 {
     ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
     int code;
+    (void)dummy;
 
     if (Tcl_InterpDeleted(limitCBPtr->interp)) {
 	return;

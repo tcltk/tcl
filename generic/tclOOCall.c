@@ -376,10 +376,11 @@ TclOOInvokeContext(
 static int
 SetFilterFlags(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
+    (void)dummy;
 
     contextPtr->oPtr->flags |= FILTER_HANDLING;
     return result;
@@ -388,10 +389,11 @@ SetFilterFlags(
 static int
 ResetFilterFlags(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
+    (void)dummy;
 
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
     return result;
@@ -400,11 +402,12 @@ ResetFilterFlags(
 static int
 FinalizeMethodRefs(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
     int i;
+    (void)dummy;
 
     for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);

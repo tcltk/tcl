@@ -101,7 +101,7 @@ static LRESULT CALLBACK	DdeClientWindowProc(HWND hwnd, UINT uMsg,
 static int		DdeCreateClient(DdeEnumServices *es);
 static BOOL CALLBACK	DdeEnumWindowsCallback(HWND hwndTarget,
 			    LPARAM lParam);
-static void		DdeExitProc(ClientData clientData);
+static void		DdeExitProc(void *clientData);
 static int		DdeGetServicesList(Tcl_Interp *interp,
 			    const WCHAR *serviceName, const WCHAR *topicName);
 static HDDEDATA CALLBACK DdeServerProc(UINT uType, UINT uFmt, HCONV hConv,
@@ -109,13 +109,13 @@ static HDDEDATA CALLBACK DdeServerProc(UINT uType, UINT uFmt, HCONV hConv,
 			    DWORD dwData1, DWORD dwData2);
 static LRESULT		DdeServicesOnAck(HWND hwnd, WPARAM wParam,
 			    LPARAM lParam);
-static void		DeleteProc(ClientData clientData);
+static void		DeleteProc(void *clientData);
 static Tcl_Obj *	ExecuteRemoteObject(RegisteredInterp *riPtr,
 			    Tcl_Obj *ddeObjectPtr);
 static int		MakeDdeConnection(Tcl_Interp *interp,
 			    const WCHAR *name, HCONV *ddeConvPtr);
 static void		SetDdeError(Tcl_Interp *interp);
-static int		DdeObjCmd(ClientData clientData,
+static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
@@ -503,7 +503,7 @@ DdeGetRegistrationPtr(
 
 static void
 DeleteProc(
-    ClientData clientData)	/* The interp we are deleting passed as
+    void *clientData)	/* The interp we are deleting passed as
 				 * ClientData. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
@@ -1291,7 +1291,7 @@ SetDdeError(
 
 static int
 DdeObjCmd(
-    ClientData dummy,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */

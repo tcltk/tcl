@@ -48,6 +48,14 @@ matrix:
         - CFGOPT=--enable-symbols=all
       script:
         - make all tcltest
+# C++ build.
+    - name: "Linux/G++/Shared"
+      os: linux
+      dist: xenial
+      compiler: g++
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CC=g++ CFLAGS=-Wall"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux

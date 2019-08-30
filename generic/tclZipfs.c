@@ -276,7 +276,7 @@ static struct {
     Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
-    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, 0,
+    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, 0, {0}, {0}
 };
 
 /*

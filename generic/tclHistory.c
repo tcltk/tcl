@@ -211,9 +211,10 @@ Tcl_RecordAndEvalObj(
 static void
 DeleteHistoryObjs(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *dummy)
 {
     HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
+    (void)dummy;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

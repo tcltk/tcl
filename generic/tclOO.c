@@ -569,12 +569,13 @@ DeletedHelpersNamespace(
 
 static void
 KillFoundation(
-    ClientData clientData,	/* Pointer to the OO system foundation
+    ClientData dummy,	/* Pointer to the OO system foundation
 				 * structure. */
     Tcl_Interp *interp)		/* The interpreter containing the OO system
 				 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
+    (void)dummy;
 
     TclDecrRefCount(fPtr->unknownMethodNameObj);
     TclDecrRefCount(fPtr->constructorName);
@@ -824,6 +825,9 @@ ObjectRenamedTrace(
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = (Object *)clientData;
+    (void)interp;
+    (void)oldName;
+    (void)newName;
 
     /*
      * If this is a rename and not a delete of the object, we just flush the
@@ -2747,9 +2751,10 @@ TclOOObjectCmdCore(
 static int
 FinalizeObjectCall(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
+    (void)dummy;
     /*
      * Dispose of the call chain, which drops the lock on the object's
      * structure.
@@ -2908,10 +2913,11 @@ TclNRObjectContextInvokeNext(
 static int
 FinalizeNext(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
+    (void)dummy;
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
