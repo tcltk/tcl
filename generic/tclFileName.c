@@ -1241,6 +1241,7 @@ Tcl_GlobObjCmd(
     };
     enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
     Tcl_GlobTypeData *globTypes = NULL;
+    (void)dummy;
 
     globFlags = 0;
     join = 0;
@@ -2641,6 +2642,7 @@ Tcl_GetBlockSizeFromStat(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return statPtr->st_blksize;
 #else
+    (void)statPtr;
     /*
      * Not a great guess, but will do...
      */

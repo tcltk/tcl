@@ -2811,7 +2811,7 @@ ObjFilterGet(
 
 static int
 ObjFilterSet(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2820,6 +2820,7 @@ ObjFilterSet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     int filterc;
     Tcl_Obj **filterv;
+    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2851,7 +2852,7 @@ ObjFilterSet(
 
 static int
 ObjMixinGet(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2861,6 +2862,7 @@ ObjMixinGet(
     Tcl_Obj *resultObj;
     Class *mixinPtr;
     int i;
+    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2883,7 +2885,7 @@ ObjMixinGet(
 
 static int
 ObjMixinSet(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2894,6 +2896,7 @@ ObjMixinSet(
     Tcl_Obj **mixinv;
     Class **mixins;
     int i;
+    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2937,7 +2940,7 @@ ObjMixinSet(
 
 static int
 ObjVarsGet(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2946,6 +2949,7 @@ ObjVarsGet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     int i;
+    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2975,7 +2979,7 @@ ObjVarsGet(
 
 static int
 ObjVarsSet(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2984,6 +2988,7 @@ ObjVarsSet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     int varc, i;
     Tcl_Obj **varv;
+    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -3040,7 +3045,7 @@ ObjVarsSet(
 
 static int
 ResolveClass(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3049,6 +3054,7 @@ ResolveClass(
     int idx = Tcl_ObjectContextSkippedArgs(context);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Class *clsPtr;
+    (void)dummy;
 
     /*
      * Check if were called wrongly. The definition context isn't used...

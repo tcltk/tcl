@@ -71,9 +71,10 @@ static void		UnregisterTcpServerInterpCleanupProc(
 
 static void
 FinalizeIOCmdTSD(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (tsdPtr->stdoutObjPtr != NULL) {
 	Tcl_DecrRefCount(tsdPtr->stdoutObjPtr);
@@ -113,6 +114,7 @@ Tcl_PutsObjCmd(
     int newline;		/* Add a newline at end? */
     int result;			/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
+    (void)dummy;
 
     switch (objc) {
     case 2:			/* [puts $x] */
@@ -237,6 +239,7 @@ Tcl_FlushObjCmd(
     Tcl_Obj *chanObjPtr;
     Tcl_Channel chan;		/* The channel to flush on. */
     int mode;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -304,6 +307,7 @@ Tcl_GetsObjCmd(
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
+    (void)dummy;
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?varName?");
@@ -390,6 +394,7 @@ Tcl_ReadObjCmd(
     int charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
+    (void)dummy;
 
     if ((objc != 2) && (objc != 3)) {
 	Interp *iPtr;
@@ -523,7 +528,7 @@ Tcl_ReadObjCmd(
 	/* ARGSUSED */
 int
 Tcl_SeekObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -537,6 +542,7 @@ Tcl_SeekObjCmd(
 	"start", "current", "end", NULL
     };
     static const int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
+    (void)dummy;
 
     if ((objc != 3) && (objc != 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId offset ?origin?");
@@ -599,7 +605,7 @@ Tcl_SeekObjCmd(
 	/* ARGSUSED */
 int
 Tcl_TellObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -607,6 +613,7 @@ Tcl_TellObjCmd(
     Tcl_Channel chan;		/* The channel to tell on. */
     Tcl_WideInt newLoc;
     int code;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -662,7 +669,7 @@ Tcl_TellObjCmd(
 	/* ARGSUSED */
 int
 Tcl_CloseObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -672,6 +679,7 @@ Tcl_CloseObjCmd(
 	"read", "write", NULL
     };
     static const int dirArray[] = {TCL_CLOSE_READ, TCL_CLOSE_WRITE};
+    (void)dummy;
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?direction?");
@@ -771,7 +779,7 @@ Tcl_CloseObjCmd(
 	/* ARGSUSED */
 int
 Tcl_FconfigureObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -779,6 +787,7 @@ Tcl_FconfigureObjCmd(
     const char *optionName, *valueName;
     Tcl_Channel chan;		/* The channel to set a mode on. */
     int i;			/* Iterate over arg-value pairs. */
+    (void)dummy;
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?-option value ...?");
@@ -847,12 +856,13 @@ Tcl_FconfigureObjCmd(
 	/* ARGSUSED */
 int
 Tcl_EofObjCmd(
-    ClientData unused,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -905,6 +915,7 @@ Tcl_ExecObjCmd(
     enum options {
 	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
     };
+    (void)dummy;
 
     /*
      * Check for any leading option arguments.
@@ -1055,13 +1066,14 @@ Tcl_ExecObjCmd(
 	/* ARGSUSED */
 int
 Tcl_FblockedObjCmd(
-    ClientData unused,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
     int mode;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -1102,7 +1114,7 @@ Tcl_FblockedObjCmd(
 	/* ARGSUSED */
 int
 Tcl_OpenObjCmd(
-    ClientData notUsed,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1110,6 +1122,7 @@ Tcl_OpenObjCmd(
     int pipeline, prot;
     const char *modeString, *what;
     Tcl_Channel chan;
+    (void)dummy;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?access? ?permissions?");
@@ -1228,11 +1241,12 @@ static void
 TcpAcceptCallbacksDeleteProc(
     ClientData clientData,	/* Data which was passed when the assocdata
 				 * was registered. */
-    Tcl_Interp *interp)		/* Interpreter being deleted - not used. */
+    Tcl_Interp *dummy)		/* Interpreter being deleted - not used. */
 {
     Tcl_HashTable *hTblPtr = (Tcl_HashTable *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
+    (void)dummy;
 
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
@@ -1478,7 +1492,7 @@ TcpServerCloseProc(
 
 int
 Tcl_SocketObjCmd(
-    ClientData notUsed,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1497,6 +1511,7 @@ Tcl_SocketObjCmd(
     const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
+    (void)dummy;
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -1731,6 +1746,7 @@ Tcl_FcopyObjCmd(
     Tcl_Obj *cmdPtr;
     static const char *const switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
+    (void)dummy;
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1816,7 +1832,7 @@ Tcl_FcopyObjCmd(
 	/* ARGSUSED */
 static int
 ChanPendingObjCmd(
-    ClientData unused,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1825,6 +1841,7 @@ ChanPendingObjCmd(
     int index, mode;
     static const char *const options[] = {"input", "output", NULL};
     enum options {PENDING_INPUT, PENDING_OUTPUT};
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
@@ -1885,6 +1902,7 @@ ChanTruncateObjCmd(
 {
     Tcl_Channel chan;
     Tcl_WideInt length;
+    (void)dummy;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?length?");
@@ -1959,6 +1977,7 @@ ChanPipeObjCmd(
     Tcl_Channel rchan, wchan;
     const char *channelNames[2];
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -2002,11 +2021,12 @@ ChanPipeObjCmd(
 
 int
 TclChannelNamesCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
+    (void)dummy;
     if (objc < 1 || objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;

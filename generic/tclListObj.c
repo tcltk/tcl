@@ -341,6 +341,8 @@ Tcl_DbNewListObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
     return Tcl_NewListObj(objc, objv);
 }
 #endif /* TCL_MEM_DEBUG */

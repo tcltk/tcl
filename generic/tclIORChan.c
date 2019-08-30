@@ -492,7 +492,7 @@ static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo
 
 int
 TclChanCreateObjCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -518,6 +518,7 @@ TclChanCreateObjCmd(
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
+    (void)dummy;
 
     /*
      * Syntax:   chan create MODE CMDPREFIX
@@ -781,6 +782,7 @@ ReflectEventRun(
      */
 
     ReflectEvent *e = (ReflectEvent *) ev;
+    (void)flags;
 
     Tcl_NotifyChannel(e->rcPtr->chan, e->events);
     return 1;
@@ -809,7 +811,7 @@ ReflectEventDelete(
 
 int
 TclChanPostEventObjCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -838,6 +840,7 @@ TclChanPostEventObjCmd(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    (void)dummy;
 
     /*
      * Number of arguments...
@@ -2728,13 +2731,14 @@ GetThreadReflectedChannelMap(void)
 
 static void
 DeleteThreadReflectedChannelMap(
-    ClientData clientData)	/* The per-thread data structure. */
+    ClientData dummy)	/* The per-thread data structure. */
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedChannelMap *rcmPtr; /* The map */
     ForwardingResult *resultPtr;
+    (void)dummy;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2981,6 +2985,7 @@ ForwardProc(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
                                  * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    (void)mask;
 
     /*
      * Ignore the event if no one is waiting for its result anymore.

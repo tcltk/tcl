@@ -803,7 +803,8 @@ AllocStringEntry(
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    unsigned int size, allocsize;
+    size_t size, allocsize;
+    (void)tablePtr;
 
     allocsize = size = strlen(string) + 1;
     if (size < sizeof(hPtr->key)) {
@@ -869,6 +870,7 @@ HashStringKey(
     const char *string = (const char *)keyPtr;
     unsigned int result;
     char c;
+    (void)tablePtr;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -933,6 +935,8 @@ BogusFind(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const char *key)		/* Key to use to find matching entry. */
 {
+    (void)tablePtr;
+    (void)key;
     Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
     return NULL;
 }
@@ -963,6 +967,9 @@ BogusCreate(
     int *newPtr)		/* Store info here telling whether a new entry
 				 * was created. */
 {
+    (void)tablePtr;
+    (void)key;
+    (void)newPtr;
     Tcl_Panic("called %s on deleted table", "Tcl_CreateHashEntry");
     return NULL;
 }

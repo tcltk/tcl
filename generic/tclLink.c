@@ -620,11 +620,12 @@ IsSpecial(
 
 static int
 SetInvalidRealFromAny(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     Tcl_Obj *objPtr)
 {
     const char *str;
     const char *endPtr;
+    (void)dummy;
 
     str = TclGetString(objPtr);
     if ((objPtr->length == 1) && (str[0] == '.')) {
@@ -754,6 +755,8 @@ LinkTraceProc(
     int objc;
     Tcl_Obj **objv;
     int i;
+    (void)name1;
+    (void)name2;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
