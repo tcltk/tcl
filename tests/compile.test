@@ -468,10 +468,13 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
 
 # Tests of nested compile (body in body compilation), should not generate stack overflow
 # (with abnormal program termination), bug [fec0c17d39]:
-test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup {
-    set i [interp create]
-    interp recursionlimit $i [expr {10000+50}]
-    $i eval {proc gencode {nr {cmd eval} {nl 0}} {
+proc _ti_gencode {} {
+    # creates test interpreter on demand with [gencode] generator:
+    if {[interp exists ti]} {
+	return
+    }
+    interp create ti
+    ti eval {proc gencode {nr {cmd eval} {nl 0}} {
 	set code ""
 	set e ""; if {$nl} {set e "\n"}
 	for {set i 0} {$i < $nr} {incr i} {
@@ -484,18 +487,45 @@ test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup 
 	#puts [format "%% %.40s ... %d bytes" $code [string length $code]]
 	return $code
     }}
+}
+test compile-13.2 {TclCompileScript: testing expected nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti [expr {10000+50}]
+    ti eval {set result {}}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 2000 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
     # boxes or systems, please don't decrease it (either provide a constraint)
-    $i eval {foreach cmd {eval "if 1" try catch} {
+    ti eval {foreach cmd {eval "if 1" try catch} {
 	set c [gencode [expr {![info exists ::tcl_platform(debug)] ? 2000 : 1000}] $cmd]
 	if 1 $c
     }}
-    $i eval {set result}
-} -result {1 1 1 1} -cleanup {
-    interp delete $i
+    ti eval {set result}
+} -result {1 1 1 1}
+test compile-13.3 {TclCompileScript: testing check of max depth by nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti 100
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 500 nested scripts (bodies). It must generate "too many nested compilations" 
+    # error for any variant we're testing here:
+    ti eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode [expr {![info exists ::tcl_platform(debug)] ? 2000 : 1000}] $cmd]
+	lappend errors [catch $c e] $e
+    }}
+    #puts $errors
+    # all of nested calls exceed the limit, so must end with "too many nested compilations"
+    # (or evaluations, depending on compile method/instruction and "mixed" compile within 
+    # evaliation), so no one succeeds, the result must be empty:
+    ti eval {set result}
+} -result {}
+#
+# clean up:
+if {[interp exists ti]} {
+    interp delete ti
 }
+rename _ti_gencode {}
 
 # Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
