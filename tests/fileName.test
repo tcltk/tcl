@@ -1089,42 +1089,42 @@ file delete -force $tildeglobname
 set globname globTest
 unset horribleglobname tildeglobname
 
-test filename-12.1 {simple globbing} {unixOrPc} {
+test filename-12.1 {simple globbing} -constraints {unixOrPc} -body {
     glob {}
-} {.}
+} -result {.}
 test filename-12.1.1 {simple globbing} -constraints {unixOrPc} -body {
     glob -types f {}
 } -result {}
-test filename-12.1.2 {simple globbing} {unixOrPc} {
+test filename-12.1.2 {simple globbing} -constraints {unixOrPc} -body {
     glob -types d {}
-} {.}
-test filename-12.1.3 {simple globbing} {unix} {
+} -result {.}
+test filename-12.1.3 {simple globbing} -constraints {unix} -body {
     glob -types hidden {}
-} {.}
+} -result {.}
 test filename-12.1.4 {simple globbing} -constraints {win} -body {
     glob -types hidden {}
-} -returnCodes error -result {no files matched glob pattern ""}
+} -result {}
 test filename-12.1.5 {simple globbing} -constraints {win} -body {
     glob -types hidden c:/
-} -returnCodes error -result {no files matched glob pattern "c:/"}
-test filename-12.1.6 {simple globbing} {win} {
+} -result {}
+test filename-12.1.6 {simple globbing} -constraints {win} -body {
     glob c:/
-} {c:/}
-test filename-12.3 {simple globbing} {
+} -result {c:/}
+test filename-12.3 {simple globbing} -body {
     glob -nocomplain \{a1,a2\}
-} {}
+} -result {}
 set globPreResult globTest/
 set x1 x1.c
 set y1 y1.c
-test filename-12.4 {simple globbing} {unixOrPc} {
+test filename-12.4 {simple globbing} -constraints {unixOrPc} -body {
     lsort [glob globTest/x1.c globTest/y1.c globTest/foo]
-} "$globPreResult$x1 $globPreResult$y1"
-test filename-12.5 {simple globbing} {
+} -result "$globPreResult$x1 $globPreResult$y1"
+test filename-12.5 {simple globbing} -body {
     glob globTest\\/x1.c
-} "$globPreResult$x1"
-test filename-12.6 {simple globbing} {
+} -result "$globPreResult$x1"
+test filename-12.6 {simple globbing} -body {
     glob globTest\\/\\x1.c
-} "$globPreResult$x1"
+} -result "$globPreResult$x1"
 test filename-12.7 {globbing at filesystem root} -constraints {unix} -body {
     list [glob -nocomplain /*] [glob -path / *]
 } -match compareWords -result equal
