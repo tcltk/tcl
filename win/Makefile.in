@@ -23,6 +23,7 @@ bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
 datarootdir		= @datarootdir@
+runstatedir		= @runstatedir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
