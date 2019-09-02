@@ -1404,7 +1404,7 @@ ObjValue(
     case TCL_LINK_LONG:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
-	    objv = ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
+	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
 		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.lPtr[i]);
 	    }
@@ -1417,7 +1417,7 @@ ObjValue(
     case TCL_LINK_ULONG:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
-	    objv = ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
+	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
 		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.ulPtr[i]);
 	    }

@@ -121,7 +121,7 @@ Tcl_AlertNotifier(
 	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
 #else /* !NOTIFIER_SELECT */
-	ThreadSpecificData *tsdPtr = clientData;
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
 	uint64_t eventFdVal = 1;
 	if (write(tsdPtr->triggerEventFd, &eventFdVal,

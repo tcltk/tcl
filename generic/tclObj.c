@@ -1072,7 +1072,7 @@ TclDbInitNewObj(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
-	    tsdPtr->objThreadMap = ckalloc(sizeof(Tcl_HashTable));
+	    tsdPtr->objThreadMap = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
@@ -1085,7 +1085,7 @@ TclDbInitNewObj(
 	 * Record the debugging information.
 	 */
 
-	objData = ckalloc(sizeof(ObjData));
+	objData = (ObjData *)ckalloc(sizeof(ObjData));
 	objData->objPtr = objPtr;
 	objData->file = file;
 	objData->line = line;

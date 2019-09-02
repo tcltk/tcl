@@ -4914,7 +4914,7 @@ TclGetNamespaceChildTable(
     return &nPtr->childTable;
 #else
     if (nPtr->childTablePtr == NULL) {
-	nPtr->childTablePtr = ckalloc(sizeof(Tcl_HashTable));
+	nPtr->childTablePtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nPtr->childTablePtr, TCL_STRING_KEYS);
     }
     return nPtr->childTablePtr;

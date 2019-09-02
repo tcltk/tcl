@@ -16,7 +16,9 @@
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #if defined(NOTIFIER_EPOLL) && TCL_THREADS
-#define _GNU_SOURCE		/* For pipe2(2) */
+#ifndef _GNU_SOURCE
+#   define _GNU_SOURCE		/* For pipe2(2) */
+#endif
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/epoll.h>
@@ -772,7 +774,7 @@ Tcl_WaitForEvent(
 	numFound = PlatformEventsWait(tsdPtr->readyEvents,
 		tsdPtr->maxReadyEvents, timeoutPtr);
 	for (numEvent = 0; numEvent < numFound; numEvent++) {
-	    pedPtr = tsdPtr->readyEvents[numEvent].data.ptr;
+	    pedPtr = (PlatformEventData*)tsdPtr->readyEvents[numEvent].data.ptr;
 	    filePtr = pedPtr->filePtr;
 	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 #ifdef HAVE_EVENTFD
