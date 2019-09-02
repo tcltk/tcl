@@ -23,6 +23,7 @@ bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
 datarootdir		= @datarootdir@
+runstatedir		= @runstatedir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
@@ -163,7 +164,7 @@ MAN2TCL			= man2tcl$(EXEEXT)
 # (make genstubs, make install) need it to be available on the PATH. This
 # executable should *NOT* be required just to do a normal build although
 # it can be required to run make dist.
-TCL_EXE			= @TCL_EXE@
+TCL_EXE			= tclsh
 
 @SET_MAKE@
 
