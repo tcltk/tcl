@@ -1473,7 +1473,7 @@ Tcl_DbNewDictObj(
 
     TclDbNewObj(dictPtr, file, line);
     TclInvalidateStringRep(dictPtr);
-    dict = ckalloc(sizeof(Dict));
+    dict = (Dict *)ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 1;
     dict->chain = NULL;
@@ -3333,7 +3333,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar(interp, Tcl_GetString(objv[i+1]), 0);
+	    Tcl_UnsetVar2(interp, Tcl_GetString(objv[i+1]), NULL, 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);

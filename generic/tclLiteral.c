@@ -98,14 +98,13 @@ TclInitLiteralTable(
 
 void
 TclDeleteLiteralTable(
-    Tcl_Interp *dummy,		/* Interpreter containing shared literals
+    Tcl_Interp *interp,		/* Interpreter containing shared literals
 				 * referenced by the table to delete. */
     LiteralTable *tablePtr)	/* Points to the literal table to delete. */
 {
     LiteralEntry *entryPtr, *nextPtr;
     Tcl_Obj *objPtr;
     size_t i;
-    (void)dummy;
 
     /*
      * Release remaining literals in the table. Note that releasing a literal
@@ -115,6 +114,8 @@ TclDeleteLiteralTable(
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable((Interp *) interp);
+#else
+    (void)interp;
 #endif /*TCL_COMPILE_DEBUG*/
 
     /*
@@ -1131,7 +1132,7 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = ckalloc(NUM_COUNTERS*60 + 300);
+    result = (char *)ckalloc(NUM_COUNTERS*60 + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
