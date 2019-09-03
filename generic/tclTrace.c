@@ -210,6 +210,7 @@ Tcl_TraceObjCmd(
 	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
 #endif
     };
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1050,6 +1051,7 @@ Tcl_CommandTraceInfo(
 {
     Command *cmdPtr;
     CommandTrace *tracePtr;
+    (void)flags;
 
     cmdPtr = (Command *) Tcl_FindCommand(interp, cmdName, NULL,
 	    TCL_LEAVE_ERR_MSG);

@@ -491,6 +491,9 @@ TclGuessPackageName(
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
+    (void)fileName;
+    (void)bufPtr;
+
     return 0;
 }
 
@@ -513,10 +516,11 @@ TclGuessPackageName(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Interp *dummy,		/* Used for error reporting. */
     int size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
+    (void)dummy;
 
     /*
      * NSCreateObjectFileImageFromMemory is available but always fails

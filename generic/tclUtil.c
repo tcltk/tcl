@@ -2479,6 +2479,7 @@ TclByteArrayMatch(
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
+    (void)flags;
 
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
@@ -3263,9 +3264,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *interp,		/* Interpreter whose tcl_precision variable
-				 * used to be used to control printing. It's
-				 * ignored now. */
+    Tcl_Interp *dummy,		/* Not used. */
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3276,6 +3275,7 @@ Tcl_PrintDouble(
     char *digits;
     char *end;
     int *precisionPtr = (int *)Tcl_GetThreadData(&precisionKey, sizeof(int));
+    (void)dummy;
 
     /*
      * Handle NaN.

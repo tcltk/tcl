@@ -1920,7 +1920,7 @@ Tcl_ZlibAdler32(
 
 static int
 ZlibCmd(
-    void *notUsed,
+    void *dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1939,6 +1939,7 @@ ZlibCmd(
 	CMD_ADLER, CMD_COMPRESS, CMD_CRC, CMD_DECOMPRESS, CMD_DEFLATE,
 	CMD_GUNZIP, CMD_GZIP, CMD_INFLATE, CMD_PUSH, CMD_STREAM
     };
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg ?...?");

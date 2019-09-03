@@ -786,8 +786,9 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    ClientData clientData)
+    ClientData dummy)
 {
+	(void)dummy;
     /*
      * Release the hashtable tracking invisible continuation lines.
      */
@@ -1024,6 +1025,8 @@ TclDbDumpActiveObjects(
 	    }
 	}
     }
+#else
+	(void)outFile;
 #endif
 }
 
@@ -1200,6 +1203,9 @@ Tcl_DbNewObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewObj();
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2038,6 +2044,9 @@ Tcl_DbNewBooleanObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewBooleanObj(boolValue);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2425,6 +2434,9 @@ Tcl_DbNewDoubleObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewDoubleObj(dblValue);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2909,6 +2921,9 @@ Tcl_DbNewLongObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewWideIntObj(longValue);
 }
 #endif /* TCL_MEM_DEBUG */

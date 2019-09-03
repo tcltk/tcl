@@ -347,6 +347,9 @@ Tcl_DbNewStringObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewStringObj(bytes, length);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -4166,9 +4169,11 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
+    (void)dummy;
+
     if (!TclHasIntRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 

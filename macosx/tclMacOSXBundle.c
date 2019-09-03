@@ -197,7 +197,7 @@ Tcl_MacOSXOpenBundleResources(
 
 int
 Tcl_MacOSXOpenVersionedBundleResources(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,
@@ -208,6 +208,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     CFBundleRef bundleRef, versionedBundleRef = NULL;
     CFStringRef bundleNameRef;
     CFURLRef libURL;
+    (void)dummy;
 
     libraryPath[0] = '\0';
 

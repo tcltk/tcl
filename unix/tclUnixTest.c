@@ -138,7 +138,7 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -148,6 +148,7 @@ TestfilehandlerCmd(
     static int initialized = 0;
     char buffer[4000];
     TclFile file;
+    (void)dummy;
 
     /*
      * NOTE: When we make this code work on Windows also, the following
@@ -360,7 +361,7 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -369,6 +370,7 @@ TestfilewaitCmd(
     Tcl_Channel channel;
     int fd;
     ClientData data;
+    (void)dummy;
 
     if (argc != 4) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
@@ -429,12 +431,13 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     Tcl_Obj *saveName;
+    (void)dummy;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
@@ -472,12 +475,13 @@ TestfindexecutableCmd(
 
 static int
 TestgetopenfileCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     ClientData filePtr;
+    (void)dummy;
 
     if (argc != 3) {
         Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -515,11 +519,13 @@ TestgetopenfileCmd(
 
 static int
 TestsetencpathObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
+    (void)dummy;
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
         return TCL_ERROR;
@@ -548,12 +554,13 @@ TestsetencpathObjCmd(
 
 static int
 TestforkObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
+    (void)dummy;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -593,11 +600,13 @@ TestforkObjCmd(
 
 static int
 TestgetencpathObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
+    (void)dummy;
+
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
         return TCL_ERROR;
@@ -627,7 +636,7 @@ TestgetencpathObjCmd(
 
 static int
 TestalarmCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
@@ -635,6 +644,7 @@ TestalarmCmd(
 #ifdef SA_RESTART
     unsigned int sec;
     struct sigaction action;
+    (void)dummy;
 
     if (argc > 1) {
 	Tcl_GetInt(interp, argv[1], (int *)&sec);
@@ -658,6 +668,8 @@ TestalarmCmd(
     (void) alarm(sec);
     return TCL_OK;
 #else
+    (void)dummy;
+
     Tcl_AppendResult(interp,
 	    "warning: sigaction SA_RESTART not support on this platform",
 	    NULL);
@@ -685,6 +697,8 @@ static void
 AlarmHandler(
     int signum)
 {
+    (void)signum;
+
     gotsig = "1";
 }
 
@@ -706,11 +720,15 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
+    (void)dummy;
+    (void)argc;
+    (void)argv;
+
     Tcl_AppendResult(interp, gotsig, NULL);
     gotsig = "0";
     return TCL_OK;
@@ -743,6 +761,7 @@ TestchmodCmd(
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
     int i, mode;
+    (void)dummy;
 
     if (objc < 2) {
     Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

@@ -240,6 +240,7 @@ ProcBodyTestProcObjCmd(
     Tcl_Obj *bodyObjPtr;
     Tcl_Obj *myobjv[5];
     int result;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "newName argsList bodyName");
@@ -333,6 +334,7 @@ ProcBodyTestCheckObjCmd(
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
