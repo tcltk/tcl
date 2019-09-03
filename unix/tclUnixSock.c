@@ -334,8 +334,10 @@ Tcl_GetHostName(void)
 
 int
 TclpHasSockets(
-    Tcl_Interp *interp)		/* Not used. */
+    Tcl_Interp *dummy)		/* Not used. */
 {
+    (void)dummy;
+
     return TCL_OK;
 }
 
@@ -621,11 +623,12 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *interp)		/* For error reporting - unused. */
+    Tcl_Interp *dummy)		/* For error reporting - unused. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
     TcpFdList *fds;
+    (void)dummy;
 
     /*
      * Delete a file handler that may be active for this socket if this is a
@@ -1116,6 +1119,7 @@ TcpGetHandleProc(
     void **handlePtr)	/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
+    (void)direction;
 
     *handlePtr = INT2PTR(statePtr->fds.fd);
     return TCL_OK;
@@ -1140,6 +1144,8 @@ TcpAsyncCallback(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
+    (void)mask;
+
     TcpConnect(NULL, (TcpState *)clientData);
 }
 
@@ -1779,6 +1785,7 @@ TcpAccept(
     socklen_t len;		/* For accept interface */
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
+    (void)mask;
 
     len = sizeof(addr);
     newsock = accept(fds->fd, &addr.sa, &len);

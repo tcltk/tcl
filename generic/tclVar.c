@@ -1534,6 +1534,7 @@ Tcl_SetObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValueObj;
+    (void)dummy;
 
     if (objc == 2) {
 	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
@@ -2830,6 +2831,7 @@ Tcl_UnsetObjCmd(
 {
     int i, flags = TCL_LEAVE_ERR_MSG;
     const char *name;
+    (void)dummy;
 
     if (objc == 1) {
 	/*
@@ -2900,6 +2902,7 @@ Tcl_AppendObjCmd(
     Tcl_Obj *varValuePtr = NULL;
 				/* Initialized to avoid compiler warning. */
     int i;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -2966,6 +2969,7 @@ Tcl_LappendObjCmd(
     int numElems, createdNewObj;
     Var *varPtr, *arrayPtr;
     int result;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -3182,6 +3186,7 @@ ArrayForNRCmd(
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
     int isArray, numVars;
+    (void)dummy;
 
     /*
      * array for {k v} a body
@@ -3404,7 +3409,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3412,6 +3417,7 @@ ArrayStartSearchCmd(
     Var *varPtr;
     int isArray;
     ArraySearch *searchPtr;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");

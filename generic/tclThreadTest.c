@@ -223,6 +223,7 @@ ThreadObjCmd(
 	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
 	THREAD_WAIT, THREAD_ERRORPROC
     };
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1018,6 +1019,7 @@ ThreadEventProc(
     Tcl_Interp *interp = tsdPtr->interp;
     int code;
     const char *result, *errorCode, *errorInfo;
+    (void)mask;
 
     if (interp == NULL) {
 	code = TCL_ERROR;
@@ -1109,8 +1111,10 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    void *clientData)	/* dummy */
+    void *dummy)	/* dummy */
 {
+    (void)dummy;
+
     if (eventPtr->proc == ThreadEventProc) {
 	ckfree(((ThreadEvent *) eventPtr)->script);
 	return 1;

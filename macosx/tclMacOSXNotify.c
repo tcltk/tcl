@@ -945,6 +945,8 @@ TimerWakeUp(
     CFRunLoopTimerRef timer,
     void *info)
 {
+    (void)timer;
+    (void)info;
 }
 
 /*
@@ -1453,6 +1455,7 @@ UpdateWaitingListAndServiceEvents(
     void *info)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
+    (void)observer;
 
     if (tsdPtr->sleeping) {
 	return;
@@ -1827,13 +1830,14 @@ TclUnixWaitForFile(
 
 static TCL_NORETURN void
 NotifierThreadProc(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;
     int i, numFdBits = 0, polling;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+    (void)dummy;
 
     /*
      * Look for file events and report them to interested threads.

@@ -584,6 +584,7 @@ Tcl_ScanObjCmd(
     char buf[513];		/* Temporary buffer to hold scanned number
 				 * strings before they are passed to
 				 * strtoul. */
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
