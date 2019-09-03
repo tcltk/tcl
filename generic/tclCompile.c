@@ -2127,8 +2127,8 @@ TclCompileScript(
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
     /* 
-     * Check depth to avoid SO by too many nested calls of TclCompileScript
-     * (considering interp recursionlimit).
+     * Check depth to avoid overflow of the C execution stack by too many
+     * nested calls of TclCompileScript (considering interp recursionlimit).
      * Factor 5/4 (1.25) is used to avoid too mistaken limit recognition
      * during "mixed" evaluation and compilation process (nested eval+compile)
      * and is good enough for default recursionlimit (1000).
