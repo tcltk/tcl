@@ -96,7 +96,7 @@ static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
 static int		BroadcastValue(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
-static void		DeleteCmd(ClientData clientData);
+static void		DeleteCmd(void *clientData);
 static int		DeleteKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    REGSAM mode);
 static int		DeleteValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
@@ -119,7 +119,7 @@ static int		ParseKeyName(Tcl_Interp *interp, char *name,
 			    char **keyNamePtr);
 static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
-static int		RegistryObjCmd(ClientData clientData,
+static int		RegistryObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
@@ -214,6 +214,7 @@ Registry_Unload(
 {
     Tcl_Command cmd;
     Tcl_Obj *objv[3];
+    (void)flags;
 
     /*
      * Unregister the registry package. There is no Tcl_PkgForget()
@@ -255,7 +256,7 @@ Registry_Unload(
 
 static void
 DeleteCmd(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Interp *interp = (Tcl_Interp *)clientData;
 
@@ -280,7 +281,7 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    ClientData clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -299,6 +300,7 @@ RegistryObjCmd(
     static const char *const modes[] = {
 	"-32bit", "-64bit", NULL
     };
+    (void)dummy;
 
     if (objc < 2) {
     wrongArgs:
