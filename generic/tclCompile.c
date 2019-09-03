@@ -2169,18 +2169,26 @@ TclCompileScript(
 
     /* Each iteration compiles one command from the script. */
 
-    while (numBytes > 0) {
-	Tcl_Parse parse;
+    if (numBytes > 0) {
+      /*
+       * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
+       * many nested compilations (body enclosed in body) can cause abnormal
+       * program termination with a stack overflow exception, bug [fec0c17d39].
+       */
+      Tcl_Parse *parsePtr = (Tcl_Parse *)ckalloc(sizeof(Tcl_Parse));
+
+      do {
 	const char *next;
 
-	if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, &parse)) {
+	if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, parsePtr)) {
 	    /*
-	     * Compile bytecodes to report the parse error at runtime.
+	     * Compile bytecodes to report the parsePtr error at runtime.
 	     */
 
-	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
-		    parse.term + 1 - parse.commandStart);
+	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
+		    parsePtr->term + 1 - parsePtr->commandStart);
 	    TclCompileSyntaxError(interp, envPtr);
+	    ckfree(parsePtr);
 	    return;
 	}
 
@@ -2191,9 +2199,9 @@ TclCompileScript(
 	 */
 
 	if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
-	    int commandLength = parse.term - parse.commandStart;
+	    int commandLength = parsePtr->term - parsePtr->commandStart;
 	    fprintf(stdout, "  Compiling: ");
-	    TclPrintSource(stdout, parse.commandStart,
+	    TclPrintSource(stdout, parsePtr->commandStart,
 		    TclMin(commandLength, 55));
 	    fprintf(stdout, "\n");
 	}
@@ -2204,48 +2212,51 @@ TclCompileScript(
 	 * (See test info-30.33).
 	 */
 
-	TclAdvanceLines(&envPtr->line, p, parse.commandStart);
+	TclAdvanceLines(&envPtr->line, p, parsePtr->commandStart);
 	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
-		parse.commandStart - envPtr->source);
+		parsePtr->commandStart - envPtr->source);
 
 	/*
 	 * Advance parser to the next command in the script.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
+	next = parsePtr->commandStart + parsePtr->commandSize;
 	numBytes -= next - p;
 	p = next;
 
-	if (parse.numWords == 0) {
+	if (parsePtr->numWords == 0) {
 	    /*
 	     * The "command" parsed has no words.  In this case we can skip
 	     * the rest of the loop body.  With no words, clearly
 	     * CompileCommandTokens() has nothing to do.  Since the parser
 	     * aggressively sucks up leading comment and white space,
-	     * including newlines, parse.commandStart must be pointing at
+	     * including newlines, parsePtr->commandStart must be pointing at
 	     * either the end of script, or a command-terminating semi-colon.
 	     * In either case, the TclAdvance*() calls have nothing to do.
 	     * Finally, when no words are parsed, no tokens have been
-	     * allocated at parse.tokenPtr so there's also nothing for
+	     * allocated at parsePtr->tokenPtr so there's also nothing for
 	     * Tcl_FreeParse() to do.
 	     *
 	     * The advantage of this shortcut is that CompileCommandTokens()
-	     * can be written with an assumption that parse.numWords > 0, with
+	     * can be written with an assumption that parsePtr->numWords > 0, with
 	     * the implication the CCT() always generates bytecode.
 	     */
 	    continue;
 	}
 
-	lastCmdIdx = CompileCommandTokens(interp, &parse, envPtr);
+	lastCmdIdx = CompileCommandTokens(interp, parsePtr, envPtr);
 
 	/*
 	 * TIP #280: Track lines in the just compiled command.
 	 */
 
-	TclAdvanceLines(&envPtr->line, parse.commandStart, p);
+	TclAdvanceLines(&envPtr->line, parsePtr->commandStart, p);
 	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
 		p - envPtr->source);
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(parsePtr);
+      } while (numBytes > 0);
+
+      ckfree(parsePtr);
     }
 
     if (lastCmdIdx == -1) {
