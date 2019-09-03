@@ -774,7 +774,7 @@ Tcl_WaitForEvent(
 	numFound = PlatformEventsWait(tsdPtr->readyEvents,
 		tsdPtr->maxReadyEvents, timeoutPtr);
 	for (numEvent = 0; numEvent < numFound; numEvent++) {
-	    pedPtr = (PlatformEventData*)tsdPtr->readyEvents[numEvent].data.ptr;
+	    pedPtr = (struct PlatformEventData*)tsdPtr->readyEvents[numEvent].data.ptr;
 	    filePtr = pedPtr->filePtr;
 	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 #ifdef HAVE_EVENTFD
