@@ -1467,13 +1467,12 @@ Tcl_VwaitObjCmd(
 static char *
 VwaitVarProc(
     void *clientData,	/* Pointer to integer to set to 1. */
-    Tcl_Interp *dummy,		/* Interpreter containing variable. */
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable. */
     const char *name2,		/* Second part of variable name. */
     int flags)			/* Information about what happened. */
 {
     int *donePtr = (int *)clientData;
-    (void)dummy;
     (void)flags;
 
     *donePtr = 1;
