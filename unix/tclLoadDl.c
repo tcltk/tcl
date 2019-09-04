@@ -202,6 +202,14 @@ FindSymbol(
 	if (proc == NULL) {
 	    proc = dlsym(handle, native);	/* INTL: Native. */
 	}
+	if (proc == NULL) {
+	    TclDStringAppendLiteral(&newName, "i");
+	    native = Tcl_DStringValue(&newName);
+	    proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	}
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
 	Tcl_DStringFree(&newName);
     }
 #endif
