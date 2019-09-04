@@ -188,6 +188,23 @@ FindSymbol(
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
+#ifdef __cplusplus
+    if (proc == NULL) {
+	char buf[32];
+	sprintf(buf, "%d", Tcl_DStringLength(&ds));
+	Tcl_DStringInit(&newName);
+	TclDStringAppendLiteral(&newName, "__Z");
+	Tcl_DStringAppend(&newName, buf, -1);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), -1);
+	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
+	native = Tcl_DStringValue(&newName);
+	proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
+	Tcl_DStringFree(&newName);
+    }
+#endif
     Tcl_DStringFree(&ds);
     if (proc == NULL) {
 	const char *errorStr = dlerror();
