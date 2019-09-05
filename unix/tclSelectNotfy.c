@@ -925,7 +925,7 @@ Tcl_WaitForEvent(
 #if TCL_THREADS
 static TCL_NORETURN void
 NotifierThreadProc(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask;
@@ -937,6 +937,7 @@ NotifierThreadProc(
     struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
     int numFdBits = 0;
+    (void)dummy;
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");

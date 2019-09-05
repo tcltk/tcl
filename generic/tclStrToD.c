@@ -3061,6 +3061,7 @@ StrictInt64Conversion(
     int digit;			/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Current position in the output buffer. */
+    (void)dPtr;
 
     /*
      * Adjust if the logarithm was guessed wrong.
@@ -3446,6 +3447,7 @@ StrictBignumConversionPowD(
     mp_digit digit;		/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Index in the output buffer. */
+    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5
@@ -3853,6 +3855,7 @@ StrictBignumConversion(
     int digit;			/* Current digit of the result. */
     int g;			/* Size of the current digit ground. */
     int i, j;
+    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5

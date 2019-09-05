@@ -310,13 +310,14 @@ TclpFinalizePipes(void)
 
 void
 PipeSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     int block = 1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -363,13 +364,14 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
     PipeEvent *evPtr;
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -1860,6 +1862,7 @@ Tcl_CreatePipe(
 {
     HANDLE readHandle, writeHandle;
     SECURITY_ATTRIBUTES sec;
+    (void)flags;
 
     sec.nLength = sizeof(SECURITY_ATTRIBUTES);
     sec.lpSecurityDescriptor = NULL;
@@ -2753,6 +2756,7 @@ Tcl_PidObjCmd(
     PipeInfo *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
@@ -3200,6 +3204,8 @@ TclpOpenTemporaryFile(
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
     int length, counter, counter2;
     Tcl_DString buf;
+    (void)dirObj;
+    (void)extensionObj;
 
     if (!resultingNameObj) {
 	flags |= FILE_FLAG_DELETE_ON_CLOSE;

@@ -770,14 +770,14 @@ HashArrayKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     const int *array = (const int *) keyPtr;
-    unsigned int result;
+    TCL_HASH_TYPE result;
     int count;
 
     for (result = 0, count = tablePtr->keyType; count > 0;
 	    count--, array++) {
 	result += *array;
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*
@@ -868,7 +868,7 @@ HashStringKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     const char *string = (const char *)keyPtr;
-    unsigned int result;
+    TCL_HASH_TYPE result;
     char c;
     (void)tablePtr;
 
@@ -909,7 +909,7 @@ HashStringKey(
 	    result += (result << 3) + UCHAR(c);
 	}
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*

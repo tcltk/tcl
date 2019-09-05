@@ -1230,7 +1230,7 @@ TraversalCopy(
 static int
 TraversalDelete(
     Tcl_DString *srcPtr,	/* Source pathname (native). */
-    Tcl_DString *ignore,	/* Destination pathname (not used). */
+    Tcl_DString *dummy,	/* Destination pathname (not used). */
     const Tcl_StatBuf *statBufPtr,
 				/* Stat info for file specified by srcPtr. */
     int type,			/* Reason for call - see TraverseUnixTree(). */
@@ -1238,6 +1238,9 @@ TraversalDelete(
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
+    (void)dummy;
+    (void)statBufPtr;
+
     switch (type) {
     case DOTREE_F:
 	if (TclpDeleteFile(Tcl_DStringValue(srcPtr)) == 0) {
@@ -1286,6 +1289,7 @@ CopyFileAtts(
 {
     struct utimbuf tval;
     mode_t newMode;
+    (void)src;
 
     newMode = statBufPtr->st_mode
 	    & (S_ISUID | S_ISGID | S_IRWXU | S_IRWXG | S_IRWXO);
@@ -1344,6 +1348,7 @@ GetGroupAttribute(
     Tcl_StatBuf statBuf;
     struct group *groupPtr;
     int result;
+    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1398,6 +1403,7 @@ GetOwnerAttribute(
     Tcl_StatBuf statBuf;
     struct passwd *pwPtr;
     int result;
+    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1449,6 +1455,7 @@ GetPermissionsAttribute(
 {
     Tcl_StatBuf statBuf;
     int result;
+    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1492,6 +1499,7 @@ SetGroupAttribute(
     Tcl_WideInt gid;
     int result;
     const char *native;
+    (void)objIndex;
 
     if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
@@ -1558,6 +1566,7 @@ SetOwnerAttribute(
     Tcl_WideInt uid;
     int result;
     const char *native;
+    (void)objIndex;
 
     if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
@@ -1627,6 +1636,7 @@ SetPermissionsAttribute(
     const char *native;
     const char *modeStringPtr = TclGetString(attributePtr);
     int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
+    (void)objIndex;
 
     /*
      * First supply support for octal number format
@@ -1739,7 +1749,7 @@ TclpObjListVolumes(void)
 
 static int
 GetModeFromPermString(
-    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    Tcl_Interp *dummy,		/* The interp we are using for errors. */
     const char *modeStringPtr, /* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
@@ -1748,6 +1758,7 @@ GetModeFromPermString(
 				 * is passed in), to allow for the chmod style
 				 * manipulation. */
     int i,n, who, op, what, op_found, who_found;
+    (void)dummy;
 
     /*
      * We start off checking for an "rwxrwxrwx" style permissions string
@@ -1929,7 +1940,7 @@ GetModeFromPermString(
 
 int
 TclpObjNormalizePath(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     Tcl_Obj *pathPtr,
     int nextCheckpoint)
 {
@@ -1942,6 +1953,7 @@ TclpObjNormalizePath(
 #ifndef NO_REALPATH
     char normPath[MAXPATHLEN];
 #endif
+    (void)dummy;
 
     /*
      * We add '1' here because if nextCheckpoint is zero we know that '/'

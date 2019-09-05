@@ -180,8 +180,10 @@ FileInit(void)
 
 static void
 FileChannelExitHandler(
-    ClientData clientData)	/* Old window proc */
+    ClientData dummy)	/* Old window proc */
 {
+    (void)dummy;
+
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
 
@@ -204,12 +206,13 @@ FileChannelExitHandler(
 
 void
 FileSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -247,12 +250,13 @@ FileSetupProc(
 
 static void
 FileCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -386,12 +390,13 @@ FileBlockProc(
 static int
 FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
-    Tcl_Interp *interp)		/* Not used. */
+    Tcl_Interp *dummy)		/* Not used. */
 {
     FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
+    (void)dummy;
 
     /*
      * Remove the file from the watch list.

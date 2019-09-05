@@ -135,7 +135,7 @@ static const Tcl_MethodType fwdMethodType = {
 
 Tcl_Method
 Tcl_NewInstanceMethod(
-    Tcl_Interp *interp,		/* Unused? */
+    Tcl_Interp *dummy,		/* Unused. */
     Tcl_Object object,		/* The object that has the method attached to
 				 * it. */
     Tcl_Obj *nameObj,		/* The name of the method. May be NULL; if so,
@@ -153,6 +153,7 @@ Tcl_NewInstanceMethod(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
+    (void)dummy;
 
     if (nameObj == NULL) {
 	mPtr = (Method *)ckalloc(sizeof(Method));
@@ -208,7 +209,7 @@ Tcl_NewInstanceMethod(
 
 Tcl_Method
 Tcl_NewMethod(
-    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Tcl_Interp *dummy,		/* The interpreter containing the class. */
     Tcl_Class cls,		/* The class to attach the method to. */
     Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
 				 * for constructors or destructors); if so, up
@@ -225,6 +226,7 @@ Tcl_NewMethod(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
+    (void)dummy;
 
     if (nameObj == NULL) {
 	mPtr = (Method *)ckalloc(sizeof(Method));
@@ -963,6 +965,7 @@ ProcedureMethodVarResolver(
 {
     int result;
     Tcl_ResolvedVarInfo *rPtr = NULL;
+    (void)flags;
 
     result = ProcedureMethodCompiledVarResolver(interp, varName,
 	    strlen(varName), contextNs, &rPtr);
@@ -1105,7 +1108,7 @@ ProcedureMethodCompiledVarDelete(
 
 static int
 ProcedureMethodCompiledVarResolver(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     const char *varName,
     int length,
     Tcl_Namespace *contextNs,
@@ -1113,6 +1116,8 @@ ProcedureMethodCompiledVarResolver(
 {
     OOResVarInfo *infoPtr;
     Tcl_Obj *variableObj = Tcl_NewStringObj(varName, length);
+    (void)dummy;
+    (void)contextNs;
 
     /*
      * Do not create resolvers for cases that contain namespace separators or
@@ -1191,6 +1196,7 @@ MethodErrorHandler(
     const char *objectName, *kindName, *methodName =
 	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
+    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1221,6 +1227,7 @@ ConstructorErrorHandler(
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
+    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1250,6 +1257,7 @@ DestructorErrorHandler(
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
+    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1524,12 +1532,13 @@ DeleteForwardMethod(
 
 static int
 CloneForwardMethod(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     void *clientData,
     void **newClientData)
 {
     ForwardMethod *fmPtr = (ForwardMethod *)clientData;
     ForwardMethod *fm2Ptr = (ForwardMethod *)ckalloc(sizeof(ForwardMethod));
+    (void)dummy;
 
     fm2Ptr->prefixObj = fmPtr->prefixObj;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);

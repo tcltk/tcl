@@ -353,10 +353,11 @@ FileOutputProc(
 static int
 FileCloseProc(
     void *instanceData,	/* File state. */
-    Tcl_Interp *interp)		/* For error reporting - unused. */
+    Tcl_Interp *dummy)		/* For error reporting - unused. */
 {
     FileState *fsPtr = (FileState *)instanceData;
     int errorCode = 0;
+    (void)dummy;
 
     Tcl_DeleteFileHandler(fsPtr->fd);
 
@@ -1927,7 +1928,7 @@ Tcl_GetOpenFile(
     const char *chanID,		/* String that identifies file. */
     int forWriting,		/* 1 means the file is going to be used for
 				 * writing, 0 means for reading. */
-    int checkUsage,		/* 1 means verify that the file was opened in
+    int dummy,		/* 1 means verify that the file was opened in
 				 * a mode that allows the access specified by
 				 * "forWriting". Ignored, we always check that
 				 * the channel is open for the requested
@@ -1939,6 +1940,7 @@ Tcl_GetOpenFile(
     const Tcl_ChannelType *chanTypePtr;
     void *data;
     FILE *f;
+    (void)dummy;
 
     chan = Tcl_GetChannel(interp, chanID, &chanMode);
     if (chan == NULL) {

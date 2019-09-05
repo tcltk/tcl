@@ -1439,6 +1439,7 @@ TclCheckExecutionTraces(
     int curLevel;
     int traceCode = TCL_OK;
     Tcl_InterpState state = NULL;
+    (void)numChars;
 
     if (cmdPtr->tracePtr == NULL) {
 	return traceCode;
@@ -1775,6 +1776,7 @@ TraceExecutionProc(
     int flags = tcmdPtr->curFlags;
     int code = tcmdPtr->curCode;
     int traceCode = TCL_OK;
+    (void)cmdInfo;
 
     if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 	/*
