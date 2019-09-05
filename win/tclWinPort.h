@@ -14,7 +14,7 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && defined(BUILD_tcl)
+#if !defined(_WIN64)
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
 
