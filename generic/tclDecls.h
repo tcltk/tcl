@@ -4038,14 +4038,14 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
-	    char *__result = result; \
+	    const char *__result = result; \
 	    Tcl_FreeProc *__freeProc = freeProc; \
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
-		    ckfree(__result); \
+		    ckfree((char *)__result); \
 		} else { \
-		    (*__freeProc)(__result); \
+		    (*__freeProc)((char *)__result); \
 		} \
 	    } \
 	} while(0)

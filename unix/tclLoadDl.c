@@ -287,6 +287,8 @@ TclGuessPackageName(
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
+    (void)fileName;
+    (void)bufPtr;
     return 0;
 }
 

@@ -163,6 +163,7 @@ Tcl_ProcObjCmd(
     const char *simpleName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
@@ -404,6 +405,7 @@ TclCreateProc(
     Proc **procPtrPtr)		/* Returns: pointer to proc data. */
 {
     Interp *iPtr = (Interp *) interp;
+    (void)nsPtr;
 
     Proc *procPtr = NULL;
     int i, result, numArgs;
@@ -904,6 +906,7 @@ TclNRUplevelObjCmd(
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
+    (void)dummy;
 
     if (objc < 2) {
     uplevelSyntax:
@@ -1375,6 +1378,7 @@ InitArgsAndLocals(
     Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
+    (void)procNameObj;
 
     ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1955,6 +1959,9 @@ TclProcCompileProc(
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
 	}
+#else
+    (void)description;
+    (void)procName;
 #endif
 
 	/*
@@ -2633,6 +2640,7 @@ TclNRApplyObjCmd(
     int result;
     Tcl_Namespace *nsPtr;
     ApplyExtraData *extraPtr;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg ...?");

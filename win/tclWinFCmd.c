@@ -1432,6 +1432,8 @@ TraversalDelete(
     Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
+    (void)dstPtr;
+
     switch (type) {
     case DOTREE_F:
 	if (TclpDeleteFile(nativeSrc) == TCL_OK) {
@@ -1597,6 +1599,7 @@ ConvertFileNameFormat(
 {
     int pathc, i;
     Tcl_Obj *splitPath;
+    (void)objIndex;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 
@@ -1894,6 +1897,8 @@ CannotSetAttribute(
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
+    (void)attributePtr;
+
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
 	    tclpFileAttrStrings[objIndex], Tcl_GetString(fileName)));

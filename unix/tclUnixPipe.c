@@ -271,6 +271,7 @@ TclpTempFileNameForLibrary(
     Tcl_Obj *path)		/* Path name of the library in the VFS. */
 {
     Tcl_Obj *retval = TclpTempFileName();
+    (void)path;
 
     if (retval == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -813,6 +814,7 @@ Tcl_CreatePipe(
     int flags)			/* Reserved for future use. */
 {
     int fileNums[2];
+    (void)flags;
 
     if (pipe(fileNums) < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("pipe creation failed: %s",
@@ -1261,6 +1263,7 @@ Tcl_PidObjCmd(
     PipeState *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");

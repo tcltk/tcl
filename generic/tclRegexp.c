@@ -1053,11 +1053,12 @@ FreeRegexp(
 
 static void
 FinalizeRegexp(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     int i;
     TclRegexp *regexpPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
 	regexpPtr = tsdPtr->regexps[i];

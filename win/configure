@@ -4173,7 +4173,7 @@ $as_echo "using shared flags" >&6; }
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith -Wunused-parameter"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 

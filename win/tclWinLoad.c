@@ -67,6 +67,7 @@ TclpDlopen(
     const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
+    (void)flags;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -286,6 +287,9 @@ TclGuessPackageName(
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
+    (void)fileName;
+    (void)bufPtr;
+
     return 0;
 }
 

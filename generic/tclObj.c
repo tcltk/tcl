@@ -3189,6 +3189,9 @@ Tcl_DbNewWideIntObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewWideIntObj(wideValue);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -3563,6 +3566,9 @@ Tcl_DbNewBignumObj(
     const char *file,
     int line)
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewBignumObj(bignumValue);
 }
 #endif
@@ -3978,6 +3984,9 @@ Tcl_DbIncrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
+#else
+    (void)file;
+    (void)line;
 #endif /* TCL_MEM_DEBUG */
     ++(objPtr)->refCount;
 }
@@ -4041,6 +4050,9 @@ Tcl_DbDecrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
+#else
+    (void)file;
+    (void)line;
 #endif /* TCL_MEM_DEBUG */
 
     if (objPtr->refCount-- <= 1) {
@@ -4106,6 +4118,9 @@ Tcl_DbIsShared(
 	}
     }
 # endif /* TCL_THREADS */
+#else
+    (void)file;
+    (void)line;
 #endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
@@ -4169,11 +4184,12 @@ Tcl_InitObjHashTable(
 
 static Tcl_HashEntry *
 AllocObjEntry(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    Tcl_HashTable *dummy,	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr = (Tcl_HashEntry *)ckalloc(sizeof(Tcl_HashEntry));
+    (void)dummy;
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
@@ -4290,13 +4306,14 @@ TclFreeObjEntry(
 
 TCL_HASH_TYPE
 TclHashObjKey(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    Tcl_HashTable *dummy,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     int length;
     const char *string = TclGetStringFromObj(objPtr, &length);
-    unsigned int result = 0;
+    TCL_HASH_TYPE result = 0;
+    (void)dummy;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4338,7 +4355,7 @@ TclHashObjKey(
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*
@@ -4691,12 +4708,13 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *descObj;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");

@@ -1038,12 +1038,13 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
-    Tcl_Interp *interp)		/* Unused. */
+    Tcl_Interp *dummy)		/* Unused. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     /* TIP #218 */
     int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1197,7 +1198,10 @@ TcpSetOptionProc(
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     TcpState *statePtr = instanceData;
     SOCKET sock;
+#else
+    (void)instanceData;
 #endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
+    (void)value;
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1674,6 +1678,7 @@ TcpGetHandleProc(
     ClientData *handlePtr)	/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
+    (void)direction;
 
     *handlePtr = INT2PTR(statePtr->sockets->fd);
     return TCL_OK;
@@ -2619,8 +2624,10 @@ SocketsEnabled(void)
     /* ARGSUSED */
 static void
 SocketExitHandler(
-    ClientData clientData)		/* Not used. */
+    ClientData dummy)		/* Not used. */
 {
+    (void)dummy;
+
     Tcl_MutexLock(&socketMutex);
 
     /*
@@ -2653,12 +2660,13 @@ SocketExitHandler(
 
 void
 SocketSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -2698,12 +2706,13 @@ SocketSetupProc(
 
 static void
 SocketCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
     SocketEvent *evPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;

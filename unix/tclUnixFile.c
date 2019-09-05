@@ -44,6 +44,8 @@ TclpFindExecutable(
     int length;
     char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
+    (void)argv0;
+
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);
@@ -555,6 +557,8 @@ NativeMatchType(
 	    return matchResult;
 	}
     }
+#else
+    (void)interp;
 #endif /* MAC_OSX_TCL */
 
     return 1;
@@ -1018,6 +1022,7 @@ Tcl_Obj *
 TclpFilesystemPathType(
     Tcl_Obj *pathPtr)
 {
+    (void)pathPtr;
     /*
      * All native paths are of the same type.
      */

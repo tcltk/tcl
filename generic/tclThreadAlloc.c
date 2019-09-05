@@ -875,6 +875,8 @@ UnlockBucket(
     Cache *cachePtr,
     int bucket)
 {
+    (void)cachePtr;
+
     Tcl_MutexUnlock(bucketInfo[bucket].lockPtr);
 }
 

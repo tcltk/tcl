@@ -211,9 +211,10 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    (void)dummy;
 
     Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
     if (tsdPtr != NULL) {
@@ -398,11 +399,12 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
 	    || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)) {
@@ -456,12 +458,13 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
 	/*
@@ -526,6 +529,7 @@ TimerHandlerEventProc(
     Tcl_Time time;
     int currentTimerId;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)evPtr;
 
     /*
      * Do nothing if timers aren't enabled. This leaves the event on the
@@ -779,7 +783,7 @@ TclServiceIdle(void)
 	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(
-    ClientData clientData,	/* Unused */
+    ClientData dummy,	/* Unused */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -795,6 +799,7 @@ Tcl_AfterObjCmd(
     };
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1253,10 +1258,11 @@ static void
 AfterCleanupProc(
     ClientData clientData,	/* Points to AfterAssocData for the
 				 * interpreter. */
-    Tcl_Interp *interp)		/* Interpreter that is being deleted. */
+    Tcl_Interp *dummy)		/* Interpreter that is being deleted. */
 {
     AfterAssocData *assocPtr = (AfterAssocData *)clientData;
     AfterInfo *afterPtr;
+    (void)dummy;
 
     while (assocPtr->firstAfterPtr != NULL) {
 	afterPtr = assocPtr->firstAfterPtr;
