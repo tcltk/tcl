@@ -3211,6 +3211,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    /* FALLTHRU */
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3309,7 +3310,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar(interp, Tcl_GetString(objv[i+1]), 0);
+	    Tcl_UnsetVar2(interp, Tcl_GetString(objv[i+1]), NULL, 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);
