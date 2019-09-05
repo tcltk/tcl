@@ -19,7 +19,7 @@
 #define __MINGW_USE_VC2005_COMPAT
 #endif
 
-#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT) && defined(BUILD_tcl)
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define _USE_32BIT_TIME_T
 #endif
