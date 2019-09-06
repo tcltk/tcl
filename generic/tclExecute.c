@@ -4132,7 +4132,7 @@ TEBCresume(
 	TRACE(("%d %.30s %.30s => ", TclGetInt4AtPtr(pc+1),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 
-	if (TclObjGetFrame(interp, OBJ_UNDER_TOS, &framePtr) == -1) {
+	if (TclObjGetFrame(interp, OBJ_UNDER_TOS, &framePtr, 0) == -1) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}

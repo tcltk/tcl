@@ -493,7 +493,7 @@ struct tm *		TclpGmtime(const time_t *clock);
 /* Slot 197 is reserved */
 /* 198 */
 EXTERN int		TclObjGetFrame(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				CallFrame **framePtrPtr);
+				CallFrame **framePtrPtr, int flags);
 /* Slot 199 is reserved */
 /* 200 */
 EXTERN int		TclpObjRemoveDirectory(Tcl_Obj *pathPtr,

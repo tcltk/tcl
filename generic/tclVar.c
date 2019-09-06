@@ -5282,7 +5282,7 @@ Tcl_UpvarObjCmd(
      * linked to.
      */
 
-    result = TclObjGetFrame(interp, levelObj, &framePtr);
+    result = TclObjGetFrame(interp, levelObj, &framePtr, 0);
     if (result == -1) {
 	return TCL_ERROR;
     }

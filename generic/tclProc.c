@@ -724,7 +724,7 @@ TclGetFrame(
 	obj.bytes = (char *) name;
 	obj.length = strlen(name);
 	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
+	result = TclObjGetFrame(interp, &obj, framePtrPtr, 0);
 	TclFreeIntRep(&obj);
 	return result;
 }
@@ -758,8 +758,9 @@ int
 TclObjGetFrame(
     Tcl_Interp *interp,		/* Interpreter in which to find frame. */
     Tcl_Obj *objPtr,		/* Object describing frame. */
-    CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
+    CallFrame **framePtrPtr,	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
+    int flags)			/* 1 means the frame level (objPtr) is optional. */
 {
     Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
@@ -817,10 +818,10 @@ TclObjGetFrame(
 	}
     }
 
-    if (result == 0) {
-	level = curLevel - 1;
-    }
     if (result != -1) {
+	if (result == 0) {
+	    level = curLevel - 1;
+	}
 	if (level >= 0) {
 	    CallFrame *framePtr;
 	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
@@ -833,10 +834,15 @@ TclObjGetFrame(
 	}
     }
 
-    if (name == NULL) {
-	name = objPtr ? TclGetString(objPtr) : "1" ;
+    if (objPtr != NULL && (result != 0 || !(flags & 1))) {
+	if (name == NULL) {
+	    name = TclGetString(objPtr);
+	}
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
+    } else {
+	/* below of top-level (e. g. [uplevel cmd] at top-level) */
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("bad level \"1\"", -1));
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
     return -1;
 }
@@ -915,7 +921,7 @@ TclNRUplevelObjCmd(
      * Find the level to use for executing the command.
      */
 
-    result = TclObjGetFrame(interp, objv[1], &framePtr);
+    result = TclObjGetFrame(interp, objv[1], &framePtr, (objc == 2)? 1 : 0);
     if (result == -1) {
 	return TCL_ERROR;
     }

@@ -802,7 +802,7 @@ declare 183 {deprecated {}}  {
 #}
 declare 198 {
     int TclObjGetFrame(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CallFrame **framePtrPtr)
+	    CallFrame **framePtrPtr, int flags)
 }
 
 #declare 199 {
