@@ -834,7 +834,7 @@ TclObjGetFrame(
     }
 
     if (name == NULL) {
-	name = TclGetString(objPtr);
+	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
