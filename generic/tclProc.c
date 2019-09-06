@@ -713,17 +713,22 @@ TclGetFrame(
     result = 1;
     curLevel = iPtr->varFramePtr->level;
     if (*name== '#') {
-	if (Tcl_GetInt(interp, name+1, &level) != TCL_OK || level < 0) {
+	if (Tcl_GetInt(NULL, name+1, &level) != TCL_OK || level < 0) {
 	    goto levelError;
 	}
     } else if (isdigit(UCHAR(*name))) { /* INTL: digit */
-	if (Tcl_GetInt(interp, name, &level) != TCL_OK) {
+	if (Tcl_GetInt(NULL, name, &level) != TCL_OK) {
 	    goto levelError;
 	}
 	level = curLevel - level;
     } else {
+	/* 
+	 * (historical, TODO) If name does not contain a level (#0 or 1),
+	 * TclGetFrame and Tcl_UpVar2 uses current level - 1
+	 */
 	level = curLevel - 1;
 	result = 0;
+	name = "1"; /* be more consistent with TclObjGetFrame (error at top - 1) */
     }
 
     /*
@@ -812,7 +817,7 @@ TclObjGetFrame(
 	}
 	level = curLevel - level;
     } else if (*name == '#') {
-	if (Tcl_GetInt(interp, name+1, &level) != TCL_OK || level < 0) {
+	if (Tcl_GetInt(NULL, name+1, &level) != TCL_OK || level < 0) {
 	    goto levelError;
 	}
 

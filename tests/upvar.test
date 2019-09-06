@@ -357,7 +357,7 @@ test upvar-8.11 {upvar will not create a variable that looks like an array} -bod
 
 test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
     list [catch {testupvar xyz a {} x global} msg] $msg
-} {1 {bad level "xyz"}}
+} {1 {bad level "1"}}
 test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
     catch {unset a}
     catch {unset x}
