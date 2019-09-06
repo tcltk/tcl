@@ -849,6 +849,7 @@ TclObjGetFrame(
 
 	level = curLevel - 1;
 	result = 0;
+	name = "1";
     }
 
     /*
