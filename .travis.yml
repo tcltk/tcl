@@ -17,7 +17,7 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-# Debug builds. Running test-cases disabled, because it is currently failing.
+# Debug build. Running test-cases disabled, because it is currently failing.
     - name: "Linux/GCC/Debug/no test"
       os: linux
       dist: xenial
