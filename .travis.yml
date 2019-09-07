@@ -17,8 +17,7 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-# Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/GCC/Debug/no test"
+    - name: "Linux/GCC/Debug"
       os: linux
       dist: xenial
       compiler: gcc
@@ -90,16 +89,13 @@ matrix:
       env:
         - CFGOPT=--disable-shared
         - BUILD_DIR=unix
-# Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/Clang/Debug/no test"
+    - name: "Linux/Clang/Debug"
       os: linux
       dist: xenial
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
@@ -178,7 +174,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --enable-threads --enable-symbols"
       script: *crosstest
-# Test with mingw-w64 (64 bit)
+# Test with mingw-w64 cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-64/GCC/Shared/no test"
       os: linux
@@ -214,8 +210,45 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --enable-symbols"
       script: *crosstest
-# Test on Windows with MSVC native
+# Test on Windows with MSVC native (using configure/make)
     - name: "Windows/MSVC/Shared"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-64bit --enable-threads"
+      before_install: &msys2preinst
+        - choco install make msys2
+        - PATH="$PATH:$VCDIR"
+        - cd ${BUILD_DIR}
+      install: &msys2inst
+        - cmd.exe /C 'vcvarsall.bat x64 && sh -c ./configure %CFGOPT% --prefix=%HOME%'
+      script: &msys2make
+        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make all tcltest
+        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make test
+    - name: "Windows/MSVC/Static"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-64bit --enable-threads --disable-shared"
+      before_install: *msys2preinst
+      install: *msys2inst
+      script: *msys2make
+    - name: "Windows/MSVC/Debug"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-64bit --enable-threads --enable-symbols"
+      before_install: *msys2preinst
+      install: *msys2inst
+      script: *msys2make
+# Test on Windows with MSVC native (using nmake)
+    - name: "Windows/MSVC/Shared/nmake"
       os: windows
       compiler: cl
       env: &vcenv
@@ -228,7 +261,7 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc test'
-    - name: "Windows/MSVC/Static"
+    - name: "Windows/MSVC/Static/nmake"
       os: windows
       compiler: cl
       env: *vcenv
@@ -237,7 +270,7 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
-    - name: "Windows/MSVC/Debug"
+    - name: "Windows/MSVC/Debug/nmake"
       os: windows
       compiler: cl
       env: *vcenv
