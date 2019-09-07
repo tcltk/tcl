@@ -252,7 +252,7 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=win
-        - CFGOPT="--enable-64bit"
+        - CFGOPT="--enable-64bit --enable-threads"
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
@@ -261,7 +261,7 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=win
-        - CFGOPT="--enable-64bit --disable-shared"
+        - CFGOPT="--enable-64bit --enable-threads --disable-shared"
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
@@ -270,7 +270,7 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=win
-        - CFGOPT="--enable-64bit --enable-symbols"
+        - CFGOPT="--enable-64bit --enable-threads --enable-symbols"
       before_install:
         - choco install make
         - cd ${BUILD_DIR}
