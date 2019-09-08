@@ -151,6 +151,60 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
+# Test with mingw-w64 cross-compile
+# Doesn't run tests because wine is only an imperfect Windows emulation
+    - name: "Linux-cross-Windows/GCC/Shared/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: &mingw64
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+            - wine
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+      script: *crosstest
+    - name: "Linux-cross-Windows/GCC/Static/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
+      script: *crosstest
+    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=6"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
+      script: *crosstest
+    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=3"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
+      script: *crosstest
+    - name: "Linux-cross-Windows/GCC/Debug/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
+      script: *crosstest
 # Test with mingw-w64 (32 bit) cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
@@ -209,60 +263,6 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
-      script: *crosstest
-# Test with mingw-w64 (64 bit)
-# Doesn't run tests because wine is only an imperfect Windows emulation
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
       script: *crosstest
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
