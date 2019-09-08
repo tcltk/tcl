@@ -23,9 +23,9 @@
 
 typedef struct {
     ClientData clientData;	/* Address of preserved block. */
-    Tcl_FreeProc *freeProc;	/* Function to call to free. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
+    Tcl_FreeProc *freeProc;	/* Function to call to free. */
 } Reference;
 
 /*
@@ -242,6 +242,14 @@ Tcl_Release(
  *
  *----------------------------------------------------------------------
  */
+
+#ifdef TCL_MEM_DEBUG
+#   undef Tcl_Free
+#   define Tcl_Free freeproc
+static void Tcl_Free(void *x) {
+    Tcl_DbCkfree((x), __FILE__, __LINE__);
+}
+#endif
 
 void
 Tcl_EventuallyFree(
