@@ -189,7 +189,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
       script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test: UTF_MAX=6"
+    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=6"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
@@ -207,7 +207,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
       script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test: NO_DEPRECATED"
+    - name: "Linux-cross-Windows/GCC/Shared/no test: NO_DEPRECATED"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
@@ -216,7 +216,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
       script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
+    - name: "Linux-cross-Windows/GCC/Debug/no test"
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
