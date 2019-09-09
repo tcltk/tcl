@@ -498,15 +498,15 @@ tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinPipe.${OBJEXT}: tclWinPipe.c
-	$(CC) -c $(CC_SWITCHES) -D_BUILD_tcl -DTCL_PIPE_DLL=\"$(PIPE_DLL_FILE)\" \
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_PIPE_DLL=\"$(PIPE_DLL_FILE)\" \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinReg.${OBJEXT}: tclWinReg.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinDde.${OBJEXT}: tclWinDde.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 testMain.${OBJEXT}: tclAppInit.c
