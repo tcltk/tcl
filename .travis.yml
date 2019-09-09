@@ -168,7 +168,11 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
-      script: *crosstest
+      script: &crosstest
+        - make all tcltest
+        # Include a high visibility marker that tests are skipped outright
+        - >
+          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
     - name: "Linux-cross-Windows/GCC/Static/no test"
       os: linux
       dist: xenial
@@ -223,11 +227,7 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
-      script: &crosstest
-        - make all tcltest
-        # Include a high visibility marker that tests are skipped outright
-        - >
-          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
+      script: *crosstest
     - name: "Linux-cross-Windows-32/GCC/Static/no test"
       os: linux
       dist: xenial
