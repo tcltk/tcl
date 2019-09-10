@@ -295,7 +295,7 @@ removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
-test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrPc} -setup {
+test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrWin} -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
@@ -403,18 +403,18 @@ test iocmd-10.5 {fblocked command} {
 set path(test4) [makeFile {} test4]
 set path(test5) [makeFile {} test5]
 
-test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.1 {I/O to command pipelines} {unixOrWin unixExecs} {
     set f [open $path(test4) w]
     close $f
     list [catch {open "| cat < \"$path(test4)\" > \"$path(test5)\"" w} msg] $msg $::errorCode
 } {1 {can't write input to command: standard input was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.2 {I/O to command pipelines} {unixOrWin unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.3 {I/O to command pipelines} {unixOrWin unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrPc} {
+test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrWin} {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
 } {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 

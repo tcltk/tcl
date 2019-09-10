@@ -230,12 +230,12 @@ foreach {testid script} {
 # More tests of Tcl_SourceObjCmd are in source.test
 
 test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} -constraints {
-    unixOrPc
+    unixOrWin
 } -returnCodes error -body {
     source
 } -match glob -result {wrong # args: should be "source*fileName"}
 test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} -constraints {
-    unixOrPc
+    unixOrWin
 } -returnCodes error -body {
     source a b c d e f
 } -match glob -result {wrong # args: should be "source*fileName"}
