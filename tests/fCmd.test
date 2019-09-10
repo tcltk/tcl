@@ -26,6 +26,15 @@ testConstraint winOlderThan2000 0
 testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
 testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
+testConstraint reg 0
+if {[testConstraint win]} {
+    if {![catch {
+	    ::tcltest::loadTestedCommands
+	    set ::regver [package require registry 1.3.3]
+	}]} {
+	testConstraint reg 1
+    }
+}
 
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
@@ -49,7 +58,7 @@ if {[testConstraint unix]} {
 }
 
 # Also used in winFCmd...
-if {[testConstraint winOnly]} {
+if {[testConstraint win]} {
     if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
         if {$::tcl_platform(osVersion) >= 6.0} {
             testConstraint winVista 1
@@ -259,7 +268,7 @@ test fCmd-3.14 {FileCopyRename: FileBasename fails} -setup {
 } -result {user "_totally_bogus_user" doesn't exist}
 test fCmd-3.15 {FileCopyRename: source[0] == '\0'} -setup {
     cleanup
-} -constraints {notRoot unixOrPc} -returnCodes error -body {
+} -constraints {notRoot unixOrWin} -returnCodes error -body {
     file mkdir td1
     file rename / td1
 } -result {error renaming "/" to "td1": file already exists}
@@ -387,7 +396,7 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} {notRoot} {
     file delete tf1 td1 tf2
     lappend x [file exists tf1] [file exists tf2] [file exists tf3]
 } {1 1 1 0 0 0}
-test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc} {
+test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrWin} {
     cleanup
     createfile tf1
     createfile tf2
@@ -1080,7 +1089,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
 } -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file already exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
-} -constraints {notRoot unixOrPc testchmod} -body {
+} -constraints {notRoot unixOrWin testchmod} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
