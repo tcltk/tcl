@@ -1084,7 +1084,7 @@ test socket_$af-7.4 {testing socket specific options} -constraints [list socket 
 test socket_$af-7.5 {testing socket specific options} -setup {
     set timer [after 10000 "set x timed_out"]
     set l ""
-} -constraints [list socket supported_$af unixOrPc] -body {
+} -constraints [list socket supported_$af unixOrWin] -body {
     set s [socket -server accept 0]
     proc accept {s a p} {
 	global x
