@@ -246,6 +246,34 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+# Test on Windows with MSVC native (32-bit)
+    - name: "Windows/MSVC-x86/Shared"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Static"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -253,7 +281,7 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads"
-      before_install:
+      before_install: &makepreinst
         - choco install make
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Static"
@@ -262,18 +290,36 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads --disable-shared"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
     - name: "Windows/GCC/Debug"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads --enable-symbols"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
+# Test on Windows with GCC native (32-bit)
+    - name: "Windows/GCC-x86/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-threads"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Static"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-threads --disable-shared"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-threads --enable-symbols"
+      before_install: *makepreinst
 before_install:
   - cd ${BUILD_DIR}
 install:
