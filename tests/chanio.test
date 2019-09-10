@@ -2025,7 +2025,7 @@ test chan-io-27.4 {FlushChannel, implicit flush when buffer fills} -setup {
 test chan-io-27.5 {FlushChannel, implicit flush when buffer fills and on chan close} -setup {
     file delete $path(test1)
     set l ""
-} -constraints {unixOrPc} -body {
+} -constraints {unixOrWin} -body {
     set f [open $path(test1) w]
     chan configure $f -translation lf -buffersize 60 -eofchar {}
     lappend l [file size $path(test1)]
@@ -7409,7 +7409,7 @@ test chan-io-57.2 {buffered data and file events, read} -setup {
     chan close $server
 } -result {1 readable 234567890 timer}
 
-test chan-io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc openpipe fileevent} {
+test chan-io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrWin openpipe fileevent} {
     set out [open $path(script) w]
     chan puts $out {
 	chan puts "normal message from pipe"
