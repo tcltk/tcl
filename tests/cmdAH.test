@@ -887,7 +887,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     file exe $gorpfile
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
-    # On pc, must be a .exe, .com, etc.
+    # On windows, must be a .exe, .com, etc.
     set x {}
     set gorpexes {}
     foreach ext {exe com cmd bat} {
