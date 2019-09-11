@@ -949,7 +949,7 @@ test socket-7.4 {testing socket specific options} {socket} {
     set l ""
     lappend l [expr {[lindex $x 2] == $listen}] [llength $x]
 } {1 3}
-test socket-7.5 {testing socket specific options} {socket unixOrPc} {
+test socket-7.5 {testing socket specific options} {socket unixOrWin} {
     set s [socket -server accept 0]
     proc accept {s a p} {
 	global x

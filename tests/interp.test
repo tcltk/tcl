@@ -53,7 +53,7 @@ test interp-1.8 {options for interp command} {
 } {1 {bad option "-froboz": must be alias, aliases, bgerror, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.9 {options for interp command} {
     list [catch {interp -froboz -safe} msg] $msg
-} {1 {bad option "-froboz": must be alias, aliases, bgerror, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}} 
+} {1 {bad option "-froboz": must be alias, aliases, bgerror, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.10 {options for interp command} {
     list [catch {interp target} msg] $msg
 } {1 {wrong # args: should be "interp target path alias"}}
@@ -68,7 +68,7 @@ test interp-2.2 {basic interpreter creation} {
 } 0
 test interp-2.3 {basic interpreter creation} {
     catch {interp create -safe}
-} 0 
+} 0
 test interp-2.4 {basic interpreter creation} {
     list [catch {interp create a} msg] $msg
 } {1 {interpreter named "a" already exists, cannot create}}
@@ -100,7 +100,7 @@ test interp-2.11 {anonymous interps vs existing procs} {
     set x [interp create]
     regexp "interp(\[0-9]+)" $x dummy anothernum
     expr $anothernum > $thenum
-} 1    
+} 1
 test interp-2.12 {anonymous interps vs existing procs} {
     set x [interp create -safe]
     regexp "interp(\[0-9]+)" $x dummy thenum
@@ -109,11 +109,11 @@ test interp-2.12 {anonymous interps vs existing procs} {
     set x [interp create -safe]
     regexp "interp(\[0-9]+)" $x dummy anothernum
     expr $anothernum - $thenum
-} 1    
+} 1
 test interp-2.13 {correct default when no $path arg is given} -body {
     interp create --
 } -match regexp -result {interp[0-9]+}
-    
+
 foreach i [interp slaves] {
     interp delete $i
 }
@@ -854,12 +854,12 @@ test interp-18.9 {eval in deleted interp, bug 495830} {
     interp create tst
     interp alias tst suicide {} interp delete tst
     list [catch {tst eval {suicide; set a 5}} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}     
+} {1 {attempt to call eval in deleted interpreter}}
 test interp-18.10 {eval in deleted interp, bug 495830} {
     interp create tst
     interp alias tst suicide {} interp delete tst
     list [catch {tst eval {set set set; suicide; $set a 5}} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}     
+} {1 {attempt to call eval in deleted interpreter}}
 
 # Test alias deletion
 
@@ -949,7 +949,7 @@ test interp-19.9 {alias deletion, renaming} {
     set l [interp eval a foo]
     interp delete a
     set l
-} 1156    
+} 1156
 
 test interp-20.1 {interp hide, interp expose and interp invokehidden} {
     set a [interp create]
@@ -1170,7 +1170,7 @@ test interp-20.21 {interp hide vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {a hide list} msg]    
+    lappend l [catch {a hide list} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1179,7 +1179,7 @@ test interp-20.22 {interp hide vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {interp hide a list} msg]    
+    lappend l [catch {interp hide a list} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1188,7 +1188,7 @@ test interp-20.23 {interp hide vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {a eval {interp hide {} list}} msg]    
+    lappend l [catch {a eval {interp hide {} list}} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1198,7 +1198,7 @@ test interp-20.24 {interp hide vs safety} {
     interp create a -safe
     interp create {a b}
     set l ""
-    lappend l [catch {a eval {interp hide b list}} msg]    
+    lappend l [catch {a eval {interp hide b list}} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1217,7 +1217,7 @@ test interp-20.26 {interp expoose vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {a hide list} msg]    
+    lappend l [catch {a hide list} msg]
     lappend l $msg
     lappend l [catch {a expose list} msg]
     lappend l $msg
@@ -1228,9 +1228,9 @@ test interp-20.27 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {interp hide a list} msg]    
+    lappend l [catch {interp hide a list} msg]
     lappend l $msg
-    lappend l [catch {interp expose a list} msg]    
+    lappend l [catch {interp expose a list} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1239,7 +1239,7 @@ test interp-20.28 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {a hide list} msg]    
+    lappend l [catch {a hide list} msg]
     lappend l $msg
     lappend l [catch {a eval {interp expose {} list}} msg]
     lappend l $msg
@@ -1250,9 +1250,9 @@ test interp-20.29 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
     set l ""
-    lappend l [catch {interp hide a list} msg]    
+    lappend l [catch {interp hide a list} msg]
     lappend l $msg
-    lappend l [catch {a eval {interp expose {} list}} msg]    
+    lappend l [catch {a eval {interp expose {} list}} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1262,9 +1262,9 @@ test interp-20.30 {interp expose vs safety} {
     interp create a -safe
     interp create {a b}
     set l ""
-    lappend l [catch {interp hide {a b} list} msg]    
+    lappend l [catch {interp hide {a b} list} msg]
     lappend l $msg
-    lappend l [catch {a eval {interp expose b list}} msg]    
+    lappend l [catch {a eval {interp expose b list}} msg]
     lappend l $msg
     interp delete a
     set l
@@ -1274,7 +1274,7 @@ test interp-20.31 {interp expose vs safety} {
     interp create a -safe
     interp create {a b}
     set l ""
-    lappend l [catch {interp hide {a b} list} msg]    
+    lappend l [catch {interp hide {a b} list} msg]
     lappend l $msg
     lappend l [catch {interp expose {a b} list} msg]
     lappend l $msg
@@ -1631,7 +1631,7 @@ test interp-21.5 {interp hidden} {
     set l [lsort [interp hidden a]]
     interp delete a
     set l
-} $hidden_cmds 
+} $hidden_cmds
 test interp-21.6 {interp hidden vs interp hide, interp expose} {
     catch {interp delete a}
     interp create a
@@ -1786,7 +1786,7 @@ test interp-23.1 {testing hiding vs aliases} {
     interp delete a
     set l
 } {{} bar {} bar bar {} {}}
-test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
+test interp-23.2 {testing hiding vs aliases} {unixOrWin} {
     catch {interp delete a}
     interp create a -safe
     set l ""
@@ -1802,7 +1802,7 @@ test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
     lappend l [lsort [interp hidden a]]
     interp delete a
     set l
-} {{cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {bar cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload}} 
+} {{cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {bar cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload}}
 
 test interp-24.1 {result resetting on error} {
     catch {interp delete a}
@@ -2045,7 +2045,7 @@ test interp-26.1 {result code transmission : interp eval direct} {
     # Test that all the possibles error codes from Tcl get passed up
     # from the slave interp's context to the master, even though the
     # slave nominally thinks the command is running at the root level.
-    
+
     catch {interp delete a}
     interp create a
     set res {}
@@ -2076,7 +2076,7 @@ test interp-26.3 {result code transmission : aliases} {
     # Test that all the possibles error codes from Tcl get passed up
     # from the slave interp's context to the master, even though the
     # slave nominally thinks the command is running at the root level.
-    
+
     catch {interp delete a}
     interp create a
     set res {}
@@ -2193,7 +2193,7 @@ test interp-26.8 {errorInfo transmission: safe interps--bug 1637} {knownBug} {
 test interp-27.1 {interp aliases & namespaces} {
     set i [interp create];
     set aliasTrace {};
-    proc tstAlias {args} { 
+    proc tstAlias {args} {
 	global aliasTrace;
 	lappend aliasTrace [list [namespace current] $args];
     }
@@ -2206,7 +2206,7 @@ test interp-27.1 {interp aliases & namespaces} {
 test interp-27.2 {interp aliases & namespaces} {
     set i [interp create];
     set aliasTrace {};
-    proc tstAlias {args} { 
+    proc tstAlias {args} {
 	global aliasTrace;
 	lappend aliasTrace [list [namespace current] $args];
     }
@@ -2219,7 +2219,7 @@ test interp-27.2 {interp aliases & namespaces} {
 test interp-27.3 {interp aliases & namespaces} {
     set i [interp create];
     set aliasTrace {};
-    proc tstAlias {args} { 
+    proc tstAlias {args} {
 	global aliasTrace;
 	lappend aliasTrace [list [namespace current] $args];
     }
@@ -2234,7 +2234,7 @@ test interp-27.4 {interp aliases & namespaces} {
     set i [interp create];
     namespace eval foo2 {
 	variable aliasTrace {};
-	proc bar {args} { 
+	proc bar {args} {
 	    variable aliasTrace;
 	    lappend aliasTrace [list [namespace current] $args];
 	}
@@ -3206,7 +3206,7 @@ test interp-34.9 {time limits trigger in blocking after} {
     } msg]
     set t1 [clock seconds]
     interp delete $i
-    list $code $msg [expr {($t1-$t0) < 3 ? "OK" : $t1-$t0}] 
+    list $code $msg [expr {($t1-$t0) < 3 ? "OK" : $t1-$t0}]
 } {1 {time limit exceeded} OK}
 test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     set i [interp create]
@@ -3440,7 +3440,7 @@ test interp-35.24 {interp time limits can't touch current interp} -body {
 test interp-36.1 {interp bgerror syntax} -body {
     interp bgerror
 } -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
-test interp-36.2 {interp bgerror syntax} -body { 
+test interp-36.2 {interp bgerror syntax} -body {
     interp bgerror x y z
 } -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
 test interp-36.3 {interp bgerror syntax} -setup {

@@ -224,12 +224,12 @@ foreach script {
 # More tests of Tcl_SourceObjCmd are in source.test
 
 test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} -constraints {
-    unixOrPc
+    unixOrWin
 } -body {
     list [catch {source} msg] $msg
 } -match glob -result {1 {wrong # args: should be "source*fileName"}}
 test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} -constraints {
-    unixOrPc
+    unixOrWin
 } -body {
     list [catch {source a b} msg] $msg
 } -match glob -result {1 {wrong # args: should be "source*fileName"}}

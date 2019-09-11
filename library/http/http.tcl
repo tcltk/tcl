@@ -1286,7 +1286,7 @@ proc http::Eof {token {force 0}} {
 
     if {($state(coding) eq "gzip") && [string length $state(body)] > 0} {
         if {[catch {
-	    if {[package vsatisfies [package present Tcl] 8.6]} {
+	    if {[package vsatisfies [package provide Tcl] 8.6]} {
 		# The zlib integration into 8.6 includes proper gzip support
 		set state(body) [zlib gunzip $state(body)]
 	    } else {
