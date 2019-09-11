@@ -2211,6 +2211,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     Tcl_Token *tokenPtr;
     int numCommands = tokens[0].numComponents;
     int depth = TclGetStackDepth(envPtr);
+    Interp *iPtr = (Interp *) interp;
     CmdLocation *cmdLocPtr = NULL;	/* Pointer into envPtr->cmdMap for
 					 * the last command this routine
 					 * compiles into bytecode;  If we
@@ -2225,6 +2226,20 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     }	 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
+    }
+    /* 
+     * Check depth to avoid overflow of the C execution stack by too many
+     * nested calls of TclCompileScript (considering interp recursionlimit).
+     * Factor 5/4 (1.25) is used to avoid too mistaken limit recognition
+     * during "mixed" evaluation and compilation process (nested eval+compile)
+     * and is good enough for default recursionlimit (1000).
+     */
+    if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "too many nested compilations (infinite loop?)", -1));
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+	TclCompileSyntaxError(interp, envPtr);
+	return;
     }
 
     tokenPtr = &(tokens[1]);
@@ -2263,7 +2278,15 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
 #endif
 
+	/*
+	 * Avoid stack exhaustion by too many nested calls of TclCompileScript
+	 * (considering interp recursionlimit).
+	 */
+	iPtr->numLevels++;
+
 	tokenPtr = CompileCommandTokens(interp, tokenPtr, envPtr, &cmdLocPtr);
+
+	iPtr->numLevels--;
 
 	/*
 	 * TIP #280: Track lines in the just compiled command.
