@@ -1218,12 +1218,32 @@ TclCompileScript(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine;
     int* clNext;
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
+    /* 
+     * Check depth to avoid overflow of the C execution stack by too many
+     * nested calls of TclCompileScript (considering interp recursionlimit).
+     * Factor 5/4 (1.25) is used to avoid too mistaken limit recognition
+     * during "mixed" evaluation and compilation process (nested eval+compile)
+     * and is good enough for default recursionlimit (1000).
+     */
+    if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "too many nested compilations (infinite loop?)", -1));
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+	TclCompileSyntaxError(interp, envPtr);
+	return;
+    }
+    /* 
+     * Avoid stack exhaustion by too many nested calls of TclCompileScript
+     * (considering interp recursionlimit).
+     */
+    iPtr->numLevels++;
+
+    parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
 
@@ -1631,6 +1651,7 @@ TclCompileScript(
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
     }
 
+    iPtr->numLevels--;
     TclStackFree(interp, parsePtr);
     Tcl_DStringFree(&ds);
 }
