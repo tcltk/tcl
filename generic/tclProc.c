@@ -808,7 +808,7 @@ TclObjGetFrame(
 	    } else {
 		result = -1;
 	    }
-	} else if (TclGetWideBitsFromObj(interp, objPtr, &w) == TCL_OK) {
+	} else if (TclGetWideBitsFromObj(NULL, objPtr, &w) == TCL_OK) {
 	    /*
 	     * If this were an integer, we'd have succeeded already.
 	     * Docs say we have to treat this as a 'bad level'  error.
@@ -817,10 +817,16 @@ TclObjGetFrame(
 	}
     }
 
-    if (result == 0) {
-	level = curLevel - 1;
-    }
     if (result != -1) {
+	/* if relative current level */
+	if (result == 0) {
+	    if (!curLevel) {
+		/* we are in top-level, so simply generate bad level */
+		name = "1";
+		goto badLevel;
+	    }
+	    level = curLevel - 1;
+	}
 	if (level >= 0) {
 	    CallFrame *framePtr;
 	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
@@ -832,9 +838,9 @@ TclObjGetFrame(
 	    }
 	}
     }
-
+badLevel:
     if (name == NULL) {
-	name = TclGetString(objPtr);
+	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);

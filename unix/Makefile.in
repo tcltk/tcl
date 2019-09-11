@@ -952,7 +952,7 @@ install-libraries: libraries
 		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/msgcat-1.7.0.tm
 	@echo "Installing package tcltest 2.5.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/tcltest-2.5.0.tm
+		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/tcltest-2.5.1.tm
 	@echo "Installing package platform 1.0.14 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/platform-1.0.14.tm
