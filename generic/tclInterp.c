@@ -3291,7 +3291,7 @@ Tcl_MakeSafe(
      * No env array in a safe slave.
      */
 
-    Tcl_UnsetVar(interp, "env", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove unsafe parts of tcl_platform
@@ -3307,9 +3307,9 @@ Tcl_MakeSafe(
      * nameofexecutable])
      */
 
-    Tcl_UnsetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove the standard channels from the interpreter; safe interpreters do
