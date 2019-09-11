@@ -83,6 +83,16 @@ test uplevel-3.4 {uplevel to same level} {
     a1
 } 55
 
+test uplevel-4.0.1 {error: non-existent level} -body {
+    uplevel #0 { uplevel { set y 222 } }
+} -returnCodes error -result {bad level "1"}
+test uplevel-4.0.2 {error: non-existent level} -setup {
+    interp create i
+} -body {
+    i eval { uplevel { set y 222 } }
+} -returnCodes error -result {bad level "1"} -cleanup {
+    interp delete i
+}
 test uplevel-4.1 {error: non-existent level} -returnCodes error -body {
     apply {{} {
 	uplevel #2 {set y 222}
