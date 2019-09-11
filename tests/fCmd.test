@@ -278,7 +278,7 @@ test fCmd-3.14 {FileCopyRename: FileBasename fails} -setup {
 } -result {user "_totally_bogus_user" doesn't exist}
 test fCmd-3.15 {FileCopyRename: source[0] == '\0'} -setup {
     cleanup
-} -constraints {notRoot unixOrPc} -returnCodes error -body {
+} -constraints {notRoot unixOrWin} -returnCodes error -body {
     file mkdir td1
     file rename / td1
 } -result {error renaming "/" to "td1": file already exists}
@@ -418,7 +418,7 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} -constraints notRoot -setup {
 } -cleanup {cleanup} -result {1 1 1 0 0 0}
 test fCmd-5.5 {TclFileDeleteCmd: stop at first error} -setup {
     cleanup
-} -constraints {notRoot unixOrPc} -body {
+} -constraints {notRoot unixOrWin} -body {
     createfile tf1
     createfile tf2
     file mkdir td1
@@ -1118,7 +1118,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
 } -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file already exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
-} -constraints {notRoot unixOrPc testchmod} -body {
+} -constraints {notRoot unixOrWin testchmod} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
