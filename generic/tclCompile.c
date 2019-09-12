@@ -2126,7 +2126,7 @@ TclCompileScript(
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
-    /* 
+    /*
      * Check depth to avoid overflow of the C execution stack by too many
      * nested calls of TclCompileScript (considering interp recursionlimit).
      * Factor 5/4 (1.25) is used to avoid too mistaken limit recognition
@@ -2218,7 +2218,7 @@ TclCompileScript(
 	    continue;
 	}
 
-	/* 
+	/*
 	 * Avoid stack exhaustion by too many nested calls of TclCompileScript
 	 * (considering interp recursionlimit).
 	 */

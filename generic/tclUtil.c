@@ -1725,7 +1725,7 @@ TrimRight(
      */
 
     do {
-	Tcl_UniChar ch1;
+	Tcl_UniChar ch1 = 0;
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
@@ -1737,7 +1737,7 @@ TrimRight(
 	 */
 
 	do {
-	    Tcl_UniChar ch2;
+	    Tcl_UniChar ch2 = 0;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -1824,7 +1824,7 @@ TrimLeft(
      */
 
     do {
-	Tcl_UniChar ch1;
+	Tcl_UniChar ch1 = 0;
 	int pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
 	int bytesLeft = numTrim;
@@ -1834,7 +1834,7 @@ TrimLeft(
 	 */
 
 	do {
-	    Tcl_UniChar ch2;
+	    Tcl_UniChar ch2 = 0;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -2237,7 +2237,7 @@ Tcl_StringCaseMatch(
 {
     int p, charLen;
     const char *pstart = pattern;
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2347,7 +2347,7 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '[') {
-	    Tcl_UniChar startChar, endChar;
+	    Tcl_UniChar startChar = 0, endChar = 0;
 
 	    pattern++;
 	    if (UCHAR(*str) < 0x80) {
@@ -3069,7 +3069,7 @@ Tcl_DStringGetResult(
 	    dsPtr->length = 0;
 	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
 	} else {
-	    dsPtr->string = Tcl_GetString(iPtr->objResultPtr);
+	    dsPtr->string = TclGetString(iPtr->objResultPtr);
 	    dsPtr->length = iPtr->objResultPtr->length;
 	    dsPtr->spaceAvl = dsPtr->length + 1;
 	    TclFreeIntRep(iPtr->objResultPtr);
@@ -3754,7 +3754,7 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	bytes = Tcl_GetString(objPtr);
+	bytes = TclGetString(objPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad index \"%s\": must be integer?[+-]integer? or"
 		" end?[+-]integer?", bytes));
