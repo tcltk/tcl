@@ -508,7 +508,7 @@ test compile-13.3 {TclCompileScript: testing check of max depth by nested script
     ti eval {set result {}}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
-    # with 500 nested scripts (bodies). It must generate "too many nested compilations" 
+    # with 500 nested scripts (bodies). It must generate "too many nested compilations"
     # error for any variant we're testing here:
     ti eval {foreach cmd {eval "if 1" try catch} {
 	set c [gencode [expr {![info exists ::tcl_platform(debug)] ? 2000 : 1000}] $cmd]
@@ -516,7 +516,7 @@ test compile-13.3 {TclCompileScript: testing check of max depth by nested script
     }}
     #puts $errors
     # all of nested calls exceed the limit, so must end with "too many nested compilations"
-    # (or evaluations, depending on compile method/instruction and "mixed" compile within 
+    # (or evaluations, depending on compile method/instruction and "mixed" compile within
     # evaliation), so no one succeeds, the result must be empty:
     ti eval {set result}
 } -result {}
