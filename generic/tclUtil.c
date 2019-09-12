@@ -901,7 +901,7 @@ Tcl_SplitList(
 	}
 	argv[i] = p;
 	if (literal) {
-	    memcpy(p, element, (size_t) elSize);
+	    memcpy(p, element, elSize);
 	    p += elSize;
 	    *p = 0;
 	    p++;
@@ -939,8 +939,8 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
+    const char *src,	/* String to convert to list element. */
+    int *flagPtr)	/* Where to store information to guide
 				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
@@ -1319,9 +1319,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1349,7 +1349,7 @@ Tcl_ConvertElement(
 
 int
 Tcl_ConvertCountedElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1382,7 +1382,7 @@ Tcl_ConvertCountedElement(
 
 int
 TclConvertElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1719,13 +1719,13 @@ TrimRight(
 {
     const char *p = bytes + numBytes;
     int pInc;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
      * Outer loop: iterate over string to be trimmed.
      */
 
     do {
-	Tcl_UniChar ch1 = 0;
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
@@ -1737,7 +1737,6 @@ TrimRight(
 	 */
 
 	do {
-	    Tcl_UniChar ch2 = 0;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -1818,13 +1817,13 @@ TrimLeft(
     int numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes;
+	Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
      * Outer loop: iterate over string to be trimmed.
      */
 
     do {
-	Tcl_UniChar ch1 = 0;
 	int pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
 	int bytesLeft = numTrim;
@@ -1834,7 +1833,6 @@ TrimLeft(
 	 */
 
 	do {
-	    Tcl_UniChar ch2 = 0;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -2012,7 +2010,7 @@ Tcl_Concat(
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = ckalloc((unsigned) (bytesNeeded + argc));
+    result = ckalloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	int triml, trimr, elemLength;
@@ -2045,7 +2043,7 @@ Tcl_Concat(
 	if (needSpace) {
 	    *p++ = ' ';
 	}
-	memcpy(p, element, (size_t) elemLength);
+	memcpy(p, element, elemLength);
 	p += elemLength;
 	needSpace = 1;
     }
@@ -2747,7 +2745,7 @@ Tcl_DStringAppend(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2850,7 +2848,7 @@ Tcl_DStringAppendElement(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2944,7 +2942,7 @@ Tcl_DStringSetLength(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
@@ -3048,7 +3046,7 @@ Tcl_DStringGetResult(
 
     /*
      * Do more efficient transfer when we know the result is a Tcl_Obj. When
-     * there's no st`ring result, we only have to deal with two cases:
+     * there's no string result, we only have to deal with two cases:
      *
      *  1. When the string rep is the empty string, when we don't copy but
      *     instead use the staticSpace in the DString to hold an empty string.
@@ -3093,7 +3091,7 @@ Tcl_DStringGetResult(
 	    dsPtr->spaceAvl = dsPtr->length+1;
 	} else {
 	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
+	    memcpy(dsPtr->string, iPtr->result, dsPtr->length+1);
 	    iPtr->freeProc(iPtr->result);
 	}
 	dsPtr->spaceAvl = dsPtr->length+1;
@@ -3106,7 +3104,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = ckalloc(dsPtr->length+1);
 	    dsPtr->spaceAvl = dsPtr->length + 1;
 	}
-	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
+	memcpy(dsPtr->string, iPtr->result, dsPtr->length+1);
     }
 
     iPtr->result = iPtr->resultSpace;
@@ -3261,7 +3259,7 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * Handle NaN.
@@ -4100,7 +4098,7 @@ TclCheckBadOctal(
 				 * errors. */
     const char *value)		/* String to check. */
 {
-    register const char *p = value;
+    const char *p = value;
 
     /*
      * A frequent mistake is invalid octal values due to an unwanted leading
@@ -4291,7 +4289,7 @@ TclSetProcessGlobalValue(
     }
     bytes = Tcl_GetStringFromObj(newValue, &pgvPtr->numBytes);
     pgvPtr->value = ckalloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, bytes, (unsigned) pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
@@ -4347,8 +4345,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DString native, newValue;
 
 	    Tcl_MutexLock(&pgvPtr->mutex);
-	    pgvPtr->epoch++;
-	    epoch = pgvPtr->epoch;
+	    epoch = ++pgvPtr->epoch;
 	    Tcl_UtfToExternalDString(pgvPtr->encoding, pgvPtr->value,
 		    pgvPtr->numBytes, &native);
 	    Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
@@ -4357,7 +4354,7 @@ TclGetProcessGlobalValue(
 	    ckfree(pgvPtr->value);
 	    pgvPtr->value = ckalloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
-		    (size_t) Tcl_DStringLength(&newValue) + 1);
+		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
 	    pgvPtr->encoding = current;
@@ -4367,7 +4364,7 @@ TclGetProcessGlobalValue(
 	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (char *) INT2PTR(epoch));
+    hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
 	int dummy;
 
