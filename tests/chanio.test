@@ -1881,7 +1881,7 @@ test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -bod
 } -result {{{} {}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
-} -constraints {stdio openpipe} -body {
+} -constraints {stdio openpipe knownMsvcBug} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stdout
@@ -2817,7 +2817,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
     chan close $cs
     chan close $ss
     vwait [namespace which -variable x]
-    return $c
+    set c
 } -result 2000
 test chan-io-29.35 {Tcl_Chan Close vs chan event vs multiple interpreters} -setup {
     catch {interp delete x}
@@ -7033,7 +7033,7 @@ test chan-io-53.8 {CopyData: async callback and error handling, Bug 1932639} -se
     vwait ::forever
     catch {after cancel $token}
     # Report
-    return $::RES
+    set ::RES
 } -cleanup {
     chan close $f
     chan close $g
@@ -7233,7 +7233,7 @@ test chan-io-54.1 {Recursive channel events} {socket fileevent} {
     for {set i 0} {$i < 10} {incr i} {
 	if {![catch {
 	    set cs [socket 127.0.0.1 [lindex [chan configure $ss -sockname] 2]]
-	}]} then {
+	}]} {
 	    set done 1
 	    break
 	}
@@ -7305,7 +7305,7 @@ test chan-io-54.2 {Testing for busy-wait in recursive channel events} -setup {
     chan close $writer
     chan close $s
     after cancel $after
-    return $counter
+    set counter
 } -cleanup {
     if {$accept ne {}} {chan close $accept}
 } -result 1
@@ -7332,7 +7332,7 @@ test chan-io-55.1 {ChannelEventScriptInvoker: deletion} -constraints {
     chan event $f writable [namespace code [list eventScript $f]]
     variable x not_done
     vwait [namespace which -variable x]
-    return $x
+    set x
 } -cleanup {
     interp bgerror {} $handler
 } -result {got_error}
@@ -7377,7 +7377,7 @@ test chan-io-57.1 {buffered data and file events, gets} -setup {
     vwait [namespace which -variable result]
     lappend result [chan gets $s2]
     vwait [namespace which -variable result]
-    return $result
+    set result
 } -cleanup {
     chan close $s
     chan close $s2
@@ -7402,7 +7402,7 @@ test chan-io-57.2 {buffered data and file events, read} -setup {
     vwait [namespace which -variable result]
     lappend result [chan read $s2 9]
     vwait [namespace which -variable result]
-    return $result
+    set result
 } -cleanup {
     chan close $s
     chan close $s2
