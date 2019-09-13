@@ -305,7 +305,7 @@ Tcl_GetEncodingFromObj(
     Tcl_Obj *objPtr,
     Tcl_Encoding *encodingPtr)
 {
-    const char *name = Tcl_GetString(objPtr);
+    const char *name = TclGetString(objPtr);
 
     if (objPtr->typePtr != &encodingType) {
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
@@ -704,7 +704,7 @@ Tcl_GetDefaultEncodingDir(void)
     }
     Tcl_ListObjIndex(NULL, searchPath, 0, &first);
 
-    return Tcl_GetString(first);
+    return TclGetString(first);
 }
 
 /*
@@ -1260,7 +1260,7 @@ Tcl_ExternalToUtf(
 	if (*dstCharsPtr <= maxChars) {
 	    break;
 	}
-	dstLen = Tcl_UtfAtIndex(dst, maxChars) - 1 - dst + TCL_UTF_MAX;
+	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	flags = savedFlags;
 	*statePtr = savedState;
     } while (1);
@@ -1518,10 +1518,10 @@ OpenEncodingFileChannel(
 	    }
 	}
 	if (!verified) {
-	    const char *dirString = Tcl_GetString(directory);
+	    const char *dirString = TclGetString(directory);
 
 	    for (i=0; i<numDirs && !verified; i++) {
-		if (strcmp(dirString, Tcl_GetString(dir[i])) == 0) {
+		if (strcmp(dirString, TclGetString(dir[i])) == 0) {
 		    verified = 1;
 		}
 	    }
@@ -1720,7 +1720,7 @@ LoadTableEncoding(
     };
 
     Tcl_DStringInit(&lineString);
-    if (Tcl_Gets(chan, &lineString) < 0) {
+    if (Tcl_Gets(chan, &lineString) == -1) {
 	return NULL;
     }
     line = Tcl_DStringValue(&lineString);
@@ -1767,7 +1767,7 @@ LoadTableEncoding(
 	if (Tcl_ReadChars(chan, objPtr, expected, 0) != expected) {
 	    return NULL;
 	}
-	p = Tcl_GetString(objPtr);
+	p = TclGetString(objPtr);
 	hi = (staticHex[UCHAR(p[0])] << 4) + staticHex[UCHAR(p[1])];
 	dataPtr->toUnicode[hi] = pageMemPtr;
 	p += 2;
@@ -2054,13 +2054,13 @@ LoadEscapeEncoding(
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = ckalloc(size);
     dataPtr->initLen = strlen(init);
-    memcpy(dataPtr->init, init, (unsigned) dataPtr->initLen + 1);
+    memcpy(dataPtr->init, init, dataPtr->initLen + 1);
     dataPtr->finalLen = strlen(final);
-    memcpy(dataPtr->final, final, (unsigned) dataPtr->finalLen + 1);
+    memcpy(dataPtr->final, final, dataPtr->finalLen + 1);
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
     memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),
-	    (size_t) Tcl_DStringLength(&escapeData));
+	    Tcl_DStringLength(&escapeData));
     Tcl_DStringFree(&escapeData);
 
     memset(dataPtr->prefixBytes, 0, sizeof(dataPtr->prefixBytes));
@@ -2148,7 +2148,7 @@ BinaryProc(
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    memcpy(dst, src, (size_t) srcLen);
+    memcpy(dst, src, srcLen);
     return result;
 }
 
@@ -2425,11 +2425,8 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    Tcl_UniChar ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*statePtr = 0;
-    }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -2457,11 +2454,11 @@ UnicodeToUtfProc(
 	 * Tcl_UniChar-size data.
 	 */
 
-	*chPtr = *(Tcl_UniChar *)src;
-	if (*chPtr && *chPtr < 0x80) {
-	    *dst++ = (*chPtr & 0xFF);
+	ch = *(Tcl_UniChar *)src;
+	if (ch && ch < 0x80) {
+	    *dst++ = (ch & 0xFF);
 	} else {
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += sizeof(Tcl_UniChar);
     }
@@ -2953,6 +2950,7 @@ Iso88591FromUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars;
+    Tcl_UniChar ch = 0;
 
     result = TCL_OK;
 
@@ -2967,7 +2965,6 @@ Iso88591FromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	Tcl_UniChar ch = 0;
 	int len;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -3321,6 +3318,7 @@ EscapeFromUtfProc(
     const TableEncodingData *tableDataPtr;
     const char *tablePrefixBytes;
     const unsigned short *const *tableFromUnicode;
+    Tcl_UniChar ch = 0;
 
     result = TCL_OK;
 
@@ -3346,7 +3344,7 @@ EscapeFromUtfProc(
 	    *dstWrotePtr = 0;
 	    return TCL_CONVERT_NOSPACE;
 	}
-	memcpy(dst, dataPtr->init, (size_t)dataPtr->initLen);
+	memcpy(dst, dataPtr->init, dataPtr->initLen);
 	dst += dataPtr->initLen;
     } else {
 	state = PTR2INT(*statePtr);
@@ -3361,7 +3359,6 @@ EscapeFromUtfProc(
     for (numChars = 0; src < srcEnd; numChars++) {
 	unsigned len;
 	int word;
-	Tcl_UniChar ch = 0;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -3468,7 +3465,7 @@ EscapeFromUtfProc(
 		memcpy(dst, dataPtr->subTables[0].sequence, len);
 		dst += len;
 	    }
-	    memcpy(dst, dataPtr->final, (size_t) dataPtr->finalLen);
+	    memcpy(dst, dataPtr->final, dataPtr->finalLen);
 	    dst += dataPtr->finalLen;
 	    state &= ~TCL_ENCODING_END;
 	}
