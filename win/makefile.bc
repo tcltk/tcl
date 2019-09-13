@@ -271,10 +271,10 @@ TCLOBJS	= \
 
 TCLSTUBOBJS	= $(TMPDIR)\tclStubLib.obj
 
-WINDIR		= $(ROOT)\win
+WIN_DIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
-TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
+TCL_INCLUDES	= -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES) $(SYMDEFINES) \
 			$(PROFDEFINES) $(OPTDEFINES) $(SIXFOURDEFINES) \
 			-DTCL_CFGVAL_ENCODING=${CFG_ENCODING}
@@ -379,8 +379,8 @@ $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\$(NAMEPREFIX)sh.res
 		$(TCLTESTOBJS), $@, -x, $(LNLIBS) $(TCLLIB),, $(TMPDIR)\$(NAMEPREFIX)sh.res
 !
 
-$(TCLPIPEDLL): $(WINDIR)\stub16.c
-	$(cc32) $(CFLAGS) -o$(TMPDIR)\stub16.obj $(WINDIR)\stub16.c
+$(TCLPIPEDLL): $(WIN_DIR)\stub16.c
+	$(cc32) $(CFLAGS) -o$(TMPDIR)\stub16.obj $(WIN_DIR)\stub16.c
 	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 \
 		$(TMPDIR)\stub16.obj, $@, -x, $(LNLIBS),, $(TMPDIR)\$(NAMEPREFIX).res
 
@@ -394,7 +394,7 @@ $(TCLREGDLL): $(TMPDIR)\tclWinReg.obj $(TCLSTUBLIB)
 		$(TMPDIR)\tclWinReg.obj, $@, -x, $(LNLIBS) $(TCLSTUBLIB),, \
 		$(TMPDIR)\$(NAMEPREFIX).res
 
-$(CAT32): $(WINDIR)\cat.c
+$(CAT32): $(WIN_DIR)\cat.c
 	$(cc32) $(CONS_CFLAGS) -o$(TMPDIR)\cat.obj $?
 	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 \
 		$(TMPDIR)\cat.obj, $@, -x, $(LNLIBS),,
@@ -499,10 +499,10 @@ $(TCLRTF): $(MAN2TCL).exe $(TCLSH)
 #
 # Special case object file targets
 #
-$(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
+$(TMPDIR)\tclWinInit.obj: $(WIN_DIR)\tclWinInit.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
-$(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
+$(TMPDIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -o$(TMPDIR)\testMain.obj $?
 
 $(TMPDIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
@@ -511,7 +511,7 @@ $(TMPDIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 $(TMPDIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
-$(TMPDIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
+$(TMPDIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
@@ -522,17 +522,17 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 		-DCFG_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\"		\
 	 -o$(TMPDIR)\$@ $?
 
-$(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
+$(TMPDIR)\tclAppInit.obj : $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 # The following objects should be built using the stub interfaces
 
 # tclWinReg: Produces errors in ANSI mode
-$(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
+$(TMPDIR)\tclWinReg.obj : $(WIN_DIR)\tclWinReg.c
 	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
 
 # tclWinDde: Produces errors in ANSI mode
-$(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
+$(TMPDIR)\tclWinDde.obj : $(WIN_DIR)\tclWinDde.c
 	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
 
 
@@ -571,7 +571,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 # Implicit rules
 #
 
-{$(WINDIR)}.c{$(TMPDIR)}.obj:
+{$(WIN_DIR)}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
@@ -580,7 +580,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
-{$(WINDIR)}.rc{$(TMPDIR)}.res:
+{$(WIN_DIR)}.rc{$(TMPDIR)}.res:
 	$(rc32) $(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -fo$@ $<
 
 clean:
