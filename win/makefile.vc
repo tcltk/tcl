@@ -480,10 +480,10 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+
 $(TCLIMPLIB): $(TCLLIB)
 
 !endif # $(STATIC_BUILD)
-
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
