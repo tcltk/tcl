@@ -71,7 +71,7 @@ static const unsigned char totalBytes[256] = {
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
-    1,1,1,1,1,
+    3,3,3,3,3, /* Tcl_UtfCharComplete() only checks TCL_UTF_MAX bytes */
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
@@ -314,7 +314,7 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	/* If *chPtr contains a high surrogate (produced by a previous
 	 * Tcl_UtfToUniChar() call) and the next 3 bytes are UTF-8 continuation
 	 * bytes, then we must produce a follow-up low surrogate. We only
@@ -364,13 +364,12 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-#if TCL_UTF_MAX > 3
     else if (byte < 0xF8) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high >= 0x400) {
@@ -394,7 +393,6 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-#endif
 
     *chPtr = byte;
     return 1;
