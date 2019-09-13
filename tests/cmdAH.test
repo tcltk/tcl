@@ -26,7 +26,6 @@ testConstraint linkDirectory [expr {
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 global env
 set cmdAHwd [pwd]
