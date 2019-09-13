@@ -242,7 +242,7 @@ test registry-4.2 {GetKeyNames} {win reg} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {baz}
-test registry-4.3 {GetKeyNames: remote key} {win reg english} {
+test registry-4.3 {GetKeyNames: remote key} {win reg nonPortable english} {
     set hostname [info hostname]
     registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar\\baz
     set result [registry keys \\\\gaspode\\HKEY_CURRENT_USER\\TclFoobar]
@@ -571,7 +571,7 @@ test registry-7.7 {GetValueNames: names with spaces} -constraints {win reg} -set
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{baz bar} blat}
 
-test registry-8.1 {OpenSubKey} -constraints {win reg english} \
+test registry-8.1 {OpenSubKey} -constraints {win reg nonPortable english} \
     -body {
         # This test will only succeed if the current user does not have
         # registry access on the specified machine.
@@ -657,7 +657,7 @@ test registry-11.2 {SetValue: modification} -constraints {win reg} \
         set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
     } -result {frob}
 test registry-11.3 {SetValue: failure} \
-    -constraints {win reg english} \
+    -constraints {win reg nonPortable english} \
     -body {
         # This test will only succeed if the current user does not have
         # registry access on the specified machine.
