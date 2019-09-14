@@ -58,7 +58,7 @@ Tcl_SetPanicProc(
     else
 #endif
     panicProc = proc;
-    TclInitSubsystems();
+    Tcl_InitSubsystems();
 }
 
 /*
