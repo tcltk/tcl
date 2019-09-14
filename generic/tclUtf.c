@@ -240,7 +240,7 @@ Tcl_UniCharToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength < 0) {
+    if (uniLength == TCL_AUTO_LENGTH) {
 	uniLength = 0;
 	w = uniStr;
 	while (*w != '\0') {
@@ -282,7 +282,7 @@ Tcl_Char16ToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength < 0) {
+    if (uniLength == TCL_AUTO_LENGTH) {
 
 	uniLength = 0;
 	w = uniStr;
