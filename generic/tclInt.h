@@ -3243,17 +3243,6 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
-#if (TCL_UTF_MAX > 4) && (defined(__CYGWIN__) || defined(_WIN32))
-MODULE_SCOPE int TclUtfToWChar(const char *src, WCHAR *chPtr);
-MODULE_SCOPE char *	TclWCharToUtfDString(const WCHAR *uniStr,
-			    int uniLength, Tcl_DString *dsPtr);
-MODULE_SCOPE WCHAR * TclUtfToWCharDString(const char *src,
-			    int length, Tcl_DString *dsPtr);
-#else
-#   define TclUtfToWChar TclUtfToUniChar
-#   define TclWCharToUtfDString Tcl_UniCharToUtfDString
-#   define TclUtfToWCharDString Tcl_UtfToUniCharDString
-#endif
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
@@ -4631,10 +4620,17 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX > 4
 #define TclUtfToUniChar(str, chPtr) \
 	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+#else
+#define TclUtfToUniChar(str, chPtr) \
+	((((unsigned char) *(str)) < 0x80) ?		\
+	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	    : Tcl_UtfToChar16(str, chPtr))
+#endif
 
 /*
  *----------------------------------------------------------------
