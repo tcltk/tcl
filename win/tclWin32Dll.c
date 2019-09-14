@@ -421,84 +421,6 @@ TclWinDriveLetterForVolMountPoint(
 }
 
 /*
- *---------------------------------------------------------------------------
- *
- * Tcl_WinUtfToTChar, Tcl_WinTCharToUtf --
- *
- *	Convert between UTF-8 and Unicode when running Windows.
- *
- *	On Mac and Unix, all strings exchanged between Tcl and the OS are
- *	"char" oriented. We need only one Tcl_Encoding to convert between
- *	UTF-8 and the system's native encoding. We use NULL to represent
- *	that encoding.
- *
- *	On Windows, some strings exchanged between Tcl and the OS are "char"
- *	oriented, while others are in Unicode. We need two Tcl_Encoding APIs
- *	depending on whether we are targeting a "char" or Unicode interface.
- *
- *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding
- *	of NULL should always used to convert between UTF-8 and the system's
- *	"char" oriented encoding. The following two functions are used in
- *	Windows-specific code to convert between UTF-8 and Unicode strings.
- *	This saves you the trouble of writing the
- *	following type of fragment over and over:
- *
- *		encoding <- Tcl_GetEncoding("unicode");
- *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		Tcl_FreeEncoding(encoding);
- *
- *	By convention, in Windows a WCHAR is a Unicode character. If you plan
- *	on targeting a Unicode interface when running on Windows, these
- *	functions should be used. If you plan on targetting a "char" oriented
- *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
- *
- * Results:
- *	The result is a pointer to the string in the desired target encoding.
- *	Storage for the result string is allocated in dsPtr; the caller must
- *	call Tcl_DStringFree() when the result is no longer needed.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-WCHAR *
-Tcl_WinUtfToTChar(
-    const char *string,		/* Source string in UTF-8. */
-    size_t len,			/* Source string length in bytes, or -1
-				 * for strlen(). */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    return TclUtfToWCharDString(string, len, dsPtr);
-}
-
-char *
-Tcl_WinTCharToUtf(
-    const WCHAR *string,	/* Source string in Unicode. */
-    size_t len,			/* Source string length in bytes, or -1
-				 * for platform-specific string length. */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len == TCL_AUTO_LENGTH) {
-	len = wcslen((WCHAR *)string);
-    } else {
-	len /= 2;
-    }
-    return TclWCharToUtfDString((unsigned short *)string, len, dsPtr);
-}
-
-/*
  *------------------------------------------------------------------------
  *
  * TclWinCPUID --
