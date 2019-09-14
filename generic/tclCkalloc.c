@@ -145,7 +145,7 @@ static void		ValidateMemory(struct mem_header *memHeaderP,
  *
  *	Initialize the locks used by the allocator. This is only appropriate
  *	to call in a single threaded environment, such as during
- *	TclInitSubsystems.
+ *	Tcl_InitSubsystems.
  *
  *----------------------------------------------------------------------
  */
