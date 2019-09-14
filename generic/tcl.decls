@@ -2468,6 +2468,9 @@ export {
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
+export {
+    void Tcl_InitSubsystems(void)
+}
 
 # Local Variables:
 # mode: tcl
