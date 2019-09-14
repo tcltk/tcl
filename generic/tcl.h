@@ -2229,6 +2229,7 @@ EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
+EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(
