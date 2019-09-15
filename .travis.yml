@@ -113,7 +113,7 @@ matrix:
         - make test styles=develop TESTFLAGS="-verbose sbtel"
     - name: "macOS/Xcode 10/Shared"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
