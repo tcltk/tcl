@@ -1984,7 +1984,7 @@ typedef struct Tcl_EncodingType {
 
 #if TCL_UTF_MAX > 4
     /*
-     * unsigned int isn't 100% accurate as it should be a strict 4-byte value
+     * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
      * value must be reflected correctly in regcustom.h and
      * in tclEncoding.c.
@@ -1992,7 +1992,7 @@ typedef struct Tcl_EncodingType {
      * XXX: string rep that Tcl_UniChar represents.  Changing the size
      * XXX: of Tcl_UniChar is /not/ supported.
      */
-typedef unsigned int Tcl_UniChar;
+typedef int Tcl_UniChar;
 #else
 typedef unsigned short Tcl_UniChar;
 #endif
@@ -2229,6 +2229,7 @@ EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
+EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(
