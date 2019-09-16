@@ -1050,7 +1050,7 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {
-	catch {set foo}
+	catch {error foo}
 	expr {1/$c}
     }
     if {[string match *foo* $::errorInfo]} {
@@ -1085,6 +1085,7 @@ test execute-10.3 {Bug 3072640} -setup {
     proc t {args} {
 	incr ::foo
     }
+    set ::foo 0
     trace add execution ::generate enterstep ::t
 } -body {
     coroutine coro generate 5
