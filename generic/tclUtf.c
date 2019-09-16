@@ -275,7 +275,7 @@ Tcl_UniCharToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
- *	If TCL_UTF_MAX == 4, special handling of Surrogate pairs is done:
+ *	If TCL_UTF_MAX <= 4, special handling of Surrogate pairs is done:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
  *	and generate a return value of 0. Calling Tcl_UtfToUniChar again
@@ -584,8 +584,8 @@ Tcl_UtfFindFirst(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX == 4
-	if ((ch >= 0xD800) && (len < 3)) {
+#if TCL_UTF_MAX <= 4
+	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
@@ -632,8 +632,8 @@ Tcl_UtfFindLast(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX == 4
-	if ((ch >= 0xD800) && (len < 3)) {
+#if TCL_UTF_MAX <= 4
+	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
@@ -675,7 +675,7 @@ Tcl_UtfNext(
     Tcl_UniChar ch = 0;
     int len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
     if ((ch >= 0xD800) && (len < 3)) {
 	len += TclUtfToUniChar(src + len, &ch);
     }
@@ -714,7 +714,7 @@ Tcl_UtfPrev(
     int i, byte;
 
     look = --src;
-    for (i = 0; i < TCL_UTF_MAX; i++) {
+    for (i = 0; i < 4; i++) {
 	if (look < start) {
 	    if (src < start) {
 		src = start;
