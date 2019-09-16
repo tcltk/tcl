@@ -333,7 +333,7 @@ Tcl_Char16ToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
- *	Special handling of Surrogate pairs is handled as follows:
+ *	If TCL_UTF_MAX <= 4, special handling of Surrogate pairs is done:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
  *	and generate a return value of 1. Calling Tcl_UtfToUniChar again
@@ -789,7 +789,7 @@ Tcl_UtfFindFirst(
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
 #if TCL_UTF_MAX <= 4
-	if ((ch >= 0xD800) && (len < 3)) {
+	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
@@ -838,7 +838,7 @@ Tcl_UtfFindLast(
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
 #if TCL_UTF_MAX <= 4
-	if ((ch >= 0xD800) && (len < 3)) {
+	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
