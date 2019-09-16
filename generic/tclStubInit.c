@@ -44,6 +44,9 @@
 #undef TclpGetPid
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
+#undef Tcl_UtfToUniChar
+#undef Tcl_UtfToUniCharDString
+#undef Tcl_UniCharToUtfDString
 #define TclStaticPackage Tcl_StaticPackage
 
 #ifdef TCL_MEM_DEBUG
@@ -102,37 +105,6 @@ size_t
 TclpGetPid(Tcl_Pid pid)
 {
     return (size_t) pid;
-}
-
-char *
-Tcl_WinUtfToTChar(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    return (char *)TclUtfToWCharDString(string, len, dsPtr);
-}
-
-char *
-Tcl_WinTCharToUtf(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len == TCL_AUTO_LENGTH) {
-	len = wcslen((wchar_t *)string);
-    } else {
-	len /= 2;
-    }
-    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -569,10 +541,6 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    Tcl_WinUtfToTChar, /* 0 */
-    Tcl_WinTCharToUtf, /* 1 */
-#endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
@@ -1031,7 +999,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToChar16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1049,8 +1017,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_UniCharToUtfDString, /* 354 */
-    Tcl_UtfToUniCharDString, /* 355 */
+    Tcl_Char16ToUtfDString, /* 354 */
+    Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     0, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1341,6 +1309,9 @@ const TclStubs tclStubs = {
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
     Tcl_GetIntForIndex, /* 645 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharToUtfDString, /* 647 */
+    Tcl_UtfToUniCharDString, /* 648 */
 };
 
 /* !END!: Do not edit above this line. */

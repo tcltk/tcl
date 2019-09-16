@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -35,12 +35,6 @@ int
 int
 \fBTcl_UtfToExternal\fR(\fIinterp, encoding, src, srcLen, flags, statePtr,
                   dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr\fR)
-.sp
-char *
-\fBTcl_WinTCharToUtf\fR(\fItsrc, srcLen, dstPtr\fR)
-.sp
-TCHAR *
-\fBTcl_WinUtfToTChar\fR(\fIsrc, srcLen, dstPtr\fR)
 .sp
 const char *
 \fBTcl_GetEncodingName\fR(\fIencoding\fR)
@@ -79,7 +73,7 @@ Points to storage where encoding token is to be written.
 .AP "const char" *src in
 For the \fBTcl_ExternalToUtf\fR functions, an array of bytes in the
 specified encoding that are to be converted to UTF-8.  For the
-\fBTcl_UtfToExternal\fR and \fBTcl_WinUtfToTChar\fR functions, an array of
+\fBTcl_UtfToExternal\fR function, an array of
 UTF-8 characters to be converted to the specified encoding.
 .AP "const TCHAR" *tsrc in
 An array of Windows TCHAR characters to convert to UTF-8.
@@ -248,12 +242,6 @@ bytes that were successfully converted from \fIsrc\fR and \fI*dstWrotePtr\fR
 is filled with the corresponding number of bytes that were stored in
 \fIdst\fR.  The return values are the same as the return values for
 \fBTcl_ExternalToUtf\fR.
-.PP
-\fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR are
-Windows-only convenience
-functions for converting between UTF-8 and Windows strings
-based on the TCHAR type which is by convention
-a Unicode character on Windows NT.
 .PP
 \fBTcl_GetEncodingName\fR is roughly the inverse of \fBTcl_GetEncoding\fR.
 Given an \fIencoding\fR, the return value is the \fIname\fR argument that
