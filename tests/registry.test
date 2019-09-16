@@ -535,7 +535,7 @@ test registry-7.3 {GetValueNames} -constraints {win reg} -setup {
 } -cleanup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{} baz blat}
-test registry-7.4 {GetValueNames: remote key} -constraints {win reg english} -body {
+test registry-7.4 {GetValueNames: remote key} -constraints {win reg nonPortable english} -body {
     set hostname [info hostname]
     registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar baz blat
     set result [registry values \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar]
