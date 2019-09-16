@@ -1,18 +1,18 @@
-# This file contains tests for the tclExecute.c source file. Tests appear
-# in the same order as the C code that they test. The set of tests is
-# currently incomplete since it currently includes only new tests for
-# code changed for the addition of Tcl namespaces. Other execution-
-# related tests appear in several other test files including
-# namespace.test, basic.test, eval.test, for.test, etc.
+# This file contains tests for the tclExecute.c source file. Tests appear in
+# the same order as the C code that they test. The set of tests is currently
+# incomplete since it currently includes only new tests for code changed for
+# the addition of Tcl namespaces. Other execution-related tests appear in
+# several other test files including namespace.test, basic.test, eval.test,
+# for.test, etc.
 #
-# Sourcing this file into Tcl runs the tests and generates output for
-# errors. No output means no errors were found.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -48,7 +48,6 @@ testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 # INST_EXPR_STK not tested
 
 # INST_LOAD_SCALAR1
-
 test execute-1.1 {TclExecuteByteCode, INST_LOAD_SCALAR1, small opnd} {
     proc foo {} {
 	set x 1
@@ -66,7 +65,6 @@ test execute-1.2 {TclExecuteByteCode, INST_LOAD_SCALAR1, large opnd} {
 	set y 1
 	return $y
     }
-
     proc foo {} $body
     foo
 } 1
@@ -91,7 +89,6 @@ test execute-2.1 {TclExecuteByteCode, INST_LOAD_SCALAR4, simple case} {
 	set y 1
 	return $y
     }
-
     proc foo {} $body
     foo
 } 1
@@ -105,11 +102,9 @@ test execute-2.2 {TclExecuteByteCode, INST_LOAD_SCALAR4, error} {
 	unset y
 	return $y
     }
-
     proc foo {} $body
     list [catch {foo} msg] $msg
 } {1 {can't read "y": no such variable}}
-
 
 # INST_LOAD_SCALAR_STK not tested
 # INST_LOAD_ARRAY4 not tested
@@ -693,7 +688,7 @@ test execute-6.12 {Tcl_ExprObj: exprcode interp validation} {
     lappend result [e $e]
     interp delete slave
     interp create slave
-    interp alias {} e slave expr 
+    interp alias {} e slave expr
     lappend result [e $e]
     interp delete slave
     set result
@@ -888,8 +883,8 @@ test execute-7.34 {Wide int handling} {
 } 1099511627776
 
 test execute-8.1 {Stack protection} -setup {
-    # If [Bug #804681] has not been properly
-    # taken care of, this should segfault
+    # If [Bug #804681] has not been properly taken care of, this should
+    # segfault
     proc whatever args {llength $args}
     trace add variable ::errorInfo {write unset} whatever
 } -body {
@@ -915,7 +910,7 @@ test execute-8.2 {Stack restoration} -body {
 
 test execute-8.3 {Stack restoration} -body {
     # Test for [Bug #1055676], correct restoration
-    # of the stack top after the epoch is bumped and 
+    # of the stack top after the epoch is bumped and
     # the stack is grown in a call from a nested evaluation
      set arglst [string repeat "a " 1000]
      proc f {args} "f $arglst"
@@ -959,7 +954,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {
-	catch {set foo}
+	catch {error foo}
 	expr {1/$c}
     }
     if {[string match *foo* $::errorInfo]} {
@@ -1000,4 +995,5 @@ return
 
 # Local Variables:
 # mode: tcl
+# fill-column: 78
 # End:
