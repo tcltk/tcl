@@ -1062,7 +1062,7 @@ GetBlocks(
  * TclInitThreadAlloc --
  *
  *	Initializes the allocator cache-maintenance structures.
- *      It is done early and protected during the TclInitSubsystems().
+ *      It is done early and protected during the Tcl_InitSubsystems().
  *
  * Results:
  *	None.

@@ -4927,7 +4927,8 @@ TclZipfs_AppHook(
 #ifdef _WIN32
 	Tcl_DString ds;
 
-	archive = Tcl_WinTCharToUtf((*argvPtr)[1], -1, &ds);
+	Tcl_DStringInit(&ds);
+	archive = Tcl_WCharToUtfDString((*argvPtr)[1], -1, &ds);
 #else /* !_WIN32 */
 	archive = (*argvPtr)[1];
 #endif /* _WIN32 */
