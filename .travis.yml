@@ -15,7 +15,7 @@ matrix:
       dist: xenial
       compiler: gcc
       env:
-        - CFGOPT=--disable-shared
+        - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/GCC/Shared: UTF_MAX=6"
       os: linux
@@ -39,15 +39,13 @@ matrix:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
 # Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/GCC/Debug/no test"
+    - name: "Linux/GCC/Debug"
       os: linux
       dist: xenial
       compiler: gcc
       env:
         - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
+        - CFGOPT="--enable-symbols"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -109,18 +107,15 @@ matrix:
       dist: xenial
       compiler: clang
       env:
-        - CFGOPT=--disable-shared
+        - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
-# Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/Clang/Debug/no test"
+    - name: "Linux/Clang/Debug"
       os: linux
       dist: xenial
       compiler: clang
       env:
         - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
+        - CFGOPT="--enable-symbols"
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
@@ -139,7 +134,7 @@ matrix:
         - make test styles=develop
     - name: "macOS/Xcode 10/Shared"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
@@ -339,6 +334,52 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc test'
+# Test on Windows with MSVC native (32-bit)
+    - name: "Windows/MSVC-x86/Shared"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: UTF_MAX=6"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Static"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols -f makefile.vc test'
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -346,7 +387,7 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
-      before_install:
+      before_install: &makepreinst
         - choco install make
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Shared: UTF_MAX=6"
@@ -355,45 +396,77 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
     - name: "Windows/GCC/Shared: UTF_MAX=3"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
     - name: "Windows/GCC/Shared: NO_DEPRECATED"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --disable-shared"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
     - name: "Windows/GCC/Debug"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-symbols"
-      before_install:
-        - choco install make
-        - cd ${BUILD_DIR}
+      before_install: *makepreinst
+# Test on Windows with GCC native (32-bit)
+    - name: "Windows/GCC-x86/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Shared: UTF_MAX=6"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=6"
+      before_install: *makepreinst
+     - name: "Windows/GCC-x86/Shared: UTF_MAX=3"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Static"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--disable-shared"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-symbols"
+      before_install: *makepreinst
 before_install:
   - cd ${BUILD_DIR}
 install:
