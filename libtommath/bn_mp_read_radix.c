@@ -12,6 +12,8 @@
  * SPDX-License-Identifier: Unlicense
  */
 
+#define MP_TOUPPER(c) ((((c) >= 'a') && ((c) <= 'z')) ? (((c) + 'A') - 'a') : (c))
+
 /* read a string [ASCII] in a given radix */
 int mp_read_radix(mp_int *a, const char *str, int radix)
 {
@@ -46,7 +48,7 @@ int mp_read_radix(mp_int *a, const char *str, int radix)
        * this allows numbers like 1AB and 1ab to represent the same  value
        * [e.g. in hex]
        */
-      ch = (radix <= 36) ? (char)toupper((int)*str) : *str;
+      ch = (radix <= 36) ? (char)MP_TOUPPER((int)*str) : *str;
       pos = (unsigned)(ch - '(');
       if (mp_s_rmap_reverse_sz < pos) {
          break;

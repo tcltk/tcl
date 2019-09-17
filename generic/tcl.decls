@@ -639,9 +639,10 @@ declare 172 {
 declare 173 {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
-declare 174 {
-    const char *Tcl_GetStringResult(Tcl_Interp *interp)
-}
+# Removed in 9.0, replaced by macro.
+#declare 174 {
+#    const char *Tcl_GetStringResult(Tcl_Interp *interp)
+#}
 # Removed in 9.0, replaced by macro.
 #declare 175 {deprecated {No longer in use, changed to macro}} {
 #    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
@@ -687,7 +688,7 @@ declare 186 {
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
-    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr,
+    int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, void *addr,
 	    int type)
 }
 
@@ -889,9 +890,10 @@ declare 243 {
 #    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
 #	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 #}
-declare 245 {
-    int Tcl_StringMatch(const char *str, const char *pattern)
-}
+# Removed in 9.0 (stub entry only)
+#declare 245 {
+#    int Tcl_StringMatch(const char *str, const char *pattern)
+#}
 # Removed in 9.0:
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
@@ -1240,7 +1242,7 @@ declare 335 {
     int Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToUniChar(const char *src, Tcl_UniChar *chPtr)
+    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
     int Tcl_UtfToUpper(char *src)
@@ -1297,11 +1299,11 @@ declare 353 {
 	    size_t numChars)
 }
 declare 354 {
-    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+    char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    size_t uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
-    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+    unsigned short *Tcl_UtfToChar16DString(const char *src,
 	    size_t length, Tcl_DString *dsPtr)
 }
 declare 356 {
@@ -2431,6 +2433,30 @@ declare 643 {
     int Tcl_IsShared(Tcl_Obj *objPtr)
 }
 
+# TIP#312 New Tcl_LinkArray() function
+declare 644 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
+	    int type, size_t size)
+}
+
+declare 645 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t endValue, size_t *indexPtr)
+}
+
+# TIP #548
+declare 646 {
+    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+}
+declare 647 {
+    char *Tcl_UniCharToUtfDString(const int *uniStr,
+	    size_t uniLength, Tcl_DString *dsPtr)
+}
+declare 648 {
+    int *Tcl_UtfToUniCharDString(const char *src,
+	    size_t length, Tcl_DString *dsPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2447,14 +2473,14 @@ interface tclPlat
 ################################
 # Windows specific functions
 
-# Added in Tcl 8.1
+# Added in Tcl 8.1, Removed in Tcl 9.0 (converted to macro)
 
-declare 0 win {
-    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
-}
-declare 1 win {
-    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
-}
+#declare 0 win {
+#    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
+#}
+#declare 1 win {
+#    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
+#}
 
 ################################
 # Mac OS X specific functions
@@ -2505,6 +2531,9 @@ export {
 }
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
+}
+export {
+    void Tcl_InitSubsystems(void)
 }
 
 # Local Variables:

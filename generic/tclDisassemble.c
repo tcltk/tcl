@@ -541,7 +541,7 @@ FormatInstruction(
 {
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
-    register const InstructionDesc *instDesc = &tclInstructionTable[opCode];
+    const InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
     int opnd = 0, i, j, numBytes = 1;
@@ -862,8 +862,8 @@ PrintSourceToObj(
     const char *stringPtr,	/* The string to print. */
     int maxChars)		/* Maximum number of chars to print. */
 {
-    register const char *p;
-    register int i = 0, len;
+    const char *p;
+    int i = 0, len;
     Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
@@ -902,10 +902,23 @@ PrintSourceToObj(
 	    i += 2;
 	    continue;
 	default:
+#if TCL_UTF_MAX > 4
 	    if (ch > 0xffff) {
 		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
 		i += 10;
 	    } else
+#else
+	    /* If len == 0, this means we have a char > 0xffff, resulting in
+	     * TclUtfToUniChar producing a surrogate pair. We want to output
+	     * this pair as a single Unicode character.
+	     */
+	    if (len == 0) {
+		int upper = ((ch & 0x3ff) + 1) << 10;
+		len = TclUtfToUniChar(p, &ch);
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", upper + (ch & 0x3ff));
+		i += 10;
+	    } else
+#endif
 	    if (ch < 0x20 || ch >= 0x7f) {
 		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ch);
 		i += 6;

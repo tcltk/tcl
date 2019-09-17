@@ -29,10 +29,8 @@
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
-#undef Tcl_NewBooleanObj
 #undef Tcl_NewByteArrayObj
 #undef Tcl_NewDoubleObj
-#undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
 #undef Tcl_DbNewLongObj
@@ -41,17 +39,14 @@
 #undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-#undef Tcl_Panic
-#undef Tcl_FindExecutable
 #undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
-#undef TclSockMinimumBuffers
-#undef Tcl_SetIntObj
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
+#undef Tcl_UtfToUniChar
+#undef Tcl_UtfToUniCharDString
+#undef Tcl_UniCharToUtfDString
 #define TclStaticPackage Tcl_StaticPackage
 
 #ifdef TCL_MEM_DEBUG
@@ -110,117 +105,6 @@ size_t
 TclpGetPid(Tcl_Pid pid)
 {
     return (size_t) pid;
-}
-
-char *
-Tcl_WinUtfToTChar(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    Tcl_UniChar ch = 0;
-    wchar_t *w, *wString;
-    const char *p, *end;
-    int oldLength;
-
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-
-    if (len < 0) {
-	len = strlen(string);
-    }
-
-    /*
-     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
-     * bytes.
-     */
-
-    oldLength = Tcl_DStringLength(dsPtr);
-
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((len + 1) * sizeof(wchar_t)));
-    wString = (wchar_t *) (Tcl_DStringValue(dsPtr) + oldLength);
-
-    w = wString;
-    p = string;
-    end = string + len - 4;
-    while (p < end) {
-	p += TclUtfToUniChar(p, &ch);
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
-	if (ch > 0xFFFF) {
-	    *w++ = (wchar_t) (0xD800 + ((ch -= 0x10000) >> 10));
-	    *w++ = (wchar_t) (0xDC00 | (ch & 0x3FF));
-	} else {
-	    *w++ = ch;
-	}
-    }
-    *w = '\0';
-    Tcl_DStringSetLength(dsPtr,
-	    oldLength + ((char *) w - (char *) wString));
-
-    return (char *)wString;
-}
-
-char *
-Tcl_WinTCharToUtf(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    const wchar_t *w, *wEnd;
-    char *p, *result;
-    int oldLength, blen = 1;
-
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len == TCL_AUTO_LENGTH) {
-	len = wcslen((wchar_t *)string);
-    } else {
-	len /= 2;
-    }
-    oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, oldLength + (len + 1) * 4);
-    result = Tcl_DStringValue(dsPtr) + oldLength;
-
-    p = result;
-    wEnd = (wchar_t *)string + len;
-    for (w = (wchar_t *)string; w < wEnd; ) {
-	if (!blen && ((*w & 0xFC00) != 0xDC00)) {
-	    /* Special case for handling high surrogates. */
-	    p += Tcl_UniCharToUtf(-1, p);
-	}
-	blen = Tcl_UniCharToUtf(*w, p);
-	p += blen;
-	if ((*w >= 0xD800) && (blen < 3)) {
-	    /* Indication that high surrogate is handled */
-	    blen = 0;
-	}
-	w++;
-    }
-    if (!blen) {
-	/* Special case for handling high surrogates. */
-	p += Tcl_UniCharToUtf(-1, p);
-    }
-    Tcl_DStringSetLength(dsPtr, oldLength + (p - result));
-
-    return result;
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -322,7 +206,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     0, /* 33 */
-    TclGetIntForIndex, /* 34 */
+    0, /* 34 */
     0, /* 35 */
     0, /* 36 */
     TclGetLoadedPackages, /* 37 */
@@ -546,6 +430,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
+    TclpCreateTemporaryDirectory, /* 258 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -655,10 +540,6 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    Tcl_WinUtfToTChar, /* 0 */
-    Tcl_WinTCharToUtf, /* 1 */
-#endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
@@ -718,17 +599,17 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_unsigned_bin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
-    TclBN_reverse, /* 50 */
-    TclBN_fast_s_mp_mul_digs, /* 51 */
-    TclBN_fast_s_mp_sqr, /* 52 */
-    TclBN_mp_karatsuba_mul, /* 53 */
-    TclBN_mp_karatsuba_sqr, /* 54 */
-    TclBN_mp_toom_mul, /* 55 */
-    TclBN_mp_toom_sqr, /* 56 */
-    TclBN_s_mp_add, /* 57 */
-    TclBN_s_mp_mul_digs, /* 58 */
-    TclBN_s_mp_sqr, /* 59 */
-    TclBN_s_mp_sub, /* 60 */
+    0, /* 50 */
+    0, /* 51 */
+    0, /* 52 */
+    0, /* 53 */
+    0, /* 54 */
+    0, /* 55 */
+    0, /* 56 */
+    0, /* 57 */
+    0, /* 58 */
+    0, /* 59 */
+    0, /* 60 */
     TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_int, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
@@ -741,10 +622,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
     TclBN_mp_get_int, /* 72 */
-    TclBN_mp_tc_and, /* 73 */
-    TclBN_mp_tc_or, /* 74 */
-    TclBN_mp_tc_xor, /* 75 */
-    TclBN_mp_tc_div_2d, /* 76 */
+    0, /* 73 */
+    0, /* 74 */
+    0, /* 75 */
+    TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
 };
 
@@ -955,7 +836,7 @@ const TclStubs tclStubs = {
     Tcl_GetServiceMode, /* 171 */
     Tcl_GetSlave, /* 172 */
     Tcl_GetStdChannel, /* 173 */
-    Tcl_GetStringResult, /* 174 */
+    0, /* 174 */
     0, /* 175 */
     Tcl_GetVar2, /* 176 */
     0, /* 177 */
@@ -1026,7 +907,7 @@ const TclStubs tclStubs = {
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
     0, /* 244 */
-    Tcl_StringMatch, /* 245 */
+    0, /* 245 */
     0, /* 246 */
     0, /* 247 */
     Tcl_TraceVar2, /* 248 */
@@ -1117,7 +998,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToChar16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1135,8 +1016,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_UniCharToUtfDString, /* 354 */
-    Tcl_UtfToUniCharDString, /* 355 */
+    Tcl_Char16ToUtfDString, /* 354 */
+    Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     0, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1425,6 +1306,11 @@ const TclStubs tclStubs = {
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
+    Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharToUtfDString, /* 647 */
+    Tcl_UtfToUniCharDString, /* 648 */
 };
 
 /* !END!: Do not edit above this line. */

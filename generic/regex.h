@@ -96,7 +96,7 @@ extern "C" {
 #undef __REG_NOCHAR
 #endif
 /* interface types */
-#define	__REG_WIDE_T	unsigned
+#define	__REG_WIDE_T	Tcl_UniChar
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
@@ -117,8 +117,8 @@ extern "C" {
 /* the biggie, a compiled RE (or rather, a front end to same) */
 typedef struct {
     int re_magic;		/* magic number */
-    size_t re_nsub;		/* number of subexpressions */
     long re_info;		/* information about RE */
+    size_t re_nsub;		/* number of subexpressions */
 #define	REG_UBACKREF		000001
 #define	REG_ULOOKAHEAD		000002
 #define	REG_UBOUNDS		000004
@@ -133,11 +133,10 @@ typedef struct {
 #define	REG_UEMPTYMATCH		004000
 #define	REG_UIMPOSSIBLE		010000
 #define	REG_USHORTEST		020000
-    int re_csize;		/* sizeof(character) */
     char *re_endp;		/* backward compatibility kludge */
     /* the rest is opaque pointers to hidden innards */
-    char *re_guts;		/* `char *' is more portable than `void *' */
-    char *re_fns;
+    void *re_guts;
+    void *re_fns;
 } regex_t;
 
 /* result reporting (may acquire more fields later) */
@@ -217,7 +216,7 @@ typedef struct {
  * of character is used for error reports is independent of what kind is used
  * in matching.
  *
- ^ extern size_t regerror(int, const regex_t *, char *, size_t);
+ ^ extern size_t regerror(int, char *, size_t);
  */
 #define	REG_OKAY	 0	/* no errors detected */
 #define	REG_NOMATCH	 1	/* failed to match */
@@ -268,7 +267,7 @@ int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
 MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
 MODULE_SCOPE void regfree(regex_t *);
-MODULE_SCOPE size_t regerror(int, const regex_t *, char *, size_t);
+MODULE_SCOPE size_t regerror(int, char *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 

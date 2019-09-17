@@ -253,9 +253,9 @@ void *
 TclpAlloc(
     size_t numBytes)	/* Number of bytes to allocate. */
 {
-    register union overhead *overPtr;
-    register size_t bucket;
-    register size_t amount;
+    union overhead *overPtr;
+    size_t bucket;
+    size_t amount;
     struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
@@ -387,8 +387,8 @@ static void
 MoreCore(
     size_t bucket)	/* What bucket to allocate to. */
 {
-    register union overhead *overPtr;
-    register size_t size;	/* size of desired block */
+    union overhead *overPtr;
+    size_t size;	/* size of desired block */
     size_t amount;		/* amount to allocate */
     size_t numBlocks;		/* how many blocks we get */
     struct block *blockPtr;
@@ -447,8 +447,8 @@ void
 TclpFree(
     void *oldPtr)		/* Pointer to memory to free. */
 {
-    register size_t size;
-    register union overhead *overPtr;
+    size_t size;
+    union overhead *overPtr;
     struct block *bigBlockPtr;
 
     if (oldPtr == NULL) {
@@ -644,8 +644,8 @@ void
 mstats(
     char *s)			/* Where to write info. */
 {
-    register unsigned int i, j;
-    register union overhead *overPtr;
+    unsigned int i, j;
+    union overhead *overPtr;
     size_t totalFree = 0, totalUsed = 0;
 
     Tcl_MutexLock(allocMutexPtr);

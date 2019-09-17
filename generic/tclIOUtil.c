@@ -327,9 +327,9 @@ Tcl_Stat(
 	oldStyleBuf->st_uid	= buf.st_uid;
 	oldStyleBuf->st_gid	= buf.st_gid;
 	oldStyleBuf->st_size	= (off_t) buf.st_size;
-	oldStyleBuf->st_atime	= buf.st_atime;
-	oldStyleBuf->st_mtime	= buf.st_mtime;
-	oldStyleBuf->st_ctime	= buf.st_ctime;
+	oldStyleBuf->st_atime	= Tcl_GetAccessTimeFromStat(&buf);
+	oldStyleBuf->st_mtime	= Tcl_GetModificationTimeFromStat(&buf);
+	oldStyleBuf->st_ctime	= Tcl_GetChangeTimeFromStat(&buf);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	oldStyleBuf->st_blksize	= buf.st_blksize;
 #endif
@@ -1392,7 +1392,7 @@ TclFSNormalizeToUniquePath(
 
     size_t i;
     int isVfsPath = 0;
-    char *path;
+    const char *path;
 
     /*
      * Paths starting with a UNC prefix whose final character is a colon
@@ -1667,7 +1667,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1680,7 +1680,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1696,12 +1696,12 @@ TclGetOpenModeEx(
 			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
 			" or TRUNC", flag));
 	    }
-	    Tcl_Free(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 	}
     }
 
-    Tcl_Free(modeArgv);
+    Tcl_Free((void *)modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
@@ -4423,8 +4423,8 @@ TclCrossFilesystemCopy(
      */
 
     if (Tcl_FSLstat(source, &sourceStatBuf) == 0) {
-	tval.actime = sourceStatBuf.st_atime;
-	tval.modtime = sourceStatBuf.st_mtime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&sourceStatBuf);
+	tval.modtime = Tcl_GetModificationTimeFromStat(&sourceStatBuf);
 	Tcl_FSUtime(target, &tval);
     }
 
@@ -4700,7 +4700,7 @@ Tcl_FSGetFileSystemForPath(
  * Tcl_FSGetNativePath --
  *
  *	This function is for use by the Win/Unix native filesystems, so that
- *	they can easily retrieve the native (char* or TCHAR*) representation
+ *	they can easily retrieve the native (char* or WCHAR*) representation
  *	of a path. Other filesystems will probably want to implement similar
  *	functions. They basically act as a safety net around
  *	Tcl_FSGetInternalRep. Normally your file-system functions will always

@@ -234,12 +234,17 @@ static int		TableToUtfProc(ClientData clientData, const char *src,
 			    char *dst, int dstLen, int *srcReadPtr,
 			    int *dstWrotePtr, int *dstCharsPtr);
 static size_t		unilen(const char *src);
-static int		UnicodeToUtfProc(ClientData clientData,
+static int		Utf16ToUtfProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
-static int		UtfToUnicodeProc(ClientData clientData,
+static int		UtfToUtf16Proc(ClientData clientData,
+			    const char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
+static int		UtfToUcs2Proc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
@@ -564,11 +569,16 @@ TclInitEncodingSubsystem(void)
     TableEncodingData *dataPtr;
     unsigned size;
     unsigned short i;
+    union {
+        char c;
+        short s;
+    } isLe;
 
     if (encodingsInitialized) {
 	return;
     }
 
+    isLe.s = 1;
     Tcl_MutexLock(&encodingMutex);
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
@@ -595,13 +605,38 @@ TclInitEncodingSubsystem(void)
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
 
-    type.encodingName   = "unicode";
-    type.toUtfProc	= UnicodeToUtfProc;
-    type.fromUtfProc    = UtfToUnicodeProc;
+    type.toUtfProc	= Utf16ToUtfProc;
+    type.fromUtfProc    = UtfToUcs2Proc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
-    type.clientData	= NULL;
+    type.encodingName   = "ucs-2le";
+    type.clientData	= INT2PTR(1);
     Tcl_CreateEncoding(&type);
+    type.encodingName   = "ucs-2be";
+    type.clientData	= INT2PTR(0);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "ucs-2";
+    type.clientData	= INT2PTR(isLe.c);
+    Tcl_CreateEncoding(&type);
+
+    type.toUtfProc	= Utf16ToUtfProc;
+    type.fromUtfProc    = UtfToUtf16Proc;
+    type.freeProc	= NULL;
+    type.nullSize	= 2;
+    type.encodingName   = "utf-16le";
+    type.clientData	= INT2PTR(1);;
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-16be";
+    type.clientData	= INT2PTR(0);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-16";
+    type.clientData	= INT2PTR(isLe.c);;
+    Tcl_CreateEncoding(&type);
+
+#ifndef TCL_NO_DEPRECATED
+    type.encodingName   = "unicode";
+    Tcl_CreateEncoding(&type);
+#endif
 
     /*
      * Need the iso8859-1 encoding in order to process binary data, so force
@@ -1216,7 +1251,7 @@ Tcl_ExternalToUtf(
 	if (*dstCharsPtr <= maxChars) {
 	    break;
 	}
-	dstLen = Tcl_UtfAtIndex(dst, maxChars) - 1 - dst + TCL_UTF_MAX;
+	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	flags = savedFlags;
 	*statePtr = savedState;
     } while (1);
@@ -1418,7 +1453,7 @@ Tcl_FindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    TclInitSubsystems();
+    Tcl_InitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
 }
@@ -2003,7 +2038,7 @@ LoadEscapeEncoding(
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	Tcl_DStringFree(&lineString);
     }
 
@@ -2321,6 +2356,12 @@ UtfToUtfProc(
 	    int len = TclUtfToUniChar(src, chPtr);
 	    src += len;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+#if TCL_UTF_MAX <= 4
+	    if ((*chPtr >= 0xD800) && (len < 3)) {
+		src += TclUtfToUniChar(src + len, chPtr);
+		dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    }
+#endif
 	}
     }
 
@@ -2333,9 +2374,9 @@ UtfToUtfProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UnicodeToUtfProc --
+ * Utf16ToUtfProc --
  *
- *	Convert from Unicode to UTF-8.
+ *	Convert from UTF-16 to UTF-8.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
@@ -2347,8 +2388,8 @@ UtfToUtfProc(
  */
 
 static int
-UnicodeToUtfProc(
-    ClientData clientData,	/* Not used. */
+Utf16ToUtfProc(
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2382,10 +2423,16 @@ UnicodeToUtfProc(
 	charLimit = *dstCharsPtr;
     }
     result = TCL_OK;
-    if ((srcLen % sizeof(unsigned short)) != 0) {
+
+    /* check alignment with utf-16 (2 == sizeof(UTF-16)) */
+    if ((srcLen % 2) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen /= sizeof(unsigned short);
-	srcLen *= sizeof(unsigned short);
+	srcLen--;
+    }
+    /* If last code point is a high surrogate, we cannot handle that yet */
+    if ((srcLen >= 2) && ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen-= 2;
     }
 
     srcStart = src;
@@ -2400,12 +2447,15 @@ UnicodeToUtfProc(
 	    break;
 	}
 
+	if (clientData) {
+	    ch = (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	} else {
+	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
+	}
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
 	 */
-
-	ch = *(unsigned short *)src;
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
@@ -2423,9 +2473,9 @@ UnicodeToUtfProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UtfToUnicodeProc --
+ * UtfToUtf16Proc --
  *
- *	Convert from UTF-8 to Unicode.
+ *	Convert from UTF-8 to UTF-16.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
@@ -2437,9 +2487,8 @@ UnicodeToUtfProc(
  */
 
 static int
-UtfToUnicodeProc(
-    ClientData clientData,	/* TableEncodingData that specifies
-				 * encoding. */
+UtfToUtf16Proc(
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2503,27 +2552,37 @@ UtfToUnicodeProc(
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
 	 */
 
-#ifdef WORDS_BIGENDIAN
-	if (*chPtr <= 0xFFFF) {
-	    *dst++ = (*chPtr >> 8);
-	    *dst++ = (*chPtr & 0xFF);
-	} else {
-	    *dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-	    *dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-	}
+	if (clientData) {
+#if TCL_UTF_MAX > 4
+	    if (*chPtr <= 0xFFFF) {
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = (*chPtr >> 8);
+	    } else {
+		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+	    }
 #else
-	if (*chPtr <= 0xFFFF) {
 	    *dst++ = (*chPtr & 0xFF);
 	    *dst++ = (*chPtr >> 8);
-	} else {
-	    *dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-	    *dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-	}
 #endif
+	} else {
+#if TCL_UTF_MAX > 4
+	    if (*chPtr <= 0xFFFF) {
+		*dst++ = (*chPtr >> 8);
+		*dst++ = (*chPtr & 0xFF);
+	    } else {
+		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
+		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+	    }
+#else
+	    *dst++ = (*chPtr >> 8);
+	    *dst++ = (*chPtr & 0xFF);
+#endif
+	}
     }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
@@ -2531,6 +2590,113 @@ UtfToUnicodeProc(
     return result;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * UtfToUcs2Proc --
+ *
+ *	Convert from UTF-8 to UCS-2.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+UtfToUcs2Proc(
+    ClientData clientData,	/* != NULL means LE, == NUL means BE */
+    const char *src,		/* Source string in UTF-8. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
+    int result, numChars;
+#if TCL_UTF_MAX <= 4
+    int len;
+#endif
+    Tcl_UniChar ch = 0;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+    srcClose = srcEnd;
+    if ((flags & TCL_ENCODING_END) == 0) {
+	srcClose -= TCL_UTF_MAX;
+    }
+
+    dstStart = dst;
+    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+
+    result = TCL_OK;
+    for (numChars = 0; src < srcEnd; numChars++) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	    /*
+	     * If there is more string to follow, this will ensure that the
+	     * last UTF-8 character in the source buffer hasn't been cut off.
+	     */
+
+	    result = TCL_CONVERT_MULTIBYTE;
+	    break;
+	}
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+#if TCL_UTF_MAX <= 4
+	src += (len = TclUtfToUniChar(src, &ch));
+	if ((ch >= 0xD800) && (len < 3)) {
+	    src += TclUtfToUniChar(src, &ch);
+	    ch = 0xFFFD;
+	}
+#else
+	src += TclUtfToUniChar(src, &ch);
+	if (ch > 0xFFFF) {
+	    ch = 0xFFFD;
+	}
+#endif
+
+	/*
+	 * Need to handle this in a way that won't cause misalignment by
+	 * casting dst to a Tcl_UniChar. [Bug 1122671]
+	 */
+
+	if (clientData) {
+	    *dst++ = (ch & 0xFF);
+	    *dst++ = (ch >> 8);
+	} else {
+	    *dst++ = (ch >> 8);
+	    *dst++ = (ch & 0xFF);
+	}
+    }
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2723,6 +2889,7 @@ TableFromUtfProc(
 	}
 	len = TclUtfToUniChar(src, &ch);
 
+#if TCL_UTF_MAX > 4
 	/*
 	 * This prevents a crash condition. More evaluation is required for
 	 * full support of int Tcl_UniChar. [Bug 1004065]
@@ -2731,6 +2898,11 @@ TableFromUtfProc(
 	if (ch & 0xffff0000) {
 	    word = 0;
 	} else
+#else
+	if (!len) {
+	    word = 0;
+	} else
+#endif
 	    word = fromUnicode[(ch >> 8)][ch & 0xff];
 
 	if ((word == 0) && (ch != 0)) {
@@ -2895,6 +3067,7 @@ Iso88591FromUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars;
+    Tcl_UniChar ch = 0;
 
     result = TCL_OK;
 
@@ -2909,7 +3082,6 @@ Iso88591FromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	Tcl_UniChar ch = 0;
 	int len;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2928,11 +3100,17 @@ Iso88591FromUtfProc(
 	 */
 
 	if (ch > 0xff
+#if TCL_UTF_MAX <= 4
+		|| ((ch >= 0xD800) && (len < 3))
+#endif
 		) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
+#if TCL_UTF_MAX <= 4
+	    if ((ch >= 0xD800) && (len < 3)) len = 4;
+#endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
 	     */
@@ -3256,6 +3434,7 @@ EscapeFromUtfProc(
     const TableEncodingData *tableDataPtr;
     const char *tablePrefixBytes;
     const unsigned short *const *tableFromUnicode;
+    Tcl_UniChar ch = 0;
 
     result = TCL_OK;
 
@@ -3296,7 +3475,6 @@ EscapeFromUtfProc(
     for (numChars = 0; src < srcEnd; numChars++) {
 	unsigned len;
 	int word;
-	Tcl_UniChar ch = 0;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*

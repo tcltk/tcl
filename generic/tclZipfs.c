@@ -283,10 +283,9 @@ static struct {
  * For password rotation.
  */
 
-static const char pwrot[16] = {
-    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
-    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0
-};
+static const char pwrot[16] =
+    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
+    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
 /*
  * Table to compute CRC32.
@@ -381,6 +380,7 @@ static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp);
@@ -399,9 +399,7 @@ static int		ZipChannelWrite(void *instanceData,
  * Define the ZIP filesystem dispatch table.
  */
 
-MODULE_SCOPE const Tcl_Filesystem zipfsFilesystem;
-
-const Tcl_Filesystem zipfsFilesystem = {
+static const Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
@@ -1280,6 +1278,7 @@ ZipFSCatalogFilesystem(
 
     *zf = *zf0;
     zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
     zf->name = Tcl_Alloc(zf->nameLength + 1);
@@ -1673,9 +1672,16 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+	Tcl_Free(zf);
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
+	    != TCL_OK) {
+	Tcl_Free(zf);
+	return TCL_ERROR;
+    }
+    Tcl_Free(zf);
+    return TCL_OK;
 }
 
 /*
@@ -1705,6 +1711,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1762,11 +1769,14 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
+    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    Tcl_Free(zf);
+    return result;
 }
 
 /*
@@ -1834,6 +1844,7 @@ TclZipfs_Unmount(
 	Tcl_Free(z);
     }
     ZipFSCloseArchive(interp, zf);
+    Tcl_DeleteExitHandler(ZipfsExitHandler, (ClientData)zf);
     Tcl_Free(zf);
     unmounted = 1;
   done:
@@ -1903,9 +1914,9 @@ ZipFSMountBufferObjCmd(
 {
     const char *mountPoint;	/* Mount point path. */
     unsigned char *data;
-    size_t length;
+    size_t length = 0;
 
-    if (objc > 4) {
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
 	return TCL_ERROR;
     }
@@ -4702,7 +4713,7 @@ ZipFSLoadFile(
  *-------------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
@@ -4772,7 +4783,7 @@ TclZipfs_Init(
 		Tcl_NewStringObj("::tcl::zipfs::find", -1));
 	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
-	Tcl_PkgProvide(interp, "zipfs", "2.0");
+	Tcl_PkgProvideEx(interp, "zipfs", "2.0", NULL);
     }
     return TCL_OK;
 #else /* !HAVE_ZLIB */
@@ -4819,6 +4830,17 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 
+static void
+ZipfsExitHandler(
+    ClientData clientData)
+{
+    ZipFile *zf = (ZipFile *)clientData;
+
+    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
+	Tcl_Panic("tried to unmount busy filesystem");
+    }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4833,7 +4855,7 @@ int
 TclZipfs_AppHook(
     int *argcPtr,		/* Pointer to argc */
 #ifdef _WIN32
-    TCHAR
+    WCHAR
 #else /* !_WIN32 */
     char
 #endif /* _WIN32 */
@@ -4891,7 +4913,8 @@ TclZipfs_AppHook(
 #ifdef _WIN32
 	Tcl_DString ds;
 
-	archive = Tcl_WinTCharToUtf((*argvPtr)[1], -1, &ds);
+	Tcl_DStringInit(&ds);
+	archive = Tcl_WCharToUtfDString((*argvPtr)[1], -1, &ds);
 #else /* !_WIN32 */
 	archive = (*argvPtr)[1];
 #endif /* _WIN32 */

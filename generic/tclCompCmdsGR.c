@@ -434,7 +434,7 @@ TclCompileIfCmd(
 		jumpFalseDist += 3;
 		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
 	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%u\" updating ifFalse jump", opCode);
+		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", opCode);
 	    }
 	}
     }
@@ -590,7 +590,7 @@ TclCompileInfoCommandsCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
-    char *bytes;
+    const char *bytes;
 
     /*
      * We require one compile-time known argument for the case we can compile.

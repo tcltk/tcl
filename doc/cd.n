@@ -22,7 +22,7 @@ home directory (as specified in the HOME environment variable) if
 Returns an empty string.
 Note that the current working directory is a per-process resource; the
 \fBcd\fR command changes the working directory for all interpreters
-and (in a threaded environment) all threads.
+and all threads.
 .SH EXAMPLES
 .PP
 Change to the home directory of the user \fBfred\fR:

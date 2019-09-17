@@ -47,7 +47,23 @@ package require \fBTcl 8.5\fR
 .br
 \fB::tcl::mathfunc::int\fR \fIarg\fR
 .br
+.VS "8.7, TIP 521"
+\fB::tcl::mathfunc::isfinite\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::isinf\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::isnan\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::isnormal\fR \fIarg\fR
+.VE "8.7, TIP 521"
+.br
 \fB::tcl::mathfunc::isqrt\fR \fIarg\fR
+.br
+.VS "8.7, TIP 521"
+\fB::tcl::mathfunc::issubnormal\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::isunordered\fR \fIx y\fR
+.VE "8.7, TIP 521"
 .br
 \fB::tcl::mathfunc::log\fR \fIarg\fR
 .br
@@ -92,15 +108,17 @@ directly.
 Tcl supports the following mathematical functions in expressions, all
 of which work solely with floating-point numbers unless otherwise noted:
 .DS
-.ta 3c 6c 9c
+.ta 3.2c 6.4c 9.6c
 \fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR
 \fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR
 \fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBexp\fR
 \fBfloor\fR	\fBfmod\fR	\fBhypot\fR	\fBint\fR
-\fBisqrt\fR	\fBlog\fR	\fBlog10\fR	\fBmax\fR
-\fBmin\fR	\fBpow\fR	\fBrand\fR	\fBround\fR
-\fBsin\fR	\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR
-\fBtan\fR	\fBtanh\fR	\fBwide\fR
+\fBisfinite\fR	\fBisinf\fR	\fBisnan\fR	\fBisnormal\fR
+\fBisqrt\fR	\fBissubnormal\fR	\fBisunordered\fR	\fBlog\fR
+\fBlog10\fR	\fBmax\fR	\fBmin\fR	\fBpow\fR
+\fBrand\fR	\fBround\fR	\fBsin\fR	\fBsinh\fR
+\fBsqrt\fR	\fBsrand\fR	\fBtan\fR	\fBtanh\fR
+\fBwide\fR
 .DE
 .PP
 In addition to these predefined functions, applications may
@@ -206,12 +224,57 @@ to the machine word size are returned as an integer value.  For reference,
 the number of bytes in the machine word are stored in the \fBwordSize\fR
 element of the \fBtcl_platform\fR array.
 .TP
+\fBisfinite \fIarg\fR
+.VS "8.7, TIP 521"
+Returns 1 if the floating-point number \fIarg\fR is finite. That is, if it is
+zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws
+an error if \fIarg\fR cannot be promoted to a floating-point value.
+.VE "8.7, TIP 521"
+.TP
+\fBisinf \fIarg\fR
+.VS "8.7, TIP 521"
+Returns 1 if the floating-point number \fIarg\fR is infinite. Returns 0 if the
+number is finite or NaN. Throws an error if \fIarg\fR cannot be promoted to a
+floating-point value.
+.VE "8.7, TIP 521"
+.TP
+\fBisnan \fIarg\fR
+.VS "8.7, TIP 521"
+Returns 1 if the floating-point number \fIarg\fR is Not-a-Number. Returns 0 if
+the number is finite or infinite. Throws an error if \fIarg\fR cannot be
+promoted to a floating-point value.
+.VE "8.7, TIP 521"
+.TP
+\fBisnormal \fIarg\fR
+.VS "8.7, TIP 521"
+Returns 1 if the floating-point number \fIarg\fR is normal. Returns 0 if the
+number is zero, subnormal, infinite or NaN. Throws an error if \fIarg\fR
+cannot be promoted to a floating-point value.
+.VE "8.7, TIP 521"
+.TP
 \fBisqrt \fIarg\fR
 .
 Computes the integer part of the square root of \fIarg\fR.  \fIArg\fR must be
 a positive value, either an integer or a floating point number.
 Unlike \fBsqrt\fR, which is limited to the precision of a floating point
 number, \fIisqrt\fR will return a result of arbitrary precision.
+.TP
+\fBissubnormal \fIarg\fR
+.VS "8.7, TIP 521"
+Returns 1 if the floating-point number \fIarg\fR is subnormal, i.e., the
+result of gradual underflow. Returns 0 if the number is zero, normal, infinite
+or NaN. Throws an error if \fIarg\fR cannot be promoted to a floating-point
+value.
+.VE "8.7, TIP 521"
+.TP
+\fBisunordered \fIx y\fR
+.VS "8.7, TIP 521"
+Returns 1 if \fIx\fR and \fIy\fR cannot be compared for ordering, that is, if
+either one is NaN. Returns 0 if both values can be ordered, that is, if they
+are both chosen from among the set of zero, subnormal, normal and infinite
+values. Throws an error if either \fIx\fR or \fIy\fR cannot be promoted to a
+floating-point value.
+.VE "8.7, TIP 521"
 .TP
 \fBlog \fIarg\fR
 .
@@ -289,12 +352,12 @@ The argument may be any numeric value.  The integer part of \fIarg\fR
 is determined, and then the low order 64 bits of that integer value
 are returned as an integer value.
 .SH "SEE ALSO"
-expr(n), mathop(n), namespace(n)
+expr(n), fpclassify(n), mathop(n), namespace(n)
 .SH "COPYRIGHT"
 .nf
-Copyright (c) 1993 The Regents of the University of California.
-Copyright (c) 1994-2000 Sun Microsystems Incorporated.
-Copyright (c) 2005, 2006 by Kevin B. Kenny <kennykb@acm.org>.
+Copyright \(co 1993 The Regents of the University of California.
+Copyright \(co 1994-2000 Sun Microsystems Incorporated.
+Copyright \(co 2005, 2006 by Kevin B. Kenny <kennykb@acm.org>.
 .fi
 '\" Local Variables:
 '\" mode: nroff

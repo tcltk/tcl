@@ -15,11 +15,11 @@
 #if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559)
 int mp_set_double(mp_int *a, double b)
 {
-   uint64_t frac;
+   unsigned long long frac;
    int exp, res;
    union {
       double   dbl;
-      uint64_t bits;
+      unsigned long long bits;
    } cast;
    cast.dbl = b;
 
@@ -41,8 +41,8 @@ int mp_set_double(mp_int *a, double b)
       return res;
    }
 
-   if (((cast.bits >> 63) != 0ULL) && (mp_iszero(a) == MP_NO)) {
-      SIGN(a) = MP_NEG;
+   if (((cast.bits >> 63) != 0ULL) && !IS_ZERO(a)) {
+      a->sign = MP_NEG;
    }
 
    return MP_OKAY;

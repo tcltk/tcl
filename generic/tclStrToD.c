@@ -529,7 +529,7 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
 
-#define ALL_BITS	(~(Tcl_WideUInt)0)
+#define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /*
@@ -704,7 +704,7 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					(~(Tcl_WideUInt)0 >> shift)))) {
+					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    TclInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
@@ -769,7 +769,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
 			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -810,7 +810,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
 			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -1388,7 +1388,7 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1]) {
+		|| w > ((Tcl_WideUInt)-1-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.
@@ -1786,15 +1786,15 @@ RefineApproximation(
      */
 
     msb = binExponent + M2;	/* 1008 */
-    nDigits = msb / DIGIT_BIT + 1;
+    nDigits = msb / MP_DIGIT_BIT + 1;
     mp_init_size(&twoMv, nDigits);
-    i = (msb % DIGIT_BIT + 1);
+    i = (msb % MP_DIGIT_BIT + 1);
     twoMv.used = nDigits;
     significand *= SafeLdExp(1.0, i);
     while (--nDigits >= 0) {
 	twoMv.dp[nDigits] = (mp_digit) significand;
 	significand -= (mp_digit) significand;
-	significand = SafeLdExp(significand, DIGIT_BIT);
+	significand = SafeLdExp(significand, MP_DIGIT_BIT);
     }
     for (i = 0; i <= 8; ++i) {
 	if (M5 & (1 << i)) {
@@ -3082,7 +3082,7 @@ ShouldBankerRoundUpPowD(
     int isodd)			/* 1 if the digit is odd, 0 if even. */
 {
     int i;
-    static const mp_digit topbit = ((mp_digit)1) << (DIGIT_BIT - 1);
+    static const mp_digit topbit = ((mp_digit)1) << (MP_DIGIT_BIT - 1);
 
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
 	return 0;
@@ -3205,7 +3205,7 @@ ShorteningBignumConversionPowD(
      */
 
     TclInitBignumFromWideUInt(&b, bw);
-    mp_init_set_int(&mminus, 1);
+    mp_init_set(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3590,7 +3590,7 @@ ShorteningBignumConversion(
 
     TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
+    mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
 
     /*
@@ -3608,7 +3608,7 @@ ShorteningBignumConversion(
      * mminus = 2**m2minus * 5**m5
      */
 
-    mp_init_set_int(&mminus, minit);
+    mp_init_set(&mminus, minit);
     mp_mul_2d(&mminus, m2minus, &mminus);
     if (m2plus > m2minus) {
 	mp_init_copy(&mplus, &mminus);
@@ -3799,7 +3799,7 @@ StrictBignumConversion(
     mp_init_multi(&dig, NULL);
     TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
+    mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
 
     /*
@@ -4150,8 +4150,8 @@ TclDoubleDigits(
 	     * in the denominator' case.
 	     */
 
-	    if (s2 % DIGIT_BIT != 0) {
-		int delta = DIGIT_BIT - (s2 % DIGIT_BIT);
+	    if (s2 % MP_DIGIT_BIT != 0) {
+		int delta = MP_DIGIT_BIT - (s2 % MP_DIGIT_BIT);
 
 		b2 += delta;
 		m2plus += delta;
@@ -4159,7 +4159,7 @@ TclDoubleDigits(
 		s2 += delta;
 	    }
 	    return ShorteningBignumConversionPowD(&d, bw, b2, b5,
-		    m2plus, m2minus, m5, s2/DIGIT_BIT, k, len, ilim, ilim1,
+		    m2plus, m2minus, m5, s2/MP_DIGIT_BIT, k, len, ilim, ilim1,
 		    decpt, endPtr);
 	} else {
 	    /*
@@ -4206,14 +4206,14 @@ TclDoubleDigits(
 	     * in the denominator' case.
 	     */
 
-	    if (s2 % DIGIT_BIT != 0) {
-		int delta = DIGIT_BIT - (s2 % DIGIT_BIT);
+	    if (s2 % MP_DIGIT_BIT != 0) {
+		int delta = MP_DIGIT_BIT - (s2 % MP_DIGIT_BIT);
 
 		b2 += delta;
 		s2 += delta;
 	    }
 	    return StrictBignumConversionPowD(&d, bw, b2, b5,
-		    s2/DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
+		    s2/MP_DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
 	} else {
 	    /*
 	     * There are no helpful special cases, but at least we know in
@@ -4338,7 +4338,7 @@ TclInitDoubleConversion(void)
 	    + 0.5 * log(10.)) / log(10.));
     minDigits = (int) floor((DBL_MIN_EXP - DBL_MANT_DIG)
 	    * log((double) FLT_RADIX) / log(10.));
-    log10_DIGIT_MAX = (int) floor(DIGIT_BIT * log(2.) / log(10.));
+    log10_DIGIT_MAX = (int) floor(MP_DIGIT_BIT * log(2.) / log(10.));
 
     /*
      * Nokia 770's software-emulated floating point is "middle endian": the
@@ -4513,7 +4513,7 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_get_bit(&b, 0)) {
+	    if (mp_isodd(&b)) {
 		if (b.sign == MP_ZPOS) {
 		    mp_add_d(&b, 1, &b);
 		} else {
@@ -4542,7 +4542,7 @@ TclBignumToDouble(
 
     r = 0.0;
     for (i=b.used-1 ; i>=0 ; --i) {
-	r = ldexp(r, DIGIT_BIT) + b.dp[i];
+	r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
     }
     mp_clear(&b);
 
@@ -4585,7 +4585,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (mp_isneg(a)) {
+    if (a->sign != MP_ZPOS) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4602,7 +4602,7 @@ TclCeil(
 		mp_int d;
 		mp_init(&d);
 		mp_div_2d(a, -shift, &b, &d);
-		exact = mp_iszero(&d);
+		exact = d.used == 0;
 		mp_clear(&d);
 	    } else {
 		mp_copy(a, &b);
@@ -4611,7 +4611,7 @@ TclCeil(
 		mp_add_d(&b, 1, &b);
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
-		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
 	}
@@ -4642,7 +4642,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (mp_isneg(a)) {
+    if (a->sign != MP_ZPOS) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
@@ -4661,7 +4661,7 @@ TclFloor(
 		mp_copy(a, &b);
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
-		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
 	}
@@ -4723,7 +4723,7 @@ BignumToBiasedFrExp(
 
     r = 0.0;
     for (i=b.used-1; i>=0; --i) {
-	r = ldexp(r, DIGIT_BIT) + b.dp[i];
+	r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
     }
     mp_clear(&b);
 

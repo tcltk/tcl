@@ -91,8 +91,8 @@ static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
 static void		FinalizeRegexp(ClientData clientData);
 static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
-static int		RegExpExecUnicode(Tcl_Interp *interp, Tcl_RegExp re,
-			    const __REG_WIDE_T *uniString, size_t numChars,
+static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
+			    const Tcl_UniChar *uniString, size_t numChars,
 			    size_t nmatches, int flags);
 static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
@@ -194,7 +194,7 @@ Tcl_RegExpExec(
     size_t numChars;
     TclRegexp *regexp = (TclRegexp *) re;
     Tcl_DString ds;
-    const __REG_WIDE_T *ustr;
+    const Tcl_UniChar *ustr;
 
     /*
      * If the starting point is offset from the beginning of the buffer, then
@@ -219,9 +219,9 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = TclUtfToUnicodeDString(text, -1, &ds);
-    numChars = Tcl_DStringLength(&ds) / sizeof(__REG_WIDE_T);
-    result = RegExpExecUnicode(interp, re, ustr, numChars, -1 /* nmatches */,
+    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
+    numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
+    result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
 	    flags);
     Tcl_DStringFree(&ds);
 
@@ -264,7 +264,7 @@ Tcl_RegExpRange(
 
     if (index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == (size_t)-1) {
+    } else if (regexpPtr->matches[index].rm_so == TCL_INDEX_NONE) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -280,7 +280,7 @@ Tcl_RegExpRange(
 /*
  *---------------------------------------------------------------------------
  *
- * RegExpExecUnicode --
+ * RegExpExecUniChar --
  *
  *	Execute the regular expression matcher using a compiled form of a
  *	regular expression and save information about any match that is found.
@@ -298,11 +298,11 @@ Tcl_RegExpRange(
  */
 
 static int
-RegExpExecUnicode(
+RegExpExecUniChar(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     Tcl_RegExp re,		/* Compiled regular expression; returned by a
 				 * previous call to Tcl_GetRegExpFromObj */
-    const __REG_WIDE_T *wString,	/* String against which to match re. */
+    const Tcl_UniChar *wString,	/* String against which to match re. */
     size_t numChars,		/* Length of Tcl_UniChar string. */
     size_t nm,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
@@ -363,21 +363,21 @@ TclRegExpRangeUniChar(
 				 * passed to Tcl_RegExpExec. */
     size_t index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
-				 * subrange, -1 means the range of the
+				 * subrange, TCL_INDEX_NONE means the range of the
 				 * rm_extend field. */
-    int *startPtr,		/* Store address of first character in
+    size_t *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    int *endPtr)		/* Store address of character just after last
+    size_t *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && index == TCL_AUTO_LENGTH) {
+    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (index > regexpPtr->re.re_nsub) {
-	*startPtr = -1;
-	*endPtr = -1;
+    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
+	*startPtr = TCL_INDEX_NONE;
+	*endPtr = TCL_INDEX_NONE;
     } else {
 	*startPtr = regexpPtr->matches[index].rm_so;
 	*endPtr = regexpPtr->matches[index].rm_eo;
@@ -449,10 +449,9 @@ Tcl_RegExpExecObj(
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
-    Tcl_DString ds;
-    __REG_WIDE_T *udata;
+    Tcl_UniChar *udata;
     size_t length;
-    int result, reflags = regexpPtr->flags;
+    int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
 
@@ -482,9 +481,7 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    Tcl_DStringInit(&ds);
-    udata = TclUtfToUnicodeDString(Tcl_GetString(textObj), -1, &ds);
-    length = Tcl_DStringLength(&ds)/sizeof(__REG_WIDE_T);
+    udata = TclGetUnicodeFromObj(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -492,9 +489,7 @@ Tcl_RegExpExecObj(
     udata += offset;
     length -= offset;
 
-    result = RegExpExecUnicode(interp, re, udata, length, nmatches, flags);
-    Tcl_DStringFree(&ds);
-    return result;
+    return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
 }
 
 /*
@@ -682,7 +677,7 @@ TclRegAbout(
 
     resultObj = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
+	    TclNewWideIntObjFromSize(regexpPtr->re.re_nsub));
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -729,12 +724,12 @@ TclRegError(
     const char *p;
 
     Tcl_ResetResult(interp);
-    n = TclReError(status, NULL, buf, sizeof(buf));
+    n = TclReError(status, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
     sprintf(cbuf, "%d", status);
-    (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));
+    (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
@@ -866,7 +861,7 @@ CompileRegexp(
     int flags)			/* Compilation flags. */
 {
     TclRegexp *regexpPtr;
-    const __REG_WIDE_T *uniString;
+    const Tcl_UniChar *uniString;
     int numChars, status, i, exact;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -931,8 +926,8 @@ CompileRegexp(
      */
 
     Tcl_DStringInit(&stringBuf);
-    uniString = TclUtfToUnicodeDString(string, length, &stringBuf);
-    numChars = Tcl_DStringLength(&stringBuf) / sizeof(__REG_WIDE_T);
+    uniString = Tcl_UtfToUniCharDString(string, length, &stringBuf);
+    numChars = Tcl_DStringLength(&stringBuf) / sizeof(Tcl_UniChar);
 
     /*
      * Compile the string and check for errors.

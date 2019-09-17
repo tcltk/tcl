@@ -168,7 +168,7 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
-    register Object *oPtr = contextPtr->oPtr;
+    Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
@@ -314,7 +314,7 @@ TclOOInvokeContext(
     int objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
-    register CallContext *const contextPtr = clientData;
+    CallContext *const contextPtr = clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const int isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
@@ -328,7 +328,7 @@ TclOOInvokeContext(
     if (contextPtr->index == 0) {
 	int i;
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -406,7 +406,7 @@ FinalizeMethodRefs(
     CallContext *contextPtr = data[0];
     int i;
 
-    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -635,13 +635,16 @@ SortMethodNames(
 	}
 	*stringsPtr = strings;
     } else {
-	Tcl_Free(strings);
+	Tcl_Free((void *)strings);
 	*stringsPtr = NULL;
     }
     return i;
 }
 
-/* Comparator for SortMethodNames */
+/*
+ * Comparator for SortMethodNames
+ */
+
 static int
 CmpStr(
     const void *ptr1,
@@ -965,7 +968,7 @@ AddMethodToCallChain(
 				 * looking to add things from a mixin and have
 				 * not passed a mixin. */
 {
-    register CallChain *callPtr = cbPtr->callChainPtr;
+    CallChain *callPtr = cbPtr->callChainPtr;
     int i;
 
     /*
@@ -1004,7 +1007,7 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+    for (i = cbPtr->filterLength ; i < callPtr->numChain ; i++) {
 	if (callPtr->chain[i].mPtr == mPtr &&
 		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
@@ -1016,8 +1019,8 @@ AddMethodToCallChain(
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<callPtr->numChain ; i++) {
-		callPtr->chain[i] = callPtr->chain[i+1];
+	    for (; i + 1 < callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i + 1];
 	    }
 	    callPtr->chain[i].mPtr = mPtr;
 	    callPtr->chain[i].isFilter = (doneFilters != NULL);
@@ -1653,7 +1656,7 @@ AddPrivatesFromClassChainToCallContext(
 		(char *) methodName);
 
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
@@ -1737,7 +1740,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= 1;
 	}
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
 	    if (!IS_PRIVATE(mPtr)) {
 		if (!(flags & KNOWN_STATE)) {
@@ -1817,7 +1820,7 @@ TclOORenderCallChain(
      */
 
     objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i=0 ; i<callPtr->numChain ; i++) {
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =

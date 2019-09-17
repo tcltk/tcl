@@ -82,7 +82,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR className[] = TEXT("TclSocket");
+static const WCHAR className[] = L"TclSocket";
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -363,19 +363,19 @@ InitializeHostName(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
+    Tcl_DStringInit(&ds);
     if (GetComputerName(tbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(tbuf, -1, &ds));
 
     } else {
-	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
 	    /*
 	     * The buffer size of 256 is recommended by the MSDN page that

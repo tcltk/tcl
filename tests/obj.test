@@ -476,11 +476,11 @@ test obj-26.1 {UpdateStringOfInt} testobj {
     lappend result [testintobj get 1]       ;# must update string rep
 } {512 5120 5120}
 
-test obj-27.1 {Tcl_NewLongObj} testobj {
+test obj-27.1 {Tcl_NewWideObj} testobj {
     set result ""
     lappend result [testobj freeallvars]
-    testintobj setmaxlong 1
-    lappend result [testintobj ismaxlong 1]
+    testintobj setmax 1
+    lappend result [testintobj ismax 1]
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 1 int 1}
@@ -489,7 +489,7 @@ test obj-28.1 {Tcl_SetLongObj, existing "empty string" object} testobj {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testobj newobj 1]
-    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testintobj setint 1 77]  ;# makes existing obj int
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} {} 77 int 2}
@@ -497,32 +497,32 @@ test obj-28.2 {Tcl_SetLongObj, existing non-"empty string" object} testobj {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testdoubleobj set 1 12.34]
-    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testintobj setint 1 77]  ;# makes existing obj int
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 12.34 77 int 2}
 
-test obj-29.1 {Tcl_GetLongFromObj, existing long integer object} testobj {
+test obj-29.1 {Tcl_GetWideIntFromObj, existing int object} testobj {
     set result ""
-    lappend result [testintobj setlong 1 22]
-    lappend result [testintobj mult10 1]   ;# gets existing long int rep
+    lappend result [testintobj setint 1 22]
+    lappend result [testintobj mult10 1]   ;# gets existingint rep
 } {22 220}
-test obj-29.2 {Tcl_GetLongFromObj, convert to long} testobj {
+test obj-29.2 {Tcl_GetWideIntFromObj, convert to int} testobj {
     set result ""
-    lappend result [testintobj setlong 1 477]
+    lappend result [testintobj setint 1 477]
     lappend result [testintobj div10 1]    ;# must convert to bool
     lappend result [testobj type 1]
 } {477 47 int}
-test obj-29.3 {Tcl_GetLongFromObj, error converting to long integer} testobj {
+test obj-29.3 {Tcl_GetWideIntFromObj, error converting to int} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]
-    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result [catch {testintobj ismax 1} msg] ;# cvts to long int
     lappend result $msg
 } {abc 1 {expected integer but got "abc"}}
-test obj-29.4 {Tcl_GetLongFromObj, error converting from "empty string"} testobj {
+test obj-29.4 {Tcl_GetWideIntFromObj, error converting from "empty string"} testobj {
     set result ""
     lappend result [testobj newobj 1]
-    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result [catch {testintobj ismax 1} msg] ;# cvts to long int
     lappend result $msg
 } {{} 1 {expected integer but got ""}}
 

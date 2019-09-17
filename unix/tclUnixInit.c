@@ -9,8 +9,6 @@
  */
 
 #include "tclInt.h"
-#include <stddef.h>
-#include <locale.h>
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
@@ -335,7 +333,7 @@ long tclMacOSXDarwinRelease = 0;
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals and
+ *	Initialize all the platform-dependent things like signals and
  *	floating-point error handling.
  *
  *	Called at process initialization time.
@@ -411,7 +409,7 @@ TclpInitPlatform(void)
     /*
      * In case the initial locale is not "C", ensure that the numeric
      * processing is done in "C" locale regardless. This is needed because Tcl
-     * relies on routines like strtod, but should not have locale dependent
+     * relies on routines like strtol/strtoul, but should not have locale dependent
      * behavior.
      */
 
@@ -1000,7 +998,7 @@ TclpFindVariable(
 				 * searches). */
 {
     size_t i, result = TCL_IO_FAILURE;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);

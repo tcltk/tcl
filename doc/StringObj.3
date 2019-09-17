@@ -88,7 +88,7 @@ Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string value.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is TCL_AUTO_LENGTH.  (Applications needing null bytes
-should represent them as the two-byte sequence \fI\e700\e600\fR, use
+should represent them as the two-byte sequence \fI\e300\e200\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP size_t length in
