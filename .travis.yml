@@ -310,7 +310,7 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc test'
-    - name: "Windows/MSVC/Shared: UTF_MAX=6"
+    - name: "Windows/MSVC-x86/Shared: UTF_MAX=6"
       os: windows
       compiler: cl
       env: *vcenv
