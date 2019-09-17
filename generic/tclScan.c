@@ -261,7 +261,7 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX+1] = "";
+    char buf[TCL_UTF_MAX + 1] = "";
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -363,8 +363,10 @@ ValidateFormat(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -386,9 +388,7 @@ ValidateFormat(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
-	    /*
-	     * Fall through!
-	     */
+	    /* FALLTHRU */
 	case 'n':
 	case 's':
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
@@ -703,11 +703,10 @@ Tcl_ScanObjCmd(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
-	    /*
-	     * Fall through so we skip to the next character.
-	     */
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -943,7 +942,7 @@ Tcl_ScanObjCmd(
 		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
 		    if (code == TCL_OK) {
-			if (mp_isneg(&big)) {
+			if (big.sign != MP_ZPOS) {
 			    code = TCL_ERROR;
 			}
 			mp_clear(&big);

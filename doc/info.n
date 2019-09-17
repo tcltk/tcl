@@ -13,129 +13,102 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-info \- Return information about the state of the Tcl interpreter
+info \- Information about the state of the Tcl interpreter
 .SH SYNOPSIS
 \fBinfo \fIoption \fR?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
-This command provides information about various internals of the Tcl
-interpreter.
-The legal \fIoption\fRs (which may be abbreviated) are:
+Available commands:
 .TP
 \fBinfo args \fIprocname\fR
 .
-Returns a list containing the names of the arguments to procedure
-\fIprocname\fR, in order.  \fIProcname\fR must be the name of a
-Tcl command procedure.
+Returns the names of the parameters to the procedure named \fIprocname\fR.
 .TP
 \fBinfo body \fIprocname\fR
 .
-Returns the body of procedure \fIprocname\fR.  \fIProcname\fR must be
-the name of a Tcl command procedure.
+Returns the body of the procedure named \fIprocname\fR.
 .TP
 \fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
 .
-Returns information about the class, \fIclass\fR. The \fIsubcommand\fRs are
-described in \fBCLASS INTROSPECTION\fR below.
+Returns information about the class named \fIclass\fR.
+See \fBCLASS INTROSPECTION\fR below.
 .TP
 \fBinfo cmdcount\fR
 .
-Returns a count of the total number of commands that have been invoked
-in this interpreter.
+Returns the total number of commands evaluated in this interpreter.
 .TP
 \fBinfo cmdtype \fIcommandName\fR
 .VS TIP426
-Returns a description of the kind of command named by \fIcommandName\fR.  The
-supported types are:
+Returns a the type of the command named \fIcommandName\fR.
+Built-in types are:
 .RS
 .IP \fBalias\fR
-Indicates that \fIcommandName\fR was created by \fBinterp alias\fR. Note that
-safe interpreters can only see a subset of aliases (specifically those between
-two commands within themselves).
+\fIcommandName\fR was created by \fBinterp alias\fR.
+In a safe interpreter an alias is only visible if both the alias and the
+target are visible.
 .IP \fBcoroutine\fR
-Indicates that \fIcommandName\fR was created by \fBcoroutine\fR.
+\fIcommandName\fR was created by \fBcoroutine\fR.
 .IP \fBensemble\fR
-Indicates that \fIcommandName\fR was created by \fBnamespace ensemble\fR.
+\fIcommandName\fR was created by \fBnamespace ensemble\fR.
 .IP \fBimport\fR
-Indicates that \fIcommandName\fR was created by \fBnamespace import\fR.
+\fIcommandName\fR was created by \fBnamespace import\fR.
 .IP \fBnative\fR
-Indicates that \fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
+\fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
 interface directly without further registration of the type of command.
 .IP \fBobject\fR
-Indicates that \fIcommandName\fR is the public command that represents an
+\fIcommandName\fR is the public command that represents an
 instance of \fBoo::object\fR or one of its subclasses.
 .IP \fBprivateObject\fR
-Indicates that \fIcommandName\fR is the private command (\fBmy\fR by default)
+\fIcommandName\fR is the private command, \fBmy\fR by default,
 that represents an instance of \fBoo::object\fR or one of its subclasses.
 .IP \fBproc\fR
-Indicates that \fIcommandName\fR was created by \fBproc\fR.
+\fIcommandName\fR was created by \fBproc\fR.
 .IP \fBslave\fR
-Indicates that \fIcommandName\fR was created by \fBinterp create\fR.
+\fIcommandName\fR was created by \fBinterp create\fR.
 .IP \fBzlibStream\fR
-Indicates that \fIcommandName\fR was created by \fBzlib stream\fR.
+\fIcommandName\fR was created by \fBzlib stream\fR.
 .PP
-There may be other registered types as well; this is a set that is extensible
-at the implementation level with \fBTcl_RegisterCommandTypeName\fR.
+Other types may be also registered as well.  See \fBTcl_RegisterCommandTypeName\fR.
 .RE
 .VE TIP426
 .TP
 \fBinfo commands \fR?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified,
-returns a list of names of all the Tcl commands visible
-(i.e. executable without using a qualified name) to the current namespace,
-including both the built-in commands written in C and
-the command procedures defined using the \fBproc\fR command.
-If \fIpattern\fR is specified,
-only those names matching \fIpattern\fR are returned.
-Matching is determined using the same rules as for \fBstring match\fR.
-\fIpattern\fR can be a qualified name like \fBFoo::print*\fR.
-That is, it may specify a particular namespace
-using a sequence of namespace names separated by double colons (\fB::\fR),
-and may have pattern matching special characters
-at the end to specify a set of commands in that namespace.
-If \fIpattern\fR is a qualified name,
-the resulting list of command names has each one qualified with the name
-of the specified namespace, and only the commands defined in the named
-namespace are returned.
-.\" Technically, most of this hasn't changed; that's mostly just the
-.\" way it always worked. Hardly anyone knew that though.
+Returns the names of all commands visible in the current namespace.  If
+\fIpattern\fR is given, returns only those names that match according to
+\fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
+Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
+\fBnamespace\fR(n) documentation.
 .TP
 \fBinfo complete \fIcommand\fR
 .
-Returns 1 if \fIcommand\fR is a complete Tcl command in the sense of
-having no unclosed quotes, braces, brackets or array element names.
-If the command does not appear to be complete then 0 is returned.
-This command is typically used in line-oriented input environments
-to allow users to type in commands that span multiple lines;  if the
-command is not complete, the script can delay evaluating it until additional
-lines have been typed to complete the command.
+Returns 1 if \fIcommand\fR is a complete command, and \fB0\fR otherwise.
+Typically used in line-oriented input environments
+to allow users to type in commands that span multiple lines.
 .TP
 \fBinfo coroutine\fR
 .
-Returns the name of the currently executing \fBcoroutine\fR, or the empty
-string if either no coroutine is currently executing, or the current coroutine
-has been deleted (but has not yet returned or yielded since deletion).
+Returns the name of the current \fBcoroutine\fR, or the empty
+string if there is no current coroutine or the current coroutine
+has been deleted.
 .TP
-\fBinfo default \fIprocname arg varname\fR
+\fBinfo default \fIprocname parameter varname\fR
 .
-\fIProcname\fR must be the name of a Tcl command procedure and \fIarg\fR
-must be the name of an argument to that procedure.  If \fIarg\fR
-does not have a default value then the command returns \fB0\fR.
-Otherwise it returns \fB1\fR and places the default value of \fIarg\fR
-into variable \fIvarname\fR.
+If the parameter \fIparameter\fR for the procedure named \fIprocname\fR has a
+default value, stores that value in \fIvarname\fR and returns \fB1\fR.
+Otherwise, returns \fB0\fR.
 .TP
 \fBinfo errorstack \fR?\fIinterp\fR?
 .
-Returns, in a form that is programmatically easy to parse, the function names
-and arguments at each level from the call stack of the last error in the given
-\fIinterp\fR, or in the current one if not specified.
+Returns a description of the active command at each level for the
+last error in the current interpreter, or in the interpreter named
+\fIinterp\fR if given.
 .RS
 .PP
-This form is an even-sized list alternating tokens and parameters. Tokens are
+The description is a dictionary of tokens and parameters. Tokens are
 currently either \fBCALL\fR, \fBUP\fR, or \fBINNER\fR, but other values may be
-introduced in the future. \fBCALL\fR indicates a procedure call, and its
+introduced in the future. \fBCALL\fR indicates a command call, and its
 parameter is the corresponding \fBinfo level\fR \fB0\fR. \fBUP\fR indicates a
 shift in variable frames generated by \fBuplevel\fR or similar, and applies to
 the previous \fBCALL\fR item. Its parameter is the level offset. \fBINNER\fR
@@ -143,126 +116,103 @@ identifies the
 .QW "inner context" ,
 which is the innermost atomic command or bytecode instruction that raised the
 error, along with its arguments when available. While \fBCALL\fR and \fBUP\fR
-allow to follow complex call paths, \fBINNER\fR homes in on the offending
-operation in the innermost procedure call, even going to sub-expression
+provide a trail of the call path, \fBINNER\fR provides details of the offending
+operation in the innermost procedure call, even to sub-expression
 granularity.
 .PP
 This information is also present in the \fB\-errorstack\fR entry of the
 options dictionary returned by 3-argument \fBcatch\fR; \fBinfo errorstack\fR
 is a convenient way of retrieving it for uncaught errors at top-level in an
-interactive \fBtclsh\fR.
+interactive \fBinterpreter\fR.
 .RE
 .TP
 \fBinfo exists \fIvarName\fR
 .
-Returns \fB1\fR if the variable named \fIvarName\fR exists in the
-current context (either as a global or local variable) and has been
-defined by being given a value, returns \fB0\fR otherwise.
+Returns \fB1\fR if a variable named \fIvarName\fR is visible and has been
+defined, and \fB0\fR otherwise.
 .TP
-\fBinfo frame\fR ?\fInumber\fR?
+\fBinfo frame\fR ?\fIdepth\fR?
 .
-This command provides access to all frames on the stack, even those
-hidden from \fBinfo level\fR. If \fInumber\fR is not specified, this
-command returns a number giving the frame level of the command. This
-is 1 if the command is invoked at top-level. If \fInumber\fR is
-specified, then the result is a dictionary containing the location
-information for the command at the \fInumber\fRed level on the stack.
+Returns the depth of the call to \fBinfo frame\fR itself.  Otherwise, returns a
+dictionary describing the active command at the \fIdepth\fR, which counts all
+commands visible to \fBinfo level\fR, plus commands that don't create a new
+level, such as \fBeval\fR, \fBsource\fR, or \fIuplevel\fR. The frame depth is
+always greater than the current level.
 .RS
 .PP
-If \fInumber\fR is positive (> 0) then it selects a particular stack
-level (1 refers to the outer-most active command, 2 to the command it
-called, and so on, up to the current frame level which refers to
-\fBinfo frame\fR itself); otherwise it gives a level relative to the
-current command (0 refers to the current command, i.e., \fBinfo
-frame\fR itself, -1 to its caller, and so on).
+If \fIdepth\fR is greater than \fB0\fR it is the frame at that depth.  Otherwise
+it is the number of frames up from the current frame.
 .PP
-This is similar to how \fBinfo level\fR works, except that this
-subcommand reports all frames, like \fBsource\fRd scripts,
-\fBeval\fRs, \fBuplevel\fRs, etc.
-.PP
-Note that for nested commands, like
+As with \fBinfo level\fR and error traces, for nested commands like
 .QW "foo [bar [x]]" ,
 only
 .QW x
-will be seen by an \fBinfo frame\fR invoked within
+is seen by \fBinfo frame\fR invoked within
 .QW x .
-This is the same as for \fBinfo level\fR and error stack traces.
 .PP
-The result dictionary may contain the keys listed below, with the
-specified meanings for their values:
+The dictionary may contain the following keys:
 .TP
 \fBtype\fR
 .
-This entry is always present and describes the nature of the location
-for the command. The recognized values are \fBsource\fR, \fBproc\fR,
+Always present.  Possible values are \fBsource\fR, \fBproc\fR,
 \fBeval\fR, and \fBprecompiled\fR.
 .RS
 .TP
 \fBsource\fR\0\0\0\0\0\0\0\0
 .
-means that the command is found in a script loaded by the \fBsource\fR
+A script loaded via the \fBsource\fR
 command.
 .TP
 \fBproc\fR\0\0\0\0\0\0\0\0
 .
-means that the command is found in dynamically created procedure body.
+The body of a procedure that could not be traced back to a
+line in a particular script.
 .TP
 \fBeval\fR\0\0\0\0\0\0\0\0
 .
-means that the command is executed by \fBeval\fR or \fBuplevel\fR.
+The body of a script provided to \fBeval\fR or \fBuplevel\fR.
 .TP
 \fBprecompiled\fR\0\0\0\0\0\0\0\0
 .
-means that the command is found in a pre-compiled script (loadable by
-the package \fBtbcload\fR), and no further information will be
-available.
+A pre-compiled script (loadable by the package
+\fBtbcload\fR), and no further information is available.
 .RE
 .TP
 \fBline\fR
 .
-This entry provides the number of the line the command is at inside of
-the script it is a part of. This information is not present for type
-\fBprecompiled\fR. For type \fBsource\fR this information is counted
-relative to the beginning of the file, whereas for the last two types
-the line is counted relative to the start of the script.
+The line number of of the command inside its script.  Not available for
+\fBprecompiled\fR commands.  When the type is \fBsource\fR, the line number is
+relative to the beginning of the file, whereas for the last two types it is
+relative to the start of the script.
 .TP
 \fBfile\fR
 .
-This entry is present only for type \fBsource\fR. It provides the
-normalized path of the file the command is in.
+For type \fBsource\fR, provides the normalized path of the file that contains
+the command.
 .TP
 \fBcmd\fR
 .
-This entry provides the string representation of the command. This is
-usually the unsubstituted form, however for commands which are a
-canonically-constructed list (e.g., as produced by the \fBlist\fR command)
-executed by \fBeval\fR it is the substituted form as they have no other
-string representation. Care is taken that the canonicality property of
-the latter is not spoiled.
+The command before substitutions were performed.
 .TP
 \fBproc\fR
 .
-This entry is present only if the command is found in the body of a
-regular Tcl procedure. It then provides the name of that procedure.
+For type \fBprod\fR, the name of the procedure containing the command.
 .TP
 \fBlambda\fR
 .
-This entry is present only if the command is found in the body of an
-anonymous Tcl procedure, i.e. a lambda. It then provides the entire
-definition of the lambda in question.
+For a command in a script evaluated as the body of an unnamed routine via the
+\fBapply\fR command, the definition of that routine.
 .TP
 \fBlevel\fR
 .
-This entry is present only if the queried frame has a corresponding
-frame returned by \fBinfo level\fR. It provides the index of this
-frame, relative to the current level (0 and negative numbers).
+For a frame that corresponds to a level, (to be determined).
 .PP
-A thing of note is that for procedures statically defined in files the
-locations of commands in their bodies will be reported with type
-\fBsource\fR and absolute line numbers, and not as type
-\fBproc\fR. The same is true for procedures nested in statically
-defined procedures, and literal eval scripts in files or statically
-defined procedures.
+When a command can be traced to its literal definition in some script, e.g.
+procedures nested in statically defined procedures, and literal eval scripts in
+files or statically defined procedures, its type is \fBsource\fR and its
+location is the absolute line number in the script.  Otherwise, its type is
+\fBproc\fR and its location is its line number within the body of the
+procedure.
 .PP
 In contrast, procedure definitions and \fBeval\fR within a dynamically
 \fBeval\fRuated environment count line numbers relative to the start of
@@ -270,7 +220,7 @@ their script, even if they would be able to count relative to the
 start of the outer dynamic script. That type of number usually makes
 more sense.
 .PP
-A different way of describing this behaviour is that file based
+A different way of describing this behaviour is that file-based
 locations are tracked as deeply as possible, and where this is not
 possible the lines are counted based on the smallest possible
 \fBeval\fR or procedure body, as that scope is usually easier to find
@@ -284,152 +234,112 @@ counted relative to the start of each word (smallest scope)
 .TP
 \fBinfo functions \fR?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified, returns a list of all the math
+If \fIpattern\fR is not given, returns a list of all the math
 functions currently defined.
-If \fIpattern\fR is specified, only those functions whose name matches
-\fIpattern\fR are returned.  Matching is determined using the same
-rules as for \fBstring match\fR.
+If \fIpattern\fR is given, returns only those names that match
+\fIpattern\fR according to \fBstring match\fR.
 .TP
 \fBinfo globals \fR?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified, returns a list of all the names
+If \fIpattern\fR is not given, returns a list of all the names
 of currently-defined global variables.
 Global variables are variables in the global namespace.
-If \fIpattern\fR is specified, only those names matching \fIpattern\fR
+If \fIpattern\fR is given, only those names matching \fIpattern\fR
 are returned.  Matching is determined using the same rules as for
 \fBstring match\fR.
 .TP
 \fBinfo hostname\fR
 .
-Returns the name of the computer on which this invocation is being
-executed.
-Note that this name is not guaranteed to be the fully qualified domain
-name of the host.  Where machines have several different names (as is
+Returns the name of the current host.
+
+This name is not guaranteed to be the fully-qualified domain
+name of the host.  Where machines have several different names, as is
 common on systems with both TCP/IP (DNS) and NetBIOS-based networking
-installed,) it is the name that is suitable for TCP/IP networking that
+installed, it is the name that is suitable for TCP/IP networking that
 is returned.
 .TP
-\fBinfo level\fR ?\fInumber\fR?
+\fBinfo level\fR ?\fIlevel\fR?
 .
-If \fInumber\fR is not specified, this command returns a number
-giving the stack level of the invoking procedure, or 0 if the
-command is invoked at top-level.  If \fInumber\fR is specified,
-then the result is a list consisting of the name and arguments for the
-procedure call at level \fInumber\fR on the stack.  If \fInumber\fR
-is positive then it selects a particular stack level (1 refers
-to the top-most active procedure, 2 to the procedure it called, and
-so on); otherwise it gives a level relative to the current level
-(0 refers to the current procedure, -1 to its caller, and so on).
-See the \fBuplevel\fR command for more information on what stack
-levels mean.
+If \fInumber\fR is not given, the level this routine was called from.
+Otherwise returns the complete command active at the given level.  If
+\fInumber\fR is greater than \fB0\fR, it is the desired level.  Otherwise, it
+is \fInumber\fR levels up from the current level.  A complete command is the
+words in the command, with all subsitutions performed, meaning that it is a
+list.  See \fBuplevel\fR for more information on levels.
 .TP
 \fBinfo library\fR
 .
-Returns the name of the library directory in which standard Tcl
-scripts are stored.
-This is actually the value of the \fBtcl_library\fR
-variable and may be changed by setting \fBtcl_library\fR.
+Returns the value of \fBtcl_library\fR, which is the name of the library
+directory in which the scripts distributed with Tcl scripts are stored.
 .TP
 \fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
 .
-Returns the filename loaded as part of \fIpackage\fR. If \fIpackage\fR
-is not specified, returns a list describing all of the packages
-that have been loaded into \fIinterp\fR with the \fBload\fR command.
-Each list element is a sub-list with two elements consisting of the
-name of the file from which the package was loaded and the name of
-the package.
-For statically-loaded packages the file name will be an empty string.
-If \fIinterp\fR is omitted then information is returned for all packages
-loaded in any interpreter in the process.
-To get a list of just the packages in the current interpreter, specify
-an empty string for the \fIinterp\fR argument.
+Returns the name of each file loaded in \fIinterp\fR va \fBload\fR as part of
+\fIpackage\fR .  If \fIpackage\fR is not given, returns a list where each item
+is the name of the loaded file and the name of the package for which the file
+was loaded.  For a statically-loaded package the name of the file is the empty
+string.  For \fInterp\fR, the empty string is the current interpreter.
 .TP
 \fBinfo locals \fR?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified, returns a list of all the names
-of currently-defined local variables, including arguments to the
-current procedure, if any.
-Variables defined with the \fBglobal\fR, \fBupvar\fR  and
-\fBvariable\fR commands will not be returned.
-If \fIpattern\fR is specified, only those names matching \fIpattern\fR
-are returned.  Matching is determined using the same rules as for
-\fBstring match\fR.
+If \fIpattern\fR is given, returns the name of each local variable matching
+\fIpattern\fR according to \fBstring match\fR.  Otherwise, returns the name of
+each local variable.  A variables defined with the \fBglobal\fR, \fBupvar\fR or
+\fBvariable\fR is not local.
+
 .TP
 \fBinfo nameofexecutable\fR
 .
-Returns the full path name of the binary file from which the application
-was invoked.  If Tcl was unable to identify the file, then an empty
-string is returned.
+Returns the absolute pathname of the program for the current interpreter.  If
+such a file can not be identified an empty string is returned.
 .TP
 \fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
 .
-Returns information about the object, \fIobject\fR. The \fIsubcommand\fRs are
-described in \fBOBJECT INTROSPECTION\fR below.
+Returns information about the object named \fIobject\fR. \fIsubcommand\fR is
+described \fBOBJECT INTROSPECTION\fR below.
 .TP
 \fBinfo patchlevel\fR
 .
-Returns the value of the global variable \fBtcl_patchLevel\fR, which holds
-the exact version of the Tcl library by default.
+Returns the value of the global variable \fBtcl_patchLevel\fR, in which the
+exact version of the Tcl library initially stored.
 .TP
 \fBinfo procs \fR?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified, returns a list of all the
-names of Tcl command procedures in the current namespace.
-If \fIpattern\fR is specified,
-only those procedure names in the current namespace
-matching \fIpattern\fR are returned.
-Matching is determined using the same rules as for
-\fBstring match\fR.
-If \fIpattern\fR contains any namespace separators, they are used to
-select a namespace relative to the current namespace (or relative to
-the global namespace if \fIpattern\fR starts with \fB::\fR) to match
-within; the matching pattern is taken to be the part after the last
-namespace separator.
+Returns the names of all visible procedures. If \fIpattern\fR is given, returns
+only those names that match according to \fBstring match\fR.  Only the final
+component in \fIpattern\fR is actually considered a pattern.  Any qualifying
+components simply select a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
+\fBnamespace\fR(n) documentation.
 .TP
 \fBinfo script\fR ?\fIfilename\fR?
 .
-If a Tcl script file is currently being evaluated (i.e. there is a
-call to \fBTcl_EvalFile\fR active or there is an active invocation
-of the \fBsource\fR command), then this command returns the name
-of the innermost file being processed.  If \fIfilename\fR is specified,
-then the return value of this command will be modified for the
-duration of the active invocation to return that name.  This is
-useful in virtual file system applications.
-Otherwise the command returns an empty string.
+Returns the pathname of the innermost script currently being evaluated, or the
+empty string if no pathname can be determined.  If \fIfilename\fR is given,
+sets the return value of any future calls to \fBinfo script\fR for the duration
+of the innermost active script.  This is useful in virtual file system
+applications.
 .TP
 \fBinfo sharedlibextension\fR
 .
-Returns the extension used on this platform for the names of files
-containing shared libraries (for example, \fB.so\fR under Solaris).
-If shared libraries are not supported on this platform then an empty
-string is returned.
+Returns the extension used on this platform for names of shared libraries, e.g.
+\fB.so\fR under Solaris.  Returns the empty string if shared libraries are not
+supported on this platform.
 .TP
 \fBinfo tclversion\fR
 .
-Returns the value of the global variable \fBtcl_version\fR, which holds the
-major and minor version of the Tcl library by default.
+Returns the value of the global variable \fBtcl_version\fR, in which the
+major and minor version of the Tcl library are stored.
 .TP
 \fBinfo vars\fR ?\fIpattern\fR?
 .
-If \fIpattern\fR is not specified,
-returns a list of all the names of currently-visible variables.
-This includes locals and currently-visible globals.
-If \fIpattern\fR is specified, only those names matching \fIpattern\fR
-are returned.  Matching is determined using the same rules as for
-\fBstring match\fR.
-\fIpattern\fR can be a qualified name like \fBFoo::option*\fR.
-That is, it may specify a particular namespace
-using a sequence of namespace names separated by double colons (\fB::\fR),
-and may have pattern matching special characters
-at the end to specify a set of variables in that namespace.
-If \fIpattern\fR is a qualified name,
-the resulting list of variable names
-has each matching namespace variable qualified with the name
-of its namespace.
-Note that a currently-visible variable may not yet
-.QW exist
-if it has not
-been set (e.g. a variable declared but not set by \fBvariable\fR).
+If \fIpattern\fR is not given, returns the names of all visible variables.  If
+\fIpattern\fR is given, returns only those names that match according to
+\fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
+Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
+\fBnamespace\fR(n) documentation.  When \fIpattern\fR is a qualified name,
+results are fully qualified.
+
+A variable that has declared but not yet defined is included in the results.
 .SS "CLASS INTROSPECTION"
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
@@ -492,7 +402,7 @@ the class \fIclass\fR; the definition namespace only affects the instances of
 actually useful on classes that are subclasses of \fBoo::class\fR).
 .RS
 .PP
-If \fIclass\fR does not provide a definition namespace of the specified kind,
+If \fIclass\fR does not provide a definition namespace of the given kind,
 this command returns the empty string. In those circumstances, the
 \fBoo::define\fR and \fBoo::objdefine\fR commands look up which definition
 namespace to use using the class inheritance hierarchy.
@@ -523,7 +433,7 @@ instances to those that match it according to the rules of \fBstring match\fR.
 .
 This subcommand returns a list of all public (i.e. exported) methods of the
 class called \fIclass\fR. Any of the following \fIoption\fRs may be
-specified, controlling exactly which method names are returned:
+given, controlling exactly which method names are returned:
 .RS
 .TP
 \fB\-all\fR
@@ -600,7 +510,7 @@ This subcommand returns a list of all variables that have been declared for
 the class named \fIclass\fR (i.e. that are automatically present in the
 class's methods, constructor and destructor).
 .VS TIP500
-If the \fB\-private\fR option is specified, this lists the private variables
+If the \fB\-private\fR option is given, this lists the private variables
 declared instead.
 .VE TIP500
 .SS "OBJECT INTROSPECTION"
@@ -638,7 +548,7 @@ methods.
 .TP
 \fBinfo object class\fI object\fR ?\fIclassName\fR?
 .
-If \fIclassName\fR is unspecified, this subcommand returns class of the
+If \fIclassName\fR is not given, this subcommand returns class of the
 \fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a
 boolean value indicating whether the \fIobject\fR is of that class.
 .TP
@@ -707,7 +617,7 @@ direct or indirect).
 .
 This subcommand returns a list of all public (i.e. exported) methods of the
 object called \fIobject\fR. Any of the following \fIoption\fRs may be
-specified, controlling exactly which method names are returned:
+given, controlling exactly which method names are returned:
 .RS
 .TP
 \fB\-all\fR
@@ -777,7 +687,7 @@ This subcommand returns a list of all variables that have been declared for
 the object named \fIobject\fR (i.e. that are automatically present in the
 object's methods).
 .VS TIP500
-If the \fB\-private\fR option is specified, this lists the private variables
+If the \fB\-private\fR option is given, this lists the private variables
 declared instead.
 .VE TIP500
 .TP

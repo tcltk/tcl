@@ -50,7 +50,7 @@ typedef struct ChannelBuffer {
 				 * structure. */
 } ChannelBuffer;
 
-#define CHANNELBUFFER_HEADER_SIZE	TclOffset(ChannelBuffer, buf)
+#define CHANNELBUFFER_HEADER_SIZE	offsetof(ChannelBuffer, buf)
 
 /*
  * How much extra space to allocate in buffer to hold bytes from previous

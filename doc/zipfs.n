@@ -110,7 +110,6 @@ for the current platform. On Windows, this value is
 .QW \fBzipfs:/\fR .
 On Unix, this value is
 .QW \fB//zipfs:/\fR .
-.RE
 .TP
 \fBzipfs unmount \fImountpoint\fR
 .
@@ -184,7 +183,7 @@ before unmounting it again:
 .PP
 .CS
 set zip myApp.zip
-set base [file join [\fbzipfs root\fR] myApp]
+set base [file join [\fBzipfs root\fR] myApp]
 
 \fBzipfs mount\fR $base $zip
 # $base now has the contents of myApp.zip
@@ -213,7 +212,7 @@ building the ZIP and when mounting it.
 set zip myApp.zip
 set sourceDir [file normalize myApp]
 set password "hunter2"
-set base [file join [\fbzipfs root\fR] myApp]
+set base [file join [\fBzipfs root\fR] myApp]
 
 # Create with password
 \fBzipfs mkzip\fR $targetZip $sourceDir $sourceDir $password

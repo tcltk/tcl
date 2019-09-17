@@ -119,7 +119,7 @@ static inline Tcl_Obj *
 NewNsObj(
     Tcl_Namespace *namespacePtr)
 {
-    register Namespace *nsPtr = (Namespace *) namespacePtr;
+    Namespace *nsPtr = (Namespace *) namespacePtr;
 
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
@@ -1645,7 +1645,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	Tcl_Free(nameParts);
+	Tcl_Free((void *)nameParts);
     }
     return ensemble;
 }
@@ -1813,7 +1813,7 @@ NsEnsembleImplementationCmdNR(
 
 	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
-	    register int cmp = strncmp(subcmdName,
+	    int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
 		    stringLength);
 
@@ -2404,7 +2404,7 @@ MakeCachedEnsembleCommand(
     Tcl_HashEntry *hPtr,
     Tcl_Obj *fix)
 {
-    register EnsembleCmdRep *ensembleCmd;
+    EnsembleCmdRep *ensembleCmd;
 
     ECRGetIntRep(objPtr, ensembleCmd);
     if (ensembleCmd) {
@@ -2581,7 +2581,7 @@ BuildEnsembleConfig(
     if (subList) {
         int subc;
         Tcl_Obj **subv, *target, *cmdObj, *cmdPrefixObj;
-        char *name;
+        const char *name;
 
         /*
          * There is a list of exactly what subcommands go in the table.
@@ -2666,7 +2666,7 @@ BuildEnsembleConfig(
         Tcl_DictObjFirst(NULL, ensemblePtr->subcommandDict, &dictSearch,
                 &keyObj, &valueObj, &done);
         while (!done) {
-            char *name = TclGetString(keyObj);
+            const char *name = TclGetString(keyObj);
 
             hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
             Tcl_SetHashValue(hPtr, valueObj);
@@ -2708,7 +2708,11 @@ BuildEnsembleConfig(
 		    if (isNew) {
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-			cmdObj = Tcl_NewStringObj(nsCmdName, -1);
+			TclNewObj(cmdObj);
+			Tcl_AppendStringsToObj(cmdObj,
+				ensemblePtr->nsPtr->fullName,
+				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
+				nsCmdName, NULL);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);
@@ -3376,7 +3380,7 @@ CompileToInvokedCommand(
 {
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
-    char *bytes;
+    const char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
     size_t length;
     DefineLineInformation;

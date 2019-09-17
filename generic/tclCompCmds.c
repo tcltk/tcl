@@ -1179,6 +1179,38 @@ TclCompileDictGetCmd(
 }
 
 int
+TclCompileDictGetWithDefaultCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int i;
+    DefineLineInformation;	/* TIP #280 */
+
+    /*
+     * There must be at least three arguments after the command.
+     */
+
+    /* TODO: Consider support for compiling expanded args. */
+    if (parsePtr->numWords < 4) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt4(INST_DICT_GET_DEF, parsePtr->numWords-3, envPtr);
+    TclAdjustStackDepth(-2, envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileDictExistsCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -1566,7 +1598,7 @@ CompileDictEachCmd(
     }
     Tcl_DStringFree(&buffer);
     if (numVars != 2) {
-	Tcl_Free(argv);
+	Tcl_Free((void *)argv);
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -1574,7 +1606,7 @@ CompileDictEachCmd(
     keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
     nameChars = strlen(argv[1]);
     valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
-    Tcl_Free(argv);
+    Tcl_Free((void *)argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -2885,9 +2917,9 @@ DupForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
-    register ForeachInfo *srcPtr = clientData;
+    ForeachInfo *srcPtr = clientData;
     ForeachInfo *dupPtr;
-    register ForeachVarList *srcListPtr, *dupListPtr;
+    ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = Tcl_Alloc(sizeof(ForeachInfo)
@@ -2934,10 +2966,10 @@ FreeForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *listPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *listPtr;
     int numLists = infoPtr->numLists;
-    register int i;
+    int i;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -2970,8 +3002,8 @@ PrintForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendToObj(appendObj, "data=[", -1);
@@ -3010,8 +3042,8 @@ PrintNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
@@ -3040,8 +3072,8 @@ DisassembleForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3087,8 +3119,8 @@ DisassembleNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3147,7 +3179,7 @@ TclCompileFormatCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
-    char *bytes, *start;
+    const char *bytes, *start;
     int i, j;
     size_t len;
 
@@ -3275,7 +3307,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		char *b = TclGetStringFromObj(tmpObj, &len);
+		const char *b = TclGetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3413,9 +3445,9 @@ TclPushVarName(
     int *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
-    register const char *p;
+    const char *p;
     const char *last, *name, *elName;
-    register size_t n;
+    size_t n;
     Tcl_Token *elemTokenPtr = NULL;
 	size_t nameLen, elNameLen;
     int simpleVarName, localIndex;

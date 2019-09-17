@@ -529,7 +529,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -541,7 +541,6 @@ typedef struct ByteCode {
  */
 
 enum TclInstruction {
-
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
     INST_PUSH1,
@@ -818,10 +817,17 @@ enum TclInstruction {
 
     INST_CLOCK_READ,
 
+    INST_DICT_GET_DEF,
+
+	/* TIP 461 */
+	INST_STR_LT,
+	INST_STR_GT,
+	INST_STR_LE,
+	INST_STR_GE,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
-
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1077,7 +1083,7 @@ MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, size_t numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, size_t numBytes,
@@ -1189,7 +1195,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1377,7 +1383,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

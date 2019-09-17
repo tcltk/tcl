@@ -68,7 +68,11 @@ proc http::Log {args} {
     }
     return
 }
-
+# The http::Log routine above needs the variable ::httpTest::testOptions
+# Set up to destroy it when that variable goes away.
+trace add variable ::httpTest::testOptions unset {apply {args {
+    proc ::http::Log args {}
+}}}
 
 # Called by http::Log (the "testing" version) to record logs for later analysis.
 

@@ -540,7 +540,7 @@ ProcessStatusObjCmd(
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);
 	for (i = 0; i < numPids; i++) {
-	    result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
+	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);
 		Tcl_DecrRefCount(dict);
@@ -654,7 +654,7 @@ ProcessPurgeObjCmd(
 	}
 	Tcl_MutexLock(&infoTablesMutex);
 	for (i = 0; i < numPids; i++) {
-	    result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
+	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);
 		return result;

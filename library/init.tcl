@@ -616,7 +616,9 @@ proc auto_execok name {
     }
 
     set path "[file dirname [info nameof]];.;"
-    if {[info exists env(WINDIR)]} {
+    if {[info exists env(SystemRoot)]} {
+	set windir $env(SystemRoot)
+    } elseif {[info exists env(WINDIR)]} {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {

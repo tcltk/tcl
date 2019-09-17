@@ -308,15 +308,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if defined(_WIN32)
-#   ifdef __BORLANDC__
-	typedef struct stati64 Tcl_StatBuf;
-#   elif defined(_WIN64)
-	typedef struct __stat64 Tcl_StatBuf;
-#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
-	typedef struct _stati64	Tcl_StatBuf;
-#   else
-	typedef struct _stat32i64 Tcl_StatBuf;
-#   endif /* _MSC_VER < 1400 */
+    typedef struct __stat64 Tcl_StatBuf;
 #elif defined(__CYGWIN__)
     typedef struct {
 	dev_t st_dev;
@@ -329,13 +321,10 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	dev_t st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
-	struct {long tv_sec;} st_atim;
-	struct {long tv_sec;} st_mtim;
-	struct {long tv_sec;} st_ctim;
-	/* Here is a 4-byte gap */
+	struct {long long tv_sec;} st_atim;
+	struct {long long tv_sec;} st_mtim;
+	struct {long long tv_sec;} st_ctim;
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-    typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
 #endif
@@ -459,19 +448,18 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 typedef struct Tcl_RegExpIndices {
-    long start;			/* Character offset of first character in
+    size_t start;			/* Character offset of first character in
 				 * match. */
-    long end;			/* Character offset of first character after
+    size_t end;			/* Character offset of first character after
 				 * the match. */
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    int nsubs;			/* Number of subexpressions in the compiled
+    size_t nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    long extendStart;		/* The offset at which a subsequent match
+    size_t extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
-    long reserved;		/* Reserved for later use. */
 } Tcl_RegExpInfo;
 
 /*
@@ -937,6 +925,8 @@ typedef struct Tcl_DString {
 #endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
+#define TCL_LINK_CHARS		15
+#define TCL_LINK_BINARY		16
 #define TCL_LINK_READ_ONLY	0x80
 
 /*
@@ -1994,15 +1984,12 @@ typedef struct Tcl_EncodingType {
 
 #if TCL_UTF_MAX > 4
     /*
-     * unsigned int isn't 100% accurate as it should be a strict 4-byte value
+     * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
      * value must be reflected correctly in regcustom.h and
      * in tclEncoding.c.
-     * XXX: Tcl is currently UCS-2 and planning UTF-16 for the Unicode
-     * XXX: string rep that Tcl_UniChar represents.  Changing the size
-     * XXX: of Tcl_UniChar is /not/ supported.
      */
-typedef unsigned int Tcl_UniChar;
+typedef int Tcl_UniChar;
 #else
 typedef unsigned short Tcl_UniChar;
 #endif
@@ -2169,6 +2156,7 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 
 #define TCL_IO_FAILURE	((size_t)-1)
 #define TCL_AUTO_LENGTH	((size_t)-1)
+#define TCL_INDEX_NONE  ((size_t)-1)
 
 /*
  *----------------------------------------------------------------------------
@@ -2181,7 +2169,7 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables. If TCL_UTF_MAX>4 use a different value.
+ * stubs tables.
  */
 
 #define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
@@ -2238,6 +2226,7 @@ EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
+EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(

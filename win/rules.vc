@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 3
+RULES_VERSION_MINOR = 4
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -162,7 +162,7 @@ MKDIR   = mkdir
 # COMPATDIR - source directory that holds compatibility sources
 # DOCDIR - source directory containing documentation files
 # GENERICDIR - platform-independent source directory
-# WINDIR - Windows-specific source directory
+# WIN_DIR - Windows-specific source directory
 # TESTDIR - directory containing test files
 # TOOLSDIR - directory containing build tools
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
@@ -215,17 +215,15 @@ DEMODIR		= $(LIBDIR)\demos
 DEMODIR		= $(ROOT)\demos
 !endif
 !endif # ifndef DEMODIR
-# Do NOT enclose WINDIR in a !ifndef because Windows always defines
-# WINDIR env var to point to c:\windows!
-# TBD - This is a potentially dangerous conflict, rename WINDIR to
-# something else
-WINDIR		= $(ROOT)\win
+# Do NOT use WINDIR because it is Windows internal environment
+# variable to point to c:\windows!
+WIN_DIR		= $(ROOT)\win
 
 !ifndef RCDIR
-!if exist("$(WINDIR)\rc")
-RCDIR           = $(WINDIR)\rc
+!if exist("$(WIN_DIR)\rc")
+RCDIR           = $(WIN_DIR)\rc
 !else
-RCDIR           = $(WINDIR)
+RCDIR           = $(WIN_DIR)
 !endif
 !endif
 RCDIR = $(RCDIR:/=\)
@@ -686,6 +684,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
 # CONFIG_CHECK - 1 -> check current build configuration against Tcl
 #           configuration (ignored for Tcl itself)
+# TCL_UTF_MAX=6 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -743,6 +742,11 @@ MSVCRT		= 0
 TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "utfmax"]
+!message *** Force 32-bit Tcl_UniChar
+TCL_UTF_MAX = 6
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1071,7 +1075,7 @@ TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
-TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
+TCL_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
 !else # ! $(DOING_TCL)
 
@@ -1146,7 +1150,7 @@ WISH 		= $(OUT_DIR)\$(WISHNAME)
 TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
-TK_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
+TK_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
 !else # effectively NEED_TK
 
@@ -1265,9 +1269,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
 !if $(TCL_COMPILE_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 !endif
-!if $(TCL_THREADS) && $(TCL_VERSION) < 86
+!if $(TCL_THREADS) && $(TCL_VERSION) < 87
 OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
-!if $(USE_THREAD_ALLOC)
+!if $(USE_THREAD_ALLOC) && $(TCL_VERSION) < 87
 OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
 !endif
 !endif
@@ -1303,6 +1307,10 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+!endif
+
+!if "$(TCL_UTF_MAX)" == "6"
+OPTDEFINES	= $(OPTDEFINES) -DTCL_UTF_MAX=6
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
@@ -1391,7 +1399,7 @@ cwarn = $(cwarn) -WX
 
 INCLUDES = $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
 !if !$(DOING_TCL) && !$(DOING_TK)
-INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WINDIR)" -I"$(COMPATDIR)"
+INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WIN_DIR)" -I"$(COMPATDIR)"
 !endif
 
 # These flags are defined roughly in the order of the pre-reform
@@ -1407,8 +1415,8 @@ cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 # BUILD_$(PROJECT) macro which should be defined only for the shared
 # library *implementation* and not for its caller interface
 
-appcflags = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
 appcflags_nostubs = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
+appcflags = $(appcflags_nostubs) $(USE_STUBS_DEFS)
 pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 
@@ -1423,7 +1431,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1573,20 +1581,20 @@ default-install-demos:
 default-clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WINDIR)\nmakehlp.obj, nmakehlp.exe ...
-	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
-	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
-	@if exist $(WINDIR)\nmakehlp.out del $(WINDIR)\nmakehlp.out
-	@echo Cleaning $(WINDIR)\nmhlp-out.txt ...
-	@if exist $(WINDIR)\nmhlp-out.txt del $(WINDIR)\nmhlp-out.txt
-	@echo Cleaning $(WINDIR)\_junk.pch ...
-	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
-	@echo Cleaning $(WINDIR)\vercl.x, vercl.i ...
-	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
-	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
-	@echo Cleaning $(WINDIR)\versions.vc, version.vc ...
-	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
-	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
+	@echo Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
+	@if exist $(WIN_DIR)\nmakehlp.obj del $(WIN_DIR)\nmakehlp.obj
+	@if exist $(WIN_DIR)\nmakehlp.exe del $(WIN_DIR)\nmakehlp.exe
+	@if exist $(WIN_DIR)\nmakehlp.out del $(WIN_DIR)\nmakehlp.out
+	@echo Cleaning $(WIN_DIR)\nmhlp-out.txt ...
+	@if exist $(WIN_DIR)\nmhlp-out.txt del $(WIN_DIR)\nmhlp-out.txt
+	@echo Cleaning $(WIN_DIR)\_junk.pch ...
+	@if exist $(WIN_DIR)\_junk.pch del $(WIN_DIR)\_junk.pch
+	@echo Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
+	@if exist $(WIN_DIR)\vercl.x del $(WIN_DIR)\vercl.x
+	@if exist $(WIN_DIR)\vercl.i del $(WIN_DIR)\vercl.i
+	@echo Cleaning $(WIN_DIR)\versions.vc, version.vc ...
+	@if exist $(WIN_DIR)\versions.vc del $(WIN_DIR)\versions.vc
+	@if exist $(WIN_DIR)\version.vc del $(WIN_DIR)\version.vc
 
 default-hose: default-clean
 	@echo Hosing $(OUT_DIR)\* ...
@@ -1678,7 +1686,7 @@ DISABLE_IMPLICIT_RULES = 0
 $<
 <<
 
-{$(WINDIR)}.c{$(TMP_DIR)}.obj::
+{$(WIN_DIR)}.c{$(TMP_DIR)}.obj::
 	$(CCPKGCMD) @<<
 $<
 <<
@@ -1696,7 +1704,7 @@ $<
 {$(RCDIR)}.rc{$(TMP_DIR)}.res:
 	$(RESCMD) $<
 
-{$(WINDIR)}.rc{$(TMP_DIR)}.res:
+{$(WIN_DIR)}.rc{$(TMP_DIR)}.res:
 	$(RESCMD) $<
 
 {$(TMP_DIR)}.rc{$(TMP_DIR)}.res:
@@ -1730,6 +1738,9 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 
 !if defined(CORE_MACHINE) && "$(CORE_MACHINE)" != "$(MACHINE)"
 !error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
+!endif
+!if $(TCL_VERSION) < 87 && defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
+!message WARNING: Value of USE_THREAD_ALLOC ($(USE_THREAD_ALLOC)) does not match its Tcl core value ($(CORE_USE_THREAD_ALLOC)).
 !endif
 !if defined(CORE_DEBUG) && $(CORE_DEBUG) != $(DEBUG)
 !message WARNING: Value of DEBUG ($(DEBUG)) does not match its Tcl library configuration ($(DEBUG)).
