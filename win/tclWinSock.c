@@ -90,7 +90,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR classname[] = TEXT("TclSocket");
+static const WCHAR classname[] = L"TclSocket";
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -232,7 +232,7 @@ typedef struct {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
-static WNDCLASS windowClass;
+static WNDCLASSW windowClass;
 
 /*
  * Static routines for this file:
@@ -343,16 +343,16 @@ InitializeHostName(
     int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
-    if (GetComputerName(tbuf, &length) != 0) {
+    if (GetComputerNameW(wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *)wbuf, -1, &ds));
 
     } else {
 	Tcl_DStringInit(&ds);
@@ -2341,7 +2341,7 @@ InitSockets(void)
 	windowClass.hIcon = NULL;
 	windowClass.hCursor = NULL;
 
-	if (!RegisterClass(&windowClass)) {
+	if (!RegisterClassW(&windowClass)) {
 	    TclWinConvertError(GetLastError());
 	    goto initFailure;
 	}
@@ -2466,7 +2466,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClass(classname, TclWinGetTclInstance());
+    UnregisterClassW(classname, TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -2992,7 +2992,7 @@ SocketThread(
      * Create a dummy window receiving socket events.
      */
 
-    tsdPtr->hwnd = CreateWindow(classname, classname, WS_TILED, 0, 0, 0, 0,
+    tsdPtr->hwnd = CreateWindowW(classname, classname, WS_TILED, 0, 0, 0, 0,
 	    NULL, NULL, windowClass.hInstance, arg);
 
     /*
