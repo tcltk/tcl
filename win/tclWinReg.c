@@ -13,8 +13,6 @@
  */
 
 #undef STATIC_BUILD
-#undef TCL_UTF_MAX
-#define TCL_UTF_MAX 3
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -127,8 +125,13 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
 #if (TCL_MAJOR_VERSION < 9) && (TCL_MINOR_VERSION < 7)
+# if TCL_UTF_MAX > 3
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf(a,(b)*sizeof(WCHAR),c)
+#   define Tcl_UtfToWCharDString(a,b,c) Tcl_WinUtfToTChar(a,b,c)
+# else
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+# endif
 #endif
 
 static unsigned char *
@@ -542,7 +545,7 @@ DeleteValue(
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&ds);
     Tcl_UtfToWCharDString(valueName, valueNameObj->length, &ds);
-    result = RegDeleteValue(key, (const WCHAR *)Tcl_DStringValue(&ds));
+    result = RegDeleteValueW(key, (const WCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -616,7 +619,7 @@ GetKeyNames(
     resultPtr = Tcl_NewObj();
     for (index = 0;; ++index) {
 	bufSize = MAX_KEY_LENGTH;
-	result = RegEnumKeyEx(key, index, buffer, &bufSize,
+	result = RegEnumKeyExW(key, index, buffer, &bufSize,
 		NULL, NULL, NULL, NULL);
 	if (result != ERROR_SUCCESS) {
 	    if (result == ERROR_NO_MORE_ITEMS) {
@@ -699,7 +702,7 @@ GetType(
     valueName = Tcl_GetString(valueNameObj);
     Tcl_DStringInit(&ds);
     nativeValue = Tcl_UtfToWCharDString(valueName, valueNameObj->length, &ds);
-    result = RegQueryValueEx(key, nativeValue, NULL, &type,
+    result = RegQueryValueExW(key, nativeValue, NULL, &type,
 	    NULL, NULL);
     Tcl_DStringFree(&ds);
     RegCloseKey(key);
@@ -782,7 +785,7 @@ GetValue(
     Tcl_DStringInit(&buf);
     nativeValue = Tcl_UtfToWCharDString(valueName, valueNameObj->length, &buf);
 
-    result = RegQueryValueEx(key, nativeValue, NULL, &type,
+    result = RegQueryValueExW(key, nativeValue, NULL, &type,
 	    (BYTE *) Tcl_DStringValue(&data), &length);
     while (result == ERROR_MORE_DATA) {
 	/*
@@ -793,7 +796,7 @@ GetValue(
 
 	length = Tcl_DStringLength(&data) * (2 / sizeof(WCHAR));
 	Tcl_DStringSetLength(&data, (int) length * sizeof(WCHAR));
-	result = RegQueryValueEx(key, nativeValue,
+	result = RegQueryValueExW(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
     Tcl_DStringFree(&buf);
@@ -919,7 +922,7 @@ GetValueNames(
      */
 
     size = MAX_KEY_LENGTH;
-    while (RegEnumValue(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
+    while (RegEnumValueW(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 
 	Tcl_DStringInit(&ds);
@@ -1031,7 +1034,7 @@ OpenSubKey(
     if (hostName) {
 	Tcl_DStringInit(&buf);
 	hostName = (char *) Tcl_UtfToWCharDString(hostName, -1, &buf);
-	result = RegConnectRegistry((WCHAR *)hostName, rootKey,
+	result = RegConnectRegistryW((WCHAR *)hostName, rootKey,
 		&rootKey);
 	Tcl_DStringFree(&buf);
 	if (result != ERROR_SUCCESS) {
@@ -1051,7 +1054,7 @@ OpenSubKey(
     if (flags & REG_CREATE) {
 	DWORD create;
 
-	result = RegCreateKeyEx(rootKey, (WCHAR *)keyName, 0, NULL,
+	result = RegCreateKeyExW(rootKey, (WCHAR *)keyName, 0, NULL,
 		REG_OPTION_NON_VOLATILE, mode, NULL, keyPtr, &create);
     } else if (rootKey == HKEY_PERFORMANCE_DATA) {
 	/*
@@ -1062,7 +1065,7 @@ OpenSubKey(
 	*keyPtr = HKEY_PERFORMANCE_DATA;
 	result = ERROR_SUCCESS;
     } else {
-	result = RegOpenKeyEx(rootKey, (WCHAR *)keyName, 0, mode,
+	result = RegOpenKeyExW(rootKey, (WCHAR *)keyName, 0, mode,
 		keyPtr);
     }
     if (keyName) {
@@ -1202,7 +1205,7 @@ RecursiveDeleteKey(
     }
 
     mode |= KEY_ENUMERATE_SUB_KEYS | DELETE | KEY_QUERY_VALUE;
-    result = RegOpenKeyEx(startKey, keyName, 0, mode, &hKey);
+    result = RegOpenKeyExW(startKey, keyName, 0, mode, &hKey);
     if (result != ERROR_SUCCESS) {
 	return result;
     }
@@ -1217,7 +1220,7 @@ RecursiveDeleteKey(
 	 */
 
 	size = MAX_KEY_LENGTH;
-	result = RegEnumKeyEx(hKey, 0, (WCHAR *)Tcl_DStringValue(&subkey),
+	result = RegEnumKeyExW(hKey, 0, (WCHAR *)Tcl_DStringValue(&subkey),
 		&size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
 	    /*
@@ -1230,14 +1233,14 @@ RecursiveDeleteKey(
 		HMODULE handle;
 
 		checkExProc = 1;
-		handle = GetModuleHandle(TEXT("ADVAPI32"));
+		handle = GetModuleHandleW(L"ADVAPI32");
 		regDeleteKeyExProc = (LSTATUS (*) (HKEY, LPCWSTR, REGSAM, DWORD))
 			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
 	    if (mode && regDeleteKeyExProc) {
 		result = regDeleteKeyExProc(startKey, keyName, mode, 0);
 	    } else {
-		result = RegDeleteKey(startKey, keyName);
+		result = RegDeleteKeyW(startKey, keyName);
 	    }
 	    break;
 	} else if (result == ERROR_SUCCESS) {
@@ -1311,7 +1314,7 @@ SetValue(
 	}
 
 	value = ConvertDWORD((DWORD) type, (DWORD) value);
-	result = RegSetValueEx(key, (WCHAR *) valueName, 0,
+	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
@@ -1346,7 +1349,7 @@ SetValue(
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
-	result = RegSetValueEx(key, (WCHAR *) valueName, 0,
+	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
 	Tcl_DStringFree(&data);
@@ -1364,7 +1367,7 @@ SetValue(
 
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
 
-	result = RegSetValueEx(key, (WCHAR *) valueName, 0,
+	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) data, (DWORD) Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
     } else {
@@ -1376,7 +1379,7 @@ SetValue(
 	 */
 
 	data = (BYTE *) getByteArrayFromObj(dataObj, &bytelength);
-	result = RegSetValueEx(key, (WCHAR *) valueName, 0,
+	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, data, (DWORD) bytelength);
     }
 
@@ -1490,7 +1493,7 @@ AppendSystemError(
     if (Tcl_IsShared(resultPtr)) {
 	resultPtr = Tcl_DuplicateObj(resultPtr);
     }
-    length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM
+    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
 	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
 	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
 	    0, NULL);
