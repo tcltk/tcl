@@ -134,15 +134,19 @@ test lrange-3.7b.2 {not compiled on empty not list object, 2nd regression test, 
     list [$cmd {} 0 1] [$cmd [lindex a -1] 0 1] [$cmd [set a {}] 0 1] \
 	 [$cmd {} 0-1 end+1] [$cmd [lindex a -1] 0-1 end+1] [$cmd $a 0-1 end+1]
 } [lrepeat 6 {}]
-test lrange-3.7c.2 {compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} {
+test lrange-3.7c.2 {compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} -constraints {
+    testpurebytesobj
+} -body {
     list [lrange [testpurebytesobj] 0 1] [lrange [testpurebytesobj { }] 0 1] [lrange [set a [testpurebytesobj {}]] 0 1] \
 	 [lrange [testpurebytesobj] 0-1 end+1] [lrange [testpurebytesobj { }] 0-1 end+1] [lrange $a 0-1 end+1]
-} [lrepeat 6 {}]
-test lrange-3.7d.2 {not compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} {
+} -result [lrepeat 6 {}]
+test lrange-3.7d.2 {not compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} -constraints {
+    testpurebytesobj
+} -body {
     set cmd lrange
     list [$cmd [testpurebytesobj] 0 1] [$cmd [testpurebytesobj { }] 0 1] [$cmd [set a [testpurebytesobj {}]] 0 1] \
 	 [$cmd [testpurebytesobj] 0-1 end+1] [$cmd [testpurebytesobj { }] 0-1 end+1] [$cmd $a 0-1 end+1]
-} [lrepeat 6 {}]
+} -result [lrepeat 6 {}]
 
 
 # cleanup
