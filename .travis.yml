@@ -10,13 +10,6 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC/Static"
-      os: linux
-      dist: xenial
-      compiler: gcc
-      env:
-        - CFGOPT="--disable-shared"
-        - BUILD_DIR=unix
     - name: "Linux/GCC/Shared: UTF_MAX=6"
       os: linux
       dist: xenial
@@ -37,8 +30,14 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_NO_DEPRECATED=1
-# Debug build. Running test-cases disabled, because it is currently failing.
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
+    - name: "Linux/GCC/Static"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - CFGOPT="--disable-shared"
+        - BUILD_DIR=unix
     - name: "Linux/GCC/Debug"
       os: linux
       dist: xenial
@@ -102,6 +101,27 @@ matrix:
       compiler: clang
       env:
         - BUILD_DIR=unix
+    - name: "Linux/Clang/Shared: UTF_MAX=6"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+    - name: "Linux/Clang/Shared: UTF_MAX=3"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/Clang/Shared:NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/Clang/Static"
       os: linux
       dist: xenial
@@ -175,15 +195,6 @@ matrix:
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
-    - name: "Linux-cross-Windows/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-      script: *crosstest
     - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=6"
       os: linux
       dist: xenial
@@ -210,6 +221,15 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+      script: *crosstest
+    - name: "Linux-cross-Windows/GCC/Static/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons: *mingw64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
       script: *crosstest
     - name: "Linux-cross-Windows/GCC/Debug/no test"
       os: linux
@@ -239,15 +259,6 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
       script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-      script: *crosstest
     - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=6"
       os: linux
       dist: xenial
@@ -274,6 +285,15 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_NO_DEPRECATED=1"
+      script: *crosstest
+    - name: "Linux-cross-Windows-32/GCC/Static/no test"
+      os: linux
+      dist: xenial
+      compiler: i686-w64-mingw32-gcc
+      addons: *mingw32
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
       script: *crosstest
     - name: "Linux-cross-Windows-32/GCC/Debug/no test"
       os: linux
