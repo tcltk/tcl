@@ -968,7 +968,7 @@ test basic-48.24.$noComp {expansion: empty not canonical list, regression test, 
     run {list [list {*}{ }] [list {*}[format %c 32]] [list {*}[set a { }]]}
 } -result [lrepeat 3 {}] -cleanup {unset -nocomplain a}
 
-test basic-48.25.$noComp {Bug cc191552c: expansion: empty non-canonical list} -setup {
+test basic-48.25.$noComp {Bug cc191552c: expansion: empty non-canonical list} -constraints $constraints -setup {
     unset -nocomplain ::CRLF
     set ::CRLF "\r\n"
 } -body {
