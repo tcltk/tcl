@@ -574,7 +574,6 @@ TestindexobjCmd(
     int allowAbbrev, index, index2, setError, i, result;
     const char **argv;
     static const char *const tablePtr[] = {"a", "b", "check", NULL};
-    (void)dummy;
 
     /*
      * Keep this structure declaration in sync with tclIndexObj.c
@@ -585,6 +584,7 @@ TestindexobjCmd(
 	int index;		/* Selected index into table. */
     };
     struct IndexRep *indexRep;
+    (void)dummy;
 
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {

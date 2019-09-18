@@ -3523,8 +3523,6 @@ TestlocaleCmd(
 {
     int index;
     const char *locale;
-    (void)dummy;
-
     static const char *const optionStrings[] = {
 	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
@@ -3533,6 +3531,7 @@ TestlocaleCmd(
 	LC_CTYPE, LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY,
 	LC_ALL
     };
+    (void)dummy;
 
     /*
      * LC_CTYPE, etc. correspond to the indices for the strings.
