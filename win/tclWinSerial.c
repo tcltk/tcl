@@ -1403,7 +1403,7 @@ TclWinSerialOpen(
      * If an open channel is specified, close it
      */
 
-    if ( handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
+    if (handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
 	return INVALID_HANDLE_VALUE;
     }
 
@@ -1413,7 +1413,7 @@ TclWinSerialOpen(
      * finished
      */
 
-    handle = CreateFile(name, access, 0, 0, OPEN_EXISTING,
+    handle = CreateFileW(name, access, 0, 0, OPEN_EXISTING,
 	    FILE_FLAG_OVERLAPPED, 0);
 
     return handle;
@@ -1671,7 +1671,7 @@ SerialSetOptionProc(
 	}
 	Tcl_DStringInit(&ds);
 	native = Tcl_UtfToWCharDString(value, -1, &ds);
-	result = BuildCommDCB(native, &dcb);
+	result = BuildCommDCBW(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {
