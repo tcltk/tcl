@@ -788,7 +788,6 @@ static void
 TclThreadFinalizeContLines(
     ClientData dummy)
 {
-	(void)dummy;
     /*
      * Release the hashtable tracking invisible continuation lines.
      */
@@ -796,6 +795,7 @@ TclThreadFinalizeContLines(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
+    (void)dummy;
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {

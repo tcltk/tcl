@@ -4494,9 +4494,6 @@ ZipFSFileAttrStringsProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
-    (void)pathPtr;
-    (void)objPtrRef;
-
     static const char *const attrs[] = {
 	"-uncompsize",
 	"-compsize",
@@ -4506,6 +4503,9 @@ ZipFSFileAttrStringsProc(
 	"-permissions",
 	NULL,
     };
+    (void)pathPtr;
+    (void)objPtrRef;
+
     return attrs;
 }
 

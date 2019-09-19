@@ -316,7 +316,7 @@ TclWinDriveLetterForVolMountPoint(
 	     * Try to read the volume mount point and see where it points.
 	     */
 
-	    if (GetVolumeNameForVolumeMountPoint(drive,
+	    if (GetVolumeNameForVolumeMountPointW(drive,
 		    Target, 55) != 0) {
 		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
@@ -375,7 +375,7 @@ TclWinDriveLetterForVolMountPoint(
 	 * Try to read the volume mount point and see where it points.
 	 */
 
-	if (GetVolumeNameForVolumeMountPoint(drive,
+	if (GetVolumeNameForVolumeMountPointW(drive,
 		Target, 55) != 0) {
 	    int alreadyStored = 0;
 
@@ -467,7 +467,7 @@ TclWinDriveLetterForVolMountPoint(
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #undef Tcl_WinUtfToTChar
-WCHAR *
+TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
     int len,			/* Source string length in bytes, or -1 for
@@ -476,19 +476,19 @@ Tcl_WinUtfToTChar(
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    return Tcl_UtfToWCharDString(string, len, dsPtr);
+    return (TCHAR *)Tcl_UtfToWCharDString(string, len, dsPtr);
 }
 #undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
-    const WCHAR *string,	/* Source string in Unicode. */
+    const TCHAR *string,	/* Source string in Unicode. */
     int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     Tcl_DStringInit(dsPtr);
-    return Tcl_WCharToUtfDString(string, len >> 1, dsPtr);
+    return Tcl_WCharToUtfDString((WCHAR *)string, len >> 1, dsPtr);
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
