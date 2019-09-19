@@ -572,7 +572,7 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
-#ifdef UNICODE
+#if 1
 	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == L'\\') {
 	    /*
 	     * Check whether this is a mounted volume.
@@ -880,17 +880,7 @@ TclpFindExecutable(
 	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
-#ifdef UNICODE
     GetModuleFileNameW(NULL, wName, MAX_PATH);
-#else
-    GetModuleFileNameA(NULL, name, sizeof(name));
-
-    /*
-     * Convert to WCHAR to get out of ANSI codepage
-     */
-
-    MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
-#endif
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
@@ -1701,7 +1691,7 @@ NativeAccess(
      * what permissions the OS has set for a file.
      */
 
-#ifdef UNICODE
+#if 1
     {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
@@ -1721,7 +1711,7 @@ NativeAccess(
 	 */
 
 	size = 0;
-	GetFileSecurity(nativePath,
+	GetFileSecurityW(nativePath,
 		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
 		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
 		0, 0, &size);
@@ -1752,10 +1742,10 @@ NativeAccess(
 	}
 
 	/*
-	 * Call GetFileSecurity() for real.
+	 * Call GetFileSecurityW() for real.
 	 */
 
-	if (!GetFileSecurity(nativePath,
+	if (!GetFileSecurityW(nativePath,
 		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
 		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
 		sdPtr, size, &size)) {
@@ -3300,7 +3290,7 @@ TclWinFileOwned(
 
     native = Tcl_FSGetNativePath(pathPtr);
 
-    if (GetNamedSecurityInfo((LPTSTR) native, SE_FILE_OBJECT,
+    if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
 	    &secd) != ERROR_SUCCESS) {
         /*
