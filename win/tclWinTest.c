@@ -136,7 +136,7 @@ TesteventloopCmd(
 	while (!done) {
 	    MSG msg;
 
-	    if (!GetMessage(&msg, NULL, 0, 0)) {
+	    if (!GetMessageW(&msg, NULL, 0, 0)) {
 		/*
 		 * The application is exiting, so repost the quit message and
 		 * start unwinding.
@@ -146,7 +146,7 @@ TesteventloopCmd(
 		break;
 	    }
 	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
+	    DispatchMessageW(&msg);
 	}
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
