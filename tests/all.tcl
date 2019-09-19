@@ -25,4 +25,9 @@ if {[singleProcess]} {
 set ErrorOnFailures [info exists env(ERROR_ON_FAILURES)]
 unset -nocomplain env(ERROR_ON_FAILURES)
 if {[runAllTests] && $ErrorOnFailures} {exit 1}
-proc exit args {}
+# if calling direct only (avoid rewrite exit if inlined or interactive):
+if { [info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]
+  && !([info exists ::tcl_interactive] && $::tcl_interactive)
+} {
+    proc exit args {}
+}

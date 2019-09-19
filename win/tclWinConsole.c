@@ -1055,7 +1055,7 @@ WaitForRead(
 	    return 1;
 	}
 
-	if (PeekConsoleInput(handle, &input, 1, &count) == FALSE) {
+	if (PeekConsoleInputW(handle, &input, 1, &count) == FALSE) {
 	    /*
 	     * Check to see if the peek failed because of EOF.
 	     */
@@ -1357,7 +1357,7 @@ TclWinOpenConsoleChannel(
 	modes |= ENABLE_LINE_INPUT;
 	SetConsoleMode(infoPtr->handle, modes);
 
-	infoPtr->reader.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->reader.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->reader.thread = CreateThread(NULL, 256, ConsoleReaderThread,
 		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr,
 			infoPtr->reader.readyEvent), 0, NULL);
@@ -1366,7 +1366,7 @@ TclWinOpenConsoleChannel(
 
     if (permissions & TCL_WRITABLE) {
 
-	infoPtr->writer.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->writer.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writer.thread = CreateThread(NULL, 256, ConsoleWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writer.TI, infoPtr,
 			infoPtr->writer.readyEvent), 0, NULL);

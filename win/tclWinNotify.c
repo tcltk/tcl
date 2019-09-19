@@ -125,7 +125,7 @@ Tcl_InitNotifier(void)
 
 	tsdPtr->hwnd = NULL;
 	tsdPtr->thread = GetCurrentThreadId();
-	tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
+	tsdPtr->event = CreateEventW(NULL, TRUE /* manual */,
 		FALSE /* !signaled */, NULL);
 
 	return tsdPtr;
@@ -247,7 +247,7 @@ Tcl_AlertNotifier(
 
 	    EnterCriticalSection(&tsdPtr->crit);
 	    if (!tsdPtr->pending) {
-		PostMessage(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
+		PostMessageW(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
 	    }
 	    tsdPtr->pending = 1;
 	    LeaveCriticalSection(&tsdPtr->crit);
@@ -407,7 +407,7 @@ NotifierProc(
 	tsdPtr->pending = 0;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
-	return DefWindowProc(hwnd, message, wParam, lParam);
+	return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
     /*

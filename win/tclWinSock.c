@@ -3245,14 +3245,14 @@ SocketProc(
     TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
-	    GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	    GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
 	    GetWindowLong(hwnd, GWL_USERDATA);
 #endif
 
     switch (message) {
     default:
-	return DefWindowProc(hwnd, message, wParam, lParam);
+	return DefWindowProcW(hwnd, message, wParam, lParam);
 	break;
 
     case WM_CREATE:
