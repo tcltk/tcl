@@ -1283,7 +1283,7 @@ SerialWriterThread(
 	buf = infoPtr->writeBuf;
 	toWrite = infoPtr->toWrite;
 
-	myWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	myWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 
 	/*
 	 * Loop until all of the bytes are written or an error occurs.
@@ -1460,15 +1460,15 @@ TclWinOpenSerialChannel(
 
     InitializeCriticalSection(&infoPtr->csWrite);
     if (permissions & TCL_READABLE) {
-	infoPtr->osRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->osRead.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
     }
     if (permissions & TCL_WRITABLE) {
 	/*
 	 * Initially the channel is writable and the writeThread is idle.
 	 */
 
-	infoPtr->osWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->osWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+	infoPtr->evWritable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
 			infoPtr->evWritable), 0, NULL);

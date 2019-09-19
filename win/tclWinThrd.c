@@ -688,7 +688,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (tsdPtr->flags == WIN_THREAD_UNINIT) {
-	    tsdPtr->condEvent = CreateEvent(NULL, TRUE /* manual reset */,
+	    tsdPtr->condEvent = CreateEventW(NULL, TRUE /* manual reset */,
 		    FALSE /* non signaled */, NULL);
 	    tsdPtr->nextPtr = NULL;
 	    tsdPtr->prevPtr = NULL;
