@@ -520,8 +520,8 @@ NativeGetMicroseconds(void)
 		DWORD id;
 
 		InitializeCriticalSection(&timeInfo.cs);
-		timeInfo.readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-		timeInfo.exitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		timeInfo.readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+		timeInfo.exitEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 		timeInfo.calibrationThread = CreateThread(NULL, 256,
 			CalibrationThread, (LPVOID) NULL, 0, &id);
 		SetThreadPriority(timeInfo.calibrationThread,

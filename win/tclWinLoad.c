@@ -76,7 +76,7 @@ TclpDlopen(
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
     if (nativeName != NULL) {
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
     }
     if (hInstance == NULL) {
@@ -97,7 +97,7 @@ TclpDlopen(
 
 	Tcl_DStringInit(&ds);
 	nativeName = Tcl_UtfToWCharDString(TclGetString(pathPtr), -1, &ds);
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
     }
