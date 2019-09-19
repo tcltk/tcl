@@ -951,7 +951,7 @@ TclpOpenFileChannel(
 	    flags = FILE_ATTRIBUTE_READONLY;
 	}
     } else {
-	flags = GetFileAttributes(nativeName);
+	flags = GetFileAttributesW(nativeName);
 	if (flags == 0xFFFFFFFF) {
 	    flags = 0;
 	}
@@ -967,7 +967,7 @@ TclpOpenFileChannel(
      * Now we get to create the file.
      */
 
-    handle = CreateFile(nativeName, accessMode, shareMode,
+    handle = CreateFileW(nativeName, accessMode, shareMode,
 	    NULL, createMode, flags, (HANDLE) NULL);
 
     if (handle == INVALID_HANDLE_VALUE) {

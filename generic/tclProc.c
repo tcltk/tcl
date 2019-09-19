@@ -405,13 +405,13 @@ TclCreateProc(
     Proc **procPtrPtr)		/* Returns: pointer to proc data. */
 {
     Interp *iPtr = (Interp *) interp;
-    (void)nsPtr;
 
     Proc *procPtr = NULL;
     int i, result, numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0;
+    (void)nsPtr;
 
     ProcGetIntRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
