@@ -98,7 +98,7 @@ Tcl_InitNotifier(void)
 
 	EnterCriticalSection(&notifierMutex);
 	if (notifierCount == 0) {
-	    WNDCLASS clazz;
+	    WNDCLASSW clazz;
 
 	    clazz.style = 0;
 	    clazz.cbClsExtra = 0;
@@ -111,7 +111,7 @@ Tcl_InitNotifier(void)
 	    clazz.hIcon = NULL;
 	    clazz.hCursor = NULL;
 
-	    if (!RegisterClass(&clazz)) {
+	    if (!RegisterClassW(&clazz)) {
 		Tcl_Panic("Unable to register TclNotifier window class");
 	    }
 	}
@@ -125,7 +125,7 @@ Tcl_InitNotifier(void)
 
 	tsdPtr->hwnd = NULL;
 	tsdPtr->thread = GetCurrentThreadId();
-	tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
+	tsdPtr->event = CreateEventW(NULL, TRUE /* manual */,
 		FALSE /* !signaled */, NULL);
 
 	return tsdPtr;
@@ -195,7 +195,7 @@ Tcl_FinalizeNotifier(
 	if (notifierCount) {
 	    notifierCount--;
 	    if (notifierCount == 0) {
-		UnregisterClass(className, TclWinGetTclInstance());
+		UnregisterClassW(className, TclWinGetTclInstance());
 	    }
 	}
 	LeaveCriticalSection(&notifierMutex);
@@ -247,7 +247,7 @@ Tcl_AlertNotifier(
 
 	    EnterCriticalSection(&tsdPtr->crit);
 	    if (!tsdPtr->pending) {
-		PostMessage(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
+		PostMessageW(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
 	    }
 	    tsdPtr->pending = 1;
 	    LeaveCriticalSection(&tsdPtr->crit);
@@ -359,7 +359,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindow(className, className,
+	    tsdPtr->hwnd = CreateWindowW(className, className,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 
@@ -407,7 +407,7 @@ NotifierProc(
 	tsdPtr->pending = 0;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
-	return DefWindowProc(hwnd, message, wParam, lParam);
+	return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
     /*
@@ -479,7 +479,7 @@ Tcl_WaitForEvent(
 	 * events currently sitting in the queue.
 	 */
 
-	if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+	if (!PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	    /*
 	     * Wait for something to happen (a signal from another thread, a
 	     * message, or timeout) or loop servicing asynchronous procedure
@@ -501,12 +501,12 @@ Tcl_WaitForEvent(
 	 * Check to see if there are any messages to process.
 	 */
 
-	if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+	if (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	    /*
 	     * Retrieve and dispatch the first message.
 	     */
 
-	    result = GetMessage(&msg, NULL, 0, 0);
+	    result = GetMessageW(&msg, NULL, 0, 0);
 	    if (result == 0) {
 		/*
 		 * We received a request to exit this thread (WM_QUIT), so
@@ -524,7 +524,7 @@ Tcl_WaitForEvent(
 		status = -1;
 	    } else {
 		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		DispatchMessageW(&msg);
 		status = 1;
 	    }
 	} else {
