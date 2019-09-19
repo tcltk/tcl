@@ -1789,7 +1789,7 @@ TclpCreateCommandChannel(
 	 * Start the background reader thread.
 	 */
 
-	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
 	    0, NULL);
@@ -1804,7 +1804,7 @@ TclpCreateCommandChannel(
 	 * Start the background writer thread.
 	 */
 
-	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
 	    0, NULL);
@@ -3290,7 +3290,7 @@ TclPipeThreadCreateTI(
 #else
     pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
-    pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
     pipeTI->clientData = clientData;
     pipeTI->evWakeUp = wakeEvent;

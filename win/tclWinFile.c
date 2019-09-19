@@ -3300,7 +3300,7 @@ TclWinFileOwned(
 
     native = Tcl_FSGetNativePath(pathPtr);
 
-    if (GetNamedSecurityInfo((LPTSTR) native, SE_FILE_OBJECT,
+    if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
 	    &secd) != ERROR_SUCCESS) {
         /*
