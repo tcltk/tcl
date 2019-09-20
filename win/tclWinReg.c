@@ -1449,7 +1449,7 @@ BroadcastValue(
      * Use the ignore the result.
      */
 
-    result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
+    result = SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE,
 	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
     Tcl_DStringFree(&ds);
 

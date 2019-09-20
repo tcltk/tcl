@@ -1161,7 +1161,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "invalid file size");
 	    goto error;
 	}
-	zf->mountHandle = CreateFileMapping((HANDLE) handle, 0, PAGE_READONLY,
+	zf->mountHandle = CreateFileMappingW((HANDLE) handle, 0, PAGE_READONLY,
 		0, zf->length, 0);
 	if (zf->mountHandle == INVALID_HANDLE_VALUE) {
 	    ZIPFS_POSIX_ERROR(interp, "file mapping failed");
@@ -4926,7 +4926,12 @@ TclZipfs_AppHook(
 {
     char *archive;
 
+#ifdef _WIN32
+    (void)argvPtr;
+    Tcl_FindExecutable(NULL);
+#else
     Tcl_FindExecutable((*argvPtr)[0]);
+#endif
     archive = (char *) Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
