@@ -208,7 +208,6 @@ ReadConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(WCHAR);
 
     /*
      * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return
@@ -221,11 +220,11 @@ ReadConsoleBytes(
      * will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsoleW(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
                              NULL);
     } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
-	*nbytesread = ntchars * tcharsize;
+	*nbytesread = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -239,12 +238,11 @@ WriteConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(WCHAR);
 
-    result = WriteConsoleW(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+    result = WriteConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
 	    NULL);
     if (nbyteswritten != NULL) {
-	*nbyteswritten = ntchars * tcharsize;
+	*nbyteswritten = ntchars * sizeof(WCHAR);
     }
     return result;
 }
