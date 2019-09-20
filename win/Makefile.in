@@ -502,11 +502,11 @@ tclWinPipe.${OBJEXT}: tclWinPipe.c
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinReg.${OBJEXT}: tclWinReg.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE \
+	$(CC) -c $(CC_SWITCHES) \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinDde.${OBJEXT}: tclWinDde.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE \
+	$(CC) -c $(CC_SWITCHES) \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 testMain.${OBJEXT}: tclAppInit.c
