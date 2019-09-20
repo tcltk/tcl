@@ -235,7 +235,7 @@ typedef struct {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
-static WNDCLASS windowClass;
+static WNDCLASSW windowClass;
 
 /*
  * Static routines for this file:
@@ -363,17 +363,17 @@ InitializeHostName(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    WCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerName(tbuf, &length) != 0) {
+    if (GetComputerNameW(wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WCharToUtfDString(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, -1, &ds));
 
     } else {
 	if (TclpHasSockets(NULL) == TCL_OK) {
@@ -2504,7 +2504,7 @@ InitSockets(void)
 	windowClass.hIcon = NULL;
 	windowClass.hCursor = NULL;
 
-	if (!RegisterClass(&windowClass)) {
+	if (!RegisterClassW(&windowClass)) {
 	    TclWinConvertError(GetLastError());
 	    goto initFailure;
 	}
@@ -2629,7 +2629,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClass(className, TclWinGetTclInstance());
+    UnregisterClassW(className, TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -3176,7 +3176,7 @@ SocketThread(
      * Create a dummy window receiving socket events.
      */
 
-    tsdPtr->hwnd = CreateWindow(className, className, WS_TILED, 0, 0, 0, 0,
+    tsdPtr->hwnd = CreateWindowW(className, className, WS_TILED, 0, 0, 0, 0,
 	    NULL, NULL, windowClass.hInstance, arg);
 
     /*
@@ -3199,8 +3199,8 @@ SocketThread(
      * PostMessage(SOCKET_TERMINATE) in TclpFinalizeSockets().
      */
 
-    while (GetMessage(&msg, NULL, 0, 0) > 0) {
-	DispatchMessage(&msg);
+    while (GetMessageW(&msg, NULL, 0, 0) > 0) {
+	DispatchMessageW(&msg);
     }
 
     /*
@@ -3245,14 +3245,14 @@ SocketProc(
     TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
-	    GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	    GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
 	    GetWindowLong(hwnd, GWL_USERDATA);
 #endif
 
     switch (message) {
     default:
-	return DefWindowProc(hwnd, message, wParam, lParam);
+	return DefWindowProcW(hwnd, message, wParam, lParam);
 	break;
 
     case WM_CREATE:
