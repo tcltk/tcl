@@ -2022,7 +2022,7 @@ TEBCresume(
      */
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
-    Tcl_Obj **objv;
+    Tcl_Obj **objv = NULL;
     int objc = 0;
     int opnd, length, pcAdjustment;
     Var *varPtr, *arrayPtr;
