@@ -1109,7 +1109,7 @@ DdeClientWindowProc(
 #ifdef _WIN64
 	SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR) es);
 #else
-	SetWindowLong(hwnd, GWL_USERDATA, (LONG) es);
+	SetWindowLongW(hwnd, GWL_USERDATA, (LONG) es);
 #endif
 	return (LRESULT) 0L;
     }
@@ -1136,7 +1136,7 @@ DdeServicesOnAck(
 #ifdef _WIN64
     es = (DdeEnumServices *) GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
-    es = (DdeEnumServices *) GetWindowLong(hwnd, GWL_USERDATA);
+    es = (DdeEnumServices *) GetWindowLongW(hwnd, GWL_USERDATA);
 #endif
 
     if (((es->service == (ATOM)0) || (es->service == service))
