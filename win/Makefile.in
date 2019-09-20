@@ -501,6 +501,14 @@ tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_PIPE_DLL=\"$(PIPE_DLL_FILE)\" \
 	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
+tclWinReg.${OBJEXT}: tclWinReg.c
+	$(CC) -c $(CC_SWITCHES) \
+	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
+
+tclWinDde.${OBJEXT}: tclWinDde.c
+	$(CC) -c $(CC_SWITCHES) \
+	    $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
+
 testMain.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) -DTCL_TEST @DEPARG@ $(CC_OBJNAME)
 

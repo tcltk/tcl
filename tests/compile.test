@@ -1,15 +1,15 @@
-# This file contains tests for the files tclCompile.c, tclCompCmds.c
-# and tclLiteral.c
+# This file contains tests for the files tclCompile.c, tclCompCmds.c and
+# tclLiteral.c
 #
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -26,10 +26,11 @@ catch {namespace delete test_ns_compile}
 catch {unset x}
 catch {unset y}
 catch {unset a}
-
-test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} {
+
+test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} -setup {
     catch {namespace delete test_ns_compile}
     catch {unset x}
+} -body {
     set x 123
     namespace eval test_ns_compile {
         proc set {args} {
@@ -41,29 +42,33 @@ test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} {
         }
     }
     list [test_ns_compile::p] [set x]
-} {{123 test_ns_compile::set} {123 test_ns_compile::set}}
+} -result {{123 test_ns_compile::set} {123 test_ns_compile::set}}
 test compile-1.2 {TclCompileString, error result is reset if TclGetLong determines word isn't an integer} {
     proc p {x} {info commands 3m}
     list [catch {p} msg] $msg
 } {1 {wrong # args: should be "p x"}}
-test compile-2.1 {TclCompileDollarVar: global scalar name with ::s} {
+
+test compile-2.1 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset x}
+} -body {
     set x 123
     list $::x [expr {[lsearch -exact [info globals] x] != 0}]
-} {123 1}
-test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} {
+} -result {123 1}
+test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset y}
+} -body {
     proc p {} {
         set ::y 789
         return $::y
     }
     list [p] $::y [expr {[lsearch -exact [info globals] y] != 0}]
-} {789 789 1}
-test compile-2.3 {TclCompileDollarVar: global array name with ::s} {
+} -result {789 789 1}
+test compile-2.3 {TclCompileDollarVar: global array name with ::s} -setup {
     catch {unset a}
+} -body {
     set ::a(1) 2
     list $::a(1) [set ::a($::a(1)) 3] $::a(2) [expr {[lsearch -exact [info globals] a] != 0}]
-} {2 3 3 1}
+} -result {2 3 3 1}
 test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} {
     catch {unset a}
     proc p {} {
@@ -82,15 +87,16 @@ test compile-2.5 {TclCompileDollarVar: global array, called as ${arrName(0)}} {
     list [p] $::a(1) [expr {[lsearch -exact [info globals] a] != 0}]
 } {111 1 1}
 
-test compile-3.1 {TclCompileCatchCmd: only catch cmds with scalar vars are compiled inline} {
+test compile-3.1 {TclCompileCatchCmd: only catch cmds with scalar vars are compiled inline} -setup {
     catch {unset a}
+} -body {
     set a(1) xyzzyx
     proc p {} {
         global a
         catch {set x 123} a(1)
     }
     list [p] $a(1)
-} {0 123}
+} -result {0 123}
 test compile-3.2 {TclCompileCatchCmd: non-local variables} {
     set ::foo 1
     proc catch-test {} {
@@ -111,7 +117,7 @@ test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
     proc foo {} {
 	set fail [catch {
 	    return 1
-	}] ; # {}	
+	}] ; # {}
 	return 2
     }
     foo
@@ -121,8 +127,8 @@ test compile-3.5 {TclCompileCatchCmd: recover from error, [Bug 705406]} {
 	catch {
 	    if {[a]} {
 		if b {}
-	    }   
-	}   
+	    }
+	}
     }
     list [catch foo msg] $msg
 } {0 1}
@@ -185,9 +191,10 @@ test compile-5.2 {TclCompileForeachCmd: non-local variables} {
     set ::foo
 } 3
 
-test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} {
+test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
     catch {unset x}
     catch {unset y}
+} -body {
     set x 123
     proc p {} {
         set ::y 789
@@ -195,19 +202,21 @@ test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} {
     }
     list $::x [expr {[lsearch -exact [info globals] x] != 0}] \
          [p] $::y [expr {[lsearch -exact [info globals] y] != 0}]
-} {123 1 789 789 1}
-test compile-6.2 {TclCompileSetCmd: global array names with ::s} {
+} -result {123 1 789 789 1}
+test compile-6.2 {TclCompileSetCmd: global array names with ::s} -setup {
     catch {unset a}
+} -body {
     set ::a(1) 2
     proc p {} {
         set ::a(1) 1
         return $::a($::a(1))
     }
     list $::a(1) [p] [set ::a($::a(1)) 3] $::a(1) [expr {[lsearch -exact [info globals] a] != 0}]
-} {2 1 3 3 1}
-test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} {
+} -result {2 1 3 3 1}
+test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} -setup {
     catch {namespace delete test_ns_compile}
     catch {unset x}
+} -body {
     namespace eval test_ns_compile {
         variable v hello
         variable arr
@@ -215,7 +224,7 @@ test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} {
 	set ::test_ns_compile::arr(1) 123
     }
     list $::x $::test_ns_compile::arr(1)
-} {hello 123}
+} -result {hello 123}
 
 test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
     set i 0
@@ -298,11 +307,11 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     list [catch {p} msg] $msg
 } {1 {unmatched open brace in list}}
 
-# 
+#
 # Special section for tests of tclLiteral.c
 # The following tests check for incorrect memory handling in
-# TclReleaseLiteral. They are only effective when tcl is compiled 
-# with TCL_MEM_DEBUG
+# TclReleaseLiteral. They are only effective when tcl is compiled with
+# TCL_MEM_DEBUG
 #
 # Special test for leak on interp delete [Bug 467523].
 test compile-12.1 {testing literal leak on interp delete} -setup {
@@ -313,10 +322,10 @@ test compile-12.1 {testing literal leak on interp delete} -setup {
 } -constraints memory -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
-	interp create foo 
-	foo eval { 
+	interp create foo
+	foo eval {
 	    namespace eval bar {}
-	} 
+	}
 	interp delete foo
 	set tmp $end
 	set end [getbytes]
@@ -326,9 +335,9 @@ test compile-12.1 {testing literal leak on interp delete} -setup {
     rename getbytes {}
     unset -nocomplain end i tmp leakedBytes
 } -result 0
-# Special test for a memory error in a preliminary fix of [Bug 467523]. 
-# It requires executing a helpfile.  Presumably the child process is
-# used because when this test fails, it crashes.
+# Special test for a memory error in a preliminary fix of [Bug 467523].  It
+# requires executing a helpfile.  Presumably the child process is used because
+# when this test fails, it crashes.
 test compile-12.2 {testing error on literal deletion} -constraints {memory exec} -body {
     set sourceFile [makeFile {
 	for {set i 0} {$i < 5} {incr i} {
@@ -337,7 +346,7 @@ test compile-12.2 {testing error on literal deletion} -constraints {memory exec}
 	}
 	puts 0
     } source.file]
-    exec [interpreter] $sourceFile 
+    exec [interpreter] $sourceFile
 } -cleanup {
     catch {removeFile $sourceFile}
 } -result 0
@@ -353,29 +362,28 @@ test compile-12.3 {check for a buffer overrun} -body {
 test compile-12.4 {TclCleanupLiteralTable segfault} -body {
     # Tcl Bug 1001997
     # Here, we're trying to test a case that causes a crash in
-    # TclCleanupLiteralTable.  The conditions that we're trying to
-    # establish are:
-    # - TclCleanupLiteralTable is attempting to clean up a bytecode
-    #   object in the literal table.
-    # - The bytecode object in question contains the only reference
-    #   to another literal.
+    # TclCleanupLiteralTable.  The conditions that we're trying to establish
+    # are:
+    # - TclCleanupLiteralTable is attempting to clean up a bytecode object in
+    #   the literal table.
+    # - The bytecode object in question contains the only reference to another
+    #   literal.
     # - The literal in question is in the same hash bucket as the bytecode
     #   object, and immediately follows it in the chain.
-    # Since newly registered literals are added at the FRONT of the
-    # bucket chains, and since the bytecode object is registered before
-    # its literals, this is difficult to achieve.  What we do is:
-    #  (a) do a [namespace eval] of a string that's calculated to
-    #      hash into the same bucket as a literal that it contains.
-    #      In this case, the script and the variable 'bugbug' 
-    #      land in the same bucket.
-    #  (b) do a [namespace eval] of a string that contains enough
-    #      literals to force TclRegisterLiteral to rebuild the global
-    #      literal table.  The newly created hash buckets will contain
-    #      the literals, IN REVERSE ORDER, thus putting the bytecode
-    #      immediately ahead of 'bugbug' and 'bug4345bug'.  The bytecode
-    #      object will contain the only references to those two literals.
-    #  (c) Delete the interpreter to invoke TclCleanupLiteralTable
-    #      and tickle the bug.
+    # Since newly registered literals are added at the FRONT of the bucket
+    # chains, and since the bytecode object is registered before its literals,
+    # this is difficult to achieve.  What we do is:
+    #  (a) do a [namespace eval] of a string that's calculated to hash into
+    #      the same bucket as a literal that it contains.  In this case, the
+    #      script and the variable 'bugbug' land in the same bucket.
+    #  (b) do a [namespace eval] of a string that contains enough literals to
+    #      force TclRegisterLiteral to rebuild the global literal table.  The
+    #      newly created hash buckets will contain the literals, IN REVERSE
+    #      ORDER, thus putting the bytecode immediately ahead of 'bugbug' and
+    #      'bug4345bug'.  The bytecode object will contain the only references
+    #      to those two literals.
+    #  (c) Delete the interpreter to invoke TclCleanupLiteralTable and tickle
+    #      the bug.
     proc foo {} {
 	set i [interp create]
 	$i eval {
@@ -409,9 +417,8 @@ test compile-12.4 {TclCleanupLiteralTable segfault} -body {
     rename foo {}
 } -result ok
 
-# Special test for underestimating the maxStackSize required for a
-# compiled command. A failure will cause a segfault in the child 
-# process.
+# Special test for underestimating the maxStackSize required for a compiled
+# command. A failure will cause a segfault in the child process.
 test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     set body {set x [list}
     for {set i 0} {$i < 3000} {incr i} {
@@ -424,10 +431,13 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
 
 # Tests of nested compile (body in body compilation), should not generate stack overflow
 # (with abnormal program termination), bug [fec0c17d39]:
-test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup {
-    set i [interp create]
-    interp recursionlimit $i [expr {10000+50}]
-    $i eval {proc gencode {nr {cmd eval} {nl 0}} {
+proc _ti_gencode {} {
+    # creates test interpreter on demand with [gencode] generator:
+    if {[interp exists ti]} {
+	return
+    }
+    interp create ti
+    ti eval {proc gencode {nr {cmd eval} {nl 0}} {
 	set code ""
 	set e ""; if {$nl} {set e "\n"}
 	for {set i 0} {$i < $nr} {incr i} {
@@ -440,18 +450,45 @@ test compile-13.2 {TclCompileScript: testing nested scripts compilation} -setup 
 	#puts [format "%% %.40s ... %d bytes" $code [string length $code]]
 	return $code
     }}
+}
+test compile-13.2 {TclCompileScript: testing expected nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti [expr {10000+50}]
+    ti eval {set result {}}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 2000 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
     # boxes or systems, please don't decrease it (either provide a constraint)
-    $i eval {foreach cmd {eval "if 1" catch} {
+    ti eval {foreach cmd {eval "if 1" catch} {
 	set c [gencode [expr {![::tcl::pkgconfig get debug] ? 2000 : 1000}] $cmd]
 	if 1 $c
     }}
-    $i eval {set result}
-} -result {1 1 1} -cleanup {
-    interp delete $i
+    ti eval {set result}
+} -result {1 1 1}
+test compile-13.3 {TclCompileScript: testing check of max depth by nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti 100
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 500 nested scripts (bodies). It must generate "too many nested compilations"
+    # error for any variant we're testing here:
+    ti eval {foreach cmd {eval "if 1" catch} {
+	set c [gencode [expr {![info exists ::tcl_platform(debug)] ? 2000 : 1000}] $cmd]
+	lappend errors [catch $c e] $e
+    }}
+    #puts $errors
+    # all of nested calls exceed the limit, so must end with "too many nested compilations"
+    # (or evaluations, depending on compile method/instruction and "mixed" compile within
+    # evaliation), so no one succeeds, the result must be empty:
+    ti eval {set result}
+} -result {}
+#
+# clean up:
+if {[interp exists ti]} {
+    interp delete ti
 }
+rename _ti_gencode {}
 
 # Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
@@ -463,7 +500,7 @@ test compile-14.1 {testing errors in element name; segfault?} {} {
 test compile-14.2 {testing element name "$"} -body {
     unset -nocomplain a
     set a() 1
-    set a(1) 2 
+    set a(1) 2
     set a($) 3
     list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
 } -cleanup {unset a} -result [list 1 2 3 {$}]
@@ -573,17 +610,16 @@ test compile-16.17.$noComp {TclCompileScript: word expansion} $constraints {
     run {list {*}x y z}
 } {x y z}
 
-# These tests note that expansion can in theory cause the number of
-# arguments to a command to exceed INT_MAX, which is as big as objc
-# is allowed to get.
+# These tests note that expansion can in theory cause the number of arguments
+# to a command to exceed INT_MAX, which is as big as objc is allowed to get.
 #
-# In practice, it seems we will run out of memory before we confront
-# this issue.  Note that compiled operations run out of memory at
-# smaller objc values than direct string evaluation.
+# In practice, it seems we will run out of memory before we confront this
+# issue. Note that compiled operations run out of memory at smaller objc
+# values than direct string evaluation.
 #
-# These tests are constrained as knownBug because they are likely
-# to cause memory allocation panics somewhere, and we don't want
-# panics in the test suite.
+# These tests are constrained as knownBug because they are likely to cause
+# memory allocation panics somewhere, and we don't want panics in the test
+# suite.
 #
 test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<10}] x]}
@@ -638,8 +674,8 @@ test compile-16.24.$noComp {
 } -returnCodes error -result {unmatched open brace in list}
 }	;# End of noComp loop
 
-# These tests are messy because it wrecks the interpreter it runs in!
-# They demonstrate issues arising from [FRQ 1101710]
+# These tests are messy because it wrecks the interpreter it runs in!  They
+# demonstrate issues arising from [FRQ 1101710]
 test compile-17.1 {Command interpretation binding for compiled code} -constraints knownBug -setup {
     set i [interp create]
 } -body {
@@ -677,3 +713,8 @@ catch {unset y}
 catch {unset a}
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

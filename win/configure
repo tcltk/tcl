@@ -3012,7 +3012,7 @@ fi
 echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 echo $ECHO_N "checking whether ${MAKE-make} sets \$(MAKE)... $ECHO_C" >&6
 set x ${MAKE-make}
-ac_make=`AS_ECHO("$[2]") | sed 's/+/p/g; s/[^a-zA-Z0-9_]/_/g'`
+ac_make=`echo "" | sed 'y,:./+-,___p_,'`
 if eval "test \"\${ac_cv_prog_make_${ac_make}_set+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
