@@ -229,7 +229,7 @@ ReadConsoleBytes(
      * will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsole(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
+        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
                              NULL);
     } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
@@ -248,7 +248,7 @@ WriteConsoleBytes(
     DWORD ntchars;
     BOOL result;
 
-    result = WriteConsole(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
+    result = WriteConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
 	    NULL);
     if (nbyteswritten != NULL) {
 	*nbyteswritten = ntchars * sizeof(WCHAR);

@@ -251,7 +251,7 @@ Initialize(void)
     if (ddeInstance == 0) {
 	Tcl_MutexLock(&ddeMutex);
 	if (ddeInstance == 0) {
-	    if (DdeInitialize(&ddeInstance, (PFNCALLBACK) DdeServerProc,
+	    if (DdeInitializeW(&ddeInstance, (PFNCALLBACK) DdeServerProc,
 		    CBF_SKIP_REGISTRATIONS | CBF_SKIP_UNREGISTRATIONS
 		    | CBF_FAIL_POKES, 0) != DMLERR_NO_ERROR) {
 		ddeInstance = 0;
@@ -1107,16 +1107,16 @@ DdeClientWindowProc(
 		(DdeEnumServices *) lpcs->lpCreateParams;
 
 #ifdef _WIN64
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR) es);
+	SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR) es);
 #else
-	SetWindowLong(hwnd, GWL_USERDATA, (LONG) es);
+	SetWindowLongW(hwnd, GWL_USERDATA, (LONG) es);
 #endif
 	return (LRESULT) 0L;
     }
     case WM_DDE_ACK:
 	return DdeServicesOnAck(hwnd, wParam, lParam);
     default:
-	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
     }
 }
 
@@ -1134,9 +1134,9 @@ DdeServicesOnAck(
     Tcl_DString dString;
 
 #ifdef _WIN64
-    es = (DdeEnumServices *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    es = (DdeEnumServices *) GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
-    es = (DdeEnumServices *) GetWindowLong(hwnd, GWL_USERDATA);
+    es = (DdeEnumServices *) GetWindowLongW(hwnd, GWL_USERDATA);
 #endif
 
     if (((es->service == (ATOM)0) || (es->service == service))
@@ -1179,7 +1179,7 @@ DdeServicesOnAck(
      * Tell the server we are no longer interested.
      */
 
-    PostMessage(hwndRemote, WM_DDE_TERMINATE, (WPARAM)hwnd, 0L);
+    PostMessageW(hwndRemote, WM_DDE_TERMINATE, (WPARAM)hwnd, 0L);
     return 0L;
 }
 
@@ -1191,7 +1191,7 @@ DdeEnumWindowsCallback(
     DWORD_PTR dwResult = 0;
     DdeEnumServices *es = (DdeEnumServices *) lParam;
 
-    SendMessageTimeout(hwndTarget, WM_DDE_INITIATE, (WPARAM)es->hwnd,
+    SendMessageTimeoutW(hwndTarget, WM_DDE_INITIATE, (WPARAM)es->hwnd,
 	    MAKELONG(es->service, es->topic), SMTO_ABORTIFHUNG, 1000,
 	    &dwResult);
     return TRUE;

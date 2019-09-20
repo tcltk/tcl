@@ -310,7 +310,7 @@ static ProcessGlobalValue hostName =
  */
 
 #define SendSelectMessage(tsdPtr, message, payload)     \
-    SendMessage((tsdPtr)->hwnd, SOCKET_SELECT,          \
+    SendMessageW((tsdPtr)->hwnd, SOCKET_SELECT,          \
                 (WPARAM) (message), (LPARAM) (payload))
 
 
@@ -501,7 +501,7 @@ TclpFinalizeSockets(void)
 
     if (tsdPtr->socketThread != NULL) {
 	if (tsdPtr->hwnd != NULL) {
-	    PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
+	    PostMessageW(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
 
 	    /*
 	     * Wait for the thread to exit. This ensures that we are
@@ -2534,11 +2534,11 @@ InitSockets(void)
     tsdPtr->socketList = NULL;
     tsdPtr->hwnd       = NULL;
     tsdPtr->threadId   = Tcl_GetCurrentThread();
-    tsdPtr->readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    tsdPtr->readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
     if (tsdPtr->readyEvent == NULL) {
 	goto initFailure;
     }
-    tsdPtr->socketListLock = CreateEvent(NULL, FALSE, TRUE, NULL);
+    tsdPtr->socketListLock = CreateEventW(NULL, FALSE, TRUE, NULL);
     if (tsdPtr->socketListLock == NULL) {
 	goto initFailure;
     }
@@ -3205,7 +3205,7 @@ SocketThread(
     /*
      * Process all messages on the socket window until WM_QUIT. This threads
      * exits only when instructed to do so by the call to
-     * PostMessage(SOCKET_TERMINATE) in TclpFinalizeSockets().
+     * PostMessageW(SOCKET_TERMINATE) in TclpFinalizeSockets().
      */
 
     while (GetMessageW(&msg, NULL, 0, 0) > 0) {
@@ -3256,7 +3256,7 @@ SocketProc(
 #ifdef _WIN64
 	    GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
-	    GetWindowLong(hwnd, GWL_USERDATA);
+	    GetWindowLongW(hwnd, GWL_USERDATA);
 #endif
 
     switch (message) {
@@ -3271,10 +3271,10 @@ SocketProc(
 	 */
 
 #ifdef _WIN64
-	SetWindowLongPtr(hwnd, GWLP_USERDATA,
+	SetWindowLongPtrW(hwnd, GWLP_USERDATA,
 		(LONG_PTR) ((LPCREATESTRUCT)lParam)->lpCreateParams);
 #else
-	SetWindowLong(hwnd, GWL_USERDATA,
+	SetWindowLongW(hwnd, GWL_USERDATA,
 		(LONG) ((LPCREATESTRUCT)lParam)->lpCreateParams);
 #endif
 	break;

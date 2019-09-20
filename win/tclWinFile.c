@@ -2207,7 +2207,7 @@ NativeDev(
 	p = strchr(p + 1, '\\');
 	if (p == NULL) {
 	    /*
-	     * Add terminating backslash to fullpath or GetVolumeInformation()
+	     * Add terminating backslash to fullpath or GetVolumeInformationW()
 	     * won't work.
 	     */
 
