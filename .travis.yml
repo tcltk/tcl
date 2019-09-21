@@ -209,78 +209,6 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --enable-threads --enable-symbols"
       script: *crosstest
-# Test with mingw-w64 cross-compile
-# Doesn't run tests because wine is only an imperfect Windows emulation
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --enable-symbols"
-      script: *crosstest
-# Test with mingw-w64 (64 bit)
-# Doesn't run tests because wine is only an imperfect Windows emulation
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads --enable-symbols"
-      script: *crosstest
 # Test on Windows with MSVC native (using configure/make)
     - name: "Windows/MSVC/Shared"
       os: windows
@@ -296,8 +224,8 @@ matrix:
       install: &msys2inst
         - cmd.exe /C 'vcvarsall.bat x64 && sh -c ./configure %CFGOPT% --prefix=%HOME%'
       script: &msys2make
-        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make all tcltest
-        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make test
+        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && sh -c make test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -350,8 +278,42 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
-# Test on Windows with MSVC native (32-bit)
+# Test on Windows with MSVC native (32-bit, using configure/make)
     - name: "Windows/MSVC-x86/Shared"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-threads"
+      before_install: *msys2preinst
+      install: &msys2inst32
+        - cmd.exe /C 'vcvarsall.bat x86 && sh -c ./configure %CFGOPT% --prefix=%HOME%'
+      script: &msys2make32
+        - cmd.exe /C 'vcvarsall.bat x86 && sh -c make all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && sh -c make test'
+    - name: "Windows/MSVC-x86/Static"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-threads --disable-shared"
+      before_install: *msys2preinst
+      install: *msys2inst32
+      script: *msys2make32
+    - name: "Windows/MSVC-x86/Debug"
+      os: windows
+      compiler: cl
+      env:
+        - BUILD_DIR=win
+        - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
+        - CFGOPT="--enable-threads --enable-symbols"
+      before_install: *msys2preinst
+      install: *msys2inst32
+      script: *msys2make32
+# Test on Windows with MSVC native (32-bit, using nmake)
+    - name: "Windows/MSVC-x86/Shared/nmake"
       os: windows
       compiler: cl
       env: *vcenv
@@ -360,7 +322,7 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc test'
-    - name: "Windows/MSVC-x86/Static"
+    - name: "Windows/MSVC-x86/Static/nmake"
       os: windows
       compiler: cl
       env: *vcenv
@@ -369,7 +331,7 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
-    - name: "Windows/MSVC-x86/Debug"
+    - name: "Windows/MSVC-x86/Debug/nmake"
       os: windows
       compiler: cl
       env: *vcenv
