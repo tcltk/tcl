@@ -52,7 +52,7 @@ matrix:
       compiler: g++
       env:
         - BUILD_DIR=unix
-        - CFGOPT="CC=g++ CFLAGS=-Wall"
+        - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux

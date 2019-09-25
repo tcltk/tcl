@@ -2624,6 +2624,7 @@ test namespace-51.6 {name resolution path control} -body {
     namespace delete ::test_ns_1
     catch {rename ::pathtestB {}}
     catch {rename ::pathtestD {}}
+    catch {rename ::pathtestC {}}
 }
 test namespace-51.7 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
