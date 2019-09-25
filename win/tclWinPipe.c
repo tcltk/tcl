@@ -1205,7 +1205,7 @@ HasConsole(void)
 {
     HANDLE handle;
 
-    handle = CreateFileA("CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE,
+    handle = CreateFileW(L"CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE,
 	    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (handle != INVALID_HANDLE_VALUE) {
