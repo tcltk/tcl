@@ -220,6 +220,9 @@ static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(void *dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestbumpinterpepochObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestbytestringObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -384,6 +387,12 @@ static int		TestSimpleFilesystemObjCmd(
 			    Tcl_Obj *const objv[]);
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
+static int		TestgetencpathObjCmd(void *dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestsetencpathObjCmd(void *dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static Tcl_Obj *	TestReportGetNativePath(Tcl_Obj *pathPtr);
 static Tcl_FSStatProc TestReportStat;
 static Tcl_FSAccessProc TestReportAccess;
@@ -596,6 +605,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 	    TestGetIndexFromObjStructObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testbumpinterpepoch",
+	    TestbumpinterpepochObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
@@ -725,6 +736,10 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testgetencpath", TestgetencpathObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -1035,6 +1050,22 @@ AsyncThreadProc(
     TCL_THREAD_CREATE_RETURN;
 }
 #endif
+
+static int
+TestbumpinterpepochObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Interp *iPtr = (Interp *)interp;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    iPtr->compileEpoch++;
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -5171,7 +5202,7 @@ TestbytestringObjCmd(
 static int
 TestsetCmd(
     void *data,		/* Additional flags for Get/SetVar2. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5203,7 +5234,7 @@ TestsetCmd(
 static int
 Testset2Cmd(
     void *data,		/* Additional flags for Get/SetVar2. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5254,7 +5285,7 @@ Testset2Cmd(
 static int
 TestsaveresultCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
@@ -5385,7 +5416,7 @@ TestsaveresultFree(
 static int
 TestmainthreadCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5446,7 +5477,7 @@ MainLoop(void)
 static int
 TestsetmainloopCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -5475,7 +5506,7 @@ TestsetmainloopCmd(
 static int
 TestexitmainloopCmd(
     void *dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,/* Current interpreter. */
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
@@ -7517,6 +7548,72 @@ TestconcatobjCmd(
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestgetencpathObjCmd --
+ *
+ *	This function implements the "testgetencpath" command. It is used to
+ *	test Tcl_GetEncodingSearchPath().
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestgetencpathObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
+{
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, "");
+        return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetencpathCmd --
+ *
+ *	This function implements the "testsetencpath" command. It is used to
+ *	test Tcl_SetDefaultEncodingDir().
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetencpathObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
+{
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
+        return TCL_ERROR;
+    }
+
+    Tcl_SetEncodingSearchPath(objv[1]);
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *

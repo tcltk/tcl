@@ -198,7 +198,7 @@ TclpGetSeconds(void)
  *	This procedure returns a value that represents the highest resolution
  *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
- *	start time is also system dependant.
+ *	start time is also system dependent.
  *
  * Results:
  *	Number of clicks from some start time.
@@ -548,8 +548,8 @@ NativeGetMicroseconds(void)
 		DWORD id;
 
 		InitializeCriticalSection(&timeInfo.cs);
-		timeInfo.readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-		timeInfo.exitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		timeInfo.readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+		timeInfo.exitEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 		timeInfo.calibrationThread = CreateThread(NULL, 256,
 			CalibrationThread, (LPVOID) NULL, 0, &id);
 		SetThreadPriority(timeInfo.calibrationThread,
@@ -734,6 +734,11 @@ TclpGetDate(
 {
     struct tm *tmPtr;
     time_t time;
+#if defined(_WIN64) || (defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400))
+#   define  t2 *t /* no need to cripple time to 32-bit */
+#else
+    time_t t2 = *(__time32_t *)t;
+#endif
 
     if (!useGMT) {
 #if defined(_MSC_VER) && (_MSC_VER >= 1900)
@@ -766,15 +771,15 @@ TclpGetDate(
 #define LOCALTIME_VALIDITY_BOUNDARY	0
 #endif
 
-	if (*t >= LOCALTIME_VALIDITY_BOUNDARY) {
-	    return TclpLocaltime(t);
+	if (t2 >= LOCALTIME_VALIDITY_BOUNDARY) {
+	    return TclpLocaltime(&t2);
 	}
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900)
 	_get_timezone(&timezone);
 #endif
 
-	time = *t - timezone;
+	time = t2 - timezone;
 
 	/*
 	 * If we aren't near to overflowing the long, just add the bias and
@@ -782,10 +787,10 @@ TclpGetDate(
 	 * result at the end.
 	 */
 
-	if (*t < (LONG_MAX - 2*SECSPERDAY) && *t > (LONG_MIN + 2*SECSPERDAY)) {
+	if (t2 < (LONG_MAX - 2*SECSPERDAY) && t2 > (LONG_MIN + 2*SECSPERDAY)) {
 	    tmPtr = ComputeGMT(&time);
 	} else {
-	    tmPtr = ComputeGMT(t);
+	    tmPtr = ComputeGMT(&t2);
 
 	    tzset();
 
@@ -821,7 +826,7 @@ TclpGetDate(
 	    tmPtr->tm_wday = (tmPtr->tm_wday + (int)time) % 7;
 	}
     } else {
-	tmPtr = ComputeGMT(t);
+	tmPtr = ComputeGMT(&t2);
     }
     return tmPtr;
 }
@@ -1357,7 +1362,11 @@ TclpGmtime(
      * Posix gmtime_r function.
      */
 
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return gmtime(timePtr);
+#else
+    return _gmtime32((CONST __time32_t *)timePtr);
+#endif
 }
 
 /*
@@ -1388,7 +1397,11 @@ TclpLocaltime(
      * provide a Posix localtime_r function.
      */
 
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return localtime(timePtr);
+#else
+    return _localtime32((CONST __time32_t *)timePtr);
+#endif
 }
 #endif /* TCL_NO_DEPRECATED */
 

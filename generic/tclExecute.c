@@ -1327,7 +1327,7 @@ int
 Tcl_ExprObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
+    Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
 				 * to evaluate. */
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
@@ -1444,7 +1444,7 @@ CompileExprObj(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register ByteCode *codePtr = NULL;
+    ByteCode *codePtr = NULL;
 				/* Tcl Internal type of bytecode. Initialized
 				 * to avoid compiler warning. */
 
@@ -1598,8 +1598,8 @@ TclCompileObj(
     const CmdFrame *invoker,
     int word)
 {
-    register Interp *iPtr = (Interp *) interp;
-    register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
+    Interp *iPtr = (Interp *) interp;
+    ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
     Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
@@ -2069,7 +2069,7 @@ TEBCresume(
 
     int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    int checkInterp;            /* Indicates when a check of interp readyness
+    int checkInterp = 0;        /* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
@@ -2079,7 +2079,7 @@ TEBCresume(
      */
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
-    Tcl_Obj **objv;
+    Tcl_Obj **objv = NULL;
     int objc = 0;
     int opnd, length, pcAdjustment;
     Var *varPtr, *arrayPtr;
@@ -2104,7 +2104,6 @@ TEBCresume(
 
     if (!pc) {
 	/* bytecode is starting from scratch */
-	checkInterp = 0;
 	pc = codePtr->codeStart;
 	goto cleanup0;
     } else {
@@ -2126,8 +2125,9 @@ TEBCresume(
 	    goto abnormalReturn;
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
+	    checkInterp = 1;
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
 
 	if (result != TCL_OK) {
@@ -2187,10 +2187,12 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
+	/* FALLTHRU */
     case 2:
     cleanup2_pushObjResultPtr:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 1:
     cleanup1_pushObjResultPtr:
 	objPtr = OBJ_AT_TOS;
@@ -2207,14 +2209,17 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
+	/* FALLTHRU */
     case 2:
     cleanup2:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 1:
     cleanup1:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
+	/* FALLTHRU */
     case 0:
 	/*
 	 * We really want to do nothing now, but this is needed for some
@@ -2302,12 +2307,12 @@ TEBCresume(
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
-	    checkInterp = 0;
 	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
 		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
 		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
+	    checkInterp = 0;
 	}
 	inst = *(pc += 9);
 	goto peepholeStart;
@@ -2501,7 +2506,7 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	/* FIXME: What is the right thing to trace? */
 	{
-	    register int i;
+	    int i;
 
 	    TRACE(("%d [", opnd));
 	    for (i=opnd-1 ; i>=0 ; i--) {
@@ -2741,15 +2746,18 @@ TEBCresume(
 	 * INVOCATION BLOCK
 	 */
 
-    instEvalStk:
     case INST_EVAL_STK:
+    instEvalStk:
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	cleanup = 1;
 	pc += 1;
+	/* yield next instruction */
 	TEBC_YIELD();
-	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
+	/* add TEBCResume for object at top of stack */
+	return TclNRExecuteByteCode(interp,
+		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
@@ -4411,8 +4419,8 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     case INST_INFO_LEVEL_ARGS: {
 	int level;
-	register CallFrame *framePtr = iPtr->varFramePtr;
-	register CallFrame *rootFramePtr = iPtr->rootFramePtr;
+	CallFrame *framePtr = iPtr->varFramePtr;
+	CallFrame *rootFramePtr = iPtr->rootFramePtr;
 
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
 	if (TclGetIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
@@ -4709,7 +4717,7 @@ TEBCresume(
 	}
 
 	{
-	    register Method *const mPtr =
+	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
 	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
@@ -6799,7 +6807,7 @@ TEBCresume(
 	NEXT_INST_F(1, 1, 0);
 
     case INST_DICT_EXISTS: {
-	register int found;
+	int found;
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
@@ -7766,18 +7774,21 @@ TEBCresume(
 	{
 	    const char *bytes;
 
-	    checkInterp = 1;
 	    length = 0;
-
-	    /*
-	     * We used to switch to direct eval; for NRE-awareness we now
-	     * compile and eval the command so that this evaluation does not
-	     * add a new TEBC instance. [Bug 2910748]
-	     */
 
 	    if (TclInterpReady(interp) == TCL_ERROR) {
 		goto gotError;
 	    }
+
+	    /*
+	     * We used to switch to direct eval; for NRE-awareness we now
+	     * compile and eval the command so that this evaluation does not
+	     * add a new TEBC instance. Bug [2910748], bug [fa6bf38d07]
+	     *
+	     * TODO: recompile, search this command and eval a code starting from,
+	     * so that this evaluation does not add a new TEBC instance without
+	     * NRE-trampoline.
+	     */
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
@@ -8900,7 +8911,7 @@ TclCompareTwoNumbers(
 
 static void
 PrintByteCodeInfo(
-    register ByteCode *codePtr)	/* The bytecode whose summary is printed to
+    ByteCode *codePtr)	/* The bytecode whose summary is printed to
 				 * stdout. */
 {
     Proc *procPtr = codePtr->procPtr;
@@ -8964,7 +8975,7 @@ PrintByteCodeInfo(
 #ifdef TCL_COMPILE_DEBUG
 static void
 ValidatePcAndStackTop(
-    register ByteCode *codePtr,	/* The bytecode whose summary is printed to
+    ByteCode *codePtr,	/* The bytecode whose summary is printed to
 				 * stdout. */
     const unsigned char *pc,	/* Points to first byte of a bytecode
 				 * instruction. The program counter. */
@@ -9207,7 +9218,7 @@ GetSrcInfoForPc(
 				 * of the command containing the pc should
 				 * be stored. */
 {
-    register int pcOffset = (pc - codePtr->codeStart);
+    int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -9360,9 +9371,9 @@ GetExceptRangeForPc(
 {
     ExceptionRange *rangeArrayPtr;
     int numRanges = codePtr->numExceptRanges;
-    register ExceptionRange *rangePtr;
+    ExceptionRange *rangePtr;
     int pcOffset = pc - codePtr->codeStart;
-    register int start;
+    int start;
 
     if (numRanges == 0) {
 	return NULL;
@@ -9494,11 +9505,11 @@ TclExprFloatError(
 
 int
 TclLog2(
-    register int value)		/* The integer for which to compute the log
+    int value)		/* The integer for which to compute the log
 				 * base 2. */
 {
-    register int n = value;
-    register int result = 0;
+    int n = value;
+    int result = 0;
 
     while (n > 1) {
 	n = n >> 1;

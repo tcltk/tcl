@@ -53,7 +53,7 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 
 static void VarPtrDeleteProc(ClientData clientData, Tcl_Interp *interp)
 {
-    register int i;
+    int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
@@ -91,7 +91,7 @@ int
 TclObjTest_Init(
     Tcl_Interp *interp)
 {
-    register int i;
+    int i;
     /*
      * An array of Tcl_Obj pointers used in the commands that operate on or get
      * the values of Tcl object-valued variables. varPtr[i] is the i-th variable's
@@ -1170,7 +1170,6 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *unicode;
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];

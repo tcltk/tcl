@@ -406,7 +406,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #if defined(_WIN32)
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
-#   elif defined(_WIN64) || defined(__MINGW_USE_VC2005_COMPAT) || defined(_USE_64BIT_TIME_T)
+#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
@@ -2399,6 +2399,7 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
+EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifndef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);

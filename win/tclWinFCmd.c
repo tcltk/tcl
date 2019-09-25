@@ -214,12 +214,12 @@ DoRenameFile(
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
 
 	/*
-	 * Call MoveFile(nativeSrc, nativeDst)
+	 * Call MoveFileW(nativeSrc, nativeDst)
 	 */
 
 	"pushl	    %%ebx"			    "\n\t"
 	"pushl	    %%ecx"			    "\n\t"
-	"movl	    %[moveFile],    %%eax"	    "\n\t"
+	"movl	    %[moveFileW],    %%eax"	    "\n\t"
 	"call	    *%%eax"			    "\n\t"
 
 	/*
@@ -256,7 +256,7 @@ DoRenameFile(
 	[registration]	"m"	(registration),
 	[nativeDst]	"m"	(nativeDst),
 	[nativeSrc]	"m"	(nativeSrc),
-	[moveFile]	"r"	(MoveFile)
+	[moveFileW]	"r"	(MoveFileW)
 	:
 	"%eax", "%ebx", "%ecx", "%edx", "memory"
 	);
@@ -267,7 +267,7 @@ DoRenameFile(
 #ifndef HAVE_NO_SEH
     __try {
 #endif
-	if ((*MoveFile)(nativeSrc, nativeDst) != FALSE) {
+	if ((*MoveFileW)(nativeSrc, nativeDst) != FALSE) {
 	    retval = TCL_OK;
 	}
 #ifndef HAVE_NO_SEH
@@ -281,10 +281,10 @@ DoRenameFile(
 
     TclWinConvertError(GetLastError());
 
-    srcAttr = GetFileAttributes(nativeSrc);
-    dstAttr = GetFileAttributes(nativeDst);
+    srcAttr = GetFileAttributesW(nativeSrc);
+    dstAttr = GetFileAttributesW(nativeDst);
     if (srcAttr == 0xffffffff) {
-	if (GetFullPathName(nativeSrc, 0, NULL,
+	if (GetFullPathNameW(nativeSrc, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
 	    return TCL_ERROR;
@@ -292,7 +292,7 @@ DoRenameFile(
 	srcAttr = 0;
     }
     if (dstAttr == 0xffffffff) {
-	if (GetFullPathName(nativeDst, 0, NULL,
+	if (GetFullPathNameW(nativeDst, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
 	    return TCL_ERROR;
@@ -315,18 +315,18 @@ DoRenameFile(
 	    Tcl_DString srcString, dstString;
 	    const char *src, *dst;
 
-	    size = GetFullPathName(nativeSrc, MAX_PATH,
+	    size = GetFullPathNameW(nativeSrc, MAX_PATH,
 		    nativeSrcPath, &nativeSrcRest);
 	    if ((size == 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
-	    size = GetFullPathName(nativeDst, MAX_PATH,
+	    size = GetFullPathNameW(nativeDst, MAX_PATH,
 		    nativeDstPath, &nativeDstRest);
 	    if ((size == 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
-	    CharLower(nativeSrcPath);
-	    CharLower(nativeDstPath);
+	    CharLowerW(nativeSrcPath);
+	    CharLowerW(nativeDstPath);
 
 	    Tcl_DStringInit(&srcString);
 	    Tcl_DStringInit(&dstString);
@@ -410,7 +410,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFile(nativeSrc,
+		    if (MoveFileW(nativeSrc,
 			    nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
@@ -421,8 +421,8 @@ DoRenameFile(
 		     */
 
 		    TclWinConvertError(GetLastError());
-		    CreateDirectory(nativeDst, NULL);
-		    SetFileAttributes(nativeDst, dstAttr);
+		    CreateDirectoryW(nativeDst, NULL);
+		    SetFileAttributesW(nativeDst, dstAttr);
 		    if (Tcl_GetErrno() == EACCES) {
 			/*
 			 * Decode the EACCES to a more meaningful error.
@@ -451,7 +451,7 @@ DoRenameFile(
 		int result, size;
 		WCHAR tempBuf[MAX_PATH];
 
-		size = GetFullPathName(nativeDst, MAX_PATH,
+		size = GetFullPathNameW(nativeDst, MAX_PATH,
 			tempBuf, &nativeRest);
 		if ((size == 0) || (size > MAX_PATH) || (nativeRest == NULL)) {
 		    return TCL_ERROR;
@@ -460,8 +460,8 @@ DoRenameFile(
 		nativeRest[0] = '\0';
 
 		result = TCL_ERROR;
-		nativePrefix = (WCHAR *) L"tclr";
-		if (GetTempFileName(nativeTmp, nativePrefix,
+		nativePrefix = (WCHAR *)L"tclr";
+		if (GetTempFileNameW(nativeTmp, nativePrefix,
 			0, tempBuf) != 0) {
 		    /*
 		     * Strictly speaking, need the following DeleteFile and
@@ -471,15 +471,15 @@ DoRenameFile(
 		     */
 
 		    nativeTmp = tempBuf;
-		    DeleteFile(nativeTmp);
-		    if (MoveFile(nativeDst, nativeTmp) != FALSE) {
-			if (MoveFile(nativeSrc, nativeDst) != FALSE) {
-			    SetFileAttributes(nativeTmp, FILE_ATTRIBUTE_NORMAL);
-			    DeleteFile(nativeTmp);
+		    DeleteFileW(nativeTmp);
+		    if (MoveFileW(nativeDst, nativeTmp) != FALSE) {
+			if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+			    SetFileAttributesW(nativeTmp, FILE_ATTRIBUTE_NORMAL);
+			    DeleteFileW(nativeTmp);
 			    return TCL_OK;
 			} else {
-			    DeleteFile(nativeDst);
-			    MoveFile(nativeTmp, nativeDst);
+			    DeleteFileW(nativeDst);
+			    MoveFileW(nativeTmp, nativeDst);
 			}
 		    }
 
@@ -603,10 +603,10 @@ DoCopyFile(
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
 
 	/*
-	 * Call CopyFile(nativeSrc, nativeDst, 0)
+	 * Call CopyFileW(nativeSrc, nativeDst, 0)
 	 */
 
-	"movl	    %[copyFile],    %%eax"	    "\n\t"
+	"movl	    %[copyFileW],    %%eax"	    "\n\t"
 	"pushl	    $0"				    "\n\t"
 	"pushl	    %%ebx"			    "\n\t"
 	"pushl	    %%ecx"			    "\n\t"
@@ -646,7 +646,7 @@ DoCopyFile(
 	[registration]	"m"	(registration),
 	[nativeDst]	"m"	(nativeDst),
 	[nativeSrc]	"m"	(nativeSrc),
-	[copyFile]	"r"	(CopyFile)
+	[copyFileW]	"r"	(CopyFileW)
 	:
 	"%eax", "%ebx", "%ecx", "%edx", "memory"
 	);
@@ -657,7 +657,7 @@ DoCopyFile(
 #ifndef HAVE_NO_SEH
     __try {
 #endif
-	if (CopyFile(nativeSrc, nativeDst, 0) != FALSE) {
+	if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 	    retval = TCL_OK;
 	}
 #ifndef HAVE_NO_SEH
@@ -677,8 +677,8 @@ DoCopyFile(
     if (Tcl_GetErrno() == EACCES) {
 	DWORD srcAttr, dstAttr;
 
-	srcAttr = GetFileAttributes(nativeSrc);
-	dstAttr = GetFileAttributes(nativeDst);
+	srcAttr = GetFileAttributesW(nativeSrc);
+	dstAttr = GetFileAttributesW(nativeDst);
 	if (srcAttr != 0xffffffff) {
 	    if (dstAttr == 0xffffffff) {
 		dstAttr = 0;
@@ -694,9 +694,9 @@ DoCopyFile(
 		Tcl_SetErrno(EISDIR);
 	    }
 	    if (dstAttr & FILE_ATTRIBUTE_READONLY) {
-		SetFileAttributes(nativeDst,
+		SetFileAttributesW(nativeDst,
 			dstAttr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
-		if (CopyFile(nativeSrc, nativeDst,
+		if (CopyFileW(nativeSrc, nativeDst,
 			0) != FALSE) {
 		    return TCL_OK;
 		}
@@ -707,7 +707,7 @@ DoCopyFile(
 		 */
 
 		TclWinConvertError(GetLastError());
-		SetFileAttributes(nativeDst, dstAttr);
+		SetFileAttributesW(nativeDst, dstAttr);
 	    }
 	}
     }
@@ -763,13 +763,13 @@ TclpDeleteFile(
 	return TCL_ERROR;
     }
 
-    if (DeleteFile(path) != FALSE) {
+    if (DeleteFileW(path) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
-	attr = GetFileAttributes(path);
+	attr = GetFileAttributesW(path);
 	if (attr != 0xffffffff) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -790,21 +790,21 @@ TclpDeleteFile(
 
 		Tcl_SetErrno(EISDIR);
 	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		int res = SetFileAttributes(path,
+		int res = SetFileAttributesW(path,
 			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
 
 		if ((res != 0) &&
-			(DeleteFile(path) != FALSE)) {
+			(DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
 		if (res != 0) {
-		    SetFileAttributes(path, attr);
+		    SetFileAttributesW(path, attr);
 		}
 	    }
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
-	attr = GetFileAttributes(path);
+	attr = GetFileAttributesW(path);
 	if (attr != 0xffffffff) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		/*
@@ -863,7 +863,7 @@ static int
 DoCreateDirectory(
     const WCHAR *nativePath)	/* Pathname of directory to create (native). */
 {
-    if (CreateDirectory(nativePath, NULL) == 0) {
+    if (CreateDirectoryW(nativePath, NULL) == 0) {
 	DWORD error = GetLastError();
 
 	TclWinConvertError(error);
@@ -1035,7 +1035,7 @@ DoRemoveJustDirectory(
 	return TCL_ERROR;
     }
 
-    attr = GetFileAttributes(nativePath);
+    attr = GetFileAttributesW(nativePath);
 
     if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 	/*
@@ -1049,7 +1049,7 @@ DoRemoveJustDirectory(
 	 * Ordinary directory.
 	 */
 
-	if (RemoveDirectory(nativePath) != FALSE) {
+	if (RemoveDirectoryW(nativePath) != FALSE) {
 	    return TCL_OK;
 	}
     }
@@ -1057,7 +1057,7 @@ DoRemoveJustDirectory(
     TclWinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
-	attr = GetFileAttributes(nativePath);
+	attr = GetFileAttributesW(nativePath);
 	if (attr != 0xffffffff) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/*
@@ -1081,15 +1081,15 @@ DoRemoveJustDirectory(
 
 	    if (attr & FILE_ATTRIBUTE_READONLY) {
 		attr &= ~FILE_ATTRIBUTE_READONLY;
-		if (SetFileAttributes(nativePath,
+		if (SetFileAttributesW(nativePath,
 			attr) == FALSE) {
 		    goto end;
 		}
-		if (RemoveDirectory(nativePath) != FALSE) {
+		if (RemoveDirectoryW(nativePath) != FALSE) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
-		SetFileAttributes(nativePath,
+		SetFileAttributesW(nativePath,
 			attr | FILE_ATTRIBUTE_READONLY);
 	    }
 	}
@@ -1191,7 +1191,7 @@ TraverseWinTree(
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
     int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
     HANDLE handle;
-    WIN32_FIND_DATA data;
+    WIN32_FIND_DATAW data;
 
     nativeErrfile = NULL;
     result = TCL_OK;
@@ -1202,7 +1202,7 @@ TraverseWinTree(
 	    (targetPtr == NULL ? NULL : Tcl_DStringValue(targetPtr));
 
     oldSourceLen = Tcl_DStringLength(sourcePtr);
-    sourceAttr = GetFileAttributes(nativeSource);
+    sourceAttr = GetFileAttributesW(nativeSource);
     if (sourceAttr == 0xffffffff) {
 	nativeErrfile = nativeSource;
 	goto end;
@@ -1229,7 +1229,7 @@ TraverseWinTree(
     Tcl_DStringSetLength(sourcePtr, Tcl_DStringLength(sourcePtr) - 1);
 
     nativeSource = (WCHAR *) Tcl_DStringValue(sourcePtr);
-    handle = FindFirstFile(nativeSource, &data);
+    handle = FindFirstFileW(nativeSource, &data);
     if (handle == INVALID_HANDLE_VALUE) {
 	/*
 	 * Can't read directory.
@@ -1262,7 +1262,7 @@ TraverseWinTree(
     }
 
     found = 1;
-    for (; found; found = FindNextFile(handle, &data)) {
+    for (; found; found = FindNextFileW(handle, &data)) {
 	WCHAR *nativeName;
 	int len;
 
@@ -1378,9 +1378,9 @@ TraversalCopy(
 	break;
     case DOTREE_PRED:
 	if (DoCreateDirectory(nativeDst) == TCL_OK) {
-	    DWORD attr = GetFileAttributes(nativeSrc);
+	    DWORD attr = GetFileAttributesW(nativeSrc);
 
-	    if (SetFileAttributes(nativeDst,
+	    if (SetFileAttributesW(nativeDst,
 		    attr) != FALSE) {
 		return TCL_OK;
 	    }
@@ -1518,7 +1518,7 @@ GetWinFileAttributes(
     int attr;
 
     nativeName = Tcl_FSGetNativePath(fileName);
-    result = GetFileAttributes(nativeName);
+    result = GetFileAttributesW(nativeName);
 
     if (result == 0xffffffff) {
 	StatError(interp, fileName);
@@ -1649,7 +1649,7 @@ ConvertFileNameFormat(
 	    Tcl_DString dsTemp;
 	    const WCHAR *nativeName;
 	    const char *tempString;
-	    WIN32_FIND_DATA data;
+	    WIN32_FIND_DATAW data;
 	    HANDLE handle;
 	    DWORD attr;
 
@@ -1665,16 +1665,16 @@ ConvertFileNameFormat(
 	    Tcl_DStringInit(&ds);
 	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
-	    handle = FindFirstFile(nativeName, &data);
+	    handle = FindFirstFileW(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
 		/*
-		 * FindFirstFile() doesn't like root directories. We would
+		 * FindFirstFileW() doesn't like root directories. We would
 		 * only get a root directory here if the caller specified "c:"
 		 * or "c:." and the current directory on the drive was the
 		 * root directory
 		 */
 
-		attr = GetFileAttributes(nativeName);
+		attr = GetFileAttributesW(nativeName);
 		if ((attr!=0xFFFFFFFF) && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 		    Tcl_DStringFree(&ds);
 		    goto simple;
@@ -1844,7 +1844,7 @@ SetWinFileAttributes(
     const WCHAR *nativeName;
 
     nativeName = Tcl_FSGetNativePath(fileName);
-    fileAttributes = old = GetFileAttributes(nativeName);
+    fileAttributes = old = GetFileAttributesW(nativeName);
 
     if (fileAttributes == 0xffffffff) {
 	StatError(interp, fileName);
@@ -1863,7 +1863,7 @@ SetWinFileAttributes(
     }
 
     if ((fileAttributes != old)
-	    && !SetFileAttributes(nativeName, fileAttributes)) {
+	    && !SetFileAttributesW(nativeName, fileAttributes)) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -1936,10 +1936,10 @@ TclpObjListVolumes(void)
 
     if (GetLogicalDriveStringsA(sizeof(buf), buf) == 0) {
 	/*
-	 * GetVolumeInformation() will detects all drives, but causes
+	 * GetVolumeInformationW() will detects all drives, but causes
 	 * chattering on empty floppy drives. We only do this if
 	 * GetLogicalDriveStrings() didn't work. It has also been reported
-	 * that on some laptops it takes a while for GetVolumeInformation() to
+	 * that on some laptops it takes a while for GetVolumeInformationW() to
 	 * return when pinging an empty floppy drive, another reason to try to
 	 * avoid calling it.
 	 */
