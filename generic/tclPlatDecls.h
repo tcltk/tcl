@@ -99,7 +99,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
-#if defined(USE_TCL_STUBS) && defined(_WIN32)
+#if defined(USE_TCL_STUBS) && defined(_WIN32) && !defined(TCL_NO_DEPRECATED)
 #define Tcl_WinUtfToTChar(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
 		(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
 #define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
