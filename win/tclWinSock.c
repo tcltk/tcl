@@ -3247,7 +3247,7 @@ SocketProc(
 #ifdef _WIN64
 	    GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 #else
-	    GetWindowLong(hwnd, GWL_USERDATA);
+	    GetWindowLongW(hwnd, GWL_USERDATA);
 #endif
 
     switch (message) {
@@ -3265,7 +3265,7 @@ SocketProc(
 	SetWindowLongPtr(hwnd, GWLP_USERDATA,
 		(LONG_PTR) ((LPCREATESTRUCT)lParam)->lpCreateParams);
 #else
-	SetWindowLong(hwnd, GWL_USERDATA,
+	SetWindowLongW(hwnd, GWL_USERDATA,
 		(LONG) ((LPCREATESTRUCT)lParam)->lpCreateParams);
 #endif
 	break;
