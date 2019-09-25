@@ -22,7 +22,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 testConstraint fcopy		[llength [info commands fcopy]]
 testConstraint testchannel	[llength [info commands testchannel]]
 testConstraint testthread	[llength [info commands testthread]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 #----------------------------------------------------------------------
 
@@ -755,7 +754,7 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
     rename foo {}
     set res
 } -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
-test iocmd-21.20 {Bug 88aef05cda} -constraints knownMsvcBug -setup {
+test iocmd-21.20 {Bug 88aef05cda} -setup {
     proc foo {method chan args} {
 	switch -- $method blocking {
 	    chan configure $chan -blocking [lindex $args 0]
@@ -769,11 +768,11 @@ test iocmd-21.20 {Bug 88aef05cda} -constraints knownMsvcBug -setup {
     }
     set ch [chan create {read write} foo]
 } -body {
-    list [catch {chan configure $ch -blocking 0} m] $m
+    chan configure $ch -blocking 0
 } -cleanup {
     close $ch
     rename foo {}
-} -match glob -result {1 {*nested eval*}}
+} -match glob -returnCodes 1 -result {*(infinite loop?)*}
 test iocmd-21.21 {[close] in [read] segfaults} -setup {
     proc foo {method chan args} {
 	switch -- $method initialize {
