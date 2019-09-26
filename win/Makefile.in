@@ -552,7 +552,7 @@ tclAppInit.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 tclMain2.${OBJEXT}: tclMain.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #

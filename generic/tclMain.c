@@ -17,20 +17,10 @@
  */
 
 /*
- * On Windows, this file needs to be compiled twice, once with TCL_ASCII_MAIN
- * defined. This way both Tcl_Main and Tcl_MainExW can be implemented, sharing
- * the same source code.
+ * On Windows, this file needs to be compiled twice, once with UNICODE and
+ * _UNICODE defined. This way both Tcl_Main and Tcl_MainExW can be
+ * implemented, sharing the same source code.
  */
-
-#if defined(TCL_ASCII_MAIN)
-#   ifdef UNICODE
-#	undef UNICODE
-#	undef _UNICODE
-#   else
-#	define UNICODE
-#	define _UNICODE
-#   endif
-#endif
 
 #include "tclInt.h"
 
@@ -134,7 +124,7 @@ static void		Prompt(Tcl_Interp *interp, InteractiveState *isPtr);
 static void		StdinProc(ClientData clientData, int mask);
 static void		FreeMainInterp(ClientData clientData);
 
-#ifndef TCL_ASCII_MAIN
+#ifndef UNKCODE
 static Tcl_ThreadDataKey dataKey;
 
 /*
@@ -279,7 +269,7 @@ Tcl_SourceRCFile(
 	Tcl_DStringFree(&temp);
     }
 }
-#endif /* !TCL_ASCII_MAIN */
+#endif /* !UNKCODE */
 
 /*----------------------------------------------------------------------
  *
@@ -650,7 +640,7 @@ Tcl_Main(
 }
 #endif /* TCL_MAJOR_VERSION == 8 && !UNICODE */
 
-#ifndef TCL_ASCII_MAIN
+#ifndef UNKCODE
 
 /*
  *---------------------------------------------------------------
@@ -741,7 +731,7 @@ TclFullFinalizationRequested(void)
     return finalize;
 #endif /* PURIFY */
 }
-#endif /* !TCL_ASCII_MAIN */
+#endif /* !UNKCODE */
 
 /*
  *----------------------------------------------------------------------

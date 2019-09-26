@@ -1277,56 +1277,56 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) -DSTDC_HEADERS
+OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
 
 !if $(TCL_MEM_DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
+OPTDEFINES	= $(OPTDEFINES) /DTCL_MEM_DEBUG
 !endif
 !if $(TCL_COMPILE_DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+OPTDEFINES	= $(OPTDEFINES) /DTCL_COMPILE_DEBUG /DTCL_COMPILE_STATS
 !endif
 !if $(TCL_THREADS) && $(TCL_VERSION) < 87
-OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
+OPTDEFINES	= $(OPTDEFINES) /DTCL_THREADS=1
 !if $(USE_THREAD_ALLOC) && $(TCL_VERSION) < 87
-OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
+OPTDEFINES	= $(OPTDEFINES) /DUSE_THREAD_ALLOC=1
 !endif
 !endif
 !if $(STATIC_BUILD)
-OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+OPTDEFINES	= $(OPTDEFINES) /DSTATIC_BUILD
 !endif
 !if $(TCL_NO_DEPRECATED)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_NO_DEPRECATED
 !endif
 
 !if $(USE_STUBS)
 # Note we do not define USE_TCL_STUBS even when building tk since some
 # test targets in tk do not use stubs
 !if ! $(DOING_TCL)
-USE_STUBS_DEFS  = -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
+USE_STUBS_DEFS  = /DUSE_TCL_STUBS /DUSE_TCLOO_STUBS
 !if $(NEED_TK)
-USE_STUBS_DEFS  = $(USE_STUBS_DEFS) -DUSE_TK_STUBS
+USE_STUBS_DEFS  = $(USE_STUBS_DEFS) /DUSE_TK_STUBS
 !endif
 !endif
 !endif # USE_STUBS
 
 !if !$(DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DNDEBUG
+OPTDEFINES	= $(OPTDEFINES) /DNDEBUG
 !if $(OPTIMIZING)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_OPTIMIZED
 !endif
 !endif
 !if $(PROFILE)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_PROFILED
 !endif
 !if "$(MACHINE)" == "AMD64"
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
-OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64
 !endif
 
 !if "$(_USE_64BIT_TIME_T)" == "1"
-OPTDEFINES	= $(OPTDEFINES) -D_USE_64BIT_TIME_T
+OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
@@ -1336,10 +1336,10 @@ COMPILERFLAGS  = /D_ATL_XP_TARGETING
 # Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME
 # so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
-PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               -DMODULE_SCOPE=extern
+PKGNAMEFLAGS = /DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+               /DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+               /DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+               /DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1386,7 +1386,7 @@ cwarn = $(cwarn) -wd4311 -wd4312
 
 ### Common compiler options that are architecture specific
 !if "$(MACHINE)" == "ARM"
-carch = -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+carch = /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !else
 carch =
 !endif
@@ -1416,11 +1416,11 @@ cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
 appcflags_nostubs = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
 appcflags = $(appcflags_nostubs) $(USE_STUBS_DEFS)
-pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
-pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
+pkgcflags = $(appcflags) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
+pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
 
 # stubscflags contains $(cflags) plus flags used for building a stubs
-# library for the package.  Note: -DSTATIC_BUILD is defined in
+# library for the package.  Note: /DSTATIC_BUILD is defined in
 # $(OPTDEFINES) only if the OPTS configuration indicates a static
 # library. However the stubs library is ALWAYS static hence included
 # here irrespective of the OPTS setting.
@@ -1430,7 +1430,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1507,13 +1507,13 @@ CONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 GUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
-	    -DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
-	    -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
-	    -DDOTVERSION=\"$(DOTVERSION)\" \
-	    -DVERSION=\"$(VERSION)\" \
-	    -DSUFX=\"$(SUFX)\" \
-	    -DPROJECT=\"$(PROJECT)\" \
-	    -DPRJLIBNAME=\"$(PRJLIBNAME)\"
+	    /DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
+	    /DCOMMAVERSION=$(DOTVERSION:.=,),0 \
+	    /DDOTVERSION=\"$(DOTVERSION)\" \
+	    /DVERSION=\"$(VERSION)\" \
+	    /DSUFX=\"$(SUFX)\" \
+	    /DPROJECT=\"$(PROJECT)\" \
+	    /DPRJLIBNAME=\"$(PRJLIBNAME)\"
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = $(PROJECT)
