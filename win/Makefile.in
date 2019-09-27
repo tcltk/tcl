@@ -270,8 +270,8 @@ GENERIC_OBJS = \
 	tclLiteral.$(OBJEXT) \
 	tclListObj.$(OBJEXT) \
 	tclLoad.$(OBJEXT) \
+	tclMainW.$(OBJEXT) \
 	tclMain.$(OBJEXT) \
-	tclMain2.$(OBJEXT) \
 	tclNamesp.$(OBJEXT) \
 	tclNotify.$(OBJEXT) \
 	tclOO.$(OBJEXT) \
@@ -551,7 +551,7 @@ tclWinDde.${OBJEXT}: tclWinDde.c
 tclAppInit.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
-tclMain2.${OBJEXT}: tclMain.c
+tclMainW.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.

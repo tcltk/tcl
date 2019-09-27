@@ -260,8 +260,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclListObj.obj \
 	$(TMP_DIR)\tclLiteral.obj \
 	$(TMP_DIR)\tclLoad.obj \
+	$(TMP_DIR)\tclMainW.obj \
 	$(TMP_DIR)\tclMain.obj \
-	$(TMP_DIR)\tclMain2.obj \
 	$(TMP_DIR)\tclNamesp.obj \
 	$(TMP_DIR)\tclNotify.obj \
 	$(TMP_DIR)\tclOO.obj \
@@ -737,7 +737,7 @@ $(TMP_DIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
 	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
-$(TMP_DIR)\tclMain2.obj: $(GENERICDIR)\tclMain.c
+$(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
 	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
