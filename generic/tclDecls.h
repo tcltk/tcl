@@ -3744,7 +3744,6 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_MainEx Tcl_MainExW
     EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-    EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #endif
 
 #undef TCL_STORAGE_CLASS
