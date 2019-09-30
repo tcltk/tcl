@@ -1984,7 +1984,7 @@ typedef struct Tcl_EncodingType {
 
 #if TCL_UTF_MAX > 4
     /*
-     * unsigned int isn't 100% accurate as it should be a strict 4-byte value
+     * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
      * value must be reflected correctly in regcustom.h and
      * in tclEncoding.c.
@@ -1992,7 +1992,7 @@ typedef struct Tcl_EncodingType {
      * XXX: string rep that Tcl_UniChar represents.  Changing the size
      * XXX: of Tcl_UniChar is /not/ supported.
      */
-typedef unsigned int Tcl_UniChar;
+typedef int Tcl_UniChar;
 #else
 typedef unsigned short Tcl_UniChar;
 #endif
@@ -2240,20 +2240,40 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
-#ifndef _WIN32
-EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+#ifdef _WIN32
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
+#else
+EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
-extern const char *TclStubFindExecutable(const char *argv0);
-extern const char *TclStubInitSubsystems(void);
-extern const char *TclStubSetPanicProc(
-	    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+extern void TclStubMainEx(int index, int argc, const void *argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+extern const char *TclStubStaticPackage(Tcl_Interp *interp,
+	    const char *pkgName,
+	    Tcl_PackageInitProc *initProc,
+	    Tcl_PackageInitProc *safeInitProc);
+extern const char *TclStubCall(int flags, void *arg1, void *arg2);
+#if defined(_WIN32) && defined(UNICODE)
+#ifndef USE_TCL_STUBS
+#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
+#endif
+#   define Tcl_MainEx Tcl_MainExW
+    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#endif
 #ifdef USE_TCL_STUBS
-#define Tcl_FindExecutable(argv0) \
-    TclInitStubTable((TclStubFindExecutable)((const char *)argv0))
 #define Tcl_InitSubsystems() \
-    TclInitStubTable((TclStubInitSubsystems)())
+    TclInitStubTable(TclStubCall(0, NULL, NULL))
+#define Tcl_FindExecutable(argv0) \
+    TclInitStubTable(TclStubCall(1, (void *)argv0, NULL))
 #define Tcl_SetPanicProc(panicProc) \
-    TclInitStubTable((TclStubSetPanicProc)(panicProc))
+    TclInitStubTable(TclStubCall(2, (void *)panicProc, NULL))
+#define TclZipfs_AppHook(argcp, argvp) \
+    TclInitStubTable(TclStubCall(3, (void *)argcp, (void *)argvp))
+#if !defined(_WIN32) || !defined(UNICODE)
+#define Tcl_MainEx(argc, argv, appInitProc, interp) TclStubMainEx(0, argc, argv, appInitProc, interp)
+#endif
+#define Tcl_MainExW(argc, argv, appInitProc, interp) TclStubMainEx(1, argc, argv, appInitProc, interp)
+#define Tcl_StaticPackage TclStubStaticPackage
 #endif
 
 /*

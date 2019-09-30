@@ -1,11 +1,5 @@
 /*
- * tclStubLibDl.c --
- *
- *	Stub object that will be statically linked into extensions that want
- *	to access Tcl.
- *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 1998 Paul Duffin.
+ * tclStubStaticPackage.c --
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,6 +13,8 @@
 #   define dlsym(a,b) (void *)GetProcAddress((HANDLE)(a),b)
 #   define dlerror() ""
 #endif
+
+MODULE_SCOPE void *tclStubsHandle;
 
 /*
  *----------------------------------------------------------------------
@@ -36,26 +32,34 @@
  *----------------------------------------------------------------------
  */
 
-static const char PROCNAME[] = "_Tcl_InitSubsystems";
+static const char PROCNAME[] = "_Tcl_StaticPackage";
 
 MODULE_SCOPE const char *
-TclStubInitSubsystems(void)
+TclStubStaticPackage(Tcl_Interp *interp,
+	const char *pkgName,
+	Tcl_PackageInitProc *initProc,
+	Tcl_PackageInitProc *safeInitProc)
 {
-    static const char *(*initSubsystems)(void) = NULL;
+    static const char *(*stubFn)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *) = NULL;
     static const char *version = NULL;
 
-    if (!initSubsystems) {
-	void *handle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
-	if (!handle) {
-	    fprintf(stderr, "Cannot find " TCL_DLL_FILE ": %s\n", dlerror());
-	    abort();
+    if (tclStubsHandle == (void *)-1) {
+	fprintf(stderr, "Cannot call %s from stubbed extension\n", PROCNAME + 1);
+	abort();
+    }
+    if (!stubFn) {
+	if (!tclStubsHandle) {
+	    tclStubsHandle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
+	    if (!tclStubsHandle) {
+		tclStubsPtr->tcl_Panic("Cannot find " TCL_DLL_FILE ": %s\n", dlerror());
+	    }
 	}
-	initSubsystems = dlsym(handle, PROCNAME + 1);
-	if (!initSubsystems) {
-		initSubsystems = dlsym(handle, PROCNAME);
+	stubFn = dlsym(tclStubsHandle, PROCNAME + 1);
+	if (!stubFn) {
+		stubFn = dlsym(tclStubsHandle, PROCNAME);
 	}
-	if (initSubsystems) {
-	    version = initSubsystems();
+	if (stubFn) {
+	    version = stubFn(interp, pkgName, initProc, safeInitProc);
 	}
     }
     return version;

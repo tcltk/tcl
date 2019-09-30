@@ -1089,13 +1089,13 @@ file delete -force $tildeglobname
 set globname globTest
 unset horribleglobname tildeglobname
 
-test filename-12.1 {simple globbing} {unixOrPc} {
+test filename-12.1 {simple globbing} {unixOrWin} {
     glob {}
 } {.}
-test filename-12.1.1 {simple globbing} -constraints {unixOrPc} -body {
+test filename-12.1.1 {simple globbing} -constraints {unixOrWin} -body {
     glob -types f {}
 } -returnCodes error -result {no files matched glob pattern ""}
-test filename-12.1.2 {simple globbing} {unixOrPc} {
+test filename-12.1.2 {simple globbing} {unixOrWin} {
     glob -types d {}
 } {.}
 test filename-12.1.3 {simple globbing} {unix} {
@@ -1116,7 +1116,7 @@ test filename-12.3 {simple globbing} {
 set globPreResult globTest/
 set x1 x1.c
 set y1 y1.c
-test filename-12.4 {simple globbing} {unixOrPc} {
+test filename-12.4 {simple globbing} {unixOrWin} {
     lsort [glob globTest/x1.c globTest/y1.c globTest/foo]
 } "$globPreResult$x1 $globPreResult$y1"
 test filename-12.5 {simple globbing} {
@@ -1178,32 +1178,32 @@ test filename-13.9 {globbing with brace substitution} {
 test filename-13.10 {globbing with brace substitution} {
     lsort [glob globTest/\{x,,y\}1.c]
 } [list $globPreResult$x1 $globPreResult$y1]
-test filename-13.11 {globbing with brace substitution} {unixOrPc} {
+test filename-13.11 {globbing with brace substitution} {unixOrWin} {
     lsort [glob globTest/\{x,x\\,z,z\}1.c]
 } [lsort {globTest/x1.c globTest/x,z1.c globTest/z1.c}]
 test filename-13.13 {globbing with brace substitution} {
     lsort [glob globTest/{a,b,x,y}1.c]
 } [list $globPreResult$x1 $globPreResult$y1]
-test filename-13.14 {globbing with brace substitution} {unixOrPc} {
+test filename-13.14 {globbing with brace substitution} {unixOrWin} {
     lsort [glob {globTest/{x1,y2,weird name}.c}]
 } {{globTest/weird name.c} globTest/x1.c}
-test filename-13.16 {globbing with brace substitution} {unixOrPc} {
+test filename-13.16 {globbing with brace substitution} {unixOrWin} {
     lsort [glob globTest/{x1.c,a1/*}]
 } {globTest/a1/b1 globTest/a1/b2 globTest/x1.c}
-test filename-13.18 {globbing with brace substitution} {unixOrPc} {
+test filename-13.18 {globbing with brace substitution} {unixOrWin} {
     lsort [glob globTest/{x1.c,{a},a1/*}]
 } {globTest/a1/b1 globTest/a1/b2 globTest/x1.c}
-test filename-13.20 {globbing with brace substitution} {unixOrPc} {
+test filename-13.20 {globbing with brace substitution} {unixOrWin} {
     lsort [glob globTest/{a,x}1/*/{x,y}*]
 } {globTest/a1/b1/x2.c globTest/a1/b2/y2.c}
 test filename-13.22 {globbing with brace substitution} -body {
     glob globTest/\{a,x\}1/*/\{
 } -returnCodes error -result {unmatched open-brace in file name}
 
-test filename-14.1 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.1 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob glo*/*.c]
 } {{globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
-test filename-14.3 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.3 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob globTest/?1.c]
 } {globTest/x1.c globTest/y1.c globTest/z1.c}
 test filename-14.5 {asterisks, question marks, and brackets} -setup {
@@ -1213,7 +1213,7 @@ test filename-14.5 {asterisks, question marks, and brackets} -setup {
     file rename globTest [file join globTestContext globTest]
     set savepwd [pwd]
     cd globTestContext
-} -constraints {unixOrPc} -body {
+} -constraints {unixOrWin} -body {
     lsort [glob */*/*/*.c]
 } -cleanup {
     # Reset to where we were
@@ -1227,16 +1227,16 @@ test filename-14.7 {asterisks, question marks, and brackets} {unix} {
 test filename-14.7.1 {asterisks, question marks, and brackets} {win} {
     lsort [glob globTest/*]
 } {globTest/.1 globTest/a1 globTest/a2 globTest/a3 {globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
-test filename-14.9 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.9 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob globTest/.*]
 } {globTest/. globTest/.. globTest/.1}
-test filename-14.11 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.11 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob globTest/*/*]
 } {globTest/a1/b1 globTest/a1/b2 globTest/a2/b3}
-test filename-14.13 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.13 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob {globTest/[xyab]1.*}]
 } {globTest/x1.c globTest/y1.c}
-test filename-14.15 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.15 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob globTest/*/]
 } {globTest/a1/ globTest/a2/ globTest/a3/}
 test filename-14.17 {asterisks, question marks, and brackets} -setup {
@@ -1248,7 +1248,7 @@ test filename-14.17 {asterisks, question marks, and brackets} -setup {
 } -cleanup {
     set env(HOME) $temp
 } -result [list [file join $env(HOME) globTest z1.c]]
-test filename-14.18 {asterisks, question marks, and brackets} {unixOrPc} {
+test filename-14.18 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob globTest/*.c goo/*]
 } {{globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
 test filename-14.20 {asterisks, question marks, and brackets} {
@@ -1287,16 +1287,16 @@ test filename-14.25.1 {type specific globbing} {win} {
 test filename-14.26 {type specific globbing} {
     glob -nocomplain -dir globTest -types {readonly} *
 } {}
-test filename-14.27 {Bug 2710920} {unixOrPc} {
+test filename-14.27 {Bug 2710920} {unixOrWin} {
     file tail [lindex [lsort [glob globTest/*/]] 0]
 } a1
-test filename-14.28 {Bug 2710920} {unixOrPc} {
+test filename-14.28 {Bug 2710920} {unixOrWin} {
     file dirname [lindex [lsort [glob globTest/*/]] 0]
 } globTest
-test filename-14.29 {Bug 2710920} {unixOrPc} {
+test filename-14.29 {Bug 2710920} {unixOrWin} {
     file extension [lindex [lsort [glob globTest/*/]] 0]
 } {}
-test filename-14.30 {Bug 2710920} {unixOrPc} {
+test filename-14.30 {Bug 2710920} {unixOrWin} {
     file rootname [lindex [lsort [glob globTest/*/]] 0]
 } globTest/a1/
 

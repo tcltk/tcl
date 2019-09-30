@@ -2212,7 +2212,7 @@ test io-27.4 {FlushChannel, implicit flush when buffer fills} {
     set l
 } {0 60 72}
 test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
-	{unixOrPc} {
+	{unixOrWin} {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation lf -buffersize 60 -eofchar {}
@@ -8084,7 +8084,7 @@ test io-53.17 {[7c187a3773] MBWrite: proper inQueueTail handling} -setup {
     removeFile out
 } -result {line 100 line}
 
-test io-54.1 {Recursive channel events} {socket fileevent} {
+test io-54.1 {Recursive channel events} {socket fileevent knownMsvcBug} {
     # This test checks to see if file events are delivered during recursive
     # event loops when there is buffered data on the channel.
 
@@ -8293,7 +8293,7 @@ test io-57.2 {buffered data and file events, read} {fileevent} {
     set result
 } {1 readable 234567890 timer}
 
-test io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc openpipe fileevent} {
+test io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrWin openpipe fileevent} {
     set out [open $path(script) w]
     puts $out {
 	puts "normal message from pipe"

@@ -34,16 +34,18 @@ TclInitStubTable(
 	const char *version) /* points to the version field of a
 	                        structure variable. */
 {
-    tclStubsPtr = ((const TclStubs **) version)[-1];
+    if (version) {
+	tclStubsPtr = ((const TclStubs **) version)[-1];
 
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
-    } else {
-	tclPlatStubsPtr = NULL;
-	tclIntStubsPtr = NULL;
-	tclIntPlatStubsPtr = NULL;
+	if (tclStubsPtr->hooks) {
+	    tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
+	    tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
+	    tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
+	} else {
+	    tclPlatStubsPtr = NULL;
+	    tclIntStubsPtr = NULL;
+	    tclIntPlatStubsPtr = NULL;
+	}
     }
 
     return version;
