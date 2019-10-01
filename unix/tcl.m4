@@ -2971,10 +2971,10 @@ AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
 # Results:
 #
 #	Might define the following vars:
-#		HAVE_GETHOSTBYADDR_R
-#		HAVE_GETHOSTBYADDR_R_3
-#		HAVE_GETHOSTBYADDR_R_5
-#		HAVE_GETHOSTBYADDR_R_6
+#		HAVE_GETHOSTBYNAME_R
+#		HAVE_GETHOSTBYNAME_R_3
+#		HAVE_GETHOSTBYNAME_R_5
+#		HAVE_GETHOSTBYNAME_R_6
 #
 #--------------------------------------------------------------------
 
