@@ -2260,7 +2260,7 @@ extern const char *TclStubCall(int flags, void *arg1, void *arg2);
     EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
-#ifdef USE_TCL_STUBS
+#if defined(USE_TCL_STUBS) && !defined(STATIC_BUILD)
 #define Tcl_InitSubsystems() \
     TclInitStubTable(TclStubCall(0, NULL, NULL))
 #define Tcl_FindExecutable(argv0) \

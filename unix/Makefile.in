@@ -1100,7 +1100,7 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	fi
 	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
-		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
+		-DTCL_TEST -DUSE_TCL_STUBS $(UNIX_DIR)/tclAppInit.c
 	@rm -f tclTestInit.o
 	mv tclAppInit.o tclTestInit.o
 	@if test -f tclAppInit.sav ; then \

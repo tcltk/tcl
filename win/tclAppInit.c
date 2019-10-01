@@ -14,7 +14,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#define USE_TCL_STUBS
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #define STRICT			/* See MSDN Article Q83456 */
