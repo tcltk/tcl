@@ -35,6 +35,12 @@ TclInitStubTable(
 	                        structure variable. */
 {
     if (version) {
+	if (tclStubsHandle == NULL) {
+		/* This can only happen with -DBUILD_STATIC, so simulate
+		 * that the loading of Tcl succeeded, although we didn't
+		 * actually loaded it dynamically */
+	    tclStubsHandle = (void *)1;
+	}
 	tclStubsPtr = ((const TclStubs **) version)[-1];
 
 	if (tclStubsPtr->hooks) {
