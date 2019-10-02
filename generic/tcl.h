@@ -2204,7 +2204,9 @@ TCLAPI void		Tcl_StaticPackage(Tcl_Interp *interp,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
 TCLAPI Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
-#ifndef _WIN32
+#ifdef _WIN32
+EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
+#else
 TCLAPI int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 

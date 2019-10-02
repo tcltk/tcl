@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -317,8 +317,8 @@ GENERIC_OBJS = \
 	tclLiteral.$(OBJEXT) \
 	tclListObj.$(OBJEXT) \
 	tclLoad.$(OBJEXT) \
+	tclMainW.$(OBJEXT) \
 	tclMain.$(OBJEXT) \
-	tclMain2.$(OBJEXT) \
 	tclNamesp.$(OBJEXT) \
 	tclNotify.$(OBJEXT) \
 	tclOO.$(OBJEXT) \
@@ -554,7 +554,7 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	@VC_MANIFEST_EMBED_EXE@
 
 cat32.$(OBJEXT): cat.c
-	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 $(CAT32): cat32.$(OBJEXT)
 	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
@@ -620,7 +620,7 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 # Special case object targets
 
 tclTestMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DBUILD_tcl $(EXTFLAGS) $(CC_OBJNAME) $(WIN_DIR)/tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
@@ -634,11 +634,11 @@ tclWinReg.${OBJEXT}: tclWinReg.c
 tclWinDde.${OBJEXT}: tclWinDde.c
 	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
-testMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST @DEPARG@ $(CC_OBJNAME)
+tclAppInit.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
-tclMain2.${OBJEXT}: tclMain.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
+tclMainW.${OBJEXT}: tclMain.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c

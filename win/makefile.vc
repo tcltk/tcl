@@ -258,8 +258,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclListObj.obj \
 	$(TMP_DIR)\tclLiteral.obj \
 	$(TMP_DIR)\tclLoad.obj \
+	$(TMP_DIR)\tclMainW.obj \
 	$(TMP_DIR)\tclMain.obj \
-	$(TMP_DIR)\tclMain2.obj \
 	$(TMP_DIR)\tclNamesp.obj \
 	$(TMP_DIR)\tclNotify.obj \
 	$(TMP_DIR)\tclOO.obj \
@@ -729,12 +729,12 @@ gendate:
 #---------------------------------------------------------------------
 
 $(TMP_DIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
-	$(cc32) $(appcflags) /DTCL_TEST \
+	$(cc32) $(appcflags) /DTCL_TEST /DUNICODE /D_UNICODE \
 	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
-$(TMP_DIR)\tclMain2.obj: $(GENERICDIR)\tclMain.c
-	$(cc32) $(pkgcflags) /DTCL_ASCII_MAIN \
+$(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
+	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
@@ -769,26 +769,18 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
-	$(cc32) $(appcflags) \
+	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
 	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
 
 $(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
-!if $(STATIC_BUILD)
-	$(cc32) $(appcflags) /DSTATIC_BUILD -Fo$@ $?
-!else
 	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
-!endif
 
 
 $(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
-!if $(STATIC_BUILD)
-	$(cc32) $(appcflags) /DSTATIC_BUILD -Fo$@ $?
-!else
 	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
-!endif
 
 
 ### The following objects are part of the stub library and should not
