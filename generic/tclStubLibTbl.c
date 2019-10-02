@@ -13,6 +13,8 @@
 
 #include "tclInt.h"
 
+MODULE_SCOPE void *tclStubsHandle;
+
 /*
  *----------------------------------------------------------------------
  *
