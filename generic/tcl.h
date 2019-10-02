@@ -2401,7 +2401,9 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-#ifndef _WIN32
+#ifdef _WIN32
+EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
+#else
 EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 
