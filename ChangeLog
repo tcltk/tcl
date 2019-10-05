@@ -1,6 +1,6 @@
 A NOTE ON THE CHANGELOG:
 Starting in early 2011, Tcl source code has been under the management of
-fossil, hosted at http://core.tcl.tk/tcl/ .  Fossil presents a "Timeline"
+fossil, hosted at https://core.tcl-lang.org/tcl/ .  Fossil presents a "Timeline"
 view of changes made that is superior in every way to a hand edited log file.
 Because of this, many Tcl developers are now out of the habit of maintaining
 this log file.  You may still find useful things in it, but the Timeline is
