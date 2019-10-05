@@ -2897,7 +2897,7 @@ FlushChannel(
 	     * there is some kind failure in the writable event machinery.
 	     *
 	     * The tls extension indeed suffers from flaws in its channel
-	     * event mgmt.  See http://core.tcl.tk/tcl/info/c31ca233ca.
+	     * event mgmt.  See https://core.tcl-lang.org/tcl/info/c31ca233ca.
 	     * Until that patch is broadly distributed, disable the
 	     * assertion checking here, so that programs using Tcl and
 	     * tls can be debugged.
