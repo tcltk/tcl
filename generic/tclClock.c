@@ -1513,7 +1513,7 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
-#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
+#if 0 /* BUG https://core.tcl-lang.org/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
 #else
     /*
