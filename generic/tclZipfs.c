@@ -4863,7 +4863,11 @@ TclZipfs_AppHook(
 {
     char *archive;
 
+#ifdef _WIN32
+    Tcl_FindExecutable(NULL);
+#else /* !_WIN32 */
     Tcl_FindExecutable((*argvPtr)[0]);
+#endif /* _WIN32 */
     archive = (char *) Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
