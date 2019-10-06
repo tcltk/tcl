@@ -2518,7 +2518,20 @@ AC_DEFUN([SC_TCL_CHECK_BROKEN_FUNC],[
 #
 #--------------------------------------------------------------------
 
-AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
+AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [
+    # Avoids picking hidden internal symbol from libc
+    SC_TCL_GETHOSTBYADDR_R_DECL
+
+    if test "$tcl_cv_api_gethostbyaddr_r" = yes; then
+	SC_TCL_GETHOSTBYADDR_R_TYPE
+    fi
+])
+
+AC_DEFUN([SC_TCL_GETHOSTBYADDR_R_DECL], [AC_CHECK_DECLS(gethostbyaddr_r, [
+    tcl_cv_api_gethostbyaddr_r=yes],[tcl_cv_api_gethostbyaddr_r=no],[#include <netdb.h>])
+])
+
+AC_DEFUN([SC_TCL_GETHOSTBYADDR_R_TYPE], [AC_CHECK_FUNC(gethostbyaddr_r, [
     AC_CACHE_CHECK([for gethostbyaddr_r with 7 args], tcl_cv_api_gethostbyaddr_r_7, [
     AC_TRY_COMPILE([
 	#include <netdb.h>
@@ -2579,14 +2592,27 @@ AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
 # Results:
 #
 #	Might define the following vars:
-#		HAVE_GETHOSTBYADDR_R
-#		HAVE_GETHOSTBYADDR_R_3
-#		HAVE_GETHOSTBYADDR_R_5
-#		HAVE_GETHOSTBYADDR_R_6
+#		HAVE_GETHOSTBYNAME_R
+#		HAVE_GETHOSTBYNAME_R_3
+#		HAVE_GETHOSTBYNAME_R_5
+#		HAVE_GETHOSTBYNAME_R_6
 #
 #--------------------------------------------------------------------
 
-AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
+AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [
+    # Avoids picking hidden internal symbol from libc
+    SC_TCL_GETHOSTBYNAME_R_DECL
+
+    if test "$tcl_cv_api_gethostbyname_r" = yes; then
+	SC_TCL_GETHOSTBYNAME_R_TYPE
+    fi
+])
+
+AC_DEFUN([SC_TCL_GETHOSTBYNAME_R_DECL], [AC_CHECK_DECLS(gethostbyname_r, [
+    tcl_cv_api_gethostbyname_r=yes],[tcl_cv_api_gethostbyname_r=no],[#include <netdb.h>])
+])
+
+AC_DEFUN([SC_TCL_GETHOSTBYNAME_R_TYPE], [AC_CHECK_FUNC(gethostbyname_r, [
     AC_CACHE_CHECK([for gethostbyname_r with 6 args], tcl_cv_api_gethostbyname_r_6, [
     AC_TRY_COMPILE([
 	#include <netdb.h>
