@@ -20,7 +20,7 @@ mp_err mp_incr(mp_int *a)
          a->sign = MP_NEG;
       }
       return MP_OKAY;
-   } else if (a->dp[0] < MP_MASK) {
+   } else if (a->dp[0] < MP_DIGIT_MAX) {
       a->dp[0]++;
       return MP_OKAY;
    } else {

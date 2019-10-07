@@ -76,7 +76,8 @@ mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_pr
       tmp[bsize-1]             |= maskOR_lsb;
 
       /* read it in */
-      if ((err = mp_read_unsigned_bin(a, tmp, bsize)) != MP_OKAY) {
+      /* TODO: casting only for now until all lengths have been changed to the type "size_t"*/
+      if ((err = mp_from_ubin(a, tmp, (size_t)bsize)) != MP_OKAY) {
          goto error;
       }
 

@@ -140,11 +140,7 @@ mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
 
    while ((high - low) > 1u) {
       mid = (high + low) >> 1;
-      /* Difference can be larger then the type behind mp_digit can hold */
-      if ((mid - low) > (unsigned int)(MP_MASK)) {
-         err = MP_VAL;
-         goto LBL_ERR;
-      }
+
       if ((err = mp_expt_u32(&bi_base, (uint32_t)(mid - low), &t)) != MP_OKAY) {
          goto LBL_ERR;
       }

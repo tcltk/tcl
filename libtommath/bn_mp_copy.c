@@ -7,6 +7,7 @@
 mp_err mp_copy(const mp_int *a, mp_int *b)
 {
    int n;
+   mp_digit *tmpa, *tmpb;
    mp_err err;
 
    /* if dst == src do nothing */
@@ -22,25 +23,21 @@ mp_err mp_copy(const mp_int *a, mp_int *b)
    }
 
    /* zero b and copy the parameters over */
-   {
-      mp_digit *tmpa, *tmpb;
+   /* pointer aliases */
 
-      /* pointer aliases */
+   /* source */
+   tmpa = a->dp;
 
-      /* source */
-      tmpa = a->dp;
+   /* destination */
+   tmpb = b->dp;
 
-      /* destination */
-      tmpb = b->dp;
-
-      /* copy all the digits */
-      for (n = 0; n < a->used; n++) {
-         *tmpb++ = *tmpa++;
-      }
-
-      /* clear high digits */
-      MP_ZERO_DIGITS(tmpb, b->used - n);
+   /* copy all the digits */
+   for (n = 0; n < a->used; n++) {
+      *tmpb++ = *tmpa++;
    }
+
+   /* clear high digits */
+   MP_ZERO_DIGITS(tmpb, b->used - n);
 
    /* copy used count and sign */
    b->used = a->used;

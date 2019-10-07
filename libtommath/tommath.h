@@ -17,6 +17,14 @@
 #  include <stdio.h>
 #endif
 
+#ifdef MP_8BIT
+#  ifdef _MSC_VER
+#    pragma message("8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version.")
+#  else
+#    warning "8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version."
+#  endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -206,7 +214,7 @@ TOOM_SQR_CUTOFF;
 #  endif
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
 #  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
 #  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
@@ -517,7 +525,7 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
  */
 mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_n_root_ex) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
+MP_DEPRECATED(mp_root_u32) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* special sqrt algo */
 mp_err mp_sqrt(const mp_int *arg, mp_int *ret) MP_WUR;
@@ -683,24 +691,34 @@ mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c) MP_WUR;
 /* c = a**b */
 mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_d) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
+MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a) MP_WUR;
 
-int mp_unsigned_bin_size(const mp_int *a) MP_WUR;
-mp_err mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c) MP_WUR;
-mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b) MP_WUR;
-mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen) MP_WUR;
 
-int mp_signed_bin_size(const mp_int *a) MP_WUR;
-mp_err mp_read_signed_bin(mp_int *a, const unsigned char *b, int c) MP_WUR;
-mp_err mp_to_signed_bin(const mp_int *a,  unsigned char *b) MP_WUR;
-mp_err mp_to_signed_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen) MP_WUR;
+MP_DEPRECATED(mp_ubin_size) int mp_unsigned_bin_size(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_from_ubin) mp_err mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c) MP_WUR;
+MP_DEPRECATED(mp_to_ubin) mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b) MP_WUR;
+MP_DEPRECATED(mp_to_ubin) mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen) MP_WUR;
+
+MP_DEPRECATED(mp_sbin_size) int mp_signed_bin_size(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_from_sbin) mp_err mp_read_signed_bin(mp_int *a, const unsigned char *b, int c) MP_WUR;
+MP_DEPRECATED(mp_to_sbin) mp_err mp_to_signed_bin(const mp_int *a,  unsigned char *b) MP_WUR;
+MP_DEPRECATED(mp_to_sbin) mp_err mp_to_signed_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen) MP_WUR;
+
+size_t mp_ubin_size(const mp_int *a) MP_WUR;
+mp_err mp_from_ubin(mp_int *a, const unsigned char *buf, size_t size) MP_WUR;
+mp_err mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written) MP_WUR;
+
+size_t mp_sbin_size(const mp_int *a) MP_WUR;
+mp_err mp_from_sbin(mp_int *a, const unsigned char *buf, size_t size) MP_WUR;
+mp_err mp_to_sbin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written) MP_WUR;
 
 mp_err mp_read_radix(mp_int *a, const char *str, int radix) MP_WUR;
-mp_err mp_toradix(const mp_int *a, char *str, int radix) MP_WUR;
-mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen) MP_WUR;
+MP_DEPRECATED(mp_to_radix) mp_err mp_toradix(const mp_int *a, char *str, int radix) MP_WUR;
+MP_DEPRECATED(mp_to_radix) mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen) MP_WUR;
+mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix) MP_WUR;
 mp_err mp_radix_size(const mp_int *a, int radix, int *size) MP_WUR;
 
 #ifndef MP_NO_FILE
@@ -715,10 +733,15 @@ mp_err mp_fwrite(const mp_int *a, int radix, FILE *stream) MP_WUR;
 #define mp_mag_size(mp)           (MP_DEPRECATED_PRAGMA("replaced by mp_unsigned_bin_size") mp_unsigned_bin_size(mp))
 #define mp_tomag(mp, str)         (MP_DEPRECATED_PRAGMA("replaced by mp_to_unsigned_bin") mp_to_unsigned_bin((mp), (str)))
 
-#define mp_tobinary(M, S)  mp_toradix((M), (S), 2)
-#define mp_tooctal(M, S)   mp_toradix((M), (S), 8)
-#define mp_todecimal(M, S) mp_toradix((M), (S), 10)
-#define mp_tohex(M, S)     mp_toradix((M), (S), 16)
+#define mp_tobinary(M, S)  (MP_DEPRECATED_PRAGMA("replaced by mp_to_binary")  mp_toradix((M), (S), 2))
+#define mp_tooctal(M, S)   (MP_DEPRECATED_PRAGMA("replaced by mp_to_octal")   mp_toradix((M), (S), 8))
+#define mp_todecimal(M, S) (MP_DEPRECATED_PRAGMA("replaced by mp_to_decimal") mp_toradix((M), (S), 10))
+#define mp_tohex(M, S)     (MP_DEPRECATED_PRAGMA("replaced by mp_to_hex")     mp_toradix((M), (S), 16))
+
+#define mp_to_binary(M, S, N)  mp_to_radix((M), (S), (N), 2)
+#define mp_to_octal(M, S, N)   mp_to_radix((M), (S), (N), 8)
+#define mp_to_decimal(M, S, N) mp_to_radix((M), (S), (N), 10)
+#define mp_to_hex(M, S, N)     mp_to_radix((M), (S), (N), 16)
 
 #ifdef __cplusplus
 }

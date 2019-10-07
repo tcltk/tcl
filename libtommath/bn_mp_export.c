@@ -53,19 +53,19 @@ mp_err mp_export(void *rop, size_t *countp, int order, size_t size,
          *byte = (unsigned char)((j == ((size - nail_bytes) - 1u)) ? (t.dp[0] & odd_nail_mask) : (t.dp[0] & 0xFFuL));
 
          if ((err = mp_div_2d(&t, (j == ((size - nail_bytes) - 1u)) ? (int)(8u - odd_nails) : 8, &t, NULL)) != MP_OKAY) {
-            mp_clear(&t);
-            return err;
+            goto LBL_ERR;
          }
       }
    }
 
-   mp_clear(&t);
-
    if (countp != NULL) {
       *countp = count;
    }
+   err = MP_OKAY;
 
-   return MP_OKAY;
+LBL_ERR:
+   mp_clear(&t);
+   return err;
 }
 
 #endif

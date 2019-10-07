@@ -48,16 +48,18 @@ mp_err mp_radix_size(const mp_int *a, int radix, int *size)
    /* fetch out all of the digits */
    while (!MP_IS_ZERO(&t)) {
       if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
-         mp_clear(&t);
-         return err;
+         goto LBL_ERR;
       }
       ++digs;
    }
-   mp_clear(&t);
 
    /* return digs + 1, the 1 is for the NULL byte that would be required. */
    *size = digs + 1;
-   return MP_OKAY;
+   err = MP_OKAY;
+
+LBL_ERR:
+   mp_clear(&t);
+   return err;
 }
 
 #endif

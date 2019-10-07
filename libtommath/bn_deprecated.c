@@ -229,4 +229,88 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    return mp_root_u32(a, (uint32_t)b, c);
 }
 #endif
+
+#ifdef BN_MP_UNSIGNED_BIN_SIZE_C
+int mp_unsigned_bin_size(const mp_int *a)
+{
+   return (int)mp_ubin_size(a);
+}
+#endif
+
+#ifdef BN_MP_READ_UNSIGNED_BIN_C
+mp_err mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c)
+{
+   return mp_from_ubin(a, b, (size_t) c);
+}
+#endif
+
+#ifdef BN_MP_TO_UNSIGNED_BIN_C
+mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
+{
+   return mp_to_ubin(a, b, SIZE_MAX, NULL);
+}
+#endif
+
+#ifdef BN_MP_TO_UNSIGNED_BIN_N_C
+mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
+{
+   if (*outlen < (unsigned long)mp_ubin_size(a)) {
+      return MP_VAL;
+   }
+   /* TODO: or use "outlen" instead of NULL? */
+   *outlen = (unsigned long)mp_ubin_size(a);
+   return mp_to_ubin(a, b, (size_t)(*outlen), NULL);
+}
+#endif
+
+#ifdef BN_MP_SIGNED_BIN_SIZE_C
+int mp_signed_bin_size(const mp_int *a)
+{
+   return (int)mp_sbin_size(a);
+}
+#endif
+
+#ifdef BN_MP_READ_SIGNED_BIN_C
+mp_err mp_read_signed_bin(mp_int *a, const unsigned char *b, int c)
+{
+   return mp_from_sbin(a, b, (size_t) c);
+}
+#endif
+
+#ifdef BN_MP_TO_SIGNED_BIN_C
+mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
+{
+   return mp_to_sbin(a, b, SIZE_MAX, NULL);
+}
+#endif
+
+#ifdef BN_MP_TO_SIGNED_BIN_N_C
+mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
+{
+   if (*outlen < (unsigned long)mp_sbin_size(a)) {
+      return MP_VAL;
+   }
+   *outlen = (unsigned long)mp_sbin_size(a);
+   return mp_to_sbin(a, b, (size_t)(*outlen), NULL);
+}
+#endif
+
+
+
+
+#ifdef BN_MP_TORADIX_N_C
+mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+{
+   if (maxlen < 0) {
+      return MP_VAL;
+   }
+   return mp_to_radix(a, str, (size_t)maxlen, radix);
+}
+#endif
+#ifdef BN_MP_TORADIX_C
+mp_err mp_toradix(const mp_int *a, char *str, int radix)
+{
+   return mp_to_radix(a, str, SIZE_MAX, radix);
+}
+#endif
 #endif

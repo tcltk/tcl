@@ -449,6 +449,14 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_from_sbin.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_from_ubin.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_fwrite.c"
 			>
 		</File>
@@ -689,14 +697,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_read_signed_bin.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_read_unsigned_bin.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_reduce.c"
 			>
 		</File>
@@ -734,6 +734,10 @@
 		</File>
 		<File
 			RelativePath="bn_mp_rshd.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_sbin_size.c"
 			>
 		</File>
 		<File
@@ -781,10 +785,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_signed_bin_size.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_signed_rsh.c"
 			>
 		</File>
@@ -817,31 +817,19 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_to_signed_bin.c"
+			RelativePath="bn_mp_to_radix.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_to_signed_bin_n.c"
+			RelativePath="bn_mp_to_sbin.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_to_unsigned_bin.c"
+			RelativePath="bn_mp_to_ubin.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_to_unsigned_bin_n.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toradix.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toradix_n.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_unsigned_bin_size.c"
+			RelativePath="bn_mp_ubin_size.c"
 			>
 		</File>
 		<File
