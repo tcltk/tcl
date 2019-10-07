@@ -8894,3 +8894,23 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
 
 - Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
+
+2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
+
+2018-12-30 (bug)[3cf3a9] variable 'timezone' deprecated in vc2017 (nijtmans)
+
+2019-01-09 (bug)[cc1e91] [list [list {*}[set a " "]]] regression (sebres)
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Released 8.6.10, October 15, 2018 - details at http://core.tcl-lang.org/tcl/ -
