@@ -113,7 +113,10 @@ mp_err mp_toom_sqr(const mp_int *a, mp_int *b)
 #ifdef S_MP_REVERSE_C
 void bn_reverse(unsigned char *s, int len)
 {
-   s_mp_reverse(s, len);
+   if (len < 0) {
+      return MP_VAL;
+   }
+   s_mp_reverse(s, (size_t)len);
 }
 #endif
 #ifdef BN_MP_TC_AND_C
@@ -304,13 +307,13 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    if (maxlen < 0) {
       return MP_VAL;
    }
-   return mp_to_radix(a, str, (size_t)maxlen, radix);
+   return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
 #endif
 #ifdef BN_MP_TORADIX_C
 mp_err mp_toradix(const mp_int *a, char *str, int radix)
 {
-   return mp_to_radix(a, str, SIZE_MAX, radix);
+   return mp_to_radix(a, str, SIZE_MAX, NULL, radix);
 }
 #endif
 #endif

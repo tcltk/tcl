@@ -5,9 +5,10 @@
 
 /* stores a bignum as a ASCII string in a given radix (2..64)
  *
- * Stores upto maxlen-1 chars and always a NULL byte
+ * Stores upto "size - 1" chars and always a NULL byte, puts the number of characters
+ * written, including the '\0', in "written".
  */
-mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
+mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 {
    size_t  digs;
    mp_err  err;
@@ -15,7 +16,13 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
    mp_digit d;
    char   *_s = str;
 
-   /* check range of the maxlen, radix */
+
+   /* If we want to fill a bucket we need a bucket in the first place. */
+   if (str == NULL) {
+      return MP_VAL;
+   }
+
+   /* check range of radix and size*/
    if ((maxlen < 2u) || (radix < 2) || (radix > 64)) {
       return MP_VAL;
    }
@@ -24,6 +31,9 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
    if (MP_IS_ZERO(a)) {
       *str++ = '0';
       *str = '\0';
+      if (written != NULL) {
+         *written = 2u;
+      }
       return MP_OKAY;
    }
 
@@ -43,11 +53,12 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
       /* subtract a char */
       --maxlen;
    }
-
    digs = 0u;
    while (!MP_IS_ZERO(&t)) {
       if (--maxlen < 1u) {
          /* no more room */
+         /* TODO: It could mimic mp_to_radix_n if that is not an error
+                  or at least not this error (MP_ITER or a new one?). */
          err = MP_VAL;
          break;
       }
@@ -57,7 +68,6 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
       *str++ = mp_s_rmap[d];
       ++digs;
    }
-
    /* reverse the digits of the string.  In this case _s points
     * to the first digit [exluding the sign] of the number
     */
@@ -65,6 +75,10 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, int radix)
 
    /* append a NULL so the string is properly terminated */
    *str = '\0';
+   digs++;
+   if (written != NULL) {
+      *written = (a->sign == MP_NEG) ? digs + 1u: digs;
+   }
 
 LBL_ERR:
    mp_clear(&t);
