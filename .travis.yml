@@ -165,14 +165,13 @@ matrix:
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
+      addons:
         apt:
           packages:
             - gcc-mingw-w64-base
             - binutils-mingw-w64-x86-64
             - gcc-mingw-w64-x86-64
             - gcc-mingw-w64
-            - wine
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
@@ -181,49 +180,13 @@ matrix:
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
-    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
-      script: *crosstest
 # Test with mingw-w64 (32 bit) cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons: &mingw32
+      addons:
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -231,46 +194,9 @@ matrix:
             - gcc-mingw-w64-i686
             - gcc-mingw-w64
             - gcc-multilib
-            - wine
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
       script: *crosstest
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
