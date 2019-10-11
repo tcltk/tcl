@@ -47,6 +47,7 @@ unix/tclIndex
 unix/pkgs/*
 win/Debug*
 win/Release*
+win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj
