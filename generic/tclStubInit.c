@@ -550,6 +550,15 @@ TclIntStubs tclIntStubs = {
     NULL, /* 247 */
     NULL, /* 248 */
     TclDoubleDigits, /* 249 */
+    NULL, /* 250 */
+    NULL, /* 251 */
+    NULL, /* 252 */
+    NULL, /* 253 */
+    NULL, /* 254 */
+    NULL, /* 255 */
+    NULL, /* 256 */
+    NULL, /* 257 */
+    TclUnusedStubEntry, /* 258 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -1398,7 +1407,25 @@ TclStubs tclStubs = {
     NULL, /* 627 */
     NULL, /* 628 */
     NULL, /* 629 */
-    TclUnusedStubEntry, /* 630 */
+    NULL, /* 630 */
+    NULL, /* 631 */
+    NULL, /* 632 */
+    NULL, /* 633 */
+    NULL, /* 634 */
+    NULL, /* 635 */
+    NULL, /* 636 */
+    NULL, /* 637 */
+    NULL, /* 638 */
+    NULL, /* 639 */
+    NULL, /* 640 */
+    NULL, /* 641 */
+    NULL, /* 642 */
+    NULL, /* 643 */
+    NULL, /* 644 */
+    NULL, /* 645 */
+    NULL, /* 646 */
+    NULL, /* 647 */
+    TclUnusedStubEntry, /* 648 */
 };
 
 /* !END!: Do not edit above this line. */

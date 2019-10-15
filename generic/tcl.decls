@@ -2107,7 +2107,7 @@ declare 578 {
 declare 579 {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
-declare 630 {
+declare 648 {
     void TclUnusedStubEntry(void)
 }
 

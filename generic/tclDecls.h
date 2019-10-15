@@ -3462,9 +3462,27 @@ EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 /* Slot 627 is reserved */
 /* Slot 628 is reserved */
 /* Slot 629 is reserved */
+/* Slot 630 is reserved */
+/* Slot 631 is reserved */
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+/* Slot 634 is reserved */
+/* Slot 635 is reserved */
+/* Slot 636 is reserved */
+/* Slot 637 is reserved */
+/* Slot 638 is reserved */
+/* Slot 639 is reserved */
+/* Slot 640 is reserved */
+/* Slot 641 is reserved */
+/* Slot 642 is reserved */
+/* Slot 643 is reserved */
+/* Slot 644 is reserved */
+/* Slot 645 is reserved */
+/* Slot 646 is reserved */
+/* Slot 647 is reserved */
 #ifndef TclUnusedStubEntry_TCL_DECLARED
 #define TclUnusedStubEntry_TCL_DECLARED
-/* 630 */
+/* 648 */
 EXTERN void		TclUnusedStubEntry(void);
 #endif
 
@@ -4132,7 +4150,25 @@ typedef struct TclStubs {
     VOID *reserved627;
     VOID *reserved628;
     VOID *reserved629;
-    void (*tclUnusedStubEntry) (void); /* 630 */
+    VOID *reserved630;
+    VOID *reserved631;
+    VOID *reserved632;
+    VOID *reserved633;
+    VOID *reserved634;
+    VOID *reserved635;
+    VOID *reserved636;
+    VOID *reserved637;
+    VOID *reserved638;
+    VOID *reserved639;
+    VOID *reserved640;
+    VOID *reserved641;
+    VOID *reserved642;
+    VOID *reserved643;
+    VOID *reserved644;
+    VOID *reserved645;
+    VOID *reserved646;
+    VOID *reserved647;
+    void (*tclUnusedStubEntry) (void); /* 648 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -6535,9 +6571,27 @@ extern TclStubs *tclStubsPtr;
 /* Slot 627 is reserved */
 /* Slot 628 is reserved */
 /* Slot 629 is reserved */
+/* Slot 630 is reserved */
+/* Slot 631 is reserved */
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+/* Slot 634 is reserved */
+/* Slot 635 is reserved */
+/* Slot 636 is reserved */
+/* Slot 637 is reserved */
+/* Slot 638 is reserved */
+/* Slot 639 is reserved */
+/* Slot 640 is reserved */
+/* Slot 641 is reserved */
+/* Slot 642 is reserved */
+/* Slot 643 is reserved */
+/* Slot 644 is reserved */
+/* Slot 645 is reserved */
+/* Slot 646 is reserved */
+/* Slot 647 is reserved */
 #ifndef TclUnusedStubEntry
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 630 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 648 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

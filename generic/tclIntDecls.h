@@ -1056,6 +1056,19 @@ EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
 EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 				int *decpt, int *signum, char **endPtr);
 #endif
+/* Slot 250 is reserved */
+/* Slot 251 is reserved */
+/* Slot 252 is reserved */
+/* Slot 253 is reserved */
+/* Slot 254 is reserved */
+/* Slot 255 is reserved */
+/* Slot 256 is reserved */
+/* Slot 257 is reserved */
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 258 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1311,6 +1324,15 @@ typedef struct TclIntStubs {
     VOID *reserved247;
     VOID *reserved248;
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
+    VOID *reserved250;
+    VOID *reserved251;
+    VOID *reserved252;
+    VOID *reserved253;
+    VOID *reserved254;
+    VOID *reserved255;
+    VOID *reserved256;
+    VOID *reserved257;
+    void (*tclUnusedStubEntry) (void); /* 258 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -2039,6 +2061,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclDoubleDigits
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
+#endif
+/* Slot 250 is reserved */
+/* Slot 251 is reserved */
+/* Slot 252 is reserved */
+/* Slot 253 is reserved */
+/* Slot 254 is reserved */
+/* Slot 255 is reserved */
+/* Slot 256 is reserved */
+/* Slot 257 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 258 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
