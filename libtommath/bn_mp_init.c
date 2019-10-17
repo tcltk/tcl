@@ -7,8 +7,7 @@
 mp_err mp_init(mp_int *a)
 {
    /* allocate memory required and clear it */
-   a->dp = (mp_digit *) MP_MALLOC((size_t)MP_PREC * sizeof(mp_digit));
-   MP_ZERO_DIGITS(a->dp, MP_PREC);
+   a->dp = (mp_digit *) MP_CALLOC((size_t)MP_PREC, sizeof(mp_digit));
    if (a->dp == NULL) {
       return MP_MEM;
    }
