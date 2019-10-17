@@ -558,9 +558,7 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
  *
  * returns error if a < 0 and b is even
  */
-#ifndef MP_NO_STDINT
-mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
-#endif
+mp_err mp_root_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_root_u32) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
@@ -723,12 +721,10 @@ MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int siz
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 
 /* Integer logarithm to integer base */
-#ifndef MP_NO_STDINT
-mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c) MP_WUR;
+mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c) MP_WUR;
 
 /* c = a**b */
-mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
-#endif
+mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
 MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 

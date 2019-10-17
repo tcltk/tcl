@@ -219,7 +219,7 @@ mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
    if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (uint32_t)b, c);
+   return mp_root_u32(a, (unsigned int)b, c);
 }
 #endif
 #ifdef BN_MP_N_ROOT_C
@@ -228,7 +228,7 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (uint32_t)b, c);
+   return mp_root_u32(a, (unsigned int)b, c);
 }
 #endif
 #ifdef BN_MP_UNSIGNED_BIN_SIZE_C
