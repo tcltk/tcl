@@ -3,11 +3,11 @@
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
-/* returns size of ASCII reprensentation */
+/* returns size of ASCII representation */
 mp_err mp_radix_size(const mp_int *a, int radix, int *size)
 {
    mp_err  err;
-   int     digs;
+   int digs;
    mp_int   t;
    mp_digit d;
 
@@ -25,7 +25,7 @@ mp_err mp_radix_size(const mp_int *a, int radix, int *size)
 
    /* special case for binary */
    if (radix == 2) {
-      *size = mp_count_bits(a) + ((a->sign == MP_NEG) ? 1 : 0) + 1;
+      *size = (mp_count_bits(a) + ((a->sign == MP_NEG) ? 1 : 0) + 1);
       return MP_OKAY;
    }
 
@@ -48,16 +48,18 @@ mp_err mp_radix_size(const mp_int *a, int radix, int *size)
    /* fetch out all of the digits */
    while (!MP_IS_ZERO(&t)) {
       if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
-         mp_clear(&t);
-         return err;
+         goto LBL_ERR;
       }
       ++digs;
    }
-   mp_clear(&t);
 
    /* return digs + 1, the 1 is for the NULL byte that would be required. */
    *size = digs + 1;
-   return MP_OKAY;
+   err = MP_OKAY;
+
+LBL_ERR:
+   mp_clear(&t);
+   return err;
 }
 
 #endif

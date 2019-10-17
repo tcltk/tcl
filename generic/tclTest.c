@@ -220,6 +220,9 @@ static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestbumpinterpepochObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestpurebytesobjObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -584,6 +587,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 	    TestGetIndexFromObjStructObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testbumpinterpepoch",
+	    TestbumpinterpepochObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
@@ -1021,6 +1026,22 @@ AsyncThreadProc(
     TCL_THREAD_CREATE_RETURN;
 }
 #endif
+
+static int
+TestbumpinterpepochObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Interp *iPtr = (Interp *)interp;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    iPtr->compileEpoch++;
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2384,11 +2405,11 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "odd %d\n", PTR2INT(clientData));
+    sprintf(buf, "odd %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
@@ -2398,11 +2419,11 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    size_t len;
+    int len;
 
-    sprintf(buf, "even %d\n", PTR2INT(clientData));
+    sprintf(buf, "even %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (size_t) write(1, buf, len)) {
+    if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }

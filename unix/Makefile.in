@@ -28,6 +28,7 @@ bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
 datarootdir		= @datarootdir@
+runstatedir		= @runstatedir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
@@ -275,7 +276,7 @@ STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
 ${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
-CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS}
+CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
 
 APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
@@ -333,9 +334,9 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
-	bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
-	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_toradix_n.o \
-	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
+	bn_mp_to_ubin.o \
+	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_to_radix.o \
+	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o \
@@ -528,12 +529,11 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
 	$(TOMMATH_DIR)/bn_mp_signed_rsh.c \
-	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c \
-	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c \
+	$(TOMMATH_DIR)/bn_mp_to_ubin.c \
 	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
 	$(TOMMATH_DIR)/bn_mp_toom_sqr.c \
-	$(TOMMATH_DIR)/bn_mp_toradix_n.c \
-	$(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c \
+	$(TOMMATH_DIR)/bn_mp_to_radix.c \
+	$(TOMMATH_DIR)/bn_mp_ubin_size.c \
 	$(TOMMATH_DIR)/bn_mp_xor.c \
 	$(TOMMATH_DIR)/bn_mp_zero.c \
 	$(TOMMATH_DIR)/bn_s_mp_reverse.c \
@@ -851,8 +851,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.5.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.5.0.tm;
+	@echo "Installing package tcltest 2.5.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.5.1.tm;
 
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
@@ -1509,11 +1509,8 @@ bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c $(MATHHDRS)
 bn_mp_signed_rsh.o: $(TOMMATH_DIR)/bn_mp_signed_rsh.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_signed_rsh.c
 
-bn_mp_to_unsigned_bin.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c
-
-bn_mp_to_unsigned_bin_n.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c
+bn_mp_to_ubin.o: $(TOMMATH_DIR)/bn_mp_to_ubin.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_ubin.c
 
 bn_s_mp_toom_mul.o: $(TOMMATH_DIR)/bn_s_mp_toom_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_toom_mul.c
@@ -1521,11 +1518,11 @@ bn_s_mp_toom_mul.o: $(TOMMATH_DIR)/bn_s_mp_toom_mul.c $(MATHHDRS)
 bn_s_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_s_mp_toom_sqr.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_toom_sqr.c
 
-bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
+bn_mp_to_radix.o: $(TOMMATH_DIR)/bn_mp_to_radix.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_radix.c
 
-bn_mp_unsigned_bin_size.o: $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c
+bn_mp_ubin_size.o: $(TOMMATH_DIR)/bn_mp_ubin_size.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_ubin_size.c
 
 bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c

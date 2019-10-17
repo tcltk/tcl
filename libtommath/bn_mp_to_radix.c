@@ -1,22 +1,26 @@
 #include "tommath_private.h"
-#ifdef BN_MP_TORADIX_N_C
+#ifdef BN_MP_TO_RADIX_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
 /* stores a bignum as a ASCII string in a given radix (2..64)
  *
- * Stores upto maxlen-1 chars and always a NULL byte
+ * Stores upto "size - 1" chars and always a NULL byte, puts the number of characters
+ * written, including the '\0', in "written".
  */
-mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 {
-   int     digs;
+   size_t  digs;
    mp_err  err;
    mp_int  t;
    mp_digit d;
    char   *_s = str;
 
-   /* check range of the maxlen, radix */
-   if ((maxlen < 2) || (radix < 2) || (radix > 64)) {
+   /* check range of radix and size*/
+   if (maxlen < 2u) {
+      return MP_BUF;
+   }
+   if ((radix < 2) || (radix > 64)) {
       return MP_VAL;
    }
 
@@ -24,6 +28,9 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    if (MP_IS_ZERO(a)) {
       *str++ = '0';
       *str = '\0';
+      if (written != NULL) {
+         *written = 2u;
+      }
       return MP_OKAY;
    }
 
@@ -43,21 +50,19 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
       /* subtract a char */
       --maxlen;
    }
-
-   digs = 0;
+   digs = 0u;
    while (!MP_IS_ZERO(&t)) {
-      if (--maxlen < 1) {
+      if (--maxlen < 1u) {
          /* no more room */
-         break;
+         err = MP_BUF;
+         goto LBL_ERR;
       }
       if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
-         mp_clear(&t);
-         return err;
+         goto LBL_ERR;
       }
       *str++ = mp_s_rmap[d];
       ++digs;
    }
-
    /* reverse the digits of the string.  In this case _s points
     * to the first digit [exluding the sign] of the number
     */
@@ -65,9 +70,15 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 
    /* append a NULL so the string is properly terminated */
    *str = '\0';
+   digs++;
 
+   if (written != NULL) {
+      *written = (a->sign == MP_NEG) ? (digs + 1u): digs;
+   }
+
+LBL_ERR:
    mp_clear(&t);
-   return MP_OKAY;
+   return err;
 }
 
 #endif

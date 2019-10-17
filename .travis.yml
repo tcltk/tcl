@@ -15,18 +15,15 @@ matrix:
       dist: xenial
       compiler: gcc
       env:
-        - CFGOPT=--disable-shared
+        - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
-# Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/GCC/Debug/no test"
+    - name: "Linux/GCC/Debug"
       os: linux
       dist: xenial
       compiler: gcc
       env:
         - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
+        - CFGOPT="--enable-symbols"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -88,18 +85,15 @@ matrix:
       dist: xenial
       compiler: clang
       env:
-        - CFGOPT=--disable-shared
+        - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
-# Debug build. Running test-cases disabled, because it is currently failing.
-    - name: "Linux/Clang/Debug/no test"
+    - name: "Linux/Clang/Debug"
       os: linux
       dist: xenial
       compiler: clang
       env:
         - BUILD_DIR=unix
-        - CFGOPT=--enable-symbols=all
-      script:
-        - make all tcltest
+        - CFGOPT="--enable-symbols"
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11/Shared/Unix-like"
       os: osx
@@ -118,7 +112,7 @@ matrix:
         - make test styles=develop
     - name: "macOS/Xcode 10/Shared"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
@@ -137,13 +131,34 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
+# Test with mingw-w64 cross-compile
+# Doesn't run tests because wine is only an imperfect Windows emulation
+    - name: "Linux-cross-Windows/GCC/Shared/no test"
+      os: linux
+      dist: xenial
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-mingw-w64-base
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - gcc-mingw-w64
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
+      script: &crosstest
+        - make all tcltest
+        # Include a high visibility marker that tests are skipped outright
+        - >
+          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
 # Test with mingw-w64 (32 bit) cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons: &mingw32
+      addons:
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -151,72 +166,12 @@ matrix:
             - gcc-mingw-w64-i686
             - gcc-mingw-w64
             - gcc-multilib
-            - wine
       env:
         - BUILD_DIR=win
-        - CFGOPT=--host=i686-w64-mingw32
-      script: &crosstest
-        - make all tcltest
-        # Include a high visibility marker that tests are skipped outright
-        - >
-          echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
-    - name: "Linux-cross-Windows-32/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
-      script: *crosstest
-# Test with mingw-w64 (64 bit)
-# Doesn't run tests because wine is only an imperfect Windows emulation
-    - name: "Linux-cross-Windows-64/GCC/Shared/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
-            - wine
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-64/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
+        - CFGOPT="--host=i686-w64-mingw32"
       script: *crosstest
 # Test on Windows with MSVC native
-# Doesn't run tests because not all tests work in this environment. TODO: either fix or disable those test-cases!
-    - name: "Windows/MSVC/Shared/no test"
+    - name: "Windows/MSVC/Shared"
       os: windows
       compiler: cl
       env: &vcenv
@@ -227,27 +182,103 @@ matrix:
         - cd ${BUILD_DIR}
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
-    - name: "Windows/MSVC/Static/no test"
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc test'
+    - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
       env: *vcenv
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static -f makefile.vc all tcltest'
-    - name: "Windows/MSVC/Debug/no test"
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+    - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
       env: *vcenv
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+# Test on Windows with MSVC native (32-bit)
+    - name: "Windows/MSVC-x86/Shared"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Static"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+# Test on Windows with GCC native
+    - name: "Windows/GCC/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit"
+      before_install: &makepreinst
+        - choco install make
+        - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Static"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --disable-shared"
+      before_install: *makepreinst
+    - name: "Windows/GCC/Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-symbols"
+      before_install: *makepreinst
+# Test on Windows with GCC native (32-bit)
+    - name: "Windows/GCC-x86/Shared"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Static"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--disable-shared"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-symbols"
+      before_install: *makepreinst
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME
+  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:

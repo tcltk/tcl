@@ -10,7 +10,7 @@
  */
 mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 {
-   int      x, y;
+   int      x, y, cmp;
    mp_err  err;
    mp_bool res = MP_NO;
    mp_digit res_tab[PRIVATE_MP_PRIME_TAB_SIZE], step, kstep;
@@ -21,35 +21,21 @@ mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
    /* simple algo if a is less than the largest prime in the table */
    if (mp_cmp_d(a, s_mp_prime_tab[PRIVATE_MP_PRIME_TAB_SIZE-1]) == MP_LT) {
-      /* find which prime it is bigger than */
-      for (x = PRIVATE_MP_PRIME_TAB_SIZE - 2; x >= 0; x--) {
-         if (mp_cmp_d(a, s_mp_prime_tab[x]) != MP_LT) {
-            if (bbs_style == 1) {
-               /* ok we found a prime smaller or
-                * equal [so the next is larger]
-                *
-                * however, the prime must be
-                * congruent to 3 mod 4
-                */
-               if ((s_mp_prime_tab[x + 1] & 3u) != 3u) {
-                  /* scan upwards for a prime congruent to 3 mod 4 */
-                  for (y = x + 1; y < PRIVATE_MP_PRIME_TAB_SIZE; y++) {
-                     if ((s_mp_prime_tab[y] & 3u) == 3u) {
-                        mp_set(a, s_mp_prime_tab[y]);
-                        return MP_OKAY;
-                     }
-                  }
-               }
+      /* find which prime it is bigger than "a" */
+      for (x = 0; x < PRIVATE_MP_PRIME_TAB_SIZE; x++) {
+         cmp = mp_cmp_d(a, s_mp_prime_tab[x]);
+         if (cmp == MP_EQ) {
+            continue;
+         }
+         if (cmp != MP_GT) {
+            if ((bbs_style == 1) && ((s_mp_prime_tab[x] & 3u) != 3u)) {
+               /* try again until we get a prime congruent to 3 mod 4 */
+               continue;
             } else {
-               mp_set(a, s_mp_prime_tab[x + 1]);
+               mp_set(a, s_mp_prime_tab[x]);
                return MP_OKAY;
             }
          }
-      }
-      /* at this point a maybe 1 */
-      if (mp_cmp_d(a, 1uL) == MP_EQ) {
-         mp_set(a, 2uL);
-         return MP_OKAY;
       }
       /* fall through to the sieve */
    }

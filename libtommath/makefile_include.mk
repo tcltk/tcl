@@ -3,9 +3,9 @@
 #
 
 #version of library
-VERSION=1.1.0-develop
-VERSION_PC=1.1.0
-VERSION_SO=2:0:1
+VERSION=1.2.0-rc1
+VERSION_PC=1.2.0
+VERSION_SO=3:0:1
 
 PLATFORM := $(shell uname | sed -e 's/_.*//')
 
@@ -47,59 +47,66 @@ else
 endif
 endif
 
-CFLAGS += -I./ -Wall -Wsign-compare -Wextra -Wshadow
+LTM_CFLAGS += -I./ -Wall -Wsign-compare -Wextra -Wshadow
 
 ifdef SANITIZER
-CFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fno-sanitize=float-divide-by-zero
+LTM_CFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fno-sanitize=float-divide-by-zero
 endif
 
 ifndef NO_ADDTL_WARNINGS
 # additional warnings
-CFLAGS += -Wdeclaration-after-statement -Wbad-function-cast -Wcast-align
-CFLAGS += -Wstrict-prototypes -Wpointer-arith
+LTM_CFLAGS += -Wdeclaration-after-statement -Wbad-function-cast -Wcast-align
+LTM_CFLAGS += -Wstrict-prototypes -Wpointer-arith
 endif
 
 ifdef CONV_WARNINGS
-CFLAGS += -std=c89 -Wconversion -Wsign-conversion
+LTM_CFLAGS += -std=c89 -Wconversion -Wsign-conversion
 ifeq ($(CONV_WARNINGS), strict)
-CFLAGS += -DMP_USE_ENUMS -Wc++-compat
+LTM_CFLAGS += -DMP_USE_ENUMS -Wc++-compat
 endif
 else
-CFLAGS += -Wsystem-headers
+LTM_CFLAGS += -Wsystem-headers
 endif
 
 ifdef COMPILE_DEBUG
 #debug
-CFLAGS += -g3
+LTM_CFLAGS += -g3
 endif
 
 ifdef COMPILE_SIZE
 #for size
-CFLAGS += -Os
+LTM_CFLAGS += -Os
 else
 
 ifndef IGNORE_SPEED
 #for speed
-CFLAGS += -O3 -funroll-loops
+LTM_CFLAGS += -O3 -funroll-loops
 
 #x86 optimizations [should be valid for any GCC install though]
-CFLAGS  += -fomit-frame-pointer
+LTM_CFLAGS  += -fomit-frame-pointer
 endif
 
 endif # COMPILE_SIZE
 
 ifneq ($(findstring clang,$(CC)),)
-CFLAGS += -Wno-typedef-redefinition -Wno-tautological-compare -Wno-builtin-requires-header
+LTM_CFLAGS += -Wno-typedef-redefinition -Wno-tautological-compare -Wno-builtin-requires-header
 endif
 ifneq ($(findstring mingw,$(CC)),)
-CFLAGS += -Wno-shadow
+LTM_CFLAGS += -Wno-shadow
 endif
 ifeq ($(PLATFORM), Darwin)
-CFLAGS += -Wno-nullability-completeness
+LTM_CFLAGS += -Wno-nullability-completeness
 endif
 ifeq ($(PLATFORM), CYGWIN)
 LIBTOOLFLAGS += -no-undefined
 endif
+
+# add in the standard FLAGS
+LTM_CFLAGS += $(CFLAGS)
+LTM_LFLAGS += $(LFLAGS)
+LTM_LDFLAGS += $(LDFLAGS)
+LTM_LIBTOOLFLAGS += $(LIBTOOLFLAGS)
+
 
 ifeq ($(PLATFORM),FreeBSD)
   _ARCH := $(shell sysctl -b hw.machine_arch)
@@ -117,9 +124,7 @@ else
 endif
 
 HEADERS_PUB=tommath.h
-HEADERS=tommath_private.h tommath_class.h tommath_superclass.h $(HEADERS_PUB)
-
-test_standalone: CFLAGS+=-DLTM_DEMO_TEST_VS_MTEST=0
+HEADERS=tommath_private.h tommath_class.h tommath_superclass.h tommath_cutoffs.h $(HEADERS_PUB)
 
 #LIBPATH  The directory for libtommath to be installed to.
 #INCPATH  The directory to install the header files for libtommath.
@@ -132,9 +137,9 @@ DATAPATH ?= $(PREFIX)/share/doc/libtommath/pdf
 
 #make the code coverage of the library
 #
-coverage: CFLAGS += -fprofile-arcs -ftest-coverage -DTIMING_NO_LOGS
-coverage: LFLAGS += -lgcov
-coverage: LDFLAGS += -lgcov
+coverage: LTM_CFLAGS += -fprofile-arcs -ftest-coverage -DTIMING_NO_LOGS
+coverage: LTM_LFLAGS += -lgcov
+coverage: LTM_LDFLAGS += -lgcov
 
 coverage: $(COVERAGE)
 	$(COVERAGE_APP)
@@ -153,8 +158,9 @@ cleancov-clean:
 cleancov: cleancov-clean clean
 
 clean:
-	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/test.o demo/main.o demo/opponent.o test timing mpitest mtest/mtest mtest/mtest.exe tuning_list\
-        *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
-	rm -rf .libs/
+	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o \
+				demo/*.o test timing mtest_opponent mtest/mtest mtest/mtest.exe tuning_list \
+				*.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
+	rm -rf .libs/ demo/.libs
 	${MAKE} -C etc/ clean MAKE=${MAKE}
 	${MAKE} -C doc/ clean MAKE=${MAKE}

@@ -2806,11 +2806,12 @@ Tcl_GetLongFromObj(
 	    UNPACK_BIGNUM(objPtr, big);
 	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1)
 		    / MP_DIGIT_BIT) {
-		unsigned long value = 0, numBytes = sizeof(long);
+		unsigned long value = 0;
+		size_t numBytes;
 		long scratch;
 		unsigned char *bytes = (unsigned char *) &scratch;
 
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		if (mp_to_ubin(&big, bytes, sizeof(long), &numBytes) == MP_OKAY) {
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
@@ -3106,11 +3107,11 @@ Tcl_GetWideIntFromObj(
 	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
 		     + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
-		unsigned long numBytes = sizeof(Tcl_WideInt);
+		size_t numBytes;
 		Tcl_WideInt scratch;
 		unsigned char *bytes = (unsigned char *) &scratch;
 
-		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		if (mp_to_ubin(&big, bytes, sizeof(Tcl_WideInt), &numBytes) == MP_OKAY) {
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
@@ -3269,7 +3270,7 @@ UpdateStringOfBignum(
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
     stringVal = ckalloc(size);
-    status = mp_toradix_n(&bignumVal, stringVal, 10, size);
+    status = mp_to_radix(&bignumVal, stringVal, size, NULL, 10);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
@@ -3524,11 +3525,12 @@ Tcl_SetBignumObj(
     }
     if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(long) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
-	unsigned long value = 0, numBytes = sizeof(long);
+	unsigned long value = 0;
+	size_t numBytes;
 	long scratch;
 	unsigned char *bytes = (unsigned char *) &scratch;
 
-	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	if (mp_to_ubin(bignumValue, bytes, sizeof(long), &numBytes) != MP_OKAY) {
 	    goto tooLargeForLong;
 	}
 	while (numBytes-- > 0) {
@@ -3550,11 +3552,11 @@ Tcl_SetBignumObj(
     if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + MP_DIGIT_BIT - 1) / MP_DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
-	unsigned long numBytes = sizeof(Tcl_WideInt);
+	size_t numBytes;
 	Tcl_WideInt scratch;
 	unsigned char *bytes = (unsigned char *)&scratch;
 
-	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	if (mp_to_ubin(bignumValue, bytes, sizeof(Tcl_WideInt), &numBytes) != MP_OKAY) {
 	    goto tooLargeForWide;
 	}
 	while (numBytes-- > 0) {

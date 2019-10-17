@@ -44,7 +44,7 @@ const mp_digit ltm_prime_tab[] = {
 #endif
 };
 
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
+#if defined(__GNUC__) && __GNUC__ >= 4
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 const mp_digit *s_mp_prime_tab = ltm_prime_tab;

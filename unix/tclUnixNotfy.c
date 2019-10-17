@@ -231,7 +231,7 @@ typedef struct {
     void *hbrBackground;
     void *lpszMenuName;
     const void *lpszClassName;
-} WNDCLASS;
+} WNDCLASSW;
 
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
@@ -248,7 +248,7 @@ extern unsigned char __stdcall	PeekMessageW(MSG *, void *, int, int, int);
 extern unsigned char __stdcall	PostMessageW(void *, unsigned int, void *,
 				    void *);
 extern void __stdcall	PostQuitMessage(int);
-extern void *__stdcall	RegisterClassW(const WNDCLASS *);
+extern void *__stdcall	RegisterClassW(const WNDCLASSW *);
 extern unsigned char __stdcall	ResetEvent(void *);
 extern unsigned char __stdcall	TranslateMessage(const MSG *);
 
@@ -337,7 +337,7 @@ Tcl_InitNotifier(void)
 	 */
 	if (tsdPtr->waitCVinitialized == 0) {
 #ifdef __CYGWIN__
-	    WNDCLASS class;
+	    WNDCLASSW class;
 
 	    class.style = 0;
 	    class.cbClsExtra = 0;

@@ -14,8 +14,7 @@ mp_err mp_mod(const mp_int *a, const mp_int *b, mp_int *c)
    }
 
    if ((err = mp_div(a, b, NULL, &t)) != MP_OKAY) {
-      mp_clear(&t);
-      return err;
+      goto LBL_ERR;
    }
 
    if (MP_IS_ZERO(&t) || (t.sign == b->sign)) {
@@ -25,6 +24,7 @@ mp_err mp_mod(const mp_int *a, const mp_int *b, mp_int *c)
       err = mp_add(b, &t, c);
    }
 
+LBL_ERR:
    mp_clear(&t);
    return err;
 }

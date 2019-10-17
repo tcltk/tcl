@@ -2720,7 +2720,7 @@ TclStringCmp(
     int reqlength)		/* requested length; -1 to compare whole
 				 * strings */
 {
-    char *s1, *s2;
+    const char *s1, *s2;
     int empty, length, match, s1len, s2len;
     memCmpFn_t memCmpFn;
 
@@ -4578,6 +4578,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
+		    /* FALLTHRU */
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;

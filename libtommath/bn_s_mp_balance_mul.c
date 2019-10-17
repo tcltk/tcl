@@ -40,6 +40,7 @@ mp_err s_mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c)
          a0.dp[count] = A.dp[ j++ ];
          a0.used++;
       }
+      mp_clamp(&a0);
       /* Multiply with b */
       if ((err = mp_mul(&a0, &B, &tmp)) != MP_OKAY) {
          goto LBL_ERR;
@@ -60,6 +61,7 @@ mp_err s_mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c)
          a0.dp[count] = A.dp[ j++ ];
          a0.used++;
       }
+      mp_clamp(&a0);
       if ((err = mp_mul(&a0, &B, &tmp)) != MP_OKAY) {
          goto LBL_ERR;
       }

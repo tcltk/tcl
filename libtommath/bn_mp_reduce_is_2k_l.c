@@ -15,7 +15,7 @@ mp_bool mp_reduce_is_2k_l(const mp_int *a)
    } else if (a->used > 1) {
       /* if more than half of the digits are -1 we're sold */
       for (iy = ix = 0; ix < a->used; ix++) {
-         if (a->dp[ix] == MP_MASK) {
+         if (a->dp[ix] == MP_DIGIT_MAX) {
             ++iy;
          }
       }

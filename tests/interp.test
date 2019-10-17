@@ -1836,7 +1836,7 @@ test interp-23.1 {testing hiding vs aliases: unsafe interp} -setup {
 test interp-23.2 {testing hiding vs aliases: safe interp} -setup {
     catch {interp delete a}
     set l ""
-} -constraints {unixOrPc} -body {
+} -constraints {unixOrWin} -body {
     interp create a -safe
     lappend l [lsort [interp hidden a]]
     a alias bar bar

@@ -17,7 +17,7 @@
  *
  * On Win32 a .def file must be used to specify the exported symbols.
  */
-#if defined (MP_PRIVATE_SYMBOLS) && __GNUC__ >= 4
+#if defined (MP_PRIVATE_SYMBOLS) && defined(__GNUC__) && __GNUC__ >= 4
 #   define MP_PRIVATE __attribute__ ((visibility ("hidden")))
 #else
 #   define MP_PRIVATE
@@ -130,13 +130,20 @@ do {                                                    \
 #   include <stdlib.h>
 #   define MP_MALLOC(size)                   malloc(size)
 #   define MP_REALLOC(mem, oldsize, newsize) realloc((mem), (newsize))
+#   define MP_CALLOC(nmemb, size)            calloc((nmemb), (size))
 #   define MP_FREE(mem, size)                free(mem)
 #elif 0
 /* prototypes for our heap functions */
 extern void *MP_MALLOC(size_t size);
 extern void *MP_REALLOC(void *mem, size_t oldsize, size_t newsize);
+extern void *MP_CALLOC(size_t nmemb, size_t size);
 extern void MP_FREE(void *mem, size_t size);
 #endif
+
+/* feature detection macro */
+#define MP_STRINGIZE(x)  MP__STRINGIZE(x)
+#define MP__STRINGIZE(x) ""#x""
+#define MP_HAS(x)        (sizeof(MP_STRINGIZE(BN_##x##_C)) == 1u)
 
 /* TODO: Remove private_mp_word as soon as deprecated mp_word is removed from tommath. */
 #undef mp_word
@@ -147,15 +154,6 @@ typedef private_mp_word mp_word;
 
 /* Static assertion */
 #define MP_STATIC_ASSERT(msg, cond) typedef char mp_static_assert_##msg[(cond) ? 1 : -1];
-
-/* you'll have to tune these... */
-#define KARATSUBA_MUL_CUTOFF 80      /* Min. number of digits before Karatsuba multiplication is used. */
-#define KARATSUBA_SQR_CUTOFF 120     /* Min. number of digits before Karatsuba squaring is used. */
-#define TOOM_MUL_CUTOFF      350     /* no optimal values of these are known yet so set em high */
-#define TOOM_SQR_CUTOFF      400
-
-/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* ---> Basic Manipulations <--- */
 #define MP_IS_ZERO(a) ((a)->used == 0)
@@ -205,12 +203,14 @@ MP_PRIVATE mp_err s_mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_i
 MP_PRIVATE mp_err s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode) MP_WUR;
 MP_PRIVATE mp_err s_mp_rand_platform(void *p, size_t n) MP_WUR;
 MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_prime_callback cb, void *dat);
-MP_PRIVATE void s_mp_reverse(unsigned char *s, int len);
+MP_PRIVATE void s_mp_reverse(unsigned char *s, size_t len);
 MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
-MP_PRIVATE void s_mp_rand_jenkins_init(Tcl_WideUInt seed);
+#ifndef MP_NO_STDINT
+MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
+#endif
 
 extern MP_PRIVATE const char *const mp_s_rmap;
 extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
@@ -239,6 +239,13 @@ MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 #endif
+
+#define MP_GET_ENDIANNESS(x) \
+   do{\
+      int16_t n = 0x1;                                          \
+      char *p = (char *)&n;                                     \
+      x = (p[0] == '\x01') ? MP_LITTLE_ENDIAN : MP_BIG_ENDIAN;  \
+   } while (0)
 
 /* code-generating macros */
 #define MP_SET_UNSIGNED(name, type)                                                    \

@@ -21,16 +21,14 @@ mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
       /* if the bit is set multiply */
       if ((b & 1u) != 0u) {
          if ((err = mp_mul(c, &g, c)) != MP_OKAY) {
-            mp_clear(&g);
-            return err;
+            goto LBL_ERR;
          }
       }
 
       /* square */
       if (b > 1u) {
          if ((err = mp_sqr(&g, &g)) != MP_OKAY) {
-            mp_clear(&g);
-            return err;
+            goto LBL_ERR;
          }
       }
 
@@ -38,8 +36,11 @@ mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
       b >>= 1;
    }
 
+   err = MP_OKAY;
+
+LBL_ERR:
    mp_clear(&g);
-   return MP_OKAY;
+   return err;
 }
 
 #endif

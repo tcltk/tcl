@@ -381,7 +381,7 @@ EOS
         # scan for mp_* and make classes
         my @deps = ();
         foreach my $line (split /\n/, $content) {
-            while ($line =~ /(fast_)?(s_)?mp\_[a-z_0-9]*(?=\()|(?<=\()mp\_[a-z_0-9]*(?=,)/g) {
+            while ($line =~ /(fast_)?(s_)?mp\_[a-z_0-9]*((?=\;)|(?=\())|(?<=\()mp\_[a-z_0-9]*(?=\()/g) {
                 my $a = $&;
                 next if $a eq "mp_err";
                 $a =~ tr/[a-z]/[A-Z]/;
