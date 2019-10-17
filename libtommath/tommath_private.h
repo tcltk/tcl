@@ -236,6 +236,13 @@ MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 
+#define MP_GET_ENDIANNESS(x) \
+   do{\
+      int16_t n = 0x1;                                          \
+      char *p = (char *)&n;                                     \
+      x = (p[0] == '\x01') ? MP_LITTLE_ENDIAN : MP_BIG_ENDIAN;  \
+   } while (0)
+
 /* code-generating macros */
 #define MP_SET_UNSIGNED(name, type)                                                    \
     void name(mp_int * a, type b)                                                      \

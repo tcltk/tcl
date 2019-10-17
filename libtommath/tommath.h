@@ -117,25 +117,35 @@ typedef uint64_t             private_mp_word;
 
 #ifdef MP_USE_ENUMS
 typedef enum {
-   MP_ZPOS = 0,
-   MP_NEG = 1
+   MP_ZPOS = 0,   /* positive */
+   MP_NEG = 1     /* negative */
 } mp_sign;
 typedef enum {
-   MP_LT = -1,
-   MP_EQ = 0,
-   MP_GT = 1
+   MP_LT = -1,    /* less than */
+   MP_EQ = 0,     /* equal */
+   MP_GT = 1      /* greater than */
 } mp_ord;
 typedef enum {
    MP_NO = 0,
    MP_YES = 1
 } mp_bool;
 typedef enum {
-   MP_OKAY  = 0,
-   MP_ERR   = -1,
-   MP_MEM   = -2,
-   MP_VAL   = -3,
-   MP_ITER  = -4
+   MP_OKAY  = 0,   /* no error */
+   MP_ERR   = -1,  /* unknown error */
+   MP_MEM   = -2,  /* out of mem */
+   MP_VAL   = -3,  /* invalid input */
+   MP_ITER  = -4,  /* maximum iterations reached */
+   MP_BUF   = -5,  /* buffer overflow, supplied buffer too small */
 } mp_err;
+typedef enum {
+   MP_LSB_FIRST = -1,
+   MP_MSB_FIRST =  1
+} mp_order;
+typedef enum {
+   MP_LITTLE_ENDIAN  = -1,
+   MP_NATIVE_ENDIAN  =  0,
+   MP_BIG_ENDIAN     =  1
+} mp_endian;
 #else
 typedef int mp_sign;
 #define MP_ZPOS       0   /* positive integer */
@@ -145,15 +155,23 @@ typedef int mp_ord;
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
 typedef int mp_bool;
-#define MP_YES        1   /* yes response */
-#define MP_NO         0   /* no response */
+#define MP_YES        1
+#define MP_NO         0
 typedef int mp_err;
-#define MP_OKAY       0   /* ok result */
+#define MP_OKAY       0   /* no error */
 #define MP_ERR        -1  /* unknown error */
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      (MP_DEPRECATED_PRAGMA("MP_RANGE has been deprecated in favor of MP_VAL") MP_VAL)
-#define MP_ITER       -4  /* Max. iterations reached */
+#define MP_ITER       -4  /* maximum iterations reached */
+#define MP_BUF        -5  /* buffer overflow, supplied buffer too small */
+typedef int mp_order;
+#define MP_LSB_FIRST -1
+#define MP_MSB_FIRST  1
+typedef int mp_endian;
+#define MP_LITTLE_ENDIAN  -1
+#define MP_NATIVE_ENDIAN  0
+#define MP_BIG_ENDIAN     1
 #endif
 
 /* tunable cutoffs */
@@ -351,11 +369,24 @@ mp_err mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 /* trim unused digits */
 void mp_clamp(mp_int *a);
 
-/* import binary data */
-mp_err mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, size_t nails, const void *op) MP_WUR;
 
 /* export binary data */
-mp_err mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mp_int *op) MP_WUR;
+MP_DEPRECATED(mp_pack) mp_err mp_export(void *rop, size_t *countp, int order, size_t size,
+                                        int endian, size_t nails, const mp_int *op) MP_WUR;
+
+/* import binary data */
+MP_DEPRECATED(mp_unpack) mp_err mp_import(mp_int *rop, size_t count, int order,
+      size_t size, int endian, size_t nails,
+      const void *op) MP_WUR;
+
+/* unpack binary data */
+mp_err mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size, mp_endian endian,
+                 size_t nails, const void *op) MP_WUR;
+
+/* pack binary data */
+size_t mp_pack_count(const mp_int *a, size_t nails, size_t size) MP_WUR;
+mp_err mp_pack(void *rop, size_t maxcount, size_t *written, mp_order order, size_t size,
+               mp_endian endian, size_t nails, const mp_int *op) MP_WUR;
 
 /* ---> digit manipulation <--- */
 
@@ -686,7 +717,7 @@ MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int siz
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 
 /* Integer logarithm to integer base */
-mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c) MP_WUR;
+mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c) MP_WUR;
 
 /* c = a**b */
 mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;

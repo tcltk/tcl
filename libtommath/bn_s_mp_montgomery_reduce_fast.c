@@ -119,7 +119,7 @@ mp_err s_mp_montgomery_reduce_fast(mp_int *x, const mp_int *n, mp_digit rho)
       /* alias for next word, where the carry goes */
       _W = W + ++ix;
 
-      for (; ix <= ((n->used * 2) + 1); ix++) {
+      for (; ix < ((n->used * 2) + 1); ix++) {
          *_W++ += *_W1++ >> (mp_word)MP_DIGIT_BIT;
       }
 

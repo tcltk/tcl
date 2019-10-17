@@ -429,10 +429,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_export.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_expt_u32.c"
 			>
 		</File>
@@ -502,14 +498,6 @@
 		</File>
 		<File
 			RelativePath="bn_mp_grow.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_ilogb.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_import.c"
 			>
 		</File>
 		<File
@@ -593,6 +581,10 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_log_u32.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_lshd.c"
 			>
 		</File>
@@ -646,6 +638,14 @@
 		</File>
 		<File
 			RelativePath="bn_mp_or.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_pack.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_pack_count.c"
 			>
 		</File>
 		<File
@@ -830,6 +830,10 @@
 		</File>
 		<File
 			RelativePath="bn_mp_ubin_size.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_unpack.c"
 			>
 		</File>
 		<File

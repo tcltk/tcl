@@ -33,7 +33,6 @@ EXPORTS
     mp_dr_setup
     mp_error_to_string
     mp_exch
-    mp_export
     mp_expt_u32
     mp_exptmod
     mp_exteuclid
@@ -55,8 +54,6 @@ EXPORTS
     mp_get_mag_ul
     mp_get_mag_ull
     mp_grow
-    mp_ilogb
-    mp_import
     mp_incr
     mp_init
     mp_init_copy
@@ -78,6 +75,7 @@ EXPORTS
     mp_isodd
     mp_kronecker
     mp_lcm
+    mp_log_u32
     mp_lshd
     mp_mod
     mp_mod_2d
@@ -92,6 +90,8 @@ EXPORTS
     mp_mulmod
     mp_neg
     mp_or
+    mp_pack
+    mp_pack_count
     mp_prime_fermat
     mp_prime_frobenius_underwood
     mp_prime_is_prime
@@ -140,5 +140,6 @@ EXPORTS
     mp_to_sbin
     mp_to_ubin
     mp_ubin_size
+    mp_unpack
     mp_xor
     mp_zero

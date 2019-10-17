@@ -3,9 +3,9 @@
 #
 
 #version of library
-VERSION=1.1.0-develop
-VERSION_PC=1.1.0
-VERSION_SO=2:0:1
+VERSION=1.2.0-rc1
+VERSION_PC=1.2.0
+VERSION_SO=3:0:1
 
 PLATFORM := $(shell uname | sed -e 's/_.*//')
 
@@ -158,8 +158,9 @@ cleancov-clean:
 cleancov: cleancov-clean clean
 
 clean:
-	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/test.o demo/main.o demo/opponent.o test timing mpitest mtest/mtest mtest/mtest.exe tuning_list\
-        *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
-	rm -rf .libs/
+	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o \
+				demo/*.o test timing mtest_opponent mtest/mtest mtest/mtest.exe tuning_list \
+				*.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
+	rm -rf .libs/ demo/.libs
 	${MAKE} -C etc/ clean MAKE=${MAKE}
 	${MAKE} -C doc/ clean MAKE=${MAKE}

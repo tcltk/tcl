@@ -16,14 +16,11 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, i
    mp_digit d;
    char   *_s = str;
 
-
-   /* If we want to fill a bucket we need a bucket in the first place. */
-   if (str == NULL) {
-      return MP_VAL;
-   }
-
    /* check range of radix and size*/
-   if ((maxlen < 2u) || (radix < 2) || (radix > 64)) {
+   if (maxlen < 2u) {
+      return MP_BUF;
+   }
+   if ((radix < 2) || (radix > 64)) {
       return MP_VAL;
    }
 
@@ -57,10 +54,8 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, i
    while (!MP_IS_ZERO(&t)) {
       if (--maxlen < 1u) {
          /* no more room */
-         /* TODO: It could mimic mp_to_radix_n if that is not an error
-                  or at least not this error (MP_ITER or a new one?). */
-         err = MP_VAL;
-         break;
+         err = MP_BUF;
+         goto LBL_ERR;
       }
       if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
          goto LBL_ERR;
@@ -76,8 +71,9 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, i
    /* append a NULL so the string is properly terminated */
    *str = '\0';
    digs++;
+
    if (written != NULL) {
-      *written = (a->sign == MP_NEG) ? digs + 1u: digs;
+      *written = (a->sign == MP_NEG) ? (digs + 1u): digs;
    }
 
 LBL_ERR:
