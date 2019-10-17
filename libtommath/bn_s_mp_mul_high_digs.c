@@ -16,12 +16,11 @@ mp_err s_mp_mul_high_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
    mp_digit tmpx, *tmpt, *tmpy;
 
    /* can we use the fast multiplier? */
-#ifdef BN_S_MP_MUL_HIGH_DIGS_FAST_C
-   if (((a->used + b->used + 1) < MP_WARRAY)
+   if (MP_HAS(S_MP_MUL_HIGH_DIGS_FAST)
+       && ((a->used + b->used + 1) < MP_WARRAY)
        && (MP_MIN(a->used, b->used) < MP_MAXFAST)) {
       return s_mp_mul_high_digs_fast(a, b, c, digs);
    }
-#endif
 
    if ((err = mp_init_size(&t, a->used + b->used + 1)) != MP_OKAY) {
       return err;

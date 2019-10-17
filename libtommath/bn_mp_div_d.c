@@ -29,7 +29,7 @@ mp_err mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    }
 
    /* power of two ? */
-   if ((b & (b-1)) == 0u) {
+   if ((b & (b - 1u)) == 0u) {
       ix = 1;
       while ((ix < MP_DIGIT_BIT) && (b != (((mp_digit)1)<<ix))) {
          ix++;
@@ -43,12 +43,10 @@ mp_err mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
       return MP_OKAY;
    }
 
-#ifdef BN_MP_DIV_3_C
    /* three? */
-   if (b == 3u) {
+   if (MP_HAS(MP_DIV_3) && (b == 3u)) {
       return mp_div_3(a, c, d);
    }
-#endif
 
    /* no easy answer [c'est la vie].  Just division */
    if ((err = mp_init_size(&q, a->used)) != MP_OKAY) {

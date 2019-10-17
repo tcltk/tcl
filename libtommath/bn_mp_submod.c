@@ -14,10 +14,11 @@ mp_err mp_submod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d)
    }
 
    if ((err = mp_sub(a, b, &t)) != MP_OKAY) {
-      mp_clear(&t);
-      return err;
+      goto LBL_ERR;
    }
    err = mp_mod(&t, c, d);
+
+LBL_ERR:
    mp_clear(&t);
    return err;
 }

@@ -4,13 +4,13 @@
 /* SPDX-License-Identifier: Unlicense */
 
 /* reverse an array, used for radix code */
-void s_mp_reverse(unsigned char *s, int len)
+void s_mp_reverse(unsigned char *s, size_t len)
 {
-   int     ix, iy;
+   size_t   ix, iy;
    unsigned char t;
 
-   ix = 0;
-   iy = len - 1;
+   ix = 0u;
+   iy = len - 1u;
    while (ix < iy) {
       t     = s[ix];
       s[ix] = s[iy];

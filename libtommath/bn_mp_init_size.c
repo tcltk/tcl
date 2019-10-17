@@ -9,7 +9,8 @@ mp_err mp_init_size(mp_int *a, int size)
    size = MP_MAX(MP_MIN_PREC, size);
 
    /* alloc mem */
-   a->dp = (mp_digit *) MP_CALLOC((size_t)size, sizeof(mp_digit));
+   a->dp = (mp_digit *) MP_MALLOC((size_t)size * sizeof(mp_digit));
+   MP_ZERO_DIGITS(a->dp, size);
    if (a->dp == NULL) {
       return MP_MEM;
    }

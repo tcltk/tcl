@@ -17,7 +17,7 @@
  *
  * On Win32 a .def file must be used to specify the exported symbols.
  */
-#if defined (MP_PRIVATE_SYMBOLS) && __GNUC__ >= 4
+#if defined (MP_PRIVATE_SYMBOLS) && defined(__GNUC__) && __GNUC__ >= 4
 #   define MP_PRIVATE __attribute__ ((visibility ("hidden")))
 #else
 #   define MP_PRIVATE
@@ -140,6 +140,11 @@ extern void *MP_CALLOC(size_t nmemb, size_t size);
 extern void MP_FREE(void *mem, size_t size);
 #endif
 
+/* feature detection macro */
+#define MP_STRINGIZE(x)  MP__STRINGIZE(x)
+#define MP__STRINGIZE(x) ""#x""
+#define MP_HAS(x)        (sizeof(MP_STRINGIZE(BN_##x##_C)) == 1u)
+
 /* TODO: Remove private_mp_word as soon as deprecated mp_word is removed from tommath. */
 #undef mp_word
 typedef private_mp_word mp_word;
@@ -198,14 +203,12 @@ MP_PRIVATE mp_err s_mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_i
 MP_PRIVATE mp_err s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode) MP_WUR;
 MP_PRIVATE mp_err s_mp_rand_platform(void *p, size_t n) MP_WUR;
 MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_prime_callback cb, void *dat);
-MP_PRIVATE void s_mp_reverse(unsigned char *s, int len);
+MP_PRIVATE void s_mp_reverse(unsigned char *s, size_t len);
 MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
-#ifndef MP_NO_STDINT
 MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
-#endif
 
 extern MP_PRIVATE const char *const mp_s_rmap;
 extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
@@ -232,6 +235,13 @@ MP_DEPRECATED(s_mp_karatsuba_sqr) mp_err mp_karatsuba_sqr(const mp_int *a, mp_in
 MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
+
+#define MP_GET_ENDIANNESS(x) \
+   do{\
+      int16_t n = 0x1;                                          \
+      char *p = (char *)&n;                                     \
+      x = (p[0] == '\x01') ? MP_LITTLE_ENDIAN : MP_BIG_ENDIAN;  \
+   } while (0)
 
 /* code-generating macros */
 #define MP_SET_UNSIGNED(name, type)                                                    \

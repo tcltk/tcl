@@ -1,12 +1,12 @@
 #include "tommath_private.h"
-#ifdef BN_MP_ILOGB_C
+#ifdef BN_MP_LOG_U32_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
 /* Compute log_{base}(a) */
 static mp_word s_pow(mp_word base, mp_word exponent)
 {
-   mp_word result = 1uLL;
+   mp_word result = 1;
    while (exponent != 0u) {
       if ((exponent & 1u) == 1u) {
          result *= base;
@@ -20,7 +20,7 @@ static mp_word s_pow(mp_word base, mp_word exponent)
 
 static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
 {
-   mp_word bracket_low = 1uLL, bracket_mid, bracket_high, N;
+   mp_word bracket_low = 1, bracket_mid, bracket_high, N;
    mp_digit ret, high = 1uL, low = 0uL, mid;
 
    if (n < base) {
@@ -70,17 +70,19 @@ static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
          as is the output of mp_bitcount.
          With the same problem: max size is INT_MAX * MP_DIGIT not INT_MAX only!
 */
-mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
+mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c)
 {
    mp_err err;
    mp_ord cmp;
-   unsigned int high, low, mid;
+   uint32_t high, low, mid;
    mp_int bracket_low, bracket_high, bracket_mid, t, bi_base;
 
    err = MP_OKAY;
+
    if (a->sign == MP_NEG) {
       return MP_VAL;
    }
+
    if (MP_IS_ZERO(a)) {
       return MP_VAL;
    }
@@ -88,23 +90,26 @@ mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
    if (base < 2u) {
       return MP_VAL;
    }
-   if (base == 2u) {
-      mp_set_u32(c, (uint32_t)(mp_count_bits(a) - 1));
-      return err;
+
+   /* A small shortcut for bases that are powers of two. */
+   if ((base & (base - 1u)) == 0u) {
+      int y, bit_count;
+      for (y=0; (y < 7) && ((base & 1u) == 0u); y++) {
+         base >>= 1;
+      }
+      bit_count = mp_count_bits(a) - 1;
+      *c = (uint32_t)(bit_count/y);
+      return MP_OKAY;
    }
+
    if (a->used == 1) {
-      mp_set(c, s_digit_ilogb(base, a->dp[0]));
+      *c = (uint32_t)s_digit_ilogb(base, a->dp[0]);
       return err;
    }
 
    cmp = mp_cmp_d(a, base);
-
-   if (cmp == MP_LT) {
-      mp_zero(c);
-      return err;
-   }
-   if (cmp == MP_EQ) {
-      mp_set(c, 1uL);
+   if ((cmp == MP_LT) || (cmp == MP_EQ)) {
+      *c = cmp == MP_EQ;
       return err;
    }
 
@@ -140,11 +145,7 @@ mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
 
    while ((high - low) > 1u) {
       mid = (high + low) >> 1;
-      /* Difference can be larger then the type behind mp_digit can hold */
-      if ((mid - low) > (unsigned int)(MP_MASK)) {
-         err = MP_VAL;
-         goto LBL_ERR;
-      }
+
       if ((err = mp_expt_u32(&bi_base, (uint32_t)(mid - low), &t)) != MP_OKAY) {
          goto LBL_ERR;
       }
@@ -161,16 +162,12 @@ mp_err mp_ilogb(const mp_int *a, uint32_t base, mp_int *c)
          mp_exch(&bracket_mid, &bracket_low);
       }
       if (cmp == MP_EQ) {
-         mp_set_u32(c, mid);
+         *c = mid;
          goto LBL_END;
       }
    }
 
-   if (mp_cmp(&bracket_high, a) == MP_EQ) {
-      mp_set_u32(c, high);
-   } else {
-      mp_set_u32(c, low);
-   }
+   *c = (mp_cmp(&bracket_high, a) == MP_EQ) ? high : low;
 
 LBL_END:
 LBL_ERR:

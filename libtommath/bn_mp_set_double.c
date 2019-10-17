@@ -6,17 +6,17 @@
 #if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559)
 mp_err mp_set_double(mp_int *a, double b)
 {
-   uint64_t frac;
+   unsigned long long frac;
    int exp;
    mp_err err;
    union {
       double   dbl;
-      uint64_t bits;
+      unsigned long long bits;
    } cast;
    cast.dbl = b;
 
    exp = (int)((unsigned)(cast.bits >> 52) & 0x7FFu);
-   frac = (cast.bits & ((1uLL << 52) - 1uLL)) | (1uLL << 52);
+   frac = (cast.bits & ((1uLL << 52) - 1)) | (1uLL << 52);
 
    if (exp == 0x7FF) { /* +-inf, NaN */
       return MP_VAL;
