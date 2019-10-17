@@ -45,7 +45,7 @@
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
 #define bn_reverse TclBN_reverse
-#define s_mp_reverse TclBN_reverse
+#define s_mp_reverse TclBN_int_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
 #define s_mp_mul_digs_fast TclBN_fast_s_mp_mul_digs
 #define fast_s_mp_sqr TclBN_fast_s_mp_sqr
@@ -113,9 +113,13 @@
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
 #define s_mp_toom_mul TclBN_mp_toom_mul
+#define s_mp_balance_mul TclBN_mp_balance_mul
 #define mp_toom_sqr TclBN_mp_toom_sqr
 #define s_mp_toom_sqr TclBN_mp_toom_sqr
 #define mp_toradix_n TclBN_mp_toradix_n
+#define mp_to_radix TclBN_mp_to_radix
+#define mp_to_ubin TclBN_mp_to_ubin
+#define mp_ubin_size TclBN_mp_ubin_size
 #define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero

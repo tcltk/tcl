@@ -33,11 +33,12 @@ EXPORTS
     mp_dr_setup
     mp_error_to_string
     mp_exch
-    mp_export
     mp_expt_u32
     mp_exptmod
     mp_exteuclid
     mp_fread
+    mp_from_sbin
+    mp_from_ubin
     mp_fwrite
     mp_gcd
     mp_get_double
@@ -53,8 +54,6 @@ EXPORTS
     mp_get_mag_ul
     mp_get_mag_ull
     mp_grow
-    mp_ilogb
-    mp_import
     mp_incr
     mp_init
     mp_init_copy
@@ -76,6 +75,7 @@ EXPORTS
     mp_isodd
     mp_kronecker
     mp_lcm
+    mp_log_u32
     mp_lshd
     mp_mod
     mp_mod_2d
@@ -90,6 +90,8 @@ EXPORTS
     mp_mulmod
     mp_neg
     mp_or
+    mp_pack
+    mp_pack_count
     mp_prime_fermat
     mp_prime_frobenius_underwood
     mp_prime_is_prime
@@ -101,8 +103,6 @@ EXPORTS
     mp_radix_size
     mp_rand
     mp_read_radix
-    mp_read_signed_bin
-    mp_read_unsigned_bin
     mp_reduce
     mp_reduce_2k
     mp_reduce_2k_l
@@ -113,6 +113,7 @@ EXPORTS
     mp_reduce_setup
     mp_root_u32
     mp_rshd
+    mp_sbin_size
     mp_set
     mp_set_double
     mp_set_i32
@@ -127,7 +128,6 @@ EXPORTS
     mp_set_ul
     mp_set_ull
     mp_shrink
-    mp_signed_bin_size
     mp_signed_rsh
     mp_sqr
     mp_sqrmod
@@ -136,12 +136,10 @@ EXPORTS
     mp_sub
     mp_sub_d
     mp_submod
-    mp_to_signed_bin
-    mp_to_signed_bin_n
-    mp_to_unsigned_bin
-    mp_to_unsigned_bin_n
-    mp_toradix
-    mp_toradix_n
-    mp_unsigned_bin_size
+    mp_to_radix
+    mp_to_sbin
+    mp_to_ubin
+    mp_ubin_size
+    mp_unpack
     mp_xor
     mp_zero

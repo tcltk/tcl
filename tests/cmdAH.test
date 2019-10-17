@@ -23,7 +23,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
 testConstraint time64bit [expr {
     $::tcl_platform(pointerSize) >= 8 ||
-    [llength [info command testsize]] && [testsize time_t] >= 8
+    [llength [info command testsize]] && [testsize st_mtime] >= 8
 }]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
@@ -892,7 +892,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     file exe $gorpfile
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
-    # On pc, must be a .exe, .com, etc.
+    # On windows, must be a .exe, .com, etc.
     set x {}
     set gorpexes {}
     foreach ext {exe com cmd bat} {
@@ -1314,8 +1314,28 @@ test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -cons
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
     file owned a b
 } -result {wrong # args: should be "file owned name"}
-test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $gorpfile
+test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -setup {
+    set fn $gorpfile
+    # prefer temp file to check owner (try to avoid bug [7de2d722bd]):
+    if {
+	[info exists ::env(TEMP)] && [file isdirectory $::env(TEMP)] &&
+        [file dirname $fn] ne [file normalize $::env(TEMP)]
+    } {
+	set fn [file join $::env(TEMP)/test-owner-from-tcl.txt]
+	set fn [makeFile "data" test-owner-from-tcl.txt $::env(TEMP)]
+    }
+    # be sure we have really owned this file before trying to check that
+    # (avoid dependency on admin with UAC and the setting "System objects:
+    # Default owner for objects created by members of the Administrators group"):
+    catch {
+	exec takeown /F [file nativename $fn]
+    }
+} -body {
+    file owned $fn
+} -cleanup {
+    if {$fn ne $gorpfile} {
+	removeFile $fn
+    }
 } -result 1
 test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
     # Avoid problems with AFS
@@ -1329,7 +1349,11 @@ test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
 test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $env(windir)
+    if {[info exists env(SystemRoot)]} {
+	file owned $env(SystemRoot)
+    } else {
+	file owned $env(windir)
+    }
 } -result 0
 test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
     file owned nosuchfile

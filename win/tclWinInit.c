@@ -17,7 +17,7 @@
 #include <lmcons.h>
 
 /*
- * GetUserName() is found in advapi32.dll
+ * GetUserNameW() is found in advapi32.dll
  */
 #ifdef _MSC_VER
 #   pragma comment(lib, "advapi32.lib")
@@ -124,7 +124,7 @@ static void		ToUtf(const WCHAR *wSrc, char *dst);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals,
+ *	Initialize all the platform-dependent things like signals,
  *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.
@@ -166,7 +166,7 @@ TclpInitPlatform(void)
     /*
      * Fill available functions depending on windows version
      */
-    handle = GetModuleHandle(TEXT("KERNEL32"));
+    handle = GetModuleHandleW(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
@@ -310,7 +310,7 @@ AppendEnvironment(
 	Tcl_SplitPath(buf, &pathc, &pathv);
 
 	/*
-	 * The lstrcmpi() will work even if pathv[pathc-1] is random UTF-8
+	 * The lstrcmpiA() will work even if pathv[pathc-1] is random UTF-8
 	 * chars because I know shortlib is ascii.
 	 */
 
@@ -525,15 +525,15 @@ TclpGetUserName(
     Tcl_DStringInit(bufferPtr);
 
     if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
-	TCHAR szUserName[UNLEN+1];
+	WCHAR szUserName[UNLEN+1];
 	DWORD cchUserNameLen = UNLEN;
 
-	if (!GetUserName(szUserName, &cchUserNameLen)) {
+	if (!GetUserNameW(szUserName, &cchUserNameLen)) {
 	    return NULL;
 	}
 	cchUserNameLen--;
-	cchUserNameLen *= sizeof(TCHAR);
-	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+	cchUserNameLen *= sizeof(WCHAR);
+	Tcl_WinTCharToUtf((TCHAR *)szUserName, cchUserNameLen, bufferPtr);
     }
     return Tcl_DStringValue(bufferPtr);
 }
@@ -573,7 +573,7 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
+	HMODULE handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
@@ -602,7 +602,7 @@ TclpSetVariables(
 		TCL_GLOBAL_ONLY);
     }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
     /*
      * The existence of the "debug" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with debug

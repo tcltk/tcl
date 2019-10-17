@@ -590,7 +590,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
 #define DUPLICATE(target,source,type) \
     do { \
-	register unsigned len = sizeof(type) * ((target).num=(source).num);\
+	size_t len = sizeof(type) * ((target).num=(source).num);\
 	if (len != 0) { \
 	    memcpy(((target).list=(type*)ckalloc(len)), (source).list, len); \
 	} else { \

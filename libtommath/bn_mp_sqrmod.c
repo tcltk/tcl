@@ -14,10 +14,11 @@ mp_err mp_sqrmod(const mp_int *a, const mp_int *b, mp_int *c)
    }
 
    if ((err = mp_sqr(a, &t)) != MP_OKAY) {
-      mp_clear(&t);
-      return err;
+      goto LBL_ERR;
    }
    err = mp_mod(&t, b, c);
+
+LBL_ERR:
    mp_clear(&t);
    return err;
 }

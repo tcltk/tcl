@@ -7,35 +7,21 @@
 mp_err mp_sqr(const mp_int *a, mp_int *b)
 {
    mp_err err;
-
-#ifdef BN_S_MP_TOOM_SQR_C
-   /* use Toom-Cook? */
-   if (a->used >= MP_TOOM_SQR_CUTOFF) {
+   if (MP_HAS(S_MP_TOOM_SQR) && /* use Toom-Cook? */
+       (a->used >= MP_TOOM_SQR_CUTOFF)) {
       err = s_mp_toom_sqr(a, b);
-      /* Karatsuba? */
-   } else
-#endif
-#ifdef BN_S_MP_KARATSUBA_SQR_C
-      if (a->used >= MP_KARATSUBA_SQR_CUTOFF) {
-         err = s_mp_karatsuba_sqr(a, b);
-      } else
-#endif
-      {
-#ifdef BN_S_MP_SQR_FAST_C
-         /* can we use the fast comba multiplier? */
-         if ((((a->used * 2) + 1) < MP_WARRAY) &&
-             (a->used < (MP_MAXFAST / 2))) {
-            err = s_mp_sqr_fast(a, b);
-         } else
-#endif
-         {
-#ifdef BN_S_MP_SQR_C
-            err = s_mp_sqr(a, b);
-#else
-            err = MP_VAL;
-#endif
-         }
-      }
+   } else if (MP_HAS(S_MP_KARATSUBA_SQR) &&  /* Karatsuba? */
+              (a->used >= MP_KARATSUBA_SQR_CUTOFF)) {
+      err = s_mp_karatsuba_sqr(a, b);
+   } else if (MP_HAS(S_MP_SQR_FAST) && /* can we use the fast comba multiplier? */
+              (((a->used * 2) + 1) < MP_WARRAY) &&
+              (a->used < (MP_MAXFAST / 2))) {
+      err = s_mp_sqr_fast(a, b);
+   } else if (MP_HAS(S_MP_SQR)) {
+      err = s_mp_sqr(a, b);
+   } else {
+      err = MP_VAL;
+   }
    b->sign = MP_ZPOS;
    return err;
 }

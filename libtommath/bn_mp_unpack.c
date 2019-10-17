@@ -1,13 +1,13 @@
 #include "tommath_private.h"
-#ifdef BN_MP_IMPORT_C
+#ifdef BN_MP_UNPACK_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
 /* based on gmp's mpz_import.
  * see http://gmplib.org/manual/Integer-Import-and-Export.html
  */
-mp_err mp_import(mp_int *rop, size_t count, int order, size_t size,
-                 int endian, size_t nails, const void *op)
+mp_err mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
+                 mp_endian endian, size_t nails, const void *op)
 {
    mp_err err;
    size_t odd_nails, nail_bytes, i, j;
@@ -15,14 +15,8 @@ mp_err mp_import(mp_int *rop, size_t count, int order, size_t size,
 
    mp_zero(rop);
 
-   if (endian == 0) {
-      union {
-         unsigned int i;
-         char c[4];
-      } lint;
-      lint.i = 0x01020304;
-
-      endian = (lint.c[0] == '\x04') ? -1 : 1;
+   if (endian == MP_NATIVE_ENDIAN) {
+      MP_GET_ENDIANNESS(endian);
    }
 
    odd_nails = (nails % 8u);
@@ -35,8 +29,8 @@ mp_err mp_import(mp_int *rop, size_t count, int order, size_t size,
    for (i = 0; i < count; ++i) {
       for (j = 0; j < (size - nail_bytes); ++j) {
          unsigned char byte = *((const unsigned char *)op +
-                                (((order == 1) ? i : ((count - 1u) - i)) * size) +
-                                ((endian == 1) ? (j + nail_bytes) : (((size - 1u) - j) - nail_bytes)));
+                                (((order == MP_MSB_FIRST) ? i : ((count - 1u) - i)) * size) +
+                                ((endian == MP_BIG_ENDIAN) ? (j + nail_bytes) : (((size - 1u) - j) - nail_bytes)));
 
          if ((err = mp_mul_2d(rop, (j == 0u) ? (int)(8u - odd_nails) : 8, rop)) != MP_OKAY) {
             return err;

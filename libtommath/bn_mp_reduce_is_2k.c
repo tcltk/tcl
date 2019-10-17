@@ -24,7 +24,7 @@ mp_bool mp_reduce_is_2k(const mp_int *a)
             return MP_NO;
          }
          iz <<= 1;
-         if (iz > MP_MASK) {
+         if (iz > MP_DIGIT_MAX) {
             ++iw;
             iz = 1;
          }

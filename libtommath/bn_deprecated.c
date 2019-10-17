@@ -113,7 +113,9 @@ mp_err mp_toom_sqr(const mp_int *a, mp_int *b)
 #ifdef S_MP_REVERSE_C
 void bn_reverse(unsigned char *s, int len)
 {
-   s_mp_reverse(s, len);
+   if (len > 0) {
+      s_mp_reverse(s, (size_t)len);
+   }
 }
 #endif
 #ifdef BN_MP_TC_AND_C
@@ -227,6 +229,93 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
       return MP_VAL;
    }
    return mp_root_u32(a, (uint32_t)b, c);
+}
+#endif
+#ifdef BN_MP_UNSIGNED_BIN_SIZE_C
+int mp_unsigned_bin_size(const mp_int *a)
+{
+   return (int)mp_ubin_size(a);
+}
+#endif
+#ifdef BN_MP_READ_UNSIGNED_BIN_C
+mp_err mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c)
+{
+   return mp_from_ubin(a, b, (size_t) c);
+}
+#endif
+#ifdef BN_MP_TO_UNSIGNED_BIN_C
+mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
+{
+   return mp_to_ubin(a, b, SIZE_MAX, NULL);
+}
+#endif
+#ifdef BN_MP_TO_UNSIGNED_BIN_N_C
+mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
+{
+   size_t n = mp_ubin_size(a);
+   if (*outlen < (unsigned long)n) {
+      return MP_VAL;
+   }
+   *outlen = (unsigned long)n;
+   return mp_to_ubin(a, b, n, NULL);
+}
+#endif
+#ifdef BN_MP_SIGNED_BIN_SIZE_C
+int mp_signed_bin_size(const mp_int *a)
+{
+   return (int)mp_sbin_size(a);
+}
+#endif
+#ifdef BN_MP_READ_SIGNED_BIN_C
+mp_err mp_read_signed_bin(mp_int *a, const unsigned char *b, int c)
+{
+   return mp_from_sbin(a, b, (size_t) c);
+}
+#endif
+#ifdef BN_MP_TO_SIGNED_BIN_C
+mp_err mp_to_signed_bin(const mp_int *a, unsigned char *b)
+{
+   return mp_to_sbin(a, b, SIZE_MAX, NULL);
+}
+#endif
+#ifdef BN_MP_TO_SIGNED_BIN_N_C
+mp_err mp_to_signed_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
+{
+   size_t n = mp_sbin_size(a);
+   if (*outlen < (unsigned long)n) {
+      return MP_VAL;
+   }
+   *outlen = (unsigned long)n;
+   return mp_to_sbin(a, b, n, NULL);
+}
+#endif
+#ifdef BN_MP_TORADIX_N_C
+mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+{
+   if (maxlen < 0) {
+      return MP_VAL;
+   }
+   return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+}
+#endif
+#ifdef BN_MP_TORADIX_C
+mp_err mp_toradix(const mp_int *a, char *str, int radix)
+{
+   return mp_to_radix(a, str, SIZE_MAX, NULL, radix);
+}
+#endif
+#ifdef BN_MP_IMPORT_C
+mp_err mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, size_t nails,
+                 const void *op)
+{
+   return mp_unpack(rop, count, order, size, endian, nails, op);
+}
+#endif
+#ifdef BN_MP_EXPORT_C
+mp_err mp_export(void *rop, size_t *countp, int order, size_t size,
+                 int endian, size_t nails, const mp_int *op)
+{
+   return mp_pack(rop, SIZE_MAX, countp, order, size, endian, nails, op);
 }
 #endif
 #endif

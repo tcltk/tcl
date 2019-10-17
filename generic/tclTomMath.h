@@ -127,25 +127,35 @@ typedef unsigned long long   private_mp_word;
 
 #ifdef MP_USE_ENUMS
 typedef enum {
-   MP_ZPOS = 0,
-   MP_NEG = 1
+   MP_ZPOS = 0,   /* positive */
+   MP_NEG = 1     /* negative */
 } mp_sign;
 typedef enum {
-   MP_LT = -1,
-   MP_EQ = 0,
-   MP_GT = 1
+   MP_LT = -1,    /* less than */
+   MP_EQ = 0,     /* equal */
+   MP_GT = 1      /* greater than */
 } mp_ord;
 typedef enum {
    MP_NO = 0,
    MP_YES = 1
 } mp_bool;
 typedef enum {
-   MP_OKAY  = 0,
-   MP_ERR   = -1,
-   MP_MEM   = -2,
-   MP_VAL   = -3,
-   MP_ITER  = -4
+   MP_OKAY  = 0,   /* no error */
+   MP_ERR   = -1,  /* unknown error */
+   MP_MEM   = -2,  /* out of mem */
+   MP_VAL   = -3,  /* invalid input */
+   MP_ITER  = -4,  /* maximum iterations reached */
+   MP_BUF   = -5,  /* buffer overflow, supplied buffer too small */
 } mp_err;
+typedef enum {
+   MP_LSB_FIRST = -1,
+   MP_MSB_FIRST =  1
+} mp_order;
+typedef enum {
+   MP_LITTLE_ENDIAN  = -1,
+   MP_NATIVE_ENDIAN  =  0,
+   MP_BIG_ENDIAN     =  1
+} mp_endian;
 #else
 typedef int mp_sign;
 #define MP_ZPOS       0   /* positive integer */
@@ -155,15 +165,23 @@ typedef int mp_ord;
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
 typedef int mp_bool;
-#define MP_YES        1   /* yes response */
-#define MP_NO         0   /* no response */
+#define MP_YES        1
+#define MP_NO         0
 typedef int mp_err;
-#define MP_OKAY       0   /* ok result */
+#define MP_OKAY       0   /* no error */
 #define MP_ERR        -1  /* unknown error */
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
 #define MP_RANGE      (MP_DEPRECATED_PRAGMA("MP_RANGE has been deprecated in favor of MP_VAL") MP_VAL)
-#define MP_ITER       -4  /* Max. iterations reached */
+#define MP_ITER       -4  /* maximum iterations reached */
+#define MP_BUF        -5  /* buffer overflow, supplied buffer too small */
+typedef int mp_order;
+#define MP_LSB_FIRST -1
+#define MP_MSB_FIRST  1
+typedef int mp_endian;
+#define MP_LITTLE_ENDIAN  -1
+#define MP_NATIVE_ENDIAN  0
+#define MP_BIG_ENDIAN     1
 #endif
 
 /* tunable cutoffs */
@@ -214,7 +232,7 @@ typedef int mp_err;
 #  endif
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
 #  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
 #  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
@@ -236,7 +254,8 @@ typedef int mp_err;
 typedef struct mp_int mp_int;
 #endif
 struct mp_int {
-   int used, alloc, sign;
+   int used, alloc;
+   mp_sign sign;
    mp_digit *dp;
 };
 
@@ -906,10 +925,15 @@ mp_err mp_fwrite(const mp_int *a, int radix, FILE *stream) MP_WUR;
 #define mp_mag_size(mp)           (MP_DEPRECATED_PRAGMA("replaced by mp_unsigned_bin_size") mp_unsigned_bin_size(mp))
 #define mp_tomag(mp, str)         (MP_DEPRECATED_PRAGMA("replaced by mp_to_unsigned_bin") mp_to_unsigned_bin((mp), (str)))
 
-#define mp_tobinary(M, S)  mp_toradix((M), (S), 2)
-#define mp_tooctal(M, S)   mp_toradix((M), (S), 8)
-#define mp_todecimal(M, S) mp_toradix((M), (S), 10)
-#define mp_tohex(M, S)     mp_toradix((M), (S), 16)
+#define mp_tobinary(M, S)  (MP_DEPRECATED_PRAGMA("replaced by mp_to_binary")  mp_toradix((M), (S), 2))
+#define mp_tooctal(M, S)   (MP_DEPRECATED_PRAGMA("replaced by mp_to_octal")   mp_toradix((M), (S), 8))
+#define mp_todecimal(M, S) (MP_DEPRECATED_PRAGMA("replaced by mp_to_decimal") mp_toradix((M), (S), 10))
+#define mp_tohex(M, S)     (MP_DEPRECATED_PRAGMA("replaced by mp_to_hex")     mp_toradix((M), (S), 16))
+
+#define mp_to_binary(M, S, N)  mp_to_radix((M), (S), (N), NULL, 2)
+#define mp_to_octal(M, S, N)   mp_to_radix((M), (S), (N), NULL, 8)
+#define mp_to_decimal(M, S, N) mp_to_radix((M), (S), (N), NULL, 10)
+#define mp_to_hex(M, S, N)     mp_to_radix((M), (S), (N), NULL, 16)
 
 #ifdef __cplusplus
 }

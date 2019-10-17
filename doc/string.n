@@ -333,21 +333,21 @@ specified using the forms described in \fBSTRING INDICES\fR.
 Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .SS "OBSOLETE SUBCOMMANDS"
 .PP
 These subcommands are currently supported, but are likely to go away in a
