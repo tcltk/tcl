@@ -32,12 +32,15 @@
 
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
 #define TclBNAlloc(s) ((void*)ckalloc((size_t)(s)))
+/* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
+#define TclBNCalloc(m,s) memset(ckalloc((size_t)(m)*(size_t)(s)),0,(size_t)(m)*(size_t)(s))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
 #define TclBNRealloc(x,s) ((void*)ckrealloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) (ckfree((char*)(x)))
 
 #define MP_MALLOC(size)                   TclBNAlloc(size)
+#define MP_CALLOC(nmemb, size)            TclBNCalloc(nmemb, size)
 #define MP_REALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
 #define MP_FREE(mem, size)                TclBNFree(mem)
 
