@@ -24,6 +24,9 @@ v1.2.0
        -- Provide a whole set of setters&getters for different primitive types (long, uint32_t, etc.)
        -- All those primitive setters are now optimized.
        -- It's possible to automatically tune the cutoff values for Karatsuba&Toom-Cook
+       -- The custom allocators which were formerly known as XMALLOC(), XFREE() etc. are now available
+          as MP_MALLOC(), MP_REALLOC(), MP_CALLOC() and MP_FREE(). MP_REALLOC() and MP_FREE() now also
+          provide the allocated size to ease the usage of simple allocators without tracking.
        -- Added mp_decr() and mp_incr()
        -- Added mp_log_u32()
        -- Improved prime-checking

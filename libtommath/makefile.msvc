@@ -14,7 +14,7 @@ PREFIX    = c:\devel
 CFLAGS    = /Ox
 
 #Compilation flags
-LTM_CFLAGS  = /nologo /I./ /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /D__STDC_WANT_SECURE_LIB__=1 /D_CRT_HAS_CXX17=0 /Wall /wd4146 /wd4127 /wd4710 /wd4711 /wd4820 /wd4003 /WX $(CFLAGS)
+LTM_CFLAGS  = /nologo /I./ /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /D__STDC_WANT_SECURE_LIB__=1 /D_CRT_HAS_CXX17=0 /Wall /wd4146 /wd4127 /wd4668 /wd4710 /wd4711 /wd4820 /wd5045 /WX $(CFLAGS)
 LTM_LDFLAGS = advapi32.lib
 
 #Libraries to be created (this makefile builds only static libraries)
