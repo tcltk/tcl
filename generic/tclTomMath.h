@@ -56,8 +56,8 @@ typedef unsigned short       private_mp_word;
 #define MP_WORD_DECLARED
 #endif
 #   define MP_SIZEOF_MP_DIGIT 1
-#   ifdef DIGIT_BIT
-#      error You must not define DIGIT_BIT when using MP_8BIT
+#   ifdef MP_DIGIT_BIT
+#      error You must not define MP_DIGIT_BIT when using MP_8BIT
 #   endif
 #elif defined(MP_16BIT)
 #ifndef MP_DIGIT_DECLARED
@@ -69,8 +69,8 @@ typedef unsigned int         private_mp_word;
 #define MP_WORD_DECLARED
 #endif
 #   define MP_SIZEOF_MP_DIGIT 2
-#   ifdef DIGIT_BIT
-#      error You must not define DIGIT_BIT when using MP_16BIT
+#   ifdef MP_DIGIT_BIT
+#      error You must not define MP_DIGIT_BIT when using MP_16BIT
 #   endif
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
@@ -79,7 +79,7 @@ typedef unsigned long long   mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 typedef unsigned long        private_mp_word __attribute__((mode(TI)));
-#   define DIGIT_BIT 60
+#   define MP_DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
@@ -98,22 +98,26 @@ typedef unsigned long long   private_mp_word;
 #endif
 
 #   ifdef MP_31BIT
-/* this is an extension that uses 31-bit digits */
-#      define DIGIT_BIT 31
+/*
+ * This is an extension that uses 31-bit digits.
+ * Please be aware that not all functions support this size, especially s_mp_mul_digs_fast
+ * will be reduced to work on small numbers only:
+ * Up to 8 limbs, 248 bits instead of up to 512 limbs, 15872 bits with MP_28BIT.
+ */
+#      define MP_DIGIT_BIT 31
 #   else
 /* default case is 28-bit digits, defines MP_28BIT as a handy macro to test */
-#      define DIGIT_BIT 28
+#      define MP_DIGIT_BIT 28
 #      define MP_28BIT
 #   endif
 #endif
 
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
-#ifndef DIGIT_BIT
-#   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
+#ifndef MP_DIGIT_BIT
+#   define MP_DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
 #endif
 
-#define MP_DIGIT_BIT     DIGIT_BIT
-#define MP_MASK          ((((mp_digit)1)<<((mp_digit)DIGIT_BIT))-((mp_digit)1))
+#define MP_MASK          ((((mp_digit)1)<<((mp_digit)MP_DIGIT_BIT))-((mp_digit)1))
 #define MP_DIGIT_MAX     MP_MASK
 
 /* Primality generation flags */
@@ -186,6 +190,14 @@ typedef int mp_endian;
 
 /* tunable cutoffs */
 
+#ifndef MP_FIXED_CUTOFFS
+extern int
+KARATSUBA_MUL_CUTOFF,
+KARATSUBA_SQR_CUTOFF,
+TOOM_MUL_CUTOFF,
+TOOM_SQR_CUTOFF;
+#endif
+
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
 
@@ -244,6 +256,7 @@ typedef int mp_endian;
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
 
+#define DIGIT_BIT   MP_DIGIT_BIT
 #define USED(m)    ((m)->used)
 #define DIGIT(m,k) ((m)->dp[(k)])
 #define SIGN(m)    ((m)->sign)
@@ -281,12 +294,12 @@ void mp_clear(mp_int *a);
 
 /* init a null terminated series of arguments */
 /*
-mp_err mp_init_multi(mp_int *mp, ...);
+mp_err mp_init_multi(mp_int *mp, ...) MP_NULL_TERMINATED MP_WUR;
 */
 
 /* clear a null terminated series of arguments */
 /*
-void mp_clear_multi(mp_int *mp, ...);
+void mp_clear_multi(mp_int *mp, ...) MP_NULL_TERMINATED;
 */
 
 /* exchange two ints */
@@ -376,15 +389,6 @@ unsigned int mp_get_mag32(const mp_int *a) MP_WUR;
 unsigned long long mp_get_mag64(const mp_int *a) MP_WUR;
 */
 
-/* get integer, set integer (long) */
-#define mp_get_l(a)        (sizeof (long) == 8 ? (long)mp_get_i64(a) : (long)mp_get_i32(a))
-#define mp_set_l(a, b)     (sizeof (long) == 8 ? mp_set_i64((a), (b)) : mp_set_i32((a), (int)(b)))
-
-/* get integer, set integer (unsigned long) */
-#define mp_get_ul(a)       (sizeof (long) == 8 ? (unsigned long)mp_get_u64(a) : (unsigned long)mp_get_u32(a))
-#define mp_set_ul(a, b)    (sizeof (long) == 8 ? mp_set_u64((a), (b)) : mp_set_u32((a), (unsigned int)(b)))
-#define mp_get_magl(a)     (sizeof (long) == 8 ? (unsigned long)mp_get_mag64(a) : (unsigned long)mp_get_mag32(a))
-
 /* set to single unsigned digit, up to MP_DIGIT_MAX */
 /*
 mp_err mp_init_set(mp_int *a, mp_digit b) MP_WUR;
@@ -434,27 +438,32 @@ mp_err mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d) MP_WUR;
 
 /* b = a/2 */
 /*
-int mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
+mp_err mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
+*/
+
+/* a/3 => 3c + d == a */
+/*
+mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
 */
 
 /* c = a * 2**b, implemented as c = a << b */
 /*
-int mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
+mp_err mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
 */
 
 /* b = a*2 */
 /*
-int mp_mul_2(const mp_int *a, mp_int *b) MP_WUR;
+mp_err mp_mul_2(const mp_int *a, mp_int *b) MP_WUR;
 */
 
 /* c = a mod 2**b */
 /*
-int mp_mod_2d(const mp_int *a, int b, mp_int *c);
+mp_err mp_mod_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
 */
 
 /* computes a = 2**b */
 /*
-int mp_2expt(mp_int *a, int b) MP_WUR;
+mp_err mp_2expt(mp_int *a, int b) MP_WUR;
 */
 
 /* Counts the number of lsbs which are zero before the first zero bit */
@@ -466,11 +475,15 @@ int mp_cnt_lsb(const mp_int *a) MP_WUR;
 
 /* makes a pseudo-random mp_int of a given size */
 /*
-int mp_rand(mp_int *a, int digits) MP_WUR;
+mp_err mp_rand(mp_int *a, int digits) MP_WUR;
 */
 /* makes a pseudo-random small int of a given size */
 /*
-int mp_rand_digit(mp_digit *r) MP_WUR;
+MP_DEPRECATED(mp_rand) mp_err mp_rand_digit(mp_digit *r) MP_WUR;
+*/
+/* use custom random data source instead of source provided the platform */
+/*
+void mp_rand_source(mp_err(*source)(void *out, size_t size));
 */
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
@@ -522,12 +535,12 @@ mp_err mp_abs(const mp_int *a, mp_int *b) MP_WUR;
 
 /* compare a to b */
 /*
-mp_err mp_cmp(const mp_int *a, const mp_int *b) MP_WUR;
+mp_ord mp_cmp(const mp_int *a, const mp_int *b) MP_WUR;
 */
 
 /* compare |a| to |b| */
 /*
-mp_err mp_cmp_mag(const mp_int *a, const mp_int *b) MP_WUR;
+mp_ord mp_cmp_mag(const mp_int *a, const mp_int *b) MP_WUR;
 */
 
 /* c = a + b */
@@ -738,7 +751,7 @@ mp_err mp_reduce_2k(mp_int *a, const mp_int *n, mp_digit d) MP_WUR;
 
 /* returns true if a can be reduced with mp_reduce_2k_l */
 /*
-mp_err mp_reduce_is_2k_l(const mp_int *a) MP_WUR;
+mp_bool mp_reduce_is_2k_l(const mp_int *a) MP_WUR;
 */
 
 /* determines k value for 2k reduction */
@@ -825,7 +838,7 @@ mp_err mp_prime_frobenius_underwood(const mp_int *N, mp_bool *result) MP_WUR;
  * Sets result to 1 if probably prime, 0 otherwise
  */
 /*
-int mp_prime_is_prime(const mp_int *a, int t, int *result) MP_WUR;
+mp_err mp_prime_is_prime(const mp_int *a, int t, mp_bool *result) MP_WUR;
 */
 
 /* finds the next prime after the number "a" using "t" trials
@@ -834,7 +847,7 @@ int mp_prime_is_prime(const mp_int *a, int t, int *result) MP_WUR;
  * bbs_style = 1 means the prime must be congruent to 3 mod 4
  */
 /*
-int mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
+mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
 */
 
 /* makes a truly random prime of a given size (bytes),
