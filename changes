@@ -8933,13 +8933,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 => registry 1.3.4
 => dde 1.4.2
 
+2019-10-02 (bug)[16768d] Fix [info hostname] on NetBSD (rytaro)
 
-
-
-
-
-
-
-
-
-- Released 8.6.10, October 15, 2018 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.10, October 25, 2019 - details at http://core.tcl-lang.org/tcl/ -
