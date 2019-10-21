@@ -137,7 +137,7 @@ typedef enum {
    MP_MEM   = -2,  /* out of mem */
    MP_VAL   = -3,  /* invalid input */
    MP_ITER  = -4,  /* maximum iterations reached */
-   MP_BUF   = -5,  /* buffer overflow, supplied buffer too small */
+   MP_BUF   = -5   /* buffer overflow, supplied buffer too small */
 } mp_err;
 typedef enum {
    MP_LSB_FIRST = -1,
