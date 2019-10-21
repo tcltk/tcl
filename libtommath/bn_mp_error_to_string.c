@@ -17,6 +17,8 @@ const char *mp_error_to_string(mp_err code)
       return "Value out of range";
    case MP_ITER:
       return "Max. iterations reached";
+   case MP_BUF:
+      return "Buffer overflow";
    default:
       return "Invalid error code";
    }
