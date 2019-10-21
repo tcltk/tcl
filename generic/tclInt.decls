@@ -1037,6 +1037,9 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
+declare 258 {
+    void TclUnusedStubEntry(void)
+}
 
 ##############################################################################
 

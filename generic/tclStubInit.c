@@ -57,6 +57,7 @@
 #define TclBN_mp_tc_and TclBN_mp_and
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
+#define TclUnusedStubEntry NULL
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -670,6 +671,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    0, /* 257 */
+    TclUnusedStubEntry, /* 258 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1536,6 +1539,24 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
+    0, /* 631 */
+    0, /* 632 */
+    0, /* 633 */
+    0, /* 634 */
+    0, /* 635 */
+    0, /* 636 */
+    0, /* 637 */
+    0, /* 638 */
+    0, /* 639 */
+    0, /* 640 */
+    0, /* 641 */
+    0, /* 642 */
+    0, /* 643 */
+    0, /* 644 */
+    0, /* 645 */
+    0, /* 646 */
+    0, /* 647 */
+    TclUnusedStubEntry, /* 648 */
 };
 
 /* !END!: Do not edit above this line. */
