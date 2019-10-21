@@ -30,7 +30,7 @@ testConstraint reg 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    set ::regver [package require registry 1.3.3]
+	    set ::regver [package require registry 1.3.4]
 	}]} {
 	testConstraint reg 1
     }
