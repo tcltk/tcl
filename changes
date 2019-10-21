@@ -8901,8 +8901,37 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2019-01-09 (bug)[cc1e91] [list [list {*}[set a " "]]] regression (sebres)
 
+2019-02-01 (bug)[e3f481] tests var-1.2[01] (sebres)
 
+2019-02-01 (new) libtommath updated to release 1.1.0 (nijtmans)
 
+2019-03-01 (new) Update to Unicode 12.0 (nijtmans)
+
+2019-03-05 (new)[TIP 527] New command [timerate] (sebres)
+
+2019-03-08 (bug)[39fed4] [package require] memory validity (hume,porter)
+
+2019-04-23 (new) New command tcl::unsupported::corotype (fellows)
+
+2019-05-04 (bug) memlink when namespace deletion kills linked var (porter)
+
+2019-05-28 (new) README file converted to README.md in Markdown (nijtmans)
+
+2019-06-17 (bug)[8b9854] [info level 0] regression with ensembles (porter)
+
+2019-06-20 (bug)[6bdadf] crash multi-arg write-traced [lappend] (fellows,porter)
+
+2019-06-21 (bug)[f8a33c] crash Tcl_Exit before init (brooks,sebres)
+
+2019-08-27 (bug)[fa6bf3] Bytecode fails epoch recovery at numLevel=0 (sebres)
+
+2019-08-29 (bug)[fec0c1] C stack overflow compiling bytecode (ade,sebres)
+
+2019-09-12 tzdata updated to Olson's tzdata2019c (jima)
+
+2019-09-20 (new) registry/dde no longer need -DUNICODE (nijtmans)
+=> registry 1.3.4
+=> dde 1.4.2
 
 
 
