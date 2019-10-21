@@ -10,9 +10,10 @@
  */
 mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 {
-   int      x, y, cmp;
-   mp_err  err;
-   mp_bool res = MP_NO;
+   int      x, y;
+   mp_ord   cmp;
+   mp_err   err;
+   mp_bool  res = MP_NO;
    mp_digit res_tab[PRIVATE_MP_PRIME_TAB_SIZE], step, kstep;
    mp_int   b;
 
