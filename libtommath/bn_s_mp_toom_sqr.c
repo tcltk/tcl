@@ -22,7 +22,8 @@ mp_err s_mp_toom_sqr(const mp_int *a, mp_int *b)
 {
    mp_int S0, a0, a1, a2;
    mp_digit *tmpa, *tmpc;
-   mp_err err, B, count;
+   int B, count;
+   mp_err err;
 
 
    /* init temps */
