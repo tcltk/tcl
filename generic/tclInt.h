@@ -2928,6 +2928,12 @@ MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
+MODULE_SCOPE
+    Tcl_Encoding	TclFSPathEncoding(
+			    Tcl_Interp *interp,
+			    Tcl_Obj *pathPtr
+			);
+
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
@@ -3048,7 +3054,7 @@ MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
-			    size_t len);
+			    size_t len, Tcl_Encoding encoding);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
@@ -4097,9 +4103,6 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t before, size_t after, int *indexPtr);
 MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
-MODULE_SCOPE int	TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written);
-MODULE_SCOPE size_t TclBN_mp_ubin_size(const mp_int *a);
-MODULE_SCOPE int	TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix);
 MODULE_SCOPE void	TclBN_int_reverse(unsigned char *s, size_t len);
 
 /* Constants used in index value encoding routines. */
