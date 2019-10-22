@@ -269,6 +269,7 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
+	Tcl_Encoding encoding;
 	dirName = TclGetString(fileNamePtr);
 	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
@@ -364,7 +365,9 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1,
+                                                                                                                                                                                                                     
+	    encoding = Tcl_GetEncoding(interp ,NULL);
+	    utfname = Tcl_ExternalToUtfDString(encoding, entryPtr->d_name, -1,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
@@ -379,7 +382,7 @@ TclpMatchInDirectory(
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
 			    TclNewFSPathObj(pathPtr, utfname,
-			    Tcl_DStringLength(&utfDs)));
+			    Tcl_DStringLength(&utfDs), encoding));
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);
