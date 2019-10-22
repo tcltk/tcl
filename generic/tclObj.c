@@ -3603,7 +3603,7 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    TclInitBignumFromWideInt(bignumValue,
+	    TclBNInitBignumFromWideInt(bignumValue,
 		    objPtr->internalRep.wideValue);
 	    return TCL_OK;
 	}

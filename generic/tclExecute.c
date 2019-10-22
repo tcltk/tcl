@@ -8072,7 +8072,7 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		TclInitBignumFromWideInt(&big1, w1);
+		TclBNInitBignumFromWideInt(&big1, w1);
 		mp_add(&big2, &big1, &big2);
 		mp_clear(&big1);
 		BIG_RESULT(&big2);
@@ -8479,7 +8479,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	mp_init(&bigResult);
-	mp_expt_d(&big1, (mp_digit)w2, &bigResult);
+	mp_expt_u32(&big1, (unsigned int)w2, &bigResult);
 	mp_clear(&big1);
 	BIG_RESULT(&bigResult);
     }
@@ -8701,7 +8701,7 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != WIDE_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    TclInitBignumFromWideInt(&big, w);
+	    TclBNInitBignumFromWideInt(&big, w);
 	    break;
 	default:
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);

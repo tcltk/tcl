@@ -7891,7 +7891,7 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    TclInitBignumFromWideInt(&big, l);
+	    TclBNInitBignumFromWideInt(&big, l);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-l));
