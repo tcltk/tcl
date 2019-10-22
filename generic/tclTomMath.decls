@@ -81,7 +81,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err TclBN_mp_expt_d(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
 }
 declare 20 {
     mp_err TclBN_mp_grow(mp_int *a, int size)
@@ -155,16 +155,19 @@ declare 42 {
 declare 43 {
     mp_err TclBN_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 }
-declare 44 {
-    mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
-}
-declare 45 {
-    mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b,
-	    unsigned long *outlen)
-}
-declare 46 {
-    mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
-}
+# Removed in 9.0
+#declare 44 {
+#    mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
+#}
+# Removed in 9.0
+#declare 45 {
+#    mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b,
+#	    unsigned long *outlen)
+#}
+# Removed in 9.0
+#declare 46 {
+#    mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+#}
 declare 47 {
     int TclBN_mp_unsigned_bin_size(const mp_int *a)
 }
@@ -199,10 +202,10 @@ declare 63 {
 #    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
 #}
 
-# Added in libtommath 1.0
-declare 67 {
-    mp_err TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
-}
+# Removed in 9.0
+#declare 67 {
+#    mp_err TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
+#}
 # Added in libtommath 1.0.1
 declare 68 {
     void TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i)
@@ -233,9 +236,20 @@ declare 71 {
 declare 76 {
     mp_err TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
+# Removed in 9.0
+#declare 77 {
+#    mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
+#}
 
-declare 77 {
-    mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
+# Added in libtommath 1.2.0
+declare 78 {
+    int TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
+}
+declare 79 {
+    size_t TclBN_mp_ubin_size(const mp_int *a)
+}
+declare 80 {
+    int TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 }
 
 

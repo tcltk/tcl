@@ -87,6 +87,7 @@ typedef struct {
 				 * epoch. The epoch changes when
 				 * filesystem-mounts are changed. */
     const Tcl_Filesystem *fsPtr;/* The Tcl_Filesystem that claims this path */
+    Tcl_Encoding encoding;
 } FsPath;
 
 /*
@@ -660,9 +661,18 @@ TclPathPart(
 		     * the tail.
 		     */
 
+		    /*
+		     * We don't know that the encoding of the fileName is the
+		     * same as the encoding of, but that's on the caller to
+		     * harmonize.  In any case, if the encoding doesn't match
+		     * at the time it the FsPath object is used, the object is
+		     * ignored.
+		     */
+
 		    Tcl_Obj *resultPtr =
-			    TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
-			    length - strlen(extension));
+			TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
+			    length - strlen(extension),
+			    TclFSPathEncoding(interp, fsPathPtr->cwdPtr));
 
 		    Tcl_IncrRefCount(resultPtr);
 		    return resultPtr;
@@ -876,6 +886,7 @@ TclJoinPath(
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
 		&& TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
 	    Tcl_Obj *tailObj = objv[1];
+
 	    Tcl_PathType type;
 
 	    /* if forceRelative - second path is relative */
@@ -917,14 +928,17 @@ TclJoinPath(
 			    || (strchr(TclGetString(elt), '\\') == NULL)) {
 
 			if (PATHFLAGS(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(elt, str, len,
+				TclFSPathEncoding(NULL, elt));
 			}
 			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(
+				elt, str, len, TclFSPathEncoding(NULL, elt));
 			}
 			(void) Tcl_FSGetNormalizedPath(NULL, elt);
 			if (elt == PATHOBJ(elt)->normPathPtr) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(
+				elt, str, len, TclFSPathEncoding(NULL, elt));
 			}
 		    }
 		}
@@ -1257,7 +1271,8 @@ Tcl_Obj *
 TclNewFSPathObj(
     Tcl_Obj *dirPtr,
     const char *addStrRep,
-    size_t len)
+    size_t len,
+    Tcl_Encoding encoding)
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
@@ -1303,6 +1318,7 @@ TclNewFSPathObj(
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
     fsPathPtr->filesystemEpoch = 0;
+    fsPathPtr->encoding = encoding;
 
     SETPATHOBJ(pathPtr, fsPathPtr);
     PATHFLAGS(pathPtr) = TCLPATH_APPENDED;
@@ -2160,6 +2176,39 @@ TclFSSetPathDetails(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclFSPathEncoding --
+ *
+ *	Produce the encoding, if any, associated with a filesystem path.
+ *
+ * Results:
+ *	NULL or a valid Tcl_Encoding.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Encoding
+TclFSPathEncoding(
+    Tcl_Interp *interp,
+    Tcl_Obj *pathPtr)
+{
+    FsPath *fsPathPtr; 
+    Tcl_Encoding encoding = NULL;
+
+    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
+	return NULL;
+    }
+    if (TclFetchIntRep(pathPtr, &fsPathType)) {
+	fsPathPtr = PATHOBJ(pathPtr);
+	encoding = fsPathPtr->encoding;
+    }
+    return encoding;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * Tcl_FSEqualPaths --
  *
  *	This function tests whether the two paths given are equal path
@@ -2245,7 +2294,10 @@ SetFsPathFromAny(
     Tcl_Obj *transPtr;
     const char *name;
 
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    Tcl_Encoding sysencoding = Tcl_GetEncoding(interp, NULL);
+
+    if (TclHasIntRep(pathPtr, &fsPathType)
+	&& TclFSPathEncoding(interp, pathPtr) == sysencoding) {
 	return TCL_OK;
     }
 
