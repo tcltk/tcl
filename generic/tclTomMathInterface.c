@@ -115,10 +115,10 @@ TclInitBignumFromWideInt(
 		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
 	}
     if (v < (Tcl_WideInt)0) {
-	mp_set_long_long(a, (Tcl_WideUInt)(-v));
+	mp_set_ull(a, (Tcl_WideUInt)(-v));
 	mp_neg(a, a);
     } else {
-	mp_set_long_long(a, (Tcl_WideUInt)v);
+	mp_set_ull(a, (Tcl_WideUInt)v);
     }
 }
 
@@ -146,7 +146,7 @@ TclInitBignumFromWideUInt(
 	if (mp_init(a) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in TclInitBignumFromWideUInt");
 	}
-	mp_set_long_long(a, v);
+	mp_set_ull(a, v);
 }
 
 /*
