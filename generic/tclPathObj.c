@@ -2297,7 +2297,7 @@ SetFsPathFromAny(
     Tcl_Encoding sysencoding = Tcl_GetEncoding(interp, NULL);
 
     if (TclHasIntRep(pathPtr, &fsPathType)
-	&& TclFsPathEncoding(pathPtr) == sysencoding) {
+	&& TclFSPathEncoding(interp, pathPtr) == sysencoding) {
 	return TCL_OK;
     }
 
