@@ -1,19 +1,10 @@
 #include "tommath_private.h"
 #ifdef BN_MP_MONTGOMERY_SETUP_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 /* setups the montgomery reduction stuff */
-int mp_montgomery_setup(const mp_int *n, mp_digit *rho)
+mp_err mp_montgomery_setup(const mp_int *n, mp_digit *rho)
 {
    mp_digit x, b;
 
@@ -44,12 +35,8 @@ int mp_montgomery_setup(const mp_int *n, mp_digit *rho)
 #endif
 
    /* rho = -1/m mod b */
-   *rho = (mp_digit)(((mp_word)1 << (mp_word)DIGIT_BIT) - x) & MP_MASK;
+   *rho = (mp_digit)(((mp_word)1 << (mp_word)MP_DIGIT_BIT) - x) & MP_MASK;
 
    return MP_OKAY;
 }
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
