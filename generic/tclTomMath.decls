@@ -81,7 +81,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err TclBN_mp_expt_d(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
 }
 declare 20 {
     mp_err TclBN_mp_grow(mp_int *a, int size)
@@ -155,14 +155,14 @@ declare 42 {
 declare 43 {
     mp_err TclBN_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 }
-declare 44 {
+declare 44 {deprecated {Use mp_to_ubin}} {
     mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 }
-declare 45 {
+declare 45 {deprecated {Use mp_to_ubin}} {
     mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b,
 	    unsigned long *outlen)
 }
-declare 46 {
+declare 46 {deprecated {Use mp_to_radix}} {
     mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 }
 declare 47 {
@@ -234,7 +234,7 @@ declare 66 {deprecated {Use mp_init() + mp_set_ull()}} {
 }
 
 # Added in libtommath 1.0
-declare 67 {
+declare 67 {deprecated {Use mp_expt_u32}} {
     mp_err TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 }
 # Added in libtommath 1.0.1
@@ -264,9 +264,19 @@ declare 75 {
 declare 76 {
     mp_err TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
-
-declare 77 {
+declare 77 {deprecated {is private function in libtommath}} {
     mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
+}
+
+# Added in libtommath 1.2.0
+declare 78 {
+    int TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
+}
+declare 79 {
+    size_t TclBN_mp_ubin_size(const mp_int *a)
+}
+declare 80 {
+    int TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 }
 
 
