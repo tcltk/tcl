@@ -237,9 +237,6 @@ declare 66 {
 declare 67 {
     mp_err TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 }
-declare 70 {
-    mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
-}
 declare 72 {
     mp_bool TclBN_mp_isodd(const mp_int *a)
 }
