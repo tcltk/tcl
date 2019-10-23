@@ -168,9 +168,10 @@ declare 43 {
 #declare 46 {
 #    mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 #}
-declare 47 {
-    int TclBN_mp_unsigned_bin_size(const mp_int *a)
-}
+# Removed in 9.0
+#declare 47 {deprecated {Use mp_ubin_size}} {
+#    int TclBN_mp_unsigned_bin_size(const mp_int *a)
+#}
 declare 48 {
     mp_err TclBN_mp_xor(const mp_int *a, const mp_int *b, mp_int *c)
 }
@@ -178,10 +179,10 @@ declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
 declare 61 {
-    mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
+    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
 }
 declare 62 {
-    mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
+    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
 }
 declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
@@ -212,9 +213,6 @@ declare 68 {
 }
 declare 69 {
     Tcl_WideUInt TclBN_mp_get_mag_ull(const mp_int *a)
-}
-declare 70 {
-    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
 }
 declare 71 {
     unsigned long TclBN_mp_get_mag_ul(const mp_int *a)

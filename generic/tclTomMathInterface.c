@@ -112,11 +112,12 @@ TclInitBignumFromWideInt(
     Tcl_WideInt v)		/* Initial value */
 {
 	if (mp_init(a) != MP_OKAY) {
-		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
+	wipanic:
+	    Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
 	}
     if (v < (Tcl_WideInt)0) {
 	mp_set_ull(a, (Tcl_WideUInt)(-v));
-	mp_neg(a, a);
+	if (mp_neg(a, a) != MP_OKAY) goto wipanic;
     } else {
 	mp_set_ull(a, (Tcl_WideUInt)v);
     }
