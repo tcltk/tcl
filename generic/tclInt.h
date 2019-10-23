@@ -4039,9 +4039,6 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
-MODULE_SCOPE int	TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written);
-MODULE_SCOPE size_t TclBN_mp_ubin_size(const mp_int *a);
-MODULE_SCOPE int	TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix);
 MODULE_SCOPE void	TclBN_int_reverse(unsigned char *s, size_t len);
 
 /* Constants used in index value encoding routines. */

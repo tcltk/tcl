@@ -90,6 +90,7 @@
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
+#define mp_isodd TclBN_mp_isodd
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -331,7 +332,8 @@ EXTERN mp_err		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 /* 70 */
 EXTERN mp_err		TclBN_mp_set_long(mp_int *a, unsigned long i);
 /* Slot 71 is reserved */
-/* Slot 72 is reserved */
+/* 72 */
+EXTERN mp_bool		TclBN_mp_isodd(const mp_int *a);
 /* 73 */
 EXTERN mp_err		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
 				mp_int *c);
@@ -346,6 +348,14 @@ EXTERN mp_err		TclBN_mp_signed_rsh(const mp_int *a, int b,
 				mp_int *c);
 /* 77 */
 EXTERN mp_bool		TclBN_mp_get_bit(const mp_int *a, unsigned int b);
+/* 78 */
+EXTERN int		TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf,
+				size_t maxlen, size_t *written);
+/* 79 */
+EXTERN size_t		TclBN_mp_ubin_size(const mp_int *a);
+/* 80 */
+EXTERN int		TclBN_mp_to_radix(const mp_int *a, char *str,
+				size_t maxlen, size_t *written, int radix);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -423,12 +433,15 @@ typedef struct TclTomMathStubs {
     void (*reserved69)(void);
     mp_err (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
     void (*reserved71)(void);
-    void (*reserved72)(void);
+    mp_bool (*tclBN_mp_isodd) (const mp_int *a); /* 72 */
     mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
     mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
     mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c); /* 76 */
     mp_bool (*tclBN_mp_get_bit) (const mp_int *a, unsigned int b); /* 77 */
+    int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written); /* 78 */
+    size_t (*tclBN_mp_ubin_size) (const mp_int *a); /* 79 */
+    int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix); /* 80 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -584,7 +597,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #define TclBN_mp_set_long \
 	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
 /* Slot 71 is reserved */
-/* Slot 72 is reserved */
+#define TclBN_mp_isodd \
+	(tclTomMathStubsPtr->tclBN_mp_isodd) /* 72 */
 #define TclBN_mp_tc_and \
 	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
 #define TclBN_mp_tc_or \
@@ -595,10 +609,20 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_signed_rsh) /* 76 */
 #define TclBN_mp_get_bit \
 	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
+#define TclBN_mp_to_ubin \
+	(tclTomMathStubsPtr->tclBN_mp_to_ubin) /* 78 */
+#define TclBN_mp_ubin_size \
+	(tclTomMathStubsPtr->tclBN_mp_ubin_size) /* 79 */
+#define TclBN_mp_to_radix \
+	(tclTomMathStubsPtr->tclBN_mp_to_radix) /* 80 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef mp_isodd
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
