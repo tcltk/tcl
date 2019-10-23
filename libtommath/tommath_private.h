@@ -296,4 +296,7 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
         return (a->sign == MP_NEG) ? (type)-res : (type)res;  \
     }
 
+#undef mp_isodd
+#define mp_isodd TclBN_mp_isodd
+
 #endif
