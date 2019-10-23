@@ -924,12 +924,15 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 69 */
     TclBN_mp_set_long, /* 70 */
     0, /* 71 */
-    0, /* 72 */
+    TclBN_mp_isodd, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
+    TclBN_mp_to_ubin, /* 78 */
+    TclBN_mp_ubin_size, /* 79 */
+    TclBN_mp_to_radix, /* 80 */
 };
 
 static const TclStubHooks tclStubHooks = {

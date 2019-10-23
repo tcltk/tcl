@@ -240,6 +240,9 @@ declare 67 {
 declare 70 {
     mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 }
+declare 72 {
+    mp_bool TclBN_mp_isodd(const mp_int *a)
+}
 
 # Added in libtommath 1.1.0
 declare 73 {
@@ -254,9 +257,19 @@ declare 75 {
 declare 76 {
     mp_err TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
-
 declare 77 {
     mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
+}
+
+# Added in libtommath 1.2.0
+declare 78 {
+    int TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
+}
+declare 79 {
+    size_t TclBN_mp_ubin_size(const mp_int *a)
+}
+declare 80 {
+    int TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 }
 
 
