@@ -387,6 +387,7 @@ TOMMATH_OBJS = \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_set.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
+	bn_mp_init_ul.${OBJEXT} \
 	bn_mp_isodd.${OBJEXT} \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \

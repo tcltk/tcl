@@ -87,22 +87,13 @@ MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
-    TclBN_mp_set_ul(a, i);
+    mp_set_ul(a, i);
     return MP_OKAY;
-}
-
-mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
-{
-    mp_err result = mp_init(a);
-    if (result == MP_OKAY) {
-	TclBN_mp_set_ul(a, i);
-    }
-    return result;
 }
 
 static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 {
-	TclBN_mp_set_ul(a, i);
+	mp_set_ul(a, i);
 	return MP_OKAY;
 }
 
@@ -1010,8 +1001,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_mul_digs, /* 58 */
     TclBN_s_mp_sqr, /* 59 */
     TclBN_s_mp_sub, /* 60 */
-    TclBN_mp_init_set_int, /* 61 */
-    TclBN_mp_set_int, /* 62 */
+    TclBN_mp_init_ul, /* 61 */
+    TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
     TclBNInitBignumFromLong, /* 64 */
     TclBNInitBignumFromWideInt, /* 65 */
@@ -1019,7 +1010,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_expt_d_ex, /* 67 */
     TclBN_mp_set_ull, /* 68 */
     TclBN_mp_get_mag_ull, /* 69 */
-    TclBN_mp_set_ul, /* 70 */
+    0, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
     TclBN_mp_isodd, /* 72 */
     TclBN_mp_tc_and, /* 73 */
