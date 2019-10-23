@@ -73,21 +73,19 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 static MP_SET_UNSIGNED(bn_mp_set_ull, Tcl_WideUInt)
 
 
-mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
+mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
 	bn_mp_set_ull(a, i);
 	return MP_OKAY;
 }
 
-mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
-{
-    return TclBN_mp_set_long(a, i);
-}
-
 mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 {
-    mp_init(a);
-	return TclBN_mp_set_long(a, i);
+    mp_err result = mp_init(a);
+    if (result == MP_OKAY) {
+	bn_mp_set_ull(a, i);
+    }
+	return result;
 }
 
 int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
@@ -922,7 +920,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_expt_d_ex, /* 67 */
     0, /* 68 */
     0, /* 69 */
-    TclBN_mp_set_long, /* 70 */
+    0, /* 70 */
     0, /* 71 */
     TclBN_mp_isodd, /* 72 */
     TclBN_mp_tc_and, /* 73 */

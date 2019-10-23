@@ -104,8 +104,9 @@
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
 #define mp_set TclBN_mp_set
-#define mp_set_int TclBN_mp_set_int
-#define mp_set_long TclBN_mp_set_long
+#define mp_set_int(a,b) (TclBN_mp_set_int(a,(unsigned int)(b)),MP_OKAY)
+#define mp_set_long(a,b) (TclBN_mp_set_int(a,b),MP_OKAY)
+#define mp_set_ul(a,b) (void)TclBN_mp_set_int(a,b)
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
@@ -329,8 +330,7 @@ EXTERN mp_err		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 				mp_int *c, int fast);
 /* Slot 68 is reserved */
 /* Slot 69 is reserved */
-/* 70 */
-EXTERN mp_err		TclBN_mp_set_long(mp_int *a, unsigned long i);
+/* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* 72 */
 EXTERN mp_bool		TclBN_mp_isodd(const mp_int *a);
@@ -431,7 +431,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_expt_d_ex) (const mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
     void (*reserved68)(void);
     void (*reserved69)(void);
-    mp_err (*tclBN_mp_set_long) (mp_int *a, unsigned long i); /* 70 */
+    void (*reserved70)(void);
     void (*reserved71)(void);
     mp_bool (*tclBN_mp_isodd) (const mp_int *a); /* 72 */
     mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
@@ -594,8 +594,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
 /* Slot 68 is reserved */
 /* Slot 69 is reserved */
-#define TclBN_mp_set_long \
-	(tclTomMathStubsPtr->tclBN_mp_set_long) /* 70 */
+/* Slot 70 is reserved */
 /* Slot 71 is reserved */
 #define TclBN_mp_isodd \
 	(tclTomMathStubsPtr->tclBN_mp_isodd) /* 72 */
