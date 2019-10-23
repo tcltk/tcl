@@ -658,7 +658,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_ull, /* 69 */
     TclBN_mp_set_ul, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    0, /* 72 */
+    TclBN_mp_isodd, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */

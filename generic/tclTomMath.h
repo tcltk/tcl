@@ -314,8 +314,12 @@ mp_err mp_init_size(mp_int *a, int size) MP_WUR;
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
-#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+/*
+mp_bool mp_iseven(const mp_int *a) MP_WUR;
+*/
+/*
+mp_bool mp_isodd(const mp_int *a) MP_WUR;
+*/
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */

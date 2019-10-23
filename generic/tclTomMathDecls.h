@@ -96,6 +96,7 @@
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
+#define mp_isodd TclBN_mp_isodd
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -320,7 +321,8 @@ TCLAPI Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a);
 TCLAPI void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
 /* 71 */
 TCLAPI unsigned long	TclBN_mp_get_mag_ul(const mp_int *a);
-/* Slot 72 is reserved */
+/* 72 */
+TCLAPI mp_bool		TclBN_mp_isodd(const mp_int *a);
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -413,7 +415,7 @@ typedef struct TclTomMathStubs {
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a); /* 69 */
     void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 70 */
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a); /* 71 */
-    void (*reserved72)(void);
+    mp_bool (*tclBN_mp_isodd) (const mp_int *a); /* 72 */
     void (*reserved73)(void);
     void (*reserved74)(void);
     void (*reserved75)(void);
@@ -562,7 +564,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ul) /* 70 */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
-/* Slot 72 is reserved */
+#define TclBN_mp_isodd \
+	(tclTomMathStubsPtr->tclBN_mp_isodd) /* 72 */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -579,5 +582,9 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef mp_isodd
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 
 #endif /* _TCLINTDECLS */

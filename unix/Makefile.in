@@ -330,7 +330,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_s_mp_get_bit.o bn_mp_get_mag_ul.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
-	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
+	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o bn_mp_isodd.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
 	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
@@ -488,8 +488,13 @@ STUB_SRCS = \
 	$(GENERIC_DIR)/tclTomMathStubLib.c
 
 TOMMATH_SRCS = \
+	$(TOMMATH_DIR)/bn_cutoffs.c \
+	$(TOMMATH_DIR)/bn_deprecated.c \
+	$(TOMMATH_DIR)/bn_mp_2expt.c \
+	$(TOMMATH_DIR)/bn_mp_abs.c \
 	$(TOMMATH_DIR)/bn_mp_add.c \
 	$(TOMMATH_DIR)/bn_mp_add_d.c \
+	$(TOMMATH_DIR)/bn_mp_addmod.c \
 	$(TOMMATH_DIR)/bn_mp_and.c \
 	$(TOMMATH_DIR)/bn_mp_clamp.c \
 	$(TOMMATH_DIR)/bn_mp_clear.c \
@@ -497,63 +502,151 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_cmp.c \
 	$(TOMMATH_DIR)/bn_mp_cmp_d.c \
 	$(TOMMATH_DIR)/bn_mp_cmp_mag.c \
-	$(TOMMATH_DIR)/bn_mp_copy.c \
 	$(TOMMATH_DIR)/bn_mp_cnt_lsb.c \
+	$(TOMMATH_DIR)/bn_mp_complement.c \
+	$(TOMMATH_DIR)/bn_mp_copy.c \
 	$(TOMMATH_DIR)/bn_mp_count_bits.c \
+	$(TOMMATH_DIR)/bn_mp_decr.c \
 	$(TOMMATH_DIR)/bn_mp_div.c \
-	$(TOMMATH_DIR)/bn_mp_div_d.c \
 	$(TOMMATH_DIR)/bn_mp_div_2.c \
 	$(TOMMATH_DIR)/bn_mp_div_2d.c \
 	$(TOMMATH_DIR)/bn_mp_div_3.c \
+	$(TOMMATH_DIR)/bn_mp_div_d.c \
+	$(TOMMATH_DIR)/bn_mp_dr_is_modulus.c \
+	$(TOMMATH_DIR)/bn_mp_dr_reduce.c \
+	$(TOMMATH_DIR)/bn_mp_dr_setup.c \
+	$(TOMMATH_DIR)/bn_mp_error_to_string.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
 	$(TOMMATH_DIR)/bn_mp_expt_d.c \
 	$(TOMMATH_DIR)/bn_mp_expt_d_ex.c \
 	$(TOMMATH_DIR)/bn_mp_expt_u32.c \
+	$(TOMMATH_DIR)/bn_mp_exptmod.c \
+	$(TOMMATH_DIR)/bn_mp_exteuclid.c \
+	$(TOMMATH_DIR)/bn_mp_fread.c \
+	$(TOMMATH_DIR)/bn_mp_from_sbin.c \
+	$(TOMMATH_DIR)/bn_mp_from_ubin.c \
+	$(TOMMATH_DIR)/bn_mp_fwrite.c \
+	$(TOMMATH_DIR)/bn_mp_gcd.c \
+	$(TOMMATH_DIR)/bn_mp_get_double.c \
+	$(TOMMATH_DIR)/bn_mp_get_i32.c \
+	$(TOMMATH_DIR)/bn_mp_get_i64.c \
+	$(TOMMATH_DIR)/bn_mp_get_l.c \
+	$(TOMMATH_DIR)/bn_mp_get_ll.c \
+	$(TOMMATH_DIR)/bn_mp_get_mag_u32.c \
+	$(TOMMATH_DIR)/bn_mp_get_mag_u64.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_ul.c \
+	$(TOMMATH_DIR)/bn_mp_get_mag_ull.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
+	$(TOMMATH_DIR)/bn_mp_incr.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
+	$(TOMMATH_DIR)/bn_mp_init_i32.c \
+	$(TOMMATH_DIR)/bn_mp_init_i64.c \
+	$(TOMMATH_DIR)/bn_mp_init_l.c \
+	$(TOMMATH_DIR)/bn_mp_init_ll.c \
 	$(TOMMATH_DIR)/bn_mp_init_multi.c \
 	$(TOMMATH_DIR)/bn_mp_init_set.c \
 	$(TOMMATH_DIR)/bn_mp_init_size.c \
+	$(TOMMATH_DIR)/bn_mp_init_u32.c \
+	$(TOMMATH_DIR)/bn_mp_init_u64.c \
+	$(TOMMATH_DIR)/bn_mp_init_ul.c \
+	$(TOMMATH_DIR)/bn_mp_init_ull.c \
+	$(TOMMATH_DIR)/bn_mp_invmod.c \
+	$(TOMMATH_DIR)/bn_mp_is_square.c \
+	$(TOMMATH_DIR)/bn_mp_iseven.c \
+	$(TOMMATH_DIR)/bn_mp_isodd.c \
+	$(TOMMATH_DIR)/bn_mp_kronecker.c \
+	$(TOMMATH_DIR)/bn_mp_lcm.c \
+	$(TOMMATH_DIR)/bn_mp_log_u32.c \
 	$(TOMMATH_DIR)/bn_mp_lshd.c \
 	$(TOMMATH_DIR)/bn_mp_mod.c \
 	$(TOMMATH_DIR)/bn_mp_mod_2d.c \
+	$(TOMMATH_DIR)/bn_mp_mod_d.c \
+	$(TOMMATH_DIR)/bn_mp_montgomery_calc_normalization.c \
+	$(TOMMATH_DIR)/bn_mp_montgomery_reduce.c \
+	$(TOMMATH_DIR)/bn_mp_montgomery_setup.c \
 	$(TOMMATH_DIR)/bn_mp_mul.c \
 	$(TOMMATH_DIR)/bn_mp_mul_2.c \
 	$(TOMMATH_DIR)/bn_mp_mul_2d.c \
 	$(TOMMATH_DIR)/bn_mp_mul_d.c \
+	$(TOMMATH_DIR)/bn_mp_mulmod.c \
 	$(TOMMATH_DIR)/bn_mp_neg.c \
 	$(TOMMATH_DIR)/bn_mp_or.c \
+	$(TOMMATH_DIR)/bn_mp_pack.c \
+	$(TOMMATH_DIR)/bn_mp_pack_count.c \
+	$(TOMMATH_DIR)/bn_mp_prime_fermat.c \
+	$(TOMMATH_DIR)/bn_mp_prime_frobenius_underwood.c \
+	$(TOMMATH_DIR)/bn_mp_prime_is_prime.c \
+	$(TOMMATH_DIR)/bn_mp_prime_miller_rabin.c \
+	$(TOMMATH_DIR)/bn_mp_prime_next_prime.c \
+	$(TOMMATH_DIR)/bn_mp_prime_rabin_miller_trials.c \
+	$(TOMMATH_DIR)/bn_mp_prime_rand.c \
+	$(TOMMATH_DIR)/bn_mp_prime_strong_lucas_selfridge.c \
 	$(TOMMATH_DIR)/bn_mp_radix_size.c \
 	$(TOMMATH_DIR)/bn_mp_radix_smap.c \
+	$(TOMMATH_DIR)/bn_mp_rand.c \
 	$(TOMMATH_DIR)/bn_mp_read_radix.c \
+	$(TOMMATH_DIR)/bn_mp_reduce.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_2k.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_2k_l.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_2k_setup.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_2k_setup_l.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_is_2k.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_is_2k_l.c \
+	$(TOMMATH_DIR)/bn_mp_reduce_setup.c \
+	$(TOMMATH_DIR)/bn_mp_root_u32.c \
 	$(TOMMATH_DIR)/bn_mp_rshd.c \
+	$(TOMMATH_DIR)/bn_mp_sbin_size.c \
 	$(TOMMATH_DIR)/bn_mp_set.c \
+	$(TOMMATH_DIR)/bn_mp_set_double.c \
+	$(TOMMATH_DIR)/bn_mp_set_i32.c \
+	$(TOMMATH_DIR)/bn_mp_set_i64.c \
+	$(TOMMATH_DIR)/bn_mp_set_l.c \
+	$(TOMMATH_DIR)/bn_mp_set_ll.c \
+	$(TOMMATH_DIR)/bn_mp_set_u32.c \
+	$(TOMMATH_DIR)/bn_mp_set_u64.c \
 	$(TOMMATH_DIR)/bn_mp_set_ul.c \
+	$(TOMMATH_DIR)/bn_mp_set_ull.c \
 	$(TOMMATH_DIR)/bn_mp_shrink.c \
+	$(TOMMATH_DIR)/bn_mp_signed_rsh.c \
 	$(TOMMATH_DIR)/bn_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_sqrmod.c \
 	$(TOMMATH_DIR)/bn_mp_sqrt.c \
+	$(TOMMATH_DIR)/bn_mp_sqrtmod_prime.c \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
-	$(TOMMATH_DIR)/bn_mp_signed_rsh.c \
-	$(TOMMATH_DIR)/bn_mp_to_ubin.c \
-	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
-	$(TOMMATH_DIR)/bn_mp_toom_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_submod.c \
 	$(TOMMATH_DIR)/bn_mp_to_radix.c \
+	$(TOMMATH_DIR)/bn_mp_to_sbin.c \
+	$(TOMMATH_DIR)/bn_mp_to_ubin.c \
 	$(TOMMATH_DIR)/bn_mp_ubin_size.c \
+	$(TOMMATH_DIR)/bn_mp_unpack.c \
 	$(TOMMATH_DIR)/bn_mp_xor.c \
 	$(TOMMATH_DIR)/bn_mp_zero.c \
-	$(TOMMATH_DIR)/bn_s_mp_reverse.c \
-	$(TOMMATH_DIR)/bn_s_mp_mul_digs_fast.c \
-	$(TOMMATH_DIR)/bn_s_mp_sqr_fast.c \
+	$(TOMMATH_DIR)/bn_prime_tab.c \
+	$(TOMMATH_DIR)/bn_s_mp_add.c \
+	$(TOMMATH_DIR)/bn_s_mp_balance_mul.c \
+	$(TOMMATH_DIR)/bn_s_mp_exptmod.c \
+	$(TOMMATH_DIR)/bn_s_mp_exptmod_fast.c \
 	$(TOMMATH_DIR)/bn_s_mp_get_bit.c \
+	$(TOMMATH_DIR)/bn_s_mp_invmod_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_invmod_slow.c \
 	$(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c \
 	$(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c \
-	$(TOMMATH_DIR)/bn_s_mp_add.c \
+	$(TOMMATH_DIR)/bn_s_mp_montgomery_reduce_fast.c \
 	$(TOMMATH_DIR)/bn_s_mp_mul_digs.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_digs_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_high_digs.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_high_digs_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_prime_is_divisible.c \
+	$(TOMMATH_DIR)/bn_s_mp_rand_jenkins.c \
+	$(TOMMATH_DIR)/bn_s_mp_rand_platform.c \
+	$(TOMMATH_DIR)/bn_s_mp_reverse.c \
 	$(TOMMATH_DIR)/bn_s_mp_sqr.c \
-	$(TOMMATH_DIR)/bn_s_mp_sub.c
+	$(TOMMATH_DIR)/bn_s_mp_sqr_fast.c \
+	$(TOMMATH_DIR)/bn_s_mp_sub.c \
+	$(TOMMATH_DIR)/bn_s_mp_toom_mul.c \
+	$(TOMMATH_DIR)/bn_s_mp_toom_sqr.c
 
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
@@ -1548,6 +1641,9 @@ bn_s_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c $(MATHHDRS)
 
 bn_s_mp_balance_mul.o: $(TOMMATH_DIR)/bn_s_mp_balance_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_balance_mul.c
+
+bn_mp_isodd.o: $(TOMMATH_DIR)/bn_mp_isodd.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_isodd.c
 
 bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
