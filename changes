@@ -8903,8 +8903,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2019-02-01 (bug)[e3f481] tests var-1.2[01] (sebres)
 
-2019-02-01 (new) libtommath updated to release 1.1.0 (nijtmans)
-
 2019-03-01 (new) Update to Unicode 12.0 (nijtmans)
 
 2019-03-05 (new)[TIP 527] New command [timerate] (sebres)
@@ -8934,5 +8932,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 => dde 1.4.2
 
 2019-10-02 (bug)[16768d] Fix [info hostname] on NetBSD (rytaro)
+
+2019-10-23 (new) libtommath updated to release 1.2.0 (nijtmans)
 
 - Released 8.6.10, October 25, 2019 - details at http://core.tcl-lang.org/tcl/ -
