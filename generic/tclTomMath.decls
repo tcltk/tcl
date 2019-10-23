@@ -219,6 +219,9 @@ declare 70 {
 declare 71 {
     unsigned long TclBN_mp_get_mag_ul(const mp_int *a)
 }
+declare 72 {
+    mp_bool TclBN_mp_isodd(const mp_int *a)
+}
 
 # Added in libtommath 1.1.0
 # No longer in use: replaced by mp_and()
