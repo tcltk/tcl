@@ -267,9 +267,9 @@ TclpMatchInDirectory(
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
+	Tcl_Encoding encoding = Tcl_GetEncoding(interp ,NULL);
 
 	Tcl_DStringInit(&dsOrig);
-	Tcl_Encoding encoding;
 	dirName = TclGetString(fileNamePtr);
 	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
@@ -366,7 +366,6 @@ TclpMatchInDirectory(
 	     */
 
                                                                                                                                                                                                                      
-	    encoding = Tcl_GetEncoding(interp ,NULL);
 	    utfname = Tcl_ExternalToUtfDString(encoding, entryPtr->d_name, -1,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
