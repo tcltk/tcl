@@ -1075,6 +1075,7 @@ TclpMatchInDirectory(
 	    const char *utfname;
 	    int checkDrive = 0, isDrive;
 	    DWORD attr;
+		Tcl_Encoding encoding;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1112,6 +1113,7 @@ TclpMatchInDirectory(
 	     * the system.
 	     */
 
+	    encoding = Tcl_GetEncoding(interp ,NULL);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 1)) {
 		/*
 		 * If the file matches, then we need to process the remainder
@@ -1130,7 +1132,7 @@ TclpMatchInDirectory(
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
 			    TclNewFSPathObj(pathPtr, utfname,
-				    Tcl_DStringLength(&ds)));
+				    Tcl_DStringLength(&ds), encoding));
 		}
 	    }
 
