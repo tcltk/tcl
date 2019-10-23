@@ -329,7 +329,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_u32.o \
 	bn_s_mp_get_bit.o bn_mp_get_mag_ul.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
-	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
+	bn_mp_init_size.o bn_mp_init_ul.o bn_s_mp_karatsuba_mul.o \
 	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o bn_mp_isodd.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
 	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
@@ -1632,6 +1632,9 @@ bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c $(MATHHDRS)
 
 bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
+
+bn_mp_init_ul.o:$(TOMMATH_DIR)/bn_mp_init_ul.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ul.c
 
 bn_s_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c

@@ -4321,7 +4321,7 @@ TclInitDoubleConversion(void)
     for (i=0; i<8; ++i) {
 	mp_sqr(pow5+i, pow5+i+1);
     }
-    mp_init_set_int(pow5_13, 1220703125);
+    mp_init_ul(pow5_13, 1220703125);
     for (i = 1; i < 5; ++i) {
 	mp_init(pow5_13 + i);
 	mp_sqr(pow5_13 + i - 1, pow5_13 + i);

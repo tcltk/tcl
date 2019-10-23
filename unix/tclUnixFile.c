@@ -270,7 +270,8 @@ TclpMatchInDirectory(
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp ,NULL);
 
 	Tcl_DStringInit(&dsOrig);
-    dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetString(fileNamePtr);
+	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*

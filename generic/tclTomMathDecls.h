@@ -90,8 +90,9 @@
 #define mp_init_copy TclBN_mp_init_copy
 #define mp_init_multi TclBN_mp_init_multi
 #define mp_init_set TclBN_mp_init_set
-#define mp_init_set_int TclBN_mp_init_set_int
+#define mp_init_set_int(a,i) TclBN_mp_init_ul(a,(unsigned int)(i))
 #define mp_init_size TclBN_mp_init_size
+#define mp_init_ul TclBN_mp_init_ul
 #define mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
@@ -110,7 +111,7 @@
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
 #define mp_set TclBN_mp_set
-#define mp_set_int TclBN_mp_set_int
+#define mp_set_int(a,b) (TclBN_mp_set_ul((a),((unsigned int)(b))),MP_OKAY)
 #define mp_set_long(a,b) (TclBN_mp_set_ul((a),(b)),MP_OKAY)
 #define mp_set_long_long(a,b) (TclBN_mp_set_ull((a),(b)),MP_OKAY)
 #define mp_set_ul TclBN_mp_set_ul
@@ -136,7 +137,6 @@
 #define mp_to_radix TclBN_mp_to_radix
 #define mp_to_ubin TclBN_mp_to_ubin
 #define mp_ubin_size TclBN_mp_ubin_size
-#define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
@@ -285,8 +285,7 @@ TCLAPI mp_err		TclBN_mp_sub_d(const mp_int *a, mp_digit b,
 /* Slot 44 is reserved */
 /* Slot 45 is reserved */
 /* Slot 46 is reserved */
-/* 47 */
-TCLAPI int		TclBN_mp_unsigned_bin_size(const mp_int *a);
+/* Slot 47 is reserved */
 /* 48 */
 TCLAPI mp_err		TclBN_mp_xor(const mp_int *a, const mp_int *b,
 				mp_int *c);
@@ -304,9 +303,9 @@ TCLAPI void		TclBN_mp_zero(mp_int *a);
 /* Slot 59 is reserved */
 /* Slot 60 is reserved */
 /* 61 */
-TCLAPI mp_err		TclBN_mp_init_set_int(mp_int *a, unsigned long i);
+TCLAPI mp_err		TclBN_mp_init_ul(mp_int *a, unsigned long i);
 /* 62 */
-TCLAPI mp_err		TclBN_mp_set_int(mp_int *a, unsigned long i);
+TCLAPI void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
 /* 63 */
 TCLAPI int		TclBN_mp_cnt_lsb(const mp_int *a);
 /* Slot 64 is reserved */
@@ -317,8 +316,7 @@ TCLAPI int		TclBN_mp_cnt_lsb(const mp_int *a);
 TCLAPI void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 /* 69 */
 TCLAPI Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a);
-/* 70 */
-TCLAPI void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
+/* Slot 70 is reserved */
 /* 71 */
 TCLAPI unsigned long	TclBN_mp_get_mag_ul(const mp_int *a);
 /* 72 */
@@ -390,7 +388,7 @@ typedef struct TclTomMathStubs {
     void (*reserved44)(void);
     void (*reserved45)(void);
     void (*reserved46)(void);
-    int (*tclBN_mp_unsigned_bin_size) (const mp_int *a); /* 47 */
+    void (*reserved47)(void);
     mp_err (*tclBN_mp_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 48 */
     void (*tclBN_mp_zero) (mp_int *a); /* 49 */
     void (*reserved50)(void);
@@ -404,8 +402,8 @@ typedef struct TclTomMathStubs {
     void (*reserved58)(void);
     void (*reserved59)(void);
     void (*reserved60)(void);
-    mp_err (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
-    mp_err (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
+    mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i); /* 61 */
+    void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
     void (*reserved64)(void);
     void (*reserved65)(void);
@@ -413,7 +411,7 @@ typedef struct TclTomMathStubs {
     void (*reserved67)(void);
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a); /* 69 */
-    void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 70 */
+    void (*reserved70)(void);
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a); /* 71 */
     mp_bool (*tclBN_mp_isodd) (const mp_int *a); /* 72 */
     void (*reserved73)(void);
@@ -529,8 +527,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* Slot 44 is reserved */
 /* Slot 45 is reserved */
 /* Slot 46 is reserved */
-#define TclBN_mp_unsigned_bin_size \
-	(tclTomMathStubsPtr->tclBN_mp_unsigned_bin_size) /* 47 */
+/* Slot 47 is reserved */
 #define TclBN_mp_xor \
 	(tclTomMathStubsPtr->tclBN_mp_xor) /* 48 */
 #define TclBN_mp_zero \
@@ -546,10 +543,10 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* Slot 58 is reserved */
 /* Slot 59 is reserved */
 /* Slot 60 is reserved */
-#define TclBN_mp_init_set_int \
-	(tclTomMathStubsPtr->tclBN_mp_init_set_int) /* 61 */
-#define TclBN_mp_set_int \
-	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
+#define TclBN_mp_init_ul \
+	(tclTomMathStubsPtr->tclBN_mp_init_ul) /* 61 */
+#define TclBN_mp_set_ul \
+	(tclTomMathStubsPtr->tclBN_mp_set_ul) /* 62 */
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
 /* Slot 64 is reserved */
@@ -560,8 +557,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ull) /* 68 */
 #define TclBN_mp_get_mag_ull \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ull) /* 69 */
-#define TclBN_mp_set_ul \
-	(tclTomMathStubsPtr->tclBN_mp_set_ul) /* 70 */
+/* Slot 70 is reserved */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
 #define TclBN_mp_isodd \

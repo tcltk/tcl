@@ -341,6 +341,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
+	$(TMP_DIR)\bn_mp_init_ul.obj \
 	$(TMP_DIR)\bn_mp_isodd.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
