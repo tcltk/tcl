@@ -742,6 +742,23 @@ TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_int, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
+    NULL, /* 64 */
+    NULL, /* 65 */
+    NULL, /* 66 */
+    NULL, /* 67 */
+    NULL, /* 68 */
+    NULL, /* 69 */
+    NULL, /* 70 */
+    NULL, /* 71 */
+    NULL, /* 72 */
+    NULL, /* 73 */
+    NULL, /* 74 */
+    NULL, /* 75 */
+    NULL, /* 76 */
+    NULL, /* 77 */
+    NULL, /* 78 */
+    NULL, /* 79 */
+    TclUnusedStubEntry, /* 80 */
 };
 
 static TclStubHooks tclStubHooks = {
