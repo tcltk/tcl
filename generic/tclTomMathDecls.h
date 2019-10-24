@@ -179,18 +179,18 @@ extern "C" {
  */
 
 /* 0 */
-TCLAPI int		TclBN_epoch(void);
+TCLAPI int		TclBN_epoch(void) MP_WUR;
 /* 1 */
-TCLAPI int		TclBN_revision(void);
+TCLAPI int		TclBN_revision(void) MP_WUR;
 /* 2 */
 TCLAPI mp_err		TclBN_mp_add(const mp_int *a, const mp_int *b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 3 */
 TCLAPI mp_err		TclBN_mp_add_d(const mp_int *a, mp_digit b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 4 */
 TCLAPI mp_err		TclBN_mp_and(const mp_int *a, const mp_int *b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 5 */
 TCLAPI void		TclBN_mp_clamp(mp_int *a);
 /* 6 */
@@ -198,97 +198,97 @@ TCLAPI void		TclBN_mp_clear(mp_int *a);
 /* 7 */
 TCLAPI void		TclBN_mp_clear_multi(mp_int *a, ...);
 /* 8 */
-TCLAPI mp_ord		TclBN_mp_cmp(const mp_int *a, const mp_int *b);
+TCLAPI mp_ord		TclBN_mp_cmp(const mp_int *a, const mp_int *b) MP_WUR;
 /* 9 */
-TCLAPI mp_ord		TclBN_mp_cmp_d(const mp_int *a, mp_digit b);
+TCLAPI mp_ord		TclBN_mp_cmp_d(const mp_int *a, mp_digit b) MP_WUR;
 /* 10 */
-TCLAPI mp_ord		TclBN_mp_cmp_mag(const mp_int *a, const mp_int *b);
+TCLAPI mp_ord		TclBN_mp_cmp_mag(const mp_int *a, const mp_int *b) MP_WUR;
 /* 11 */
-TCLAPI mp_err		TclBN_mp_copy(const mp_int *a, mp_int *b);
+TCLAPI mp_err		TclBN_mp_copy(const mp_int *a, mp_int *b) MP_WUR;
 /* 12 */
-TCLAPI int		TclBN_mp_count_bits(const mp_int *a);
+TCLAPI int		TclBN_mp_count_bits(const mp_int *a) MP_WUR;
 /* 13 */
 TCLAPI mp_err		TclBN_mp_div(const mp_int *a, const mp_int *b,
-				mp_int *q, mp_int *r);
+				mp_int *q, mp_int *r) MP_WUR;
 /* 14 */
 TCLAPI mp_err		TclBN_mp_div_d(const mp_int *a, mp_digit b,
-				mp_int *q, mp_digit *r);
+				mp_int *q, mp_digit *r) MP_WUR;
 /* 15 */
-TCLAPI mp_err		TclBN_mp_div_2(const mp_int *a, mp_int *q);
+TCLAPI mp_err		TclBN_mp_div_2(const mp_int *a, mp_int *q) MP_WUR;
 /* 16 */
 TCLAPI mp_err		TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q,
-				mp_int *r);
+				mp_int *r) MP_WUR;
 /* 17 */
 TCLAPI mp_err		TclBN_mp_div_3(const mp_int *a, mp_int *q,
-				mp_digit *r);
+				mp_digit *r) MP_WUR;
 /* 18 */
 TCLAPI void		TclBN_mp_exch(mp_int *a, mp_int *b);
 /* 19 */
 TCLAPI mp_err		TclBN_mp_expt_u32(const mp_int *a, unsigned int b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 20 */
-TCLAPI mp_err		TclBN_mp_grow(mp_int *a, int size);
+TCLAPI mp_err		TclBN_mp_grow(mp_int *a, int size) MP_WUR;
 /* 21 */
-TCLAPI mp_err		TclBN_mp_init(mp_int *a);
+TCLAPI mp_err		TclBN_mp_init(mp_int *a) MP_WUR;
 /* 22 */
-TCLAPI mp_err		TclBN_mp_init_copy(mp_int *a, const mp_int *b);
+TCLAPI mp_err		TclBN_mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 /* 23 */
-TCLAPI mp_err		TclBN_mp_init_multi(mp_int *a, ...);
+TCLAPI mp_err		TclBN_mp_init_multi(mp_int *a, ...) MP_WUR;
 /* 24 */
-TCLAPI mp_err		TclBN_mp_init_set(mp_int *a, mp_digit b);
+TCLAPI mp_err		TclBN_mp_init_set(mp_int *a, mp_digit b) MP_WUR;
 /* 25 */
-TCLAPI mp_err		TclBN_mp_init_size(mp_int *a, int size);
+TCLAPI mp_err		TclBN_mp_init_size(mp_int *a, int size) MP_WUR;
 /* 26 */
-TCLAPI mp_err		TclBN_mp_lshd(mp_int *a, int shift);
+TCLAPI mp_err		TclBN_mp_lshd(mp_int *a, int shift) MP_WUR;
 /* 27 */
 TCLAPI mp_err		TclBN_mp_mod(const mp_int *a, const mp_int *b,
-				mp_int *r);
+				mp_int *r) MP_WUR;
 /* 28 */
-TCLAPI mp_err		TclBN_mp_mod_2d(const mp_int *a, int b, mp_int *r);
+TCLAPI mp_err		TclBN_mp_mod_2d(const mp_int *a, int b, mp_int *r) MP_WUR;
 /* 29 */
 TCLAPI mp_err		TclBN_mp_mul(const mp_int *a, const mp_int *b,
-				mp_int *p);
+				mp_int *p) MP_WUR;
 /* 30 */
 TCLAPI mp_err		TclBN_mp_mul_d(const mp_int *a, mp_digit b,
-				mp_int *p);
+				mp_int *p) MP_WUR;
 /* 31 */
-TCLAPI mp_err		TclBN_mp_mul_2(const mp_int *a, mp_int *p);
+TCLAPI mp_err		TclBN_mp_mul_2(const mp_int *a, mp_int *p) MP_WUR;
 /* 32 */
-TCLAPI mp_err		TclBN_mp_mul_2d(const mp_int *a, int d, mp_int *p);
+TCLAPI mp_err		TclBN_mp_mul_2d(const mp_int *a, int d, mp_int *p) MP_WUR;
 /* 33 */
-TCLAPI mp_err		TclBN_mp_neg(const mp_int *a, mp_int *b);
+TCLAPI mp_err		TclBN_mp_neg(const mp_int *a, mp_int *b) MP_WUR;
 /* 34 */
 TCLAPI mp_err		TclBN_mp_or(const mp_int *a, const mp_int *b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 35 */
 TCLAPI mp_err		TclBN_mp_radix_size(const mp_int *a, int radix,
-				int *size);
+				int *size) MP_WUR;
 /* 36 */
 TCLAPI mp_err		TclBN_mp_read_radix(mp_int *a, const char *str,
-				int radix);
+				int radix) MP_WUR;
 /* 37 */
 TCLAPI void		TclBN_mp_rshd(mp_int *a, int shift);
 /* 38 */
-TCLAPI mp_err		TclBN_mp_shrink(mp_int *a);
+TCLAPI mp_err		TclBN_mp_shrink(mp_int *a) MP_WUR;
 /* 39 */
 TCLAPI void		TclBN_mp_set(mp_int *a, mp_digit b);
 /* 40 */
-TCLAPI mp_err		TclBN_mp_sqr(const mp_int *a, mp_int *b);
+TCLAPI mp_err		TclBN_mp_sqr(const mp_int *a, mp_int *b) MP_WUR;
 /* 41 */
-TCLAPI mp_err		TclBN_mp_sqrt(const mp_int *a, mp_int *b);
+TCLAPI mp_err		TclBN_mp_sqrt(const mp_int *a, mp_int *b) MP_WUR;
 /* 42 */
 TCLAPI mp_err		TclBN_mp_sub(const mp_int *a, const mp_int *b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 43 */
 TCLAPI mp_err		TclBN_mp_sub_d(const mp_int *a, mp_digit b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* Slot 44 is reserved */
 /* Slot 45 is reserved */
 /* Slot 46 is reserved */
 /* Slot 47 is reserved */
 /* 48 */
 TCLAPI mp_err		TclBN_mp_xor(const mp_int *a, const mp_int *b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* 49 */
 TCLAPI void		TclBN_mp_zero(mp_int *a);
 /* Slot 50 is reserved */
@@ -303,11 +303,11 @@ TCLAPI void		TclBN_mp_zero(mp_int *a);
 /* Slot 59 is reserved */
 /* Slot 60 is reserved */
 /* 61 */
-TCLAPI mp_err		TclBN_mp_init_ul(mp_int *a, unsigned long i);
+TCLAPI mp_err		TclBN_mp_init_ul(mp_int *a, unsigned long i) MP_WUR;
 /* 62 */
 TCLAPI void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
 /* 63 */
-TCLAPI int		TclBN_mp_cnt_lsb(const mp_int *a);
+TCLAPI int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
 /* Slot 64 is reserved */
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
@@ -315,81 +315,81 @@ TCLAPI int		TclBN_mp_cnt_lsb(const mp_int *a);
 /* 68 */
 TCLAPI void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 /* 69 */
-TCLAPI Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a);
+TCLAPI Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
 /* Slot 70 is reserved */
 /* 71 */
 TCLAPI unsigned long	TclBN_mp_get_mag_ul(const mp_int *a);
 /* 72 */
-TCLAPI mp_bool		TclBN_mp_isodd(const mp_int *a);
+TCLAPI mp_bool		TclBN_mp_isodd(const mp_int *a) MP_WUR;
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
 /* 76 */
 TCLAPI mp_err		TclBN_mp_signed_rsh(const mp_int *a, int b,
-				mp_int *c);
+				mp_int *c) MP_WUR;
 /* Slot 77 is reserved */
 /* 78 */
 TCLAPI int		TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf,
-				size_t maxlen, size_t *written);
+				size_t maxlen, size_t *written) MP_WUR;
 /* 79 */
-TCLAPI size_t		TclBN_mp_ubin_size(const mp_int *a);
+TCLAPI size_t		TclBN_mp_ubin_size(const mp_int *a) MP_WUR;
 /* 80 */
 TCLAPI int		TclBN_mp_to_radix(const mp_int *a, char *str,
-				size_t maxlen, size_t *written, int radix);
+				size_t maxlen, size_t *written, int radix) MP_WUR;
 
 typedef struct TclTomMathStubs {
     int magic;
     void *hooks;
 
-    int (*tclBN_epoch) (void); /* 0 */
-    int (*tclBN_revision) (void); /* 1 */
-    mp_err (*tclBN_mp_add) (const mp_int *a, const mp_int *b, mp_int *c); /* 2 */
-    mp_err (*tclBN_mp_add_d) (const mp_int *a, mp_digit b, mp_int *c); /* 3 */
-    mp_err (*tclBN_mp_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 4 */
+    int (*tclBN_epoch) (void) MP_WUR; /* 0 */
+    int (*tclBN_revision) (void) MP_WUR; /* 1 */
+    mp_err (*tclBN_mp_add) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 2 */
+    mp_err (*tclBN_mp_add_d) (const mp_int *a, mp_digit b, mp_int *c) MP_WUR; /* 3 */
+    mp_err (*tclBN_mp_and) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 4 */
     void (*tclBN_mp_clamp) (mp_int *a); /* 5 */
     void (*tclBN_mp_clear) (mp_int *a); /* 6 */
     void (*tclBN_mp_clear_multi) (mp_int *a, ...); /* 7 */
-    mp_ord (*tclBN_mp_cmp) (const mp_int *a, const mp_int *b); /* 8 */
-    mp_ord (*tclBN_mp_cmp_d) (const mp_int *a, mp_digit b); /* 9 */
-    mp_ord (*tclBN_mp_cmp_mag) (const mp_int *a, const mp_int *b); /* 10 */
-    mp_err (*tclBN_mp_copy) (const mp_int *a, mp_int *b); /* 11 */
-    int (*tclBN_mp_count_bits) (const mp_int *a); /* 12 */
-    mp_err (*tclBN_mp_div) (const mp_int *a, const mp_int *b, mp_int *q, mp_int *r); /* 13 */
-    mp_err (*tclBN_mp_div_d) (const mp_int *a, mp_digit b, mp_int *q, mp_digit *r); /* 14 */
-    mp_err (*tclBN_mp_div_2) (const mp_int *a, mp_int *q); /* 15 */
-    mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r); /* 16 */
-    mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, mp_digit *r); /* 17 */
+    mp_ord (*tclBN_mp_cmp) (const mp_int *a, const mp_int *b) MP_WUR; /* 8 */
+    mp_ord (*tclBN_mp_cmp_d) (const mp_int *a, mp_digit b) MP_WUR; /* 9 */
+    mp_ord (*tclBN_mp_cmp_mag) (const mp_int *a, const mp_int *b) MP_WUR; /* 10 */
+    mp_err (*tclBN_mp_copy) (const mp_int *a, mp_int *b) MP_WUR; /* 11 */
+    int (*tclBN_mp_count_bits) (const mp_int *a) MP_WUR; /* 12 */
+    mp_err (*tclBN_mp_div) (const mp_int *a, const mp_int *b, mp_int *q, mp_int *r) MP_WUR; /* 13 */
+    mp_err (*tclBN_mp_div_d) (const mp_int *a, mp_digit b, mp_int *q, mp_digit *r) MP_WUR; /* 14 */
+    mp_err (*tclBN_mp_div_2) (const mp_int *a, mp_int *q) MP_WUR; /* 15 */
+    mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r) MP_WUR; /* 16 */
+    mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, mp_digit *r) MP_WUR; /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
-    mp_err (*tclBN_mp_expt_u32) (const mp_int *a, unsigned int b, mp_int *c); /* 19 */
-    mp_err (*tclBN_mp_grow) (mp_int *a, int size); /* 20 */
-    mp_err (*tclBN_mp_init) (mp_int *a); /* 21 */
-    mp_err (*tclBN_mp_init_copy) (mp_int *a, const mp_int *b); /* 22 */
-    mp_err (*tclBN_mp_init_multi) (mp_int *a, ...); /* 23 */
-    mp_err (*tclBN_mp_init_set) (mp_int *a, mp_digit b); /* 24 */
-    mp_err (*tclBN_mp_init_size) (mp_int *a, int size); /* 25 */
-    mp_err (*tclBN_mp_lshd) (mp_int *a, int shift); /* 26 */
-    mp_err (*tclBN_mp_mod) (const mp_int *a, const mp_int *b, mp_int *r); /* 27 */
-    mp_err (*tclBN_mp_mod_2d) (const mp_int *a, int b, mp_int *r); /* 28 */
-    mp_err (*tclBN_mp_mul) (const mp_int *a, const mp_int *b, mp_int *p); /* 29 */
-    mp_err (*tclBN_mp_mul_d) (const mp_int *a, mp_digit b, mp_int *p); /* 30 */
-    mp_err (*tclBN_mp_mul_2) (const mp_int *a, mp_int *p); /* 31 */
-    mp_err (*tclBN_mp_mul_2d) (const mp_int *a, int d, mp_int *p); /* 32 */
-    mp_err (*tclBN_mp_neg) (const mp_int *a, mp_int *b); /* 33 */
-    mp_err (*tclBN_mp_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 34 */
-    mp_err (*tclBN_mp_radix_size) (const mp_int *a, int radix, int *size); /* 35 */
-    mp_err (*tclBN_mp_read_radix) (mp_int *a, const char *str, int radix); /* 36 */
+    mp_err (*tclBN_mp_expt_u32) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 19 */
+    mp_err (*tclBN_mp_grow) (mp_int *a, int size) MP_WUR; /* 20 */
+    mp_err (*tclBN_mp_init) (mp_int *a) MP_WUR; /* 21 */
+    mp_err (*tclBN_mp_init_copy) (mp_int *a, const mp_int *b) MP_WUR; /* 22 */
+    mp_err (*tclBN_mp_init_multi) (mp_int *a, ...) MP_WUR; /* 23 */
+    mp_err (*tclBN_mp_init_set) (mp_int *a, mp_digit b) MP_WUR; /* 24 */
+    mp_err (*tclBN_mp_init_size) (mp_int *a, int size) MP_WUR; /* 25 */
+    mp_err (*tclBN_mp_lshd) (mp_int *a, int shift) MP_WUR; /* 26 */
+    mp_err (*tclBN_mp_mod) (const mp_int *a, const mp_int *b, mp_int *r) MP_WUR; /* 27 */
+    mp_err (*tclBN_mp_mod_2d) (const mp_int *a, int b, mp_int *r) MP_WUR; /* 28 */
+    mp_err (*tclBN_mp_mul) (const mp_int *a, const mp_int *b, mp_int *p) MP_WUR; /* 29 */
+    mp_err (*tclBN_mp_mul_d) (const mp_int *a, mp_digit b, mp_int *p) MP_WUR; /* 30 */
+    mp_err (*tclBN_mp_mul_2) (const mp_int *a, mp_int *p) MP_WUR; /* 31 */
+    mp_err (*tclBN_mp_mul_2d) (const mp_int *a, int d, mp_int *p) MP_WUR; /* 32 */
+    mp_err (*tclBN_mp_neg) (const mp_int *a, mp_int *b) MP_WUR; /* 33 */
+    mp_err (*tclBN_mp_or) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 34 */
+    mp_err (*tclBN_mp_radix_size) (const mp_int *a, int radix, int *size) MP_WUR; /* 35 */
+    mp_err (*tclBN_mp_read_radix) (mp_int *a, const char *str, int radix) MP_WUR; /* 36 */
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
-    mp_err (*tclBN_mp_shrink) (mp_int *a); /* 38 */
+    mp_err (*tclBN_mp_shrink) (mp_int *a) MP_WUR; /* 38 */
     void (*tclBN_mp_set) (mp_int *a, mp_digit b); /* 39 */
-    mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b); /* 40 */
-    mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b); /* 41 */
-    mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c); /* 42 */
-    mp_err (*tclBN_mp_sub_d) (const mp_int *a, mp_digit b, mp_int *c); /* 43 */
+    mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b) MP_WUR; /* 40 */
+    mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b) MP_WUR; /* 41 */
+    mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 42 */
+    mp_err (*tclBN_mp_sub_d) (const mp_int *a, mp_digit b, mp_int *c) MP_WUR; /* 43 */
     void (*reserved44)(void);
     void (*reserved45)(void);
     void (*reserved46)(void);
     void (*reserved47)(void);
-    mp_err (*tclBN_mp_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 48 */
+    mp_err (*tclBN_mp_xor) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 48 */
     void (*tclBN_mp_zero) (mp_int *a); /* 49 */
     void (*reserved50)(void);
     void (*reserved51)(void);
@@ -402,26 +402,26 @@ typedef struct TclTomMathStubs {
     void (*reserved58)(void);
     void (*reserved59)(void);
     void (*reserved60)(void);
-    mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i); /* 61 */
+    mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i) MP_WUR; /* 61 */
     void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
-    int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
+    int (*tclBN_mp_cnt_lsb) (const mp_int *a) MP_WUR; /* 63 */
     void (*reserved64)(void);
     void (*reserved65)(void);
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
-    Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a); /* 69 */
+    Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
     void (*reserved70)(void);
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a); /* 71 */
-    mp_bool (*tclBN_mp_isodd) (const mp_int *a); /* 72 */
+    mp_bool (*tclBN_mp_isodd) (const mp_int *a) MP_WUR; /* 72 */
     void (*reserved73)(void);
     void (*reserved74)(void);
     void (*reserved75)(void);
-    mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c); /* 76 */
+    mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c) MP_WUR; /* 76 */
     void (*reserved77)(void);
-    int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written); /* 78 */
-    size_t (*tclBN_mp_ubin_size) (const mp_int *a); /* 79 */
-    int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix); /* 80 */
+    int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written) MP_WUR; /* 78 */
+    size_t (*tclBN_mp_ubin_size) (const mp_int *a) MP_WUR; /* 79 */
+    int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix) MP_WUR; /* 80 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
