@@ -365,8 +365,7 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-                                                                                                                                                                                                                     
-	    utfname = Tcl_ExternalToUtfDString(encoding, entryPtr->d_name, -1,
+	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
@@ -381,7 +380,7 @@ TclpMatchInDirectory(
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
 			    TclNewFSPathObj(pathPtr, utfname,
-			    Tcl_DStringLength(&utfDs), encoding));
+			    Tcl_DStringLength(&utfDs)));
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);
