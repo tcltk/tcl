@@ -220,3 +220,11 @@ declare 62 {
 declare 63 {
     int TclBN_mp_cnt_lsb(mp_int *a)
 }
+declare 80 {
+    void TclUnusedStubEntry(void)
+}
+
+
+# Local Variables:
+# mode: tcl
+# End:

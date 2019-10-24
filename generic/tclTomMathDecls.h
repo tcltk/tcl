@@ -474,6 +474,27 @@ EXTERN int		TclBN_mp_set_int(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(mp_int *a);
 #endif
+/* Slot 64 is reserved */
+/* Slot 65 is reserved */
+/* Slot 66 is reserved */
+/* Slot 67 is reserved */
+/* Slot 68 is reserved */
+/* Slot 69 is reserved */
+/* Slot 70 is reserved */
+/* Slot 71 is reserved */
+/* Slot 72 is reserved */
+/* Slot 73 is reserved */
+/* Slot 74 is reserved */
+/* Slot 75 is reserved */
+/* Slot 76 is reserved */
+/* Slot 77 is reserved */
+/* Slot 78 is reserved */
+/* Slot 79 is reserved */
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 80 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -543,6 +564,23 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (mp_int *a); /* 63 */
+    VOID *reserved64;
+    VOID *reserved65;
+    VOID *reserved66;
+    VOID *reserved67;
+    VOID *reserved68;
+    VOID *reserved69;
+    VOID *reserved70;
+    VOID *reserved71;
+    VOID *reserved72;
+    VOID *reserved73;
+    VOID *reserved74;
+    VOID *reserved75;
+    VOID *reserved76;
+    VOID *reserved77;
+    VOID *reserved78;
+    VOID *reserved79;
+    void (*tclUnusedStubEntry) (void); /* 80 */
 } TclTomMathStubs;
 
 extern TclTomMathStubs *tclTomMathStubsPtr;
@@ -812,6 +850,26 @@ extern TclTomMathStubs *tclTomMathStubsPtr;
 #ifndef TclBN_mp_cnt_lsb
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
+#endif
+/* Slot 64 is reserved */
+/* Slot 65 is reserved */
+/* Slot 66 is reserved */
+/* Slot 67 is reserved */
+/* Slot 68 is reserved */
+/* Slot 69 is reserved */
+/* Slot 70 is reserved */
+/* Slot 71 is reserved */
+/* Slot 72 is reserved */
+/* Slot 73 is reserved */
+/* Slot 74 is reserved */
+/* Slot 75 is reserved */
+/* Slot 76 is reserved */
+/* Slot 77 is reserved */
+/* Slot 78 is reserved */
+/* Slot 79 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclTomMathStubsPtr->tclUnusedStubEntry) /* 80 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
