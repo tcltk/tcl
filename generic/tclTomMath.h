@@ -4,11 +4,13 @@
 #ifndef BN_H_
 #define BN_H_
 
+#ifndef MP_NO_STDINT
+#  include <stdint.h>
+#endif
+
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
 #endif
-
-
 
 #ifdef __cplusplus
 extern "C" {
