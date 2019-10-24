@@ -430,7 +430,7 @@ mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 
 mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-   size_t n = mp_ubin_size(a);
+   size_t n = TclBN_mp_unsigned_bin_size(a);
    if (*outlen < (unsigned long)n) {
       return MP_VAL;
    }
@@ -445,8 +445,6 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    }
    return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
-#undef TclBN_mp_unsigned_bin_size
-#define TclBN_mp_unsigned_bin_size (int (*)(const mp_int *a)) mp_ubin_size
 
 void bn_reverse(unsigned char *s, int len)
 {
@@ -929,7 +927,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    TclBN_mp_ubin_size, /* 79 */
+    0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 
