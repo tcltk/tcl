@@ -621,7 +621,7 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 44 */
     0, /* 45 */
     0, /* 46 */
-    0, /* 47 */
+    TclBN_mp_ubin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     0, /* 50 */
@@ -653,7 +653,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_signed_rsh, /* 76 */
     0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    TclBN_mp_ubin_size, /* 79 */
+    0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 
