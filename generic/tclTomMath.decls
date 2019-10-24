@@ -165,8 +165,8 @@ declare 45 {deprecated {Use mp_to_ubin}} {
 declare 46 {deprecated {Use mp_to_radix}} {
     mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 }
-declare 47 {deprecated {Use mp_ubin_size}} {
-    int TclBN_mp_unsigned_bin_size(const mp_int *a)
+declare 47 {
+    size_t TclBN_mp_ubin_size(const mp_int *a)
 }
 declare 48 {
     mp_err MP_WUR TclBN_mp_xor(const mp_int *a, const mp_int *b, mp_int *c)
@@ -271,9 +271,6 @@ declare 77 {deprecated {is private function in libtommath}} {
 # Added in libtommath 1.2.0
 declare 78 {
     int MP_WUR TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
-}
-declare 79 {
-    size_t MP_WUR TclBN_mp_ubin_size(const mp_int *a)
 }
 declare 80 {
     int MP_WUR TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
