@@ -361,7 +361,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32)
+#   if defined(_MSC_VER) || (defined(_WIN32) && !defined(__cplusplus))
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)
@@ -2206,8 +2206,6 @@ typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
 typedef unsigned int mp_digit;
 #define MP_DIGIT_DECLARED
-typedef unsigned TCL_WIDE_INT_TYPE mp_word;
-#define MP_WORD_DECLARED
 
 /*
  *----------------------------------------------------------------------------

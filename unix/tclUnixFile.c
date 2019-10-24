@@ -269,6 +269,7 @@ TclpMatchInDirectory(
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
+	Tcl_Encoding encoding = Tcl_GetEncoding(interp ,NULL);
 
 	Tcl_DStringInit(&dsOrig);
 	dirName = TclGetString(fileNamePtr);
