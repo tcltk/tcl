@@ -12,8 +12,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
-#undef STATIC_BUILD
+#if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
+#error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
+#endif
 #include "tcl.h"
 
 #ifdef TCL_TEST
@@ -110,7 +111,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -152,10 +153,10 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 

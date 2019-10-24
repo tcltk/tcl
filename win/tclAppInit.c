@@ -14,6 +14,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
+#error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
+#endif
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #define STRICT			/* See MSDN Article Q83456 */
@@ -158,7 +161,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -205,7 +208,7 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
