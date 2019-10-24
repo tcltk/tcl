@@ -673,7 +673,7 @@ TclPathPart(
 
 		    Tcl_Obj *resultPtr =
 			TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
-			    (int)(length - strlen(extension)), 
+			    (int)(length - strlen(extension)),
 			    TclFSPathEncoding(interp, fsPathPtr->cwdPtr));
 
 		    Tcl_IncrRefCount(resultPtr);
@@ -2195,7 +2195,7 @@ TclFSPathEncoding(
     Tcl_Interp *interp,
     Tcl_Obj *pathPtr)
 {
-    FsPath *fsPathPtr; 
+    FsPath *fsPathPtr;
     Tcl_Encoding encoding = NULL;
 
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {

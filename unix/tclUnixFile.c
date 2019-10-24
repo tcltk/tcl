@@ -267,7 +267,7 @@ TclpMatchInDirectory(
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
-	Tcl_Encoding encoding = Tcl_GetEncoding(interp ,NULL);
+	Tcl_Encoding encoding;
 
 	Tcl_DStringInit(&dsOrig);
 	dirName = TclGetString(fileNamePtr);
@@ -325,6 +325,7 @@ TclpMatchInDirectory(
 	}
 
 	nativeDirLen = Tcl_DStringLength(&ds);
+	encoding = Tcl_GetEncoding(interp ,NULL);
 
 	/*
 	 * Check to see if -type or the pattern requests hidden files.
@@ -365,7 +366,6 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-                                                                                                                                                                                                                     
 	    utfname = Tcl_ExternalToUtfDString(encoding, entryPtr->d_name, -1,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
@@ -390,6 +390,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
+	Tcl_FreeEncoding(encoding);
 	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);

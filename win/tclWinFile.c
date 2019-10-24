@@ -964,6 +964,7 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* UTF-8 encoding of dir. */
 	Tcl_Obj *fileNamePtr;
 	char lastChar;
+    Tcl_Encoding encoding;
 
 	/*
 	 * Get the normalized path representation (the main thing is we dont
@@ -1085,6 +1086,7 @@ TclpMatchInDirectory(
 	} else {
 	    matchSpecialDots = 0;
 	}
+	encoding = Tcl_GetEncoding(interp ,NULL);
 
 	/*
 	 * Now iterate over all of the files in the directory, starting with
@@ -1095,7 +1097,6 @@ TclpMatchInDirectory(
 	    const char *utfname;
 	    int checkDrive = 0, isDrive;
 	    DWORD attr;
-		Tcl_Encoding encoding;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1133,7 +1134,6 @@ TclpMatchInDirectory(
 	     * the system.
 	     */
 
-	    encoding = Tcl_GetEncoding(interp ,NULL);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 1)) {
 		/*
 		 * If the file matches, then we need to process the remainder
@@ -1163,6 +1163,7 @@ TclpMatchInDirectory(
 	    Tcl_DStringFree(&ds);
 	} while (FindNextFileW(handle, &data) == TRUE);
 
+	Tcl_FreeEncoding(encoding);
 	FindClose(handle);
 	Tcl_DStringFree(&dsOrig);
 	return TCL_OK;
