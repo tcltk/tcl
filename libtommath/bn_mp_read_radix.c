@@ -43,10 +43,10 @@ mp_err mp_read_radix(mp_int *a, const char *str, int radix)
        */
       ch = (radix <= 36) ? (char)MP_TOUPPER((int)*str) : *str;
       pos = (unsigned)(ch - '(');
-      if (mp_s_rmap_reverse_sz < pos) {
+      if (MP_RMAP_REVERSE_SIZE < pos) {
          break;
       }
-      y = (int)mp_s_rmap_reverse[pos];
+      y = (int)s_mp_rmap_reverse[pos];
 
       /* if the char was found in the map
        * and is less than the given radix add it
