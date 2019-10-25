@@ -73,21 +73,19 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 static MP_SET_UNSIGNED(bn_mp_set_ull, Tcl_WideUInt)
 
 
-mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
+mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
 	bn_mp_set_ull(a, i);
 	return MP_OKAY;
 }
 
-mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
-{
-    return TclBN_mp_set_long(a, i);
-}
-
 mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 {
-    mp_init(a);
-	return TclBN_mp_set_long(a, i);
+    mp_err result = mp_init(a);
+    if (result == MP_OKAY) {
+	bn_mp_set_ull(a, i);
+    }
+	return result;
 }
 
 int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
@@ -432,7 +430,7 @@ mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 
 mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-   size_t n = mp_ubin_size(a);
+   size_t n = TclBN_mp_unsigned_bin_size(a);
    if (*outlen < (unsigned long)n) {
       return MP_VAL;
    }
@@ -447,8 +445,6 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    }
    return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
-#undef TclBN_mp_unsigned_bin_size
-#define TclBN_mp_unsigned_bin_size (int (*)(const mp_int *a)) mp_ubin_size
 
 void bn_reverse(unsigned char *s, int len)
 {
@@ -922,7 +918,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_expt_d_ex, /* 67 */
     0, /* 68 */
     0, /* 69 */
-    TclBN_mp_set_long, /* 70 */
+    0, /* 70 */
     0, /* 71 */
     TclBN_mp_isodd, /* 72 */
     TclBN_mp_tc_and, /* 73 */
@@ -931,7 +927,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    TclBN_mp_ubin_size, /* 79 */
+    0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 
