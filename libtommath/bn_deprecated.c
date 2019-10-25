@@ -25,7 +25,7 @@ mp_err mp_jacobi(const mp_int *a, const mp_int *n, int *c)
 }
 #endif
 #ifdef BN_MP_PRIME_RANDOM_EX_C
-mp_err mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_prime_callback cb, void *dat)
+mp_err mp_prime_random_ex(mp_int *a, int t, int size, int flags, mp_prime_callback cb, void *dat)
 {
    return s_mp_prime_random_ex(a, t, size, flags, cb, dat);
 }

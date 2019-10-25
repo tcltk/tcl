@@ -60,7 +60,7 @@ mp_err mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, i
       if ((err = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
          goto LBL_ERR;
       }
-      *str++ = mp_s_rmap[d];
+      *str++ = s_mp_rmap[d];
       ++digs;
    }
    /* reverse the digits of the string.  In this case _s points
