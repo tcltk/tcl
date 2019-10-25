@@ -182,10 +182,10 @@ declare 50 {deprecated {is private function in libtommath}} {
     void TclBN_reverse(unsigned char *s, int len)
 }
 declare 51 {deprecated {is private function in libtommath}} {
-    mp_err TclBN_fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
+    mp_err TclBN_s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 }
 declare 52 {deprecated {is private function in libtommath}} {
-    mp_err TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b)
+    mp_err TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b)
 }
 declare 53 {deprecated {is private function in libtommath}} {
     mp_err TclBN_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c)

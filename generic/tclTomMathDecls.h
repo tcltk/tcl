@@ -127,10 +127,10 @@
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
-#define s_mp_mul_digs_fast TclBN_fast_s_mp_mul_digs
+#define s_mp_mul_digs_fast TclBN_s_mp_mul_digs_fast
 #define s_mp_reverse TclBN_s_mp_reverse
 #define s_mp_sqr TclBN_s_mp_sqr
-#define s_mp_sqr_fast TclBN_fast_s_mp_sqr
+#define s_mp_sqr_fast TclBN_s_mp_sqr_fast
 #define s_mp_sub TclBN_s_mp_sub
 #define s_mp_toom_mul TclBN_mp_toom_mul
 #define s_mp_toom_sqr TclBN_mp_toom_sqr
@@ -290,11 +290,11 @@ TCL_DEPRECATED("is private function in libtommath")
 void			TclBN_reverse(unsigned char *s, int len);
 /* 51 */
 TCL_DEPRECATED("is private function in libtommath")
-mp_err			TclBN_fast_s_mp_mul_digs(const mp_int *a,
+mp_err			TclBN_s_mp_mul_digs_fast(const mp_int *a,
 				const mp_int *b, mp_int *c, int digs);
 /* 52 */
 TCL_DEPRECATED("is private function in libtommath")
-mp_err			TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b);
+mp_err			TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b);
 /* 53 */
 TCL_DEPRECATED("is private function in libtommath")
 mp_err			TclBN_mp_karatsuba_mul(const mp_int *a,
@@ -432,8 +432,8 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_xor) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 48 */
     void (*tclBN_mp_zero) (mp_int *a); /* 49 */
     TCL_DEPRECATED_API("is private function in libtommath") void (*tclBN_reverse) (unsigned char *s, int len); /* 50 */
-    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_fast_s_mp_mul_digs) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 51 */
-    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_fast_s_mp_sqr) (const mp_int *a, mp_int *b); /* 52 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_s_mp_mul_digs_fast) (const mp_int *a, const mp_int *b, mp_int *c, int digs); /* 51 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_s_mp_sqr_fast) (const mp_int *a, mp_int *b); /* 52 */
     TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_karatsuba_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 53 */
     TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_karatsuba_sqr) (const mp_int *a, mp_int *b); /* 54 */
     TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_toom_mul) (const mp_int *a, const mp_int *b, mp_int *c); /* 55 */
@@ -578,10 +578,10 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_zero) /* 49 */
 #define TclBN_reverse \
 	(tclTomMathStubsPtr->tclBN_reverse) /* 50 */
-#define TclBN_fast_s_mp_mul_digs \
-	(tclTomMathStubsPtr->tclBN_fast_s_mp_mul_digs) /* 51 */
-#define TclBN_fast_s_mp_sqr \
-	(tclTomMathStubsPtr->tclBN_fast_s_mp_sqr) /* 52 */
+#define TclBN_s_mp_mul_digs_fast \
+	(tclTomMathStubsPtr->tclBN_s_mp_mul_digs_fast) /* 51 */
+#define TclBN_s_mp_sqr_fast \
+	(tclTomMathStubsPtr->tclBN_s_mp_sqr_fast) /* 52 */
 #define TclBN_mp_karatsuba_mul \
 	(tclTomMathStubsPtr->tclBN_mp_karatsuba_mul) /* 53 */
 #define TclBN_mp_karatsuba_sqr \
