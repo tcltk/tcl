@@ -24,6 +24,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/GCC/Shared: NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/GCC/Static"
       os: linux
       dist: xenial
@@ -108,6 +115,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/Clang/Shared:NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/Clang/Static"
       os: linux
       dist: xenial
@@ -221,6 +235,15 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -258,6 +281,15 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -300,6 +332,13 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
       before_install: *makepreinst
+    - name: "Windows/GCC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+      before_install: *makepreinst
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -334,6 +373,13 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Static"
       os: windows

@@ -51,12 +51,6 @@
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
-#define bn_reverse TclBN_reverse
-#define s_mp_reverse TclBN_int_reverse
-#define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
-#define s_mp_mul_digs_fast TclBN_fast_s_mp_mul_digs
-#define fast_s_mp_sqr TclBN_fast_s_mp_sqr
-#define s_mp_sqr_fast TclBN_fast_s_mp_sqr
 #define mp_add TclBN_mp_add
 #define mp_add_d TclBN_mp_add_d
 #define mp_and TclBN_mp_and
@@ -79,12 +73,8 @@
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_expt_u32 TclBN_mp_expt_u32
 #define mp_get_bit TclBN_mp_get_bit
-#define mp_get_long TclBN_mp_get_mag_ul
 #define mp_get_mag_ul TclBN_mp_get_mag_ul
-#define mp_get_long_long TclBN_mp_get_mag_ull
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
-#define mp_grow TclBN_mp_grow
-#define s_mp_get_bit TclBN_mp_get_bit
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -92,10 +82,6 @@
 #define mp_init_set TclBN_mp_init_set
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_ul TclBN_mp_init_ul
-#define mp_karatsuba_mul TclBN_mp_karatsuba_mul
-#define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
-#define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
-#define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define mp_isodd TclBN_mp_isodd
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
@@ -120,38 +106,24 @@
 #define mp_signed_rsh TclBN_mp_signed_rsh
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
-#define mp_toom_mul TclBN_mp_toom_mul
-#define s_mp_toom_mul TclBN_mp_toom_mul
-#define s_mp_balance_mul TclBN_mp_balance_mul
-#define mp_toom_sqr TclBN_mp_toom_sqr
-#define s_mp_toom_sqr TclBN_mp_toom_sqr
 #define mp_to_radix TclBN_mp_to_radix
 #define mp_to_ubin TclBN_mp_to_ubin
 #define mp_ubin_size TclBN_mp_ubin_size
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
+#define s_mp_balance_mul TclBN_mp_balance_mul
+#define s_mp_get_bit TclBN_mp_get_bit
+#define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
+#define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
+#define s_mp_mul_digs_fast TclBN_s_mp_mul_digs_fast
+#define s_mp_reverse TclBN_s_mp_reverse
 #define s_mp_sqr TclBN_s_mp_sqr
+#define s_mp_sqr_fast TclBN_s_mp_sqr_fast
 #define s_mp_sub TclBN_s_mp_sub
-
-MODULE_SCOPE void TclBN_reverse(unsigned char *s, int len);
-MODULE_SCOPE int TclBN_fast_s_mp_mul_digs(const mp_int *a,
-				const mp_int *b, mp_int *c, int digs);
-MODULE_SCOPE int TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE int TclBN_mp_karatsuba_mul(const mp_int *a,
-				const mp_int *b, mp_int *c);
-MODULE_SCOPE int TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE int TclBN_mp_toom_mul(const mp_int *a, const mp_int *b,
-				mp_int *c);
-MODULE_SCOPE int TclBN_mp_toom_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE int TclBN_s_mp_add(const mp_int *a, const mp_int *b,
-				mp_int *c);
-MODULE_SCOPE int TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b,
-				mp_int *c, int digs);
-MODULE_SCOPE int TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE int TclBN_s_mp_sub(const mp_int *a, const mp_int *b,
-				mp_int *c);
+#define s_mp_toom_mul TclBN_mp_toom_mul
+#define s_mp_toom_sqr TclBN_mp_toom_sqr
 
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl

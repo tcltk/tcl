@@ -4,8 +4,8 @@
 /* SPDX-License-Identifier: Unlicense */
 
 /* chars used in radix conversions */
-const char *const mp_s_rmap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
-const unsigned char mp_s_rmap_reverse[] = {
+const char s_mp_rmap[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+const unsigned char s_mp_rmap_reverse[] = {
    0xff, 0xff, 0xff, 0x3e, 0xff, 0xff, 0xff, 0x3f, /* ()*+,-./ */
    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 01234567 */
    0x08, 0x09, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* 89:;<=>? */
@@ -18,5 +18,4 @@ const unsigned char mp_s_rmap_reverse[] = {
    0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, /* pqrstuvw */
    0x3b, 0x3c, 0x3d, 0xff, 0xff, 0xff, 0xff, 0xff, /* xyz{|}~. */
 };
-const size_t mp_s_rmap_reverse_sz = sizeof(mp_s_rmap_reverse);
 #endif

@@ -61,7 +61,6 @@ extern "C" {
 /* some default configurations.
  *
  * A "mp_digit" must be able to hold MP_DIGIT_BIT + 1 bits
- * A "mp_word" must be able to hold 2*MP_DIGIT_BIT + 1 bits
  *
  * At the very least a mp_digit must be able to hold 7 bits
  * [any size beyond that is ok provided it doesn't overflow the data type]
@@ -69,22 +68,16 @@ extern "C" {
 
 #ifdef MP_8BIT
 typedef unsigned char        mp_digit;
-typedef unsigned short       mp_word;
 #   define MP_DIGIT_BIT 7
 #elif defined(MP_16BIT)
 typedef unsigned short       mp_digit;
-typedef unsigned int         mp_word;
 #   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
 typedef Tcl_WideUInt   mp_digit;
-#if defined(__GNUC__)
-typedef unsigned long        mp_word __attribute__((mode(TI)));
-#endif
 #   define MP_DIGIT_BIT 60
 #else
 typedef unsigned int         mp_digit;
-typedef Tcl_WideUInt   mp_word;
 #   ifdef MP_31BIT
 /*
  * This is an extension that uses 31-bit digits.
@@ -191,9 +184,6 @@ TOOM_SQR_CUTOFF;
 #   define MP_PREC (MP_DEPRECATED_PRAGMA("MP_PREC is an internal macro") PRIVATE_MP_PREC)
 #endif
 
-/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * (int)sizeof(mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
-
 #if defined(__GNUC__) && __GNUC__ >= 4
 #   define MP_NULL_TERMINATED __attribute__((sentinel))
 #else
@@ -246,10 +236,6 @@ typedef struct  {
    mp_sign sign;
    mp_digit *dp;
 } mp_int;
-
-/* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
-typedef int private_mp_prime_callback(unsigned char *dst, int len, void *dat);
-typedef private_mp_prime_callback MP_DEPRECATED(mp_rand_source) ltm_prime_callback;
 
 /* error code to char* string */
 const char *mp_error_to_string(mp_err code) MP_WUR;
@@ -627,12 +613,6 @@ mp_err mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y) 
 #endif
 #define PRIME_SIZE (MP_DEPRECATED_PRAGMA("PRIME_SIZE has been made internal") PRIVATE_MP_PRIME_TAB_SIZE)
 
-/* table of first PRIME_SIZE primes */
-MP_DEPRECATED(internal) extern const mp_digit ltm_prime_tab[PRIVATE_MP_PRIME_TAB_SIZE];
-
-/* result=1 if a is divisible by one of the first PRIME_SIZE primes */
-MP_DEPRECATED(mp_prime_is_prime) mp_err mp_prime_is_divisible(const mp_int *a, mp_bool *result) MP_WUR;
-
 /* performs one Fermat test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
@@ -681,17 +661,6 @@ mp_err mp_prime_is_prime(const mp_int *a, int t, mp_bool *result) MP_WUR;
  */
 mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
 
-/* makes a truly random prime of a given size (bytes),
- * call with bbs = 1 if you want it to be congruent to 3 mod 4
- *
- * You have to supply a callback which fills in a buffer with random bytes.  "dat" is a parameter you can
- * have passed to the callback (e.g. a state or something).  This function doesn't use "dat" itself
- * so it can be NULL
- *
- * The prime generated will be larger than 2^(8*size).
- */
-#define mp_prime_random(a, t, size, bbs, cb, dat) (MP_DEPRECATED_PRAGMA("mp_prime_random has been deprecated, use mp_prime_rand instead") mp_prime_random_ex(a, t, ((size) * 8) + 1, (bbs==1)?MP_PRIME_BBS:0, cb, dat))
-
 /* makes a truly random prime of a given size (bits),
  *
  * Flags are as follows:
@@ -705,8 +674,6 @@ mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
  * so it can be NULL
  *
  */
-MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int size, int flags,
-      private_mp_prime_callback cb, void *dat) MP_WUR;
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 
 /* Integer logarithm to integer base */
