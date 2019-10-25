@@ -533,11 +533,11 @@ GetUWide(
 		Tcl_WideUInt value;
 		unsigned char bytes[sizeof(Tcl_WideUInt)];
 	    } scratch;
-	    unsigned long numBytes = sizeof(Tcl_WideUInt);
+	    size_t numBytes;
 	    unsigned char *bytes = scratch.bytes;
 
-	    if (numPtr->sign || (MP_OKAY != mp_to_unsigned_bin_n(numPtr,
-		    bytes, &numBytes))) {
+	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
+		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
 		/*
 		 * If the sign bit is set (a negative value) or if the value
 		 * can't possibly fit in the bits of an unsigned wide, there's
