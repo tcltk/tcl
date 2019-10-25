@@ -30,11 +30,11 @@ mp_err mp_fread(mp_int *a, int radix, FILE *stream)
    do {
       int y;
       unsigned pos = (unsigned)(ch - (int)'(');
-      if (mp_s_rmap_reverse_sz < pos) {
+      if (MP_RMAP_REVERSE_SIZE < pos) {
          break;
       }
 
-      y = (int)mp_s_rmap_reverse[pos];
+      y = (int)s_mp_rmap_reverse[pos];
 
       if ((y == 0xff) || (y >= radix)) {
          break;

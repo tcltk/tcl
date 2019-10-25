@@ -479,8 +479,8 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
-#   define TclBN_fast_s_mp_mul_digs 0
-#   define TclBN_fast_s_mp_sqr 0
+#   define TclBN_s_mp_mul_digs_fast 0
+#   define TclBN_s_mp_sqr_fast 0
 #   define TclBN_mp_karatsuba_mul 0
 #   define TclBN_mp_karatsuba_sqr 0
 #   define TclBN_mp_toom_mul 0
@@ -989,8 +989,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     TclBN_reverse, /* 50 */
-    TclBN_fast_s_mp_mul_digs, /* 51 */
-    TclBN_fast_s_mp_sqr, /* 52 */
+    TclBN_s_mp_mul_digs_fast, /* 51 */
+    TclBN_s_mp_sqr_fast, /* 52 */
     TclBN_mp_karatsuba_mul, /* 53 */
     TclBN_mp_karatsuba_sqr, /* 54 */
     TclBN_mp_toom_mul, /* 55 */
