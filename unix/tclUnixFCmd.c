@@ -268,6 +268,11 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #else
 #   define haveRealpath	1
 #endif
+#else /* NO_REALPATH */
+/*
+ * At least TclpObjNormalizedPath now requires REALPATH
+*/
+#error NO_REALPATH is not supported
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
