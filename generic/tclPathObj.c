@@ -2070,6 +2070,7 @@ Tcl_FSGetInternalRep(
 	nativePathPtr = proc(pathPtr);
 	srcFsPathPtr = PATHOBJ(pathPtr);
 	srcFsPathPtr->nativePathPtr = nativePathPtr;
+	/* to do: the epoch for srcFsPathPtr should be bumped here */
     }
 
     return srcFsPathPtr->nativePathPtr;
@@ -2298,8 +2299,10 @@ SetFsPathFromAny(
 
     if (TclHasIntRep(pathPtr, &fsPathType)
 	&& TclFSPathEncoding(interp, pathPtr) == sysencoding) {
+	Tcl_FreeEncoding(sysencoding);
 	return TCL_OK;
     }
+    Tcl_FreeEncoding(sysencoding);
 
     /*
      * First step is to translate the filename. This is similar to

@@ -1156,6 +1156,8 @@ TclpMatchInDirectory(
 		}
 	    }
 
+	    Tcl_FreeEncoding(encoding);
+
 	    /*
 	     * Free ds here to ensure that native is valid above.
 	     */
