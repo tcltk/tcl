@@ -2070,7 +2070,7 @@ Tcl_FSGetInternalRep(
 	nativePathPtr = proc(pathPtr);
 	srcFsPathPtr = PATHOBJ(pathPtr);
 	srcFsPathPtr->nativePathPtr = nativePathPtr;
-	/* to do: the epoch for srcFsPathPtr should be bumped here */
+	srcFsPathPtr->filesystemEpoch = TclFSEpoch();
     }
 
     return srcFsPathPtr->nativePathPtr;
