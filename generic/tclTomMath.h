@@ -4,13 +4,11 @@
 #ifndef BN_H_
 #define BN_H_
 
-#ifndef MP_NO_STDINT
-#  include <stdint.h>
-#endif
-
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
 #endif
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +39,7 @@ extern "C" {
 /* some default configurations.
  *
  * A "mp_digit" must be able to hold MP_DIGIT_BIT + 1 bits
+ * A "mp_word" must be able to hold 2*MP_DIGIT_BIT + 1 bits
  *
  * At the very least a mp_digit must be able to hold 7 bits
  * [any size beyond that is ok provided it doesn't overflow the data type]
@@ -51,6 +50,10 @@ extern "C" {
 typedef unsigned char        mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
+typedef unsigned short       private_mp_word;
+#define MP_WORD_DECLARED
+#endif
 #   define MP_SIZEOF_MP_DIGIT 1
 #   ifdef MP_DIGIT_BIT
 #      error You must not define MP_DIGIT_BIT when using MP_8BIT
@@ -59,6 +62,10 @@ typedef unsigned char        mp_digit;
 #ifndef MP_DIGIT_DECLARED
 typedef unsigned short       mp_digit;
 #define MP_DIGIT_DECLARED
+#endif
+#ifndef MP_WORD_DECLARED
+typedef unsigned int         private_mp_word;
+#define MP_WORD_DECLARED
 #endif
 #   define MP_SIZEOF_MP_DIGIT 2
 #   ifdef MP_DIGIT_BIT
@@ -70,14 +77,23 @@ typedef unsigned short       mp_digit;
 typedef unsigned long long   mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+typedef unsigned long        private_mp_word __attribute__((mode(TI)));
 #   define MP_DIGIT_BIT 60
 #else
 /* this is the default case, 28-bit digits */
 
 /* this is to make porting into LibTomCrypt easier :-) */
 #ifndef MP_DIGIT_DECLARED
-typedef unsigned int         mp_digit;
+ypedef uint32_t             mp_digit;
 #define MP_DIGIT_DECLARED
+#endif
+#ifndef MP_WORD_DECLARED
+#ifdef _WIN32
+typedef unsigned __int64   private_mp_word;
+#else
+typedef unsigned long long   private_mp_word;
+#endif
+#define MP_WORD_DECLARED
 #endif
 
 #   ifdef MP_31BIT
@@ -195,6 +211,9 @@ TOOM_SQR_CUTOFF;
 #   endif
 #endif
 
+/* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
+#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+
 #if defined(__GNUC__) && __GNUC__ >= 4
 #   define MP_NULL_TERMINATED __attribute__((sentinel))
 #else
@@ -251,6 +270,10 @@ struct mp_int {
    mp_sign sign;
    mp_digit *dp;
 };
+
+/* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
+typedef int private_mp_prime_callback(unsigned char *dst, int len, void *dat);
+typedef private_mp_prime_callback MP_DEPRECATED(mp_rand_source) ltm_prime_callback;
 
 /* error code to char* string */
 /*
@@ -755,7 +778,7 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
  * returns error if a < 0 and b is even
  */
 /*
-mp_err mp_root_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
 */
 /*
 MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
@@ -880,6 +903,11 @@ mp_err mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y) 
 #endif
 #define PRIME_SIZE (MP_DEPRECATED_PRAGMA("PRIME_SIZE has been made internal") PRIVATE_MP_PRIME_TAB_SIZE)
 
+/* table of first PRIME_SIZE primes */
+#if defined(BUILD_tcl) || !defined(_WIN32)
+MODULE_SCOPE const mp_digit ltm_prime_tab[PRIVATE_MP_PRIME_TAB_SIZE];
+#endif
+
 /* result=1 if a is divisible by one of the first PRIME_SIZE primes */
 /*
 MP_DEPRECATED(mp_prime_is_prime) mp_err mp_prime_is_divisible(const mp_int *a, mp_bool *result) MP_WUR;
@@ -972,17 +1000,21 @@ mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
  *
  */
 /*
+MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int size, int flags,
+      private_mp_prime_callback cb, void *dat) MP_WUR;
+*/
+/*
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 */
 
 /* Integer logarithm to integer base */
 /*
-mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c) MP_WUR;
+mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c) MP_WUR;
 */
 
 /* c = a**b */
 /*
-mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
 */
 /*
 MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;

@@ -81,7 +81,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
 }
 declare 20 {
     mp_err MP_WUR TclBN_mp_grow(mp_int *a, int size)
@@ -208,10 +208,10 @@ declare 63 {
 #}
 # Added in libtommath 1.0.1
 declare 68 {
-    void TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i)
+    void TclBN_mp_set_ull(mp_int *a, unsigned long long i)
 }
 declare 69 {
-    Tcl_WideUInt MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
+    unsigned long long MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
 }
 declare 71 {
     unsigned long TclBN_mp_get_mag_ul(const mp_int *a)
