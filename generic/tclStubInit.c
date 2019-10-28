@@ -430,7 +430,7 @@ mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 
 mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-   size_t n = TclBN_mp_unsigned_bin_size(a);
+   size_t n = mp_ubin_size(a);
    if (*outlen < (unsigned long)n) {
       return MP_VAL;
    }
