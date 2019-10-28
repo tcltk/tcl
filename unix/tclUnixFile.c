@@ -269,7 +269,8 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetString(fileNamePtr);
+	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*

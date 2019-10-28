@@ -2570,11 +2570,12 @@ Tcl_GetLongFromObj(
 	     */
 
 	    mp_int big;
-	    unsigned long scratch, value = 0, numBytes = sizeof(unsigned long);
+	    unsigned long scratch, value = 0;
 	    unsigned char *bytes = (unsigned char *) &scratch;
+	    size_t numBytes;
 
 	    TclUnpackBignum(objPtr, big);
-	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+	    if (mp_to_ubin(&big, bytes, sizeof(long), &numBytes) == MP_OKAY) {
 		while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		}
@@ -2809,12 +2810,12 @@ Tcl_GetWideIntFromObj(
 
 	    mp_int big;
 	    Tcl_WideUInt value = 0;
-	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    size_t numBytes;
 	    Tcl_WideInt scratch;
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    TclUnpackBignum(objPtr, big);
-	    if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+	    if (mp_to_ubin(&big, bytes, sizeof(Tcl_WideInt), &numBytes) == MP_OKAY) {
 		while (numBytes-- > 0) {
 		    value = (value << CHAR_BIT) | *bytes++;
 		}
@@ -2890,12 +2891,12 @@ TclGetWideBitsFromObj(
 	    mp_int big;
 
 	    Tcl_WideUInt value = 0, scratch;
-	    unsigned long numBytes = sizeof(Tcl_WideInt);
+	    size_t numBytes;
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    Tcl_GetBignumFromObj(NULL, objPtr, &big);
 	    mp_mod_2d(&big, (int) (CHAR_BIT * sizeof(Tcl_WideInt)), &big);
-	    mp_to_unsigned_bin_n(&big, bytes, &numBytes);
+	    mp_to_ubin(&big, bytes, sizeof(Tcl_WideInt), &numBytes);
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
@@ -3015,7 +3016,7 @@ UpdateStringOfBignum(
     stringVal = Tcl_InitStringRep(objPtr, NULL, size - 1);
 
     TclOOM(stringVal, size);
-    if (MP_OKAY != mp_toradix_n(&bignumVal, stringVal, 10, size)) {
+    if (MP_OKAY != mp_to_radix(&bignumVal, stringVal, size, NULL, 10)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
     (void) Tcl_InitStringRep(objPtr, NULL, size - 1);
@@ -3264,14 +3265,14 @@ Tcl_SetBignumObj(
     mp_int *bignumValue)	/* Value to store */
 {
     Tcl_WideUInt value = 0;
-    unsigned long numBytes = sizeof(Tcl_WideUInt);
+    size_t numBytes;
     Tcl_WideUInt scratch;
     unsigned char *bytes = (unsigned char *) &scratch;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+    if (mp_to_ubin(bignumValue, bytes, sizeof(Tcl_WideUInt), &numBytes) != MP_OKAY) {
 	goto tooLargeForWide;
     }
     while (numBytes-- > 0) {
