@@ -156,8 +156,16 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #else
+#   undef MP_NO_STDINT
 #   define MP_NO_STDINT
 #   include "../compat/stdint.h"
+#endif
+#ifdef HAVE_STDBOOL_H
+#   include <stdbool.h>
+#else
+#   undef MP_NO_STDBOOL
+#   define MP_NO_STDBOOL
+#   include "../compat/stdbool.h"
 #endif
 #include <unistd.h>
 

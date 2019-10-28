@@ -948,6 +948,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
 
+    AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
+
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
@@ -967,6 +969,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when compiler supports casting to union type.])
 	fi
     fi
+
+	AC_DEFINE(MP_32BIT, 1, [Use 'MP_32BIT' for libtommath])
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)

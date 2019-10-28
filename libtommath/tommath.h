@@ -9,6 +9,11 @@
  * are brought in through another header-file first */
 #  include <stdint.h>
 #endif
+#ifndef MP_NO_STDBOOL
+/* If compiling with -DMP_NO_STDBOOL, make sure that bool, true and false
+ * are brought in through another header-file first */
+#  include <stdbool.h>
+#endif
 #include <stddef.h>
 #include <limits.h>
 
@@ -119,6 +124,10 @@ typedef uint64_t             private_mp_word;
 #define LTM_PRIME_SAFE     (MP_DEPRECATED_PRAGMA("LTM_PRIME_SAFE has been deprecated, use MP_PRIME_SAFE") MP_PRIME_SAFE)
 #define LTM_PRIME_2MSB_ON  (MP_DEPRECATED_PRAGMA("LTM_PRIME_2MSB_ON has been deprecated, use MP_PRIME_2MSB_ON") MP_PRIME_2MSB_ON)
 
+#define mp_bool bool
+#define MP_NO false
+#define MP_YES true
+
 #ifdef MP_USE_ENUMS
 typedef enum {
    MP_ZPOS = 0,   /* positive */
@@ -129,10 +138,6 @@ typedef enum {
    MP_EQ = 0,     /* equal */
    MP_GT = 1      /* greater than */
 } mp_ord;
-typedef enum {
-   MP_NO = 0,
-   MP_YES = 1
-} mp_bool;
 typedef enum {
    MP_OKAY  = 0,   /* no error */
    MP_ERR   = -1,  /* unknown error */
@@ -158,9 +163,6 @@ typedef int mp_ord;
 #define MP_LT        -1   /* less than */
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
-typedef int mp_bool;
-#define MP_YES        1
-#define MP_NO         0
 typedef int mp_err;
 #define MP_OKAY       0   /* no error */
 #define MP_ERR        -1  /* unknown error */
@@ -254,13 +256,18 @@ TOOM_SQR_CUTOFF;
 #define SIGN(m)     (MP_DEPRECATED_PRAGMA("SIGN macro is deprecated, use z->sign instead") (m)->sign)
 
 /* the infamous mp_int structure */
-typedef struct  {
+#ifndef MP_INT_DECLARED
+#define MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#endif
+struct mp_int {
    int used, alloc;
    mp_sign sign;
    mp_digit *dp;
-} mp_int;
+};
 
-/* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
+/* callback for mp_prime_random, should fill dst with random bytes and r};
+many read [upto len] */
 typedef int private_mp_prime_callback(unsigned char *dst, int len, void *dat);
 typedef private_mp_prime_callback MP_DEPRECATED(mp_rand_source) ltm_prime_callback;
 

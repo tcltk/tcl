@@ -8,21 +8,54 @@
 #define MODULE_SCOPE extern
 #endif
 
+#ifndef MP_NO_STDINT
+/* If compiling with -DMP_NO_STDINT, make sure that uint32_t and friends
+ * are brought in through another header-file first */
+#  include <stdint.h>
+#endif
+#ifndef MP_NO_STDBOOL
+/* If compiling with -DMP_NO_STDINT, make sure that uint32_t and friends
+ * are brought in through another header-file first */
+#  include <stdbool.h>
+#endif
+#include <stddef.h>
+#include <limits.h>
 
+#ifdef LTM_NO_FILE
+#  warning LTM_NO_FILE has been deprecated, use MP_NO_FILE.
+#  define MP_NO_FILE
+#endif
+
+#ifndef MP_NO_FILE
+#  include <stdio.h>
+#endif
+
+#ifdef MP_8BIT
+#  ifdef _MSC_VER
+#    pragma message("8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version.")
+#  else
+#    warning "8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version."
+#  endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if (defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
+#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(NEVER)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      if defined(__GNUC__)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+    defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+    defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
+    defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
+    defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
+    defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
+#   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#      if defined(__GNUC__) && !defined(__hppa)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
 #      else
@@ -46,56 +79,23 @@ extern "C" {
  */
 
 #ifdef MP_8BIT
-#ifndef MP_DIGIT_DECLARED
-typedef unsigned char        mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-typedef unsigned short       private_mp_word;
-#define MP_WORD_DECLARED
-#endif
-#   define MP_SIZEOF_MP_DIGIT 1
-#   ifdef MP_DIGIT_BIT
-#      error You must not define MP_DIGIT_BIT when using MP_8BIT
-#   endif
+typedef uint8_t              mp_digit;
+typedef uint16_t             private_mp_word;
+#   define MP_DIGIT_BIT 7
 #elif defined(MP_16BIT)
-#ifndef MP_DIGIT_DECLARED
-typedef unsigned short       mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-typedef unsigned int         private_mp_word;
-#define MP_WORD_DECLARED
-#endif
-#   define MP_SIZEOF_MP_DIGIT 2
-#   ifdef MP_DIGIT_BIT
-#      error You must not define MP_DIGIT_BIT when using MP_16BIT
-#   endif
+typedef uint16_t             mp_digit;
+typedef uint32_t             private_mp_word;
+#   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-#ifndef MP_DIGIT_DECLARED
-typedef unsigned long long   mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
+typedef uint64_t mp_digit;
+#if defined(__GNUC__)
 typedef unsigned long        private_mp_word __attribute__((mode(TI)));
+#endif
 #   define MP_DIGIT_BIT 60
 #else
-/* this is the default case, 28-bit digits */
-
-/* this is to make porting into LibTomCrypt easier :-) */
-#ifndef MP_DIGIT_DECLARED
-ypedef uint32_t             mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#ifndef MP_WORD_DECLARED
-#ifdef _WIN32
-typedef unsigned __int64   private_mp_word;
-#else
-typedef unsigned long long   private_mp_word;
-#endif
-#define MP_WORD_DECLARED
-#endif
-
+typedef uint32_t             mp_digit;
+typedef uint64_t             private_mp_word;
 #   ifdef MP_31BIT
 /*
  * This is an extension that uses 31-bit digits.
@@ -111,10 +111,10 @@ typedef unsigned long long   private_mp_word;
 #   endif
 #endif
 
-/* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
-#ifndef MP_DIGIT_BIT
-#   define MP_DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-#endif
+/* mp_word is a private type */
+#define mp_word MP_DEPRECATED_PRAGMA("mp_word has been made private") private_mp_word
+
+#define MP_SIZEOF_MP_DIGIT (MP_DEPRECATED_PRAGMA("MP_SIZEOF_MP_DIGIT has been deprecated, use sizeof (mp_digit)") sizeof (mp_digit))
 
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)MP_DIGIT_BIT))-((mp_digit)1))
 #define MP_DIGIT_MAX     MP_MASK
@@ -128,6 +128,10 @@ typedef unsigned long long   private_mp_word;
 #define LTM_PRIME_SAFE     (MP_DEPRECATED_PRAGMA("LTM_PRIME_SAFE has been deprecated, use MP_PRIME_SAFE") MP_PRIME_SAFE)
 #define LTM_PRIME_2MSB_ON  (MP_DEPRECATED_PRAGMA("LTM_PRIME_2MSB_ON has been deprecated, use MP_PRIME_2MSB_ON") MP_PRIME_2MSB_ON)
 
+#define mp_bool bool
+#define MP_NO false
+#define MP_YES true
+
 #ifdef MP_USE_ENUMS
 typedef enum {
    MP_ZPOS = 0,   /* positive */
@@ -138,10 +142,6 @@ typedef enum {
    MP_EQ = 0,     /* equal */
    MP_GT = 1      /* greater than */
 } mp_ord;
-typedef enum {
-   MP_NO = 0,
-   MP_YES = 1
-} mp_bool;
 typedef enum {
    MP_OKAY  = 0,   /* no error */
    MP_ERR   = -1,  /* unknown error */
@@ -167,9 +167,6 @@ typedef int mp_ord;
 #define MP_LT        -1   /* less than */
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
-typedef int mp_bool;
-#define MP_YES        1
-#define MP_NO         0
 typedef int mp_err;
 #define MP_OKAY       0   /* no error */
 #define MP_ERR        -1  /* unknown error */
@@ -203,16 +200,18 @@ TOOM_SQR_CUTOFF;
 /* default precision */
 #ifndef MP_PREC
 #   ifndef MP_LOW_MEM
-#      define MP_PREC 32        /* default digits of precision */
+#      define PRIVATE_MP_PREC 32        /* default digits of precision */
 #   elif defined(MP_8BIT)
-#      define MP_PREC 16        /* default digits of precision */
+#      define PRIVATE_MP_PREC 16        /* default digits of precision */
 #   else
-#      define MP_PREC 8         /* default digits of precision */
+#      define PRIVATE_MP_PREC 8         /* default digits of precision */
 #   endif
+#   define MP_PREC (MP_DEPRECATED_PRAGMA("MP_PREC is an internal macro") PRIVATE_MP_PREC)
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define MP_WARRAY (MP_DEPRECATED_PRAGMA("MP_WARRAY is an internal macro") PRIVATE_MP_WARRAY)
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #   define MP_NULL_TERMINATED __attribute__((sentinel))
@@ -255,10 +254,10 @@ TOOM_SQR_CUTOFF;
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
 
-#define DIGIT_BIT   MP_DIGIT_BIT
-#define USED(m)    ((m)->used)
-#define DIGIT(m,k) ((m)->dp[(k)])
-#define SIGN(m)    ((m)->sign)
+#define DIGIT_BIT   (MP_DEPRECATED_PRAGMA("DIGIT_BIT macro is deprecated, MP_DIGIT_BIT instead") MP_DIGIT_BIT)
+#define USED(m)     (MP_DEPRECATED_PRAGMA("USED macro is deprecated, use z->used instead") (m)->used)
+#define DIGIT(m, k) (MP_DEPRECATED_PRAGMA("DIGIT macro is deprecated, use z->dp instead") (m)->dp[(k)])
+#define SIGN(m)     (MP_DEPRECATED_PRAGMA("SIGN macro is deprecated, use z->sign instead") (m)->sign)
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -271,7 +270,8 @@ struct mp_int {
    mp_digit *dp;
 };
 
-/* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
+/* callback for mp_prime_random, should fill dst with random bytes and r};
+many read [upto len] */
 typedef int private_mp_prime_callback(unsigned char *dst, int len, void *dat);
 typedef private_mp_prime_callback MP_DEPRECATED(mp_rand_source) ltm_prime_callback;
 
@@ -582,6 +582,7 @@ void mp_rand_source(mp_err(*source)(void *out, size_t size));
 */
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
+#  warning MP_PRNG_ENABLE_LTM_RNG has been deprecated, use mp_rand_source instead.
 /* A last resort to provide random data on systems without any of the other
  * implemented ways to gather entropy.
  * It is compatible with `rng_get_bytes()` from libtomcrypt so you could
