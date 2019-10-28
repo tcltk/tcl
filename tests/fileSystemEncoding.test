@@ -2,6 +2,10 @@
 
 # Copyright (c) 2019 Poor Yorick
 
+if {[string equal $::tcl_platform(os) "Windows NT"]} {
+    return
+}
+
 namespace eval ::tcl::test::fileSystemEncoding {
     package require tcltest 2
     namespace import ::tcltest::*
