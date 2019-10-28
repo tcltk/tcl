@@ -145,7 +145,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define QUICK_MAX	14	/* floor((FP_PRECISION-1)*log(2)/log(10))-1 */
 #define BLETCH		0x10	/* Highest power of two that is greater than
 				 * DBL_MAX_10_EXP, divided by 16. */
-#define DIGIT_GROUP	8	/* floor(DIGIT_BIT*log(2)/log(10)) */
+#define DIGIT_GROUP	8	/* floor(MP_DIGIT_BIT*log(2)/log(10)) */
 
 /*
  * Union used to dismantle floating point numbers.
@@ -711,7 +711,7 @@ TclParseNumber(
 				|| (octalSignificandWide >
 					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    TclInitBignumFromWideUInt(&octalSignificandBig,
+			    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -828,7 +828,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			TclBNInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -869,7 +869,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			TclBNInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -1214,7 +1214,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1235,7 +1235,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1256,7 +1256,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		TclInitBignumFromWideUInt(&octalSignificandBig,
+		TclBNInitBignumFromWideUInt(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
@@ -1269,7 +1269,7 @@ TclParseNumber(
 	    }
 	    if (!octalSignificandOverflow) {
 		if (octalSignificandWide > (MOST_BITS + signum)) {
-		    TclInitBignumFromWideUInt(&octalSignificandBig,
+		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
@@ -1297,12 +1297,12 @@ TclParseNumber(
 		    &significandWide, &significandBig, significandOverflow);
 	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
 		if (significandWide > MOST_BITS+signum) {
-		    TclInitBignumFromWideUInt(&significandBig,
+		    TclBNInitBignumFromWideUInt(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
@@ -1457,7 +1457,7 @@ AccumulateDecimalDigit(
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    TclInitBignumFromWideUInt(bignumRepPtr, w);
+	    TclBNInitBignumFromWideUInt(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1485,9 +1485,9 @@ AccumulateDecimalDigit(
 	 * More than single digit multiplication. Multiply by the appropriate
 	 * small powers of 5, and then shift. Large strings of zeroes are
 	 * eaten 256 at a time; this is less efficient than it could be, but
-	 * seems implausible. We presume that DIGIT_BIT is at least 27. The
+	 * seems implausible. We presume that MP_DIGIT_BIT is at least 27. The
 	 * first multiplication, by up to 10**7, is done with a one-DIGIT
-	 * multiply (this presumes that DIGIT_BIT >= 24).
+	 * multiply (this presumes that MP_DIGIT_BIT >= 24).
 	 */
 
 	n = numZeros + 1;
@@ -1600,7 +1600,7 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    TclInitBignumFromWideUInt(&significandBig, significand);
+    TclBNInitBignumFromWideUInt(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -3129,7 +3129,7 @@ StrictInt64Conversion(
  *
  *	Test whether bankers' rounding should round a digit up. Assumption is
  *	made that the denominator of the fraction being tested is a power of
- *	2**DIGIT_BIT.
+ *	2**MP_DIGIT_BIT.
  *
  * Results:
  *	Returns 1 iff the fraction is more than 1/2, or if the fraction is
@@ -3141,7 +3141,7 @@ StrictInt64Conversion(
 static inline int
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
-    int sd,			/* Denominator is 2**(sd*DIGIT_BIT). */
+    int sd,			/* Denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd)			/* 1 if the digit is odd, 0 if even. */
 {
     int i;
@@ -3180,7 +3180,7 @@ static inline int
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
-    int sd,			/* Common denominator is 2**(sd*DIGIT_BIT). */
+    int sd,			/* Common denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd,			/* 1 if the integer significand is odd. */
     mp_int *temp)		/* Work area for the calculation. */
 {
@@ -3189,7 +3189,7 @@ ShouldBankerRoundUpToNextPowD(
     /*
      * Compare B and S-m - which is the same as comparing B+m and S - which we
      * do by computing b+m and doing a bitwhack compare against
-     * 2**(DIGIT_BIT*sd)
+     * 2**(MP_DIGIT_BIT*sd)
      */
 
     mp_add(b, m, temp);
@@ -3217,7 +3217,7 @@ ShouldBankerRoundUpToNextPowD(
  *	Converts a double-precision number to the shortest string of digits
  *	that reconverts exactly to the given number, or to 'ilim' digits if
  *	that will yield a shorter result. The denominator in David Gay's
- *	conversion algorithm is known to be a power of 2**DIGIT_BIT, and hence
+ *	conversion algorithm is known to be a power of 2**MP_DIGIT_BIT, and hence
  *	the division in the main loop may be replaced by a digit shift and
  *	mask.
  *
@@ -3267,7 +3267,7 @@ ShorteningBignumConversionPowD(
      * mminus = 5**m5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    TclBNInitBignumFromWideUInt(&b, bw);
     mp_init_set(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
@@ -3297,7 +3297,7 @@ ShorteningBignumConversionPowD(
     mp_init(&temp);
 
     /*
-     * Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+     * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction.
      */
 
@@ -3409,7 +3409,7 @@ ShorteningBignumConversionPowD(
  *	Converts a double-precision number to a fixed-lengt string of 'ilim'
  *	digits (or 'ilim1' if log10(d) has been overestimated).  The
  *	denominator in David Gay's conversion algorithm is known to be a power
- *	of 2**DIGIT_BIT, and hence the division in the main loop may be
+ *	of 2**MP_DIGIT_BIT, and hence the division in the main loop may be
  *	replaced by a digit shift and mask.
  *
  * Results:
@@ -3451,7 +3451,7 @@ StrictBignumConversionPowD(
      * b = bw * 2**b2 * 5**b5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    TclBNInitBignumFromWideUInt(&b, bw);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3466,7 +3466,7 @@ StrictBignumConversionPowD(
     }
 
     /*
-     * Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+     * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction.
      */
 
@@ -3651,7 +3651,7 @@ ShorteningBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3860,7 +3860,7 @@ StrictBignumConversion(
      */
 
     mp_init_multi(&dig, NULL);
-    TclInitBignumFromWideUInt(&b, bw);
+    TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -4208,7 +4208,7 @@ TclDoubleDigits(
 	} else if (s5 == 0) {
 	    /*
 	     * The denominator is a power of 2, so we can replace division by
-	     * digit shifts. First we round up s2 to a multiple of DIGIT_BIT,
+	     * digit shifts. First we round up s2 to a multiple of MP_DIGIT_BIT,
 	     * and adjust m2 and b2 accordingly. Then we launch into a version
 	     * of the comparison that's specialized for the 'power of mp_digit
 	     * in the denominator' case.
@@ -4264,7 +4264,7 @@ TclDoubleDigits(
 	} else if (s5 == 0) {
 	    /*
 	     * The denominator is a power of 2, so we can replace division by
-	     * digit shifts. First we round up s2 to a multiple of DIGIT_BIT,
+	     * digit shifts. First we round up s2 to a multiple of MP_DIGIT_BIT,
 	     * and adjust m2 and b2 accordingly. Then we launch into a version
 	     * of the comparison that's specialized for the 'power of mp_digit
 	     * in the denominator' case.
@@ -4385,7 +4385,7 @@ TclInitDoubleConversion(void)
     for (i=0; i<8; ++i) {
 	mp_sqr(pow5+i, pow5+i+1);
     }
-    mp_init_set_int(pow5_13, 1220703125);
+    mp_init_ul(pow5_13, 1220703125);
     for (i = 1; i < 5; ++i) {
 	mp_init(pow5_13 + i);
 	mp_sqr(pow5_13 + i - 1, pow5_13 + i);
@@ -4503,7 +4503,7 @@ Tcl_InitBignumFromDouble(
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	TclInitBignumFromWideInt(b, w);
+	TclBNInitBignumFromWideInt(b, w);
 	if (shift < 0) {
 	    mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
