@@ -777,7 +777,7 @@ INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DOC_TARGETS) $(INSTALL_DEV_T
 install: $(INSTALL_TARGETS)
 
 install-binaries: binaries
-	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
+	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)"; \
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
@@ -873,7 +873,7 @@ install-libraries: libraries install-tzdata install-msgs
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";
-	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
+	@for i in $(ROOT_DIR)/library/encoding/*.enc; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
