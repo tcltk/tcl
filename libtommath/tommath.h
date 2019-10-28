@@ -15,23 +15,9 @@
 #  include <stdbool.h>
 #endif
 #include <stddef.h>
-#include <limits.h>
-
-#ifdef LTM_NO_FILE
-#  warning LTM_NO_FILE has been deprecated, use MP_NO_FILE.
-#  define MP_NO_FILE
-#endif
 
 #ifndef MP_NO_FILE
 #  include <stdio.h>
-#endif
-
-#ifdef MP_8BIT
-#  ifdef _MSC_VER
-#    pragma message("8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version.")
-#  else
-#    warning "8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version."
-#  endif
 #endif
 
 #ifdef __cplusplus
@@ -39,7 +25,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
+#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
@@ -50,7 +36,7 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT))
 #      if defined(__GNUC__) && !defined(__hppa)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
@@ -62,7 +48,7 @@ extern "C" {
 #endif
 
 #ifdef MP_DIGIT_BIT
-#   error Defining MP_DIGIT_BIT is disallowed, use MP_8/16/31/32/64BIT
+#   error Defining MP_DIGIT_BIT is disallowed, use MP_16/31/32/64BIT
 #endif
 
 /* some default configurations.
@@ -74,24 +60,14 @@ extern "C" {
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 
-#ifdef MP_8BIT
-typedef uint8_t              mp_digit;
-typedef uint16_t             private_mp_word;
-#   define MP_DIGIT_BIT 7
-#elif defined(MP_16BIT)
+if defined(MP_16BIT)
 typedef uint16_t             mp_digit;
-typedef uint32_t             private_mp_word;
 #   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
-/* for GCC only on supported platforms */
 typedef uint64_t mp_digit;
-#if defined(__GNUC__)
-typedef unsigned long        private_mp_word __attribute__((mode(TI)));
-#endif
 #   define MP_DIGIT_BIT 60
 #else
 typedef uint32_t             mp_digit;
-typedef uint64_t             private_mp_word;
 #   ifdef MP_31BIT
 /*
  * This is an extension that uses 31-bit digits.
@@ -107,11 +83,6 @@ typedef uint64_t             private_mp_word;
 #   endif
 #endif
 
-/* mp_word is a private type */
-#define mp_word MP_DEPRECATED_PRAGMA("mp_word has been made private") private_mp_word
-
-#define MP_SIZEOF_MP_DIGIT (MP_DEPRECATED_PRAGMA("MP_SIZEOF_MP_DIGIT has been deprecated, use sizeof (mp_digit)") sizeof (mp_digit))
-
 #define MP_MASK          ((((mp_digit)1)<<((mp_digit)MP_DIGIT_BIT))-((mp_digit)1))
 #define MP_DIGIT_MAX     MP_MASK
 
@@ -119,10 +90,6 @@ typedef uint64_t             private_mp_word;
 #define MP_PRIME_BBS      0x0001 /* BBS style prime */
 #define MP_PRIME_SAFE     0x0002 /* Safe prime (p-1)/2 == prime */
 #define MP_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
-
-#define LTM_PRIME_BBS      (MP_DEPRECATED_PRAGMA("LTM_PRIME_BBS has been deprecated, use MP_PRIME_BBS") MP_PRIME_BBS)
-#define LTM_PRIME_SAFE     (MP_DEPRECATED_PRAGMA("LTM_PRIME_SAFE has been deprecated, use MP_PRIME_SAFE") MP_PRIME_SAFE)
-#define LTM_PRIME_2MSB_ON  (MP_DEPRECATED_PRAGMA("LTM_PRIME_2MSB_ON has been deprecated, use MP_PRIME_2MSB_ON") MP_PRIME_2MSB_ON)
 
 #define mp_bool bool
 #define MP_NO false
@@ -133,11 +100,13 @@ typedef enum {
    MP_ZPOS = 0,   /* positive */
    MP_NEG = 1     /* negative */
 } mp_sign;
+
 typedef enum {
    MP_LT = -1,    /* less than */
    MP_EQ = 0,     /* equal */
    MP_GT = 1      /* greater than */
 } mp_ord;
+
 typedef enum {
    MP_OKAY  = 0,   /* no error */
    MP_ERR   = -1,  /* unknown error */
@@ -146,10 +115,12 @@ typedef enum {
    MP_ITER  = -4,  /* maximum iterations reached */
    MP_BUF   = -5   /* buffer overflow, supplied buffer too small */
 } mp_err;
+
 typedef enum {
    MP_LSB_FIRST = -1,
    MP_MSB_FIRST =  1
 } mp_order;
+
 typedef enum {
    MP_LITTLE_ENDIAN  = -1,
    MP_NATIVE_ENDIAN  =  0,
@@ -181,7 +152,6 @@ typedef int mp_endian;
 #endif
 
 /* tunable cutoffs */
-
 #ifndef MP_FIXED_CUTOFFS
 extern int
 KARATSUBA_MUL_CUTOFF,
@@ -249,11 +219,6 @@ TOOM_SQR_CUTOFF;
 #  define MP_DEPRECATED(s)
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
-
-#define DIGIT_BIT   (MP_DEPRECATED_PRAGMA("DIGIT_BIT macro is deprecated, MP_DIGIT_BIT instead") MP_DIGIT_BIT)
-#define USED(m)     (MP_DEPRECATED_PRAGMA("USED macro is deprecated, use z->used instead") (m)->used)
-#define DIGIT(m, k) (MP_DEPRECATED_PRAGMA("DIGIT macro is deprecated, use z->dp instead") (m)->dp[(k)])
-#define SIGN(m)     (MP_DEPRECATED_PRAGMA("SIGN macro is deprecated, use z->sign instead") (m)->sign)
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED

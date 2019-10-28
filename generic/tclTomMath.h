@@ -4,22 +4,22 @@
 #ifndef BN_H_
 #define BN_H_
 
-#ifndef MODULE_SCOPE
-#define MODULE_SCOPE extern
-#endif
-
 #ifndef MP_NO_STDINT
 /* If compiling with -DMP_NO_STDINT, make sure that uint32_t and friends
  * are brought in through another header-file first */
 #  include <stdint.h>
 #endif
 #ifndef MP_NO_STDBOOL
-/* If compiling with -DMP_NO_STDINT, make sure that uint32_t and friends
+/* If compiling with -DMP_NO_STDBOOL, make sure that bool, true and false
  * are brought in through another header-file first */
 #  include <stdbool.h>
 #endif
 #include <stddef.h>
 #include <limits.h>
+
+#ifndef MODULE_SCOPE
+#define MODULE_SCOPE extern
+#endif
 
 #ifdef LTM_NO_FILE
 #  warning LTM_NO_FILE has been deprecated, use MP_NO_FILE.
@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
+#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
@@ -79,23 +79,17 @@ extern "C" {
  */
 
 #ifdef MP_8BIT
-typedef uint8_t              mp_digit;
-typedef uint16_t             private_mp_word;
+typedef unsigned char        mp_digit;
 #   define MP_DIGIT_BIT 7
 #elif defined(MP_16BIT)
-typedef uint16_t             mp_digit;
-typedef uint32_t             private_mp_word;
+typedef unsigned short       mp_digit;
 #   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-typedef uint64_t mp_digit;
-#if defined(__GNUC__)
-typedef unsigned long        private_mp_word __attribute__((mode(TI)));
-#endif
+typedef unsigned long long   mp_digit;
 #   define MP_DIGIT_BIT 60
 #else
-typedef uint32_t             mp_digit;
-typedef uint64_t             private_mp_word;
+typedef unsigned int         mp_digit;
 #   ifdef MP_31BIT
 /*
  * This is an extension that uses 31-bit digits.
@@ -110,9 +104,6 @@ typedef uint64_t             private_mp_word;
 #      define MP_28BIT
 #   endif
 #endif
-
-/* mp_word is a private type */
-#define mp_word MP_DEPRECATED_PRAGMA("mp_word has been made private") private_mp_word
 
 #define MP_SIZEOF_MP_DIGIT (MP_DEPRECATED_PRAGMA("MP_SIZEOF_MP_DIGIT has been deprecated, use sizeof (mp_digit)") sizeof (mp_digit))
 
@@ -210,7 +201,7 @@ TOOM_SQR_CUTOFF;
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
 #define MP_WARRAY (MP_DEPRECATED_PRAGMA("MP_WARRAY is an internal macro") PRIVATE_MP_WARRAY)
 
 #if defined(__GNUC__) && __GNUC__ >= 4
@@ -485,6 +476,7 @@ mp_err mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 /*
 void mp_clamp(mp_int *a);
 */
+
 
 /* export binary data */
 /*

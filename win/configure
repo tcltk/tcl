@@ -4590,7 +4590,7 @@ $as_echo "#define HAVE_WINNT_IGNORE_VOID 1" >>confdefs.h
 
 	fi
 
-    ac_fn_c_check_header_mongrel "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
+	ac_fn_c_check_header_mongrel "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdbool_h" = xyes; then :
 
 $as_echo "#define HAVE_STDBOOL_H 1" >>confdefs.h
