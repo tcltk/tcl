@@ -8935,4 +8935,8 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2019-10-23 (new) libtommath updated to release 1.2.0 (nijtmans)
 
+2019-10-25 OSX: system Tcl deprecated. End default use of its packages. (walzer)
+
+2019-10-28 (bug)[bcd100] bad fs cache when system encoding changes (coulter)
+
 - Released 8.6.10, October 25, 2019 - details at http://core.tcl-lang.org/tcl/ -
