@@ -56,7 +56,9 @@ MODULE_SCOPE mp_err	TclBN_s_mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_
 MODULE_SCOPE mp_err TclBN_s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
 MODULE_SCOPE mp_err TclBN_s_mp_init_set(mp_int *a, mp_digit b);
 MODULE_SCOPE mp_err	TclBN_s_mp_mul_d(const mp_int *a, mp_digit b, mp_int *c);
-MODULE_SCOPE void TclBN_s_mp_set(mp_int *a, mp_digit b);
+MODULE_SCOPE void	TclBN_s_mp_set(mp_int *a, mp_digit b);
+MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c);
+
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
@@ -68,6 +70,7 @@ MODULE_SCOPE void TclBN_s_mp_set(mp_int *a, mp_digit b);
 #define mp_init_set TclBN_s_mp_init_set
 #define mp_mul_d TclBN_s_mp_mul_d
 #define mp_set TclBN_s_mp_set
+#define mp_expt_u32 TclBN_s_mp_expt_u32
 
 #define bn_reverse TclBN_reverse
 #define mp_add TclBN_mp_add
@@ -86,7 +89,6 @@ MODULE_SCOPE void TclBN_s_mp_set(mp_int *a, mp_digit b);
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_u32
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
-#define mp_expt_u32 TclBN_mp_expt_u32
 #define mp_get_bit TclBN_mp_get_bit
 #define mp_get_mag_ul TclBN_mp_get_mag_ul
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
@@ -656,7 +658,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 #define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 
-#if defined(USE_TCL_STUBS) || (defined(STATIC_BUILD) && !defined(BUILD_tcl))
+#ifndef BUILD_tcl
 #undef mp_add_d
 #undef mp_cmp_d
 #undef mp_div_d
@@ -665,6 +667,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #undef mp_init_set
 #undef mp_mul_d
 #undef mp_set
+#undef mp_expt_u32
 #define mp_add_d TclBN_mp_add_d
 #define mp_cmp_d TclBN_mp_cmp_d
 #define mp_div_d TclBN_mp_div_d
@@ -673,7 +676,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #define mp_init_set TclBN_mp_init_set
 #define mp_mul_d TclBN_mp_mul_d
 #define mp_set TclBN_mp_set
-#endif /* USE_TCL_STUBS */
+#define mp_expt_u32 TclBN_mp_expt_u32
+#endif /* !BUILD_tcl */
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

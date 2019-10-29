@@ -99,6 +99,10 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 
 #define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
 
+mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_expt_u32(a, b, c);
+}
+
 mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
    return TclBN_s_mp_add_d(a, b, c);
 }
