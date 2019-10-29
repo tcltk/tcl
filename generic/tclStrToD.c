@@ -2661,7 +2661,7 @@ QuickConversion(
     int k,			/* floor(log10(d)), approximately. */
     int k_check,		/* 0 if k is exact, 1 if it may be too high */
     int flags,			/* Flags passed to dtoa:
-				 *    TCL_DD_SHORTEN_FLAG */
+				 *    TCL_DD_SHORTEST */
     int len,			/* Length of the return value. */
     int ilim,			/* Number of digits to store. */
     int ilim1,			/* Number of digits to store if we misguessed
@@ -2732,7 +2732,7 @@ QuickConversion(
      * Format the digit string.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	end = ShorteningQuickFormat(d, k, ilim, eps.d, retval, decpt);
     } else {
 	end = StrictQuickFormat(d, k, ilim, eps.d, retval, decpt);
@@ -3944,7 +3944,7 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEST is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -3955,7 +3955,7 @@ StrictBignumConversion(
  *		string if the number is sufficiently small. Again, it is
  *		permissible for TCL_DD_F_FORMAT to return fewer digits for a
  *		number that converts exactly, and changing the argument to
- *		TCL_DD_F_FORMAT|TCL_DD_SHORTEN_FLAG will allow the routine
+ *		TCL_DD_F_FORMAT|TCL_DD_SHORTEST will allow the routine
  *		also to return fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. Strings of
  *		trailing zeroes are suppressed.
@@ -4092,7 +4092,7 @@ TclDoubleDigits(
      * denominator.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	int m2minus = b2;
 	int m2plus;
 	int m5 = b5;
