@@ -4481,10 +4481,10 @@ TclBignumToDouble(
     bits = mp_count_bits(a);
     if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	errno = ERANGE;
-	if (a->sign == MP_ZPOS) {
-	    return HUGE_VAL;
-	} else {
+	if (mp_isneg(a)) {
 	    return -HUGE_VAL;
+	} else {
+	    return HUGE_VAL;
 	}
     }
     shift = mantBits - bits;
@@ -4514,10 +4514,10 @@ TclBignumToDouble(
 
 	    mp_div_2d(a, -shift, &b, NULL);
 	    if (mp_isodd(&b)) {
-		if (b.sign == MP_ZPOS) {
-		    mp_add_d(&b, 1, &b);
-		} else {
+		if (mp_isneg(&b)) {
 		    mp_sub_d(&b, 1, &b);
+		} else {
+		    mp_add_d(&b, 1, &b);
 		}
 	    }
 	} else {
@@ -4527,10 +4527,10 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -1-shift, &b, NULL);
-	    if (b.sign == MP_ZPOS) {
-		mp_add_d(&b, 1, &b);
-	    } else {
+	    if (mp_isneg(&b)) {
 		mp_sub_d(&b, 1, &b);
+	    } else {
+		mp_add_d(&b, 1, &b);
 	    }
 	    mp_div_2d(&b, 1, &b, NULL);
 	}
@@ -4556,10 +4556,10 @@ TclBignumToDouble(
      * Return the result with the appropriate sign.
      */
 
-    if (a->sign == MP_ZPOS) {
-	return r;
-    } else {
+    if (mp_isneg(a)) {
 	return -r;
+    } else {
+	return r;
     }
 }
 
@@ -4585,7 +4585,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (a->sign != MP_ZPOS) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4642,7 +4642,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (a->sign != MP_ZPOS) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
@@ -4732,7 +4732,7 @@ BignumToBiasedFrExp(
      */
 
     *machexp = bits - mantBits + 2;
-    return ((a->sign == MP_ZPOS) ? r : -r);
+    return (mp_isneg(a) ? -r : r);
 }
 
 /*
