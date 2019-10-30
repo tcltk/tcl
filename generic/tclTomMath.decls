@@ -214,10 +214,7 @@ declare 69 {
     unsigned long long MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
 }
 declare 71 {
-    unsigned long TclBN_mp_get_mag_ul(const mp_int *a)
-}
-declare 72 {
-    mp_bool MP_WUR TclBN_mp_isodd(const mp_int *a)
+    unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
 }
 
 # Added in libtommath 1.1.0

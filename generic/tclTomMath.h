@@ -201,7 +201,7 @@ TOOM_SQR_CUTOFF;
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * (int)sizeof(mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
 #define MP_WARRAY (MP_DEPRECATED_PRAGMA("MP_WARRAY is an internal macro") PRIVATE_MP_WARRAY)
 
 #if defined(__GNUC__) && __GNUC__ >= 4
@@ -314,12 +314,8 @@ mp_err mp_init_size(mp_int *a, int size) MP_WUR;
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-/*
-mp_bool mp_iseven(const mp_int *a) MP_WUR;
-*/
-/*
-mp_bool mp_isodd(const mp_int *a) MP_WUR;
-*/
+#define mp_isodd(a)  (((a)->used != 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
