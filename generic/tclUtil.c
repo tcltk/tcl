@@ -3345,13 +3345,13 @@ Tcl_PrintDouble(
 	 * the first (the recommended zero value for tcl_precision avoids the
 	 * problem entirely).
 	 *
-	 * Uncomment TCL_DD_SHORTEN_FLAG in the next call to prefer the method
+	 * Uncomment TCL_DD_SHORTEST in the next call to prefer the method
 	 * that allows floating point values to be shortened if it can be done
 	 * without loss of precision.
 	 */
 
 	digits = TclDoubleDigits(value, *precisionPtr,
-		TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */,
+		TCL_DD_E_FORMAT /* | TCL_DD_SHORTEST */,
 		&exponent, &signum, &end);
     }
     if (signum) {
