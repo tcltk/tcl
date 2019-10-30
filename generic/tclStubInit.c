@@ -920,7 +920,7 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 69 */
     0, /* 70 */
     0, /* 71 */
-    TclBN_mp_isodd, /* 72 */
+    0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
