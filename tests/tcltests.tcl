@@ -21,7 +21,7 @@ namespace eval ::tcltests {
 	    interp alias {} [namespace current]::tempdir {} ::tcl::file::tempdir
 	}
     }
-	    
+
 
     proc tempdir_alternate {} {
 	file tempfile tempfile
