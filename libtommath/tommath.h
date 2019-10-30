@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if (defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
+#if (defined(_MSC_VER) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
@@ -74,7 +74,7 @@ typedef unsigned short       mp_digit;
 #   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-typedef Tcl_WideUInt   mp_digit;
+typedef unsigned long long   mp_digit;
 #   define MP_DIGIT_BIT 60
 #else
 typedef unsigned int         mp_digit;
@@ -148,6 +148,7 @@ typedef int mp_err;
 #define MP_ERR        -1  /* unknown error */
 #define MP_MEM        -2  /* out of mem */
 #define MP_VAL        -3  /* invalid input */
+#define MP_RANGE      (MP_DEPRECATED_PRAGMA("MP_RANGE has been deprecated in favor of MP_VAL") MP_VAL)
 #define MP_ITER       -4  /* maximum iterations reached */
 #define MP_BUF        -5  /* buffer overflow, supplied buffer too small */
 typedef int mp_order;
