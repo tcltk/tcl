@@ -83,7 +83,6 @@
 #define mp_init_set_int(a,i) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_ul(a,(unsigned int)(i)))
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_ul TclBN_mp_init_ul
-#define mp_isodd TclBN_mp_isodd
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -351,9 +350,8 @@ EXTERN void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
 /* Slot 70 is reserved */
 /* 71 */
-EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a);
-/* 72 */
-EXTERN mp_bool		TclBN_mp_isodd(const mp_int *a) MP_WUR;
+EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
+/* Slot 72 is reserved */
 /* 73 */
 EXTERN mp_err		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
 				mp_int *c) MP_WUR;
@@ -452,8 +450,8 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
     void (*reserved70)(void);
-    unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a); /* 71 */
-    mp_bool (*tclBN_mp_isodd) (const mp_int *a) MP_WUR; /* 72 */
+    unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
+    void (*reserved72)(void);
     mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 73 */
     mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 74 */
     mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 75 */
@@ -619,8 +617,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* Slot 70 is reserved */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
-#define TclBN_mp_isodd \
-	(tclTomMathStubsPtr->tclBN_mp_isodd) /* 72 */
+/* Slot 72 is reserved */
 #define TclBN_mp_tc_and \
 	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
 #define TclBN_mp_tc_or \
@@ -640,10 +637,6 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-#undef mp_isodd
-#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
-#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
