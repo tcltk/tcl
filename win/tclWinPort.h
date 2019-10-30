@@ -82,6 +82,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <process.h>
 #include <signal.h>
 #include <limits.h>
+#ifdef HAVE_STDINT_H
+#   include <stdint.h>
+#endif
 
 #ifndef __GNUC__
 #    define strncasecmp _strnicmp
