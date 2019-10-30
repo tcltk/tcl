@@ -82,7 +82,6 @@
 #define mp_init_set TclBN_mp_init_set
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_ul TclBN_mp_init_ul
-#define mp_isodd TclBN_mp_isodd
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -282,9 +281,8 @@ TCLAPI void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 TCLAPI Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
 /* Slot 70 is reserved */
 /* 71 */
-TCLAPI unsigned long	TclBN_mp_get_mag_ul(const mp_int *a);
-/* 72 */
-TCLAPI mp_bool		TclBN_mp_isodd(const mp_int *a) MP_WUR;
+TCLAPI unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
+/* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -375,8 +373,8 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
     void (*reserved70)(void);
-    unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a); /* 71 */
-    mp_bool (*tclBN_mp_isodd) (const mp_int *a) MP_WUR; /* 72 */
+    unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
+    void (*reserved72)(void);
     void (*reserved73)(void);
     void (*reserved74)(void);
     void (*reserved75)(void);
@@ -524,8 +522,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* Slot 70 is reserved */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
-#define TclBN_mp_isodd \
-	(tclTomMathStubsPtr->tclBN_mp_isodd) /* 72 */
+/* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -541,9 +538,5 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-#undef mp_isodd
-#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
-#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 
 #endif /* _TCLINTDECLS */

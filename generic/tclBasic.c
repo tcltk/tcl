@@ -6843,7 +6843,7 @@ ExprIsqrtFunc(
 	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (big.sign != MP_ZPOS) {
+	if (mp_isneg(&big)) {
 	    mp_clear(&big);
 	    goto negarg;
 	}
@@ -7117,7 +7117,7 @@ ExprAbsFunc(
     }
 
     if (type == TCL_NUMBER_BIG) {
-	if (((const mp_int *) ptr)->sign != MP_ZPOS) {
+	if (mp_isneg((const mp_int *) ptr)) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
 	    mp_neg(&big, &big);
