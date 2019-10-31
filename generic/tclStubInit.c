@@ -136,7 +136,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 	return TclBN_s_mp_mul_d(a, b, c);
 }
 void TclBN_mp_set(mp_int *a, unsigned int b) {
-	return TclBN_s_mp_set(a, b);
+	TclBN_s_mp_set(a, b);
 }
 
 
