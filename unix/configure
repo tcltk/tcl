@@ -6388,6 +6388,9 @@ echo "$as_me: WARNING: can't find uname command" >&2;}
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi
+		if test "`uname -s`" = "NetBSD" -a -f /etc/debian_version ; then
+		    tcl_cv_sys_version=NetBSD-Debian
+		fi
 	    fi
 	fi
 
@@ -18262,6 +18265,9 @@ echo "$as_me: WARNING: can't find uname command" >&2;}
 		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
+		fi
+		if test "`uname -s`" = "NetBSD" -a -f /etc/debian_version ; then
+		    tcl_cv_sys_version=NetBSD-Debian
 		fi
 	    fi
 	fi
