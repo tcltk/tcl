@@ -80,8 +80,9 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_expt_d TclBN_mp_expt_u32
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_get_bit TclBN_mp_get_bit
+#define mp_get_mag_u64 TclBN_mp_get_mag_u64
 #define mp_get_mag_ul TclBN_mp_get_mag_ul
-#define mp_get_mag_ull TclBN_mp_get_mag_ull
+#define mp_get_mag_ull(a) ((unsigned long long)TclBN_mp_get_mag_u64(a))
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -102,9 +103,10 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_rshd TclBN_mp_rshd
 #define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),((unsigned int)(b))),MP_OKAY))
 #define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),(b)),MP_OKAY))
-#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ull") (TclBN_mp_set_ull((a),(b)),MP_OKAY))
+#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
 #define mp_set_ul TclBN_mp_set_ul
-#define mp_set_ull TclBN_mp_set_ull
+#define mp_set_ull(a,b) TclBN_mp_set_u64(a,(uint64_t)(b))
+#define mp_set_u64 TclBN_mp_set_u64
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
@@ -172,7 +174,7 @@ EXTERN int		TclBN_revision(void) MP_WUR;
 EXTERN mp_err		TclBN_mp_add(const mp_int *a, const mp_int *b,
 				mp_int *c) MP_WUR;
 /* 3 */
-EXTERN mp_err		TclBN_mp_add_d(const mp_int *a, unsigned int b,
+EXTERN mp_err		TclBN_mp_add_d(const mp_int *a, uint32_t b,
 				mp_int *c) MP_WUR;
 /* 4 */
 EXTERN mp_err		TclBN_mp_and(const mp_int *a, const mp_int *b,
@@ -186,7 +188,7 @@ EXTERN void		TclBN_mp_clear_multi(mp_int *a, ...);
 /* 8 */
 EXTERN mp_ord		TclBN_mp_cmp(const mp_int *a, const mp_int *b) MP_WUR;
 /* 9 */
-EXTERN mp_ord		TclBN_mp_cmp_d(const mp_int *a, unsigned int b) MP_WUR;
+EXTERN mp_ord		TclBN_mp_cmp_d(const mp_int *a, uint32_t b) MP_WUR;
 /* 10 */
 EXTERN mp_ord		TclBN_mp_cmp_mag(const mp_int *a, const mp_int *b) MP_WUR;
 /* 11 */
@@ -197,8 +199,8 @@ EXTERN int		TclBN_mp_count_bits(const mp_int *a) MP_WUR;
 EXTERN mp_err		TclBN_mp_div(const mp_int *a, const mp_int *b,
 				mp_int *q, mp_int *r) MP_WUR;
 /* 14 */
-EXTERN mp_err		TclBN_mp_div_d(const mp_int *a, unsigned int b,
-				mp_int *q, unsigned int *r) MP_WUR;
+EXTERN mp_err		TclBN_mp_div_d(const mp_int *a, uint32_t b,
+				mp_int *q, uint32_t *r) MP_WUR;
 /* 15 */
 EXTERN mp_err		TclBN_mp_div_2(const mp_int *a, mp_int *q) MP_WUR;
 /* 16 */
@@ -206,11 +208,11 @@ EXTERN mp_err		TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q,
 				mp_int *r) MP_WUR;
 /* 17 */
 EXTERN mp_err		TclBN_mp_div_3(const mp_int *a, mp_int *q,
-				unsigned int *r) MP_WUR;
+				uint32_t *r) MP_WUR;
 /* 18 */
 EXTERN void		TclBN_mp_exch(mp_int *a, mp_int *b);
 /* 19 */
-EXTERN mp_err		TclBN_mp_expt_u32(const mp_int *a, unsigned int b,
+EXTERN mp_err		TclBN_mp_expt_u32(const mp_int *a, uint32_t b,
 				mp_int *c) MP_WUR;
 /* 20 */
 EXTERN mp_err		TclBN_mp_grow(mp_int *a, int size) MP_WUR;
@@ -221,7 +223,7 @@ EXTERN mp_err		TclBN_mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 /* 23 */
 EXTERN mp_err		TclBN_mp_init_multi(mp_int *a, ...) MP_WUR;
 /* 24 */
-EXTERN mp_err		TclBN_mp_init_set(mp_int *a, unsigned int b) MP_WUR;
+EXTERN mp_err		TclBN_mp_init_set(mp_int *a, uint32_t b) MP_WUR;
 /* 25 */
 EXTERN mp_err		TclBN_mp_init_size(mp_int *a, int size) MP_WUR;
 /* 26 */
@@ -235,7 +237,7 @@ EXTERN mp_err		TclBN_mp_mod_2d(const mp_int *a, int b, mp_int *r) MP_WUR;
 EXTERN mp_err		TclBN_mp_mul(const mp_int *a, const mp_int *b,
 				mp_int *p) MP_WUR;
 /* 30 */
-EXTERN mp_err		TclBN_mp_mul_d(const mp_int *a, unsigned int b,
+EXTERN mp_err		TclBN_mp_mul_d(const mp_int *a, uint32_t b,
 				mp_int *p) MP_WUR;
 /* 31 */
 EXTERN mp_err		TclBN_mp_mul_2(const mp_int *a, mp_int *p) MP_WUR;
@@ -257,7 +259,7 @@ EXTERN void		TclBN_mp_rshd(mp_int *a, int shift);
 /* 38 */
 EXTERN mp_err		TclBN_mp_shrink(mp_int *a) MP_WUR;
 /* 39 */
-EXTERN void		TclBN_mp_set(mp_int *a, unsigned int b);
+EXTERN void		TclBN_mp_set(mp_int *a, uint32_t b);
 /* 40 */
 EXTERN mp_err		TclBN_mp_sqr(const mp_int *a, mp_int *b) MP_WUR;
 /* 41 */
@@ -266,7 +268,7 @@ EXTERN mp_err		TclBN_mp_sqrt(const mp_int *a, mp_int *b) MP_WUR;
 EXTERN mp_err		TclBN_mp_sub(const mp_int *a, const mp_int *b,
 				mp_int *c) MP_WUR;
 /* 43 */
-EXTERN mp_err		TclBN_mp_sub_d(const mp_int *a, unsigned int b,
+EXTERN mp_err		TclBN_mp_sub_d(const mp_int *a, uint32_t b,
 				mp_int *c) MP_WUR;
 /* 44 */
 TCL_DEPRECATED("Use mp_to_ubin")
@@ -336,21 +338,21 @@ EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
 TCL_DEPRECATED("Use mp_init() + mp_set_l()")
 void			TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 /* 65 */
-TCL_DEPRECATED("Use mp_init() + mp_set_ll()")
+TCL_DEPRECATED("Use mp_init() + mp_set_i64()")
 void			TclBNInitBignumFromWideInt(mp_int *bignum,
 				Tcl_WideInt initVal);
 /* 66 */
-TCL_DEPRECATED("Use mp_init() + mp_set_ull()")
+TCL_DEPRECATED("Use mp_init() + mp_set_u64()")
 void			TclBNInitBignumFromWideUInt(mp_int *bignum,
 				Tcl_WideUInt initVal);
 /* 67 */
 TCL_DEPRECATED("Use mp_expt_u32")
-mp_err			TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b,
+mp_err			TclBN_mp_expt_d_ex(const mp_int *a, uint32_t b,
 				mp_int *c, int fast);
 /* 68 */
-EXTERN void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
+EXTERN void		TclBN_mp_set_u64(mp_int *a, uint64_t i);
 /* 69 */
-EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
+EXTERN uint64_t		TclBN_mp_get_mag_u64(const mp_int *a) MP_WUR;
 /* Slot 70 is reserved */
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
@@ -385,34 +387,34 @@ typedef struct TclTomMathStubs {
     int (*tclBN_epoch) (void) MP_WUR; /* 0 */
     int (*tclBN_revision) (void) MP_WUR; /* 1 */
     mp_err (*tclBN_mp_add) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 2 */
-    mp_err (*tclBN_mp_add_d) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 3 */
+    mp_err (*tclBN_mp_add_d) (const mp_int *a, uint32_t b, mp_int *c) MP_WUR; /* 3 */
     mp_err (*tclBN_mp_and) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 4 */
     void (*tclBN_mp_clamp) (mp_int *a); /* 5 */
     void (*tclBN_mp_clear) (mp_int *a); /* 6 */
     void (*tclBN_mp_clear_multi) (mp_int *a, ...); /* 7 */
     mp_ord (*tclBN_mp_cmp) (const mp_int *a, const mp_int *b) MP_WUR; /* 8 */
-    mp_ord (*tclBN_mp_cmp_d) (const mp_int *a, unsigned int b) MP_WUR; /* 9 */
+    mp_ord (*tclBN_mp_cmp_d) (const mp_int *a, uint32_t b) MP_WUR; /* 9 */
     mp_ord (*tclBN_mp_cmp_mag) (const mp_int *a, const mp_int *b) MP_WUR; /* 10 */
     mp_err (*tclBN_mp_copy) (const mp_int *a, mp_int *b) MP_WUR; /* 11 */
     int (*tclBN_mp_count_bits) (const mp_int *a) MP_WUR; /* 12 */
     mp_err (*tclBN_mp_div) (const mp_int *a, const mp_int *b, mp_int *q, mp_int *r) MP_WUR; /* 13 */
-    mp_err (*tclBN_mp_div_d) (const mp_int *a, unsigned int b, mp_int *q, unsigned int *r) MP_WUR; /* 14 */
+    mp_err (*tclBN_mp_div_d) (const mp_int *a, uint32_t b, mp_int *q, uint32_t *r) MP_WUR; /* 14 */
     mp_err (*tclBN_mp_div_2) (const mp_int *a, mp_int *q) MP_WUR; /* 15 */
     mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r) MP_WUR; /* 16 */
-    mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, unsigned int *r) MP_WUR; /* 17 */
+    mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, uint32_t *r) MP_WUR; /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
-    mp_err (*tclBN_mp_expt_u32) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 19 */
+    mp_err (*tclBN_mp_expt_u32) (const mp_int *a, uint32_t b, mp_int *c) MP_WUR; /* 19 */
     mp_err (*tclBN_mp_grow) (mp_int *a, int size) MP_WUR; /* 20 */
     mp_err (*tclBN_mp_init) (mp_int *a) MP_WUR; /* 21 */
     mp_err (*tclBN_mp_init_copy) (mp_int *a, const mp_int *b) MP_WUR; /* 22 */
     mp_err (*tclBN_mp_init_multi) (mp_int *a, ...) MP_WUR; /* 23 */
-    mp_err (*tclBN_mp_init_set) (mp_int *a, unsigned int b) MP_WUR; /* 24 */
+    mp_err (*tclBN_mp_init_set) (mp_int *a, uint32_t b) MP_WUR; /* 24 */
     mp_err (*tclBN_mp_init_size) (mp_int *a, int size) MP_WUR; /* 25 */
     mp_err (*tclBN_mp_lshd) (mp_int *a, int shift) MP_WUR; /* 26 */
     mp_err (*tclBN_mp_mod) (const mp_int *a, const mp_int *b, mp_int *r) MP_WUR; /* 27 */
     mp_err (*tclBN_mp_mod_2d) (const mp_int *a, int b, mp_int *r) MP_WUR; /* 28 */
     mp_err (*tclBN_mp_mul) (const mp_int *a, const mp_int *b, mp_int *p) MP_WUR; /* 29 */
-    mp_err (*tclBN_mp_mul_d) (const mp_int *a, unsigned int b, mp_int *p) MP_WUR; /* 30 */
+    mp_err (*tclBN_mp_mul_d) (const mp_int *a, uint32_t b, mp_int *p) MP_WUR; /* 30 */
     mp_err (*tclBN_mp_mul_2) (const mp_int *a, mp_int *p) MP_WUR; /* 31 */
     mp_err (*tclBN_mp_mul_2d) (const mp_int *a, int d, mp_int *p) MP_WUR; /* 32 */
     mp_err (*tclBN_mp_neg) (const mp_int *a, mp_int *b) MP_WUR; /* 33 */
@@ -421,11 +423,11 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_read_radix) (mp_int *a, const char *str, int radix) MP_WUR; /* 36 */
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
     mp_err (*tclBN_mp_shrink) (mp_int *a) MP_WUR; /* 38 */
-    void (*tclBN_mp_set) (mp_int *a, unsigned int b); /* 39 */
+    void (*tclBN_mp_set) (mp_int *a, uint32_t b); /* 39 */
     mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b) MP_WUR; /* 40 */
     mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b) MP_WUR; /* 41 */
     mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 42 */
-    mp_err (*tclBN_mp_sub_d) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 43 */
+    mp_err (*tclBN_mp_sub_d) (const mp_int *a, uint32_t b, mp_int *c) MP_WUR; /* 43 */
     TCL_DEPRECATED_API("Use mp_to_ubin") mp_err (*tclBN_mp_to_unsigned_bin) (const mp_int *a, unsigned char *b); /* 44 */
     TCL_DEPRECATED_API("Use mp_to_ubin") mp_err (*tclBN_mp_to_unsigned_bin_n) (const mp_int *a, unsigned char *b, unsigned long *outlen); /* 45 */
     TCL_DEPRECATED_API("Use mp_to_radix") mp_err (*tclBN_mp_toradix_n) (const mp_int *a, char *str, int radix, int maxlen); /* 46 */
@@ -447,11 +449,11 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a) MP_WUR; /* 63 */
     TCL_DEPRECATED_API("Use mp_init() + mp_set_l()") void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_ll()") void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_ull()") void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
-    TCL_DEPRECATED_API("Use mp_expt_u32") mp_err (*tclBN_mp_expt_d_ex) (const mp_int *a, unsigned int b, mp_int *c, int fast); /* 67 */
-    void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
-    Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
+    TCL_DEPRECATED_API("Use mp_init() + mp_set_i64()") void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
+    TCL_DEPRECATED_API("Use mp_init() + mp_set_u64()") void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    TCL_DEPRECATED_API("Use mp_expt_u32") mp_err (*tclBN_mp_expt_d_ex) (const mp_int *a, uint32_t b, mp_int *c, int fast); /* 67 */
+    void (*tclBN_mp_set_u64) (mp_int *a, uint64_t i); /* 68 */
+    uint64_t (*tclBN_mp_get_mag_u64) (const mp_int *a) MP_WUR; /* 69 */
     void (*reserved70)(void);
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
     void (*reserved72)(void);
@@ -613,10 +615,10 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
 #define TclBN_mp_expt_d_ex \
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
-#define TclBN_mp_set_ull \
-	(tclTomMathStubsPtr->tclBN_mp_set_ull) /* 68 */
-#define TclBN_mp_get_mag_ull \
-	(tclTomMathStubsPtr->tclBN_mp_get_mag_ull) /* 69 */
+#define TclBN_mp_set_u64 \
+	(tclTomMathStubsPtr->tclBN_mp_set_u64) /* 68 */
+#define TclBN_mp_get_mag_u64 \
+	(tclTomMathStubsPtr->tclBN_mp_get_mag_u64) /* 69 */
 /* Slot 70 is reserved */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
