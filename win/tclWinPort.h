@@ -86,6 +86,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
 #endif
 
 #ifndef __GNUC__

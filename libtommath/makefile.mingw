@@ -11,11 +11,11 @@
 
 #The following can be overridden from command line e.g. make -f makefile.mingw CC=gcc ARFLAGS=rcs
 PREFIX    = c:\mingw
-CC        = gcc
+CC        = i686-w64-mingw32-gcc
 AR        = ar
 ARFLAGS   = r
 RANLIB    = ranlib
-STRIP     = strip
+STRIP     = i686-w64-mingw32-strip
 CFLAGS    = -O2
 LDFLAGS   =
 

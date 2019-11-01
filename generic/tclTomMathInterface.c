@@ -116,10 +116,10 @@ TclBNInitBignumFromWideInt(
 	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideInt");
 	}
     if (v < 0) {
-	mp_set_ull(a, (Tcl_WideUInt)(-v));
+	mp_set_u64(a, (uint64_t)(-v));
 	if (mp_neg(a, a) != MP_OKAY) goto wipanic;
     } else {
-	mp_set_ull(a, (Tcl_WideUInt)v);
+	mp_set_u64(a, (uint64_t)v);
     }
 }
 
@@ -147,7 +147,7 @@ TclBNInitBignumFromWideUInt(
 	if (mp_init(a) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
 	}
-	mp_set_ull(a, v);
+	mp_set_u64(a, (uint64_t)v);
 }
 
 /*

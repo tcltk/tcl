@@ -380,6 +380,7 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_u32.${OBJEXT} \
+	bn_mp_get_mag_u64.${OBJEXT} \
 	bn_mp_get_mag_ul.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
@@ -402,6 +403,7 @@ TOMMATH_OBJS = \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
+	bn_mp_set_u64.${OBJEXT} \
 	bn_mp_set_ul.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \

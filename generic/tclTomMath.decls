@@ -33,7 +33,7 @@ declare 2 {
     mp_err MP_WUR TclBN_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 3 {
-    mp_err MP_WUR TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_add_d(const mp_int *a, uint32_t b, mp_int *c)
 }
 declare 4 {
     mp_err MP_WUR TclBN_mp_and(const mp_int *a, const mp_int *b, mp_int *c)
@@ -51,7 +51,7 @@ declare 8 {
     mp_ord MP_WUR TclBN_mp_cmp(const mp_int *a, const mp_int *b)
 }
 declare 9 {
-    mp_ord MP_WUR TclBN_mp_cmp_d(const mp_int *a, unsigned int b)
+    mp_ord MP_WUR TclBN_mp_cmp_d(const mp_int *a, uint32_t b)
 }
 declare 10 {
     mp_ord MP_WUR TclBN_mp_cmp_mag(const mp_int *a, const mp_int *b)
@@ -66,7 +66,7 @@ declare 13 {
     mp_err MP_WUR TclBN_mp_div(const mp_int *a, const mp_int *b, mp_int *q, mp_int *r)
 }
 declare 14 {
-    mp_err MP_WUR TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *q, unsigned int *r)
+    mp_err MP_WUR TclBN_mp_div_d(const mp_int *a, uint32_t b, mp_int *q, uint32_t *r)
 }
 declare 15 {
     mp_err MP_WUR TclBN_mp_div_2(const mp_int *a, mp_int *q)
@@ -75,13 +75,13 @@ declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
 declare 17 {
-    mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
+    mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, uint32_t *r)
 }
 declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
 }
 declare 20 {
     mp_err MP_WUR TclBN_mp_grow(mp_int *a, int size)
@@ -96,7 +96,7 @@ declare 23 {
     mp_err MP_WUR TclBN_mp_init_multi(mp_int *a, ...)
 }
 declare 24 {
-    mp_err MP_WUR TclBN_mp_init_set(mp_int *a, unsigned int b)
+    mp_err MP_WUR TclBN_mp_init_set(mp_int *a, uint32_t b)
 }
 declare 25 {
     mp_err MP_WUR TclBN_mp_init_size(mp_int *a, int size)
@@ -114,7 +114,7 @@ declare 29 {
     mp_err MP_WUR TclBN_mp_mul(const mp_int *a, const mp_int *b, mp_int *p)
 }
 declare 30 {
-    mp_err MP_WUR TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *p)
+    mp_err MP_WUR TclBN_mp_mul_d(const mp_int *a, uint32_t b, mp_int *p)
 }
 declare 31 {
     mp_err MP_WUR TclBN_mp_mul_2(const mp_int *a, mp_int *p)
@@ -141,7 +141,7 @@ declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
 declare 39 {
-    void TclBN_mp_set(mp_int *a, unsigned int b)
+    void TclBN_mp_set(mp_int *a, uint32_t b)
 }
 declare 40 {
     mp_err MP_WUR TclBN_mp_sqr(const mp_int *a, mp_int *b)
@@ -153,7 +153,7 @@ declare 42 {
     mp_err MP_WUR TclBN_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 43 {
-    mp_err MP_WUR TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_sub_d(const mp_int *a, uint32_t b, mp_int *c)
 }
 declare 44 {deprecated {Use mp_to_ubin}} {
     mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
@@ -226,23 +226,23 @@ declare 63 {
 declare 64 {deprecated {Use mp_init() + mp_set_l()}} {
     void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
 }
-declare 65 {deprecated {Use mp_init() + mp_set_ll()}} {
+declare 65 {deprecated {Use mp_init() + mp_set_i64()}} {
     void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
 }
-declare 66 {deprecated {Use mp_init() + mp_set_ull()}} {
+declare 66 {deprecated {Use mp_init() + mp_set_u64()}} {
     void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
 }
 
 # Added in libtommath 1.0
 declare 67 {deprecated {Use mp_expt_u32}} {
-    mp_err TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
+    mp_err TclBN_mp_expt_d_ex(const mp_int *a, uint32_t b, mp_int *c, int fast)
 }
 # Added in libtommath 1.0.1
 declare 68 {
-    void TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i)
+    void TclBN_mp_set_u64(mp_int *a, uint64_t i)
 }
 declare 69 {
-    Tcl_WideUInt MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
+    uint64_t MP_WUR TclBN_mp_get_mag_u64(const mp_int *a)
 }
 declare 71 {
     unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)

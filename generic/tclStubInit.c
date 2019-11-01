@@ -82,9 +82,6 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
-MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
-MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
-
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
     mp_set_ul(a, i);
@@ -1048,8 +1045,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
-    TclBN_mp_set_ull, /* 68 */
-    TclBN_mp_get_mag_ull, /* 69 */
+    TclBN_mp_set_u64, /* 68 */
+    TclBN_mp_get_mag_u64, /* 69 */
     0, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
     0, /* 72 */
