@@ -4189,8 +4189,6 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
-MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
-
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           (-2)
 #define TCL_INDEX_START         (0)
