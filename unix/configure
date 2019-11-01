@@ -6894,9 +6894,6 @@ fi
 
     if test "${tcl_cv_type_64bit}" = none ; then
 
-$as_echo "#define MP_32BIT 1" >>confdefs.h
-
-
 $as_echo "#define TCL_WIDE_INT_IS_LONG 1" >>confdefs.h
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

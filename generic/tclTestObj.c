@@ -18,7 +18,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include "tclStringRep.h"
 
 

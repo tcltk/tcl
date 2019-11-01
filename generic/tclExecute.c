@@ -18,7 +18,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
 
