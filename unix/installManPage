@@ -92,11 +92,19 @@ case $ManPage in
 	exit 2 ;;
 esac
 
+Name=`basename $ManPage .$Section`
 SrcDir=`dirname $ManPage`
 
 ########################################################################
 ### Process Page to Create Target Pages
 ###
+
+Specials="DString Thread Notifier RegExp library packagens pkgMkIndex safesock"
+for n in $Specials; do
+    if [ "$Name" = "$n" ] ; then
+	Names="$n $Names"
+    fi
+done
 
 First=""
 for Target in $Names; do
