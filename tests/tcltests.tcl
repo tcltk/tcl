@@ -24,7 +24,7 @@ namespace eval ::tcltests {
 
 
     proc tempdir_alternate {} {
-	file tempfile tempfile
+	close [file tempfile tempfile]
 	set tmpdir [file dirname $tempfile]
 	set execname [info nameofexecutable]
 	regsub -all {[^[:alpha:][:digit:]]} $execname _ execname
