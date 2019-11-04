@@ -8072,7 +8072,7 @@ ExecuteExtendedBinaryMathOp(
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 	    /* TODO: internals intrusion */
-	    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
+	    if ((w1 > ((Tcl_WideInt) 0)) ^ !mp_isneg(&big2)) {
 		/*
 		 * Arguments are opposite sign; remainder is sum.
 		 */
@@ -8121,7 +8121,7 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = big2.sign != MP_ZPOS;
+	    invalid = mp_isneg(&big2);
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8200,7 +8200,7 @@ ExecuteExtendedBinaryMathOp(
 		    break;
 		case TCL_NUMBER_BIG:
 		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
-		    zero = (big1.sign == MP_ZPOS);
+		    zero = !mp_isneg(&big1);
 		    mp_clear(&big1);
 		    break;
 		default:
@@ -8324,7 +8324,7 @@ ExecuteExtendedBinaryMathOp(
 	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
 	} else {
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = big2.sign != MP_ZPOS;
+	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = big2.used != 0;
 	    mp_clear(&big2);
@@ -8799,7 +8799,7 @@ TclCompareTwoNumbers(
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (big2.sign != MP_ZPOS) {
+	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -8836,7 +8836,7 @@ TclCompareTwoNumbers(
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
-		if (big2.sign != MP_ZPOS) {
+		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
