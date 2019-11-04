@@ -7,9 +7,28 @@
 #ifndef MP_NO_STDINT
 #  include <stdint.h>
 #endif
+#include <stddef.h>
+#include <limits.h>
 
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
+#endif
+
+#ifdef LTM_NO_FILE
+#  warning LTM_NO_FILE has been deprecated, use MP_NO_FILE.
+#  define MP_NO_FILE
+#endif
+
+#ifndef MP_NO_FILE
+#  include <stdio.h>
+#endif
+
+#ifdef MP_8BIT
+#  ifdef _MSC_VER
+#    pragma message("8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version.")
+#  else
+#    warning "8-bit (MP_8BIT) support is deprecated and will be dropped completely in the next version."
+#  endif
 #endif
 
 #ifdef __cplusplus
@@ -17,14 +36,19 @@ extern "C" {
 #endif
 
 /* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
-#if (defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_64BIT)
+#if (defined(_WIN32) || defined(__LLP64__) || defined(__e2k__) || defined(__LCC__)) && !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_32BIT
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(NEVER)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      if defined(__GNUC__)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+    defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+    defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
+    defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
+    defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
+    defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
+#   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#      if defined(__GNUC__) && !defined(__hppa)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
 #      else
@@ -47,39 +71,17 @@ extern "C" {
  */
 
 #ifdef MP_8BIT
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned char        mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#   define MP_SIZEOF_MP_DIGIT 1
-#   ifdef MP_DIGIT_BIT
-#      error You must not define MP_DIGIT_BIT when using MP_8BIT
-#   endif
+#   define MP_DIGIT_BIT 7
 #elif defined(MP_16BIT)
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned short       mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-#   define MP_SIZEOF_MP_DIGIT 2
-#   ifdef MP_DIGIT_BIT
-#      error You must not define MP_DIGIT_BIT when using MP_16BIT
-#   endif
+#   define MP_DIGIT_BIT 15
 #elif defined(MP_64BIT)
 /* for GCC only on supported platforms */
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned long long   mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
 #   define MP_DIGIT_BIT 60
 #else
-/* this is the default case, 28-bit digits */
-
-/* this is to make porting into LibTomCrypt easier :-) */
-#ifndef MP_DIGIT_DECLARED
 typedef unsigned int         mp_digit;
-#define MP_DIGIT_DECLARED
-#endif
-
 #   ifdef MP_31BIT
 /*
  * This is an extension that uses 31-bit digits.
@@ -107,10 +109,6 @@ typedef unsigned int         mp_digit;
 #define MP_PRIME_BBS      0x0001 /* BBS style prime */
 #define MP_PRIME_SAFE     0x0002 /* Safe prime (p-1)/2 == prime */
 #define MP_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
-
-#define LTM_PRIME_BBS      (MP_DEPRECATED_PRAGMA("LTM_PRIME_BBS has been deprecated, use MP_PRIME_BBS") MP_PRIME_BBS)
-#define LTM_PRIME_SAFE     (MP_DEPRECATED_PRAGMA("LTM_PRIME_SAFE has been deprecated, use MP_PRIME_SAFE") MP_PRIME_SAFE)
-#define LTM_PRIME_2MSB_ON  (MP_DEPRECATED_PRAGMA("LTM_PRIME_2MSB_ON has been deprecated, use MP_PRIME_2MSB_ON") MP_PRIME_2MSB_ON)
 
 #ifdef MP_USE_ENUMS
 typedef enum {
@@ -236,10 +234,10 @@ TOOM_SQR_CUTOFF;
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
 
-#define DIGIT_BIT   MP_DIGIT_BIT
-#define USED(m)    ((m)->used)
-#define DIGIT(m,k) ((m)->dp[(k)])
-#define SIGN(m)    ((m)->sign)
+#define DIGIT_BIT   (MP_DEPRECATED_PRAGMA("DIGIT_BIT macro is deprecated, MP_DIGIT_BIT instead") MP_DIGIT_BIT)
+#define USED(m)     (MP_DEPRECATED_PRAGMA("USED macro is deprecated, use z->used instead") (m)->used)
+#define DIGIT(m, k) (MP_DEPRECATED_PRAGMA("DIGIT macro is deprecated, use z->dp instead") (m)->dp[(k)])
+#define SIGN(m)     (MP_DEPRECATED_PRAGMA("SIGN macro is deprecated, use z->sign instead") (m)->sign)
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -300,12 +298,8 @@ mp_err mp_init_size(mp_int *a, int size) MP_WUR;
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-/*
-mp_bool mp_iseven(const mp_int *a) MP_WUR;
-*/
-/*
-mp_bool mp_isodd(const mp_int *a) MP_WUR;
-*/
+#define mp_isodd(a)  (((a)->used != 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -463,6 +457,7 @@ mp_err mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 void mp_clamp(mp_int *a);
 */
 
+
 /* export binary data */
 /*
 MP_DEPRECATED(mp_pack) mp_err mp_export(void *rop, size_t *countp, int order, size_t size,
@@ -559,6 +554,7 @@ void mp_rand_source(mp_err(*source)(void *out, size_t size));
 */
 
 #ifdef MP_PRNG_ENABLE_LTM_RNG
+#  warning MP_PRNG_ENABLE_LTM_RNG has been deprecated, use mp_rand_source instead.
 /* A last resort to provide random data on systems without any of the other
  * implemented ways to gather entropy.
  * It is compatible with `rng_get_bytes()` from libtomcrypt so you could

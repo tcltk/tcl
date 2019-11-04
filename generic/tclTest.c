@@ -1846,7 +1846,7 @@ TestdoubledigitsObjCmd(void *dummy,
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", -1));
 	    return TCL_ERROR;
 	}
-	type |= TCL_DD_SHORTEN_FLAG;
+	type |= TCL_DD_SHORTEST;
     }
     str = TclDoubleDigits(d, ndigits, type, &decpt, &signum, &endPtr);
     strObj = Tcl_NewStringObj(str, endPtr-str);
