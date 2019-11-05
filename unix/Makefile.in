@@ -180,6 +180,7 @@ STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@ -DBUILD_tcl
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
+SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
@@ -330,7 +331,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_s_mp_get_bit.o bn_mp_get_mag_ul.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_mp_init_ul.o bn_s_mp_karatsuba_mul.o \
-	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o bn_mp_isodd.o \
+	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
 	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
@@ -1644,9 +1645,6 @@ bn_s_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_sqr.c $(MATHHDRS)
 
 bn_s_mp_balance_mul.o: $(TOMMATH_DIR)/bn_s_mp_balance_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_balance_mul.c
-
-bn_mp_isodd.o: $(TOMMATH_DIR)/bn_mp_isodd.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_isodd.c
 
 bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
