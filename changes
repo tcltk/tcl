@@ -8939,4 +8939,4 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2019-10-28 (bug)[bcd100] bad fs cache when system encoding changes (coulter)
 
-- Released 8.6.10, November 7, 2019 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.10, November 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
