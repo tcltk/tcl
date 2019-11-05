@@ -202,7 +202,7 @@ TOOM_SQR_CUTOFF;
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define PRIVATE_MP_WARRAY (int)(1uLL << (((CHAR_BIT * sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
+#define PRIVATE_MP_WARRAY (int)(1 << (((CHAR_BIT * (int)sizeof(private_mp_word)) - (2 * MP_DIGIT_BIT)) + 1))
 #define MP_WARRAY (MP_DEPRECATED_PRAGMA("MP_WARRAY is an internal macro") PRIVATE_MP_WARRAY)
 
 #if defined(__GNUC__) && __GNUC__ >= 4
@@ -252,11 +252,15 @@ TOOM_SQR_CUTOFF;
 #define SIGN(m)     (MP_DEPRECATED_PRAGMA("SIGN macro is deprecated, use z->sign instead") (m)->sign)
 
 /* the infamous mp_int structure */
-typedef struct  {
+#ifndef MP_INT_DECLARED
+#define MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#endif
+struct mp_int {
    int used, alloc;
    mp_sign sign;
    mp_digit *dp;
-} mp_int;
+};
 
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int private_mp_prime_callback(unsigned char *dst, int len, void *dat);
