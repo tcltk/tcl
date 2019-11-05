@@ -3419,7 +3419,7 @@ GetWideForIndex(
 
 	/* objPtr holds an integer outside the signed wide range */
 	/* Truncate to the signed wide range. */
-	*widePtr = (((mp_int *)cd)->sign != MP_ZPOS) ? WIDE_MIN : WIDE_MAX;
+	*widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
     return TCL_OK;
     }
 
@@ -3532,7 +3532,7 @@ GetWideForIndex(
 		} else {
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
-		    if (((mp_int *)cd)->sign != MP_ZPOS) {
+		    if (mp_isneg((mp_int *)cd)) {
 			*widePtr = WIDE_MIN;
 		    } else {
 			*widePtr = WIDE_MAX;
@@ -3685,7 +3685,7 @@ GetEndOffsetFromObj(
 
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */
-		if (((mp_int *)cd)->sign != MP_ZPOS) {
+		if (mp_isneg((mp_int *)cd)) {
 		    offset = (bytes[3] == '-') ? WIDE_MAX : WIDE_MIN;
 		} else {
 		    offset = (bytes[3] == '-') ? WIDE_MIN : WIDE_MAX;
