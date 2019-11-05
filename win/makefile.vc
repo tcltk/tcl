@@ -566,21 +566,6 @@ genstubs:
 !endif
 
 
-#----------------------------------------------------------------------
-# The following target generates the file generic/tclTomMath.h.
-# It needs to be run (and the results checked) after updating
-# to a new release of libtommath.
-#----------------------------------------------------------------------
-
-gentommath_h:
-!if !exist($(TCLSH))
-	@echo Build tclsh first!
-!else
-	$(TCLSH) "$(TOOLSDIR:\=/)/fix_tommath_h.tcl" \
-		"$(TOMMATHDIR:\=/)/tommath.h" \
-		> "$(GENERICDIR)\tclTomMath.h"
-!endif
-
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
 #---------------------------------------------------------------------

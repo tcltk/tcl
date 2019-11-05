@@ -310,9 +310,6 @@
 /* No Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
-/* Default libtommath precision. */
-#undef MP_PREC
-
 /* Is no debugging enabled? */
 #undef NDEBUG
 
