@@ -8949,4 +8949,20 @@ in this changeset (new minor version) rather than bug fixes:
 2018-03-12 (TIP 499) custom locale preference list (oehlmann)
 => msgcat 1.7.0
 
-- Released 8.7a3, Nov 30, 2018 --- http://core.tcl-lang.org/tcl/ for details -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Released 8.7a3, Nov 21, 2019 --- http://core.tcl-lang.org/tcl/ for details -
