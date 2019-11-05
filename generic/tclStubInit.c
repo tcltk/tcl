@@ -99,6 +99,48 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 
 #define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
 
+mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_expt_u32(a, b, c);
+}
+
+mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_add_d(a, b, c);
+}
+mp_err	TclBN_mp_cmp_d(const mp_int *a, unsigned int b) {
+   return TclBN_s_mp_cmp_d(a, b);
+}
+mp_err	TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_sub_d(a, b, c);
+}
+
+mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_d(a, b, c, (d ? &d2 : NULL));
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
+	return TclBN_s_mp_init_set(a, b);
+}
+mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_mul_d(a, b, c);
+}
+void TclBN_mp_set(mp_int *a, unsigned int b) {
+	TclBN_s_mp_set(a, b);
+}
+
+
+
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclBN_mp_expt_d_ex 0
 #   define TclBN_mp_to_unsigned_bin 0
@@ -136,7 +178,7 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 #   define Tcl_BackgroundError 0
 #else
 
-int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
+int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 {
 	return mp_expt_u32(a, b, c);
 }
@@ -1010,7 +1052,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_ull, /* 69 */
     0, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    TclBN_mp_isodd, /* 72 */
+    0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
