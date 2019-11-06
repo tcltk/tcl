@@ -2234,7 +2234,12 @@ TCLAPI int		TclZipfs_AppHook(int *argc, char ***argv);
  */
 
 #define ckalloc Tcl_Alloc
-#define ckfree Tcl_Free
+#ifdef _MSC_VER
+    /* Silence invalid C4090 warnings */
+#   define ckfree(a) Tcl_Free((char *)(a))
+#else
+#   define ckfree Tcl_Free
+#endif
 #define ckrealloc Tcl_Realloc
 #define attemptckalloc Tcl_AttemptAlloc
 #define attemptckrealloc Tcl_AttemptRealloc
