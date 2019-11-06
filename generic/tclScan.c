@@ -934,8 +934,9 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    mp_int big;
+		    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)wideValue);
+		    Tcl_SetBignumObj(objPtr, &big);
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
 		}
