@@ -2182,7 +2182,7 @@ TclCompileScript(
 	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		    parsePtr->term + 1 - parsePtr->commandStart);
 	    TclCompileSyntaxError(interp, envPtr);
-	    ckfree(parsePtr);
+	    Tcl_Free(parsePtr);
 	    return;
 	}
 
@@ -2258,7 +2258,7 @@ TclCompileScript(
 	Tcl_FreeParse(parsePtr);
       } while (numBytes > 0);
 
-      ckfree(parsePtr);
+      Tcl_Free(parsePtr);
     }
 
     if (lastCmdIdx == -1) {
