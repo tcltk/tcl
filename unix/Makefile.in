@@ -2246,6 +2246,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
 		$(DISTDIR)
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
+		$(TOP_DIR)/library/manifest.txt \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
 	@for i in $(BUILTIN_PACKAGE_LIST); do \
 	    mkdir $(DISTDIR)/library/$$i;\
