@@ -106,7 +106,6 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_set_ul TclBN_mp_set_ul
 #define mp_set_ull TclBN_mp_set_ull
 #define mp_shrink TclBN_mp_shrink
-#define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
 #define mp_signed_rsh TclBN_mp_signed_rsh
@@ -205,7 +204,8 @@ EXTERN mp_err		TclBN_mp_div_2(const mp_int *a, mp_int *q) MP_WUR;
 EXTERN mp_err		TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q,
 				mp_int *r) MP_WUR;
 /* 17 */
-EXTERN mp_err		TclBN_mp_div_3(const mp_int *a, mp_int *q,
+TCL_DEPRECATED("is private function in libtommath")
+mp_err MP_WUR		TclBN_mp_div_3(const mp_int *a, mp_int *q,
 				unsigned int *r) MP_WUR;
 /* 18 */
 EXTERN void		TclBN_mp_exch(mp_int *a, mp_int *b);
@@ -399,7 +399,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_div_d) (const mp_int *a, unsigned int b, mp_int *q, unsigned int *r) MP_WUR; /* 14 */
     mp_err (*tclBN_mp_div_2) (const mp_int *a, mp_int *q) MP_WUR; /* 15 */
     mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r) MP_WUR; /* 16 */
-    mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, unsigned int *r) MP_WUR; /* 17 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, unsigned int *r) MP_WUR; /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
     mp_err (*tclBN_mp_expt_u32) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 19 */
     mp_err (*tclBN_mp_grow) (mp_int *a, int size) MP_WUR; /* 20 */
@@ -422,7 +422,7 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
     mp_err (*tclBN_mp_shrink) (mp_int *a) MP_WUR; /* 38 */
     void (*tclBN_mp_set) (mp_int *a, unsigned int b); /* 39 */
-    mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b) MP_WUR; /* 40 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b) MP_WUR; /* 40 */
     mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b) MP_WUR; /* 41 */
     mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 42 */
     mp_err (*tclBN_mp_sub_d) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 43 */
@@ -665,5 +665,11 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#if defined(USE_TCL_STUBS)
+#   define mp_sqr(a,b) mp_mul(a,a,b)
+#else
+#   define mp_sqr TclBN_mp_sqr
+#endif
 
 #endif /* _TCLINTDECLS */
