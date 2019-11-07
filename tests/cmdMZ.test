@@ -25,8 +25,6 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::testConstraint
     namespace import ::tcltest::test
 
-    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
-
     proc ListGlobMatch {expected actual} {
 	if {[llength $expected] != [llength $actual]} {
 	    return 0
@@ -324,8 +322,12 @@ test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
 proc _nrt_sleep {msec} {
     set usec [expr {$msec * 1000}]
     set stime [clock microseconds]
-    while {abs([clock microseconds] - $stime) < $usec} {after 0}
+    while {abs([clock microseconds] - $stime) < $usec} {
+      # don't use after 0 unless it's NRT-capable, so yes - busy-wait (but it's more precise):
+      # after 0
+    }
 }
+_nrt_sleep 0; # warm up (clock, compile, etc)
 
 test cmdMZ-5.1 {Tcl_TimeObjCmd: basic format of command} -body {
     time
@@ -342,8 +344,8 @@ test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} 
 test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
     time {format 1}
 } -match regexp -result {^\d+ microseconds per iteration}
-test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} knownMsvcBug {
-    expr {[lindex [time {_nrt_sleep 1}] 0] < [lindex [time {_nrt_sleep 20}] 0]}
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} {
+    expr {[lindex [time {_nrt_sleep 0.01}] 0] < [lindex [time {_nrt_sleep 10.0}] 0]}
 } 1
 test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
     list [catch {time {error foo}} msg] $msg $::errorInfo
@@ -395,19 +397,20 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} knownMsvcBug {
-    set m1 [timerate {_nrt_sleep 0} 20]
-    set m2 [timerate {_nrt_sleep 0.2} 20]
+test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} {
+    lassign [timerate {_nrt_sleep 0} 50] ovh
+    set m1 [timerate -overhead $ovh {_nrt_sleep 0.01} 50]
+    set m2 [timerate -overhead $ovh {_nrt_sleep 1.00} 50]
     list \
 	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
 	[expr {[lindex $m1 0] < 100}] \
 	[expr {[lindex $m2 0] > 100}] \
-	[expr {[lindex $m1 2] > 1000}] \
-	[expr {[lindex $m2 2] < 1000}] \
-	[expr {[lindex $m1 4] > 50000}] \
-	[expr {[lindex $m2 4] < 50000}] \
-	[expr {[lindex $m1 6] > 10 && [lindex $m1 6] < 100}] \
-	[expr {[lindex $m2 6] > 10 && [lindex $m2 6] < 100}]
+	[expr {[lindex $m1 2] > 500}] \
+	[expr {[lindex $m2 2] < 500}] \
+	[expr {[lindex $m1 4] > 10000}] \
+	[expr {[lindex $m2 4] < 10000}] \
+	[expr {[lindex $m1 6] > 5 && [lindex $m1 6] < 100}] \
+	[expr {[lindex $m2 6] > 5 && [lindex $m2 6] < 100}]
 } [lrepeat 9 1]
 test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
     list [catch {timerate {error foo} 1} msg] $msg $::errorInfo
