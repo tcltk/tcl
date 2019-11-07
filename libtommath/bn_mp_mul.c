@@ -12,7 +12,9 @@ mp_err mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
        digs = a->used + b->used + 1;
    mp_sign neg = (a->sign == b->sign) ? MP_ZPOS : MP_NEG;
 
-   if (MP_HAS(S_MP_BALANCE_MUL) &&
+   if (a == b) {
+       return mp_sqr(a,c);
+   } else if (MP_HAS(S_MP_BALANCE_MUL) &&
        /* Check sizes. The smaller one needs to be larger than the Karatsuba cut-off.
         * The bigger one needs to be at least about one MP_KARATSUBA_MUL_CUTOFF bigger
         * to make some sense, but it depends on architecture, OS, position of the
