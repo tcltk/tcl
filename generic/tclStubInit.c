@@ -121,14 +121,6 @@ mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *
    }
    return result;
 }
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
 mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 	return TclBN_s_mp_init_set(a, b);
 }
@@ -146,6 +138,8 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclBN_mp_to_unsigned_bin 0
 #   define TclBN_mp_to_unsigned_bin_n 0
 #   define TclBN_mp_toradix_n 0
+#   define TclBN_mp_sqr 0
+#   define TclBN_mp_div_3 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -177,6 +171,15 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
 #else
+
+mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
 
 int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 {
