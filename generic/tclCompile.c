@@ -2169,7 +2169,7 @@ TclCompileScript(
        * many nested compilations (body enclosed in body) can cause abnormal
        * program termination with a stack overflow exception, bug [fec0c17d39].
        */
-      Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
+      Tcl_Parse *parsePtr = Tcl_Alloc(sizeof(Tcl_Parse));
 
       do {
 	const char *next;

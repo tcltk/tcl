@@ -34,19 +34,10 @@
 /* Define custom memory allocation for libtommath */
 
 
-/* MODULE_SCOPE void* TclBNAlloc( size_t ); */
-#define TclBNAlloc(s) ((void*)Tcl_Alloc((size_t)(s)))
-/* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-#define TclBNCalloc(m,s) memset(ckalloc((size_t)(m)*(size_t)(s)),0,(size_t)(m)*(size_t)(s))
-/* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
-#define TclBNRealloc(x,s) ((void*)Tcl_Realloc((char*)(x),(size_t)(s)))
-/* MODULE_SCOPE void  TclBNFree( void* ); */
-#define TclBNFree(x) (Tcl_Free((char*)(x)))
-
-#define MP_MALLOC(size)                   TclBNAlloc(size)
-#define MP_CALLOC(nmemb, size)            TclBNCalloc(nmemb, size)
-#define MP_REALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
-#define MP_FREE(mem, size)                TclBNFree(mem)
+#define MP_MALLOC(size)                   Tcl_Alloc(size)
+#define MP_CALLOC(nmemb, size)            memset(Tcl_Alloc((nmemb)*(size)),0,(nmemb)*(size))
+#define MP_REALLOC(mem, oldsize, newsize) Tcl_Realloc(mem, newsize)
+#define MP_FREE(mem, size)                Tcl_Free(mem)
 
 
 MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);

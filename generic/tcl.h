@@ -2230,19 +2230,23 @@ TCLAPI int		TclZipfs_AppHook(int *argc, char ***argv);
 /*
  *----------------------------------------------------------------------------
  * The following declarations map ckalloc and ckfree to Tcl_Alloc and
- * Tcl_Free.
+ * Tcl_Free for use in Tcl-8.x-compatible extensions.
  */
 
-#define ckalloc Tcl_Alloc
-#ifdef _MSC_VER
-    /* Silence invalid C4090 warnings */
-#   define ckfree(a) Tcl_Free((char *)(a))
-#else
-#   define ckfree Tcl_Free
+#ifndef BUILD_tcl
+#   define ckalloc Tcl_Alloc
+#   define attemptckalloc Tcl_AttemptAlloc
+#   ifdef _MSC_VER
+	/* Silence invalid C4090 warnings */
+#	define ckfree(a) Tcl_Free((char *)(a))
+#	define ckrealloc(a,b) Tcl_Realloc((char *)(a),(b))
+#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((char *)(a),(b))
+#   else
+#	define ckfree Tcl_Free
+#	define ckrealloc Tcl_Realloc
+#	define attemptckrealloc Tcl_AttemptRealloc
+#   endif
 #endif
-#define ckrealloc Tcl_Realloc
-#define attemptckalloc Tcl_AttemptAlloc
-#define attemptckrealloc Tcl_AttemptRealloc
 
 #ifndef TCL_MEM_DEBUG
 
