@@ -98,14 +98,6 @@ mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *
    }
    return result;
 }
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
 mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 	return TclBN_s_mp_init_set(a, b);
 }
@@ -625,7 +617,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_d, /* 14 */
     TclBN_mp_div_2, /* 15 */
     TclBN_mp_div_2d, /* 16 */
-    TclBN_mp_div_3, /* 17 */
+    0, /* 17 */
     TclBN_mp_exch, /* 18 */
     TclBN_mp_expt_u32, /* 19 */
     TclBN_mp_grow, /* 20 */
@@ -648,7 +640,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_rshd, /* 37 */
     TclBN_mp_shrink, /* 38 */
     TclBN_mp_set, /* 39 */
-    TclBN_mp_sqr, /* 40 */
+    0, /* 40 */
     TclBN_mp_sqrt, /* 41 */
     TclBN_mp_sub, /* 42 */
     TclBN_mp_sub_d, /* 43 */

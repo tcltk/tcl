@@ -1927,17 +1927,14 @@ GetModeFromPermString(
  *
  * TclpObjNormalizePath --
  *
- *	This function scans through a path specification and replaces it, in
- *	place, with a normalized version. A normalized version is one in which
- *	all symlinks in the path are replaced with their expanded form (except
- *	a symlink at the very end of the path).
+ *	Replaces each component except that last one in a pathname that is a
+ *	symbolic link with the fully resolved target of that link.
  *
  * Results:
- *	The new 'nextCheckpoint' value, giving as far as we could understand
- *	in the path.
+ *	Stores the resulting path in pathPtr and returns the offset of the last
+ *	byte processed to obtain the resulting path.
  *
  * Side effects:
- *	The pathPtr string, is modified.
  *
  *---------------------------------------------------------------------------
  */
@@ -1945,8 +1942,14 @@ GetModeFromPermString(
 int
 TclpObjNormalizePath(
     Tcl_Interp *interp,
-    Tcl_Obj *pathPtr,
-    int nextCheckpoint)
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
+				 * normalize. */
+    int nextCheckpoint)		/* offset to start at in pathPtr.  Must either
+				 * be 0 or the offset of a directory separator
+				 * at the end of a path part that is already
+				 * normalized.  I.e. this is not the index of
+				 * the byte just after the separator.  */
+
 {
     const char *currentPathEndPosition;
     char cur;
@@ -1958,23 +1961,17 @@ TclpObjNormalizePath(
     char normPath[MAXPATHLEN];
 #endif
 
-    /*
-     * We add '1' here because if nextCheckpoint is zero we know that '/'
-     * exists, and if it isn't zero, it must point at a directory separator
-     * which we also know exists.
-     */
-
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
 	currentPathEndPosition++;
     }
 
 #ifndef NO_REALPATH
-    /*
-     * For speed, try to get the entire path in one go.
-     */
-
     if (nextCheckpoint == 0 && haveRealpath) {
+	/*
+	 * Try to get the entire path in one go
+	 */
+
 	char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
@@ -1983,8 +1980,13 @@ TclpObjNormalizePath(
 	    if (Realpath(nativePath, normPath) != NULL) {
 		if (*nativePath != '/' && *normPath == '/') {
 		    /*
-		     * realpath has transformed a relative path into an
-		     * absolute path, we do not know how to handle this.
+		     * realpath transformed a relative path into an
+		     * absolute path.  Fall back to the long way.
+		     */
+
+		    /*
+		     * To do: This logic seems to be out of date.  This whole
+		     * routine should be reviewed and cleaed up.
 		     */
 		} else {
 		    nextCheckpoint = lastDir - path;
@@ -2023,13 +2025,13 @@ TclpObjNormalizePath(
 	    }
 
 	    /*
-	     * Update the acceptable point.
+	     * Assign the end of the current component to nextCheckpoint
 	     */
 
 	    nextCheckpoint = currentPathEndPosition - path;
 	} else if (cur == 0) {
 	    /*
-	     * Reached end of string.
+	     * The end of the string.
 	     */
 
 	    break;
@@ -2038,22 +2040,19 @@ TclpObjNormalizePath(
     }
 
     /*
-     * We should really now convert this to a canonical path. We do that with
-     * 'realpath' if we have it available. Otherwise we could step through
-     * every single path component, checking whether it is a symlink, but that
-     * would be a lot of work, and most modern OSes have 'realpath'.
+     * Call 'realpath' to obtain a canonical path. 
      */
 
 #ifndef NO_REALPATH
     if (haveRealpath) {
-	/*
-	 * If we only had '/foo' or '/' then we never increment nextCheckpoint
-	 * and we don't need or want to go through 'Realpath'. Also, on some
-	 * platforms, passing an empty string to 'Realpath' will give us the
-	 * normalized pwd, which is not what we want at all!
-	 */
-
 	if (nextCheckpoint == 0) {
+	    /*
+	     * The path contains at most one component, e.g. '/foo' or '/', so
+	     * so there is nothing to resolve. Also, on some platforms
+	     * 'Realpath' transforms an empty string into the normalized pwd,
+	     * which is the wrong answer. 
+	     */
+
 	    return 0;
 	}
 
@@ -2066,18 +2065,19 @@ TclpObjNormalizePath(
 	    if ((newNormLen == Tcl_DStringLength(&ds))
 		    && (strcmp(normPath, nativePath) == 0)) {
 		/*
-		 * String is unchanged.
+		 * The original path is unchanged.
 		 */
 
 		Tcl_DStringFree(&ds);
 
 		/*
-		 * Enable this to have the native FS claim normalization of
-		 * the whole path for existing files. That would permit the
-		 * caller to declare normalization complete without calls to
-		 * additional filesystems. Saving lots of calls is probably
-		 * worth the extra access() time here. When no other FS's are
-		 * registered though, things are less clear.
+		 * Uncommenting this would mean that this native filesystem
+		 * routine claims the path is normalized if the file exists,
+		 * which would permit the caller to avoid iterating through
+		 * other filesystems filesystems. Saving lots of calls is
+		 * probably worth the extra access() time, but in the common
+		 * case that no other filesystems are registered this is an
+		 * unnecessary expense.
 		 *
 		if (0 == access(normPath, F_OK)) {
 		    return pathLen;
@@ -2088,8 +2088,7 @@ TclpObjNormalizePath(
 	    }
 
 	    /*
-	     * Free up the native path and put in its place the converted,
-	     * normalized path.
+	     * Free the original path and replace it with the normalized path.
 	     */
 
 	    Tcl_DStringFree(&ds);
@@ -2097,7 +2096,7 @@ TclpObjNormalizePath(
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
-		 * Not at end, append remaining path.
+		 * Append the remaining path components. 
 		 */
 
 		int normLen = Tcl_DStringLength(&ds);
@@ -2106,7 +2105,8 @@ TclpObjNormalizePath(
 			pathLen - nextCheckpoint);
 
 		/*
-		 * We recognise up to and including the directory separator.
+		 * characters up to and including the directory separator have
+		 * been processed
 		 */
 
 		nextCheckpoint = normLen + 1;
@@ -2117,10 +2117,6 @@ TclpObjNormalizePath(
 
 		nextCheckpoint = Tcl_DStringLength(&ds);
 	    }
-
-	    /*
-	     * Overwrite with the normalized path.
-	     */
 
 	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
 		    Tcl_DStringLength(&ds));
@@ -2395,24 +2391,26 @@ static const int attributeArray[] = {
  *
  * GetUnixFileAttributes
  *
- *	Gets the readonly attribute of a file.
+ *	Gets an attribute of a file.
  *
  * Results:
- *	Standard TCL result. Returns a new Tcl_Obj in attributePtrPtr if there
- *	is no error. The object will have ref count 0.
+ *	A standard Tcl result.
  *
  * Side effects:
- *	A new object is allocated.
+ *	If there is no error assigns to *attributePtrPtr the address of a new
+ *	Tcl_Obj having a refCount of zero and containing the value of the
+ *	specified attribute.
+ *
  *
  *----------------------------------------------------------------------
  */
 
 static int
 GetUnixFileAttributes(
-    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    Tcl_Interp *interp,		/* The interp to report errors to. */
     int objIndex,		/* The index of the attribute. */
-    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj *fileName,		/* The pathname of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* Where to store the result. */
 {
     int fileAttributes;
     WCHAR *winPath = winPathFromObj(fileName);
