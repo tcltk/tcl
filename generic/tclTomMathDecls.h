@@ -95,6 +95,7 @@ MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *c);
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
+#define mp_set_ll TclBN_mp_set_ll
 #define mp_set_ul TclBN_mp_set_ul
 #define mp_set_ull TclBN_mp_set_ull
 #define mp_shrink TclBN_mp_shrink
@@ -286,7 +287,8 @@ EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
 EXTERN void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 /* 69 */
 EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
-/* Slot 70 is reserved */
+/* 70 */
+EXTERN void		TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
 /* Slot 72 is reserved */
@@ -379,7 +381,7 @@ typedef struct TclTomMathStubs {
     void (*reserved67)(void);
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
-    void (*reserved70)(void);
+    void (*tclBN_mp_set_ll) (mp_int *a, Tcl_WideInt i); /* 70 */
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
     void (*reserved72)(void);
     void (*reserved73)(void);
@@ -524,7 +526,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ull) /* 68 */
 #define TclBN_mp_get_mag_ull \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ull) /* 69 */
-/* Slot 70 is reserved */
+#define TclBN_mp_set_ll \
+	(tclTomMathStubsPtr->tclBN_mp_set_ll) /* 70 */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
 /* Slot 72 is reserved */
