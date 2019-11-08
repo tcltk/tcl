@@ -585,9 +585,6 @@ Tcl_ScanObjCmd(
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
-    char buf[513];		/* Temporary buffer to hold scanned number
-				 * strings before they are passed to
-				 * strtoul. */
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -937,9 +934,9 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    mp_int big;
+		    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)wideValue);
+		    Tcl_SetBignumObj(objPtr, &big);
 		} else {
 		    Tcl_SetWideIntObj(objPtr, wideValue);
 		}
@@ -952,8 +949,13 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
-		    Tcl_SetStringObj(objPtr, buf, -1);
+#ifdef TCL_WIDE_INT_IS_LONG
+		    mp_int big;
+		    TclBNInitBignumFromWideUInt(&big, (unsigned long)value);
+		    Tcl_SetBignumObj(objPtr, &big);
+#else
+		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
+#endif
 		} else {
 		    Tcl_SetLongObj(objPtr, value);
 		}
