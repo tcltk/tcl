@@ -101,6 +101,7 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
 #define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),((unsigned int)(b))),MP_OKAY))
+#define mp_set_ll TclBN_mp_set_ll
 #define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),(b)),MP_OKAY))
 #define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ull") (TclBN_mp_set_ull((a),(b)),MP_OKAY))
 #define mp_set_ul TclBN_mp_set_ul
@@ -351,7 +352,8 @@ mp_err			TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b,
 EXTERN void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
 /* 69 */
 EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
-/* Slot 70 is reserved */
+/* 70 */
+EXTERN void		TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
 /* Slot 72 is reserved */
@@ -452,7 +454,7 @@ typedef struct TclTomMathStubs {
     TCL_DEPRECATED_API("Use mp_expt_u32") mp_err (*tclBN_mp_expt_d_ex) (const mp_int *a, unsigned int b, mp_int *c, int fast); /* 67 */
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
-    void (*reserved70)(void);
+    void (*tclBN_mp_set_ll) (mp_int *a, Tcl_WideInt i); /* 70 */
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
     void (*reserved72)(void);
     mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 73 */
@@ -617,7 +619,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ull) /* 68 */
 #define TclBN_mp_get_mag_ull \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ull) /* 69 */
-/* Slot 70 is reserved */
+#define TclBN_mp_set_ll \
+	(tclTomMathStubsPtr->tclBN_mp_set_ll) /* 70 */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
 /* Slot 72 is reserved */

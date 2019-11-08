@@ -111,16 +111,10 @@ TclBNInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
 {
-	if (mp_init(a) != MP_OKAY) {
-	wipanic:
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideInt");
-	}
-    if (v < 0) {
-	mp_set_ull(a, (Tcl_WideUInt)(-v));
-	if (mp_neg(a, a) != MP_OKAY) goto wipanic;
-    } else {
-	mp_set_ull(a, (Tcl_WideUInt)v);
+    if (mp_init(a) != MP_OKAY) {
+	Tcl_Panic("insufficient memory to create bignum");
     }
+    mp_set_ll(a, v);
 }
 
 /*
@@ -144,10 +138,10 @@ TclBNInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */
 {
-	if (mp_init(a) != MP_OKAY) {
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
-	}
-	mp_set_ull(a, v);
+    if (mp_init(a) != MP_OKAY) {
+	Tcl_Panic("insufficient memory to create bignum");
+    }
+    mp_set_ull(a, v);
 }
 
 /*

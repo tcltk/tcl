@@ -244,6 +244,9 @@ declare 68 {
 declare 69 {
     Tcl_WideUInt MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
 }
+declare 70 {
+    void TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i)
+}
 declare 71 {
     unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
 }
