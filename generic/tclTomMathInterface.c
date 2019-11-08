@@ -91,60 +91,6 @@ TclBN_revision(void)
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideInt v)		/* Initial value */
-{
-    if (mp_init(a) != MP_OKAY) {
-	Tcl_Panic("insufficient memory to create bignum");
-    }
-    mp_set_ll(a, v);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideUInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideUInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideUInt v)		/* Initial value */
-{
-    if (mp_init(a) != MP_OKAY) {
-	Tcl_Panic("insufficient memory to create bignum");
-    }
-    mp_set_ull(a, v);
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
