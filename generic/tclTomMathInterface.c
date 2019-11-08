@@ -106,7 +106,7 @@ TclBN_revision(void)
  *----------------------------------------------------------------------
  */
 
-void
+int
 TclBNInitBignumFromLong(
     mp_int *a,
     long initVal)
@@ -146,6 +146,7 @@ TclBNInitBignumFromLong(
 	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
+    return MP_OKAY;
 }
 
 /*
@@ -164,7 +165,7 @@ TclBNInitBignumFromLong(
  *----------------------------------------------------------------------
  */
 
-void
+int
 TclBNInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
@@ -175,6 +176,7 @@ TclBNInitBignumFromWideInt(
     } else {
 	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
     }
+    return MP_OKAY;
 }
 
 /*
@@ -193,7 +195,7 @@ TclBNInitBignumFromWideInt(
  *----------------------------------------------------------------------
  */
 
-void
+int
 TclBNInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */
@@ -222,6 +224,7 @@ TclBNInitBignumFromWideUInt(
 	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
+    return MP_OKAY;
 }
 
 /*
