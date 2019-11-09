@@ -81,9 +81,12 @@ MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *c);
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
+#define mp_init_l TclBNInitBignumFromLong
+#define mp_init_ll TclBNInitBignumFromWideInt
 #define mp_init_multi TclBN_mp_init_multi
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_ul TclBN_mp_init_ul
+#define mp_init_ull TclBNInitBignumFromWideUInt
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -95,6 +98,7 @@ MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *c);
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
+#define mp_set_l TclBN_mp_set_l
 #define mp_set_ll TclBN_mp_set_ll
 #define mp_set_ul TclBN_mp_set_ul
 #define mp_set_ull TclBN_mp_set_ull
@@ -279,9 +283,14 @@ EXTERN mp_err		TclBN_mp_init_ul(mp_int *a, unsigned long i) MP_WUR;
 EXTERN void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
-/* Slot 64 is reserved */
-/* Slot 65 is reserved */
-/* Slot 66 is reserved */
+/* 64 */
+EXTERN int		TclBNInitBignumFromLong(mp_int *bignum, long initVal);
+/* 65 */
+EXTERN int		TclBNInitBignumFromWideInt(mp_int *bignum,
+				Tcl_WideInt initVal);
+/* 66 */
+EXTERN int		TclBNInitBignumFromWideUInt(mp_int *bignum,
+				Tcl_WideUInt initVal);
 /* Slot 67 is reserved */
 /* 68 */
 EXTERN void		TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i);
@@ -291,7 +300,8 @@ EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
 EXTERN void		TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
-/* Slot 72 is reserved */
+/* 72 */
+EXTERN void		TclBN_mp_set_l(mp_int *a, long i);
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -375,15 +385,15 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i) MP_WUR; /* 61 */
     void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a) MP_WUR; /* 63 */
-    void (*reserved64)(void);
-    void (*reserved65)(void);
-    void (*reserved66)(void);
+    int (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
+    int (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
+    int (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     void (*reserved67)(void);
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
     void (*tclBN_mp_set_ll) (mp_int *a, Tcl_WideInt i); /* 70 */
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
-    void (*reserved72)(void);
+    void (*tclBN_mp_set_l) (mp_int *a, long i); /* 72 */
     void (*reserved73)(void);
     void (*reserved74)(void);
     void (*reserved75)(void);
@@ -518,9 +528,12 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ul) /* 62 */
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
-/* Slot 64 is reserved */
-/* Slot 65 is reserved */
-/* Slot 66 is reserved */
+#define TclBNInitBignumFromLong \
+	(tclTomMathStubsPtr->tclBNInitBignumFromLong) /* 64 */
+#define TclBNInitBignumFromWideInt \
+	(tclTomMathStubsPtr->tclBNInitBignumFromWideInt) /* 65 */
+#define TclBNInitBignumFromWideUInt \
+	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
 /* Slot 67 is reserved */
 #define TclBN_mp_set_ull \
 	(tclTomMathStubsPtr->tclBN_mp_set_ull) /* 68 */
@@ -530,7 +543,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ll) /* 70 */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
-/* Slot 72 is reserved */
+#define TclBN_mp_set_l \
+	(tclTomMathStubsPtr->tclBN_mp_set_l) /* 72 */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
 /* Slot 75 is reserved */
@@ -576,4 +590,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #   define mp_sqr TclBN_mp_sqr
 #endif
 
+#define mp_init_i32(a,b) mp_init_l((a),(int32_t)(b))
+#define mp_init_i64(a,b) mp_init_ll((a),(b))
+#define mp_init_u32(a,b) mp_init_ull((a),(uint32_t)(b))
+#define mp_init_u64(a,b) mp_init_ull((a),(b))
 #endif /* _TCLINTDECLS */

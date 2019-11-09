@@ -665,15 +665,15 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_ul, /* 61 */
     TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    0, /* 64 */
-    0, /* 65 */
-    0, /* 66 */
+    TclBNInitBignumFromLong, /* 64 */
+    TclBNInitBignumFromWideInt, /* 65 */
+    TclBNInitBignumFromWideUInt, /* 66 */
     0, /* 67 */
     TclBN_mp_set_ull, /* 68 */
     TclBN_mp_get_mag_ull, /* 69 */
     TclBN_mp_set_ll, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    0, /* 72 */
+    TclBN_mp_set_l, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */
