@@ -191,18 +191,15 @@ declare 63 {
 
 # Formerly internal API to allow initialisation of bignums without knowing the
 # typedefs of how a bignum works internally.
-# Removed in 9.0
-#declare 64 {
-#    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
-#}
-# Removed in 9.0
-#declare 65 {
-#    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
-#}
-# Removed in 9.0
-#declare 66 {
-#    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
-#}
+declare 64 {
+    int TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+}
+declare 65 {
+    int TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+}
+declare 66 {
+    int TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+}
 
 # Removed in 9.0
 #declare 67 {
@@ -220,6 +217,9 @@ declare 70 {
 }
 declare 71 {
     unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
+}
+declare 72 {
+    void TclBN_mp_set_l(mp_int *a, long i)
 }
 
 # Added in libtommath 1.1.0
