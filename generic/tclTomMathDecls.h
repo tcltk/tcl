@@ -85,10 +85,13 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
+#define mp_init_l TclBNInitBignumFromLong
+#define mp_init_ll TclBNInitBignumFromWideInt
 #define mp_init_multi TclBN_mp_init_multi
 #define mp_init_set_int(a,i) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_ul(a,(unsigned int)(i)))
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_ul TclBN_mp_init_ul
+#define mp_init_ull TclBNInitBignumFromWideUInt
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
@@ -101,6 +104,7 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
 #define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),((unsigned int)(b))),MP_OKAY))
+#define mp_set_l TclBN_mp_set_l
 #define mp_set_ll TclBN_mp_set_ll
 #define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_ul((a),(b)),MP_OKAY))
 #define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ull") (TclBN_mp_set_ull((a),(b)),MP_OKAY))
@@ -334,15 +338,12 @@ EXTERN void		TclBN_mp_set_ul(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
 /* 64 */
-TCL_DEPRECATED("Use mp_init() + mp_set_l()")
-void			TclBNInitBignumFromLong(mp_int *bignum, long initVal);
+EXTERN int		TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 /* 65 */
-TCL_DEPRECATED("Use mp_init() + mp_set_ll()")
-void			TclBNInitBignumFromWideInt(mp_int *bignum,
+EXTERN int		TclBNInitBignumFromWideInt(mp_int *bignum,
 				Tcl_WideInt initVal);
 /* 66 */
-TCL_DEPRECATED("Use mp_init() + mp_set_ull()")
-void			TclBNInitBignumFromWideUInt(mp_int *bignum,
+EXTERN int		TclBNInitBignumFromWideUInt(mp_int *bignum,
 				Tcl_WideUInt initVal);
 /* 67 */
 TCL_DEPRECATED("Use mp_expt_u32")
@@ -356,7 +357,8 @@ EXTERN Tcl_WideUInt	TclBN_mp_get_mag_ull(const mp_int *a) MP_WUR;
 EXTERN void		TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i);
 /* 71 */
 EXTERN unsigned long	TclBN_mp_get_mag_ul(const mp_int *a) MP_WUR;
-/* Slot 72 is reserved */
+/* 72 */
+EXTERN void		TclBN_mp_set_l(mp_int *a, long i);
 /* 73 */
 EXTERN mp_err		TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
 				mp_int *c) MP_WUR;
@@ -448,15 +450,15 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i) MP_WUR; /* 61 */
     void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a) MP_WUR; /* 63 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_l()") void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_ll()") void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_ull()") void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    int (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
+    int (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
+    int (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     TCL_DEPRECATED_API("Use mp_expt_u32") mp_err (*tclBN_mp_expt_d_ex) (const mp_int *a, unsigned int b, mp_int *c, int fast); /* 67 */
     void (*tclBN_mp_set_ull) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_mag_ull) (const mp_int *a) MP_WUR; /* 69 */
     void (*tclBN_mp_set_ll) (mp_int *a, Tcl_WideInt i); /* 70 */
     unsigned long (*tclBN_mp_get_mag_ul) (const mp_int *a) MP_WUR; /* 71 */
-    void (*reserved72)(void);
+    void (*tclBN_mp_set_l) (mp_int *a, long i); /* 72 */
     mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 73 */
     mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 74 */
     mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 75 */
@@ -623,7 +625,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_ll) /* 70 */
 #define TclBN_mp_get_mag_ul \
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_ul) /* 71 */
-/* Slot 72 is reserved */
+#define TclBN_mp_set_l \
+	(tclTomMathStubsPtr->tclBN_mp_set_l) /* 72 */
 #define TclBN_mp_tc_and \
 	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
 #define TclBN_mp_tc_or \
@@ -675,4 +678,38 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #   define mp_sqr TclBN_mp_sqr
 #endif
 
+#ifdef USE_TCL_STUBS
+#undef TclBNInitBignumFromLong
+#define TclBNInitBignumFromLong(a,b) \
+	do { \
+	    (a)->dp = NULL; \
+	    (void)tclTomMathStubsPtr->tclBNInitBignumFromLong((a),(b)); \
+	    if ((a)->dp == NULL) { \
+	    Tcl_Panic("initialization failure in TclBNInitBignumFromLong"); \
+	    } \
+	} while (0)
+#undef TclBNInitBignumFromWideInt
+#define TclBNInitBignumFromWideInt(a,b) \
+	do { \
+	    (a)->dp = NULL; \
+	    (void)tclTomMathStubsPtr->tclBNInitBignumFromWideInt((a),(b)); \
+	    if ((a)->dp == NULL) { \
+	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideInt"); \
+	    } \
+	} while (0)
+#undef TclBNInitBignumFromWideUInt
+#define TclBNInitBignumFromWideUInt(a,b) \
+	do { \
+	    (a)->dp = NULL; \
+	    (void)tclTomMathStubsPtr->tclBNInitBignumFromWideUInt((a),(b)); \
+	    if ((a)->dp == NULL) { \
+	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt"); \
+	    } \
+	} while (0)
+#else
+#endif /* USE_TCL_STUBS */
+#define mp_init_i32(a,b) mp_init_l((a),(int32_t)(b))
+#define mp_init_i64(a,b) mp_init_ll((a),(b))
+#define mp_init_u32(a,b) mp_init_ull((a),(uint32_t)(b))
+#define mp_init_u64(a,b) mp_init_ull((a),(b))
 #endif /* _TCLINTDECLS */
