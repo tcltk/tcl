@@ -58,7 +58,6 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
-#undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
@@ -86,6 +85,9 @@
 #define TclBN_mp_init_copy mp_init_copy
 #define TclBN_mp_init_multi mp_init_multi
 #define TclBN_mp_init_size mp_init_size
+#define TclBN_mp_init_l mp_init_l
+#define TclBN_mp_init_i64 mp_init_i64
+#define TclBN_mp_init_u64 mp_init_u64
 #define TclBN_mp_init_ul mp_init_ul
 #define TclBN_mp_lshd mp_lshd
 #define TclBN_mp_mod mp_mod
@@ -96,18 +98,21 @@
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
 #define TclBN_mp_radix_size mp_radix_size
+#define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
+#define TclBN_mp_set_l mp_set_l
+#define TclBN_mp_set_i64 mp_set_i64
 #define TclBN_mp_set_u64 mp_set_u64
 #define TclBN_mp_shrink mp_shrink
 #define TclBN_mp_sqr mp_sqr
 #define TclBN_mp_sqrt mp_sqrt
 #define TclBN_mp_sub mp_sub
 #define TclBN_mp_signed_rsh mp_signed_rsh
-#define TclBN_mp_tc_and mp_and
+#define TclBN_mp_tc_and TclBN_mp_and
 #define TclBN_mp_tc_div_2d mp_signed_rsh
-#define TclBN_mp_tc_or mp_or
-#define TclBN_mp_tc_xor mp_xor
+#define TclBN_mp_tc_or TclBN_mp_or
+#define TclBN_mp_tc_xor TclBN_mp_xor
 #define TclBN_mp_toradix_n mp_toradix_n
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
@@ -187,22 +192,6 @@ mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
    }
    return result;
 }
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = mp_div_3(a, c, (d ? &d2 : NULL));
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
-mp_err TclBN_mp_div_l3(const mp_int *a, mp_int *c, uint64_t *d) {
-   mp_digit d2;
-   mp_err result = mp_div_3(a, c, (d ? &d2 : NULL));
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
 mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 	return mp_init_set(a, b);
 }
@@ -221,6 +210,9 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclBN_mp_to_unsigned_bin_n 0
 #   undef TclBN_mp_toradix_n
 #   define TclBN_mp_toradix_n 0
+#   define TclBN_mp_sqr 0
+#   undef TclBN_mp_div_3
+#   define TclBN_mp_div_3 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -235,9 +227,6 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclWinResetInterfaces 0
 #   define TclWinSetInterfaces 0
 #   define TclWinGetPlatformId 0
-#   define TclBNInitBignumFromWideUInt 0
-#   define TclBNInitBignumFromWideInt 0
-#   define TclBNInitBignumFromLong 0
 #   define Tcl_Backslash 0
 #   define Tcl_GetDefaultEncodingDir 0
 #   define Tcl_SetDefaultEncodingDir 0
@@ -253,46 +242,50 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define Tcl_BackgroundError 0
 #else
 
+mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = mp_div_d(a, 3, c, &d2);
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+
 int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 {
-	return mp_expt_u32(a, b, c);
+	return TclBN_mp_expt_u32(a, b, c);
 }
 
 mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 {
-   return mp_to_ubin(a, b, INT_MAX, NULL);
+   return TclBN_mp_to_ubin(a, b, INT_MAX, NULL);
 }
 
 mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-   size_t n = mp_ubin_size(a);
+   size_t n = TclBN_mp_ubin_size(a);
    if (*outlen < (unsigned long)n) {
       return MP_VAL;
    }
    *outlen = (unsigned long)n;
-   return mp_to_ubin(a, b, n, NULL);
+   return TclBN_mp_to_ubin(a, b, n, NULL);
 }
 
 void TclBN_reverse(unsigned char *s, int len)
 {
    if (len > 0) {
-      s_mp_reverse(s, (size_t)len);
+	TclBN_s_mp_reverse(s, (size_t)len);
    }
 }
 
-mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 {
    if (maxlen < 0) {
       return MP_VAL;
    }
-   return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+   return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
 
-#define TclBNInitBignumFromLong initBignumFromLong
-static void TclBNInitBignumFromLong(mp_int *a, long b)
-{
-    TclBNInitBignumFromWideInt(a, b);
-}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -1129,22 +1122,22 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_ul, /* 61 */
     TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    TclBNInitBignumFromLong, /* 64 */
-    TclBNInitBignumFromWideInt, /* 65 */
-    TclBNInitBignumFromWideUInt, /* 66 */
+    TclBN_mp_init_l, /* 64 */
+    TclBN_mp_init_i64, /* 65 */
+    TclBN_mp_init_u64, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
-    TclBN_mp_div_l3, /* 70 */
+    TclBN_mp_set_i64, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    TclBN_mp_div_ld, /* 72 */
+    TclBN_mp_set_l, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
     TclBN_mp_get_bit, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    0, /* 79 */
+    TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 

@@ -5965,8 +5965,8 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
 
 close $f
 
-test chan-io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
+} -constraints {stdio fileevent openpipe} -body {
 
     namespace eval refchan {
 	namespace ensemble create
@@ -6017,12 +6017,13 @@ test chan-io-44.6 {FileEventProc procedure: write-only non-blocking channel} -se
 	    set x done
 	}
     }]
-    after 10000 [namespace code {
+    set token [after 10000 [namespace code {
 	set x timeout
-    }]
+    }]]
     vwait [namespace which -variable x]
     return $x
 } -cleanup {
+    after cancel $token
     catch {chan close $f}
 } -result done
 

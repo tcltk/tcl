@@ -384,9 +384,12 @@ TOMMATH_OBJS = \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
+	bn_mp_init_i64.${OBJEXT} \
+	bn_mp_init_l.${OBJEXT} \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_set.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
+	bn_mp_init_u64.${OBJEXT} \
 	bn_mp_init_ul.${OBJEXT} \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \
@@ -402,6 +405,8 @@ TOMMATH_OBJS = \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
+	bn_mp_set_i64.${OBJEXT} \
+	bn_mp_set_l.${OBJEXT} \
 	bn_mp_set_u64.${OBJEXT} \
 	bn_mp_set_ul.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
