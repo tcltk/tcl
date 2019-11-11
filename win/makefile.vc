@@ -341,9 +341,12 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
+	$(TMP_DIR)\bn_mp_init_i64.obj \
+	$(TMP_DIR)\bn_mp_init_l.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
+	$(TMP_DIR)\bn_mp_init_u64.obj \
 	$(TMP_DIR)\bn_mp_init_ul.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
@@ -359,6 +362,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
+	$(TMP_DIR)\bn_mp_set_i64.obj \
+	$(TMP_DIR)\bn_mp_set_l.obj \
 	$(TMP_DIR)\bn_mp_set_u64.obj \
 	$(TMP_DIR)\bn_mp_set_ul.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \

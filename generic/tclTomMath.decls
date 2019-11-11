@@ -74,7 +74,7 @@ declare 15 {
 declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
-declare 17 {
+declare 17 {deprecated {is private function in libtommath}} {
     mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
 }
 declare 18 {
@@ -143,7 +143,7 @@ declare 38 {
 declare 39 {
     void TclBN_mp_set(mp_int *a, unsigned int b)
 }
-declare 40 {
+declare 40 {nostub {is private function in libtommath}} {
     mp_err MP_WUR TclBN_mp_sqr(const mp_int *a, mp_int *b)
 }
 declare 41 {
@@ -220,17 +220,14 @@ declare 62 {
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
-
-# Formerly internal API to allow initialisation of bignums without knowing the
-# typedefs of how a bignum works internally.
-declare 64 {deprecated {Use mp_init() + mp_set_l()}} {
-    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+declare 64 {
+    int MP_WUR TclBN_mp_init_l(mp_int *bignum, long initVal)
 }
-declare 65 {deprecated {Use mp_init() + mp_set_i64()}} {
-    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+declare 65 {
+    int MP_WUR TclBN_mp_init_i64(mp_int *bignum, int64_t initVal)
 }
-declare 66 {deprecated {Use mp_init() + mp_set_u64()}} {
-    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+declare 66 {
+    int MP_WUR TclBN_mp_init_u64(mp_int *bignum, uint64_t initVal)
 }
 
 # Added in libtommath 1.0
@@ -245,13 +242,13 @@ declare 69 {
     uint64_t MP_WUR TclBN_mp_get_mag_u64(const mp_int *a)
 }
 declare 70 {
-    mp_err MP_WUR TclBN_mp_div_l3(const mp_int *a, mp_int *q, uint64_t *r)
+    void TclBN_mp_set_i64(mp_int *a, int64_t i)
 }
 declare 71 {
     unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
 }
 declare 72 {
-    mp_err MP_WUR TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *q, uint64_t *r)
+    void TclBN_mp_set_l(mp_int *a, long i)
 }
 
 # Added in libtommath 1.1.0
@@ -274,6 +271,9 @@ declare 77 {deprecated {is private function in libtommath}} {
 # Added in libtommath 1.2.0
 declare 78 {
     int MP_WUR TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
+}
+declare 79 {
+    mp_err MP_WUR TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *q, uint64_t *r)
 }
 declare 80 {
     int MP_WUR TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)

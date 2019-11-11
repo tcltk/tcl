@@ -91,66 +91,6 @@ TclBN_revision(void)
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideInt v)		/* Initial value */
-{
-	if (mp_init(a) != MP_OKAY) {
-	wipanic:
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideInt");
-	}
-    if (v < 0) {
-	mp_set_u64(a, (uint64_t)(-v));
-	if (mp_neg(a, a) != MP_OKAY) goto wipanic;
-    } else {
-	mp_set_u64(a, (uint64_t)v);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideUInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideUInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideUInt v)		/* Initial value */
-{
-	if (mp_init(a) != MP_OKAY) {
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
-	}
-	mp_set_u64(a, (uint64_t)v);
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
