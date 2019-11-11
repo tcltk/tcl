@@ -74,7 +74,7 @@ declare 15 {
 declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
-declare 17 {
+declare 17 {deprecated {is private function in libtommath}} {
     mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
 }
 declare 18 {
@@ -143,7 +143,7 @@ declare 38 {
 declare 39 {
     void TclBN_mp_set(mp_int *a, unsigned int b)
 }
-declare 40 {
+declare 40 {nostub {is private function in libtommath}} {
     mp_err MP_WUR TclBN_mp_sqr(const mp_int *a, mp_int *b)
 }
 declare 41 {
@@ -223,14 +223,14 @@ declare 63 {
 
 # Formerly internal API to allow initialisation of bignums without knowing the
 # typedefs of how a bignum works internally.
-declare 64 {deprecated {Use mp_init() + mp_set_l()}} {
-    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+declare 64 {
+    int TclBNInitBignumFromLong(mp_int *bignum, long initVal)
 }
-declare 65 {deprecated {Use mp_init() + mp_set_ll()}} {
-    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+declare 65 {
+    int TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
 }
-declare 66 {deprecated {Use mp_init() + mp_set_ull()}} {
-    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+declare 66 {
+    int TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
 }
 
 # Added in libtommath 1.0
@@ -244,8 +244,14 @@ declare 68 {
 declare 69 {
     Tcl_WideUInt MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
 }
+declare 70 {
+    void TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i)
+}
 declare 71 {
     unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
+}
+declare 72 {
+    void TclBN_mp_set_l(mp_int *a, long i)
 }
 
 # Added in libtommath 1.1.0
