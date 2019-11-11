@@ -65,7 +65,6 @@
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
 #undef TclStaticPackage
-#undef TclBNInitBignumFromLong
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
@@ -91,6 +90,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #endif
 
 MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
+MP_SET_SIGNED(mp_set_ll, mp_set_ull, Tcl_WideInt, Tcl_WideUInt)
 MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
@@ -129,14 +129,6 @@ mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *
    }
    return result;
 }
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
 mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 	return TclBN_s_mp_init_set(a, b);
 }
@@ -154,6 +146,8 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclBN_mp_to_unsigned_bin 0
 #   define TclBN_mp_to_unsigned_bin_n 0
 #   define TclBN_mp_toradix_n 0
+#   define TclBN_mp_sqr 0
+#   define TclBN_mp_div_3 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -168,9 +162,6 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclWinResetInterfaces 0
 #   define TclWinSetInterfaces 0
 #   define TclWinGetPlatformId 0
-#   define TclBNInitBignumFromWideUInt 0
-#   define TclBNInitBignumFromWideInt 0
-#   define TclBNInitBignumFromLong 0
 #   define Tcl_Backslash 0
 #   define Tcl_GetDefaultEncodingDir 0
 #   define Tcl_SetDefaultEncodingDir 0
@@ -185,6 +176,15 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
 #else
+
+mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
 
 int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 {
@@ -221,11 +221,6 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
 
-#define TclBNInitBignumFromLong initBignumFromLong
-static void TclBNInitBignumFromLong(mp_int *a, long b)
-{
-    TclBNInitBignumFromWideInt(a, b);
-}
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -1066,9 +1061,9 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_expt_d_ex, /* 67 */
     TclBN_mp_set_ull, /* 68 */
     TclBN_mp_get_mag_ull, /* 69 */
-    0, /* 70 */
+    TclBN_mp_set_ll, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    0, /* 72 */
+    TclBN_mp_set_l, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
