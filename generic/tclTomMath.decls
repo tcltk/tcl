@@ -75,7 +75,7 @@ declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
 declare 17 {deprecated {is private function in libtommath}} {
-    mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
+    mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
 }
 declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
@@ -140,11 +140,11 @@ declare 37 {
 declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
-declare 39 {
+declare 39 {deprecated {macro calling mp_set_u64}} {
     void TclBN_mp_set(mp_int *a, unsigned int b)
 }
-declare 40 {nostub {is private function in libtommath}} {
-    mp_err MP_WUR TclBN_mp_sqr(const mp_int *a, mp_int *b)
+declare 40 {deprecated {is private function in libtommath}} {
+    mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
 }
 declare 41 {
     mp_err MP_WUR TclBN_mp_sqrt(const mp_int *a, mp_int *b)
@@ -211,17 +211,17 @@ declare 59 {deprecated {is private function in libtommath}} {
 declare 60 {deprecated {is private function in libtommath}} {
     mp_err TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 61 {
-    mp_err MP_WUR TclBN_mp_init_ul(mp_int *a, unsigned long i)
+declare 61 {deprecated {macro calling mp_init_u64}} {
+    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
 }
-declare 62 {
+declare 62 {deprecated {macro calling mp_set_u64}} {
     void TclBN_mp_set_ul(mp_int *a, unsigned long i)
 }
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
-declare 64 {
-    int MP_WUR TclBN_mp_init_l(mp_int *bignum, long initVal)
+declare 64 {deprecated {macro calling mp_init_i64}} {
+    int TclBN_mp_init_l(mp_int *bignum, long initVal)
 }
 declare 65 {
     int MP_WUR TclBN_mp_init_i64(mp_int *bignum, int64_t initVal)
@@ -244,22 +244,16 @@ declare 69 {
 declare 70 {
     void TclBN_mp_set_i64(mp_int *a, int64_t i)
 }
-declare 71 {
-    unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
-}
-declare 72 {
-    void TclBN_mp_set_l(mp_int *a, long i)
-}
 
 # Added in libtommath 1.1.0
-declare 73 {
-    mp_err MP_WUR TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
+declare 73 {deprecated {merged with mp_and}} {
+    mp_err TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 74 {
-    mp_err MP_WUR TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
+declare 74 {deprecated {merged with mp_or}} {
+    mp_err TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
 }
-declare 75 {
-    mp_err MP_WUR TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
+declare 75 {deprecated {merged with mp_xor}} {
+    mp_err TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 76 {
     mp_err MP_WUR TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)

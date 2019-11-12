@@ -1324,7 +1324,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=6
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /D_ATL_XP_TARGETING
+COMPILERFLAGS  = /D_ATL_XP_TARGETING=1 /DMP_32BIT=1
 
 # Like the TEA system only set this non empty for non-Tk extensions
 # Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME

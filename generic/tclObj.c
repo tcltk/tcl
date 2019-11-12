@@ -3604,7 +3604,7 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    mp_init_ll(bignumValue,
+	    mp_init_i64(bignumValue,
 		    objPtr->internalRep.wideValue);
 	    return TCL_OK;
 	}

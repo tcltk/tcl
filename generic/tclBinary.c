@@ -2349,8 +2349,7 @@ ScanNumber(
 	    Tcl_Obj *bigObj = NULL;
 	    mp_int big;
 
-	    if (mp_init(&big) == MP_OKAY) {
-		mp_set_u64(&big, uwvalue);
+	    if (mp_init_u64(&big, uwvalue) == MP_OKAY) {
 		bigObj = Tcl_NewBignumObj(&big);
 	    }
 	    return bigObj;

@@ -337,17 +337,14 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_u32.obj \
 	$(TMP_DIR)\bn_mp_get_mag_u64.obj \
-	$(TMP_DIR)\bn_mp_get_mag_ul.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
 	$(TMP_DIR)\bn_mp_init_i64.obj \
-	$(TMP_DIR)\bn_mp_init_l.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
 	$(TMP_DIR)\bn_mp_init_u64.obj \
-	$(TMP_DIR)\bn_mp_init_ul.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
 	$(TMP_DIR)\bn_mp_mod_2d.obj \
@@ -361,11 +358,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
-	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_i64.obj \
-	$(TMP_DIR)\bn_mp_set_l.obj \
 	$(TMP_DIR)\bn_mp_set_u64.obj \
-	$(TMP_DIR)\bn_mp_set_ul.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
@@ -892,8 +886,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_class.h"   "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_superclass.h" "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"

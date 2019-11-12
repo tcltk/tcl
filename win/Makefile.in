@@ -380,17 +380,14 @@ TOMMATH_OBJS = \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_u32.${OBJEXT} \
 	bn_mp_get_mag_u64.${OBJEXT} \
-	bn_mp_get_mag_ul.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
 	bn_mp_init_i64.${OBJEXT} \
-	bn_mp_init_l.${OBJEXT} \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_set.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
 	bn_mp_init_u64.${OBJEXT} \
-	bn_mp_init_ul.${OBJEXT} \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \
 	bn_mp_mod_2d.${OBJEXT} \
@@ -404,11 +401,8 @@ TOMMATH_OBJS = \
 	bn_mp_radix_smap.${OBJEXT} \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
-	bn_mp_set.${OBJEXT} \
 	bn_mp_set_i64.${OBJEXT} \
-	bn_mp_set_l.${OBJEXT} \
 	bn_mp_set_u64.${OBJEXT} \
-	bn_mp_set_ul.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sqrt.${OBJEXT} \
@@ -914,6 +908,7 @@ install-headers:
 		$(GENERIC_DIR)/tclPlatDecls.h \
 		$(GENERIC_DIR)/tclTomMath.h \
 		$(GENERIC_DIR)/tclTomMathDecls.h ; \
+		$(TOMMATH_DIR)/tommath.h ; \
 	    do \
 	    $(COPY) $$i "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
