@@ -8072,7 +8072,7 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		mp_init_ll(&big1, w1);
+		mp_init_i64(&big1, w1);
 		mp_add(&big2, &big1, &big2);
 		mp_clear(&big1);
 		BIG_RESULT(&big2);
@@ -8701,7 +8701,7 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != WIDE_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    mp_init_ll(&big, w);
+	    mp_init_i64(&big, w);
 	    break;
 	default:
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);

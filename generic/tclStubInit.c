@@ -79,16 +79,13 @@
 #define TclBN_mp_div_2d mp_div_2d
 #define TclBN_mp_exch mp_exch
 #define TclBN_mp_get_mag_u64 mp_get_mag_u64
-#define TclBN_mp_get_mag_ul mp_get_mag_ul
 #define TclBN_mp_grow mp_grow
 #define TclBN_mp_init mp_init
 #define TclBN_mp_init_copy mp_init_copy
 #define TclBN_mp_init_multi mp_init_multi
 #define TclBN_mp_init_size mp_init_size
-#define TclBN_mp_init_l mp_init_l
 #define TclBN_mp_init_i64 mp_init_i64
 #define TclBN_mp_init_u64 mp_init_u64
-#define TclBN_mp_init_ul mp_init_ul
 #define TclBN_mp_lshd mp_lshd
 #define TclBN_mp_mod mp_mod
 #define TclBN_mp_mod_2d mp_mod_2d
@@ -101,7 +98,6 @@
 #define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
-#define TclBN_mp_set_l mp_set_l
 #define TclBN_mp_set_i64 mp_set_i64
 #define TclBN_mp_set_u64 mp_set_u64
 #define TclBN_mp_shrink mp_shrink
@@ -147,13 +143,13 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
-    mp_set_ul(a, i);
+    mp_set_u64(a, i);
     return MP_OKAY;
 }
 
 static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 {
-	mp_set_ul(a, i);
+	mp_set_u64(a, i);
 	return MP_OKAY;
 }
 
@@ -198,11 +194,6 @@ mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 	return mp_mul_d(a, b, c);
 }
-void TclBN_mp_set(mp_int *a, unsigned int b) {
-	mp_set(a, b);
-}
-
-
 
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclBN_mp_expt_d_ex 0
@@ -210,9 +201,13 @@ void TclBN_mp_set(mp_int *a, unsigned int b) {
 #   define TclBN_mp_to_unsigned_bin_n 0
 #   undef TclBN_mp_toradix_n
 #   define TclBN_mp_toradix_n 0
+#   undef TclBN_mp_sqr
 #   define TclBN_mp_sqr 0
 #   undef TclBN_mp_div_3
 #   define TclBN_mp_div_3 0
+#   define TclBN_mp_init_l 0
+#   define TclBN_mp_init_ul 0
+#   define TclBN_mp_set 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -276,6 +271,20 @@ void TclBN_reverse(unsigned char *s, int len)
    if (len > 0) {
 	TclBN_s_mp_reverse(s, (size_t)len);
    }
+}
+
+mp_err TclBN_mp_init_ul(mp_int *a, unsigned long b)
+{
+   return TclBN_mp_init_u64(a,b);
+}
+
+mp_err TclBN_mp_init_l(mp_int *a, long b)
+{
+   return TclBN_mp_init_i64(a,b);
+}
+
+void TclBN_mp_set(mp_int *a, unsigned int b) {
+	mp_set_u64(a, b);
 }
 
 mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
@@ -1129,8 +1138,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
-    TclBN_mp_get_mag_ul, /* 71 */
-    TclBN_mp_set_l, /* 72 */
+    0, /* 71 */
+    0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
