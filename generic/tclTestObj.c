@@ -131,7 +131,7 @@ TclObjTest_Init(
  *
  * TestbignumobjCmd --
  *
- *	This function implmenets the "testbignumobj" command.  It is used
+ *	This function implements the "testbignumobj" command.  It is used
  *	to exercise the bignum Tcl object type implementation.
  *
  * Results:
