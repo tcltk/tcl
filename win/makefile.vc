@@ -890,8 +890,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_class.h"   "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_superclass.h" "$(INCLUDE_INSTALL_DIR)\"
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"

@@ -2351,7 +2351,7 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 #if TCL_UTF_MAX <= 4
 	    if ((*chPtr >= 0xD800) && (len < 3)) {
-		src += TclUtfToUniChar(src + len, chPtr);
+		src += Tcl_UtfToUniChar(src, chPtr);
 		dst += Tcl_UniCharToUtf(*chPtr, dst);
 	    }
 #endif
