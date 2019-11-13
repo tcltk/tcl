@@ -60,6 +60,7 @@
 #endif
 
 MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
+MP_SET_SIGNED(mp_set_ll, mp_set_ull, Tcl_WideInt, Tcl_WideUInt)
 MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
@@ -93,14 +94,6 @@ mp_err	TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c) {
 mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *d) {
    mp_digit d2;
    mp_err result = TclBN_s_mp_div_d(a, b, c, (d ? &d2 : NULL));
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
    if (d) {
       *d = d2;
    }
@@ -626,7 +619,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_d, /* 14 */
     TclBN_mp_div_2, /* 15 */
     TclBN_mp_div_2d, /* 16 */
-    TclBN_mp_div_3, /* 17 */
+    0, /* 17 */
     TclBN_mp_exch, /* 18 */
     TclBN_mp_expt_u32, /* 19 */
     TclBN_mp_grow, /* 20 */
@@ -649,7 +642,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_rshd, /* 37 */
     TclBN_mp_shrink, /* 38 */
     TclBN_mp_set, /* 39 */
-    TclBN_mp_sqr, /* 40 */
+    0, /* 40 */
     TclBN_mp_sqrt, /* 41 */
     TclBN_mp_sub, /* 42 */
     TclBN_mp_sub_d, /* 43 */
@@ -673,15 +666,15 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_ul, /* 61 */
     TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    0, /* 64 */
-    0, /* 65 */
-    0, /* 66 */
+    TclBNInitBignumFromLong, /* 64 */
+    TclBNInitBignumFromWideInt, /* 65 */
+    TclBNInitBignumFromWideUInt, /* 66 */
     0, /* 67 */
     TclBN_mp_set_ull, /* 68 */
     TclBN_mp_get_mag_ull, /* 69 */
-    0, /* 70 */
+    TclBN_mp_set_ll, /* 70 */
     TclBN_mp_get_mag_ul, /* 71 */
-    0, /* 72 */
+    TclBN_mp_set_l, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */
