@@ -579,9 +579,6 @@ Tcl_ScanObjCmd(
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
-    char buf[513];		/* Temporary buffer to hold scanned number
-				 * strings before they are passed to
-				 * strtoul. */
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -931,8 +928,16 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    mp_int big;
+		    if (mp_init(&big) != MP_OKAY) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to create bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+			return TCL_ERROR;
+		    } else {
+			mp_set_ull(&big, (Tcl_WideUInt)wideValue);    
+			Tcl_SetBignumObj(objPtr, &big);
+		    }
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
 		}
@@ -969,8 +974,20 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
-		    Tcl_SetStringObj(objPtr, buf, -1);
+#ifdef TCL_WIDE_INT_IS_LONG
+		    mp_int big;
+		    if (mp_init(&big) != MP_OKAY) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to create bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+			return TCL_ERROR;
+		    } else {
+			mp_set_ull(&big, (unsigned long)value);
+			Tcl_SetBignumObj(objPtr, &big);
+		    }
+#else
+		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
+#endif
 		} else {
 		    TclSetIntObj(objPtr, value);
 		}
