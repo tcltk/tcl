@@ -331,12 +331,13 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_s_mp_get_bit.o bn_mp_get_mag_ul.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_mp_init_ul.o bn_s_mp_karatsuba_mul.o \
+	bn_mp_init_l.o bn_mp_init_ll.o bn_mp_init_ull.o \
 	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
 	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
 	bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_ul.o \
-	bn_mp_shrink.o \
+	bn_mp_shrink.o bn_mp_set_l.o  \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
 	bn_mp_to_ubin.o \
@@ -1625,6 +1626,12 @@ bn_mp_init.o: $(TOMMATH_DIR)/bn_mp_init.c $(MATHHDRS)
 bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
 
+bn_mp_init_l.o:$(TOMMATH_DIR)/bn_mp_init_l.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_l.c
+
+bn_mp_init_ll.o:$(TOMMATH_DIR)/bn_mp_init_ll.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ll.c
+
 bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
 
@@ -1636,6 +1643,9 @@ bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c $(MATHHDRS)
 
 bn_mp_init_ul.o:$(TOMMATH_DIR)/bn_mp_init_ul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ul.c
+
+bn_mp_init_ull.o:$(TOMMATH_DIR)/bn_mp_init_ull.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ull.c
 
 bn_s_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c
@@ -1687,6 +1697,9 @@ bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c $(MATHHDRS)
 
 bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
+
+bn_mp_set_l.o: $(TOMMATH_DIR)/bn_mp_set_l.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_l.c
 
 bn_mp_set_ul.o: $(TOMMATH_DIR)/bn_mp_set_ul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_ul.c
@@ -2106,7 +2119,7 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
-$(GENERIC_DIR)/tclOOScript.h: $(GENERIC_DIR)/tclOOScript.tcl
+$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
 	@echo "Warning: tclOOScript.h may be out of date."
 	@echo "Developers may want to run \"make genscript\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
@@ -2120,7 +2133,7 @@ genstubs:
 
 genscript:
 	$(NATIVE_TCLSH) $(TOOL_DIR)/makeHeader.tcl \
-		$(GENERIC_DIR)/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
+		$(TOOL_DIR)/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
 
 #
 # Target to check that all exported functions have an entry in the stubs
@@ -2246,6 +2259,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
 		$(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
+		$(TOP_DIR)/library/manifest.txt \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
 	@for i in $(BUILTIN_PACKAGE_LIST); do \
 	    $(INSTALL_DATA_DIR) $(DISTDIR)/library/$$i;\

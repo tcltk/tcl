@@ -536,7 +536,7 @@ MakeByteArray(
 	if (ch > 255) {
 	  proper = 0;
 	  if (earlyOut) {
-	    ckfree(byteArrayPtr);
+	    Tcl_Free(byteArrayPtr);
 	    *byteArrayPtrPtr = NULL;
 	    return proper;
 	  }
@@ -2327,8 +2327,10 @@ ScanNumber(
 	    Tcl_Obj *bigObj = NULL;
 	    mp_int big;
 
-	    TclInitBignumFromWideUInt(&big, uwvalue);
-	    bigObj = Tcl_NewBignumObj(&big);
+	    if (mp_init(&big) == MP_OKAY) {
+		mp_set_ull(&big, uwvalue);
+		bigObj = Tcl_NewBignumObj(&big);
+	    }
 	    return bigObj;
 	}
 	return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
