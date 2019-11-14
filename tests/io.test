@@ -7383,7 +7383,7 @@ test io-53.3 {CopyData: background read underflow} {stdio unix openpipe fcopy} {
     close $f
     set result
 } "ready line1 line2 {done\n}"
-test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileevent fcopy} {
+test io-53.4 {CopyData: background write overflow} {stdio openpipe fileevent fcopy} {
     set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
     variable x
     for {set x 0} {$x < 12} {incr x} {
