@@ -1353,6 +1353,35 @@ test oo-7.9 {OO: defining inheritance in namespaces} -setup {
 	return
     }
 } -result {}
+test oo-7.10 {OO: next after object deletion, bug [135804138e]} -setup {
+    set ::result ""
+    oo::class create c1 {
+        method m1 {} {
+           lappend ::result c1::m1
+        }
+    }
+    oo::class create c2 {
+        superclass c1
+        destructor {
+            lappend ::result c2::destructor
+            my m1
+            lappend ::result /c2::destructor
+        }
+        method m1 {} {
+            lappend ::result c2::m1
+            rename [self] {}
+            lappend ::result no-self
+            next
+            lappend ::result /c2::m1
+        }
+    }
+} -body {
+    c2 create o
+    lappend ::result [catch {o m1} msg] $msg
+} -cleanup {
+    c1 destroy
+    unset ::result
+} -result {c2::m1 c2::destructor c2::m1 no-self c1::m1 /c2::m1 /c2::destructor no-self 1 {no next method implementation}}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
