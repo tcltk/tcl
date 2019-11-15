@@ -1297,7 +1297,7 @@ int TclOODecrRefCount(Object *oPtr) {
  * ----------------------------------------------------------------------
  */
 int TclOOObjectDestroyed(Object *oPtr) {
-    oPtr->namespacePtr == NULL;
+    return (oPtr->namespacePtr == NULL);
 }
 
 /*
