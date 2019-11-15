@@ -2987,8 +2987,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(void *dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	TclInfoVarsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE void	TclInitBignumFromWideInt(mp_int *, Tcl_WideInt);
-MODULE_SCOPE void	TclInitBignumFromWideUInt(mp_int *, Tcl_WideUInt);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -4047,7 +4045,6 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
  */
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-MODULE_SCOPE void	TclFreeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 

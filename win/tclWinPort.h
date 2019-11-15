@@ -81,6 +81,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
+#if HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
@@ -474,6 +477,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
 #if defined(_MSC_VER)
+#   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
 #   if _MSC_VER >= 1400
 #	pragma warning(disable:4267)
