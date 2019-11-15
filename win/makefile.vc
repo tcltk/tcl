@@ -374,7 +374,6 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
 	$(TMP_DIR)\bn_s_mp_balance_mul.obj \
-	$(TMP_DIR)\bn_s_mp_get_bit.obj \
 	$(TMP_DIR)\bn_s_mp_karatsuba_mul.obj \
 	$(TMP_DIR)\bn_s_mp_karatsuba_sqr.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
