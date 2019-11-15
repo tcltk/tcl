@@ -1683,9 +1683,8 @@ Tcl_GlobObjCmd(
  *
  * TclGlob --
  *
- *	This procedure prepares arguments for the DoGlob call. It sets the
- *	separator string based on the platform, performs * tilde substitution,
- *	and calls DoGlob.
+ *	Sets the separator string based on the platform, performs tilde
+ *	substitution, and calls DoGlob.
  *
  *	The interpreter's result, on entry to this function, must be a valid
  *	Tcl list (e.g. it could be empty), since we will lappend any new

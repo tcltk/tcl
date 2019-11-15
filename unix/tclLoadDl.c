@@ -210,15 +210,14 @@ FindSymbol(
  *
  * UnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory. Code
- *	pointers in the formerly loaded file are no longer valid after calling
- *	this function.
+ *	Unloads a dynamic shared object, after which all pointers to functions
+ *	in the formerly-loaded object are no longer valid.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Code removed from memory.
+ *	Memory for the loaded object is deallocated.
  *
  *----------------------------------------------------------------------
  */
