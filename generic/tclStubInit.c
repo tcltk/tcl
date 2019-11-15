@@ -299,7 +299,7 @@ void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&TclpIsAtty, &hInstance);
+	    (const wchar_t *)&TclpIsAtty, &hInstance);
     return hInstance;
 }
 
@@ -528,7 +528,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_UniCharCaseMatch 0
 #   define Tcl_UniCharLen 0
 #   define Tcl_UniCharNcmp 0
-#   define TclOldFreeObj 0
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
@@ -563,7 +562,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
-#   define TclOldFreeObj TclFreeObj
 
 static int
 seekOld(
@@ -1068,7 +1066,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    TclBN_mp_get_bit, /* 77 */
+    0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
@@ -1129,7 +1127,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    TclOldFreeObj, /* 30 */
+    TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */

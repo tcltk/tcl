@@ -79,7 +79,6 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_u32
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
-#define mp_get_bit TclBN_mp_get_bit
 #define mp_get_mag_ul TclBN_mp_get_mag_ul
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
 #define mp_grow TclBN_mp_grow
@@ -129,7 +128,6 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
 #define s_mp_balance_mul TclBN_mp_balance_mul
-#define s_mp_get_bit TclBN_mp_get_bit
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
@@ -210,8 +208,8 @@ EXTERN mp_err		TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q,
 				mp_int *r) MP_WUR;
 /* 17 */
 TCL_DEPRECATED("is private function in libtommath")
-mp_err MP_WUR		TclBN_mp_div_3(const mp_int *a, mp_int *q,
-				unsigned int *r) MP_WUR;
+mp_err			TclBN_mp_div_3(const mp_int *a, mp_int *q,
+				unsigned int *r);
 /* 18 */
 EXTERN void		TclBN_mp_exch(mp_int *a, mp_int *b);
 /* 19 */
@@ -264,7 +262,7 @@ EXTERN mp_err		TclBN_mp_shrink(mp_int *a) MP_WUR;
 /* 39 */
 EXTERN void		TclBN_mp_set(mp_int *a, unsigned int b);
 /* 40 */
-EXTERN mp_err		TclBN_mp_sqr(const mp_int *a, mp_int *b) MP_WUR;
+EXTERN mp_err		TclBN_mp_sqr(const mp_int *a, mp_int *b);
 /* 41 */
 EXTERN mp_err		TclBN_mp_sqrt(const mp_int *a, mp_int *b) MP_WUR;
 /* 42 */
@@ -371,9 +369,7 @@ EXTERN mp_err		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 /* 76 */
 EXTERN mp_err		TclBN_mp_signed_rsh(const mp_int *a, int b,
 				mp_int *c) MP_WUR;
-/* 77 */
-TCL_DEPRECATED("is private function in libtommath")
-mp_bool			TclBN_mp_get_bit(const mp_int *a, unsigned int b);
+/* Slot 77 is reserved */
 /* 78 */
 EXTERN int		TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf,
 				size_t maxlen, size_t *written) MP_WUR;
@@ -403,7 +399,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_div_d) (const mp_int *a, unsigned int b, mp_int *q, unsigned int *r) MP_WUR; /* 14 */
     mp_err (*tclBN_mp_div_2) (const mp_int *a, mp_int *q) MP_WUR; /* 15 */
     mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r) MP_WUR; /* 16 */
-    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, unsigned int *r) MP_WUR; /* 17 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, unsigned int *r); /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
     mp_err (*tclBN_mp_expt_u32) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 19 */
     mp_err (*tclBN_mp_grow) (mp_int *a, int size) MP_WUR; /* 20 */
@@ -426,7 +422,7 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
     mp_err (*tclBN_mp_shrink) (mp_int *a) MP_WUR; /* 38 */
     void (*tclBN_mp_set) (mp_int *a, unsigned int b); /* 39 */
-    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b) MP_WUR; /* 40 */
+    TCL_DEPRECATED_API("is private function in libtommath") mp_err (*tclBN_mp_sqr) (const mp_int *a, mp_int *b); /* 40 */
     mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b) MP_WUR; /* 41 */
     mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 42 */
     mp_err (*tclBN_mp_sub_d) (const mp_int *a, unsigned int b, mp_int *c) MP_WUR; /* 43 */
@@ -463,7 +459,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 74 */
     mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 75 */
     mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c) MP_WUR; /* 76 */
-    TCL_DEPRECATED_API("is private function in libtommath") mp_bool (*tclBN_mp_get_bit) (const mp_int *a, unsigned int b); /* 77 */
+    void (*reserved77)(void);
     int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written) MP_WUR; /* 78 */
     void (*reserved79)(void);
     int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix) MP_WUR; /* 80 */
@@ -635,8 +631,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
 #define TclBN_mp_signed_rsh \
 	(tclTomMathStubsPtr->tclBN_mp_signed_rsh) /* 76 */
-#define TclBN_mp_get_bit \
-	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
+/* Slot 77 is reserved */
 #define TclBN_mp_to_ubin \
 	(tclTomMathStubsPtr->tclBN_mp_to_ubin) /* 78 */
 /* Slot 79 is reserved */

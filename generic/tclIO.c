@@ -4712,14 +4712,14 @@ Tcl_GetsObj(
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[TCL_UTF_MAX];
+		    char tmp[4];
 		    int rawRead;
 
 		    bufPtr = gs.bufPtr;
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
 			    gs.rawRead, statePtr->inputEncodingFlags
 				| TCL_ENCODING_NO_TERMINATE, &gs.state, tmp,
-			    TCL_UTF_MAX, &rawRead, NULL, NULL);
+			    4, &rawRead, NULL, NULL);
 		    bufPtr->nextRemoved += rawRead;
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
@@ -6265,7 +6265,7 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[TCL_UTF_MAX + 1];
+		char buffer[5];
 		int read, decoded, count;
 
 		/*
