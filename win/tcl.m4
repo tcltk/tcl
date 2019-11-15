@@ -764,28 +764,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	LIBSUFFIX="\${DBGX}.lib"
 	LIBFLAGSUFFIX="\${DBGX}"
 
-	# This is a 2-stage check to make sure we have the 64-bit SDK
-	# We have to know where the SDK is installed.
-	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
 	if test "$do64bit" != "no" ; then
-	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft Platform SDK"
-	    fi
-	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    PATH64=""
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
-		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
-		    PATH64="${MSSDK}/Bin/Win64"
 		    ;;
 	    esac
-	    if test ! -d "${PATH64}" ; then
-		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK])
-	    fi
 	    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	fi
 
@@ -800,21 +787,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	esac
 
 	if test "$do64bit" != "no" ; then
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.  TEA has the
-	    # TEA_PATH_NOSPACE to avoid this issue.
-	    # Check if _WIN64 is already recognized, and if so we don't
-	    # need to modify CC.
-	    AC_CHECK_DECL([_WIN64], [],
-			  [CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
-			 -I\"${MSSDK}/Include/crt\" \
-			 -I\"${MSSDK}/Include/crt/sys\""])
-	    RC="\"${MSSDK}/bin/rc.exe\""
+	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
-	    LINKBIN="\"${PATH64}/link.exe\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
+	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
 	    LIBS="$LIBS bufferoverflowU.lib"

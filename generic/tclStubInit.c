@@ -117,7 +117,6 @@
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
 #define TclBN_s_mp_balance_mul mp_balance_mul
-#define TclBN_mp_get_bit s_mp_get_bit
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
@@ -1144,7 +1143,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    TclBN_mp_get_bit, /* 77 */
+    0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */

@@ -143,7 +143,7 @@ declare 38 {
 declare 39 {deprecated {macro calling mp_set_u64}} {
     void TclBN_mp_set(mp_int *a, unsigned int b)
 }
-declare 40 {deprecated {is private function in libtommath}} {
+declare 40 {nostub {is private function in libtommath}} {
     mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
 }
 declare 41 {
@@ -257,9 +257,6 @@ declare 75 {deprecated {merged with mp_xor}} {
 }
 declare 76 {
     mp_err MP_WUR TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
-}
-declare 77 {deprecated {is private function in libtommath}} {
-    mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
 }
 
 # Added in libtommath 1.2.0
