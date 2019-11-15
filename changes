@@ -8988,6 +8988,8 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-10-28 (bug)[bcd100] bad fs cache when system encoding changes (coulter)
 
+2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
+
 - Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
 
 Changes to 8.7a3 include all changes to the 8.6 line through 8.6.10,
