@@ -739,7 +739,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    0, /* 30 */
+    TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */
