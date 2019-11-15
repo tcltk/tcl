@@ -226,7 +226,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
  * ROOT_CLASS respectively.
  */
 
-#define Deleted(oPtr)		((oPtr)->flags & OBJECT_DELETED)
+#define Destructing(oPtr)	((oPtr)->flags & OBJECT_DESTRUCTING)
 #define IsRootObject(ocPtr)	((ocPtr)->flags & ROOT_OBJECT)
 #define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
@@ -839,7 +839,7 @@ ObjectRenamedTrace(
      * 2950259].
      */
 
-    if (!Deleted(oPtr)) {
+    if (!Destructing(oPtr)) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
     oPtr->command = NULL;
@@ -879,7 +879,7 @@ TclOODeleteDescendants(
 	     * clsPtr
 	     */
 
-	    if (!Deleted(mixinSubclassPtr->thisPtr)
+	    if (!Destructing(mixinSubclassPtr->thisPtr)
 		    && !(mixinSubclassPtr->thisPtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp,
 			mixinSubclassPtr->thisPtr->command);
@@ -898,7 +898,7 @@ TclOODeleteDescendants(
     if (clsPtr->subclasses.num > 0) {
 	while (clsPtr->subclasses.num > 0) {
 	    subclassPtr = clsPtr->subclasses.list[clsPtr->subclasses.num - 1];
-	    if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)
+	    if (!Destructing(subclassPtr->thisPtr) && !IsRoot(subclassPtr)
 		    && !(subclassPtr->thisPtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp,
 			subclassPtr->thisPtr->command);
@@ -924,7 +924,7 @@ TclOODeleteDescendants(
 	     * This condition also covers the case where instancePtr == oPtr
 	     */
 
-	    if (!Deleted(instancePtr) && !IsRoot(instancePtr) &&
+	    if (!Destructing(instancePtr) && !IsRoot(instancePtr) &&
 		    !(instancePtr->flags & DONT_DELETE)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
 	    }
@@ -965,7 +965,7 @@ TclOOReleaseClassContents(
      * Sanity check!
      */
 
-    if (!Deleted(oPtr)) {
+    if (!Destructing(oPtr)) {
 	if (IsRootClass(oPtr)) {
 	    Tcl_Panic("deleting class structure for non-deleted %s",
 		    "::oo::class");
@@ -1063,7 +1063,7 @@ TclOOReleaseClassContents(
 	ckfree(clsPtr->variables.list);
     }
 
-    if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
+    if (IsRootClass(oPtr) && !Destructing(fPtr->objectCls->thisPtr)) {
 	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
 }
@@ -1095,7 +1095,7 @@ ObjectNamespaceDeleted(
     Tcl_Interp *interp = oPtr->fPtr->interp;
     int i;
 
-    if (Deleted(oPtr)) {
+    if (Destructing(oPtr)) {
 	/*
 	 * TODO:  Can ObjectNamespaceDeleted ever be called twice?  If not,
 	 * this guard could be removed.
@@ -1108,7 +1108,7 @@ ObjectNamespaceDeleted(
      * process of being deleted, nothing else may modify its bookeeping
      * records.  This is the flag that
      */
-    oPtr->flags |= OBJECT_DELETED;
+    oPtr->flags |= OBJECT_DESTRUCTING;
 
     /*
      * Let the dominoes fall!
@@ -1242,7 +1242,7 @@ ObjectNamespaceDeleted(
      * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
 
-    if (IsRootObject(oPtr) && !Deleted(fPtr->classCls->thisPtr)
+    if (IsRootObject(oPtr) && !Destructing(fPtr->classCls->thisPtr)
 	    && !Tcl_InterpDeleted(interp)) {
 
 	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
@@ -1284,6 +1284,20 @@ int TclOODecrRefCount(Object *oPtr) {
 	return 1;
     }
     return 0;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectDestroyed --
+ *
+ *	Returns TCL_OK if an object is entirely deleted, i.e. the destruction
+ *	sequence has completed.
+ *
+ * ----------------------------------------------------------------------
+ */
+int TclOOObjectDestroyed(Object *oPtr) {
+    return (oPtr->namespacePtr == NULL);
 }
 
 /*
@@ -1446,7 +1460,7 @@ TclOOAddToSubclasses(
 				 * is assumed that the class is not already
 				 * present as a subclass in the superclass. */
 {
-    if (Deleted(superPtr->thisPtr)) {
+    if (Destructing(superPtr->thisPtr)) {
 	return;
     }
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
@@ -1511,7 +1525,7 @@ TclOOAddToMixinSubs(
 				 * is assumed that the class is not already
 				 * present as a subclass in the superclass. */
 {
-    if (Deleted(superPtr->thisPtr)) {
+    if (Destructing(superPtr->thisPtr)) {
 	return;
     }
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
@@ -1809,7 +1823,7 @@ FinalizeAlloc(
      * Don't want to lose errors by accident. [Bug 2903011]
      */
 
-    if (result != TCL_ERROR && Deleted(oPtr)) {
+    if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"object deleted in constructor", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
@@ -1824,7 +1838,7 @@ FinalizeAlloc(
 	 * command before we delete it. [Bug 9dd1bd7a74]
 	 */
 
-	if (!Deleted(oPtr)) {
+	if (!Destructing(oPtr)) {
 	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
@@ -1961,7 +1975,7 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr->flags = oPtr->flags & ~(
-	    OBJECT_DELETED | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING);
+	    OBJECT_DESTRUCTING | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING);
 
     /*
      * Copy the object's metadata.

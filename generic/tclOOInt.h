@@ -189,14 +189,11 @@ typedef struct Object {
     LIST_STATIC(Tcl_Obj *) variables;
 } Object;
 
-#define OBJECT_DELETED	1	/* Flag to say that an object has been
-				 * destroyed. */
-#define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
-				 * called. */
-#define CLASS_GONE	4	/* Obsolete. Indicates that the class of this
-				 * object has been deleted, and so the object
-				 * should not attempt to remove itself from its
-				 * class. */
+#define OBJECT_DESTRUCTING	1	/* Indicates that an object is being or has
+								 *  been destroyed  */
+#define DESTRUCTOR_CALLED 2	/* Indicates that evaluation of destructor script for the
+							   object has began */
+#define OO_UNUSED_4	4	/* No longer used.  */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -497,6 +494,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    const char *nameStr,
 			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
+MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
