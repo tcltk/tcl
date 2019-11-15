@@ -72,7 +72,6 @@
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_expt_u32 TclBN_mp_expt_d
-#define mp_get_bit TclBN_mp_get_bit
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -119,7 +118,6 @@
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
 #define s_mp_balance_mul TclBN_mp_balance_mul
-#define s_mp_get_bit TclBN_mp_get_bit
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
@@ -341,8 +339,7 @@ EXTERN mp_err		TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 /* 76 */
 EXTERN mp_err		TclBN_mp_signed_rsh(const mp_int *a, int b,
 				mp_int *c);
-/* 77 */
-EXTERN mp_bool		TclBN_mp_get_bit(const mp_int *a, unsigned int b);
+/* Slot 77 is reserved */
 /* 78 */
 EXTERN int		TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf,
 				size_t maxlen, size_t *written);
@@ -432,7 +429,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
     mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c); /* 76 */
-    mp_bool (*tclBN_mp_get_bit) (const mp_int *a, unsigned int b); /* 77 */
+    void (*reserved77)(void);
     int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written); /* 78 */
     void (*reserved79)(void);
     int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix); /* 80 */
@@ -600,8 +597,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
 #define TclBN_mp_signed_rsh \
 	(tclTomMathStubsPtr->tclBN_mp_signed_rsh) /* 76 */
-#define TclBN_mp_get_bit \
-	(tclTomMathStubsPtr->tclBN_mp_get_bit) /* 77 */
+/* Slot 77 is reserved */
 #define TclBN_mp_to_ubin \
 	(tclTomMathStubsPtr->tclBN_mp_to_ubin) /* 78 */
 /* Slot 79 is reserved */

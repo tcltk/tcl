@@ -319,26 +319,26 @@ OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 
 TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_s_mp_sqr_fast.o bn_mp_add.o bn_mp_and.o \
-        bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
-        bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
+	bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
+	bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
 	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_u32.o \
-        bn_s_mp_get_bit.o bn_mp_grow.o bn_mp_init.o \
+	bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
 	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
-        bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
-        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
+	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
+	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
-        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o \
+	bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o \
 	bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
 	bn_mp_to_ubin.o \
 	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_to_radix.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
-        bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
+	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
@@ -1514,9 +1514,6 @@ bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 
 bn_mp_expt_u32.o: $(TOMMATH_DIR)/bn_mp_expt_u32.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_u32.c
-
-bn_s_mp_get_bit.o: $(TOMMATH_DIR)/bn_s_mp_get_bit.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_get_bit.c
 
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
