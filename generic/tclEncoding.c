@@ -2365,7 +2365,7 @@ UtfToUtfProc(
 	    if ((*chPtr & 0xFC00) == 0xD800) {
 		/* A high surrogate character is detected, handle especially */
 		Tcl_UniChar low = *chPtr;
-		size_t len = Tcl_UtfToUniChar(src, &low);
+		size_t len = (src <= srcEnd-3) ? Tcl_UtfToUniChar(src, &low) : 0;
 		if ((low & 0xFC00) != 0xDC00) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
