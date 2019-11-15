@@ -238,10 +238,6 @@ declare 72 {
 declare 76 {
     mp_err MP_WUR TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
-# Removed in 9.0
-#declare 77 {
-#    mp_bool TclBN_mp_get_bit(const mp_int *a, unsigned int b)
-#}
 
 # Added in libtommath 1.2.0
 declare 78 {

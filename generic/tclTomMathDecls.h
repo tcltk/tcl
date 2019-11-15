@@ -75,7 +75,6 @@ MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *c);
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_u32
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
-#define mp_get_bit TclBN_mp_get_bit
 #define mp_get_mag_ul TclBN_mp_get_mag_ul
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
 #define mp_grow TclBN_mp_grow
@@ -116,7 +115,6 @@ MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *c);
 #define s_mp_add TclBN_s_mp_add
 #define s_mp_balance_mul TclBN_mp_balance_mul
 #define s_mp_div_3 TclBN_s_mp_div_3
-#define s_mp_get_bit TclBN_mp_get_bit
 #define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
