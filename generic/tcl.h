@@ -2246,6 +2246,25 @@ TCLAPI int		TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
+#else
+#   undef Tcl_IncrRefCount
+#   define Tcl_IncrRefCount(objPtr) \
+	++(objPtr)->refCount
+    /*
+     * Use do/while0 idiom for optimum correctness without compiler warnings.
+     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     */
+#   undef Tcl_DecrRefCount
+#   define Tcl_DecrRefCount(objPtr) \
+	do { \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if ((_objPtr)->refCount-- <= 1) { \
+		TclFreeObj(_objPtr); \
+	    } \
+	} while(0)
+#   undef Tcl_IsShared
+#   define Tcl_IsShared(objPtr) \
+	((objPtr)->refCount > 1)
 #endif
 
 /*
