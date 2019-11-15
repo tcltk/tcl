@@ -76,7 +76,7 @@ declare 16 {
 }
 # Removed in 9.0
 #declare 17 {deprecated {is private function in libtommath}} {
-#    mp_err MP_WUR TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
+#    mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, unsigned int *r)
 #}
 declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
@@ -146,7 +146,7 @@ declare 39 {
 }
 # Removed in 9.0
 #declare 40 {nostub {is private function in libtommath}} {
-#    mp_err MP_WUR TclBN_mp_sqr(const mp_int *a, mp_int *b)
+#    mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
 #}
 declare 41 {
     mp_err MP_WUR TclBN_mp_sqrt(const mp_int *a, mp_int *b)
