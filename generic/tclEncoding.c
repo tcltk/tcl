@@ -2304,7 +2304,7 @@ UtfToUtfProc(
     }
 
     dstStart = dst;
-    dstEnd = dst + dstLen - ((pureNullMode == 1) ? 4 : TCL_UTF_MAX);
+    dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2350,21 +2350,14 @@ UtfToUtfProc(
 	    if ((*chPtr & 0xFC00) == 0xD800) {
 		/* A high surrogate character is detected, handle especially */
 		Tcl_UniChar low = *chPtr;
-		size_t len = Tcl_UtfToUniChar(src, &low);
+		if (src <= srcEnd-3) {
+		    Tcl_UtfToUniChar(src, &low);
+		}
 		if ((low & 0xFC00) != 0xDC00) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
 			continue;
-		} else if (pureNullMode == 1) {
-		    int full = (((*chPtr & 0x3FF) << 10) | (low & 0x3FF)) + 0x10000;
-		    *dst++ = (char) (((full >> 18) | 0xF0) & 0xF7);
-		    *dst++ = (char) (((full >> 12) | 0x80) & 0xBF);
-		    *dst++ = (char) (((full >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char) ((full | 0x80) & 0xBF);
-			*chPtr = 0;
-		    src += len;
-		    continue;
 		}
 	    }
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
