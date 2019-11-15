@@ -423,7 +423,6 @@ TOMMATH_OBJS = \
 	bn_mp_zero.${OBJEXT} \
 	bn_s_mp_add.${OBJEXT} \
 	bn_s_mp_balance_mul.$(OBJEXT) \
-	bn_s_mp_get_bit.${OBJEXT} \
 	bn_s_mp_karatsuba_mul.${OBJEXT} \
 	bn_s_mp_karatsuba_sqr.$(OBJEXT) \
 	bn_s_mp_mul_digs.${OBJEXT} \
