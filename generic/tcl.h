@@ -2452,14 +2452,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
-#elif (!defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS))
-/*
- * When compiling stub-enabled extensions without -DTCL_NO_DEPRECATED,
- * those extensions are expected to run fine with Tcl 8.6 as well.
- * This means we must continue to use macro's for the above 3 functions,
- * and the old stub entry for TclFreeObj. All other usage of TclFreeObj()
- * is forbidden now, therefore it is changed to be MODULE_SCOPE internal.
- */
+#else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
 	++(objPtr)->refCount
@@ -2472,7 +2465,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
 	    if ((_objPtr)->refCount-- <= 1) { \
-		TclOldFreeObj(_objPtr); \
+		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
 #   undef Tcl_IsShared

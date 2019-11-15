@@ -132,9 +132,8 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-# Only available as stub-entry, for backwards-compatible stub-enabled extensions
 declare 30 {
-    void TclOldFreeObj(Tcl_Obj *objPtr)
+    void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
