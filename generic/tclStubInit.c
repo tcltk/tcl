@@ -1052,7 +1052,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    TclBN_mp_get_bit, /* 77 */
+    0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
