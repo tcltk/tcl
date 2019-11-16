@@ -8998,59 +8998,125 @@ in this changeset (new minor version) rather than bug fixes:
 
 2017-11-01 (bug)[3c32a3] crash deleting class mixed into instance (coulter)
 
-2017-11-03 (new)[TIP 345] eliminate the encoding 'identity' (porter)
+2017-11-03 [TIP 345] eliminate the encoding 'identity' (porter)
 
 2017-11-04 (bug)[0d902e] [string first] on ASCII stored as Unicode (fellows)
 
-2017-11-17 (new)[TIP 422] Mark all Tcl_*VA() routines deprecated. (nijtmans)
+2017-11-17 [TIP 422] Mark all Tcl_*VA() routines deprecated. (nijtmans)
 
 2017-11-20 (support) Ended use of the obsolete values.h header (culler)
 
 2017-11-30 (bug)[8e1e31] [lsort] ordering of U+0000 (nijtmans)
 
-2017-12-07 (new)[TIP 487] Terminate support for pre-XP Windows (nijtmans)
+2017-12-07 [TIP 487] Terminate support for pre-XP Windows (nijtmans)
 
-2017-12-08 (new)[TIP 477] Reform of nmake build (nadkarni)
+2017-12-08 [TIP 477] Reform of nmake build (nadkarni)
 
 2017-12-20 (bug)[ba1419] Crash: complex ensemble delete, namespace-7.8 (coulter)
 
-2018-01-17 (new)[TIP 485] Removal of many deprecated features (nijtmans)
+2018-01-17 [TIP 485] Removal of many deprecated features (nijtmans)
 
 2018-01-27 (bug) Crash in [join $l $l], join-4.1 (porter)
 
-2018-02-06 (new)[TIP 493] Cease Distribution of http 1.0 (porter)
+2018-02-06 [TIP 493] Cease Distribution of http 1.0 (porter)
 
-2018-02-06 (new)[TIP 484] internal rep for native ints are all 64-bit (nijtmans)
+2018-02-06 [TIP 484] internal rep for native ints are all 64-bit (nijtmans)
 
-2018-02-14 (new)[TIP 476] Scan/Printf consistency (nijtmans)
+2018-02-14 [TIP 476] Scan/Printf consistency (nijtmans)
 
-2018-03-05 (new)[TIP 351] [lsearch] striding 
+2018-03-05 [TIP 351] [lsearch] striding 
 
-2018-03-05 (new)[TIPs 330,336] tighten access to Interp fields (porter)
+2018-03-05 [TIPs 330,336] tighten access to Interp fields (porter)
 
-2018-03-12 (new)[TIP 462] [::tcl::process] 
+2018-03-12 [TIP 462] [::tcl::process] 
 
-2018-03-12 (new)[TIP 490] add oo support for msgcat => msgcat 1.7.0 (oehlmann)
+2018-03-12 [TIP 490] add oo support for msgcat => msgcat 1.7.0 (oehlmann)
 
-2018-03-12 (new)[TIP 499] custom locale preference list (oehlmann)
+2018-03-12 [TIP 499] custom locale preference list (oehlmann)
 => msgcat 1.7.0
 
-2018-03-20 (new)[TIP 503] End CONST84 support for Tcl 8.3 (porter)
+2018-03-20 [TIP 503] End CONST84 support for Tcl 8.3 (porter)
 
 2018-03-30 Refactored [lrange] (spjuth)
 
-2018-04-20 (new)[TIP 389] Unicode beyond BMP (nijtmans)
+2018-04-20 [TIP 389] Unicode beyond BMP (nijtmans)
 
-2018-04-20 (new)[TIP 421] [array for]
+2018-04-20 [TIP 421] [array for]
 
-2018-05-11 (new)[TIP 425] Windows panic callback use of UTF-8
+2018-05-11 [TIP 425] Windows panic callback use of UTF-8
 
-2018-05-17 (new)[TIP 491] Phase out --disable-threads support
+2018-05-17 [TIP 491] Phase out --disable-threads support
 
-2018-06-03 (new)[TIP 500] TclOO Private Methods and Variables
+2018-06-03 [TIP 500] TclOO Private Methods and Variables
 
 2018-07-26 (bug)[ba921a] [string cat] of bytearrays (coulter,porter)
 
+2018-09-02 [TIP 478] Many new features in TclOO (lester,fellows)
 
+2018-09-04 (bug)[540bed] [binary format w] from bignum (nijtmans)
+
+2018-09-12 [TIP 430] zipfs and embedded script library (woods)
+
+2018-09-26 [TIP 508] [array default] (bonnet,fellows)
+
+2018-09-27 [TIP 515] level value reform (nijtmans)
+
+2018-09-27 [TIP 516] More OO slot operations (fellows)
+
+2018-09-27 [TIP 426] [info cmdtype] (fellows)
+
+2018-09-28 [TIP 509] Cross platform reentrant mutex
+
+2018-10-08 [TIP 514] native integers are 64-bit
+
+2018-10-12 [TIP 502] index value reform (porter)
+
+2018-11-06 [TIP 406] http cookies (fellows)
+
+2018-11-06 [TIP 445] Tcl_ObjType utilities (migrate to Tcl 9) (porter)
+
+2018-11-06 [TIP 501] [string is dict]
+
+2018-11-06 [TIP 519] inline export/unexport option for [oo::define]
+
+2018-11-06 [TIP 523] [lpop]
+
+2018-11-06 [TIP 524] TclOO custom dialects
+
+2018-11-06 [TIP 506] Tcl_(Incr|Decr)RefCount macros -> functions (porter)
+
+2018-11-15 [TIP 512] No stub for Tcl_SetExitProc()
+
+2019-04-08 (bug)[45b9fa] crash in [try] (coulter)
+
+2019-04-14 [TIP 160] terminal and serial channel controls
+
+2019-04-14 [TIP 312] more types for Tcl_LinkVar
+
+2019-04-14 [TIP 367] [lremove]
+
+2019-04-14 [TIP 504] [string insert]
+
+2019-04-16 [TIP 342] [dict getwithdefault]
+
+2019-05-25 [TIP 431] [file tempdir]
+
+2019-05-25 [TIP 383] [coroinject], [coroprobe]
+
+2019-05-31 [TIP 544] Tcl_GetIntForIndex()
+
+2019-06-12 Replace TclOffset() with offsetof()
+
+2019-06-15 [TIP 461] string compare operators for [expr]
+
+2019-06-16 [TIP 521] floating point classification functions for [expr]
+
+2019-06-20 (bug)[6bdadf] crash multi-arg traced [lappend] (fellows)
+
+2019-06-28 [TIP 547] New encodings utf-16, ucs-2
+
+2019-09-14 [TIP 414] Tcl_InitSubsystems()
+
+2019-09-14 [TIP 548] wchar_t conversion functions
 
 - Released 8.7a3, Nov 21, 2019 --- http://core.tcl-lang.org/tcl/ for details -
