@@ -706,7 +706,7 @@ TclParseNumber(
 				|| (octalSignificandWide >
 					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    TclInitBignumFromWideUInt(&octalSignificandBig,
+			    mp_init_ull(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -771,7 +771,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			mp_init_ull(&significandBig,
 				significandWide);
 		    }
 		}
@@ -812,7 +812,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			mp_init_ull(&significandBig,
 				significandWide);
 		    }
 		}
@@ -1154,7 +1154,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		mp_init_ull(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1175,7 +1175,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		mp_init_ull(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1196,7 +1196,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		TclInitBignumFromWideUInt(&octalSignificandBig,
+		mp_init_ull(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
@@ -1209,7 +1209,7 @@ TclParseNumber(
 	    }
 	    if (!octalSignificandOverflow) {
 		if (octalSignificandWide > (MOST_BITS + signum)) {
-		    TclInitBignumFromWideUInt(&octalSignificandBig,
+		    mp_init_ull(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
@@ -1237,12 +1237,12 @@ TclParseNumber(
 		    &significandWide, &significandBig, significandOverflow);
 	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		mp_init_ull(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
 		if (significandWide > MOST_BITS+signum) {
-		    TclInitBignumFromWideUInt(&significandBig,
+		    mp_init_ull(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
@@ -1394,7 +1394,7 @@ AccumulateDecimalDigit(
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    TclInitBignumFromWideUInt(bignumRepPtr, w);
+	    mp_init_ull(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1537,7 +1537,7 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    TclInitBignumFromWideUInt(&significandBig, significand);
+    mp_init_ull(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -2661,7 +2661,7 @@ QuickConversion(
     int k,			/* floor(log10(d)), approximately. */
     int k_check,		/* 0 if k is exact, 1 if it may be too high */
     int flags,			/* Flags passed to dtoa:
-				 *    TCL_DD_SHORTEN_FLAG */
+				 *    TCL_DD_SHORTEST */
     int len,			/* Length of the return value. */
     int ilim,			/* Number of digits to store. */
     int ilim1,			/* Number of digits to store if we misguessed
@@ -2732,7 +2732,7 @@ QuickConversion(
      * Format the digit string.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	end = ShorteningQuickFormat(d, k, ilim, eps.d, retval, decpt);
     } else {
 	end = StrictQuickFormat(d, k, ilim, eps.d, retval, decpt);
@@ -3204,7 +3204,7 @@ ShorteningBignumConversionPowD(
      * mminus = 5**m5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    mp_init_ull(&b, bw);
     mp_init_set(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
@@ -3388,7 +3388,7 @@ StrictBignumConversionPowD(
      * b = bw * 2**b2 * 5**b5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    mp_init_ull(&b, bw);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3588,7 +3588,7 @@ ShorteningBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
+    mp_init_ull(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3797,7 +3797,7 @@ StrictBignumConversion(
      */
 
     mp_init_multi(&dig, NULL);
-    TclInitBignumFromWideUInt(&b, bw);
+    mp_init_ull(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3944,7 +3944,7 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEST is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -3955,7 +3955,7 @@ StrictBignumConversion(
  *		string if the number is sufficiently small. Again, it is
  *		permissible for TCL_DD_F_FORMAT to return fewer digits for a
  *		number that converts exactly, and changing the argument to
- *		TCL_DD_F_FORMAT|TCL_DD_SHORTEN_FLAG will allow the routine
+ *		TCL_DD_F_FORMAT|TCL_DD_SHORTEST will allow the routine
  *		also to return fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. Strings of
  *		trailing zeroes are suppressed.
@@ -4092,7 +4092,7 @@ TclDoubleDigits(
      * denominator.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	int m2minus = b2;
 	int m2plus;
 	int m5 = b5;
@@ -4439,7 +4439,7 @@ Tcl_InitBignumFromDouble(
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	TclInitBignumFromWideInt(b, w);
+	mp_init_ll(b, w);
 	if (shift < 0) {
 	    mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
@@ -4481,10 +4481,10 @@ TclBignumToDouble(
     bits = mp_count_bits(a);
     if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	errno = ERANGE;
-	if (a->sign == MP_ZPOS) {
-	    return HUGE_VAL;
-	} else {
+	if (mp_isneg(a)) {
 	    return -HUGE_VAL;
+	} else {
+	    return HUGE_VAL;
 	}
     }
     shift = mantBits - bits;
@@ -4514,10 +4514,10 @@ TclBignumToDouble(
 
 	    mp_div_2d(a, -shift, &b, NULL);
 	    if (mp_isodd(&b)) {
-		if (b.sign == MP_ZPOS) {
-		    mp_add_d(&b, 1, &b);
-		} else {
+		if (mp_isneg(&b)) {
 		    mp_sub_d(&b, 1, &b);
+		} else {
+		    mp_add_d(&b, 1, &b);
 		}
 	    }
 	} else {
@@ -4527,10 +4527,10 @@ TclBignumToDouble(
 	     */
 
 	    mp_div_2d(a, -1-shift, &b, NULL);
-	    if (b.sign == MP_ZPOS) {
-		mp_add_d(&b, 1, &b);
-	    } else {
+	    if (mp_isneg(&b)) {
 		mp_sub_d(&b, 1, &b);
+	    } else {
+		mp_add_d(&b, 1, &b);
 	    }
 	    mp_div_2d(&b, 1, &b, NULL);
 	}
@@ -4556,10 +4556,10 @@ TclBignumToDouble(
      * Return the result with the appropriate sign.
      */
 
-    if (a->sign == MP_ZPOS) {
-	return r;
-    } else {
+    if (mp_isneg(a)) {
 	return -r;
+    } else {
+	return r;
     }
 }
 
@@ -4585,7 +4585,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (a->sign != MP_ZPOS) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4642,7 +4642,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (a->sign != MP_ZPOS) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
@@ -4732,7 +4732,7 @@ BignumToBiasedFrExp(
      */
 
     *machexp = bits - mantBits + 2;
-    return ((a->sign == MP_ZPOS) ? r : -r);
+    return (mp_isneg(a) ? -r : r);
 }
 
 /*

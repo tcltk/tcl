@@ -2522,8 +2522,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     Tcl_Interp *interp,
-    Tcl_Obj *pathPtr,
-    int nextCheckpoint)
+    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+				 * normalize */
+    int nextCheckpoint)	        /* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -3012,7 +3013,7 @@ TclpNativeToNormalized(
  *	The nativePath representation.
  *
  * Side effects:
- *	Memory will be allocated. The path may need to be normalized.
+ *	Memory will be allocated. The path might be normalized.
  *
  *---------------------------------------------------------------------------
  */
