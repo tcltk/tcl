@@ -1117,7 +1117,7 @@ TclNativeCreateNativeRep(
     }
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;

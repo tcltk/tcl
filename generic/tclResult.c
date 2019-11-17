@@ -414,14 +414,14 @@ void
 Tcl_SetResult(
     Tcl_Interp *interp,		/* Interpreter with which to associate the
 				 * return value. */
-    register char *result,	/* Value to be returned. If NULL, the result
+    char *result,	/* Value to be returned. If NULL, the result
 				 * is set to an empty string. */
     Tcl_FreeProc *freeProc)	/* Gives information about the string:
 				 * TCL_STATIC, TCL_VOLATILE, or the address of
 				 * a Tcl_FreeProc such as free. */
 {
     Interp *iPtr = (Interp *) interp;
-    register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
+    Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
     if (result == NULL) {
@@ -438,7 +438,7 @@ Tcl_SetResult(
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	memcpy(iPtr->result, result, (unsigned) length+1);
+	memcpy(iPtr->result, result, length+1);
     } else {
 	iPtr->result = (char *) result;
 	iPtr->freeProc = freeProc;
@@ -464,7 +464,6 @@ Tcl_SetResult(
 
     ResetObjResult(iPtr);
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -485,12 +484,9 @@ Tcl_SetResult(
 
 const char *
 Tcl_GetStringResult(
-    register Tcl_Interp *interp)/* Interpreter whose result to return. */
+    Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
     Interp *iPtr = (Interp *) interp;
-#ifdef TCL_NO_DEPRECATED
-    return Tcl_GetString(iPtr->objResultPtr);
-#else
     /*
      * If the string result is empty, move the object result to the string
      * result, then reset the object result.
@@ -501,8 +497,8 @@ Tcl_GetStringResult(
 		TCL_VOLATILE);
     }
     return iPtr->result;
-#endif
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -527,11 +523,11 @@ void
 Tcl_SetObjResult(
     Tcl_Interp *interp,		/* Interpreter with which to associate the
 				 * return object value. */
-    register Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
+    Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
 				 * result is made an empty string object. */
 {
-    register Interp *iPtr = (Interp *) interp;
-    register Tcl_Obj *oldObjResult = iPtr->objResultPtr;
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *oldObjResult = iPtr->objResultPtr;
 
     iPtr->objResultPtr = objPtr;
     Tcl_IncrRefCount(objPtr);	/* since interp result is a reference */
@@ -586,7 +582,7 @@ Tcl_Obj *
 Tcl_GetObjResult(
     Tcl_Interp *interp)		/* Interpreter whose result to return. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 #ifndef TCL_NO_DEPRECATED
     Tcl_Obj *objResultPtr;
     int length;
@@ -836,19 +832,19 @@ SetupAppendBuffer(
 
     totalSpace = newSpace + iPtr->appendUsed;
     if (totalSpace >= iPtr->appendAvl) {
-	char *new;
+	char *newSpace;
 
 	if (totalSpace < 100) {
 	    totalSpace = 200;
 	} else {
 	    totalSpace *= 2;
 	}
-	new = ckalloc(totalSpace);
-	strcpy(new, iPtr->result);
+	newSpace = ckalloc(totalSpace);
+	strcpy(newSpace, iPtr->result);
 	if (iPtr->appendResult != NULL) {
 	    ckfree(iPtr->appendResult);
 	}
-	iPtr->appendResult = new;
+	iPtr->appendResult = newSpace;
 	iPtr->appendAvl = totalSpace;
     } else if (iPtr->result != iPtr->appendResult) {
 	strcpy(iPtr->appendResult, iPtr->result);
@@ -883,9 +879,9 @@ SetupAppendBuffer(
 
 void
 Tcl_FreeResult(
-    register Tcl_Interp *interp)/* Interpreter for which to free result. */
+    Tcl_Interp *interp)/* Interpreter for which to free result. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
 #ifndef TCL_NO_DEPRECATED
     if (iPtr->freeProc != NULL) {
@@ -922,9 +918,9 @@ Tcl_FreeResult(
 
 void
 Tcl_ResetResult(
-    register Tcl_Interp *interp)/* Interpreter for which to clear result. */
+    Tcl_Interp *interp)/* Interpreter for which to clear result. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     ResetObjResult(iPtr);
 #ifndef TCL_NO_DEPRECATED
@@ -987,10 +983,10 @@ Tcl_ResetResult(
 
 static void
 ResetObjResult(
-    register Interp *iPtr)	/* Points to the interpreter whose result
+    Interp *iPtr)	/* Points to the interpreter whose result
 				 * object should be reset. */
 {
-    register Tcl_Obj *objResultPtr = iPtr->objResultPtr;
+    Tcl_Obj *objResultPtr = iPtr->objResultPtr;
 
     if (Tcl_IsShared(objResultPtr)) {
 	TclDecrRefCount(objResultPtr);

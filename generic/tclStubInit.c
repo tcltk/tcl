@@ -10,7 +10,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tommath_private.h"
 
 #ifdef __CYGWIN__
 #   include <wchar.h>
@@ -45,6 +45,7 @@
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
@@ -55,6 +56,19 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
+#undef TclStaticPackage
+#undef Tcl_BackgroundError
+#define TclStaticPackage Tcl_StaticPackage
+#undef Tcl_UniCharToUtfDString
+#undef Tcl_UtfToUniCharDString
+#undef Tcl_UtfToUniChar
+
+#undef TclBN_mp_tc_and
+#undef TclBN_mp_tc_or
+#undef TclBN_mp_tc_xor
+#define TclBN_mp_tc_and TclBN_mp_and
+#define TclBN_mp_tc_or TclBN_mp_or
+#define TclBN_mp_tc_xor TclBN_mp_xor
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -67,7 +81,65 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
+MP_SET_SIGNED(mp_set_ll, mp_set_ull, Tcl_WideInt, Tcl_WideUInt)
+MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
+
+mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
+{
+    mp_set_ul(a, i);
+    return MP_OKAY;
+}
+
+static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
+{
+	mp_set_ul(a, i);
+	return MP_OKAY;
+}
+
+#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
+
+mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_expt_u32(a, b, c);
+}
+
+mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_add_d(a, b, c);
+}
+mp_err	TclBN_mp_cmp_d(const mp_int *a, unsigned int b) {
+   return TclBN_s_mp_cmp_d(a, b);
+}
+mp_err	TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_sub_d(a, b, c);
+}
+
+mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_d(a, b, c, (d ? &d2 : NULL));
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
+	return TclBN_s_mp_init_set(a, b);
+}
+mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_mul_d(a, b, c);
+}
+void TclBN_mp_set(mp_int *a, unsigned int b) {
+	TclBN_s_mp_set(a, b);
+}
+
+
+
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#   define TclBN_mp_expt_d_ex 0
+#   define TclBN_mp_to_unsigned_bin 0
+#   define TclBN_mp_to_unsigned_bin_n 0
+#   define TclBN_mp_toradix_n 0
+#   define TclBN_mp_sqr 0
+#   define TclBN_mp_div_3 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -82,9 +154,6 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinResetInterfaces 0
 #   define TclWinSetInterfaces 0
 #   define TclWinGetPlatformId 0
-#   define TclBNInitBignumFromWideUInt 0
-#   define TclBNInitBignumFromWideInt 0
-#   define TclBNInitBignumFromLong 0
 #   define Tcl_Backslash 0
 #   define Tcl_GetDefaultEncodingDir 0
 #   define Tcl_SetDefaultEncodingDir 0
@@ -92,7 +161,58 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define Tcl_CreateMathFunc 0
 #   define Tcl_GetMathFuncInfo 0
 #   define Tcl_ListMathFuncs 0
+#   define Tcl_SetIntObj 0
+#   define Tcl_SetLongObj 0
+#   define Tcl_NewIntObj 0
+#   define Tcl_NewLongObj 0
+#   define Tcl_DbNewLongObj 0
+#   define Tcl_BackgroundError 0
 #else
+
+mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_3(a, c, &d2);
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+
+int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
+{
+	return mp_expt_u32(a, b, c);
+}
+
+mp_err mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
+{
+   return mp_to_ubin(a, b, INT_MAX, NULL);
+}
+
+mp_err mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
+{
+   size_t n = mp_ubin_size(a);
+   if (*outlen < (unsigned long)n) {
+      return MP_VAL;
+   }
+   *outlen = (unsigned long)n;
+   return mp_to_ubin(a, b, n, NULL);
+}
+
+void bn_reverse(unsigned char *s, int len)
+{
+   if (len > 0) {
+      s_mp_reverse(s, (size_t)len);
+   }
+}
+
+mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
+{
+   if (maxlen < 0) {
+      return MP_VAL;
+   }
+   return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+}
+
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -141,9 +261,6 @@ TclWinGetPlatformId(void)
 #define TclWinResetInterfaces doNothing
 #define TclWinSetInterfaces (void (*) (int)) doNothing
 #endif
-#   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
-#   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -223,6 +340,8 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef Tcl_WinUtfToTChar
 char *
 Tcl_WinUtfToTChar(
     const char *string,
@@ -230,12 +349,9 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    return (char *)Tcl_UtfToUniCharDString(string, len, dsPtr);
+    return (char *)Tcl_UtfToChar16DString(string, len, dsPtr);
 }
-
+#undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
     const char *string,
@@ -243,16 +359,9 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)
 {
     Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len < 0) {
-	len = wcslen((wchar_t *)string);
-    } else {
-	len /= 2;
-    }
-    return Tcl_UniCharToUtfDString((Tcl_UniChar *)string, len, dsPtr);
+    return Tcl_Char16ToUtfDString((const unsigned short *)string, len >> 1, dsPtr);
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #if defined(TCL_WIDE_INT_IS_LONG)
 /* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
@@ -353,6 +462,8 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
+#   undef Tcl_GetStringResult
+#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -370,6 +481,7 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpReaddir 0
 #   define TclSetStartupScript 0
 #   define TclGetStartupScript 0
+#   define TclGetIntForIndex 0
 #   define TclCreateNamespace 0
 #   define TclDeleteNamespace 0
 #   define TclAppendExportList 0
@@ -396,13 +508,30 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   define Tcl_SetExitProc 0
+#   define Tcl_SetPanicProc 0
+#   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
+#   undef Tcl_StringMatch
+#   define Tcl_StringMatch 0
+#   define TclBN_reverse 0
+#   define TclBN_s_mp_mul_digs_fast 0
+#   define TclBN_s_mp_sqr_fast 0
+#   define TclBN_mp_karatsuba_mul 0
+#   define TclBN_mp_karatsuba_sqr 0
+#   define TclBN_mp_toom_mul 0
+#   define TclBN_mp_toom_sqr 0
+#   define TclBN_s_mp_add 0
+#   define TclBN_s_mp_mul_digs 0
+#   define TclBN_s_mp_sqr 0
+#   define TclBN_s_mp_sub 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
 #   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
+#   define TclGetIntForIndex Tcl_GetIntForIndex
 #   define TclCreateNamespace Tcl_CreateNamespace
 #   define TclDeleteNamespace Tcl_DeleteNamespace
 #   define TclAppendExportList Tcl_AppendExportList
@@ -434,6 +563,11 @@ tellOld(
     return Tcl_Tell(chan);
 }
 #endif /* !TCL_NO_DEPRECATED */
+
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#define Tcl_WinUtfToTChar 0
+#define Tcl_WinTCharToUtf 0
+#endif
 
 /*
  * WARNING: The contents of this file is automatically generated by the
@@ -715,6 +849,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
+    TclStaticPackage, /* 257 */
+    TclpCreateTemporaryDirectory, /* 258 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -856,7 +992,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     TclBN_mp_div_3, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_d, /* 19 */
+    TclBN_mp_expt_u32, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -884,12 +1020,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_to_unsigned_bin, /* 44 */
     TclBN_mp_to_unsigned_bin_n, /* 45 */
     TclBN_mp_toradix_n, /* 46 */
-    TclBN_mp_unsigned_bin_size, /* 47 */
+    TclBN_mp_ubin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     TclBN_reverse, /* 50 */
-    TclBN_fast_s_mp_mul_digs, /* 51 */
-    TclBN_fast_s_mp_sqr, /* 52 */
+    TclBN_s_mp_mul_digs_fast, /* 51 */
+    TclBN_s_mp_sqr_fast, /* 52 */
     TclBN_mp_karatsuba_mul, /* 53 */
     TclBN_mp_karatsuba_sqr, /* 54 */
     TclBN_mp_toom_mul, /* 55 */
@@ -898,18 +1034,26 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_mul_digs, /* 58 */
     TclBN_s_mp_sqr, /* 59 */
     TclBN_s_mp_sub, /* 60 */
-    TclBN_mp_init_set_int, /* 61 */
-    TclBN_mp_set_int, /* 62 */
+    TclBN_mp_init_ul, /* 61 */
+    TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
     TclBNInitBignumFromLong, /* 64 */
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
-    TclBN_mp_set_long_long, /* 68 */
-    TclBN_mp_get_long_long, /* 69 */
-    TclBN_mp_set_long, /* 70 */
-    TclBN_mp_get_long, /* 71 */
-    TclBN_mp_get_int, /* 72 */
+    TclBN_mp_set_ull, /* 68 */
+    TclBN_mp_get_mag_ull, /* 69 */
+    TclBN_mp_set_ll, /* 70 */
+    TclBN_mp_get_mag_ul, /* 71 */
+    TclBN_mp_set_l, /* 72 */
+    TclBN_mp_tc_and, /* 73 */
+    TclBN_mp_tc_or, /* 74 */
+    TclBN_mp_tc_xor, /* 75 */
+    TclBN_mp_signed_rsh, /* 76 */
+    0, /* 77 */
+    TclBN_mp_to_ubin, /* 78 */
+    0, /* 79 */
+    TclBN_mp_to_radix, /* 80 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -1281,7 +1425,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToChar16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1299,8 +1443,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_UniCharToUtfDString, /* 354 */
-    Tcl_UtfToUniCharDString, /* 355 */
+    Tcl_Char16ToUtfDString, /* 354 */
+    Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     Tcl_EvalTokens, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1581,7 +1725,20 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
-    Tcl_OpenTcpClientEx, /* 636 */
+    Tcl_FreeIntRep, /* 636 */
+    Tcl_InitStringRep, /* 637 */
+    Tcl_FetchIntRep, /* 638 */
+    Tcl_StoreIntRep, /* 639 */
+    Tcl_HasStringRep, /* 640 */
+    Tcl_IncrRefCount, /* 641 */
+    Tcl_DecrRefCount, /* 642 */
+    Tcl_IsShared, /* 643 */
+    Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharToUtfDString, /* 647 */
+    Tcl_UtfToUniCharDString, /* 648 */
+    Tcl_OpenTcpClientEx, /* 649 */
 };
 
 /* !END!: Do not edit above this line. */

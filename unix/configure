@@ -3333,8 +3333,8 @@ esac
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
-#	- stdlib.h doesn't define strtol, strtoul, or
-#	  strtod insome versions of SunOS
+#	- stdlib.h doesn't define strtol or strtoul in some versions
+#	  of SunOS
 #	- some versions of string.h don't declare procedures such
 #	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure
@@ -3825,19 +3825,6 @@ else
 fi
 rm -f conftest*
 
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "strtod" >/dev/null 2>&1; then :
-
-else
-  tcl_ok=0
-fi
-rm -f conftest*
-
     if test $tcl_ok = 0; then
 
 $as_echo "#define NO_STDLIB_H 1" >>confdefs.h
@@ -3903,6 +3890,14 @@ if test "x$ac_cv_header_dlfcn_h" = xyes; then :
 else
 
 $as_echo "#define NO_DLFCN_H 1" >>confdefs.h
+
+fi
+
+
+    ac_fn_c_check_header_mongrel "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdbool_h" = xyes; then :
+
+$as_echo "#define HAVE_STDBOOL_H 1" >>confdefs.h
 
 fi
 
@@ -4870,6 +4865,9 @@ $as_echo "$as_me: WARNING: can't find uname command" >&2;}
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi
+		if test "`uname -s`" = "NetBSD" -a -f /etc/debian_version ; then
+		    tcl_cv_sys_version=NetBSD-Debian
+		fi
 	    fi
 	fi
 
@@ -5660,7 +5658,7 @@ fi
 fi
 
 	    # The combo of gcc + glibc has a bug related to inlining of
-	    # functions like strtod(). The -fno-builtin flag should address
+	    # functions like strtol()/strtoul(). The -fno-builtin flag should address
 	    # this problem but it does not work. The -fno-inline flag is kind
 	    # of overkill but it works. Disable inlining only when one of the
 	    # files in compat/*.c is being linked in.
@@ -5731,7 +5729,7 @@ fi
 	    CFLAGS="$CFLAGS -pthread"
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
-	FreeBSD-*)
+	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
@@ -5902,12 +5900,6 @@ fi
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    if test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int($2)}'`" -lt 4 -a \
-		"`echo "${CPPFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int($2)}'`" -lt 4; then :
-
-		LDFLAGS="$LDFLAGS -prebind"
-fi
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ld accepts -search_paths_first flag" >&5
 $as_echo_n "checking if ld accepts -search_paths_first flag... " >&6; }
@@ -6143,13 +6135,13 @@ fi
 	    # below.
 	    if test "$GCC" = yes; then :
 
-	    	SHLIB_CFLAGS="-fPIC -melf"
-	    	LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
+		SHLIB_CFLAGS="-fPIC -melf"
+		LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
 
 else
 
-	    	SHLIB_CFLAGS="-Kpic -belf"
-	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
+		SHLIB_CFLAGS="-Kpic -belf"
+		LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
 
 fi
 	    SHLIB_LD="ld -G"
@@ -6472,7 +6464,7 @@ fi
 	    BSD/OS*) ;;
 	    CYGWIN_*) ;;
 	    IRIX*) ;;
-	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -6901,6 +6893,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
     if test "${tcl_cv_type_64bit}" = none ; then
+
+$as_echo "#define MP_32BIT 1" >>confdefs.h
+
 
 $as_echo "#define TCL_WIDE_INT_IS_LONG 1" >>confdefs.h
 
@@ -7945,7 +7940,30 @@ $as_echo "#define HAVE_MTSAFE_GETHOSTBYADDR 1" >>confdefs.h
 
 
 else
-    ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
+
+    # Avoids picking hidden internal symbol from libc
+    ac_fn_c_check_decl "$LINENO" "gethostbyname_r" "ac_cv_have_decl_gethostbyname_r" "#include <netdb.h>
+"
+if test "x$ac_cv_have_decl_gethostbyname_r" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_GETHOSTBYNAME_R $ac_have_decl
+_ACEOF
+if test $ac_have_decl = 1; then :
+
+    tcl_cv_api_gethostbyname_r=yes
+else
+  tcl_cv_api_gethostbyname_r=no
+fi
+
+
+
+    if test "$tcl_cv_api_gethostbyname_r" = yes; then
+	ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname_r with 6 args" >&5
@@ -8082,7 +8100,32 @@ $as_echo "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
 
 fi
 
-    ac_fn_c_check_func "$LINENO" "gethostbyaddr_r" "ac_cv_func_gethostbyaddr_r"
+    fi
+
+
+    # Avoids picking hidden internal symbol from libc
+    ac_fn_c_check_decl "$LINENO" "gethostbyaddr_r" "ac_cv_have_decl_gethostbyaddr_r" "#include <netdb.h>
+"
+if test "x$ac_cv_have_decl_gethostbyaddr_r" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_GETHOSTBYADDR_R $ac_have_decl
+_ACEOF
+if test $ac_have_decl = 1; then :
+
+    tcl_cv_api_gethostbyaddr_r=yes
+else
+  tcl_cv_api_gethostbyaddr_r=no
+fi
+
+
+
+    if test "$tcl_cv_api_gethostbyaddr_r" = yes; then
+	ac_fn_c_check_func "$LINENO" "gethostbyaddr_r" "ac_cv_func_gethostbyaddr_r"
 if test "x$ac_cv_func_gethostbyaddr_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr_r with 7 args" >&5
@@ -8183,6 +8226,8 @@ $as_echo "#define HAVE_GETHOSTBYADDR_R 1" >>confdefs.h
     fi
 
 fi
+
+    fi
 
 fi
 
@@ -8839,140 +8884,6 @@ esac
 
 
 #--------------------------------------------------------------------
-#	Check for the strtod function.  This is tricky because in some
-#	versions of Linux strtod mis-parses strings starting with "+".
-#--------------------------------------------------------------------
-
-
-    ac_fn_c_check_func "$LINENO" "strtod" "ac_cv_func_strtod"
-if test "x$ac_cv_func_strtod" = xyes; then :
-  tcl_ok=1
-else
-  tcl_ok=0
-fi
-
-    if test "$tcl_ok" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking proper strtod implementation" >&5
-$as_echo_n "checking proper strtod implementation... " >&6; }
-if ${tcl_cv_strtod_unbroken+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  tcl_cv_strtod_unbroken=unknown
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int main() {
-    extern double strtod();
-    char *term, *string = " +69";
-    exit(strtod(string,&term) != 69 || term != string+4);
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  tcl_cv_strtod_unbroken=ok
-else
-  tcl_cv_strtod_unbroken=broken
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_strtod_unbroken" >&5
-$as_echo "$tcl_cv_strtod_unbroken" >&6; }
-	if test "$tcl_cv_strtod_unbroken" = "ok"; then
-	    tcl_ok=1
-	else
-	    tcl_ok=0
-	fi
-    fi
-    if test "$tcl_ok" = 0; then
-	case " $LIBOBJS " in
-  *" strtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS strtod.$ac_objext"
- ;;
-esac
-
-	USE_COMPAT=1
-    fi
-
-
-#--------------------------------------------------------------------
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" that corrects the error.
-#--------------------------------------------------------------------
-
-
-    ac_fn_c_check_func "$LINENO" "strtod" "ac_cv_func_strtod"
-if test "x$ac_cv_func_strtod" = xyes; then :
-  tcl_strtod=1
-else
-  tcl_strtod=0
-fi
-
-    if test "$tcl_strtod" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Solaris2.4/Tru64 strtod bugs" >&5
-$as_echo_n "checking for Solaris2.4/Tru64 strtod bugs... " >&6; }
-if ${tcl_cv_strtod_buggy+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    if test "$cross_compiling" = yes; then :
-  tcl_cv_strtod_buggy=buggy
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-		extern double strtod();
-		int main() {
-		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		    char *term;
-		    double value;
-		    value = strtod(infString, &term);
-		    if ((term != infString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(nanString, &term);
-		    if ((term != nanString) && (term[-1] == 0)) {
-			exit(1);
-		    }
-		    value = strtod(spaceString, &term);
-		    if (term == (spaceString+1)) {
-			exit(1);
-		    }
-		    exit(0);
-		}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  tcl_cv_strtod_buggy=ok
-else
-  tcl_cv_strtod_buggy=buggy
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_strtod_buggy" >&5
-$as_echo "$tcl_cv_strtod_buggy" >&6; }
-	if test "$tcl_cv_strtod_buggy" = buggy; then
-	    case " $LIBOBJS " in
-  *" fixstrtod.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS fixstrtod.$ac_objext"
- ;;
-esac
-
-	    USE_COMPAT=1
-
-$as_echo "#define strtod fixstrtod" >>confdefs.h
-
-	fi
-    fi
-
-
-#--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
 #	they don't exist.
 #--------------------------------------------------------------------
@@ -9595,10 +9506,10 @@ $as_echo "$langinfo_ok" >&6; }
 
 
 #--------------------------------------------------------------------
-# Check for support of chflags and mkstemps functions
+# Check for support of cfmakeraw, chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-for ac_func in chflags mkstemps
+for ac_func in cfmakeraw chflags mkstemps
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -9929,6 +9840,9 @@ $as_echo "$as_me: WARNING: can't find uname command" >&2;}
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi
+		if test "`uname -s`" = "NetBSD" -a -f /etc/debian_version ; then
+		    tcl_cv_sys_version=NetBSD-Debian
+		fi
 	    fi
 	fi
 
@@ -9976,7 +9890,7 @@ $as_echo "$tcl_ok" >&6; }
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
-#	be overriden on the configure command line either way.
+#	be overridden on the configure command line either way.
 #------------------------------------------------------------------------
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for timezone data" >&5
@@ -10232,20 +10146,20 @@ else
 fi
 
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip "
+        ZIP_PROG="$ac_cv_path_zip"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 $as_echo "$ZIP_PROG" >&6; }
         ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
 $as_echo "Found INFO Zip in environment" >&6; }
         # Use standard arguments for zip
     else
         # It is not an error if an installed version of Zip can't be located.
         # We can use the locally distributed minizip instead
-        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
         ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
 $as_echo "No zip found on PATH. Building minizip" >&6; }
@@ -10353,7 +10267,7 @@ eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
-TCL_LIBRARY='$(prefix)/lib/tcl$(VERSION)'
+test -z "$TCL_LIBRARY" && TCL_LIBRARY='$(prefix)/lib/tcl$(VERSION)'
 PRIVATE_INCLUDE_DIR='$(includedir)'
 HTML_DIR='$(DISTDIR)/html'
 
@@ -10478,13 +10392,13 @@ VERSION=${TCL_VERSION}
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /System/Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl  ~/Library/Frameworks /Library/Frameworks"
     test -z "$TCL_MODULE_PATH"  && \
-	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl /System/Library/Tcl"
+	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------

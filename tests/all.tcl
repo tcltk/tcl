@@ -12,7 +12,7 @@
 
 package prefer latest
 package require Tcl 8.5-
-package require tcltest 2.2
+package require tcltest 2.5
 namespace import ::tcltest::*
 
 configure {*}$argv -testdir [file dirname [file dirname [file normalize [
@@ -22,5 +22,12 @@ if {[singleProcess]} {
     interp debug {} -frame 1
 }
 
-runAllTests
-proc exit args {}
+set ErrorOnFailures [info exists env(ERROR_ON_FAILURES)]
+unset -nocomplain env(ERROR_ON_FAILURES)
+if {[runAllTests] && $ErrorOnFailures} {exit 1}
+# if calling direct only (avoid rewrite exit if inlined or interactive):
+if { [info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]
+  && !([info exists ::tcl_interactive] && $::tcl_interactive)
+} {
+    proc exit args {}
+}

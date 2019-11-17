@@ -872,7 +872,7 @@ TclGetAndDetachPids(
     pipePtr = Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewWideIntObj(
 		PTR2INT(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
@@ -1268,7 +1268,7 @@ Tcl_PidObjCmd(
     }
 
     if (objc == 1) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) getpid()));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(getpid()));
     } else {
 	/*
 	 * Get the channel and make sure that it refers to a pipe.
@@ -1290,7 +1290,7 @@ Tcl_PidObjCmd(
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

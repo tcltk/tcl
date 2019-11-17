@@ -15,7 +15,6 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
-#include <locale.h>
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -169,7 +168,7 @@ Tcl_CaseObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register int i;
+    int i;
     int body, result, caseObjc;
     const char *stringPtr, *arg;
     Tcl_Obj *const *caseObjv;
@@ -382,7 +381,7 @@ CatchObjCmdCallback(
     }
 
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
@@ -872,7 +871,7 @@ TclNREvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -932,7 +931,7 @@ Tcl_ExitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int value;
+    Tcl_WideInt value;
 
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
@@ -941,10 +940,10 @@ Tcl_ExitObjCmd(
 
     if (objc == 1) {
 	value = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+    } else if (TclGetWideBitsFromObj(interp, objv[1], &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_Exit(value);
+    Tcl_Exit((int)value);
     /*NOTREACHED*/
     return TCL_OK;		/* Better not ever reach this! */
 }
@@ -1093,6 +1092,7 @@ TclInitFileCmd(
 	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
 	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
 	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"tempdir",	TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
 	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
@@ -1138,7 +1138,7 @@ FileAttrAccessTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the access time not available */
-    if (buf.st_atime == 0) {
+    if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get access time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1159,7 +1159,7 @@ FileAttrAccessTimeCmd(
 	}
 
 	tval.actime = newTime;
-	tval.modtime = buf.st_mtime;
+	tval.modtime = Tcl_GetModificationTimeFromStat(&buf);
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1179,7 +1179,7 @@ FileAttrAccessTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -1220,7 +1220,7 @@ FileAttrModifyTimeCmd(
     }
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the modification time not available */
-    if (buf.st_mtime == 0) {
+    if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                              "could not get modification time for file \"%s\"",
                              TclGetString(objv[1])));
@@ -1239,7 +1239,7 @@ FileAttrModifyTimeCmd(
 	    return TCL_ERROR;
 	}
 
-	tval.actime = buf.st_atime;
+	tval.actime = Tcl_GetAccessTimeFromStat(&buf);
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
@@ -1259,7 +1259,7 @@ FileAttrModifyTimeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(&buf)));
     return TCL_OK;
 }
 
@@ -1882,7 +1882,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
     return TCL_OK;
 }
 
@@ -2253,7 +2253,7 @@ StoreStatData(
 				 * store in varName. */
 {
     Tcl_Obj *field, *value;
-    register unsigned short mode;
+    unsigned short mode;
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
@@ -2278,23 +2278,23 @@ StoreStatData(
      * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
-    STORE_ARY("dev",	Tcl_NewLongObj((long)statPtr->st_dev));
+    STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
     STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-    STORE_ARY("nlink",	Tcl_NewLongObj((long)statPtr->st_nlink));
-    STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
-    STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
+    STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+    STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
+    STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
     STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ARY("blksize", Tcl_NewLongObj((long)statPtr->st_blksize));
+    STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-    STORE_ARY("atime",	Tcl_NewLongObj((long)statPtr->st_atime));
-    STORE_ARY("mtime",	Tcl_NewLongObj((long)statPtr->st_mtime));
-    STORE_ARY("ctime",	Tcl_NewLongObj((long)statPtr->st_ctime));
+    STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
     mode = (unsigned short) statPtr->st_mode;
-    STORE_ARY("mode",	Tcl_NewIntObj(mode));
+    STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
 
@@ -2630,7 +2630,7 @@ EachloopCmd(
     Tcl_Obj *const objv[])
 {
     int numLists = (objc-2) / 2;
-    register struct ForeachState *statePtr;
+    struct ForeachState *statePtr;
     int i, j, result;
 
     if (objc < 4 || (objc%2 != 0)) {
@@ -2755,7 +2755,7 @@ ForeachLoopStep(
     Tcl_Interp *interp,
     int result)
 {
-    register struct ForeachState *statePtr = data[0];
+    struct ForeachState *statePtr = data[0];
 
     /*
      * Process the result code from this run of the [foreach] body. Note that

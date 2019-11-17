@@ -3,7 +3,9 @@
 *.dylib
 *.exe
 *.exp
+*.la
 *.lib
+*.lo
 *.o
 *.obj
 *.pdb
@@ -19,14 +21,18 @@
 */tcltest*
 */versions.vc
 */version.vc
+*/libtcl.vfs
+*/libtcl_*.zip
 html
 libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build
 libtommath/tommath.src
+libtommath/*.log
 libtommath/*.pdf
-libtommath/*.pl
+libtommath/gen.pl
 libtommath/*.sh
+libtommath/doc/*
 libtommath/tombc/*
 libtommath/pre_gen/*
 libtommath/pics/*
@@ -43,6 +49,7 @@ unix/tclIndex
 unix/pkgs/*
 win/Debug*
 win/Release*
+win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj

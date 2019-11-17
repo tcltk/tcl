@@ -20,6 +20,7 @@ namespace eval http {
     if {![info exists http]} {
 	array set http {
 	    -accept */*
+	    -cookiejar {}
 	    -pipeline 1
 	    -postfresh 0
 	    -proxyhost {}
@@ -125,6 +126,18 @@ namespace eval http {
     variable defaultKeepalive
     if {![info exists defaultKeepalive]} {
 	set defaultKeepalive 0
+    }
+
+    # Regular expression used to parse cookies
+    variable CookieRE {(?x)                            # EXPANDED SYNTAX
+	\s*                                            # Ignore leading spaces
+	([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+) # Match the name
+	=                                              # LITERAL: Equal sign
+	([!\u0023-+\u002D-:<-\u005B\u005D-~]*)         # Match the value
+	(?:
+	 \s* ; \s*                                     # LITERAL: semicolon
+	 ([^\u0000]+)                                  # Match the options
+	)?
     }
 
     namespace export geturl config reset wait formatQuery quoteString
@@ -892,8 +905,12 @@ proc http::geturl {url args} {
 	    }
 	    return -code error "Illegal characters in URL path"
 	}
+	if {![regexp {^[^?#]+} $srvurl state(path)]} {
+	    set state(path) /
+	}
     } else {
 	set srvurl /
+	set state(path) /
     }
     if {$proto eq ""} {
 	set proto http
@@ -1354,12 +1371,16 @@ proc http::Connected {token proto phost srvurl} {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
 	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: [dict get $state(-headers) Host]"
+	    set hostHdr [dict get $state(-headers) Host]
+	    regexp {^[^:]+} $hostHdr state(host)
+	    puts $sock "Host: $hostHdr"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
+	    set state(host) $host
 	    puts $sock "Host: $host"
 	} else {
+	    set state(host) $host
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
@@ -1419,6 +1440,22 @@ proc http::Connected {token proto phost srvurl} {
 	    set state(querylength) \
 		    [expr {[tell $state(-querychannel)] - $start}]
 	    seek $state(-querychannel) $start
+	}
+
+	# Note that we don't do Cookie2; that's much nastier and not normally
+	# observed in practice either. It also doesn't fix the multitude of
+	# bugs in the basic cookie spec.
+	if {$http(-cookiejar) ne ""} {
+	    set cookies ""
+	    set separator ""
+	    foreach {key value} [{*}$http(-cookiejar) \
+		    getCookies $proto $host $state(path)] {
+		append cookies $separator $key = $value
+		set separator "; "
+	    }
+	    if {$cookies ne ""} {
+		puts $sock "Cookie: $cookies"
+	    }
 	}
 
 	# Flush the request header and set up the fileevent that will either
@@ -2693,6 +2730,11 @@ proc http::Event {sock token} {
 			    set state(connection) \
 				    [string trim [string tolower $value]]
 			}
+			set-cookie {
+			    if {$http(-cookiejar) ne ""} {
+				ParseCookie $token [string trim $value]
+			    }
+			}
 		    }
 		    lappend state(meta) $key [string trim $value]
 		}
@@ -2988,6 +3030,83 @@ proc http::IsBinaryContentType {type} {
 	return false
     }
     return true
+}
+
+proc http::ParseCookie {token value} {
+    variable http
+    variable CookieRE
+    variable $token
+    upvar 0 $token state
+
+    if {![regexp $CookieRE $value -> cookiename cookieval opts]} {
+	# Bad cookie! No biscuit!
+	return
+    }
+
+    # Convert the options into a list before feeding into the cookie store;
+    # ugly, but quite easy.
+    set realopts {hostonly 1 path / secure 0 httponly 0}
+    dict set realopts origin $state(host)
+    dict set realopts domain $state(host)
+    foreach option [split [regsub -all {;\s+} $opts \u0000] \u0000] {
+	regexp {^(.*?)(?:=(.*))?$} $option -> optname optval
+	switch -exact -- [string tolower $optname] {
+	    expires {
+		if {[catch {
+		    #Sun, 06 Nov 1994 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%a, %d %b %Y %T %Z"]
+		}] && [catch {
+		    # Google does this one
+		    #Mon, 01-Jan-1990 00:00:00 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%a, %d-%b-%Y %T %Z"]
+		}] && [catch {
+		    # This is in the RFC, but it is also in the original
+		    # Netscape cookie spec, now online at:
+		    # <URL:http://curl.haxx.se/rfc/cookie_spec.html>
+		    #Sunday, 06-Nov-94 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%A, %d-%b-%y %T %Z"]
+		}]} {catch {
+		    #Sun Nov  6 08:49:37 1994
+		    dict set realopts expires \
+			[clock scan $optval -gmt 1 -format "%a %b %d %T %Y"]
+		}}
+	    }
+	    max-age {
+		# Normalize
+		if {[string is integer -strict $optval]} {
+		    dict set realopts expires [expr {[clock seconds] + $optval}]
+		}
+	    }
+	    domain {
+		# From the domain-matches definition [RFC 2109, section 2]:
+		#   Host A's name domain-matches host B's if [...]
+		#	A is a FQDN string and has the form NB, where N is a
+		#	non-empty name string, B has the form .B', and B' is a
+		#	FQDN string. (So, x.y.com domain-matches .y.com but
+		#	not y.com.)
+		if {$optval ne "" && ![string match *. $optval]} {
+		    dict set realopts domain [string trimleft $optval "."]
+		    dict set realopts hostonly [expr {
+			! [string match .* $optval]
+		    }]
+		}
+	    }
+	    path {
+		if {[string match /* $optval]} {
+		    dict set realopts path $optval
+		}
+	    }
+	    secure - httponly {
+		dict set realopts [string tolower $optname] 1
+	    }
+	}
+    }
+    dict set realopts key $cookiename
+    dict set realopts value $cookieval
+    {*}$http(-cookiejar) storeCookie $realopts
 }
 
 # http::getTextLine --

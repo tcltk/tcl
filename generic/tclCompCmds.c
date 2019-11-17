@@ -1177,6 +1177,38 @@ TclCompileDictGetCmd(
 }
 
 int
+TclCompileDictGetWithDefaultCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int i;
+    DefineLineInformation;	/* TIP #280 */
+
+    /*
+     * There must be at least three arguments after the command.
+     */
+
+    /* TODO: Consider support for compiling expanded args. */
+    if (parsePtr->numWords < 4) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt4(INST_DICT_GET_DEF, parsePtr->numWords-3, envPtr);
+    TclAdjustStackDepth(-2, envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileDictExistsCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -2880,9 +2912,9 @@ DupForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
-    register ForeachInfo *srcPtr = clientData;
+    ForeachInfo *srcPtr = clientData;
     ForeachInfo *dupPtr;
-    register ForeachVarList *srcListPtr, *dupListPtr;
+    ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = ckalloc(sizeof(ForeachInfo)
@@ -2929,10 +2961,10 @@ FreeForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *listPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *listPtr;
     int numLists = infoPtr->numLists;
-    register int i;
+    int i;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -2965,8 +2997,8 @@ PrintForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendToObj(appendObj, "data=[", -1);
@@ -3005,8 +3037,8 @@ PrintNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
@@ -3035,8 +3067,8 @@ DisassembleForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3082,8 +3114,8 @@ DisassembleNewForeachInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
+    ForeachInfo *infoPtr = clientData;
+    ForeachVarList *varsPtr;
     int i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
@@ -3142,7 +3174,7 @@ TclCompileFormatCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
-    char *bytes, *start;
+    const char *bytes, *start;
     int i, j, len;
 
     /*
@@ -3269,7 +3301,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		char *b = TclGetStringFromObj(tmpObj, &len);
+		const char *b = TclGetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3407,11 +3439,11 @@ TclPushVarName(
     int *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
-    register const char *p;
-    const char *name, *elName;
-    register int i, n;
+    const char *p;
+    const char *last, *name, *elName;
+    int n;
     Tcl_Token *elemTokenPtr = NULL;
-    int nameChars, elNameChars, simpleVarName, localIndex;
+    int nameLen, elNameLen, simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 
     /*
@@ -3424,7 +3456,7 @@ TclPushVarName(
 
     simpleVarName = 0;
     name = elName = NULL;
-    nameChars = elNameChars = 0;
+    nameLen = elNameLen = 0;
     localIndex = -1;
 
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -3436,22 +3468,25 @@ TclPushVarName(
 	simpleVarName = 1;
 
 	name = varTokenPtr[1].start;
-	nameChars = varTokenPtr[1].size;
-	if (name[nameChars-1] == ')') {
+	nameLen = varTokenPtr[1].size;
+	if (name[nameLen-1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */
+	    last = Tcl_UtfPrev(name + nameLen, name);
 
-	    for (i=0,p=name ; i<nameChars ; i++,p++) {
-		if (*p == '(') {
-		    elName = p + 1;
-		    elNameChars = nameChars - i - 2;
-		    nameChars = i;
-		    break;
+	    if (*last == ')') {
+		for (p = name;  p < last;  p = Tcl_UtfNext(p)) {
+		    if (*p == '(') {
+			elName = p + 1;
+			elNameLen = last - elName;
+			nameLen = p - name;
+			break;
+		    }
 		}
 	    }
 
-	    if (!(flags & TCL_NO_ELEMENT) && (elName != NULL) && elNameChars) {
+	    if (!(flags & TCL_NO_ELEMENT) && elNameLen) {
 		/*
 		 * An array element, the element name is a simple string:
 		 * assemble the corresponding token.
@@ -3461,7 +3496,7 @@ TclPushVarName(
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
-		elemTokenPtr->size = elNameChars;
+		elemTokenPtr->size = elNameLen;
 		elemTokenPtr->numComponents = 0;
 		elemTokenCount = 1;
 	    }
@@ -3469,21 +3504,22 @@ TclPushVarName(
     } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
+	    && (*((p = varTokenPtr[n].start + varTokenPtr[n].size)-1) == ')')
+	    && (*Tcl_UtfPrev(p, varTokenPtr[n].start) == ')')) {
 	/*
 	 * Check for parentheses inside first token.
 	 */
 
 	simpleVarName = 0;
-	for (i = 0, p = varTokenPtr[1].start;
-		i < varTokenPtr[1].size; i++, p++) {
+	for (p = varTokenPtr[1].start,
+	     last = p + varTokenPtr[1].size;  p < last;  p = Tcl_UtfNext(p)) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
 	    }
 	}
 	if (simpleVarName) {
-	    int remainingChars;
+	    int remainingLen;
 
 	    /*
 	     * Check the last token: if it is just ')', do not count it.
@@ -3499,13 +3535,13 @@ TclPushVarName(
 	    }
 
 	    name = varTokenPtr[1].start;
-	    nameChars = p - varTokenPtr[1].start;
+	    nameLen = p - varTokenPtr[1].start;
 	    elName = p + 1;
-	    remainingChars = (varTokenPtr[2].start - p) - 1;
-	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
+	    remainingLen = (varTokenPtr[2].start - p) - 1;
+	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingChars) {
+	      if (remainingLen) {
 		/*
 		 * Make a first token with the extra characters in the first
 		 * token.
@@ -3515,7 +3551,7 @@ TclPushVarName(
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingChars;
+		elemTokenPtr->size = remainingLen;
 		elemTokenPtr->numComponents = 0;
 		elemTokenCount = n;
 
@@ -3544,8 +3580,8 @@ TclPushVarName(
 
 	int hasNsQualifiers = 0;
 
-	for (i = 0, p = name;  i < nameChars;  i++, p++) {
-	    if ((*p == ':') && ((i+1) < nameChars) && (*(p+1) == ':')) {
+	for (p = name, last = p + nameLen-1;  p < last;  p = Tcl_UtfNext(p)) {
+	    if ((*p == ':') && (*(p+1) == ':')) {
 		hasNsQualifiers = 1;
 		break;
 	    }
@@ -3558,7 +3594,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
 		/*
 		 * We'll push the name.
@@ -3568,7 +3604,7 @@ TclPushVarName(
 	    }
 	}
 	if (interp && localIndex < 0) {
-	    PushLiteral(envPtr, name, nameChars);
+	    PushLiteral(envPtr, name, nameLen);
 	}
 
 	/*
@@ -3577,7 +3613,7 @@ TclPushVarName(
 	 */
 
 	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
-	    if (elNameChars) {
+	    if (elNameLen) {
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {

@@ -1188,7 +1188,7 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = TclStackAlloc(slaveInterp, sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1826,13 +1826,13 @@ AliasNRCmd(
     cmdc = prefc + objc - 1;
 
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = listPtr->internalRep.twoPtrValue.ptr1;
+    listRep = ListRepPtr(listPtr);
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
 
     prefv = &aliasPtr->objPtr;
-    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
-    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+    memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
+    memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
     for (i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
@@ -1880,8 +1880,8 @@ TclAliasObjCmd(
 	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
-    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
-    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+    memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
+    memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
     Tcl_ResetResult(targetInterp);
 
@@ -1970,8 +1970,8 @@ TclLocalAliasObjCmd(
 	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
-    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
-    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+    memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
+    memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
     for (i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
@@ -3007,7 +3007,7 @@ SlaveRecursionLimit(
 	return TCL_OK;
     } else {
 	limit = Tcl_SetRecursionLimit(slaveInterp, 0);
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(limit));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limit));
 	return TCL_OK;
     }
 }
@@ -3291,7 +3291,7 @@ Tcl_MakeSafe(
      * No env array in a safe slave.
      */
 
-    Tcl_UnsetVar(interp, "env", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove unsafe parts of tcl_platform
@@ -3307,9 +3307,9 @@ Tcl_MakeSafe(
      * nameofexecutable])
      */
 
-    Tcl_UnsetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove the standard channels from the interpreter; safe interpreters do
@@ -3362,7 +3362,7 @@ int
 Tcl_LimitExceeded(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     return iPtr->limit.exceeded != 0;
 }
@@ -3393,10 +3393,10 @@ int
 Tcl_LimitReady(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     if (iPtr->limit.active != 0) {
-	register int ticker = ++iPtr->limit.granularityTicker;
+	int ticker = ++iPtr->limit.granularityTicker;
 
 	if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
 		((iPtr->limit.cmdGranularity == 1) ||
@@ -3440,7 +3440,7 @@ Tcl_LimitCheck(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
-    register int ticker = iPtr->limit.granularityTicker;
+    int ticker = iPtr->limit.granularityTicker;
 
     if (Tcl_InterpDeleted(interp)) {
 	return TCL_OK;
@@ -4516,12 +4516,12 @@ SlaveCommandLimitCmd(
 		    Tcl_NewStringObj(options[0], -1), empty);
 	}
 	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(slaveInterp,
+		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(slaveInterp,
 		TCL_LIMIT_COMMANDS)));
 
 	if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_COMMANDS)) {
 	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewIntObj(Tcl_LimitGetCommands(slaveInterp)));
+		    Tcl_NewWideIntObj(Tcl_LimitGetCommands(slaveInterp)));
 	} else {
 	    Tcl_Obj *empty;
 
@@ -4549,13 +4549,13 @@ SlaveCommandLimitCmd(
 	    }
 	    break;
 	case OPT_GRAN:
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		    Tcl_LimitGetGranularity(slaveInterp, TCL_LIMIT_COMMANDS)));
 	    break;
 	case OPT_VAL:
 	    if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_COMMANDS)) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewIntObj(Tcl_LimitGetCommands(slaveInterp)));
+			Tcl_NewWideIntObj(Tcl_LimitGetCommands(slaveInterp)));
 	    }
 	    break;
 	}
@@ -4703,7 +4703,7 @@ SlaveTimeLimitCmd(
 		    Tcl_NewStringObj(options[0], -1), empty);
 	}
 	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(slaveInterp,
+		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(slaveInterp,
 		TCL_LIMIT_TIME)));
 
 	if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_TIME)) {
@@ -4711,9 +4711,9 @@ SlaveTimeLimitCmd(
 
 	    Tcl_LimitGetTime(slaveInterp, &limitMoment);
 	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewLongObj(limitMoment.usec/1000));
+		    Tcl_NewWideIntObj(limitMoment.usec/1000));
 	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
-		    Tcl_NewLongObj(limitMoment.sec));
+		    Tcl_NewWideIntObj(limitMoment.sec));
 	} else {
 	    Tcl_Obj *empty;
 
@@ -4743,7 +4743,7 @@ SlaveTimeLimitCmd(
 	    }
 	    break;
 	case OPT_GRAN:
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		    Tcl_LimitGetGranularity(slaveInterp, TCL_LIMIT_TIME)));
 	    break;
 	case OPT_MILLI:
@@ -4752,7 +4752,7 @@ SlaveTimeLimitCmd(
 
 		Tcl_LimitGetTime(slaveInterp, &limitMoment);
 		Tcl_SetObjResult(interp,
-			Tcl_NewLongObj(limitMoment.usec/1000));
+			Tcl_NewWideIntObj(limitMoment.usec/1000));
 	    }
 	    break;
 	case OPT_SEC:
@@ -4760,7 +4760,7 @@ SlaveTimeLimitCmd(
 		Tcl_Time limitMoment;
 
 		Tcl_LimitGetTime(slaveInterp, &limitMoment);
-		Tcl_SetObjResult(interp, Tcl_NewLongObj(limitMoment.sec));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
 	    }
 	    break;
 	}

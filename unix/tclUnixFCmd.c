@@ -1315,8 +1315,8 @@ CopyFileAtts(
 	}
     }
 
-    tval.actime = statBufPtr->st_atime;
-    tval.modtime = statBufPtr->st_mtime;
+    tval.actime = Tcl_GetAccessTimeFromStat(statBufPtr);
+    tval.modtime = Tcl_GetModificationTimeFromStat(statBufPtr);
 
     if (utime(dst, &tval)) {				/* INTL: Native. */
 	return TCL_ERROR;
@@ -1369,7 +1369,7 @@ GetGroupAttribute(
     groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	const char *utf;
@@ -1423,7 +1423,7 @@ GetOwnerAttribute(
     pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
+	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 
@@ -1499,11 +1499,11 @@ SetGroupAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New group for file. */
 {
-    long gid;
+    Tcl_WideInt gid;
     int result;
     const char *native;
 
-    if (Tcl_GetLongFromObj(NULL, attributePtr, &gid) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
@@ -1565,11 +1565,11 @@ SetOwnerAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New owner for file. */
 {
-    long uid;
+    Tcl_WideInt uid;
     int result;
     const char *native;
 
-    if (Tcl_GetLongFromObj(NULL, attributePtr, &uid) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
@@ -1631,7 +1631,7 @@ SetPermissionsAttribute(
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
-    long mode;
+    Tcl_WideInt mode;
     mode_t newMode;
     int result = TCL_ERROR;
     const char *native;
@@ -1650,11 +1650,11 @@ SetPermissionsAttribute(
 
 	TclNewLiteralStringObj(modeObj, "0o");
 	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
-	result = Tcl_GetLongFromObj(NULL, modeObj, &mode);
+	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
     if (result == TCL_OK
-	    || Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+	    || Tcl_GetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
@@ -1922,17 +1922,14 @@ GetModeFromPermString(
  *
  * TclpObjNormalizePath --
  *
- *	This function scans through a path specification and replaces it, in
- *	place, with a normalized version. A normalized version is one in which
- *	all symlinks in the path are replaced with their expanded form (except
- *	a symlink at the very end of the path).
+ *	Replaces each component except that last one in a pathname that is a
+ *	symbolic link with the fully resolved target of that link.
  *
  * Results:
- *	The new 'nextCheckpoint' value, giving as far as we could understand
- *	in the path.
+ *	Stores the resulting path in pathPtr and returns the offset of the last
+ *	byte processed to obtain the resulting path.
  *
  * Side effects:
- *	The pathPtr string, is modified.
  *
  *---------------------------------------------------------------------------
  */
@@ -1940,8 +1937,14 @@ GetModeFromPermString(
 int
 TclpObjNormalizePath(
     Tcl_Interp *interp,
-    Tcl_Obj *pathPtr,
-    int nextCheckpoint)
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
+				 * normalize. */
+    int nextCheckpoint)		/* offset to start at in pathPtr.  Must either
+				 * be 0 or the offset of a directory separator
+				 * at the end of a path part that is already
+				 * normalized.  I.e. this is not the index of
+				 * the byte just after the separator.  */
+
 {
     const char *currentPathEndPosition;
     char cur;
@@ -1953,23 +1956,17 @@ TclpObjNormalizePath(
     char normPath[MAXPATHLEN];
 #endif
 
-    /*
-     * We add '1' here because if nextCheckpoint is zero we know that '/'
-     * exists, and if it isn't zero, it must point at a directory separator
-     * which we also know exists.
-     */
-
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
 	currentPathEndPosition++;
     }
 
 #ifndef NO_REALPATH
-    /*
-     * For speed, try to get the entire path in one go.
-     */
-
     if (nextCheckpoint == 0 && haveRealpath) {
+	/*
+	 * Try to get the entire path in one go
+	 */
+
 	char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
@@ -1978,8 +1975,13 @@ TclpObjNormalizePath(
 	    if (Realpath(nativePath, normPath) != NULL) {
 		if (*nativePath != '/' && *normPath == '/') {
 		    /*
-		     * realpath has transformed a relative path into an
-		     * absolute path, we do not know how to handle this.
+		     * realpath transformed a relative path into an
+		     * absolute path.  Fall back to the long way.
+		     */
+
+		    /*
+		     * To do: This logic seems to be out of date.  This whole
+		     * routine should be reviewed and cleaed up.
 		     */
 		} else {
 		    nextCheckpoint = lastDir - path;
@@ -2018,13 +2020,13 @@ TclpObjNormalizePath(
 	    }
 
 	    /*
-	     * Update the acceptable point.
+	     * Assign the end of the current component to nextCheckpoint
 	     */
 
 	    nextCheckpoint = currentPathEndPosition - path;
 	} else if (cur == 0) {
 	    /*
-	     * Reached end of string.
+	     * The end of the string.
 	     */
 
 	    break;
@@ -2033,22 +2035,19 @@ TclpObjNormalizePath(
     }
 
     /*
-     * We should really now convert this to a canonical path. We do that with
-     * 'realpath' if we have it available. Otherwise we could step through
-     * every single path component, checking whether it is a symlink, but that
-     * would be a lot of work, and most modern OSes have 'realpath'.
+     * Call 'realpath' to obtain a canonical path. 
      */
 
 #ifndef NO_REALPATH
     if (haveRealpath) {
-	/*
-	 * If we only had '/foo' or '/' then we never increment nextCheckpoint
-	 * and we don't need or want to go through 'Realpath'. Also, on some
-	 * platforms, passing an empty string to 'Realpath' will give us the
-	 * normalized pwd, which is not what we want at all!
-	 */
-
 	if (nextCheckpoint == 0) {
+	    /*
+	     * The path contains at most one component, e.g. '/foo' or '/', so
+	     * so there is nothing to resolve. Also, on some platforms
+	     * 'Realpath' transforms an empty string into the normalized pwd,
+	     * which is the wrong answer. 
+	     */
+
 	    return 0;
 	}
 
@@ -2061,18 +2060,19 @@ TclpObjNormalizePath(
 	    if ((newNormLen == Tcl_DStringLength(&ds))
 		    && (strcmp(normPath, nativePath) == 0)) {
 		/*
-		 * String is unchanged.
+		 * The original path is unchanged.
 		 */
 
 		Tcl_DStringFree(&ds);
 
 		/*
-		 * Enable this to have the native FS claim normalization of
-		 * the whole path for existing files. That would permit the
-		 * caller to declare normalization complete without calls to
-		 * additional filesystems. Saving lots of calls is probably
-		 * worth the extra access() time here. When no other FS's are
-		 * registered though, things are less clear.
+		 * Uncommenting this would mean that this native filesystem
+		 * routine claims the path is normalized if the file exists,
+		 * which would permit the caller to avoid iterating through
+		 * other filesystems filesystems. Saving lots of calls is
+		 * probably worth the extra access() time, but in the common
+		 * case that no other filesystems are registered this is an
+		 * unnecessary expense.
 		 *
 		if (0 == access(normPath, F_OK)) {
 		    return pathLen;
@@ -2083,8 +2083,7 @@ TclpObjNormalizePath(
 	    }
 
 	    /*
-	     * Free up the native path and put in its place the converted,
-	     * normalized path.
+	     * Free the original path and replace it with the normalized path.
 	     */
 
 	    Tcl_DStringFree(&ds);
@@ -2092,7 +2091,7 @@ TclpObjNormalizePath(
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
-		 * Not at end, append remaining path.
+		 * Append the remaining path components. 
 		 */
 
 		int normLen = Tcl_DStringLength(&ds);
@@ -2101,7 +2100,8 @@ TclpObjNormalizePath(
 			pathLen - nextCheckpoint);
 
 		/*
-		 * We recognise up to and including the directory separator.
+		 * characters up to and including the directory separator have
+		 * been processed
 		 */
 
 		nextCheckpoint = normLen + 1;
@@ -2112,10 +2112,6 @@ TclpObjNormalizePath(
 
 		nextCheckpoint = Tcl_DStringLength(&ds);
 	    }
-
-	    /*
-	     * Overwrite with the normalized path.
-	     */
 
 	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
 		    Tcl_DStringLength(&ds));
@@ -2273,6 +2269,85 @@ DefaultTempDir(void)
     return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCreateTemporaryDirectory --
+ *
+ *	Creates a temporary directory, possibly based on the supplied bits and
+ *	pieces of template supplied in the arguments.
+ *
+ * Results:
+ *	An object (refcount 0) containing the name of the newly-created
+ *	directory, or NULL on failure.
+ *
+ * Side effects:
+ *	Accesses the native filesystem. Makes a directory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclpCreateTemporaryDirectory(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj)
+{
+    Tcl_DString template, tmp;
+    const char *string;
+
+#define DEFAULT_TEMP_DIR_PREFIX	"tcl"
+
+    /*
+     * Build the template in writable memory from the user-supplied pieces and
+     * some defaults.
+     */
+
+    if (dirObj) {
+	string = TclGetString(dirObj);
+	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &template);
+    } else {
+	Tcl_DStringInit(&template);
+	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
+    }
+
+    if (Tcl_DStringValue(&template)[Tcl_DStringLength(&template) - 1] != '/') {
+	TclDStringAppendLiteral(&template, "/");
+    }
+
+    if (basenameObj) {
+	string = TclGetString(basenameObj);
+	if (basenameObj->length) {
+	    Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
+	    TclDStringAppendDString(&template, &tmp);
+	    Tcl_DStringFree(&tmp);
+	} else {
+	    TclDStringAppendLiteral(&template, DEFAULT_TEMP_DIR_PREFIX);
+	}
+    } else {
+	TclDStringAppendLiteral(&template, DEFAULT_TEMP_DIR_PREFIX);
+    }
+
+    TclDStringAppendLiteral(&template, "_XXXXXX");
+
+    /*
+     * Make the temporary directory.
+     */
+
+    if (mkdtemp(Tcl_DStringValue(&template)) == NULL) {
+	Tcl_DStringFree(&template);
+	return NULL;
+    }
+
+    /*
+     * The template has been updated. Tell the caller what it was.
+     */
+
+    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&template),
+	    Tcl_DStringLength(&template), &tmp);
+    Tcl_DStringFree(&template);
+    return TclDStringToObj(&tmp);
+}
+
 #if defined(__CYGWIN__)
 
 static void
@@ -2310,24 +2385,26 @@ static const int attributeArray[] = {
  *
  * GetUnixFileAttributes
  *
- *	Gets the readonly attribute of a file.
+ *	Gets an attribute of a file.
  *
  * Results:
- *	Standard TCL result. Returns a new Tcl_Obj in attributePtrPtr if there
- *	is no error. The object will have ref count 0.
+ *	A standard Tcl result.
  *
  * Side effects:
- *	A new object is allocated.
+ *	If there is no error assigns to *attributePtrPtr the address of a new
+ *	Tcl_Obj having a refCount of zero and containing the value of the
+ *	specified attribute.
+ *
  *
  *----------------------------------------------------------------------
  */
 
 static int
 GetUnixFileAttributes(
-    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    Tcl_Interp *interp,		/* The interp to report errors to. */
     int objIndex,		/* The index of the attribute. */
-    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj *fileName,		/* The pathname of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* Where to store the result. */
 {
     int fileAttributes;
     WCHAR *winPath = winPathFromObj(fileName);
@@ -2340,7 +2417,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj(
+    *attributePtrPtr = Tcl_NewWideIntObj(
 	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
@@ -2440,7 +2517,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags & UF_IMMUTABLE);
+    *attributePtrPtr = Tcl_NewWideIntObj((statBuf.st_flags & UF_IMMUTABLE) != 0);
     return TCL_OK;
 }
 

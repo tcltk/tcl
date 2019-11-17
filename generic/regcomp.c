@@ -59,7 +59,6 @@ static void wordchrs(struct vars *);
 static struct subre *subre(struct vars *, int, int, struct state *, struct state *);
 static void freesubre(struct vars *, struct subre *);
 static void freesrnode(struct vars *, struct subre *);
-static void optst(struct vars *, struct subre *);
 static int numst(struct subre *, int);
 static void markst(struct subre *);
 static void cleanst(struct vars *);
@@ -206,11 +205,11 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    chr nextvalue;		/* value (if any) of next token */
+    int nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
     int nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    size_t nsubs;		/* length of vector */
+    int nsubs;			/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -244,6 +243,7 @@ struct vars {
 #define	EMPTYARC(x, y)	newarc(v->nfa, EMPTY, 0, x, y)
 
 /* token type codes, some also used as NFA arc types */
+#undef	DIGIT /* prevent conflict with libtommath */
 #define	EMPTY	'n'		/* no token present */
 #define	EOS	'e'		/* end of string */
 #define	PLAIN	'p'		/* ordinary character */
@@ -287,8 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i;
-    size_t j;
+    int i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -395,7 +394,6 @@ compile(
 	dumpnfa(v->nfa, debug);
 	dumpst(v->tree, debug, 1);
     }
-    optst(v, v->tree);
     v->ntree = numst(v->tree, 1);
     markst(v->tree);
     cleanst(v);
@@ -477,10 +475,10 @@ moresubs(
     int wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    size_t n;
+    int n;
 
-    assert(wanted > 0 && (size_t)wanted >= v->nsubs);
-    n = (size_t)wanted * 3 / 2 + 1;
+    assert(wanted > 0 && wanted >= v->nsubs);
+    n = wanted * 3 / 2 + 1;
     if (v->subs == v->sub10) {
 	p = (struct subre **) MALLOC(n * sizeof(struct subre *));
 	if (p != NULL) {
@@ -499,7 +497,7 @@ moresubs(
 	*p = NULL;
     }
     assert(v->nsubs == n);
-    assert((size_t)wanted < v->nsubs);
+    assert(wanted < v->nsubs);
 }
 
 /*
@@ -513,7 +511,7 @@ freev(
     struct vars *v,
     int err)
 {
-    register int ret;
+    int ret;
 
     if (v->re != NULL) {
 	rfree(v->re);
@@ -923,7 +921,7 @@ parseqatom(
 	 */
 
 	NOTE(REG_UPBOTCH);
-	/* fallthrough into case PLAIN */
+	/* FALLTHRU */
     case PLAIN:
 	onechr(v, v->nextvalue, lp, rp);
 	okcolors(v->nfa, v->cm);
@@ -954,10 +952,10 @@ parseqatom(
 	if (cap) {
 	    v->nsubexp++;
 	    subno = v->nsubexp;
-	    if ((size_t)subno >= v->nsubs) {
+	    if (subno >= v->nsubs) {
 		moresubs(v, subno);
 	    }
-	    assert((size_t)subno < v->nsubs);
+	    assert(subno < v->nsubs);
 	} else {
 	    atomtype = PLAIN;	/* something that's not '(' */
 	}
@@ -1812,25 +1810,6 @@ freesrnode(
 }
 
 /*
- - optst - optimize a subRE subtree
- ^ static void optst(struct vars *, struct subre *);
- */
-static void
-optst(
-    struct vars *v,
-    struct subre *t)
-{
-    /*
-     * DGP (2007-11-13): I assume it was the programmer's intent to eventually
-     * come back and add code to optimize subRE trees, but the routine coded
-     * just spends effort traversing the tree and doing nothing. We can do
-     * nothing with less effort.
-     */
-
-    return;
-}
-
-/*
  - numst - number tree nodes (assigning "id" indexes)
  ^ static int numst(struct subre *, int);
  */
@@ -2101,6 +2080,9 @@ dump(
     }
     fprintf(f, "\n");
     dumpst(g->tree, f, 0);
+#else
+    (void)re;
+    (void)f;
 #endif
 }
 

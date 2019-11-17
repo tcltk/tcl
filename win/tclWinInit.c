@@ -17,7 +17,7 @@
 #include <lmcons.h>
 
 /*
- * GetUserName() is found in advapi32.dll
+ * GetUserNameW() is found in advapi32.dll
  */
 #ifdef _MSC_VER
 #   pragma comment(lib, "advapi32.lib")
@@ -113,7 +113,7 @@ static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals,
+ *	Initialize all the platform-dependent things like signals,
  *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.
@@ -149,13 +149,13 @@ TclpInitPlatform(void)
      * invoked.
      */
 
-    TclWinInit(GetModuleHandle(NULL));
+    TclWinInit(GetModuleHandleW(NULL));
 #endif
 
     /*
      * Fill available functions depending on windows version
      */
-    handle = GetModuleHandle(TEXT("KERNEL32"));
+    handle = GetModuleHandleW(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
@@ -188,6 +188,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
     const char *bytes;
+    int length;
 
     pathPtr = Tcl_NewObj();
 
@@ -223,10 +224,10 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, bytes, *lengthPtr + 1);
+    bytes = TclGetStringFromObj(pathPtr, &length);
+    *lengthPtr = length++;
+    *valuePtr = ckalloc(length);
+    memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -269,7 +270,7 @@ AppendEnvironment(
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
+	    if ((size_t)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;
@@ -296,7 +297,7 @@ AppendEnvironment(
 	Tcl_SplitPath(buf, &pathc, &pathv);
 
 	/*
-	 * The lstrcmpi() will work even if pathv[pathc-1] is random UTF-8
+	 * The lstrcmpiA() will work even if pathv[pathc-1] is random UTF-8
 	 * chars because I know shortlib is ascii.
 	 */
 
@@ -468,15 +469,15 @@ TclpGetUserName(
     Tcl_DStringInit(bufferPtr);
 
     if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
-	TCHAR szUserName[UNLEN+1];
+	WCHAR szUserName[UNLEN+1];
 	DWORD cchUserNameLen = UNLEN;
 
-	if (!GetUserName(szUserName, &cchUserNameLen)) {
+	if (!GetUserNameW(szUserName, &cchUserNameLen)) {
 	    return NULL;
 	}
 	cchUserNameLen--;
-	cchUserNameLen *= sizeof(TCHAR);
-	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+	Tcl_DStringInit(bufferPtr);
+	Tcl_WCharToUtfDString(szUserName, cchUserNameLen, bufferPtr);
     }
     return Tcl_DStringValue(bufferPtr);
 }
@@ -516,7 +517,7 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
+	HMODULE handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
@@ -542,7 +543,7 @@ TclpSetVariables(
 		TCL_GLOBAL_ONLY);
     }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
     /*
      * The existence of the "debug" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with debug
@@ -627,7 +628,7 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    register const char *env, *p1, *p2;
+    const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 
@@ -637,7 +638,7 @@ TclpFindVariable(
 
     length = strlen(name);
     nameUpper = ckalloc(length + 1);
-    memcpy(nameUpper, name, (size_t) length+1);
+    memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);

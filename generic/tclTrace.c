@@ -136,7 +136,7 @@ static int		StringTraceProc(ClientData clientData,
 static void		StringTraceDeleteProc(ClientData clientData);
 static void		DisposeTraceResult(int flags, char *result);
 static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
-			    const char *part2, register VarTrace *tracePtr);
+			    const char *part2, VarTrace *tracePtr);
 
 /*
  * The following structure holds the client data for string-based
@@ -470,7 +470,7 @@ TraceExecutionObjCmd(
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
-		    TclOffset(TraceCommandInfo, command) + 1 + length);
+		    offsetof(TraceCommandInfo, command) + 1 + length);
 
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
@@ -537,9 +537,7 @@ TraceExecutionObjCmd(
 
 			Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 			tcmdPtr->stepTrace = NULL;
-			if (tcmdPtr->startCmd != NULL) {
-			    ckfree(tcmdPtr->startCmd);
-			}
+			ckfree(tcmdPtr->startCmd);
 		    }
 		    if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 			/*
@@ -709,7 +707,7 @@ TraceCommandObjCmd(
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
-		    TclOffset(TraceCommandInfo, command) + 1 + length);
+		    offsetof(TraceCommandInfo, command) + 1 + length);
 
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
@@ -912,7 +910,7 @@ TraceVariableObjCmd(
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = ckalloc(
-		    TclOffset(CombinedTraceVarInfo, traceCmdInfo.command)
+		    offsetof(CombinedTraceVarInfo, traceCmdInfo.command)
 		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;
@@ -1051,7 +1049,7 @@ Tcl_CommandTraceInfo(
 				 * call will return the first trace. */
 {
     Command *cmdPtr;
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
 
     cmdPtr = (Command *) Tcl_FindCommand(interp, cmdName, NULL,
 	    TCL_LEAVE_ERR_MSG);
@@ -1116,7 +1114,7 @@ Tcl_TraceCommand(
     ClientData clientData)	/* Arbitrary argument to pass to proc. */
 {
     Command *cmdPtr;
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
 
     cmdPtr = (Command *) Tcl_FindCommand(interp, cmdName, NULL,
 	    TCL_LEAVE_ERR_MSG);
@@ -1179,7 +1177,7 @@ Tcl_UntraceCommand(
     Tcl_CommandTraceProc *proc,	/* Function assocated with trace. */
     ClientData clientData)	/* Arbitrary argument to pass to proc. */
 {
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
     CommandTrace *prevPtr;
     Command *cmdPtr;
     Interp *iPtr = (Interp *) interp;
@@ -1349,9 +1347,7 @@ TraceCommandProc(
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		ckfree(tcmdPtr->startCmd);
-	    }
+	    ckfree(tcmdPtr->startCmd);
 	}
 	if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 	    /*
@@ -1676,13 +1672,13 @@ TclCheckInterpTraces(
 static int
 CallTraceFunction(
     Tcl_Interp *interp,		/* The current interpreter. */
-    register Trace *tracePtr,	/* Describes the trace function to call. */
+    Trace *tracePtr,	/* Describes the trace function to call. */
     Command *cmdPtr,		/* Points to command's Command struct. */
     const char *command,	/* Points to the first character of the
 				 * command's source before substitutions. */
     int numChars,		/* The number of characters in the command's
 				 * source. */
-    register int objc,		/* Number of arguments for the command. */
+    int objc,		/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1693,8 +1689,8 @@ CallTraceFunction(
      * Copy the command characters into a new string.
      */
 
-    commandCopy = TclStackAlloc(interp, (unsigned) numChars + 1);
-    memcpy(commandCopy, command, (size_t) numChars);
+    commandCopy = TclStackAlloc(interp, numChars + 1);
+    memcpy(commandCopy, command, numChars);
     commandCopy[numChars] = '\0';
 
     /*
@@ -1814,9 +1810,7 @@ TraceExecutionProc(
 		&& (strcmp(command, tcmdPtr->startCmd) == 0)) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		ckfree(tcmdPtr->startCmd);
-	    }
+	    ckfree(tcmdPtr->startCmd);
 	}
 
 	/*
@@ -1926,7 +1920,7 @@ TraceExecutionProc(
 	if ((flags & TCL_TRACE_ENTER_EXEC) && (tcmdPtr->stepTrace == NULL)
 		&& (tcmdPtr->flags & (TCL_TRACE_ENTER_DURING_EXEC |
 			TCL_TRACE_LEAVE_DURING_EXEC))) {
-	    register unsigned len = strlen(command) + 1;
+	    size_t len = strlen(command) + 1;
 
 	    tcmdPtr->startLevel = level;
 	    tcmdPtr->startCmd = ckalloc(len);
@@ -1941,9 +1935,7 @@ TraceExecutionProc(
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
-	    if (tcmdPtr->startCmd != NULL) {
-		ckfree(tcmdPtr->startCmd);
-	    }
+	    ckfree(tcmdPtr->startCmd);
 	}
     }
     if (call) {
@@ -2073,7 +2065,7 @@ TraceVarProc(
 	}
     }
     if (destroy && result != NULL) {
-	register Tcl_Obj *errMsgObj = (Tcl_Obj *) result;
+	Tcl_Obj *errMsgObj = (Tcl_Obj *) result;
 
 	Tcl_DecrRefCount(errMsgObj);
 	result = NULL;
@@ -2150,8 +2142,8 @@ Tcl_CreateObjTrace(
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
-    register Trace *tracePtr;
-    register Interp *iPtr = (Interp *) interp;
+    Trace *tracePtr;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Test if this trace allows inline compilation of commands.
@@ -2283,7 +2275,7 @@ StringTraceProc(
      */
 
     argv = (const char **) TclStackAlloc(interp,
-	    (unsigned) ((objc + 1) * sizeof(const char *)));
+	    (objc + 1) * sizeof(const char *));
     for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
     }
@@ -2350,7 +2342,7 @@ Tcl_DeleteTrace(
 {
     Interp *iPtr = (Interp *) interp;
     Trace *prevPtr, *tracePtr = (Trace *) trace;
-    register Trace **tracePtr2 = &iPtr->tracePtr;
+    Trace **tracePtr2 = &iPtr->tracePtr;
     ActiveInterpTrace *activePtr;
 
     /*
@@ -2542,7 +2534,7 @@ TclCheckArrayTraces(
 int
 TclObjCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    register Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,	/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */
@@ -2576,7 +2568,7 @@ TclObjCallVarTraces(
 int
 TclCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    register Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,	/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */
@@ -2589,7 +2581,7 @@ TclCallVarTraces(
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
 {
-    register VarTrace *tracePtr;
+    VarTrace *tracePtr;
     ActiveVarTrace active;
     char *result;
     const char *openParen, *p;
@@ -2919,7 +2911,7 @@ Tcl_UntraceVar2(
     Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
     ClientData clientData)	/* Arbitrary argument to pass to proc. */
 {
-    register VarTrace *tracePtr;
+    VarTrace *tracePtr;
     VarTrace *prevPtr, *nextPtr;
     Var *varPtr, *arrayPtr;
     Interp *iPtr = (Interp *) interp;
@@ -3111,7 +3103,7 @@ Tcl_VarTraceInfo2(
     hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
 
     if (hPtr) {
-	register VarTrace *tracePtr = Tcl_GetHashValue(hPtr);
+	VarTrace *tracePtr = Tcl_GetHashValue(hPtr);
 
 	if (prevClientData != NULL) {
 	    for (; tracePtr != NULL; tracePtr = tracePtr->nextPtr) {
@@ -3209,7 +3201,7 @@ Tcl_TraceVar2(
 				 * invoked upon varName. */
     ClientData clientData)	/* Arbitrary argument to pass to proc. */
 {
-    register VarTrace *tracePtr;
+    VarTrace *tracePtr;
     int result;
 
     tracePtr = ckalloc(sizeof(VarTrace));
@@ -3254,7 +3246,7 @@ TraceVarEx(
     const char *part2,		/* Name of element within array; NULL means
 				 * trace applies to scalar variable or array
 				 * as-a-whole. */
-    register VarTrace *tracePtr)/* Structure containing flags, traceProc and
+    VarTrace *tracePtr)/* Structure containing flags, traceProc and
 				 * clientData fields. Others should be left
 				 * blank. Will be ckfree()d (eventually) if
 				 * this function returns TCL_OK, and up to

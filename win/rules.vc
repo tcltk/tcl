@@ -6,7 +6,7 @@
 # compiler switches, defining common targets and macros. The Tcl makefile
 # directly includes this. Extensions include it via "rules-ext.vc".
 #
-# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# See TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md) for
 # detailed documentation.
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 3
+RULES_VERSION_MINOR = 4
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -162,7 +162,7 @@ MKDIR   = mkdir
 # COMPATDIR - source directory that holds compatibility sources
 # DOCDIR - source directory containing documentation files
 # GENERICDIR - platform-independent source directory
-# WINDIR - Windows-specific source directory
+# WIN_DIR - Windows-specific source directory
 # TESTDIR - directory containing test files
 # TOOLSDIR - directory containing build tools
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
@@ -215,17 +215,15 @@ DEMODIR		= $(LIBDIR)\demos
 DEMODIR		= $(ROOT)\demos
 !endif
 !endif # ifndef DEMODIR
-# Do NOT enclose WINDIR in a !ifndef because Windows always defines
-# WINDIR env var to point to c:\windows!
-# TBD - This is a potentially dangerous conflict, rename WINDIR to
-# something else
-WINDIR		= $(ROOT)\win
+# Do NOT use WINDIR because it is Windows internal environment
+# variable to point to c:\windows!
+WIN_DIR		= $(ROOT)\win
 
 !ifndef RCDIR
-!if exist("$(WINDIR)\rc")
-RCDIR           = $(WINDIR)\rc
+!if exist("$(WIN_DIR)\rc")
+RCDIR           = $(WIN_DIR)\rc
 !else
-RCDIR           = $(WINDIR)
+RCDIR           = $(WIN_DIR)
 !endif
 !endif
 RCDIR = $(RCDIR:/=\)
@@ -475,6 +473,21 @@ MACHINE = AMD64
 MACHINE=$(ARCH)
 !endif
 
+#---------------------------------------------------------------
+# The PLATFORM_IDENTIFY macro matches the values returned by
+# the Tcl platform::identify command
+!if "$(MACHINE)" == "AMD64"
+PLATFORM_IDENTIFY = win32-x86_64
+!else
+PLATFORM_IDENTIFY = win32-ix86
+!endif
+
+# The MULTIPLATFORM macro controls whether binary extensions are installed
+# in platform-specific directories. Intended to be set/used by extensions.
+!ifndef MULTIPLATFORM_INSTALL
+MULTIPLATFORM_INSTALL = 0
+!endif
+
 #------------------------------------------------------------
 # Figure out the *host* architecture by reading the registry
 
@@ -671,6 +684,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
 # CONFIG_CHECK - 1 -> check current build configuration against Tcl
 #           configuration (ignored for Tcl itself)
+# _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
+#           (CRT library should support this)
+# TCL_UTF_MAX=6 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -730,6 +746,18 @@ TCL_USE_STATIC_PACKAGES	= 1
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
 
+!if [nmakehlp -f $(OPTS) "time64bit"]
+!message *** Force 64-bit time_t
+_USE_64BIT_TIME_T = 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "utfmax"]
+!message *** Force 32-bit Tcl_UniChar
+TCL_UTF_MAX = 6
+!endif
+
+# Yes, it's weird that the "symbols" option controls DEBUG and
+# the "pdbs" option controls SYMBOLS. That's historical.
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
@@ -1054,7 +1082,7 @@ TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
-TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
+TCL_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
 !else # ! $(DOING_TCL)
 
@@ -1129,7 +1157,7 @@ WISH 		= $(OUT_DIR)\$(WISHNAME)
 TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
-TK_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
+TK_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
 !else # effectively NEED_TK
 
@@ -1205,8 +1233,13 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 !else # extension other than Tk
 
 PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
+!if $(MULTIPLATFORM_INSTALL)
+LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
+BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
+!else
 LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+!endif
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
 DEMO_INSTALL_DIR	= $(PRJ_INSTALL_DIR)\demos
@@ -1235,82 +1268,72 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) -DSTDC_HEADERS
+OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
 
 !if $(TCL_MEM_DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
+OPTDEFINES	= $(OPTDEFINES) /DTCL_MEM_DEBUG
 !endif
 !if $(TCL_COMPILE_DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+OPTDEFINES	= $(OPTDEFINES) /DTCL_COMPILE_DEBUG /DTCL_COMPILE_STATS
 !endif
-!if $(TCL_THREADS) && $(TCL_VERSION) < 86
-OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
-!if $(USE_THREAD_ALLOC)
-OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
+!if $(TCL_THREADS) && $(TCL_VERSION) < 87
+OPTDEFINES	= $(OPTDEFINES) /DTCL_THREADS=1
+!if $(USE_THREAD_ALLOC) && $(TCL_VERSION) < 87
+OPTDEFINES	= $(OPTDEFINES) /DUSE_THREAD_ALLOC=1
 !endif
 !endif
 !if $(STATIC_BUILD)
-OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+OPTDEFINES	= $(OPTDEFINES) /DSTATIC_BUILD
 !endif
 !if $(TCL_NO_DEPRECATED)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_NO_DEPRECATED
 !endif
 
 !if $(USE_STUBS)
 # Note we do not define USE_TCL_STUBS even when building tk since some
 # test targets in tk do not use stubs
 !if ! $(DOING_TCL)
-USE_STUBS_DEFS  = -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
+USE_STUBS_DEFS  = /DUSE_TCL_STUBS /DUSE_TCLOO_STUBS
 !if $(NEED_TK)
-USE_STUBS_DEFS  = $(USE_STUBS_DEFS) -DUSE_TK_STUBS
+USE_STUBS_DEFS  = $(USE_STUBS_DEFS) /DUSE_TK_STUBS
 !endif
 !endif
 !endif # USE_STUBS
 
 !if !$(DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DNDEBUG
+OPTDEFINES	= $(OPTDEFINES) /DNDEBUG
 !if $(OPTIMIZING)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_OPTIMIZED
 !endif
 !endif
 !if $(PROFILE)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_PROFILED
 !endif
 !if "$(MACHINE)" == "AMD64"
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
+OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
-OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64
+!endif
+
+!if "$(_USE_64BIT_TIME_T)" == "1"
+OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T
+!endif
+!if "$(TCL_UTF_MAX)" == "6"
+OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=6
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 COMPILERFLAGS  = /D_ATL_XP_TARGETING
 
-# Following is primarily for the benefit of extensions. Tcl 8.5 builds
-# Tcl without /DUNICODE, while 8.6 builds with it defined. When building
-# an extension, it is advisable (but not mandated) to use the same Windows
-# API as the Tcl build. This is accordingly defaulted below. A particular
-# extension can override this by pre-definining USE_WIDECHAR_API.
-!ifndef USE_WIDECHAR_API
-!if $(TCL_VERSION) > 85
-USE_WIDECHAR_API = 1
-!else
-USE_WIDECHAR_API = 0
-!endif
-!endif
-
-!if $(USE_WIDECHAR_API)
-COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
-!endif
-
 # Like the TEA system only set this non empty for non-Tk extensions
 # Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME
 # so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
-PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               -DMODULE_SCOPE=extern
+PKGNAMEFLAGS = /DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+               /DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+               /DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+               /DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1357,7 +1380,7 @@ cwarn = $(cwarn) -wd4311 -wd4312
 
 ### Common compiler options that are architecture specific
 !if "$(MACHINE)" == "ARM"
-carch = -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+carch = /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !else
 carch =
 !endif
@@ -1369,7 +1392,7 @@ cwarn = $(cwarn) -WX
 
 INCLUDES = $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
 !if !$(DOING_TCL) && !$(DOING_TK)
-INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WINDIR)" -I"$(COMPATDIR)"
+INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WIN_DIR)" -I"$(COMPATDIR)"
 !endif
 
 # These flags are defined roughly in the order of the pre-reform
@@ -1385,13 +1408,13 @@ cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 # BUILD_$(PROJECT) macro which should be defined only for the shared
 # library *implementation* and not for its caller interface
 
-appcflags = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
 appcflags_nostubs = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
-pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
-pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
+appcflags = $(appcflags_nostubs) $(USE_STUBS_DEFS)
+pkgcflags = $(appcflags) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
+pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
 
 # stubscflags contains $(cflags) plus flags used for building a stubs
-# library for the package.  Note: -DSTATIC_BUILD is defined in
+# library for the package.  Note: /DSTATIC_BUILD is defined in
 # $(OPTDEFINES) only if the OPTS configuration indicates a static
 # library. However the stubs library is ALWAYS static hence included
 # here irrespective of the OPTS setting.
@@ -1401,7 +1424,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1466,13 +1489,13 @@ CONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 GUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
-	    -DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
-	    -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
-	    -DDOTVERSION=\"$(DOTVERSION)\" \
-	    -DVERSION=\"$(VERSION)\" \
-	    -DSUFX=\"$(SUFX:t=)\" \
-	    -DPROJECT=\"$(PROJECT)\" \
-	    -DPRJLIBNAME=\"$(PRJLIBNAME)\"
+	    /DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
+	    /DCOMMAVERSION=$(DOTVERSION:.=,),0 \
+	    /DDOTVERSION=\"$(DOTVERSION)\" \
+	    /DVERSION=\"$(VERSION)\" \
+	    /DSUFX=\"$(SUFX:t=)\" \
+	    /DPROJECT=\"$(PROJECT)\" \
+	    /DPRJLIBNAME=\"$(PRJLIBNAME)\"
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = $(PROJECT)
@@ -1480,9 +1503,15 @@ DEFAULT_BUILD_TARGET = $(PROJECT)
 
 default-target: $(DEFAULT_BUILD_TARGET)
 
+!if $(MULTIPLATFORM_INSTALL)
+default-pkgindex:
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+!else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
 	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+!endif
 
 default-pkgindex-tea:
 	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
@@ -1492,15 +1521,26 @@ default-pkgindex-tea:
 @PKG_LIB_FILE@       $(PRJLIBNAME)
 <<
 
-
 default-install: default-install-binaries default-install-libraries
+!if $(SYMBOLS)
+default-install: default-install-pdbs
+!endif
 
+# Again to deal with historical brokenness, there is some confusion
+# in terminlogy. For extensions, the "install-binaries" was used to
+# locate target directory for *binary shared libraries* and thus
+# the appropriate macro is LIB_INSTALL_DIR since BIN_INSTALL_DIR is
+# for executables (exes). On the other hand the "install-libraries"
+# target is for *scripts* and should have been called "install-scripts".
 default-install-binaries: $(PRJLIB)
-	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
-	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
-	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+	@echo Installing binaries to '$(LIB_INSTALL_DIR)'
+	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
+	@$(CPY) $(PRJLIB) "$(LIB_INSTALL_DIR)" >NUL
 
-default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
+# Alias for default-install-scripts
+default-install-libraries: default-install-scripts
+
+default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
@@ -1510,6 +1550,11 @@ default-install-stubs:
 	@echo Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+
+default-install-pdbs:
+	@echo Installing PDBs to '$(LIB_INSTALL_DIR)'
+	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
 
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
@@ -1529,20 +1574,20 @@ default-install-demos:
 default-clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WINDIR)\nmakehlp.obj, nmakehlp.exe ...
-	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
-	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
-	@if exist $(WINDIR)\nmakehlp.out del $(WINDIR)\nmakehlp.out
-	@echo Cleaning $(WINDIR)\nmhlp-out.txt ...
-	@if exist $(WINDIR)\nmhlp-out.txt del $(WINDIR)\nmhlp-out.txt
-	@echo Cleaning $(WINDIR)\_junk.pch ...
-	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
-	@echo Cleaning $(WINDIR)\vercl.x, vercl.i ...
-	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
-	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
-	@echo Cleaning $(WINDIR)\versions.vc, version.vc ...
-	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
-	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
+	@echo Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
+	@if exist $(WIN_DIR)\nmakehlp.obj del $(WIN_DIR)\nmakehlp.obj
+	@if exist $(WIN_DIR)\nmakehlp.exe del $(WIN_DIR)\nmakehlp.exe
+	@if exist $(WIN_DIR)\nmakehlp.out del $(WIN_DIR)\nmakehlp.out
+	@echo Cleaning $(WIN_DIR)\nmhlp-out.txt ...
+	@if exist $(WIN_DIR)\nmhlp-out.txt del $(WIN_DIR)\nmhlp-out.txt
+	@echo Cleaning $(WIN_DIR)\_junk.pch ...
+	@if exist $(WIN_DIR)\_junk.pch del $(WIN_DIR)\_junk.pch
+	@echo Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
+	@if exist $(WIN_DIR)\vercl.x del $(WIN_DIR)\vercl.x
+	@if exist $(WIN_DIR)\vercl.i del $(WIN_DIR)\vercl.i
+	@echo Cleaning $(WIN_DIR)\versions.vc, version.vc ...
+	@if exist $(WIN_DIR)\versions.vc del $(WIN_DIR)\versions.vc
+	@if exist $(WIN_DIR)\version.vc del $(WIN_DIR)\version.vc
 
 default-hose: default-clean
 	@echo Hosing $(OUT_DIR)\* ...
@@ -1634,7 +1679,7 @@ DISABLE_IMPLICIT_RULES = 0
 $<
 <<
 
-{$(WINDIR)}.c{$(TMP_DIR)}.obj::
+{$(WIN_DIR)}.c{$(TMP_DIR)}.obj::
 	$(CCPKGCMD) @<<
 $<
 <<
@@ -1652,7 +1697,7 @@ $<
 {$(RCDIR)}.rc{$(TMP_DIR)}.res:
 	$(RESCMD) $<
 
-{$(WINDIR)}.rc{$(TMP_DIR)}.res:
+{$(WIN_DIR)}.rc{$(TMP_DIR)}.res:
 	$(RESCMD) $<
 
 {$(TMP_DIR)}.rc{$(TMP_DIR)}.res:
@@ -1686,6 +1731,9 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 
 !if defined(CORE_MACHINE) && "$(CORE_MACHINE)" != "$(MACHINE)"
 !error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
+!endif
+!if $(TCL_VERSION) < 87 && defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
+!message WARNING: Value of USE_THREAD_ALLOC ($(USE_THREAD_ALLOC)) does not match its Tcl core value ($(CORE_USE_THREAD_ALLOC)).
 !endif
 !if defined(CORE_DEBUG) && $(CORE_DEBUG) != $(DEBUG)
 !message WARNING: Value of DEBUG ($(DEBUG)) does not match its Tcl library configuration ($(DEBUG)).

@@ -250,6 +250,18 @@ proc ::testClock::registry { cmd path key } {
     return [dict get $reg $path $key]
 }
 
+proc timeWithinDuration {duration start end} {
+    regexp {([\d.]+)(s|ms|us)} $duration -> duration unit
+    if {[llength $start] > 1} { set start [expr "([join $start +])/[llength $start]"] }
+    if {[llength $end] > 1} { set end [expr "([join $end +])/[llength $end]"] }
+    set delta [expr {$end - $start}]
+    expr {
+	  ($delta > 0) && ($delta <= $duration) ?
+	  "ok" :
+	  "test should have taken 0-$duration $unit, actually took $delta"}
+}
+
+
 # Test some of the basics of [clock format]
 
 test clock-1.0 "clock format - wrong # args" {
@@ -35425,7 +35437,7 @@ test clock-33.2 {clock clicks tests} {
     set start [clock clicks]
     after 10
     set end [clock clicks]
-    expr "$end > $start"
+    expr {$end > $start}
 } {1}
 test clock-33.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
@@ -35439,28 +35451,22 @@ test clock-33.4a {clock milliseconds} {
     concat {}
 } {}
 test clock-33.5 {clock clicks tests, millisecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >60 ms to run.
-    set start [clock clicks -milli]
-    after 10
-    set end [clock clicks -milli]
-    # 60 msecs seems to be the max time slice under Windows 95/98
-    expr {
-	  ($end > $start) && (($end - $start) <= 60) ?
-	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock clicks -milli]
+	after 1 {lappend end [clock clicks -milli]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >60 ms to run.
-    set start [clock milliseconds]
-    after 10
-    set end [clock milliseconds]
-    # 60 msecs seems to be the max time slice under Windows 95/98
-    expr {
-	  ($end > $start) && (($end - $start) <= 60) ?
-	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock milliseconds]
+	after 1 {lappend end [clock milliseconds]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
@@ -35470,21 +35476,23 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >60 ms to run.
-    set start [clock clicks -micro]
-    after 10
-    set end [clock clicks -micro]
-    expr {($end > $start) && (($end - $start) <= 60000)}
-} {1}
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock clicks -micro]
+	after 1 {lappend end [clock clicks -micro]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm + 10)}]us $start $end
+} {ok}
 test clock-33.8a {clock test, microsecond timing test} {
-    # This test can fail on a system that is so heavily loaded that
-    # the test takes >60 ms to run.
-    set start [clock microseconds]
-    after 10
-    set end [clock microseconds]
-    expr {($end > $start) && (($end - $start) <= 60000)}
-} {1}
+    set start [set end {}]
+    lassign [time {
+	lappend start [clock microseconds]
+	after 1 {lappend end [clock microseconds]}
+	vwait end
+    } 5] tm
+    timeWithinDuration [expr {int($tm + 10)}]us $start $end
+} {ok}
 
 test clock-33.9 {clock clicks test, millis align with seconds} {
     set t1 [clock seconds]
@@ -35826,7 +35834,7 @@ test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
     after 2000
     set end [clock seconds]
-    expr "$end > $start"
+    expr {$end > $start}
 } {1}
 
 
@@ -36699,16 +36707,18 @@ test clock-58.1 {clock l10n - Japanese localisation} {*}{
     }
     -body {
 	set trouble {}
-	foreach {date jdate} [list \
-	    1872-12-31 \u897f\u66a61872\u5e7412\u670831\u65e5 \
-	    1873-01-01 \u660e\u6cbb06\u5e7401\u670801\u65e5 \
-	    1912-07-29 \u660e\u6cbb45\u5e7407\u670829\u65e5 \
-	    1912-07-30 \u5927\u6b6301\u5e7407\u670830\u65e5 \
-	    1926-12-24 \u5927\u6b6315\u5e7412\u670824\u65e5 \
-	    1926-12-25 \u662d\u548c01\u5e7412\u670825\u65e5 \
-	    1989-01-07 \u662d\u548c64\u5e7401\u670807\u65e5 \
-	    1989-01-08 \u5e73\u621001\u5e7401\u670808\u65e5 \
-	] {
+	foreach {date jdate} {
+	    1872-12-31 \u897f\u66a61872\u5e7412\u670831\u65e5
+	    1873-01-01 \u660e\u6cbb06\u5e7401\u670801\u65e5
+	    1912-07-29 \u660e\u6cbb45\u5e7407\u670829\u65e5
+	    1912-07-30 \u5927\u6b6301\u5e7407\u670830\u65e5
+	    1926-12-24 \u5927\u6b6315\u5e7412\u670824\u65e5
+	    1926-12-25 \u662d\u548c01\u5e7412\u670825\u65e5
+	    1989-01-07 \u662d\u548c64\u5e7401\u670807\u65e5
+	    1989-01-08 \u5e73\u621001\u5e7401\u670808\u65e5
+	    2019-04-30 \u5e73\u621031\u5e7404\u670830\u65e5
+	    2019-05-01 \u4ee4\u548c01\u5e7405\u670801\u65e5
+	} {
 	    set status [catch {
 		set secs [clock scan $date \
 			      -timezone +0900 \

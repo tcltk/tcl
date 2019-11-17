@@ -12,7 +12,7 @@
 # Commands covered: assemble
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 namespace eval tcl::unsupported {namespace export assemble}
@@ -852,10 +852,11 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
+	    assemble {load x}
 	}
     }
-    -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
+    -result {cannot use this instruction to create a variable in a non-proc context}
+    -errorCode {TCL ASSEM LVT}
     -cleanup {namespace delete assem}
 }
 test assemble-8.6 {load1} {
@@ -1110,10 +1111,10 @@ test assemble-9.6 {concat} {
 }
 test assemble-9.7 {concat} {
     -body {
-	list [catch {assemble {concat 0}} result] $result $::errorCode
+	assemble {concat 0}
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
-    -cleanup {unset result}
+    -result {operand must be positive}
+    -errorCode {TCL ASSEM POSITIVE}
 }
 
 # assemble-10 -- eval and expr

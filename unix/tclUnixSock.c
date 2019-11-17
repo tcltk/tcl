@@ -241,7 +241,7 @@ InitializeHostName(
 	    if (dot != NULL) {
 		char *node = ckalloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
 		ckfree(node);
@@ -252,9 +252,6 @@ InitializeHostName(
         } else {
 	    native = u.nodename;
         }
-    }
-    if (native == NULL) {
-	native = &tclEmptyString;
     }
 #else /* !NO_UNAME */
     /*
@@ -284,9 +281,15 @@ InitializeHostName(
 #endif /* NO_UNAME */
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    *lengthPtr = strlen(native);
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, native, *lengthPtr + 1);
+    if (native) {
+	*lengthPtr = strlen(native);
+	*valuePtr = ckalloc(*lengthPtr + 1);
+	memcpy(*valuePtr, native, *lengthPtr + 1);
+    } else {
+	*lengthPtr = 0;
+	*valuePtr = ckalloc(1);
+	*valuePtr[0] = '\0';
+    }
 }
 
 /*

@@ -685,7 +685,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -948,6 +948,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
 
+	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
+
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
@@ -967,6 +969,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when compiler supports casting to union type.])
 	fi
     fi
+
+    AC_DEFINE(MP_32BIT, 1, [Use 'MP_32BIT' for libtommath])
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
@@ -1267,18 +1271,18 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     done
     ])
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip "
+        ZIP_PROG="$ac_cv_path_zip"
         AC_MSG_RESULT([$ZIP_PROG])
         ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         AC_MSG_RESULT([Found INFO Zip in environment])
         # Use standard arguments for zip
     else
         # It is not an error if an installed version of Zip can't be located.
         # We can use the locally distributed minizip instead
-        ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
         ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="."
+        ZIP_PROG_VFSSEARCH="*"
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
         AC_MSG_RESULT([No zip found on PATH building minizip])
     fi

@@ -14,9 +14,10 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && defined(BUILD_tcl)
+
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
+#   define __MINGW_USE_VC2005_COMPAT
 #endif
 
 /*
@@ -52,15 +53,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   include <wspiapi.h>
 #endif
 
-#ifdef CHECK_UNICODE_CALLS
-#   define _UNICODE
-#   define UNICODE
-#   define __TCHAR_DEFINED
-    typedef float *_TCHAR;
-#   define _TCHAR_DEFINED
-    typedef float *TCHAR;
-#endif /* CHECK_UNICODE_CALLS */
-
 /*
  *  Pull in the typedef of TCHAR for windows.
  */
@@ -91,7 +83,13 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
+#if HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
 #include <limits.h>
+#ifdef HAVE_STDINT_H
+#   include <stdint.h>
+#endif
 
 #ifndef __GNUC__
 #    define strncasecmp _strnicmp
@@ -480,10 +478,13 @@ typedef DWORD_PTR * PDWORD_PTR;
  * including the *printf family and others. Tell it to shut up.
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#if defined(_MSC_VER)
+#   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
-#   pragma warning(disable:4267)
-#   pragma warning(disable:4996)
+#   if _MSC_VER >= 1400
+#	pragma warning(disable:4267)
+#	pragma warning(disable:4996)
+#   endif
 #endif
 
 /*

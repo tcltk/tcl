@@ -156,11 +156,7 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
-#ifdef HAVE_UNISTD_H
-#   include <unistd.h>
-#else
-#   include "../compat/unistd.h"
-#endif
+#include <unistd.h>
 
 MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 

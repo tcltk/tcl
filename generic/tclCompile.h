@@ -266,7 +266,7 @@ typedef struct AuxDataType {
 typedef struct AuxData {
     const AuxDataType *type;	/* Pointer to the AuxData type associated with
 				 * this ClientData. */
-    ClientData clientData;	/* The compilation data itself. */
+    void *clientData;	/* The compilation data itself. */
 } AuxData;
 
 /*
@@ -514,6 +514,23 @@ typedef struct ByteCode {
 				 * created. */
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
+
+#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (codePtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
+    } while (0)
+
+
+
+#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
 
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to the
@@ -823,8 +840,16 @@ typedef struct ByteCode {
 
 #define INST_CLOCK_READ			189
 
+#define INST_DICT_GET_DEF		190
+
+/* TIP 461 */
+#define INST_STR_LT			191
+#define INST_STR_GT			192
+#define INST_STR_LE			193
+#define INST_STR_GE			194
+
 /* The last opcode */
-#define LAST_INST_OPCODE		189
+#define LAST_INST_OPCODE		194
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1192,7 +1217,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1380,7 +1405,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

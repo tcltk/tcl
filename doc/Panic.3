@@ -93,7 +93,11 @@ have a panic message displayed the same way that panic messages from Tcl
 will be displayed.
 .PP
 \fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
-taking a variable number of arguments it takes an argument list.
+taking a variable number of arguments it takes an argument list. This
+function is deprecated and will be removed in Tcl 9.0.
+.PP
+This function can not be used in stub-enabled extensions. Its symbol
+entry in the stub table is deprecated and it will be removed in Tcl 9.0.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

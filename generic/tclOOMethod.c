@@ -67,7 +67,7 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int toRewrite,
 			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
 			    int *lengthPtr);
-static int		InvokeProcedureMethod(ClientData clientData,
+static int		InvokeProcedureMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	FinalizeForwardCall;
@@ -77,22 +77,22 @@ static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
-static void		DeleteProcedureMethod(ClientData clientData);
+static void		DeleteProcedureMethod(void *clientData);
 static int		CloneProcedureMethod(Tcl_Interp *interp,
-			    ClientData clientData, ClientData *newClientData);
+			    void *clientData, void **newClientData);
 static void		MethodErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		ConstructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		DestructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
-static Tcl_Obj *	RenderDeclarerName(ClientData clientData);
-static int		InvokeForwardMethod(ClientData clientData,
+static Tcl_Obj *	RenderDeclarerName(void *clientData);
+static int		InvokeForwardMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static void		DeleteForwardMethod(ClientData clientData);
+static void		DeleteForwardMethod(void *clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
-			    ClientData clientData, ClientData *newClientData);
+			    void *clientData, void **newClientData);
 static int		ProcedureMethodVarResolver(Tcl_Interp *interp,
 			    const char *varName, Tcl_Namespace *contextNs,
 			    int flags, Tcl_Var *varPtr);
@@ -121,7 +121,7 @@ static const Tcl_MethodType fwdMethodType = {
 #define TclVarTable(contextNs) \
     ((Tcl_HashTable *) (&((Namespace *) (contextNs))->varTable))
 #define TclVarHashGetValue(hPtr) \
-    ((Tcl_Var) ((char *)hPtr - TclOffset(VarInHash, entry)))
+    ((Tcl_Var) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 /*
  * ----------------------------------------------------------------------
@@ -146,11 +146,11 @@ Tcl_NewInstanceMethod(
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
-    ClientData clientData)	/* Some data associated with the particular
+    void *clientData)	/* Some data associated with the particular
 				 * method to be created. */
 {
-    register Object *oPtr = (Object *) object;
-    register Method *mPtr;
+    Object *oPtr = (Object *) object;
+    Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
 
@@ -218,11 +218,11 @@ Tcl_NewMethod(
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
-    ClientData clientData)	/* Some data associated with the particular
+    void *clientData)	/* Some data associated with the particular
 				 * method to be created. */
 {
-    register Class *clsPtr = (Class *) cls;
-    register Method *mPtr;
+    Class *clsPtr = (Class *) cls;
+    Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
 
@@ -344,7 +344,7 @@ TclOONewProcInstanceMethod(
 				 * interested. */
 {
     int argsLen;
-    register ProcedureMethod *pmPtr;
+    ProcedureMethod *pmPtr;
     Tcl_Method method;
 
     if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
@@ -396,7 +396,7 @@ TclOONewProcMethod(
 				 * interested. */
 {
     int argsLen;		/* -1 => delete argsObj before exit */
-    register ProcedureMethod *pmPtr;
+    ProcedureMethod *pmPtr;
     const char *procName;
     Tcl_Method method;
 
@@ -458,7 +458,7 @@ TclOOMakeProcInstanceMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    ClientData clientData,	/* The per-method type-specific data. */
+    void *clientData,	/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -571,7 +571,7 @@ TclOOMakeProcMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    ClientData clientData,	/* The per-method type-specific data. */
+    void *clientData,	/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -666,7 +666,7 @@ TclOOMakeProcMethod(
 
 static int
 InvokeProcedureMethod(
-    ClientData clientData,	/* Pointer to some per-method context. */
+    void *clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -679,11 +679,13 @@ InvokeProcedureMethod(
 				 * call frame's lifetime). */
 
     /*
-     * If the interpreter was deleted, we just skip to the next thing in the
-     * chain.
+     * If the object namespace (or interpreter) were deleted, we just skip to
+     * the next thing in the chain.
      */
 
-    if (Tcl_InterpDeleted(interp)) {
+    if (TclOOObjectDestroyed(((CallContext *)context)->oPtr) ||
+	Tcl_InterpDeleted(interp)
+    ) {
 	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
 		Tcl_ObjectContextSkippedArgs(context));
     }
@@ -745,7 +747,7 @@ InvokeProcedureMethod(
 
 static int
 FinalizePMCall(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -796,9 +798,10 @@ PushMethodCallFrame(
 				 * frame. */
 {
     Namespace *nsPtr = (Namespace *) contextPtr->oPtr->namespacePtr;
-    register int result;
+    int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
+    ByteCode *codePtr;
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -828,7 +831,7 @@ PushMethodCallFrame(
      */
 
     if (pmPtr->flags & USE_DECLARER_NS) {
-	register Method *mPtr =
+	Method *mPtr =
 		contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
@@ -864,10 +867,8 @@ PushMethodCallFrame(
      * alternative is *so* slow...
      */
 
-    if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
-		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
-
+    ByteCodeGetIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr) {
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
@@ -901,7 +902,7 @@ PushMethodCallFrame(
 	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
 	fdPtr->efi.fields[1].clientData = pmPtr;
     } else {
-	register Tcl_Method method =
+	Tcl_Method method =
 		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr);
 
 	if (Tcl_MethodDeclarerObject(method) != NULL) {
@@ -978,10 +979,8 @@ ProcedureMethodVarResolver(
      * Must not retain reference to resolved information. [Bug 3105999]
      */
 
-    if (rPtr != NULL) {
-	rPtr->deleteProc(rPtr);
-    }
-    return (*varPtr? TCL_OK : TCL_CONTINUE);
+    rPtr->deleteProc(rPtr);
+    return (*varPtr ? TCL_OK : TCL_CONTINUE);
 }
 
 static Tcl_Var
@@ -1153,7 +1152,7 @@ ProcedureMethodCompiledVarResolver(
 
 static Tcl_Obj *
 RenderDeclarerName(
-    ClientData clientData)
+    void *clientData)
 {
     struct PNI *pni = clientData;
     Tcl_Object object = Tcl_MethodDeclarerObject(pni->method);
@@ -1295,9 +1294,9 @@ DeleteProcedureMethodRecord(
 
 static void
 DeleteProcedureMethod(
-    ClientData clientData)
+    void *clientData)
 {
-    register ProcedureMethod *pmPtr = clientData;
+    ProcedureMethod *pmPtr = clientData;
 
     if (pmPtr->refCount-- <= 1) {
 	DeleteProcedureMethodRecord(pmPtr);
@@ -1307,8 +1306,8 @@ DeleteProcedureMethod(
 static int
 CloneProcedureMethod(
     Tcl_Interp *interp,
-    ClientData clientData,
-    ClientData *newClientData)
+    void *clientData,
+    void **newClientData)
 {
     ProcedureMethod *pmPtr = clientData;
     ProcedureMethod *pm2Ptr;
@@ -1341,7 +1340,7 @@ CloneProcedureMethod(
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
     Tcl_GetString(bodyObj);
-    TclFreeIntRep(bodyObj);
+    Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*
      * Create the actual copy of the method record, manufacturing a new proc
@@ -1390,7 +1389,7 @@ TclOONewForwardInstanceMethod(
 				 * prefix to forward to. */
 {
     int prefixLen;
-    register ForwardMethod *fmPtr;
+    ForwardMethod *fmPtr;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1429,7 +1428,7 @@ TclOONewForwardMethod(
 				 * prefix to forward to. */
 {
     int prefixLen;
-    register ForwardMethod *fmPtr;
+    ForwardMethod *fmPtr;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1461,7 +1460,7 @@ TclOONewForwardMethod(
 
 static int
 InvokeForwardMethod(
-    ClientData clientData,	/* Pointer to some per-method context. */
+    void *clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -1495,7 +1494,7 @@ InvokeForwardMethod(
 
 static int
 FinalizeForwardCall(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -1517,7 +1516,7 @@ FinalizeForwardCall(
 
 static void
 DeleteForwardMethod(
-    ClientData clientData)
+    void *clientData)
 {
     ForwardMethod *fmPtr = clientData;
 
@@ -1528,8 +1527,8 @@ DeleteForwardMethod(
 static int
 CloneForwardMethod(
     Tcl_Interp *interp,
-    ClientData clientData,
-    ClientData *newClientData)
+    void *clientData,
+    void **newClientData)
 {
     ForwardMethod *fmPtr = clientData;
     ForwardMethod *fm2Ptr = ckalloc(sizeof(ForwardMethod));
@@ -1570,9 +1569,7 @@ TclOOGetMethodBody(
     if (mPtr->typePtr == &procMethodType) {
 	ProcedureMethod *pmPtr = mPtr->clientData;
 
-	if (pmPtr->procPtr->bodyPtr->bytes == NULL) {
-	    (void) Tcl_GetString(pmPtr->procPtr->bodyPtr);
-	}
+	(void) TclGetString(pmPtr->procPtr->bodyPtr);
 	return pmPtr->procPtr->bodyPtr;
     }
     return NULL;
@@ -1680,7 +1677,7 @@ int
 Tcl_MethodIsType(
     Tcl_Method method,
     const Tcl_MethodType *typePtr,
-    ClientData *clientDataPtr)
+    void **clientDataPtr)
 {
     Method *mPtr = (Method *) method;
 
@@ -1718,7 +1715,7 @@ TclOONewProcInstanceMethodEx(
     TclOO_PreCallProc *preCallPtr,
     TclOO_PostCallProc *postCallPtr,
     ProcErrorProc *errProc,
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which must not be
 				 * NULL. */
     Tcl_Obj *argsObj,		/* The formal argument list for the method,
@@ -1755,7 +1752,7 @@ TclOONewProcMethodEx(
     TclOO_PreCallProc *preCallPtr,
     TclOO_PostCallProc *postCallPtr,
     ProcErrorProc *errProc,
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
 				 * if so, up to caller to manage storage
 				 * (e.g., because it is a constructor or

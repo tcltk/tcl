@@ -405,7 +405,7 @@ Tcl_LoadObjCmd(
 	len = strlen(fullFileName) + 1;
 	pkgPtr->fileName	   = ckalloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
-	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
+	len = Tcl_DStringLength(&pkgName) + 1;
 	pkgPtr->packageName	   = ckalloc(len);
 	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
