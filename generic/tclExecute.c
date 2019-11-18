@@ -8689,7 +8689,7 @@ ExecuteExtendedUnaryMathOp(
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	/* ~a = - a - 1 */
-	mp_neg(&big, &big);
+	(void)mp_neg(&big, &big);
 	mp_sub_d(&big, 1, &big);
 	BIG_RESULT(&big);
     case INST_UMINUS:
@@ -8706,7 +8706,7 @@ ExecuteExtendedUnaryMathOp(
 	default:
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	}
-	mp_neg(&big, &big);
+	(void)mp_neg(&big, &big);
 	BIG_RESULT(&big);
     }
 
