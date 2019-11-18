@@ -158,8 +158,10 @@ extern void MP_FREE(void *mem, size_t size);
 #define MP_HAS(x)        (sizeof(MP_STRINGIZE(BN_##x##_C)) == 1u)
 
 /* TODO: Remove private_mp_word as soon as deprecated mp_word is removed from tommath. */
+#if !defined(MP_64BIT) || defined(__GNUC__)
 #undef mp_word
 typedef private_mp_word mp_word;
+#endif
 
 #define MP_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MP_MAX(x, y) (((x) > (y)) ? (x) : (y))
