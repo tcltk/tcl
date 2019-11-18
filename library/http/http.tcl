@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.0
+package provide http 2.9.1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -2978,7 +2978,7 @@ proc http::IsBinaryContentType {type} {
     # and so on.
     if {$major eq "application"} {
 	set minor [string trimright $minor]
-	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	if {$minor in {"json" "xml" "xml-external-parsed-entity" "xml-dtd"}} {
 	    return false
 	}
     }
