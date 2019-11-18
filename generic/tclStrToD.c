@@ -1285,7 +1285,7 @@ TclParseNumber(
 	    }
 	    if (octalSignificandOverflow) {
 		if (signum) {
-		    mp_neg(&octalSignificandBig, &octalSignificandBig);
+		    (void)mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
 		TclSetBignumIntRep(objPtr, &octalSignificandBig);
 	    }
@@ -1318,7 +1318,7 @@ TclParseNumber(
 	    }
 	    if (significandOverflow) {
 		if (signum) {
-		    mp_neg(&significandBig, &significandBig);
+		    (void)mp_neg(&significandBig, &significandBig);
 		}
 		TclSetBignumIntRep(objPtr, &significandBig);
 	    }
