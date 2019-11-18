@@ -746,6 +746,15 @@ TCL_USE_STATIC_PACKAGES	= 1
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
 
+!if [nmakehlp -f $(OPTS) "nothreads"]
+!message *** Compile explicitly for non-threaded tcl
+TCL_THREADS = 0
+USE_THREAD_ALLOC= 0
+!else
+TCL_THREADS	= 1
+USE_THREAD_ALLOC= 1
+!endif
+
 !if [nmakehlp -f $(OPTS) "time64bit"]
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
@@ -791,6 +800,12 @@ PGO		= 0
 
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
+!endif
+
+# TBD - should get rid of this option
+!if [nmakehlp -f $(OPTS) "thrdalloc"]
+!message *** Doing thrdalloc
+USE_THREAD_ALLOC = 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "tclalloc"]
@@ -1190,8 +1205,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 !endif # $(DOING_TK) || $(NEED_TK)
 
 # Various output paths
-PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX:t=).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
+PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1284,6 +1299,11 @@ OPTDEFINES	= $(OPTDEFINES) /DUSE_THREAD_ALLOC=1
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) /DSTATIC_BUILD
+!elseif $(TCL_VERSION) > 86
+OPTDEFINES	= $(OPTDEFINES) /DTCL_WITH_EXTERNAL_TOMMATH
+!if "$(MACHINE)" == "AMD64"
+OPTDEFINES	= $(OPTDEFINES) /DMP_64BIT
+!endif
 !endif
 !if $(TCL_NO_DEPRECATED)
 OPTDEFINES	= $(OPTDEFINES) /DTCL_NO_DEPRECATED
@@ -1324,7 +1344,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=6
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /D_ATL_XP_TARGETING=1 /DMP_32BIT=1
+COMPILERFLAGS  = /D_ATL_XP_TARGETING
 
 # Like the TEA system only set this non empty for non-Tk extensions
 # Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME
@@ -1493,7 +1513,7 @@ RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    /DCOMMAVERSION=$(DOTVERSION:.=,),0 \
 	    /DDOTVERSION=\"$(DOTVERSION)\" \
 	    /DVERSION=\"$(VERSION)\" \
-	    /DSUFX=\"$(SUFX:t=)\" \
+	    /DSUFX=\"$(SUFX)\" \
 	    /DPROJECT=\"$(PROJECT)\" \
 	    /DPRJLIBNAME=\"$(PRJLIBNAME)\"
 

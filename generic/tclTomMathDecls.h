@@ -140,7 +140,7 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_u64(a,(unsigned int)(b)))
 #define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
 #define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),(long)(b)),MP_OKAY))
-#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ull") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
+#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
 #define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)TclBN_mp_ubin_size(mp))
 
 #undef TCL_STORAGE_CLASS

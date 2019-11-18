@@ -332,7 +332,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - choco install make
+        - choco install -y make zip
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Shared: UTF_MAX=6"
       os: windows

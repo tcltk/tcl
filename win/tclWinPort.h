@@ -19,7 +19,8 @@
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
-#if defined(_MSC_VER) && defined(_WIN64) && !defined(MP_32BIT) && !defined(STATIC_BUILD)
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
+	&& !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_64BIT
 #endif
 
