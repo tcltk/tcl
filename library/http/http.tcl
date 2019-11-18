@@ -1181,7 +1181,7 @@ proc http::IsBinaryContentType {type} {
     # and so on.
     if {$major eq "application"} {
 	set minor [string trimright $minor]
-	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	if {$minor in {"json" "xml" "xml-external-parsed-entity" "xml-dtd"}} {
 	    return false
 	}
     }
