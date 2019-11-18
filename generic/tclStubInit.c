@@ -237,61 +237,61 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #else
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = mp_div_d(a, 3, c, &d2);
-   if (d) {
-      *d = d2;
-   }
-   return result;
+    mp_digit d2;
+    mp_err result = mp_div_d(a, 3, c, &d2);
+    if (d) {
+	*d = d2;
+    }
+    return result;
 }
 
 int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 {
-	return TclBN_mp_expt_u32(a, b, c);
+    return TclBN_mp_expt_u32(a, b, c);
 }
 
 mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 {
-   return TclBN_mp_to_ubin(a, b, INT_MAX, NULL);
+    return TclBN_mp_to_ubin(a, b, INT_MAX, NULL);
 }
 
 mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-   size_t n = TclBN_mp_ubin_size(a);
-   if (*outlen < (unsigned long)n) {
-      return MP_VAL;
-   }
-   *outlen = (unsigned long)n;
-   return TclBN_mp_to_ubin(a, b, n, NULL);
+    size_t n = TclBN_mp_ubin_size(a);
+    if (*outlen < (unsigned long)n) {
+	return MP_VAL;
+    }
+    *outlen = (unsigned long)n;
+    return TclBN_mp_to_ubin(a, b, n, NULL);
 }
 
 void TclBN_reverse(unsigned char *s, int len)
 {
-   if (len > 0) {
+    if (len > 0) {
 	TclBN_s_mp_reverse(s, (size_t)len);
-   }
+    }
 }
 
 mp_err TclBN_mp_init_ul(mp_int *a, unsigned long b)
 {
-   return TclBN_mp_init_u64(a,b);
+    return TclBN_mp_init_u64(a,b);
 }
 
 mp_err TclBN_mp_init_l(mp_int *a, long b)
 {
-   return TclBN_mp_init_i64(a,b);
+    return TclBN_mp_init_i64(a,b);
 }
 
 void TclBN_mp_set(mp_int *a, unsigned int b) {
-	mp_set_u64(a, b);
+    mp_set_u64(a, b);
 }
 
 mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 {
-   if (maxlen < 0) {
-      return MP_VAL;
-   }
-   return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+    if (maxlen < 0) {
+	return MP_VAL;
+    }
+    return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath
