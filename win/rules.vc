@@ -1190,8 +1190,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 !endif # $(DOING_TK) || $(NEED_TK)
 
 # Various output paths
-PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX:t=).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
+PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1493,7 +1493,7 @@ RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    /DCOMMAVERSION=$(DOTVERSION:.=,),0 \
 	    /DDOTVERSION=\"$(DOTVERSION)\" \
 	    /DVERSION=\"$(VERSION)\" \
-	    /DSUFX=\"$(SUFX:t=)\" \
+	    /DSUFX=\"$(SUFX)\" \
 	    /DPROJECT=\"$(PROJECT)\" \
 	    /DPRJLIBNAME=\"$(PRJLIBNAME)\"
 

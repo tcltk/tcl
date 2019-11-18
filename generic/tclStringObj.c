@@ -2613,7 +2613,7 @@ AppendPrintfToObjVA(
 		    end = q;
 		}
 
-		q = bytes + TCL_UTF_MAX;
+		q = bytes + 4;
 		while ((bytes < end) && (bytes < q)
 			&& ((*bytes & 0xC0) == 0x80)) {
 		    bytes++;
