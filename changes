@@ -8941,4 +8941,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
 
-- Released 8.6.10, November 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+2019-11-18 (bug)[13657a] application/json us text, not binary (noe,nijtmans)
+=> http 2.9.1
+
+- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
