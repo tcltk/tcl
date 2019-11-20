@@ -21,7 +21,7 @@
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
 #else
-#   include "tclTommath.h"
+#   include "tclTomMath.h"
 #endif
 #include "tclStringRep.h"
 
