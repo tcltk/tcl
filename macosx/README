@@ -57,7 +57,7 @@ No nroff manpages are installed by default by the GNUmakefile.
 
 - The Tcl framework can be installed in any of the system's standard
 framework directories:
-	$HOME/Library/Frameworks /Library/Frameworks /System/Library/Frameworks
+	$HOME/Library/Frameworks /Library/Frameworks
 
 
 3. Building Tcl on Mac OS X
