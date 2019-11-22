@@ -224,7 +224,7 @@ MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
 MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
 
 extern MP_PRIVATE const char *const mp_s_rmap;
-extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
+extern MP_PRIVATE const uint8_t mp_s_rmap_reverse[];
 extern MP_PRIVATE const size_t mp_s_rmap_reverse_sz;
 extern MP_PRIVATE const mp_digit *s_mp_prime_tab;
 
