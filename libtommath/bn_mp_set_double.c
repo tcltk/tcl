@@ -16,7 +16,7 @@ mp_err mp_set_double(mp_int *a, double b)
    cast.dbl = b;
 
    exp = (int)((unsigned)(cast.bits >> 52) & 0x7FFu);
-   frac = (cast.bits & ((UINT64_C(1) << 52) - UINT64_C(1))) | (UINT64_C(1) << 52);
+   frac = (cast.bits & (((uint64_t)1 << 52) - (uint64_t)1)) | ((uint64_t)1 << 52);
 
    if (exp == 0x7FF) { /* +-inf, NaN */
       return MP_VAL;
