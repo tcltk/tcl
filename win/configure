@@ -842,6 +842,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-threads        build with threads (default: on)
   --enable-shared         build and link with shared libraries (default: on)
+  --enable-time64bit      force 64-bit time_t for 32-bit build (default: off)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
   --enable-symbols        build with debugging symbols (default: off)
@@ -1311,7 +1312,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".8"
+TCL_PATCH_LEVEL=".10"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -3017,24 +3018,26 @@ fi
 
 echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 echo $ECHO_N "checking whether ${MAKE-make} sets \$(MAKE)... $ECHO_C" >&6
-set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y,:./+-,___p_,'`
+set x ${MAKE-make}
+ac_make=`echo "" | sed 'y,:./+-,___p_,'`
 if eval "test \"\${ac_cv_prog_make_${ac_make}_set+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.make <<\_ACEOF
+SHELL = /bin/sh
 all:
-	@echo 'ac_maketemp="$(MAKE)"'
+	@echo '@@@%%%=$(MAKE)=@@@%%%'
 _ACEOF
-# GNU make sometimes prints "make[1]: Entering...", which would confuse us.
-eval `${MAKE-make} -f conftest.make 2>/dev/null | grep temp=`
-if test -n "$ac_maketemp"; then
-  eval ac_cv_prog_make_${ac_make}_set=yes
-else
-  eval ac_cv_prog_make_${ac_make}_set=no
-fi
+# GNU make sometimes prints "make[1]: Entering ...", which would confuse us.
+case `${MAKE-make} -f conftest.make 2>/dev/null` in
+  *@@@%%%=?*=@@@%%%*)
+    eval ac_cv_prog_make_${ac_make}_set=yes;;
+  *)
+    eval ac_cv_prog_make_${ac_make}_set=no;;
+esac
 rm -f conftest.make
 fi
-if eval "test \"`echo '$ac_cv_prog_make_'${ac_make}_set`\" = yes"; then
+if eval test \$ac_cv_prog_make_${ac_make}_set = yes; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   SET_MAKE=
@@ -3153,6 +3156,25 @@ _ACEOF
 
     fi
 
+
+#--------------------------------------------------------------------
+# Check whether --enable-time64bit was given.
+#--------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking force of 64-bit time_t" >&5
+echo $ECHO_N "checking force of 64-bit time_t... $ECHO_C" >&6
+# Check whether --enable-time64bit or --disable-time64bit was given.
+if test "${enable_time64bit+set}" = set; then
+  enableval="$enable_time64bit"
+  tcl_ok=$enableval
+else
+  tcl_ok=no
+fi;
+echo "$as_me:$LINENO: result: \"$tcl_ok\"" >&5
+echo "${ECHO_T}\"$tcl_ok\"" >&6
+if test "$tcl_ok" = "yes"; then
+    CFLAGS="${CFLAGS} -D_USE_64BIT_TIME_T"
+fi
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
@@ -4372,7 +4394,7 @@ if test "$tcl_ok" = "yes"; then
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  if test "$do64bit" = "yes"; then
+  if test "$do64bit" != "no"; then
 
     if test "$GCC" == "yes"; then
 

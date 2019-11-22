@@ -86,7 +86,7 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
 test http-1.1 {http::config} {
     http::config -useragent UserAgent
     http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
+} [list -accept */* -pipeline 1 -postfresh 0 -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -repost 0 -urlencoding utf-8 -useragent UserAgent -zip 1]
 test http-1.2 {http::config} {
     http::config -proxyfilter
 } http::ProxyRequired
@@ -101,10 +101,10 @@ test http-1.4 {http::config} {
     set x [http::config]
     http::config {*}$savedconf
     set x
-} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
+} {-accept */* -pipeline 1 -postfresh 0 -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -repost 0 -urlencoding iso8859-1 -useragent {Tcl Test Suite} -zip 1}
 test http-1.5 {http::config} -returnCodes error -body {
     http::config -proxyhost {} -junk 8080
-} -result {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
+} -result {Unknown option -junk, must be: -accept, -pipeline, -postfresh, -proxyfilter, -proxyhost, -proxyport, -repost, -urlencoding, -useragent, -zip}
 test http-1.6 {http::config} -setup {
     set oldenc [http::config -urlencoding]
 } -body {
@@ -190,7 +190,7 @@ test http-3.7 {http::geturl} -body {
 <h2>GET $tail</h2>
 </body></html>"
 test http-3.8 {http::geturl} -body {
-    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 2000]
+    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 3000]
     http::data $token
 } -cleanup {
     http::cleanup $token
@@ -356,7 +356,7 @@ test http-3.24 {http::geturl parse failures} -body {
 test http-3.25 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -timeout 2000]
+    set token [http::geturl $url -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -366,7 +366,7 @@ test http-3.25 {http::meta} -setup {
 test http-3.26 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
+    set token [http::geturl $url -headers {X-Check 1} -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -592,7 +592,7 @@ test http-4.14 {http::Event} -body {
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 1000 -command \#]
+    set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
     http::wait $token
     http::status $token
     # error codes vary among platforms.

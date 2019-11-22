@@ -1513,7 +1513,7 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
-#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
+#if 0 /* BUG https://core.tcl-lang.org/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
 #else
     /*
@@ -1652,6 +1652,7 @@ ClockGetenvObjCmd(
 {
     const char *varName;
     const char *varValue;
+    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1744,6 +1745,7 @@ ClockClicksObjCmd(
     int index = CLICKS_NATIVE;
     Tcl_Time now;
     Tcl_WideInt clicks = 0;
+    (void)clientData;
 
     switch (objc) {
     case 1:
@@ -1772,8 +1774,7 @@ ClockClicksObjCmd(
 #endif
 	break;
     case CLICKS_MICROS:
-	Tcl_GetTime(&now);
-	clicks = ((Tcl_WideInt) now.sec * 1000000) + now.usec;
+	clicks = TclpGetMicroseconds();
 	break;
     }
 
@@ -1807,6 +1808,7 @@ ClockMillisecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -1843,15 +1845,12 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    Tcl_Time now;
-
+    (void)clientData;
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
     return TCL_OK;
 }
 
@@ -1999,6 +1998,7 @@ ClockSecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);

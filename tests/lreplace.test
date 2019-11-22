@@ -98,12 +98,18 @@ test lreplace-1.26 {lreplace command} {
         [set foo [lreplace $foo end end]] \
         [set foo [lreplace $foo end end]]
 } {a {} {}}
-test lreplace-1.27 {lreplace command} {
+test lreplace-1.27 {lreplace command} -body {
     lreplace x 1 1
-} x
-test lreplace-1.28 {lreplace command} {
+} -result x
+test lreplace-1.28 {lreplace command} -body {
     lreplace x 1 1 y
-} {x y}
+} -result {x y}
+test lreplace-1.29 {lreplace command} -body {
+    lreplace x 1 1 [error foo]
+} -returnCodes 1 -result {foo}
+test lreplace-1.30 {lreplace command} -body {
+    lreplace {not {}alist} 0 0 [error foo]
+} -returnCodes 1 -result {foo}
 
 test lreplace-2.1 {lreplace errors} {
     list [catch lreplace msg] $msg
@@ -122,10 +128,10 @@ test lreplace-2.5 {lreplace errors} {
 } {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.6 {lreplace errors} {
     list [catch {lreplace x 3 2} msg] $msg
-} {1 {list doesn't contain element 3}}
+} {0 x}
 test lreplace-2.7 {lreplace errors} {
     list [catch {lreplace x 2 2} msg] $msg
-} {1 {list doesn't contain element 2}}
+} {0 x}
 
 test lreplace-3.1 {lreplace won't modify shared argument objects} {
     proc p {} {

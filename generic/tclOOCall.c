@@ -110,7 +110,12 @@ TclOODeleteContext(
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
 	TclStackFree(oPtr->fPtr->interp, contextPtr);
-	DelRef(oPtr);
+
+	/*
+	 * Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore
+	 */
+
+	TclOODecrRefCount(oPtr);
     }
 }
 
@@ -233,7 +238,7 @@ FreeMethodNameRep(
  * TclOOInvokeContext --
  *
  *	Invokes a single step along a method call-chain context. Note that the
- *	invokation of a step along the chain can cause further steps along the
+ *	invocation of a step along the chain can cause further steps along the
  *	chain to be invoked. Note that this function is written to be as light
  *	in stack usage as possible.
  *
@@ -264,7 +269,7 @@ TclOOInvokeContext(
     if (contextPtr->index == 0) {
 	int i;
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -342,7 +347,7 @@ FinalizeMethodRefs(
     CallContext *contextPtr = data[0];
     int i;
 
-    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -567,7 +572,10 @@ TclOOGetSortedClassMethodList(
     return i;
 }
 
-/* Comparator for GetSortedMethodList */
+/*
+ * Comparator for GetSortedMethodList
+ */
+
 static int
 CmpStr(
     const void *ptr1,
@@ -576,7 +584,7 @@ CmpStr(
     const char **strPtr1 = (const char **) ptr1;
     const char **strPtr2 = (const char **) ptr2;
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1)+1);
+    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
 }
 
 /*
@@ -823,20 +831,20 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+    for (i = cbPtr->filterLength ; i < callPtr->numChain ; i++) {
 	if (callPtr->chain[i].mPtr == mPtr &&
 		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
 	     * following methods. Note that this does not change the number of
-	     * method invokations in the call chain; it just rearranges them.
+	     * method invocations in the call chain; it just rearranges them.
 	     */
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<callPtr->numChain ; i++) {
-		callPtr->chain[i] = callPtr->chain[i+1];
+	    for (; i + 1 < callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i + 1];
 	    }
 	    callPtr->chain[i].mPtr = mPtr;
 	    callPtr->chain[i].isFilter = (doneFilters != NULL);
@@ -853,7 +861,7 @@ AddMethodToCallChain(
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
 	callPtr->chain =
-		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain+1));
+		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
@@ -935,7 +943,7 @@ IsStillValid(
  * TclOOGetCallContext --
  *
  *	Responsible for constructing the call context, an ordered list of all
- *	method implementations to be called as part of a method invokation.
+ *	method implementations to be called as part of a method invocation.
  *	This method is central to the whole operation of the OO system.
  *
  * ----------------------------------------------------------------------
@@ -1171,6 +1179,11 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
+
+    /*
+     * Corresponding TclOODecrRefCount() in TclOODeleteContext
+     */
+
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
@@ -1442,7 +1455,6 @@ AddSimpleClassChainToCallContext(
     if (flags & CONSTRUCTOR) {
 	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
 		filterDecl, flags);
-
     } else if (flags & DESTRUCTOR) {
 	AddMethodToCallChain(classPtr->destructorPtr, cbPtr, doneFilters,
 		filterDecl, flags);
@@ -1517,7 +1529,7 @@ TclOORenderCallChain(
     /*
      * Do the actual construction of the descriptions. They consist of a list
      * of triples that describe the details of how a method is understood. For
-     * each triple, the first word is the type of invokation ("method" is
+     * each triple, the first word is the type of invocation ("method" is
      * normal, "unknown" is special because it adds the method name as an
      * extra argument when handled by some method types, and "filter" is
      * special because it's a filter method). The second word is the name of
@@ -1527,7 +1539,7 @@ TclOORenderCallChain(
      */
 
     objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i=0 ; i<callPtr->numChain ; i++) {
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] = miPtr->isFilter

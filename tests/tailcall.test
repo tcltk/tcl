@@ -688,6 +688,26 @@ if {[testConstraint testnrelevels]} {
     namespace delete testnre
 }
 
+test tailcall-14.1 {in a deleted namespace} -body {
+    namespace eval ns {
+	proc p args {
+	    tailcall [namespace current] $args
+	}
+	namespace delete [namespace current]
+	p
+    }
+} -returnCodes 1 -result {namespace "::ns" not found}
+
+test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
+    namespace eval ns {
+	proc p args {
+	    tailcall [namespace current] {*}$args
+	}
+	namespace delete [namespace current]
+	p
+    }
+} -returnCodes 1 -result {namespace "::ns" not found}
+
 # cleanup
 ::tcltest::cleanupTests
 

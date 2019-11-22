@@ -322,11 +322,22 @@ TclCompileArraySetCmd(
      */
 
     if (isDataValid && !isDataEven) {
+	/* Abandon custom compile and let invocation raise the error */
+	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto done;
+
+	/*
+	 * We used to compile to the bytecode that would throw the error,
+	 * but that was wrong because it would not invoke the array trace
+	 * on the variable.
+	 *
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	goto done;
+	 *
+	 */
     }
 
     /*
@@ -404,6 +415,10 @@ TclCompileArraySetCmd(
      * Start issuing instructions to write to the array.
      */
 
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+
     CompileWord(envPtr, dataTokenPtr, interp, 2);
     if (!isDataLiteral || !isDataValid) {
 	/*
@@ -428,9 +443,6 @@ TclCompileArraySetCmd(
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
 
-    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
     TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
     offsetBack = CurrentOffset(envPtr);
     Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
@@ -3396,10 +3408,10 @@ TclPushVarName(
     int *isScalarPtr)		/* Must not be NULL. */
 {
     register const char *p;
-    const char *name, *elName;
-    register int i, n;
+    const char *last, *name, *elName;
+    register int n;
     Tcl_Token *elemTokenPtr = NULL;
-    int nameChars, elNameChars, simpleVarName, localIndex;
+    int nameLen, elNameLen, simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 
     /*
@@ -3412,7 +3424,7 @@ TclPushVarName(
 
     simpleVarName = 0;
     name = elName = NULL;
-    nameChars = elNameChars = 0;
+    nameLen = elNameLen = 0;
     localIndex = -1;
 
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -3424,22 +3436,25 @@ TclPushVarName(
 	simpleVarName = 1;
 
 	name = varTokenPtr[1].start;
-	nameChars = varTokenPtr[1].size;
-	if (name[nameChars-1] == ')') {
+	nameLen = varTokenPtr[1].size;
+	if (name[nameLen-1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */
+	    last = Tcl_UtfPrev(name + nameLen, name);
 
-	    for (i=0,p=name ; i<nameChars ; i++,p++) {
-		if (*p == '(') {
-		    elName = p + 1;
-		    elNameChars = nameChars - i - 2;
-		    nameChars = i;
-		    break;
+	    if (*last == ')') {
+		for (p = name;  p < last;  p = Tcl_UtfNext(p)) {
+		    if (*p == '(') {
+			elName = p + 1;
+			elNameLen = last - elName;
+			nameLen = p - name;
+			break;
+		    }
 		}
 	    }
 
-	    if (!(flags & TCL_NO_ELEMENT) && (elName != NULL) && elNameChars) {
+	    if (!(flags & TCL_NO_ELEMENT) && elNameLen) {
 		/*
 		 * An array element, the element name is a simple string:
 		 * assemble the corresponding token.
@@ -3449,7 +3464,7 @@ TclPushVarName(
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
-		elemTokenPtr->size = elNameChars;
+		elemTokenPtr->size = elNameLen;
 		elemTokenPtr->numComponents = 0;
 		elemTokenCount = 1;
 	    }
@@ -3457,21 +3472,22 @@ TclPushVarName(
     } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
+	    && (*((p = varTokenPtr[n].start + varTokenPtr[n].size)-1) == ')')
+	    && (*Tcl_UtfPrev(p, varTokenPtr[n].start) == ')')) {
 	/*
 	 * Check for parentheses inside first token.
 	 */
 
 	simpleVarName = 0;
-	for (i = 0, p = varTokenPtr[1].start;
-		i < varTokenPtr[1].size; i++, p++) {
+	for (p = varTokenPtr[1].start,
+	     last = p + varTokenPtr[1].size;  p < last;  p = Tcl_UtfNext(p)) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
 	    }
 	}
 	if (simpleVarName) {
-	    int remainingChars;
+	    int remainingLen;
 
 	    /*
 	     * Check the last token: if it is just ')', do not count it.
@@ -3487,13 +3503,13 @@ TclPushVarName(
 	    }
 
 	    name = varTokenPtr[1].start;
-	    nameChars = p - varTokenPtr[1].start;
+	    nameLen = p - varTokenPtr[1].start;
 	    elName = p + 1;
-	    remainingChars = (varTokenPtr[2].start - p) - 1;
-	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
+	    remainingLen = (varTokenPtr[2].start - p) - 1;
+	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingChars) {
+	      if (remainingLen) {
 		/*
 		 * Make a first token with the extra characters in the first
 		 * token.
@@ -3503,7 +3519,7 @@ TclPushVarName(
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingChars;
+		elemTokenPtr->size = remainingLen;
 		elemTokenPtr->numComponents = 0;
 		elemTokenCount = n;
 
@@ -3532,8 +3548,8 @@ TclPushVarName(
 
 	int hasNsQualifiers = 0;
 
-	for (i = 0, p = name;  i < nameChars;  i++, p++) {
-	    if ((*p == ':') && ((i+1) < nameChars) && (*(p+1) == ':')) {
+	for (p = name, last = p + nameLen-1;  p < last;  p = Tcl_UtfNext(p)) {
+	    if ((*p == ':') && (*(p+1) == ':')) {
 		hasNsQualifiers = 1;
 		break;
 	    }
@@ -3546,7 +3562,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
 		/*
 		 * We'll push the name.
@@ -3556,7 +3572,7 @@ TclPushVarName(
 	    }
 	}
 	if (interp && localIndex < 0) {
-	    PushLiteral(envPtr, name, nameChars);
+	    PushLiteral(envPtr, name, nameLen);
 	}
 
 	/*
@@ -3565,7 +3581,7 @@ TclPushVarName(
 	 */
 
 	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
-	    if (elNameChars) {
+	    if (elNameLen) {
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {

@@ -37,6 +37,11 @@ testConstraint testobj [expr {
 testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
+
+if {[namespace which -command testbumpinterpepoch] eq ""} {
+  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+}
+
 # Tests for the omnibus TclExecuteByteCode function:
 
 # INST_DONE not tested
@@ -933,8 +938,7 @@ test execute-8.3 {Stack restoration} -setup {
     proc f {args} "f $arglst"
     proc run {} {
 	# bump the interp's epoch
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	catch f msg
 	set msg
     }
@@ -948,8 +952,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
     }
     proc FOO {} {
 	catch {error bar} m o
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	return -options $o $m
     }
 } -body {
@@ -978,10 +981,80 @@ test execute-8.5 {Bug 2038069} -setup {
     invoked from within
 "catch \[list error FOO\] m o"} -errorline 2}
 
+test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    slave eval {
+	lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+	}
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    }
+    slave eval {
+	catch {
+	    lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    }
+    slave eval {set res}
+} -cleanup {
+    interp delete slave
+} -result [lrepeat 4 A B]
+test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), exception case} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    set res {}
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code return test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    } e] $e
+    list $res [slave eval {set res}]
+} -cleanup {
+    interp delete slave
+} -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
+
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {
-	catch {set foo}
+	catch {error foo}
 	expr {1/$c}
     }
     if {[string match *foo* $::errorInfo]} {
@@ -1016,6 +1089,7 @@ test execute-10.3 {Bug 3072640} -setup {
     proc t {args} { 
 	incr ::foo 
     }
+    set ::foo 0
     trace add execution ::generate enterstep ::t
 } -body {
     coroutine coro generate 5
@@ -1066,6 +1140,45 @@ test execute-11.3 {Bug a0ece9d6d4} -setup {
     trace remove execution crash enterstep {apply {args {info frame -2}}}
     rename crash {}
 } -result 1
+
+test execute-12.1 {failing multi-lappend to unshared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.2 {failing multi-lappend to shared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    set y $x
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.4 {failing multi-lappend to shared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	set y $x
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
 
 # cleanup
 if {[info commands testobj] != {}} {

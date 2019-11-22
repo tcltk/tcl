@@ -328,6 +328,40 @@ test encoding-15.3 {UtfToUtfProc null character input} {
     binary scan [encoding convertto identity $y] H* z
     list [string bytelength $x] [string bytelength $y] $z
 } {1 2 c080}
+test encoding-15.4 {UtfToUtfProc emoji character input} {
+    set x \xED\xA0\xBD\xED\xB8\x82
+    set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
+    list [string length $x] [string length $y] $y
+} "6 2 \uD83D\uDE02"
+test encoding-15.5 {UtfToUtfProc emoji character input} {
+    set x \xF0\x9F\x98\x82
+    set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
+    list [string length $x] [string length $y] $y
+} "4 2 \uD83D\uDE02"
+test encoding-15.6 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\uDE02\uD83D
+    set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {4 10 edb882f09f9882eda0bd}
+test encoding-15.7 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\uD83D
+    set y [encoding convertto utf-8 \uDE02\uD83D\uD83D]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 9 edb882eda0bdeda0bd}
+test encoding-15.8 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\xE9
+    set y [encoding convertto utf-8 \uDE02\uD83D\xE9]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 8 edb882eda0bdc3a9}
+test encoding-15.9 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83DX
+    set y [encoding convertto utf-8 \uDE02\uD83DX]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 7 edb882eda0bd58}
 
 test encoding-16.1 {UnicodeToUtfProc} {
     set val [encoding convertfrom unicode NN]

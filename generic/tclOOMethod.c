@@ -671,11 +671,13 @@ InvokeProcedureMethod(
 				 * call frame's lifetime). */
 
     /*
-     * If the interpreter was deleted, we just skip to the next thing in the
-     * chain.
+     * If the object namespace (or interpreter) were deleted, we just skip to
+     * the next thing in the chain.
      */
 
-    if (Tcl_InterpDeleted(interp)) {
+    if (TclOOObjectDestroyed(((CallContext *)context)->oPtr) ||
+	Tcl_InterpDeleted(interp)
+    ) {
 	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
 		Tcl_ObjectContextSkippedArgs(context));
     }
@@ -970,10 +972,8 @@ ProcedureMethodVarResolver(
      * Must not retain reference to resolved information. [Bug 3105999]
      */
 
-    if (rPtr != NULL) {
-	rPtr->deleteProc(rPtr);
-    }
-    return (*varPtr? TCL_OK : TCL_CONTINUE);
+    rPtr->deleteProc(rPtr);
+    return (*varPtr ? TCL_OK : TCL_CONTINUE);
 }
 
 static Tcl_Var

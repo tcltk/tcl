@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
+.TH "tcltest" n 2.5 tcltest "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -16,7 +16,7 @@
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest\fR ?\fB2.3\fR?
+\fBpackage require tcltest\fR ?\fB2.5\fR?
 
 \fBtcltest::test \fIname description\fR ?\fI\-option value ...\fR?
 \fBtcltest::test \fIname description\fR ?\fIconstraints\fR? \fIbody result\fR
@@ -454,6 +454,7 @@ The valid options for \fBtest\fR are summarized:
         ?\fB\-output \fIexpectedOutput\fR?
         ?\fB\-errorOutput \fIexpectedError\fR?
         ?\fB\-returnCodes \fIcodeList\fR?
+        ?\fB\-errorCode \fIexpectedErrorCode\fR?
         ?\fB\-match \fImode\fR?
 .CE
 .PP
@@ -577,6 +578,15 @@ return codes known to \fBreturn\fR, in both numeric and symbolic
 form, including extended return codes, are acceptable elements in
 the \fIexpectedCodeList\fR.  Default value is
 .QW "\fBok return\fR" .
+.TP
+\fB\-errorCode \fIexpectedErrorCode\fR
+.
+The optional \fB\-errorCode\fR attribute supplies \fIexpectedErrorCode\fR,
+a glob pattern that should match the error code reported from evaluation of the
+\fB\-body\fR script.  If evaluation of the \fB\-body\fR script returns
+a code not matching \fIexpectedErrorCode\fR, the test fails.  Default value is
+.QW "\fB*\fR" .
+If \fB\-returnCodes\fR does not include \fBerror\fR it is set to \fBerror\fR.
 .PP
 To pass, a test must successfully evaluate its \fB\-setup\fR, \fB\-body\fR,
 and \fB\-cleanup\fR scripts.  The return code of the \fB\-body\fR script and

@@ -1206,22 +1206,10 @@ TclOOCopyObjectCmd(
 	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL, NULL);
     } else {
 	const char *name, *namespaceName;
-	Tcl_DString buffer;
 
 	name = TclGetString(objv[2]);
-	Tcl_DStringInit(&buffer);
 	if (name[0] == '\0') {
 	    name = NULL;
-	} else if (name[0]!=':' || name[1]!=':') {
-	    Interp *iPtr = (Interp *) interp;
-
-	    if (iPtr->varFramePtr != NULL) {
-		Tcl_DStringAppend(&buffer,
-			iPtr->varFramePtr->nsPtr->fullName, -1);
-	    }
-	    TclDStringAppendLiteral(&buffer, "::");
-	    Tcl_DStringAppend(&buffer, name, -1);
-	    name = Tcl_DStringValue(&buffer);
 	}
 
 	/*
@@ -1243,7 +1231,6 @@ TclOOCopyObjectCmd(
 	}
 
 	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name, namespaceName);
-	Tcl_DStringFree(&buffer);
     }
 
     if (o2Ptr == NULL) {

@@ -11,8 +11,13 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+# There is no point in running Valgrind on cases where [exec] forks but then
+# fails and the child process doesn't go through full cleanup.
+
 package require tcltest 2
 namespace import -force ::tcltest::*
+
+package require tcltests
 
 # All tests require the "exec" command.
 # Skip them if exec is not defined.
@@ -300,7 +305,6 @@ test exec-6.3 {redirecting stderr through a pipeline} {exec stdio} {
 # I/O redirection: combinations.
 
 set path(gorp.file2) [makeFile {} gorp.file2]
-file delete $path(gorp.file2)
 
 test exec-7.1 {multiple I/O redirections} {exec} {
     exec << "command input" > $path(gorp.file2) [interpreter] $path(cat) < $path(gorp.file)
@@ -326,11 +330,11 @@ test exec-8.2 {long input and output} {exec} {
 
 # Commands that return errors.
 
-test exec-9.1 {commands returning errors} {exec} {
+test exec-9.1 {commands returning errors} {exec notValgrind} {
     set x [catch {exec gorp456} msg]
     list $x [string tolower $msg] [string tolower $errorCode]
 } {1 {couldn't execute "gorp456": no such file or directory} {posix enoent {no such file or directory}}}
-test exec-9.2 {commands returning errors} {exec} {
+test exec-9.2 {commands returning errors} {exec notValgrind} {
     string tolower [list [catch {exec [interpreter] echo foo | foo123} msg] $msg $errorCode]
 } {1 {couldn't execute "foo123": no such file or directory} {posix enoent {no such file or directory}}}
 test exec-9.3 {commands returning errors} -constraints {exec stdio} -body {
@@ -340,7 +344,7 @@ test exec-9.4 {commands returning errors} -constraints {exec stdio} -body {
     exec [interpreter] $path(exit) 43 | [interpreter] $path(echo) "foo bar"
 } -returnCodes error -result {foo bar
 child process exited abnormally}
-test exec-9.5 {commands returning errors} -constraints {exec stdio} -body {
+test exec-9.5 {commands returning errors} -constraints {exec stdio notValgrind} -body {
     exec gorp456 | [interpreter] echo a b c
 } -returnCodes error -result {couldn't execute "gorp456": no such file or directory}
 test exec-9.6 {commands returning errors} -constraints {exec} -body {
@@ -429,13 +433,13 @@ test exec-10.19 {errors in exec invocation} -constraints {exec} -body {
     exec cat >@ $f
 } -returnCodes error -result "channel \"$f\" wasn't opened for writing"
 close $f
-test exec-10.20 {errors in exec invocation} -constraints {exec} -body {
+test exec-10.20 {errors in exec invocation} -constraints {exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
 } -returnCodes error -result {user "non_existent_user" doesn't exist}
-test exec-10.21 {errors in exec invocation} -constraints {exec} -body {
+test exec-10.21 {errors in exec invocation} -constraints {exec notValgrind} -body {
     exec [interpreter] true | ~xyzzy_bad_user/x | false
 } -returnCodes error -result {user "xyzzy_bad_user" doesn't exist}
-test exec-10.22 {errors in exec invocation} -constraints exec -body {
+test exec-10.22 {errors in exec invocation} -constraints {exec notValgrind} -body {
     exec echo test > ~non_existent_user/foo/bar
 } -returnCodes error -result {user "non_existent_user" doesn't exist}
 # Commands in background.
@@ -511,7 +515,7 @@ test exec-13.1 {setting errorCode variable} {exec} {
 test exec-13.2 {setting errorCode variable} {exec} {
     list [catch {exec [interpreter] $path(cat) > a/b/c} msg] [string tolower $errorCode]
 } {1 {posix enoent {no such file or directory}}}
-test exec-13.3 {setting errorCode variable} {exec} {
+test exec-13.3 {setting errorCode variable} {exec notValgrind} {
     set x [catch {exec _weird_cmd_} msg]
     list $x [string tolower $msg] [lindex $errorCode 0] \
 	    [string tolower [lrange $errorCode 2 end]]
@@ -549,7 +553,7 @@ test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
 } -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
-test exec-14.4 {-- switch} -constraints {exec} -body {
+test exec-14.4 {-- switch} -constraints {exec notValgrind} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
 test exec-14.5 {-ignorestderr switch} {exec} {
@@ -663,7 +667,7 @@ test exec-18.2 {exec cat deals with weird file names} -body {
 # Note that this test cannot be adapted to work on Windows; that platform has
 # no kernel support for an analog of O_APPEND. OTOH, that means we can assume
 # that there is a POSIX shell...
-test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
+test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind} -setup {
     set tmpfile [makeFile {0} tmpfile.exec-19.1]
 } -body {
     # Note that we have to allow for the current contents of the temporary
@@ -676,7 +680,7 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
     exec /bin/sh -c \
 	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
-    # The above four shell invokations take about 3 seconds to finish, so allow
+    # The above four shell invocations take about 3 seconds to finish, so allow
     # 5s (in case the machine is busy)
     after 5000
     # Check that no bytes have got lost through mixups with overlapping

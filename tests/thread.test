@@ -11,25 +11,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.2
-    namespace import -force ::tcltest::*
-}
+
+#  when thread::release is used, -wait is passed in order allow the thread to
+#  be fully finalized, which avoids valgrind "still reachable" reports.
+
+package require tcltests
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
 # Some tests require the testthread command
 
-testConstraint testthread [expr {[info commands testthread] != {}}]
+testConstraint testthread [expr {[info commands testthread] ne {}}]
 
-# Some tests require the Thread package
-
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
-
-# Some tests may not work under valgrind
-
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
 
 set threadSuperKillScript {
     rename catch ""
@@ -72,6 +66,17 @@ proc ThreadError {id info} {
     set threadSawError($id) true; # signal main thread to exit [vwait].
 }
 
+proc threadSuperKill id {
+    variable threadSuperKillScript
+    try {
+	thread::send $id $::threadSuperKillScript
+    } on error {tres topts} {
+	if {$tres ne {target thread died}} {
+	    return -options $topts $tres
+	}
+    }
+}
+
 if {[testConstraint thread]} {
     thread::errorproc ThreadError
 }
@@ -96,22 +101,22 @@ test thread-1.3 {Tcl_ThreadObjCmd: initial thread list} {thread} {
 test thread-1.4 {Tcl_ThreadObjCmd: thread create } {thread} {
     set serverthread [thread::create -preserved]
     set numthreads [llength [thread::names]]
-    thread::release $serverthread
+    thread::release -wait $serverthread
     set numthreads
-} {2}
+} 2
 test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {thread} {
     thread::create {set x 5}
     foreach try {0 1 2 4 5 6} {
-	# Try various ways to yield
-	update
-	after 10
-	set l [llength [thread::names]]
-	if {$l == 1} {
-	    break
-	}
+        # Try various ways to yield
+        update
+        after 10
+        set l [llength [thread::names]]
+        if {$l == 1} {
+            break
+        }
     }
     set l
-} {1}
+} 1
 test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {thread} {
     thread::create {{*}{}}
     update
@@ -121,13 +126,13 @@ test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {thread} {
 test thread-1.13 {Tcl_ThreadObjCmd: send args} {thread} {
     set serverthread [thread::create -preserved]
     set five [thread::send $serverthread {set x 5}]
-    thread::release $serverthread
+    thread::release -wait $serverthread
     set five
 } 5
 test thread-1.15 {Tcl_ThreadObjCmd: wait} {thread} {
     set serverthread [thread::create -preserved {set z 5 ; thread::wait}]
     set five [thread::send $serverthread {set z}]
-    thread::release $serverthread
+    thread::release -wait $serverthread
     set five
 } 5
 
@@ -159,7 +164,7 @@ test thread-3.1 {TclThreadList} {thread} {
     set l2 [thread::names]
     set c [string compare [lsort [concat [thread::id] $l1]] [lsort $l2]]
     foreach t $l1 {
-	thread::release $t
+	thread::release -wait $t
     }
     list $len $c
 } {1 0}
@@ -887,7 +892,7 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {thread drainE
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -929,7 +934,7 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread 
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1029,7 +1034,7 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1071,7 +1076,7 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1111,7 +1116,7 @@ test thread-7.30 {cancel: send async thread cancel nested catch inside pure byte
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1153,7 +1158,7 @@ test thread-7.31 {cancel: send async thread cancel nested catch pure inside-comm
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
-    thread::send $serverthread $::threadSuperKillScript
+    threadSuperKill $serverthread
     vwait ::threadSawError($serverthread)
     thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \

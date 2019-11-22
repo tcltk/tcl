@@ -1200,6 +1200,7 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
     # without invoking the transform handler.
 } -cleanup {
     tempdone
+    interp delete $idb
 } -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 test iortrans-11.1 {origin interpreter of moved transform destroyed during access} -setup {
     set ida [interp create];	#puts <<$ida>>
@@ -1239,6 +1240,7 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	set res
     }]
 } -cleanup {
+    interp delete $idb
     tempdone
 } -result {Owner lost}
 test iortrans-11.2 {delete interp of reflected transform} -setup {

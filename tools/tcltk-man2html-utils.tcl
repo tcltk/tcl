@@ -149,6 +149,7 @@ proc process-text {text} {
 	    {\(em}	"&#8212;" \
 	    {\(en}	"&#8211;" \
 	    {\(fm}	"&#8242;" \
+	    {\(mc}	"&#181;" \
 	    {\(mu}	"&#215;" \
 	    {\(mi}	"&#8722;" \
 	    {\(->}	"<font size=\"+1\">&#8594;</font>" \
@@ -868,7 +869,7 @@ proc insert-cross-references {text} {
 				      [expr {$offset(end-bold)-1}]]
 			set text [string range $text[set text ""] \
 				      [expr {$offset(end-bold)+4}] end]
-			regsub {http://[\w/.]+} $body {<A HREF="&">&</A>} body
+			regsub {http://[\w/.-]+} $body {<A HREF="&">&</A>} body
 			append result <B> [cross-reference $body] </B>
 			continue
 		    }
@@ -904,7 +905,7 @@ proc insert-cross-references {text} {
 	    url {
 		set off [lindex $offsets 0]
 		append result [string range $text 0 [expr {$off-1}]]
-		regexp -indices -start $off {http://[\w/.]+} $text range
+		regexp -indices -start $off {http://[\w/.-]+} $text range
 		set url [string range $text {*}$range]
 		append result "<A HREF=\"[string trimright $url .]\">$url</A>"
 		set text [string range $text[set text ""] \

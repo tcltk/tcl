@@ -115,9 +115,7 @@ Any Unicode control character.
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
-Any of the valid forms for a double in Tcl, with optional surrounding
-whitespace.  In case of under/overflow in the value, 0 is returned and
-the \fIvarname\fR will contain \-1.
+Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
 .VS 8.6
 Any of the valid string formats for an integer value of arbitrary size
@@ -131,7 +129,7 @@ false.
 Any Unicode printing character, except space.
 .IP \fBinteger\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
-with optional surrounding whitespace.  In case of under/overflow in
+with optional surrounding whitespace.  In case of overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
@@ -156,7 +154,7 @@ true.
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
 Any of the valid forms for a wide integer in Tcl, with optional
-surrounding whitespace.  In case of under/overflow in the value, 0 is
+surrounding whitespace.  In case of overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
 .IP \fBwordchar\fR 12
 Any Unicode word character.  That is any alphanumeric character, and
@@ -335,21 +333,21 @@ specified using the forms described in \fBSTRING INDICES\fR.
 Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
-for which \fBstring is space\fR returns 1, and "\0").
+for which \fBstring is space\fR returns 1, and "\e0").
 .SS "OBSOLETE SUBCOMMANDS"
 .PP
 These subcommands are currently supported, but are likely to go away in a

@@ -153,7 +153,7 @@ typedef struct Dict {
  * must be assignable as well as readable.
  */
 
-#define DICT(dictObj)   (*((Dict **)&(dictObj)->internalRep.twoPtrValue.ptr1))
+#define DICT(dictObj)   ((dictObj)->internalRep.twoPtrValue.ptr1)
 
 /*
  * The structure below defines the dictionary object type by means of
@@ -3083,6 +3083,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    /* FALLTHRU */
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
