@@ -754,7 +754,7 @@ LBL_ERR:
 
 static int test_mp_get_u64(void)
 {
-   unsigned long long q, r;
+   uint64_t q, r;
    int i;
 
    mp_int a, b;
@@ -762,20 +762,20 @@ static int test_mp_get_u64(void)
       return EXIT_FAILURE;
    }
 
-   for (i = 0; i < (int)(MP_SIZEOF_BITS(unsigned long long) - 1); ++i) {
-      r = (1ULL << (i+1)) - 1;
+   for (i = 0; i < (int)(MP_SIZEOF_BITS(uint64_t) - 1); ++i) {
+      r = ((uint64_t)1 << (i+1)) - 1;
       if (!r)
-         r = ~0ULL;
-      printf(" r = 0x%llx i = %d\r", r, i);
+         r = UINT64_MAX;
+      printf(" r = 0x%" PRIx64 " i = %d\r", r, i);
       do {
          mp_set_u64(&a, r);
          q = mp_get_u64(&a);
          if (q != r) {
-            printf("\nmp_get_u64() bad result! 0x%llx != 0x%llx", q, r);
+            printf("\nmp_get_u64() bad result! 0x%" PRIx64 " != 0x%" PRIx64, q, r);
             goto LBL_ERR;
          }
          r <<= 1;
-      } while (r != 0uLL);
+      } while (r != 0u);
    }
 
    mp_clear_multi(&a, &b, NULL);
@@ -2313,7 +2313,7 @@ static int test_mp_read_write_ubin(void)
 
    size = mp_ubin_size(&a);
    printf("mp_to_ubin_size  %zu\n", size);
-   buf = malloc(sizeof(*buf) * size);
+   buf = (unsigned char *)malloc(sizeof(*buf) * size);
    if (buf == NULL) {
       fprintf(stderr, "test_read_write_binaries (u) failed to allocate %zu bytes\n",
               sizeof(*buf) * size);
@@ -2354,7 +2354,7 @@ static int test_mp_read_write_sbin(void)
 
    size = mp_sbin_size(&a);
    printf("mp_to_sbin_size  %zu\n", size);
-   buf = malloc(sizeof(*buf) * size);
+   buf = (unsigned char *)malloc(sizeof(*buf) * size);
    if (buf == NULL) {
       fprintf(stderr, "test_read_write_binaries (s) failed to allocate %zu bytes\n",
               sizeof(*buf) * size);
@@ -2395,7 +2395,7 @@ static int test_mp_pack_unpack(void)
 
    count = mp_pack_count(&a, 0, 1);
 
-   buf = malloc(count);
+   buf = (unsigned char *)malloc(count);
    if (buf == NULL) {
       fprintf(stderr, "test_pack_unpack failed to allocate\n");
       goto LTM_ERR;
@@ -2483,7 +2483,7 @@ static int unit_tests(int argc, char **argv)
    ok = fail = nop = 0;
 
    t = (uint64_t)time(NULL);
-   printf("SEED: 0x%"PRIx64"\n\n", t);
+   printf("SEED: 0x%" PRIx64 "\n\n", t);
    s_mp_rand_jenkins_init(t);
    mp_rand_source(s_mp_rand_jenkins);
 
