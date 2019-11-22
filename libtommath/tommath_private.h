@@ -13,7 +13,6 @@
 #endif
 #include "tclTomMath.h"
 #include "tommath_class.h"
-#include <limits.h>
 
 /*
  * Private symbols

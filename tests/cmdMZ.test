@@ -344,9 +344,13 @@ test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} 
 test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
     time {format 1}
 } -match regexp -result {^\d+ microseconds per iteration}
-test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} {
-    expr {[lindex [time {_nrt_sleep 0.01}] 0] < [lindex [time {_nrt_sleep 10.0}] 0]}
-} 1
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} -body {
+    set m1 [lindex [time {_nrt_sleep 0.01}] 0]
+    set m2 [lindex [time {_nrt_sleep 10.0}] 0]
+    list \
+	[expr {$m1 < $m2}] \
+	$m1 $m2; # interesting only in error case.
+} -match glob -result [list 1 *]
 test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
     list [catch {time {error foo}} msg] $msg $::errorInfo
 } {1 foo {foo
@@ -397,11 +401,10 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} {
-    lassign [timerate {_nrt_sleep 0} 50] ovh
-    set m1 [timerate -overhead $ovh {_nrt_sleep 0.01} 50]
-    set m2 [timerate -overhead $ovh {_nrt_sleep 1.00} 50]
-    list \
+test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} -body {
+    set m1 [timerate {_nrt_sleep 0.01} 50]
+    set m2 [timerate {_nrt_sleep 1.00} 50]
+    list [list \
 	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
 	[expr {[lindex $m1 0] < 100}] \
 	[expr {[lindex $m2 0] > 100}] \
@@ -410,8 +413,9 @@ test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains 
 	[expr {[lindex $m1 4] > 10000}] \
 	[expr {[lindex $m2 4] < 10000}] \
 	[expr {[lindex $m1 6] > 5 && [lindex $m1 6] < 100}] \
-	[expr {[lindex $m2 6] > 5 && [lindex $m2 6] < 100}]
-} [lrepeat 9 1]
+	[expr {[lindex $m2 6] > 5 && [lindex $m2 6] < 100}] \
+    ] $m1 $m2; # interesting only in error case.
+} -match glob -result [list [lrepeat 9 1] *]
 test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
     list [catch {timerate {error foo} 1} msg] $msg $::errorInfo
 } {1 foo {foo
@@ -424,35 +428,38 @@ test cmdMZ-6.7.1 {Tcl_TimeRateObjCmd: return from timerate} {
     proc r1 {} {upvar x x; timerate {incr x; return "r1"; incr x} 1000 10}
     list [r1] $x
 } {r1 1}
-test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
+test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} -body {
     set m1 [timerate {break}]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] < 1000}] \
 	[expr {[lindex $m1 2] == 1}] \
 	[expr {[lindex $m1 4] > 1000}] \
-	[expr {[lindex $m1 6] < 10}]
-} {1 1 1 1}
-test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} {
+	[expr {[lindex $m1 6] < 10}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
+test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} -body {
     set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] < 1000}] \
 	[expr {[lindex $m1 2] == 10}] \
 	[expr {[lindex $m1 4] > 1000}] \
-	[expr {[lindex $m1 6] < 100}]
-} {1 1 1 1}
+	[expr {[lindex $m1 6] < 100}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
     set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
     list [lindex $m1 2] [lindex $m2 2]
 } {5 1}
-test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
+test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} -body {
     set m1 [timerate -overhead 1e6 {_nrt_sleep 10} 100 1]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] == 0.0}] \
 	[expr {[lindex $m1 2] == 1}] \
 	[expr {[lindex $m1 4] == 1000000}] \
-	[expr {[lindex $m1 6] <= 0.001}]
-} {1 1 1 1}
+	[expr {[lindex $m1 6] <= 0.001}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
 test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
     set m1 {set m2 ok}
     if 1 $m1
