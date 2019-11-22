@@ -9120,3 +9120,14 @@ in this changeset (new minor version) rather than bug fixes:
 2019-09-14 [TIP 548] wchar_t conversion functions
 
 - Released 8.7a3, Nov 21, 2019 --- http://core.tcl-lang.org/tcl/ for details -
+
+Changes to 9.0a1 include all changes to the 8.7 line through 8.7a3,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+2017-11-03 [TIP 114] Leading zero integer no longer means octal
+
+
+
+
+- Released 9.0a1, Nov 25, 2019 --- http://core.tcl-lang.org/tcl/ for details -
