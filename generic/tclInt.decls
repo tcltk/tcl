@@ -73,7 +73,7 @@ declare 11 {
 declare 12 {
     void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 13 {
 #    int TclDoGlob(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
@@ -88,7 +88,7 @@ declare 14 {
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-# Removed in 8.4
+# Removed in 8.4:
 #declare 17 {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 #}
@@ -123,7 +123,7 @@ declare 25 {
 #  declare 26 {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 27 {
 #    int TclGetDate(char *p, unsigned long now, long zone,
 #	    unsigned long *timePtr)
@@ -147,7 +147,7 @@ declare 32 {
     int TclGetFrame(Tcl_Interp *interp, const char *str,
 	    CallFrame **framePtrPtr)
 }
-# Removed in Tcl 8.5
+# Removed in 8.5:
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
@@ -185,9 +185,9 @@ declare 41 {
 declare 42 {
     CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 43 {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 44 {
@@ -220,9 +220,9 @@ declare 50 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 52 {
-#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 53 {
@@ -273,7 +273,7 @@ declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 65 {
 #    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
 #	    Tcl_Obj *const objv[], int flags)
@@ -380,9 +380,9 @@ declare 92 {
 declare 93 {
     void TclProcDeleteProc(ClientData clientData)
 }
-# Removed in Tcl 8.5:
+# Removed in 8.5:
 #declare 94 {
-#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#    int TclProcInterpProc(void *clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
 #}
 # Replaced by Tcl_FSStat in 8.4:
@@ -555,7 +555,7 @@ declare 138 {
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
+#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
@@ -610,11 +610,11 @@ declare 153 {
 
 # moved to tclTest.c (static) in 8.3.2/8.4a2
 #declare 154 {
-#    int TclTestChannelCmd(ClientData clientData,
+#    int TclTestChannelCmd(void *clientData,
 #    Tcl_Interp *interp, int argc, char **argv)
 #}
 #declare 155 {
-#    int TclTestChannelEventCmd(ClientData clientData,
+#    int TclTestChannelEventCmd(void *clientData,
 #	     Tcl_Interp *interp, int argc, char **argv)
 #}
 
@@ -1037,7 +1037,7 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
-declare 258 {
+declare 259 {
     void TclUnusedStubEntry(void)
 }
 
@@ -1206,10 +1206,9 @@ declare 4 unix {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
+declare 5 unix {
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+}
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1253,25 +1252,28 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 macosx {
+declare 16 {unix macosx} {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 macosx {
+declare 17 {unix macosx} {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 22 {unix macosx} {
+    TclFile TclpCreateTempFile_(const char *contents)
 }
 
 declare 29 {win unix} {
@@ -1282,8 +1284,6 @@ declare 30 {win unix} {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
-
-
 
 # Local Variables:
 # mode: tcl
