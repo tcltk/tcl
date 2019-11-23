@@ -38,11 +38,12 @@ namespace eval ::tcl::test::fileSystemEncoding {
 	makeFile {} $utf8name
 	set globbed [lindex [glob -directory $dir *] 0]
 	encoding system utf-8
-	lappend res [file exists $globbed]
+	set res [file exists $globbed]
 	encoding system iso8859-1
 	lappend res [file exists $globbed]
 	return $res
     } -cleanup {
+	removeFile $utf8name
 	file delete -force $dir
 	encoding system $saved
     } -result  {0 1}
