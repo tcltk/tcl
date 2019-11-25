@@ -56,15 +56,16 @@
 #   define MODULE_SCOPE extern
 #endif
 
-MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
 MODULE_SCOPE mp_err	TclBN_s_mp_add_d(const mp_int *a, mp_digit b, mp_int *c);
 MODULE_SCOPE mp_ord	TclBN_s_mp_cmp_d(const mp_int *a, mp_digit b);
-MODULE_SCOPE mp_err	TclBN_s_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
 MODULE_SCOPE mp_err	TclBN_s_mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
-MODULE_SCOPE mp_err TclBN_s_mp_init_set(mp_int *a, mp_digit b);
+MODULE_SCOPE mp_err	TclBN_s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *b);
+MODULE_SCOPE mp_err	TclBN_s_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_s_mp_init_set(mp_int *a, mp_digit b);
 MODULE_SCOPE mp_err	TclBN_s_mp_mul_d(const mp_int *a, mp_digit b, mp_int *c);
+MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
 MODULE_SCOPE void	TclBN_s_mp_set(mp_int *a, mp_digit b);
-MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_s_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
 
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
@@ -72,33 +73,40 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 #define bn_reverse TclBN_reverse
 #define mp_add TclBN_mp_add
+#define mp_add_d TclBN_s_mp_add_d
 #define mp_and TclBN_mp_and
 #define mp_clamp TclBN_mp_clamp
 #define mp_clear TclBN_mp_clear
 #define mp_clear_multi TclBN_mp_clear_multi
 #define mp_cmp TclBN_mp_cmp
+#define mp_cmp_d TclBN_s_mp_cmp_d
 #define mp_cmp_mag TclBN_mp_cmp_mag
 #define mp_cnt_lsb TclBN_mp_cnt_lsb
 #define mp_copy TclBN_mp_copy
 #define mp_count_bits TclBN_mp_count_bits
 #define mp_div TclBN_mp_div
+#define mp_div_d TclBN_s_mp_div_d
 #define mp_div_2 TclBN_mp_div_2
+#define mp_div_3 TclBN_s_mp_div_3
 #define mp_div_2d TclBN_mp_div_2d
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_expt_u32 TclBN_s_mp_expt_u32
 #define mp_get_mag_u64 TclBN_mp_get_mag_u64
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
 #define mp_init_i64 TclBN_mp_init_i64
 #define mp_init_multi TclBN_mp_init_multi
+#define mp_init_set TclBN_s_mp_init_set
 #define mp_init_size TclBN_mp_init_size
 #define mp_init_u64 TclBN_mp_init_u64
 #define mp_lshd TclBN_mp_lshd
 #define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
 #define mp_mul TclBN_mp_mul
+#define mp_mul_d TclBN_s_mp_mul_d
 #define mp_mul_2 TclBN_mp_mul_2
 #define mp_mul_2d TclBN_mp_mul_2d
 #define mp_neg TclBN_mp_neg
@@ -106,10 +114,17 @@ MODULE_SCOPE mp_err TclBN_s_mp_expt_u32(const mp_int *a, unsigned int b, mp_int 
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
+#define mp_s_rmap TclBN_mp_s_rmap
+#define mp_s_rmap_reverse TclBN_mp_s_rmap_reverse
+#define mp_s_rmap_reverse_sz TclBN_mp_s_rmap_reverse_sz
+#define mp_set TclBN_s_mp_set
 #define mp_set_i64 TclBN_mp_set_i64
+#define mp_set_u64 TclBN_mp_set_u64
 #define mp_shrink TclBN_mp_shrink
+#define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
+#define mp_sub_d TclBN_s_mp_sub_d
 #define mp_signed_rsh TclBN_mp_signed_rsh
 #define mp_tc_and TclBN_mp_and
 #define mp_tc_div_2d TclBN_mp_signed_rsh
@@ -651,17 +666,25 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* !END!: Do not edit above this line. */
 
 #if defined(USE_TCL_STUBS)
+#undef mp_add_d
 #define mp_add_d TclBN_mp_add_d
+#undef mp_cmp_d
 #define mp_cmp_d TclBN_mp_cmp_d
+#undef mp_div_d
 #ifdef MP_64BIT
 #define mp_div_d TclBN_mp_div_ld
 #else
 #define mp_div_d TclBN_mp_div_d
 #endif
+#undef mp_sub_d
 #define mp_sub_d TclBN_mp_sub_d
+#undef mp_init_set
 #define mp_init_set TclBN_mp_init_set
+#undef mp_mul_d
 #define mp_mul_d TclBN_mp_mul_d
+#undef mp_set
 #define mp_set TclBN_mp_set
+#undef mp_expt_u32
 #define mp_expt_u32 TclBN_mp_expt_u32
 #endif /* USE_TCL_STUBS */
 
