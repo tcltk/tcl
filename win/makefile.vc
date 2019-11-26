@@ -303,7 +303,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclZipfs.obj \
 	$(TMP_DIR)\tclZlib.obj
 
-!if $(STATIC_BUILD)
 ZLIBOBJS = \
 	$(TMP_DIR)\adler32.obj \
 	$(TMP_DIR)\compress.obj \
@@ -316,9 +315,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\trees.obj \
 	$(TMP_DIR)\uncompr.obj \
 	$(TMP_DIR)\zutil.obj
-!else
-ZLIBOBJS = $(OUT_DIR)\zdll.lib
-!endif
 
 TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_add.obj \
@@ -450,7 +446,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
-dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll
+dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
@@ -522,19 +518,6 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
-
-!if "$(MACHINE)" == "AMD64"
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
-!else
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win32\zdll.lib $(OUT_DIR)\zdll.lib
-!endif
-
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -888,7 +871,6 @@ install-binaries:
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
-	@$(CPY) "$(OUT_DIR)\zlib1.dll" "$(BIN_INSTALL_DIR)\"
 !if exist($(TCLSH))
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
@@ -899,6 +881,10 @@ install-binaries:
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.1" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.1"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
@@ -938,8 +924,13 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library opt0.4 directory
-	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
+	@echo Installing package cookiejar 0.1 files to $(SCRIPT_INSTALL_DIR)/cookiejar0.1/
+	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.1\"
+	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.1\"
+	@echo Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/
+	@$(CPY) "$(ROOT)\library\opt0.4\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
