@@ -11,7 +11,7 @@
 package require Tcl 8.6
 package require http 2.8.4
 package require sqlite3
-package require tcl::idna 1.0
+package require http::idna 1.0.0
 
 #
 # Configuration for the cookiejar package, plus basic support procedures.
@@ -54,7 +54,7 @@ namespace eval [info object namespace ::http::cookiejar] {
 
     # Keep this in sync with pkgIndex.tcl and with the install directories in
     # Makefiles
-    variable version 0.1
+    variable version 0.1.0
 
     variable domainlist \
 	http://publicsuffix.org/list/effective_tld_names.dat
@@ -82,10 +82,10 @@ namespace eval [info object namespace ::http::cookiejar] {
 	proc locn {secure domain path {key ""}} {
 	    if {$key eq ""} {
 		format "%s://%s%s" [expr {$secure?"https":"http"}] \
-		    [::tcl::idna encode $domain] $path
+		    [::http::idna encode $domain] $path
 	    } else {
 		format "%s://%s%s?%s" \
-		    [expr {$secure?"https":"http"}] [::tcl::idna encode $domain] \
+		    [expr {$secure?"https":"http"}] [::http::idna encode $domain] \
 		    $path $key
 	    }
 	}
@@ -397,8 +397,8 @@ package provide cookiejar \
 		    continue
 		} elseif {[string match !* $line]} {
 		    set line [string range $line 1 end]
-		    set idna [string tolower [::tcl::idna encode $line]]
-		    set utf [::tcl::idna decode [string tolower $line]]
+		    set idna [string tolower [::http::idna encode $line]]
+		    set utf [::http::idna decode [string tolower $line]]
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
 			VALUES ($utf, 0);
@@ -412,8 +412,8 @@ package provide cookiejar \
 		} else {
 		    if {[string match {\*.*} $line]} {
 			set line [string range $line 2 end]
-			set idna [string tolower [::tcl::idna encode $line]]
-			set utf [::tcl::idna decode [string tolower $line]]
+			set idna [string tolower [::http::idna encode $line]]
+			set utf [::http::idna decode [string tolower $line]]
 			db eval {
 			    INSERT OR REPLACE INTO forbiddenSuper (domain)
 			    VALUES ($utf);
@@ -425,8 +425,8 @@ package provide cookiejar \
 			    }
 			}
 		    } else {
-			set idna [string tolower [::tcl::idna encode $line]]
-			set utf [::tcl::idna decode [string tolower $line]]
+			set idna [string tolower [::http::idna encode $line]]
+			set utf [::http::idna decode [string tolower $line]]
 		    }
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
@@ -439,9 +439,9 @@ package provide cookiejar \
 			}
 		    }
 		}
-		if {$utf ne [::tcl::idna decode [string tolower $idna]]} {
+		if {$utf ne [::http::idna decode [string tolower $idna]]} {
 		    log warn "mismatch in IDNA handling for %s (%d, %s, %s)" \
-			    $idna $line $utf [::tcl::idna decode $idna]
+			    $idna $line $utf [::http::idna decode $idna]
 		}
 	    }
 
@@ -518,7 +518,7 @@ package provide cookiejar \
 	set result {}
 	set paths [splitPath $path]
 	if {[regexp {[^0-9.]} $host]} {
-	    set domains [splitDomain [string tolower [::tcl::idna encode $host]]]
+	    set domains [splitDomain [string tolower [::http::idna encode $host]]]
 	} else {
 	    # Ugh, it's a numeric domain! Restrict it to just itself...
 	    set domains [list $host]
@@ -704,7 +704,7 @@ package provide cookiejar \
     forward Database db
 
     method lookup {{host ""} {key ""}} {
-	set host [string tolower [::tcl::idna encode $host]]
+	set host [string tolower [::http::idna encode $host]]
 	db transaction {
 	    if {$host eq ""} {
 		set result {}
@@ -712,7 +712,7 @@ package provide cookiejar \
 		    SELECT DISTINCT domain FROM cookies
 		    ORDER BY domain
 		} {
-		    lappend result [::tcl::idna decode [string tolower $domain]]
+		    lappend result [::http::idna decode [string tolower $domain]]
 		}
 		return $result
 	    } elseif {$key eq ""} {

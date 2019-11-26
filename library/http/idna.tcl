@@ -12,16 +12,16 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-namespace eval ::tcl::idna {
+namespace eval ::http::idna {
     namespace ensemble create -command puny -map {
 	encode punyencode
 	decode punydecode
     }
-    namespace ensemble create -command ::tcl::idna -map {
+    namespace ensemble create -command ::http::idna -map {
 	encode IDNAencode
 	decode IDNAdecode
 	puny puny
-	version {::apply {{} {package present tcl::idna} ::}}
+	version {::apply {{} {package present http::idna} ::}}
     }
 
     proc IDNAencode hostname {
@@ -284,7 +284,7 @@ namespace eval ::tcl::idna {
     }
 }
 
-package provide tcl::idna 1.0
+package provide http::idna 1.0.0
 
 # Local variables:
 # mode: tcl
