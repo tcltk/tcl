@@ -8,7 +8,7 @@
 #  include "../compat/stdint.h"
 #endif
 #endif
-#include <tommath.h>
+#include "../libtommath/tommath.h"
 #include "tclTomMathDecls.h"
 
 #endif
