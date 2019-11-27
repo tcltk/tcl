@@ -930,7 +930,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.1\"
 	@echo Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/
-	@$(CPY) "$(ROOT)\library\opt0.4\*.tcl" \
+	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
