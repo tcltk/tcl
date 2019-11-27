@@ -154,6 +154,9 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
+!if [echo PKG_COOKIEJAR_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
+!endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
 !endif
@@ -932,6 +935,11 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@echo Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/
 	@$(CPY) "$(ROOT)\library\opt0.4\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER) directory
+	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar$(PKG_COOKIEJAR_VER)\"
+	@$(CPY) "$(ROOT)\library\cookiejar\*.txt.gz" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar$(PKG_COOKIEJAR_VER)\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
