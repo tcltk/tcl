@@ -341,9 +341,9 @@ uint32_t mp_get_mag_u32(const mp_int *a) MP_WUR;
 uint64_t mp_get_mag_u64(const mp_int *a) MP_WUR;
 unsigned long mp_get_mag_ul(const mp_int *a) MP_WUR;
 #ifdef _MSC_VER
-#define mp_get_mag_ull(a) ((unsigned long long)mp_get_mag_u64(a))
+#define mp_get_mag_ull(a) ((uint64_t)mp_get_mag_u64(a))
 #else
-unsigned long long mp_get_mag_ull(const mp_int *a) MP_WUR;
+uint64_t mp_get_mag_ull(const mp_int *a) MP_WUR;
 #endif
 
 /* get integer, set integer (long) */
@@ -357,25 +357,25 @@ void mp_set_ul(mp_int *a, unsigned long b);
 mp_err mp_init_ul(mp_int *a, unsigned long b) MP_WUR;
 
 #ifdef _MSC_VER
-/* get integer, set integer (long long) */
-#define mp_get_ll(a) ((long long)mp_get_i64(a))
+/* get integer, set integer (int64_t) */
+#define mp_get_ll(a) ((int64_t)mp_get_i64(a))
 #define mp_set_ll(a,b) mp_set_i64(a,b)
 #define mp_init_ll(a,b) mp_init_i64(a,b)
 
-/* get integer, set integer (unsigned long long) */
-#define mp_get_ull(a) ((unsigned long long)mp_get_i64(a))
+/* get integer, set integer (uint64_t) */
+#define mp_get_ull(a) ((uint64_t)mp_get_i64(a))
 #define mp_set_ull(a,b) mp_set_u64(a,b)
 #define mp_init_ull(a,b) mp_init_u64(a,b)
 #else
-/* get integer, set integer (long long) */
-long long mp_get_ll(const mp_int *a) MP_WUR;
-void mp_set_ll(mp_int *a, long long b);
-mp_err mp_init_ll(mp_int *a, long long b) MP_WUR;
+/* get integer, set integer (int64_t) */
+int64_t mp_get_ll(const mp_int *a) MP_WUR;
+void mp_set_ll(mp_int *a, int64_t b);
+mp_err mp_init_ll(mp_int *a, int64_t b) MP_WUR;
 
-/* get integer, set integer (unsigned long long) */
-#define mp_get_ull(a) ((unsigned long long)mp_get_ll(a))
-void mp_set_ull(mp_int *a, unsigned long long b);
-mp_err mp_init_ull(mp_int *a, unsigned long long b) MP_WUR;
+/* get integer, set integer (uint64_t) */
+#define mp_get_ull(a) ((uint64_t)mp_get_ll(a))
+void mp_set_ull(mp_int *a, uint64_t b);
+mp_err mp_init_ull(mp_int *a, uint64_t b) MP_WUR;
 #endif
 
 /* set to single unsigned digit, up to MP_DIGIT_MAX */
@@ -386,12 +386,12 @@ mp_err mp_init_set(mp_int *a, mp_digit b) MP_WUR;
 MP_DEPRECATED(mp_get_mag_u32/mp_get_u32) unsigned long mp_get_int(const mp_int *a) MP_WUR;
 MP_DEPRECATED(mp_get_mag_ul/mp_get_ul) unsigned long mp_get_long(const mp_int *a) MP_WUR;
 #ifdef _MSC_VER
-MP_DEPRECATED(mp_get_mag_ull/mp_get_ull) unsigned long long mp_get_long_long(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_get_mag_ull/mp_get_ull) uint64_t mp_get_long_long(const mp_int *a) MP_WUR;
 #endif
 MP_DEPRECATED(mp_set_ul) mp_err mp_set_int(mp_int *a, unsigned long b);
 MP_DEPRECATED(mp_set_ul) mp_err mp_set_long(mp_int *a, unsigned long b);
 #ifdef _MSC_VER
-MP_DEPRECATED(mp_set_ull) mp_err mp_set_long_long(mp_int *a, unsigned long long b);
+MP_DEPRECATED(mp_set_ull) mp_err mp_set_long_long(mp_int *a, uint64_t b);
 #endif
 MP_DEPRECATED(mp_init_ul) mp_err mp_init_set_int(mp_int *a, unsigned long b) MP_WUR;
 
