@@ -109,7 +109,6 @@
 #define TclBN_mp_tc_div_2d mp_signed_rsh
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
-#define TclBN_mp_toradix_n mp_toradix_n
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
@@ -142,14 +141,14 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
-    mp_set_u64(a, i);
+    TclBN_mp_set_u64(a, i);
     return MP_OKAY;
 }
 
 static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 {
-	mp_set_u64(a, i);
-	return MP_OKAY;
+    TclBN_mp_set_u64(a, i);
+    return MP_OKAY;
 }
 
 #define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
@@ -198,7 +197,6 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclBN_mp_expt_d_ex 0
 #   define TclBN_mp_to_unsigned_bin 0
 #   define TclBN_mp_to_unsigned_bin_n 0
-#   undef TclBN_mp_toradix_n
 #   define TclBN_mp_toradix_n 0
 #   undef TclBN_mp_sqr
 #   define TclBN_mp_sqr 0
@@ -283,7 +281,7 @@ mp_err TclBN_mp_init_l(mp_int *a, long b)
 }
 
 void TclBN_mp_set(mp_int *a, unsigned int b) {
-    mp_set_u64(a, b);
+    TclBN_mp_set_u64(a, b);
 }
 
 mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
