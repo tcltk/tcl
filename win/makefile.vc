@@ -153,6 +153,9 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
+!if [echo PKG_OPT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
+!endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
 !endif
@@ -872,6 +875,8 @@ install-binaries:
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
@@ -909,10 +914,10 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library http1.0 directory
+	@echo Installing package http 1.0 (obsolete)
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo Installing library opt0.4 directory
+	@echo Installing package opt $(PKG_OPT_VER)
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
