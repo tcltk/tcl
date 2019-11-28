@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 5
+RULES_VERSION_MINOR = 6
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1299,6 +1299,8 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
 !if $(VCVERSION) >= 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
+!else
+OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1
 !endif
 !if $(VCVERSION) >= 1700
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_INTTYPES_H=1

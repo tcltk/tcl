@@ -670,7 +670,7 @@ test http-7.4 {http::formatQuery} -setup {
     http::config -urlencoding $enc
 } -result {%3F}
 
-package require -exact tcl::idna 1.0
+package require tcl::idna 1.0
 
 test http-idna-1.1 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna
