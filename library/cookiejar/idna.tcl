@@ -284,7 +284,7 @@ namespace eval ::tcl::idna {
     }
 }
 
-package provide tcl::idna 1.0
+package provide tcl::idna 1.0.1
 
 # Local variables:
 # mode: tcl
