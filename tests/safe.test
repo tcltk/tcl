@@ -40,7 +40,7 @@ test safe-1.2 {safe::interpCreate syntax} {
 } {1 {Usage information:
     Var/FlagName  Type     Value   Help
     ------------  ----     -----   ----
-    ( -help                        gives this help )
+    (-help                         gives this help)
     ?slave?       name     ()      name of the slave (optional)
     -accessPath   list     ()      access path for the slave
     -noStatics    boolflag (false) prevent loading of statically linked pkgs
