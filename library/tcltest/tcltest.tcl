@@ -1983,8 +1983,9 @@ proc tcltest::test {name description args} {
     }
 
     # First, run the setup script
-    lassign [uplevel 1 [list [
-		namespace which SetupScript] $setup]] code setupMsg
+    set code [catch {
+		uplevel 1 [list [namespace which SetupTest] $setup]
+	} setupMsg]
     if {$code == 1} {
 	set errorInfo(setup) $::errorInfo
 	set errorCodeRes(setup) $::errorCode
@@ -2368,11 +2369,8 @@ proc tcltest::RunTest {name script} {
 #
 # Evaluates the -setup script for a test
 
-proc tcltest::SetupTest {name script} {
-    DebugPuts 3 [list Setup Script for $name $script]
-
-    set code [catch {uplevel 1 $setup} setupMsg]
-	return [list $code $setupMsg]
+proc tcltest::SetupTest setup {
+    uplevel 1 $setup
 }
 
 #####################################################################
