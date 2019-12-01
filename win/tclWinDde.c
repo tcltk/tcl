@@ -79,7 +79,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.4.1"
+#define TCL_DDE_VERSION		"1.4.2"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
@@ -119,8 +119,8 @@ static int		DdeObjCmd(void *clientData,
 
 #if (TCL_MAJOR_VERSION < 9) && (TCL_MINOR_VERSION < 7)
 # if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf(a,(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) Tcl_WinUtfToTChar(a,b,c)
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
 # else
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
@@ -175,7 +175,7 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.5-", 0)) {
+    if (!Tcl_InitStubs(interp, "8.5", 0)) {
 	return TCL_ERROR;
     }
 

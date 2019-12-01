@@ -16,7 +16,7 @@
 # General usage:
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
-# For MACRODEF, see TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md)
+# For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md)
 # or examine Sections 6-8 in rules.vc.
 #
 # Possible values of TARGET are:
@@ -151,6 +151,12 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+!endif
+!if [echo PKG_OPT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
+!endif
+!if [echo PKG_COOKIEJAR_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
 !endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
@@ -315,9 +321,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
-	$(TMP_DIR)\bn_reverse.obj \
-	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
-	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_add.obj \
 	$(TMP_DIR)\bn_mp_add_d.obj \
 	$(TMP_DIR)\bn_mp_and.obj \
@@ -336,21 +339,18 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_2d.obj \
 	$(TMP_DIR)\bn_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
-	$(TMP_DIR)\bn_mp_expt_d.obj \
-	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
-	$(TMP_DIR)\bn_s_mp_get_bit.obj \
-	$(TMP_DIR)\bn_mp_get_int.obj \
-	$(TMP_DIR)\bn_mp_get_long.obj \
-	$(TMP_DIR)\bn_mp_get_long_long.obj \
+	$(TMP_DIR)\bn_mp_expt_u32.obj \
+	$(TMP_DIR)\bn_mp_get_mag_ul.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
+	$(TMP_DIR)\bn_mp_init_l.obj \
+	$(TMP_DIR)\bn_mp_init_ll.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
-	$(TMP_DIR)\bn_mp_init_set_int.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
-	$(TMP_DIR)\bn_mp_karatsuba_mul.obj \
-	$(TMP_DIR)\bn_mp_karatsuba_sqr.obj \
+	$(TMP_DIR)\bn_mp_init_ul.obj \
+	$(TMP_DIR)\bn_mp_init_ull.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
 	$(TMP_DIR)\bn_mp_mod_2d.obj \
@@ -365,27 +365,31 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
-	$(TMP_DIR)\bn_mp_set_int.obj \
-	$(TMP_DIR)\bn_mp_set_long.obj \
-	$(TMP_DIR)\bn_mp_set_long_long.obj \
+	$(TMP_DIR)\bn_mp_set_l.obj \
+	$(TMP_DIR)\bn_mp_set_ul.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
 	$(TMP_DIR)\bn_mp_signed_rsh.obj \
-	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
-	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
-	$(TMP_DIR)\bn_mp_toom_mul.obj \
-	$(TMP_DIR)\bn_mp_toom_sqr.obj \
-	$(TMP_DIR)\bn_mp_toradix_n.obj \
-	$(TMP_DIR)\bn_mp_unsigned_bin_size.obj \
+	$(TMP_DIR)\bn_mp_to_ubin.obj \
+	$(TMP_DIR)\bn_mp_to_radix.obj \
+	$(TMP_DIR)\bn_mp_ubin_size.obj \
 	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
+	$(TMP_DIR)\bn_s_mp_balance_mul.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_mul.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_sqr.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
+	$(TMP_DIR)\bn_s_mp_mul_digs_fast.obj \
+	$(TMP_DIR)\bn_s_mp_reverse.obj \
 	$(TMP_DIR)\bn_s_mp_sqr.obj \
-	$(TMP_DIR)\bn_s_mp_sub.obj
+	$(TMP_DIR)\bn_s_mp_sqr_fast.obj \
+	$(TMP_DIR)\bn_s_mp_sub.obj \
+	$(TMP_DIR)\bn_s_mp_toom_sqr.obj \
+	$(TMP_DIR)\bn_s_mp_toom_mul.obj
 
 PLATFORMOBJS = \
 	$(TMP_DIR)\tclWin32Dll.obj \
@@ -429,7 +433,7 @@ PKGSDIR		= $(ROOT)\pkgs
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
+PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DMP_WUR=
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
@@ -463,8 +467,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.1 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.3 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.2 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.4 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -897,6 +901,10 @@ install-binaries:
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4$(NULL)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2$(NULL)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl9$(NULL)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl9"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl9\9.0$(NULL)" \
@@ -911,8 +919,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_class.h"   "$(INCLUDE_INSTALL_DIR)\"
-	@$(CPY) "$(TOMMATHDIR)\tommath_superclass.h" "$(INCLUDE_INSTALL_DIR)\"
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
@@ -930,7 +936,12 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library opt0.4 directory
+	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
+	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
+	@echo Installing package opt $(PKG_OPT_VER)
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module

@@ -24,6 +24,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/GCC/Shared: NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/GCC/Static"
       os: linux
       dist: xenial
@@ -108,6 +115,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
+    - name: "Linux/Clang/Shared:NO_DEPRECATED"
+      os: linux
+      dist: xenial
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/Clang/Static"
       os: linux
       dist: xenial
@@ -165,14 +179,13 @@ matrix:
       os: linux
       dist: xenial
       compiler: x86_64-w64-mingw32-gcc
-      addons: &mingw64
+      addons:
         apt:
           packages:
             - gcc-mingw-w64-base
             - binutils-mingw-w64-x86-64
             - gcc-mingw-w64-x86-64
             - gcc-mingw-w64
-            - wine
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
@@ -181,49 +194,13 @@ matrix:
         # Include a high visibility marker that tests are skipped outright
         - >
           echo "`tput setaf 3`SKIPPED TEST: CROSS COMPILING`tput sgr0`"
-    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=6"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Shared/no test: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: x86_64-w64-mingw32-gcc
-      addons: *mingw64
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-symbols"
-      script: *crosstest
 # Test with mingw-w64 (32 bit) cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
       dist: xenial
       compiler: i686-w64-mingw32-gcc
-      addons: &mingw32
+      addons:
         apt:
           packages:
             - gcc-mingw-w64-base
@@ -231,46 +208,9 @@ matrix:
             - gcc-mingw-w64-i686
             - gcc-mingw-w64
             - gcc-multilib
-            - wine
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=6"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Shared/no test: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 CFLAGS=-DTCL_UTF_MAX=3"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Static/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --disable-shared"
-      script: *crosstest
-    - name: "Linux-cross-Windows-32/GCC/Debug/no test"
-      os: linux
-      dist: xenial
-      compiler: i686-w64-mingw32-gcc
-      addons: *mingw32
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32 --enable-symbols"
       script: *crosstest
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
@@ -295,6 +235,15 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -332,6 +281,15 @@ matrix:
       script:
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc all tcltest'
         - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=nodep -f makefile.vc test'
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -374,6 +332,13 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
       before_install: *makepreinst
+    - name: "Windows/GCC/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
+      before_install: *makepreinst
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -408,6 +373,13 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Static"
       os: windows

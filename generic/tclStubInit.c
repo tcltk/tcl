@@ -10,7 +10,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tommath_private.h"
 
 #ifdef __CYGWIN__
 #   include <wchar.h>
@@ -58,6 +58,58 @@
 #   undef Tcl_AttemptRealloc
 #   define Tcl_AttemptRealloc TclpRealloc
 #endif
+
+MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
+MP_SET_SIGNED(mp_set_ll, mp_set_ull, Tcl_WideInt, Tcl_WideUInt)
+MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
+
+mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
+{
+    mp_set_ul(a, i);
+    return MP_OKAY;
+}
+
+static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
+{
+	mp_set_ul(a, i);
+	return MP_OKAY;
+}
+
+#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
+
+mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_expt_u32(a, b, c);
+}
+
+mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_add_d(a, b, c);
+}
+mp_err	TclBN_mp_cmp_d(const mp_int *a, unsigned int b) {
+   return TclBN_s_mp_cmp_d(a, b);
+}
+mp_err	TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c) {
+   return TclBN_s_mp_sub_d(a, b, c);
+}
+
+mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *d) {
+   mp_digit d2;
+   mp_err result = TclBN_s_mp_div_d(a, b, c, (d ? &d2 : NULL));
+   if (d) {
+      *d = d2;
+   }
+   return result;
+}
+mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
+	return TclBN_s_mp_init_set(a, b);
+}
+mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
+	return TclBN_s_mp_mul_d(a, b, c);
+}
+void TclBN_mp_set(mp_int *a, unsigned int b) {
+	TclBN_s_mp_set(a, b);
+}
+
+
 
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
@@ -566,9 +618,9 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_d, /* 14 */
     TclBN_mp_div_2, /* 15 */
     TclBN_mp_div_2d, /* 16 */
-    TclBN_mp_div_3, /* 17 */
+    0, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_d, /* 19 */
+    TclBN_mp_expt_u32, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -589,14 +641,14 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_rshd, /* 37 */
     TclBN_mp_shrink, /* 38 */
     TclBN_mp_set, /* 39 */
-    TclBN_mp_sqr, /* 40 */
+    0, /* 40 */
     TclBN_mp_sqrt, /* 41 */
     TclBN_mp_sub, /* 42 */
     TclBN_mp_sub_d, /* 43 */
-    TclBN_mp_to_unsigned_bin, /* 44 */
-    TclBN_mp_to_unsigned_bin_n, /* 45 */
-    TclBN_mp_toradix_n, /* 46 */
-    TclBN_mp_unsigned_bin_size, /* 47 */
+    0, /* 44 */
+    0, /* 45 */
+    0, /* 46 */
+    TclBN_mp_ubin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     0, /* 50 */
@@ -610,23 +662,26 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 58 */
     0, /* 59 */
     0, /* 60 */
-    TclBN_mp_init_set_int, /* 61 */
-    TclBN_mp_set_int, /* 62 */
+    TclBN_mp_init_ul, /* 61 */
+    TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    0, /* 64 */
-    0, /* 65 */
-    0, /* 66 */
-    TclBN_mp_expt_d_ex, /* 67 */
-    TclBN_mp_set_long_long, /* 68 */
-    TclBN_mp_get_long_long, /* 69 */
-    TclBN_mp_set_long, /* 70 */
-    TclBN_mp_get_long, /* 71 */
-    TclBN_mp_get_int, /* 72 */
+    TclBNInitBignumFromLong, /* 64 */
+    TclBNInitBignumFromWideInt, /* 65 */
+    TclBNInitBignumFromWideUInt, /* 66 */
+    0, /* 67 */
+    TclBN_mp_set_ull, /* 68 */
+    TclBN_mp_get_mag_ull, /* 69 */
+    TclBN_mp_set_ll, /* 70 */
+    TclBN_mp_get_mag_ul, /* 71 */
+    TclBN_mp_set_l, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    TclBN_mp_get_bit, /* 77 */
+    0, /* 77 */
+    TclBN_mp_to_ubin, /* 78 */
+    0, /* 79 */
+    TclBN_mp_to_radix, /* 80 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -684,7 +739,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    0, /* 30 */
+    TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */

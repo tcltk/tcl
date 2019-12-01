@@ -2806,18 +2806,14 @@ struct Tcl_LoadHandle_ {
 
 /* Flags for conversion of doubles to digit strings */
 
-#define TCL_DD_SHORTEST 		0x4
-				/* Use the shortest possible string */
 #define TCL_DD_E_FORMAT 		0x2
 				/* Use a fixed-length string of digits,
 				 * suitable for E format*/
 #define TCL_DD_F_FORMAT 		0x3
 				/* Use a fixed number of digits after the
 				 * decimal point, suitable for F format */
-
-#define TCL_DD_SHORTEN_FLAG 		0x4
-				/* Allow return of a shorter digit string
-				 * if it converts losslessly */
+#define TCL_DD_SHORTEST 		0x4
+				/* Use the shortest possible string */
 #define TCL_DD_NO_QUICK 		0x8
 				/* Debug flag: forbid quick FP conversion */
 
@@ -2991,8 +2987,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(void *dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	TclInfoVarsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE void	TclInitBignumFromWideInt(mp_int *, Tcl_WideInt);
-MODULE_SCOPE void	TclInitBignumFromWideUInt(mp_int *, Tcl_WideUInt);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -4051,7 +4045,6 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
  */
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-MODULE_SCOPE void	TclFreeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
