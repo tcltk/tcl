@@ -1983,7 +1983,9 @@ proc tcltest::test {name description args} {
     }
 
     # First, run the setup script
-    set code [catch {uplevel 1 $setup} setupMsg]
+    set code [catch {
+		uplevel 1 [list [namespace which SetupTest] $setup]
+	} setupMsg]
     if {$code == 1} {
 	set errorInfo(setup) $::errorInfo
 	set errorCodeRes(setup) $::errorCode
@@ -2338,6 +2340,8 @@ proc tcltest::Skipped {name constraints} {
     return 0
 }
 
+
+
 # RunTest --
 #
 # This is where the body of a test is evaluated.  The combination of
@@ -2357,6 +2361,16 @@ proc tcltest::RunTest {name script} {
     set code [catch {uplevel 1 $script} actualAnswer]
 
     return [list $actualAnswer $code]
+}
+
+
+
+# SetupTest --
+#
+# Evaluates the -setup script for a test
+
+proc tcltest::SetupTest setup {
+    uplevel 1 $setup
 }
 
 #####################################################################
