@@ -2358,9 +2358,18 @@ proc tcltest::RunTest {name script} {
 	memory tag $name
     }
 
-    set code [catch {uplevel 1 $script} actualAnswer]
+    set code [catch {uplevel 1 [list [
+	namespace origin EvalTest] $script]} actualAnswer copts]
 
     return [list $actualAnswer $code]
+}
+
+
+proc tcltest::EvalTest script {
+    set code [catch {uplevel 1 $script} cres copts]
+    dict set copts -code $code
+    dict incr copts -level
+    return -options $copts $cres
 }
 
 

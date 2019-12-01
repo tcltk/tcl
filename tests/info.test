@@ -735,28 +735,28 @@ proc etrace {} {
 
 test info-22.0 {info frame, levels} {!singleTestInterp} {
     info frame
-} 7
+} 9
 test info-22.1 {info frame, bad level relative} {!singleTestInterp} {
     # catch is another level!, i.e. we have 8, not 7
-    catch {info frame -8} msg
+    catch {info frame -10} msg
     set msg
-} {bad level "-8"}
+} {bad level "-10"}
 test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
     # catch is another level!, i.e. we have 8, not 7
-    catch {info frame 9} msg
+    catch {info frame 11} msg
     set msg
-} {bad level "9"}
+} {bad level "11"}
 test info-22.3 {info frame, current, relative} -match glob -body {
     info frame 0
-} -result {type source line 750 file */info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 750 file */info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-22.4 {info frame, current, relative, nested} -match glob -body {
     set res [info frame 0]
-} -result {type source line 753 file */info.test cmd {info frame 0} proc ::tcltest::RunTest} -cleanup {unset res}
+} -result {type source line 753 file */info.test cmd {info frame 0} proc ::tcltest::EvalTest} -cleanup {unset res}
 test info-22.5 {info frame, current, absolute} -constraints {!singleTestInterp} -match glob -body {
-    reduce [info frame 7]
-} -result {type source line 756 file info.test cmd {info frame 7} proc ::tcltest::RunTest}
+    reduce [info frame 9]
+} -result {type source line 756 file info.test cmd {info frame 9} proc ::tcltest::EvalTest}
 test info-22.6 {info frame, global, relative} {!singleTestInterp} {
-    reduce [info frame -6]
+    reduce [info frame -8]
 } {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}
 test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
     reduce [info frame 1]
@@ -764,8 +764,8 @@ test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
 test info-22.8 {info frame, basic trace} -match glob -body {
     join [lrange [etrace] 0 2] \n
 } -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type source line 765 file info.test cmd etrace proc ::tcltest::RunTest}
-* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+* {type source line 765 file info.test cmd etrace proc ::tcltest::EvalTest}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::EvalTest}}
 unset -nocomplain msg
 
 
@@ -792,20 +792,20 @@ test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0
     }
-} -result {type source line 793 file * cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 793 file * cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-23.4 {eval'd info frame, semi-dynamic} {
     eval info frame 0
-} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-23.5 {eval'd info frame, dynamic} -cleanup {unset script} -body {
     set script {info frame 0}
     eval $script
-} -result {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 1 cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-23.6 {eval'd info frame, trace} -match glob -cleanup {unset script} -body {
     set script {etrace}
     join [lrange [eval $script] 0 2] \n
 } -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type eval line 1 cmd etrace proc ::tcltest::RunTest}
-* {type source line 805 file info.test cmd {eval $script} proc ::tcltest::RunTest}}
+* {type eval line 1 cmd etrace proc ::tcltest::EvalTest}
+* {type source line 805 file info.test cmd {eval $script} proc ::tcltest::EvalTest}}
 
 # -------------------------------------------------------------------------
 
@@ -1024,7 +1024,7 @@ test info-30.0 {bs+nl in literal words} -cleanup {unset res} -body {
     # offsets of all bs+nl sequences in literal words, then using the
     # information in the bcc and other places to bump line numbers when
     # parsing over the location. Also affected: testcases 22.8 and 23.6.
-} -result {type source line 1018 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 1018 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 # -------------------------------------------------------------------------
 # See 24.0 - 24.5 for similar situations, using literal scripts.
@@ -1042,36 +1042,36 @@ test info-31.0 {ns eval, script in variable} -body {namespace eval foo {variable
 test info-31.1 {if, script in variable} -cleanup {unset res a flag} -body {
     if 1 $body
     return $res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-31.1a {if, script in variable} -cleanup {unset res a flag} -body {
     if 1 then $body
     return $res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-31.2 {while, script in variable} -cleanup {unset flag res a} -body {
     set flag 1
     while {$flag} $body
     return $res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 # .3 - proc - scoping prevent return of result ...
 
 test info-31.4 {foreach, script in variable} -cleanup {unset var res a flag} -body {
     foreach var val $body
     set res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-31.5 {for, script in variable} -cleanup {unset flag res a} -body {
     set flag 1
     for {} {$flag} {} $body
     return $res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-31.6 {eval, script in variable} -cleanup {unset res a flag} -body {
     eval $body
     return $res
-} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 # -------------------------------------------------------------------------
 
@@ -1319,8 +1319,8 @@ test info-37.0 {eval pure list, single line} -match glob -body {
     eval $cmd
     return $res
 } -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type eval line 2 cmd etrace proc ::tcltest::RunTest}
-* {type eval line 1 cmd foreac proc ::tcltest::RunTest}} -cleanup {unset foo cmd res b c}
+* {type eval line 2 cmd etrace proc ::tcltest::EvalTest}
+* {type eval line 1 cmd foreac proc ::tcltest::EvalTest}} -cleanup {unset foo cmd res b c}
 
 # -------------------------------------------------------------------------
 
@@ -1360,8 +1360,8 @@ test info-38.1 {location information for uplevel, dv, direct-var} -match glob -b
     }
     join [lrange [uplevel \#0 $script] 0 2] \n
 } -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type eval line 3 cmd etrace proc ::tcltest::RunTest}
-* {type source line 1361 file info.test cmd {uplevel \\#0 $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
+* {type eval line 3 cmd etrace proc ::tcltest::EvalTest}
+* {type source line 1361 file info.test cmd {uplevel \\#0 $script} proc ::tcltest::EvalTest}} -cleanup {unset script y}
 
 # 38.2 moved to bottom to not disturb other tests with the necessary changes to this one.
 
@@ -1381,7 +1381,7 @@ test info-38.3 {location information for uplevel, dpv, direct-proc-var} -match g
 } -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
 * {type eval line 3 cmd etrace proc ::control}
 * {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
-* {type source line 1380 file info.test cmd {control y $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
+* {type source line 1380 file info.test cmd {control y $script} proc ::tcltest::EvalTest}} -cleanup {unset script y}
 
 # 38.4 moved to bottom to not disturb other tests with the necessary changes to this one.
 
@@ -1399,7 +1399,7 @@ test info-38.5 {location information for uplevel, ppv, proc-proc-var} -match glo
 * {type eval line 3 cmd etrace proc ::control}
 * {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
 * {type source line 1353 file info.test cmd {control y $script} proc ::datav level 1}
-* {type source line 1397 file info.test cmd datav proc ::tcltest::RunTest}}
+* {type source line 1397 file info.test cmd datav proc ::tcltest::EvalTest}}
 
 # 38.6 moved to bottom to not disturb other tests with the necessary changes to this one.
 
@@ -1413,9 +1413,9 @@ testConstraint testevalex [llength [info commands testevalex]]
 test info-38.7 {location information for arg substitution} -constraints testevalex -match glob -body {
     join [lrange [testevalex {return -level 0 [etrace]}] 0 3] \n
 } -result {* {type source line 730 file info.test cmd {info frame \$level} proc ::etrace level 0}
-* {type eval line 1 cmd etrace proc ::tcltest::RunTest}
-* {type source line 1414 file info.test cmd {testevalex {return -level 0 \[etrace]}} proc ::tcltest::RunTest}
-* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+* {type eval line 1 cmd etrace proc ::tcltest::EvalTest}
+* {type source line 1414 file info.test cmd {testevalex {return -level 0 \[etrace]}} proc ::tcltest::EvalTest}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::EvalTest}}
 
 # -------------------------------------------------------------------------
 # literal sharing
@@ -1463,7 +1463,7 @@ test info-30.3 {bs+nl in literal words, namespace multi-word script} {
     namespace eval xxx variable res \
 	[list [reduce [info frame 0]]];# line 1464
     return $xxx::res
-} {type source line 1464 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1464 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.4 {bs+nl in literal words, eval script} -cleanup {unset res} -body {
     eval {
@@ -1471,7 +1471,7 @@ test info-30.4 {bs+nl in literal words, eval script} -cleanup {unset res} -body 
 	    [reduce [info frame 0]];# line 1471
     }
     return $res
-} -result {type source line 1471 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 1471 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.5 {bs+nl in literal words, eval script, with nested words} -body {
     eval {
@@ -1482,12 +1482,12 @@ test info-30.5 {bs+nl in literal words, eval script, with nested words} -body {
 	    }
     }
     return $res
-} -cleanup {unset res} -result {type source line 1481 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res} -result {type source line 1481 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.6 {bs+nl in computed word} -cleanup {unset res} -body {
     set res "\
 [reduce [info frame 0]]";# line 1489
-} -result { type source line 1489 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result { type source line 1489 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.7 {bs+nl in computed word, in proc} -body {
     proc abra {} {
@@ -1505,7 +1505,7 @@ test info-30.8 {bs+nl in computed word, nested eval} -body {
 	    res "\
 [reduce [info frame 0]]";# line 1506
 }
-} -cleanup {unset res} -result { type source line 1506 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res} -result { type source line 1506 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.9 {bs+nl in computed word, nested eval} -body {
     eval {
@@ -1514,7 +1514,7 @@ test info-30.9 {bs+nl in computed word, nested eval} -body {
 [reduce \
      [info frame 0]]";# line 1515
 }
-} -cleanup {unset res} -result { type source line 1515 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res} -result { type source line 1515 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.10 {bs+nl in computed word, key to array} -body {
     set tmp([set \
@@ -1523,14 +1523,14 @@ test info-30.10 {bs+nl in computed word, key to array} -body {
      [info frame 0]]"]) x ; #1523
     unset tmp
     set res
-} -cleanup {unset res} -result { type source line 1523 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res} -result { type source line 1523 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.11 {bs+nl in subst arguments} -body {
     subst {[set \
 	    res "\
 [reduce \
      [info frame 0]]"]} ; #1532
-} -cleanup {unset res} -result { type source line 1532 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res} -result { type source line 1532 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.12 {bs+nl in computed word, nested eval} -body {
     eval {
@@ -1540,7 +1540,7 @@ test info-30.12 {bs+nl in computed word, nested eval} -body {
 [reduce \
      [info frame 0]]";# line 1541
 }
-} -cleanup {unset res x} -result {   type source line 1541 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset res x} -result {   type source line 1541 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.13 {bs+nl in literal words, uplevel script, with nested words} -body {
     subinterp ; set res [interp eval sub { uplevel #0 {
@@ -1601,7 +1601,7 @@ test info-30.17 {bs+nl in multi-body switch, direct} {
 	^key     { reduce [info frame 0] ;# 1601 } \
         \t###    { } \
         {[0-9]*} { }
-} {type source line 1601 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1601 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.18 {bs+nl, literal word, uplevel through proc, appended, loss of primary tracking data} {
     proc abra {script} {
@@ -1644,7 +1644,7 @@ test info-30.20 {bs+nl in single-body switch, direct} {
 	\t###    { }
         {[0-9]*} { }
     }
-} {type source line 1643 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1643 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 
 test info-30.21 {bs+nl in if, full compiled} {
     proc a {value} {
@@ -1710,71 +1710,71 @@ type source line 1700 file info.test cmd {info frame 0} proc ::a level 0}
 
 test info-30.25 {TIP 280 for compiled [subst]} {
     subst {[reduce [info frame 0]]} ; # 1712
-} {type source line 1712 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1712 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.26 {TIP 280 for compiled [subst]} {
     subst \
 	    {[reduce [info frame 0]]} ; # 1716
-} {type source line 1716 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1716 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.27 {TIP 280 for compiled [subst]} {
     subst {
 [reduce [info frame 0]]} ; # 1720
 } {
-type source line 1720 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1720 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.28 {TIP 280 for compiled [subst]} {
     subst {\
 [reduce [info frame 0]]} ; # 1725
-} { type source line 1725 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} { type source line 1725 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.29 {TIP 280 for compiled [subst]} {
     subst {foo\
 [reduce [info frame 0]]} ; # 1729
-} {foo type source line 1729 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {foo type source line 1729 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.30 {TIP 280 for compiled [subst]} {
     subst {foo
 [reduce [info frame 0]]} ; # 1733
 } {foo
-type source line 1733 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1733 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.31 {TIP 280 for compiled [subst]} {
     subst {[][reduce [info frame 0]]} ; # 1737
-} {type source line 1737 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1737 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.32 {TIP 280 for compiled [subst]} {
     subst {[\
 ][reduce [info frame 0]]} ; # 1741
-} {type source line 1741 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1741 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.33 {TIP 280 for compiled [subst]} {
     subst {[
 ][reduce [info frame 0]]} ; # 1745
-} {type source line 1745 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1745 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.34 {TIP 280 for compiled [subst]} {
     subst {[format %s {}
 ][reduce [info frame 0]]} ; # 1749
-} {type source line 1749 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1749 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.35 {TIP 280 for compiled [subst]} {
     subst {[format %s {}
 ]
 [reduce [info frame 0]]} ; # 1754
 } {
-type source line 1754 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1754 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.36 {TIP 280 for compiled [subst]} {
     subst {
 [format %s {}][reduce [info frame 0]]} ; # 1759
 } {
-type source line 1759 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1759 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.37 {TIP 280 for compiled [subst]} {
     subst {
 [format %s {}]
 [reduce [info frame 0]]} ; # 1765
 } {
 
-type source line 1765 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1765 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.38 {TIP 280 for compiled [subst]} {
     subst {\
 [format %s {}][reduce [info frame 0]]} ; # 1771
-} { type source line 1771 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} { type source line 1771 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.39 {TIP 280 for compiled [subst]} {
     subst {\
 [format %s {}]\
 [reduce [info frame 0]]} ; # 1776
-} {  type source line 1776 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {  type source line 1776 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.40 {TIP 280 for compiled [subst]} -setup {
     unset -nocomplain empty
 } -body {
@@ -1782,7 +1782,7 @@ test info-30.40 {TIP 280 for compiled [subst]} -setup {
     subst {$empty[reduce [info frame 0]]} ; # 1782
 } -cleanup {
     unset empty
-} -result {type source line 1782 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 1782 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.41 {TIP 280 for compiled [subst]} -setup {
     unset -nocomplain empty
 } -body {
@@ -1792,7 +1792,7 @@ test info-30.41 {TIP 280 for compiled [subst]} -setup {
 } -cleanup {
     unset empty
 } -result {
-type source line 1791 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+type source line 1791 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.42 {TIP 280 for compiled [subst]} -setup {
     unset -nocomplain empty
 } -body {
@@ -1800,25 +1800,25 @@ test info-30.42 {TIP 280 for compiled [subst]} -setup {
 [reduce [info frame 0]]} ; # 1800
 } -cleanup {
     unset empty
-} -result { type source line 1800 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -result { type source line 1800 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.43 {TIP 280 for compiled [subst]} -body {
     unset -nocomplain a\nb
     set a\nb {}
     subst {${a
 b}[reduce [info frame 0]]} ; # 1808
-} -cleanup {unset a\nb} -result {type source line 1808 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} -cleanup {unset a\nb} -result {type source line 1808 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.44 {TIP 280 for compiled [subst]} {
     unset -nocomplain a
     set a(\n) {}
     subst {$a(
 )[reduce [info frame 0]]} ; # 1814
-} {type source line 1814 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1814 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.45 {TIP 280 for compiled [subst]} {
     unset -nocomplain a
     set a() {}
     subst {$a([
 return -level 0])[reduce [info frame 0]]} ; # 1820
-} {type source line 1820 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+} {type source line 1820 file info.test cmd {info frame 0} proc ::tcltest::EvalTest}
 test info-30.46 {TIP 280 for compiled [subst]} {
     unset -nocomplain a
     set a(1825) YES;  set a(1824) 1824; set a(1826) 1826
@@ -1835,7 +1835,7 @@ unset -nocomplain a
 test info-30.48 {Bug 2850901} testevalex {
     testevalex {return -level 0 [format %s {}
 ][reduce [info frame 0]]} ; # line 2 of the eval
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::EvalTest}
 
 
 # -------------------------------------------------------------------------
