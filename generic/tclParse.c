@@ -867,6 +867,14 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
+	} else if (((result & 0xDC00) == 0xD800) && (count == 6) && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
+	    /* If high surrogate is immediately followed by a low surrogate escape, combine them. */
+	    int low;
+	    int count2 = TclParseHex(p+7, 4, &low);
+	    if ((low & 0xDC00) == 0xDC00) {
+		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
+		count += count2 + 2;
+	    }
 	}
 	break;
     case 'U':
