@@ -51,10 +51,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   9
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a1"
+#define TCL_PATCH_LEVEL	    "9.0a2"
 
 #if defined(RC_INVOKED)
 /*
