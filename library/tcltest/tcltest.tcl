@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.1
+    variable Version 2.5.2
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -2358,9 +2358,18 @@ proc tcltest::RunTest {name script} {
 	memory tag $name
     }
 
-    set code [catch {uplevel 1 $script} actualAnswer]
+    set code [catch {uplevel 1 [list [
+	namespace origin EvalTest] $script]} actualAnswer copts]
 
     return [list $actualAnswer $code]
+}
+
+
+proc tcltest::EvalTest script {
+    set code [catch {uplevel 1 $script} cres copts]
+    dict set copts -code $code
+    dict incr copts -level
+    return -options $copts $cres
 }
 
 

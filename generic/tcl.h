@@ -1559,7 +1559,7 @@ typedef struct Tcl_Filesystem {
 				 * arbitrary additional data to files in a
 				 * filesystem. */
     Tcl_FSFileAttrsGetProc *fileAttrsGetProc;
-				/* Called by 'Tcl_FSFileAttrsGet()' and by 
+				/* Called by 'Tcl_FSFileAttrsGet()' and by
 				 * 'file attributes'. */
     Tcl_FSFileAttrsSetProc *fileAttrsSetProc;
 				/* Called by 'Tcl_FSFileAttrsSet()' and by
