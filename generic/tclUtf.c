@@ -846,7 +846,7 @@ Tcl_UtfBackslash(
 	 * We ate a whole line. Pay the price of a strlen()
 	 */
 
-	result = TclParseBackslash(src, (int)strlen(src), &numRead, dst);
+	result = TclParseBackslash(src, strlen(src), &numRead, dst);
     }
     if (readPtr != NULL) {
 	*readPtr = numRead;
