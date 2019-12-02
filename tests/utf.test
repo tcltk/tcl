@@ -27,34 +27,37 @@ test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
     expr {"\x01" eq [testbytestring "\x01"]}
 } 1
 test utf-1.2 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
-    expr {"\x00" eq [testbytestring "\xc0\x80"]}
+    expr {"\x00" eq [testbytestring "\xC0\x80"]}
 } 1
 test utf-1.3 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
-    expr {"\xe0" eq [testbytestring "\xc3\xa0"]}
+    expr {"\xE0" eq [testbytestring "\xC3\xA0"]}
 } 1
 test utf-1.4 {Tcl_UniCharToUtf: 3 byte sequences} testbytestring {
-    expr {"\u4e4e" eq [testbytestring "\xe4\xb9\x8e"]}
+    expr {"\u4E4E" eq [testbytestring "\xE4\xB9\x8E"]}
 } 1
 test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
-    expr {[format %c 0x110000] eq [testbytestring "\xef\xbf\xbd"]}
+    expr {[format %c 0x110000] eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
-    expr {[format %c -1] eq [testbytestring "\xef\xbf\xbd"]}
+    expr {[format %c -1] eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
 test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints testbytestring -body {
-    expr {"\U014e4e" eq [testbytestring "\xf0\x94\xb9\x8e"]}
+    expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
 } -result 1
 test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
-    expr {"\ud842" eq [testbytestring "\xed\xa1\x82"]}
+    expr {"\uD842" eq [testbytestring "\xED\xA1\x82"]}
 } 1
 test utf-1.9 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
-    expr {"\udc42" eq [testbytestring "\xed\xb1\x82"]}
+    expr {"\uDC42" eq [testbytestring "\xED\xB1\x82"]}
 } 1
 test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
-    expr {[format %c 0xd842] eq [testbytestring "\xed\xa1\x82"]}
+    expr {[format %c 0xD842] eq [testbytestring "\xED\xA1\x82"]}
 } 1
 test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
-    expr {[format %c 0xdc42] eq [testbytestring "\xed\xb1\x82"]}
+    expr {[format %c 0xDC42] eq [testbytestring "\xED\xB1\x82"]}
+} 1
+test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} testbytestring {
+    expr {"\uD842\uDC42" eq [testbytestring "\xF0\xA0\xA1\x82"]}
 } 1
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
@@ -67,7 +70,7 @@ test utf-2.3 {Tcl_UtfToUniChar: lead (2-byte) followed by non-trail} testbytestr
     string length [testbytestring "\xC2"]
 } {1}
 test utf-2.4 {Tcl_UtfToUniChar: lead (2-byte) followed by trail} testbytestring {
-    string length [testbytestring "\xC2\xa2"]
+    string length [testbytestring "\xC2\xA2"]
 } {1}
 test utf-2.5 {Tcl_UtfToUniChar: lead (3-byte) followed by non-trail} testbytestring {
     string length [testbytestring "\xE2"]
@@ -76,7 +79,7 @@ test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestrin
     string length [testbytestring "\xE2\xA2"]
 } {2}
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
-    string length [testbytestring "\xE4\xb9\x8e"]
+    string length [testbytestring "\xE4\xB9\x8E"]
 } {1}
 test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {tip389 testbytestring} -body {
     string length [testbytestring "\xF0\x90\x80\x80"]
@@ -150,13 +153,13 @@ test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
 } {a}
 test utf-8.2 {Tcl_UniCharAtIndex: index = 0} {
-    string index \u4e4e\u25a 0
-} "\u4e4e"
+    string index \u4E4E\u25A 0
+} "\u4E4E"
 test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
     string index abcd 2
 } {c}
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
-    string index \u4e4e\u25a\xff\u543 2
+    string index \u4E4E\u25A\xFF\u543 2
 } "\uff"
 test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
     string index \ud842 0
@@ -169,8 +172,8 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
 } {abc}
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
-    string range \u4e4e\u25a\xff\u543klmnop 1 5
-} "\u25a\xff\u543kl"
+    string range \u4E4E\u25A\xFF\u543klmnop 1 5
+} "\u25A\xFF\u543kl"
 
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
@@ -178,16 +181,16 @@ test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
 } {
 }
 test utf-10.2 {Tcl_UtfBackslash: \u subst} testbytestring {
-    expr {"\ua2" eq [testbytestring "\xc2\xa2"]}
+    expr {"\uA2" eq [testbytestring "\xC2\xA2"]}
 } 1
 test utf-10.3 {Tcl_UtfBackslash: longer \u subst} testbytestring {
-    expr {"\u4e21" eq [testbytestring "\xe4\xb8\xa1"]}
+    expr {"\u4E21" eq [testbytestring "\xE4\xB8\xA1"]}
 } 1
 test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
-    expr {"\u4e2k" eq "[testbytestring \xd3\xa2]k"}
+    expr {"\u4E2k" eq "[testbytestring \xD3\xA2]k"}
 } 1
 test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
-    expr {"\u4e216" eq "[testbytestring \xe4\xb8\xa1]6"}
+    expr {"\u4E216" eq "[testbytestring \xE4\xB8\xA1]6"}
 } 1
 test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} testbytestring {
     expr {"\U1e2165" eq "[testbytestring \xf0\x9e\x88\x96]5"}
@@ -239,8 +242,8 @@ bsCheck \u41	65
 bsCheck \ua	10
 bsCheck \uA	10
 bsCheck \340	224
-bsCheck \ua1	161
-bsCheck \u4e21	20001
+bsCheck \uA1	161
+bsCheck \u4E21	20001
 bsCheck \741	60
 bsCheck \U	85
 bsCheck \Uk	85
@@ -248,10 +251,10 @@ bsCheck \U41	65
 bsCheck \Ua	10
 bsCheck \UA	10
 bsCheck \Ua1	161
-bsCheck \U4e21	20001
-bsCheck \U004e21	20001
-bsCheck \U00004e21	20001
-bsCheck \U0000004e21	78
+bsCheck \U4E21	20001
+bsCheck \U004E21	20001
+bsCheck \U00004E21	20001
+bsCheck \U0000004E21	78
 bsCheck \U00110000	69632
 bsCheck \U01100000	69632
 bsCheck \U11000000	69632
@@ -267,14 +270,14 @@ test utf-11.2 {Tcl_UtfToUpper} {
     string toupper abc
 } ABC
 test utf-11.3 {Tcl_UtfToUpper} {
-    string toupper \u00e3ab
-} \u00c3AB
+    string toupper \u00E3ab
+} \u00C3AB
 test utf-11.4 {Tcl_UtfToUpper} {
-    string toupper \u01e3ab
-} \u01e2AB
+    string toupper \u01E3ab
+} \u01E2AB
 test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
-    string toupper \u10d0\u1c90
-} \u1c90\u1c90
+    string toupper \u10D0\u1C90
+} \u1C90\u1C90
 test utf-11.6 {Tcl_UtfToUpper low/high surrogate)} {
     string toupper \udc24\ud824
 } \udc24\ud824
@@ -286,14 +289,14 @@ test utf-12.2 {Tcl_UtfToLower} {
     string tolower ABC
 } abc
 test utf-12.3 {Tcl_UtfToLower} {
-    string tolower \u00c3AB
-} \u00e3ab
+    string tolower \u00C3AB
+} \u00E3ab
 test utf-12.4 {Tcl_UtfToLower} {
-    string tolower \u01e2AB
-} \u01e3ab
+    string tolower \u01E2AB
+} \u01E3ab
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
-    string tolower \u10d0\u1c90
-} \u10d0\u10d0
+    string tolower \u10D0\u1C90
+} \u10D0\u10D0
 test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
     string tolower \udc24\ud824
 } \udc24\ud824
@@ -305,17 +308,17 @@ test utf-13.2 {Tcl_UtfToTitle} {
     string totitle abc
 } Abc
 test utf-13.3 {Tcl_UtfToTitle} {
-    string totitle \u00e3ab
-} \u00c3ab
+    string totitle \u00E3ab
+} \u00C3ab
 test utf-13.4 {Tcl_UtfToTitle} {
-    string totitle \u01f3ab
-} \u01f2ab
+    string totitle \u01F3ab
+} \u01F2ab
 test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
-    string totitle \u10d0\u1c90
-} \u10d0\u1c90
+    string totitle \u10D0\u1C90
+} \u10D0\u1C90
 test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
-    string totitle \u1c90\u10d0
-} \u1c90\u10d0
+    string totitle \u1C90\u10D0
+} \u1C90\u10D0
 test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \udc24\ud824
 } \udc24\ud824
