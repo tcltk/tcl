@@ -935,7 +935,7 @@ Tcl_ScanObjCmd(
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
-			mp_set_ull(&big, (Tcl_WideUInt)wideValue);    
+			mp_set_ull(&big, (Tcl_WideUInt)wideValue);
 			Tcl_SetBignumObj(objPtr, &big);
 		    }
 		} else {

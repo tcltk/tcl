@@ -1659,7 +1659,7 @@ LoadEncodingFile(
  *	not be created because the file contained invalid data.
  *
  * Side effects:
- *	See Tcl_CreateEncoding(). 
+ *	See Tcl_CreateEncoding().
  *
  *-------------------------------------------------------------------------
  */
