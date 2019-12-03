@@ -154,6 +154,12 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
+!if [echo PKG_OPT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
+!endif
+!if [echo PKG_COOKIEJAR_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
+!endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
 !endif
@@ -425,7 +431,7 @@ PKGSDIR		= $(ROOT)\pkgs
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DMP_NO_STDINT /DMP_WUR=
+PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DMP_WUR=
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
@@ -881,6 +887,10 @@ install-binaries:
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
@@ -920,7 +930,12 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library opt0.4 directory
+	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
+	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
+	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
+	@echo Installing package opt $(PKG_OPT_VER)
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module

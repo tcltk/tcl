@@ -17,7 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # the package we are going to test
-package require opt 0.4.6
+package require opt 0.4.7
 
 # we are using implementation specifics to test the package
 
