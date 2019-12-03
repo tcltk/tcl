@@ -47,7 +47,7 @@ static const Tcl_ObjType fsPathType = {
 /*
  * struct FsPath --
  *
- * Internal representation of a Tcl_Obj of fsPathType 
+ * Internal representation of a Tcl_Obj of fsPathType
  */
 
 typedef struct FsPath {
@@ -124,7 +124,7 @@ typedef struct FsPath {
  *	None (beyond the memory allocation for the result).
  *
  * Special note:
- *	Originally based on code from Matt Newman and Jean-Claude Wippler. 
+ *	Originally based on code from Matt Newman and Jean-Claude Wippler.
  *	Totally rewritten later by Vince Darley to handle symbolic links.
  *
  *---------------------------------------------------------------------------
@@ -2028,7 +2028,7 @@ Tcl_FSGetInternalRep(
  *
  * TclFSEnsureEpochOk --
  *
- *	Ensure that the path is a valid path, and that it has a 
+ *	Ensure that the path is a valid path, and that it has a
  *	fsPathType internal representation that is not stale.
  *
  * Results:
