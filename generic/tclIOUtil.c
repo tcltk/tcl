@@ -619,7 +619,7 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can is changed when a filesystems is added or removed, when 
+ * The epoch can is changed when a filesystems is added or removed, when
  * "system encoding" changes, and when env(HOME) changes.
  */
 
@@ -958,7 +958,7 @@ Tcl_FSUnregister(
  *	Search in the given pathname for files matching the given pattern.
  *	Used by [glob].  Processes just one pattern for one directory.  Callers
  *	such as TclGlob and DoGlob implement manage the searching of multiple
- *	directories in cases such as  
+ *	directories in cases such as
  *		glob -dir $dir -join * pkgIndex.tcl
  *
  * Results:
@@ -1221,7 +1221,7 @@ FsAddMountsToGlobResult(
  *
  *	The reason for the exception in 2,3 for the native filesystem is that
  *	the native filesystem claims every file without determining whether
- *	whether the file exists, or even whether the pathname makes sense. 
+ *	whether the file exists, or even whether the pathname makes sense.
  *
  *----------------------------------------------------------------------
  */
@@ -1239,7 +1239,7 @@ Tcl_FSMountsChanged(
 
     /*
      * Increment the filesystem epoch to invalidate every existing cached
-     * internal representation. 
+     * internal representation.
      */
 
     Tcl_MutexLock(&filesystemMutex);
@@ -1474,7 +1474,7 @@ TclGetOpenModeEx(
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
     int *seekFlagPtr,		/* Sets this to 1 to tell the the caller to seek to
 				 * EOF after opening the file, and 0 otherwise. */
-    int *binaryPtr)		/* Sets this to 1 to tell the caller to 
+    int *binaryPtr)		/* Sets this to 1 to tell the caller to
 				 * configure the channel for binary
 				 * operations after opening the file. */
 {
@@ -1717,7 +1717,7 @@ Tcl_FSEvalFileEx(
     }
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl 
+     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
      * uses it on every platform to allow for scripted documents. [Bug: 2040]
      */
 
@@ -1853,7 +1853,7 @@ TclNREvalFile(
     TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl 
+     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
      * uses it on every platform to allow for scripted documents. [Bug: 2040]
      */
 
@@ -2063,7 +2063,7 @@ Tcl_PosixError(
  *----------------------------------------------------------------------
  *
  * Tcl_FSStat --
- *	Calls 'statProc' of the filesystem corresponding to pathPtr. 
+ *	Calls 'statProc' of the filesystem corresponding to pathPtr.
  *
  *	Replaces the standard library routines stat.
  *
@@ -2097,7 +2097,7 @@ Tcl_FSStat(
  *----------------------------------------------------------------------
  *
  * Tcl_FSLstat --
- *	Calls the 'lstatProc' of the filesystem corresponding to pathPtr. 
+ *	Calls the 'lstatProc' of the filesystem corresponding to pathPtr.
  *
  *	Replaces the library version of lstat.  If the filesystem doesn't
  *	provide lstatProc but does provide statProc, Tcl falls back to
@@ -2197,7 +2197,7 @@ Tcl_FSOpenFileChannel(
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	/*
-	 * Return the correct error message. 
+	 * Return the correct error message.
 	 */
 	return NULL;
     }
@@ -2651,7 +2651,7 @@ Tcl_FSGetCwd(
 		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
 		    /*
-		     * Assign to global storage the pathname of the current directory 
+		     * Assign to global storage the pathname of the current directory
 		     * and copy it into thread-local storage as well.
 		     *
 		     * At system startup multiple threads could in principle
@@ -2954,7 +2954,7 @@ Tcl_FSChdir(
 		 */
 
 		FsUpdateCwd(normDirName, cd);
-	    } 
+	    }
 	} else {
 	    /*
 	     * Tcl_FSGetCwd() synchronizes the file-global cwdPathPtr if
@@ -3018,7 +3018,7 @@ Tcl_FSLoadFile(
 				/* Places to store pointers to the functions
 				 * named by sym1 and sym2. */
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
-				 * object.  Can be passed to 
+				 * object.  Can be passed to
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* A place to store a pointer to the function
@@ -3051,7 +3051,7 @@ Tcl_FSLoadFile(
  *
  *	Load a dynamic shared object by calling 'loadFileProc' of the
  *	filesystem corresponding to the given pathname, and then finds within
- *	the loaded object the functions named in symbols[].  
+ *	the loaded object the functions named in symbols[].
  *
  *	The given pathname is passed unmodified to `loadFileProc`, which
  *	decides how to resolve it.  On POSIX systems the native filesystem
@@ -3199,7 +3199,7 @@ Tcl_LoadFile(
     }
 
     /*
-     * The filesystem doesn't support 'load'. Fall to the following: 
+     * The filesystem doesn't support 'load'. Fall to the following:
      */
 
     /*
@@ -3382,7 +3382,7 @@ Tcl_LoadFile(
 	/*
 	 * This is the filesystem for the temporary file the object was loaded
 	 * from.  A reference to copyToPtr is already stored in
-	 * tvdlPtr->divertedFile, so need need to increment the refCount again. 
+	 * tvdlPtr->divertedFile, so need need to increment the refCount again.
 	 */
 
 	tvdlPtr->divertedFilesystem = copyFsPtr;
@@ -3725,7 +3725,7 @@ TclFSUnloadTempFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/* 
+    Tcl_Obj *toPtr,		/*
 				 * NULL or the pathname of a file to link to.
 				 */
     int linkAction)		/* Action to perform. */
@@ -3808,7 +3808,7 @@ Tcl_FSListVolumes(void)
  *
  * FsListMounts --
  *
- *	Lists the mounts mathing the given pattern in the given directory. 
+ *	Lists the mounts mathing the given pattern in the given directory.
  *
  * Results:
  *	A list, having a refCount of 0, of the matching mounts, or NULL if no
@@ -4213,7 +4213,7 @@ Tcl_FSCopyFile(
  * TclCrossFilesystemCopy --
  *
  *	Helper for Tcl_FSCopyFile and Tcl_FSLoadFile.  Copies a file from one
- *	filesystem to another, overwiting any file that already exists. 
+ *	filesystem to another, overwiting any file that already exists.
  *
  * Results:
  *	A standard Tcl return code.
@@ -4518,7 +4518,7 @@ Tcl_FSGetFileSystemForPath(
     /*
      * Call each of the "pathInFilesystem" functions in succession until the
      * corresponding filesystem is found.
-     */ 
+     */
     for (; fsRecPtr!=NULL ; fsRecPtr=fsRecPtr->nextPtr) {
 	ClientData clientData = NULL;
 

@@ -1723,7 +1723,7 @@ LoadEncodingFile(
  *	not be created because the file contained invalid data.
  *
  * Side effects:
- *	See Tcl_CreateEncoding(). 
+ *	See Tcl_CreateEncoding().
  *
  *-------------------------------------------------------------------------
  */
@@ -2206,7 +2206,7 @@ BinaryProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UtfExtToUtfIntProc --
+ * UtfIntToUtfExtProc --
  *
  *	Convert from UTF-8 to UTF-8. While converting null-bytes from the
  *	Tcl's internal representation (0xc0, 0x80) to the official
@@ -2347,7 +2347,7 @@ UtfToUtfProc(
 				 * output buffer. */
     int pureNullMode)		/* Convert embedded nulls from internal
 				 * representation to real null-bytes or vice
-				 * versa. */
+				 * versa. Also combine or separate surrogate pairs */
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
@@ -2364,7 +2364,7 @@ UtfToUtfProc(
     srcEnd = src + srcLen;
     srcClose = srcEnd;
     if ((flags & TCL_ENCODING_END) == 0) {
-	srcClose -= TCL_UTF_MAX;
+	srcClose -= 6;
     }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2413,15 +2413,21 @@ UtfToUtfProc(
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    int len = TclUtfToUniChar(src, chPtr);
-	    src += len;
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
-#if TCL_UTF_MAX <= 4
-	    if ((*chPtr >= 0xD800) && (len < 3)) {
-		src += TclUtfToUniChar(src + len, chPtr);
-		dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    src += TclUtfToUniChar(src, chPtr);
+	    if ((*chPtr & 0xFC00) == 0xD800) {
+		/* A high surrogate character is detected, handle especially */
+		Tcl_UniChar low = *chPtr;
+		if (src <= srcEnd-3) {
+		    Tcl_UtfToUniChar(src, &low);
+		}
+		if ((low & 0xFC00) != 0xDC00) {
+			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
+			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
+			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
+			continue;
+		}
 	    }
-#endif
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}
     }
 

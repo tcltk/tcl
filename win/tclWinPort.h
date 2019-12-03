@@ -83,6 +83,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
+#ifdef HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
