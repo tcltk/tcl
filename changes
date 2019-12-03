@@ -9024,11 +9024,11 @@ in this changeset (new minor version) rather than bug fixes:
 
 2018-02-14 [TIP 476] Scan/Printf consistency (nijtmans)
 
-2018-03-05 [TIP 351] [lsearch] striding 
+2018-03-05 [TIP 351] [lsearch] striding
 
 2018-03-05 [TIPs 330,336] tighten access to Interp fields (porter)
 
-2018-03-12 [TIP 462] [::tcl::process] 
+2018-03-12 [TIP 462] [::tcl::process]
 
 2018-03-12 [TIP 490] add oo support for msgcat => msgcat 1.7.0 (oehlmann)
 

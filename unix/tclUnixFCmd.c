@@ -2035,7 +2035,7 @@ TclpObjNormalizePath(
     }
 
     /*
-     * Call 'realpath' to obtain a canonical path. 
+     * Call 'realpath' to obtain a canonical path.
      */
 
 #ifndef NO_REALPATH
@@ -2045,7 +2045,7 @@ TclpObjNormalizePath(
 	     * The path contains at most one component, e.g. '/foo' or '/', so
 	     * so there is nothing to resolve. Also, on some platforms
 	     * 'Realpath' transforms an empty string into the normalized pwd,
-	     * which is the wrong answer. 
+	     * which is the wrong answer.
 	     */
 
 	    return 0;
@@ -2091,7 +2091,7 @@ TclpObjNormalizePath(
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
-		 * Append the remaining path components. 
+		 * Append the remaining path components.
 		 */
 
 		int normLen = Tcl_DStringLength(&ds);
