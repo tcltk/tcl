@@ -2069,7 +2069,9 @@ proc tcltest::test {name description args} {
     }
 
     # Always run the cleanup script
-    set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    set code [catch {
+	uplevel 1 [list [namespace which CleanupTest] $cleanup]
+    } cleanupMsg]
     if {$code == 1} {
 	set errorInfo(cleanup) $::errorInfo
 	set errorCodeRes(cleanup) $::errorCode
@@ -2380,6 +2382,14 @@ proc tcltest::EvalTest script {
 
 proc tcltest::SetupTest setup {
     uplevel 1 $setup
+}
+
+
+# CleanupTest --
+#
+# Evaluates the -cleanup script for a test
+proc tcltest::CleanupTest cleanup {
+    uplevel 1 $cleanup
 }
 
 #####################################################################
