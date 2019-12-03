@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 4
+RULES_VERSION_MINOR = 6
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -976,6 +976,19 @@ VERSION         = $(DOTVERSION:.=)
 
 !endif # $(DOING_TCL) ... etc.
 
+# Windows RC files have 3 version components. Ensure this irrespective
+# of how many components the package has specified. Basically, ensure
+# minimum 4 components by appending 4 0's and then pick out the first 4.
+# Also take care of the fact that DOTVERSION may have "a" or "b" instead
+# of "." separating the version components.
+DOTSEPARATED=$(DOTVERSION:a=.)
+DOTSEPARATED=$(DOTSEPARATED:b=.)
+!if [echo RCCOMMAVERSION = \> versions.vc] \
+  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
+!error *** Could not generate RCCOMMAVERSION ***
+!endif
+!include versions.vc
+
 ################################################################
 # 10. Construct output directory and file paths
 # Figure-out how to name our intermediate and output directories.
@@ -1269,6 +1282,17 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
+!if $(VCVERSION) >= 1600
+OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
+!else
+OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1
+!endif
+!if $(VCVERSION) >= 1700
+OPTDEFINES	= $(OPTDEFINES) /DHAVE_INTTYPES_H=1
+!endif
+!if $(VCVERSION) >= 1800
+OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDBOOL_H=1
+!endif
 
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MEM_DEBUG
@@ -1490,7 +1514,7 @@ GUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
 	    /DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
-	    /DCOMMAVERSION=$(DOTVERSION:.=,),0 \
+	    /DCOMMAVERSION=$(RCCOMMAVERSION) \
 	    /DDOTVERSION=\"$(DOTVERSION)\" \
 	    /DVERSION=\"$(VERSION)\" \
 	    /DSUFX=\"$(SUFX:t=)\" \

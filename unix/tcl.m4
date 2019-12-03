@@ -1873,6 +1873,8 @@ dnl # preprocessing tests use only CPPFLAGS.
 		    [Defined when compiler supports casting to union type.])
 	fi
 
+    AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -1933,7 +1935,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
 #		HAVE_SYS_PARAM_H
-#		HAVE_STDBOOL_H
 #		HAVE_STRING_H ?
 #
 #--------------------------------------------------------------------
@@ -1984,7 +1985,6 @@ closedir(d);
 
     AC_CHECK_HEADER(sys/wait.h, , [AC_DEFINE(NO_SYS_WAIT_H, 1, [Do we have <sys/wait.h>?])])
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H, 1, [Do we have <dlfcn.h>?])])
-    AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
     AC_HAVE_HEADERS(sys/param.h)

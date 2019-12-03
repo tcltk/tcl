@@ -51,10 +51,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  2
+#define TCL_RELEASE_SERIAL  4
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a2"
+#define TCL_PATCH_LEVEL	    "8.7a4"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
@@ -1729,7 +1729,7 @@ typedef struct Tcl_Filesystem {
 				 * arbitrary additional data to files in a
 				 * filesystem. */
     Tcl_FSFileAttrsGetProc *fileAttrsGetProc;
-				/* Called by 'Tcl_FSFileAttrsGet()' and by 
+				/* Called by 'Tcl_FSFileAttrsGet()' and by
 				 * 'file attributes'. */
     Tcl_FSFileAttrsSetProc *fileAttrsSetProc;
 				/* Called by 'Tcl_FSFileAttrsSet()' and by
@@ -2452,14 +2452,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
-#elif (!defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS))
-/*
- * When compiling stub-enabled extensions without -DTCL_NO_DEPRECATED,
- * those extensions are expected to run fine with Tcl 8.6 as well.
- * This means we must continue to use macro's for the above 3 functions,
- * and the old stub entry for TclFreeObj. All other usage of TclFreeObj()
- * is forbidden now, therefore it is changed to be MODULE_SCOPE internal.
- */
+#else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
 	++(objPtr)->refCount
@@ -2472,7 +2465,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
 	    if ((_objPtr)->refCount-- <= 1) { \
-		TclOldFreeObj(_objPtr); \
+		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
 #   undef Tcl_IsShared
