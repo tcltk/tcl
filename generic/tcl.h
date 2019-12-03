@@ -51,10 +51,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   9
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a0"
+#define TCL_PATCH_LEVEL	    "9.0a2"
 
 #if defined(RC_INVOKED)
 /*
@@ -1559,7 +1559,7 @@ typedef struct Tcl_Filesystem {
 				 * arbitrary additional data to files in a
 				 * filesystem. */
     Tcl_FSFileAttrsGetProc *fileAttrsGetProc;
-				/* Called by 'Tcl_FSFileAttrsGet()' and by 
+				/* Called by 'Tcl_FSFileAttrsGet()' and by
 				 * 'file attributes'. */
     Tcl_FSFileAttrsSetProc *fileAttrsSetProc;
 				/* Called by 'Tcl_FSFileAttrsSet()' and by

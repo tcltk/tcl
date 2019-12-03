@@ -670,7 +670,7 @@ test http-7.4 {http::formatQuery} -setup {
     http::config -urlencoding $enc
 } -result {%3F}
 
-package require -exact tcl::idna 1.0
+package require tcl::idna 1.0
 
 test http-idna-1.1 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna
@@ -680,7 +680,7 @@ test http-idna-1.2 {IDNA package: basics} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "?": must be decode, encode, puny, or version}
 test http-idna-1.3 {IDNA package: basics} -body {
     ::tcl::idna version
-} -result 1.0
+} -result 1.0.1
 test http-idna-1.4 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna version what
 } -result {wrong # args: should be "::tcl::idna version"}

@@ -54,7 +54,7 @@ namespace eval [info object namespace ::http::cookiejar] {
 
     # Keep this in sync with pkgIndex.tcl and with the install directories in
     # Makefiles
-    variable version 0.1
+    variable version 0.2.0
 
     variable domainlist \
 	http://publicsuffix.org/list/effective_tld_names.dat
