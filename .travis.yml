@@ -94,20 +94,6 @@ matrix:
       compiler: clang
       env:
         - BUILD_DIR=unix
-    - name: "Linux/Clang/Shared: UTF_MAX=6"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
-    - name: "Linux/Clang/Shared: UTF_MAX=3"
-      os: linux
-      dist: xenial
-      compiler: clang
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=3
     - name: "Linux/Clang/Static"
       os: linux
       dist: xenial
