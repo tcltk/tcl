@@ -335,8 +335,8 @@ test encoding-15.6 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
-    list [string length $x] [string length $y] $z
-} {4 10 edb882f09f9882eda0bd}
+    list [string length $y] $z
+} {10 edb882f09f9882eda0bd}
 test encoding-15.7 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uD83D
     set y [encoding convertto utf-8 \uDE02\uD83D\uD83D]
