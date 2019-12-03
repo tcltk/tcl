@@ -10,6 +10,13 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=unix
+    - name: "Linux/GCC/Shared: UTF_MAX=4"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
     - name: "Linux/GCC/Static"
       os: linux
       dist: xenial
@@ -182,8 +189,8 @@ matrix:
         - cd ${BUILD_DIR}
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=msvcrt -f makefile.vc test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -191,8 +198,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt -f makefile.vc test'
     - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
@@ -200,8 +207,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt -f makefile.vc test'
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -210,8 +217,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=msvcrt -f makefile.vc test'
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -219,8 +226,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt -f makefile.vc test'
     - name: "Windows/MSVC-x86/Debug"
       os: windows
       compiler: cl
@@ -228,8 +235,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt -f makefile.vc test'
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
