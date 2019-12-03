@@ -59,6 +59,9 @@ test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring 
 test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} testbytestring {
     expr {"\uD842\uDC42" eq [testbytestring "\xF0\xA0\xA1\x82"]}
 } 1
+test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} testbytestring {
+    expr {"\UD842" eq [testbytestring "\xEF\xBF\xBD"]}
+} 1
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
@@ -160,13 +163,13 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 } {c}
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
-} "\uff"
+} "\uFF"
 test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
-    string index \ud842 0
-} "\ud842"
+    string index \uD842 0
+} "\uD842"
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
-    string index \udc42 0
-} "\udc42"
+    string index \uDC42 0
+} "\uDC42"
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
@@ -193,10 +196,10 @@ test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
     expr {"\u4E216" eq "[testbytestring \xE4\xB8\xA1]6"}
 } 1
 test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} testbytestring {
-    expr {"\U1e2165" eq "[testbytestring \xf0\x9e\x88\x96]5"}
+    expr {"\U1E2165" eq "[testbytestring \xF0\x9E\x88\x96]5"}
 } 1
 test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} testbytestring {
-    expr {"\U10e2165" eq "[testbytestring \xf4\x8e\x88\x96]5"}
+    expr {"\U10E2165" eq "[testbytestring \xF4\x8E\x88\x96]5"}
 } 1
 proc bsCheck {char num} {
     global errNum
@@ -270,17 +273,17 @@ test utf-11.2 {Tcl_UtfToUpper} {
     string toupper abc
 } ABC
 test utf-11.3 {Tcl_UtfToUpper} {
-    string toupper \u00E3ab
-} \u00C3AB
+    string toupper \xE3AB
+} \xC3AB
 test utf-11.4 {Tcl_UtfToUpper} {
-    string toupper \u01E3ab
+    string toupper \u01E3AB
 } \u01E2AB
 test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
     string toupper \u10D0\u1C90
 } \u1C90\u1C90
 test utf-11.6 {Tcl_UtfToUpper low/high surrogate)} {
-    string toupper \udc24\ud824
-} \udc24\ud824
+    string toupper \uDC24\uD824
+} \uDC24\uD824
 
 test utf-12.1 {Tcl_UtfToLower} {
     string tolower {}
@@ -289,8 +292,8 @@ test utf-12.2 {Tcl_UtfToLower} {
     string tolower ABC
 } abc
 test utf-12.3 {Tcl_UtfToLower} {
-    string tolower \u00C3AB
-} \u00E3ab
+    string tolower \xC3AB
+} \xE3ab
 test utf-12.4 {Tcl_UtfToLower} {
     string tolower \u01E2AB
 } \u01E3ab
@@ -298,8 +301,8 @@ test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
 test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
-    string tolower \udc24\ud824
-} \udc24\ud824
+    string tolower \uDC24\uD824
+} \uDC24\uD824
 
 test utf-13.1 {Tcl_UtfToTitle} {
     string totitle {}
@@ -308,10 +311,10 @@ test utf-13.2 {Tcl_UtfToTitle} {
     string totitle abc
 } Abc
 test utf-13.3 {Tcl_UtfToTitle} {
-    string totitle \u00E3ab
-} \u00C3ab
+    string totitle \xE3AB
+} \xC3ab
 test utf-13.4 {Tcl_UtfToTitle} {
-    string totitle \u01F3ab
+    string totitle \u01F3AB
 } \u01F2ab
 test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
     string totitle \u10D0\u1C90
@@ -320,8 +323,8 @@ test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
     string totitle \u1C90\u10D0
 } \u1C90\u10D0
 test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
-    string totitle \udc24\ud824
-} \udc24\ud824
+    string totitle \uDC24\uD824
+} \uDC24\uD824
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
@@ -340,7 +343,7 @@ test utf-15.1 {Tcl_UniCharToUpper, negative delta} {
     string toupper aA
 } AA
 test utf-15.2 {Tcl_UniCharToUpper, positive delta} {
-    string toupper \u0178\u00ff
+    string toupper \u0178\xFF
 } \u0178\u0178
 test utf-15.3 {Tcl_UniCharToUpper, no delta} {
     string toupper !
@@ -350,24 +353,24 @@ test utf-16.1 {Tcl_UniCharToLower, negative delta} {
     string tolower aA
 } aa
 test utf-16.2 {Tcl_UniCharToLower, positive delta} {
-    string tolower \u0178\u00ff\uA78D\u01c5\U10400
-} \u00ff\u00ff\u0265\u01c6\U10428
+    string tolower \u0178\xFF\uA78D\u01C5\U10400
+} \xFF\xFF\u0265\u01C6\U10428
 
 test utf-17.1 {Tcl_UniCharToLower, no delta} {
     string tolower !
 } !
 
 test utf-18.1 {Tcl_UniCharToTitle, add one for title} {
-    string totitle \u01c4
-} \u01c5
+    string totitle \u01C4
+} \u01C5
 test utf-18.2 {Tcl_UniCharToTitle, subtract one for title} {
-    string totitle \u01c6
-} \u01c5
+    string totitle \u01C6
+} \u01C5
 test utf-18.3 {Tcl_UniCharToTitle, subtract delta for title (positive)} {
-    string totitle \u017f
-} \u0053
+    string totitle \u017F
+} \x53
 test utf-18.4 {Tcl_UniCharToTitle, subtract delta for title (negative)} {
-    string totitle \u00ff
+    string totitle \xFF
 } \u0178
 test utf-18.5 {Tcl_UniCharToTitle, no delta} {
     string totitle !
@@ -384,15 +387,15 @@ test utf-20.1 {TclUniCharNcmp} {
 
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
-    string is alnum \u1040\u021f\u0220
+    string is alnum \u1040\u021F\u0220
 } {1}
 test utf-21.2 {unicode alnum char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
-    list [regexp {^[[:alnum:]]+$} \u1040\u021f\u0220] [regexp {^\w+$} \u1040\u021f\u0220_\u203f\u2040\u2054\ufe33\ufe34\ufe4d\ufe4e\ufe4f\uff3f]
+    list [regexp {^[[:alnum:]]+$} \u1040\u021F\u0220] [regexp {^\w+$} \u1040\u021F\u0220_\u203F\u2040\u2054\uFE33\uFE34\uFE4D\uFE4E\uFE4F\uFF3F]
 } {1 1}
 test utf-21.3 {unicode print char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
-    regexp {^[[:print:]]+$} \ufbc1
+    regexp {^[[:print:]]+$} \uFBC1
 } 1
 test utf-21.4 {TclUniCharIsGraph} {
     # [Bug 3464428]
@@ -404,65 +407,65 @@ test utf-21.5 {unicode graph char in regc_locale.c} {
 } {1}
 test utf-21.6 {TclUniCharIsGraph} {
     # [Bug 3464428]
-    string is graph \u00a0
+    string is graph \xA0
 } {0}
 test utf-21.7 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:graph:]]} \u0020\u00a0\u2028\u2029
+    regexp {[[:graph:]]} \x20\xA0\u2028\u2029
 } {0}
 test utf-21.8 {TclUniCharIsPrint} {
     # [Bug 3464428]
-    string is print \u0009
+    string is print \x09
 } {0}
 test utf-21.9 {unicode print char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:print:]]} \u0009
+    regexp {[[:print:]]} \x09
 } {0}
 test utf-21.10 {unicode print char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:print:]]} \u0009
+    regexp {[[:print:]]} \x09
 } {0}
 test utf-21.11 {TclUniCharIsControl} {
     # [Bug 3464428]
-    string is control \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
+    string is control \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
 } {1}
 test utf-21.12 {unicode control char in regc_locale.c} {
     # [Bug 3464428], [Bug a876646efe]
-    regexp {^[[:cntrl:]]*$} \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
+    regexp {^[[:cntrl:]]*$} \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
 } {1}
 
 test utf-22.1 {TclUniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
 } 10
 test utf-22.2 {TclUniCharIsWordChar} {
-    string wordend "x\u5080z123_bar\u203c fg" 0
+    string wordend "x\u5080z123_bar\u203C fg" 0
 } 10
 
 test utf-23.1 {TclUniCharIsAlpha} {
     # this returns 1 with Unicode 7 compliance
-    string is alpha \u021f\u0220\u037f\u052f
+    string is alpha \u021F\u0220\u037F\u052F
 } {1}
 test utf-23.2 {unicode alpha char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
-    regexp {^[[:alpha:]]+$} \u021f\u0220\u037f\u052f
+    regexp {^[[:alpha:]]+$} \u021F\u0220\u037F\u052F
 } {1}
 
 test utf-24.1 {TclUniCharIsDigit} {
     # this returns 1 with Unicode 7 compliance
-    string is digit \u1040\uabf0
+    string is digit \u1040\uABF0
 } {1}
 test utf-24.2 {unicode digit char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
-    list [regexp {^[[:digit:]]+$} \u1040\uabf0] [regexp {^\d+$} \u1040\uabf0]
+    list [regexp {^[[:digit:]]+$} \u1040\uABF0] [regexp {^\d+$} \u1040\uABF0]
 } {1 1}
 
 test utf-24.3 {TclUniCharIsSpace} {
     # this returns 1 with Unicode 7/TIP 413 compliance
-    string is space \u0085\u1680\u180e\u200b\u202f\u2060
+    string is space \x85\u1680\u180E\u200B\u202F\u2060
 } {1}
 test utf-24.4 {unicode space char in regc_locale.c} {
     # this returns 1 with Unicode 7/TIP 413 compliance
-    list [regexp {^[[:space:]]+$} \u0085\u1680\u180e\u200b\u202f\u2060] [regexp {^\s+$} \u0085\u1680\u180e\u200b\u202f\u2060]
+    list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
 
 testConstraint teststringobj [llength [info commands teststringobj]]
