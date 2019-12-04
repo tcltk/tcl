@@ -686,6 +686,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 #           configuration (ignored for Tcl itself)
 # _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
 #           (CRT library should support this)
+# TCL_UTF_MAX=4 - forces a build allowing 4-byte UTF-8 sequences internally.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -750,13 +751,18 @@ TCL_USE_STATIC_PACKAGES	= 0
 TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !else
-TCL_THREADS	= 1
+TCL_THREADS    = 1
 USE_THREAD_ALLOC= 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "time64bit"]
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "utfmax"]
+!message *** Force allowing 4-byte UTF-8 sequences internally
+TCL_UTF_MAX = 4
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1346,11 +1352,14 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_PROFILED
 OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
-OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64
+OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !endif
 
 !if "$(_USE_64BIT_TIME_T)" == "1"
-OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T
+OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
+!endif
+!if "$(TCL_UTF_MAX)" == "4"
+OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=4
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP

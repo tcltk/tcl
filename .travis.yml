@@ -175,7 +175,7 @@ matrix:
             - gcc-multilib
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32"
+        - CFGOPT=--host=i686-w64-mingw32
       script: *crosstest
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
@@ -189,8 +189,17 @@ matrix:
         - cd ${BUILD_DIR}
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=msvcrt -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=msvcrt -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC/Shared: UTF_MAX=4"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=utfmax -f makefile.vc test'
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -207,8 +216,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols -f makefile.vc test'
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -217,8 +226,17 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=msvcrt -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=msvcrt -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake -f makefile.vc test'
+    - name: "Windows/MSVC-x86/Shared: UTF_MAX=4"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=utfmax -f makefile.vc test'
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -235,8 +253,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt -f makefile.vc test'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols -f makefile.vc all tcltest'
+        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols -f makefile.vc test'
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -247,6 +265,13 @@ matrix:
       before_install: &makepreinst
         - choco install make
         - cd ${BUILD_DIR}
+    - name: "Windows/GCC/Shared: UTF_MAX=4"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=4"
+      before_install: *makepreinst
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -267,6 +292,13 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=win
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Shared: UTF_MAX=4"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=4"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Static"
       os: windows
