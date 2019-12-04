@@ -3045,7 +3045,7 @@ TclNativeCreateNativeRep(
     WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
     WCHAR *wp;
 
     if (TclFSCwdIsNative()) {
@@ -3082,9 +3082,10 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetString(validPathPtr);
+    len = validPathPtr->length;
 
-    if (strlen(str) != (size_t) len) {
+    if (strlen(str) != len) {
 	/*
 	 * String contains NUL-bytes. This is invalid.
 	 */
