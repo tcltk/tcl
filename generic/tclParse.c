@@ -817,7 +817,7 @@ TclParseBackslash(
     count = 2;
     switch (*p) {
 	/*
-	 * Note: in the conversions below, use absolute values (e.g., 0xa)
+	 * Note: in the conversions below, use absolute values (e.g., 0xA)
 	 * rather than symbolic values (e.g. \n) that get converted by the
 	 * compiler. It's possible that compilers on some platforms will do
 	 * the symbolic conversions differently, which could result in
@@ -831,19 +831,19 @@ TclParseBackslash(
 	result = 0x8;
 	break;
     case 'f':
-	result = 0xc;
+	result = 0xC;
 	break;
     case 'n':
-	result = 0xa;
+	result = 0xA;
 	break;
     case 'r':
-	result = 0xd;
+	result = 0xD;
 	break;
     case 't':
 	result = 0x9;
 	break;
     case 'v':
-	result = 0xb;
+	result = 0xB;
 	break;
     case 'x':
 	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
@@ -867,6 +867,16 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
+	} else if (((result & 0xDC00) == 0xD800) && (count == 6)
+		    && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
+	    /* If high surrogate is immediately followed by a low surrogate
+	     * escape, combine them into one character. */
+	    int low;
+	    int count2 = TclParseHex(p+7, 4, &low);
+	    if ((count2 == 4) && ((low & 0xDC00) == 0xDC00)) {
+		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
+		count += count2 + 2;
+	    }
 	}
 	break;
     case 'U':
@@ -876,6 +886,9 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "U".
 	     */
 	    result = 'U';
+	} else if ((result | 0x7FF) == 0xDFFF) {
+	    /* Upper or lower surrogate, not allowed in this syntax. */
+	    result = 0xFFFD;
 	}
 	break;
     case '\n':
