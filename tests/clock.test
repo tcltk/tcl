@@ -31,6 +31,7 @@ testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
+testConstraint knownWindowsTimingProblem [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 # TEST PLAN
 
@@ -35438,7 +35439,7 @@ test clock-33.4a {clock milliseconds} {
     expr { [clock milliseconds] + 1 }
     concat {}
 } {}
-test clock-33.5 {clock clicks tests, millisecond timing test} {
+test clock-33.5 {clock clicks tests, millisecond timing test} knownWindowsTimingProblem {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     set start [clock clicks -milli]
@@ -35450,7 +35451,7 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
 	  "ok" : 
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
-test clock-33.5a {clock tests, millisecond timing test} {
+test clock-33.5a {clock tests, millisecond timing test} knownWindowsTimingProblem {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     set start [clock milliseconds]
@@ -35469,7 +35470,7 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
-test clock-33.8 {clock clicks test, microsecond timing test} {
+test clock-33.8 {clock clicks test, microsecond timing test} knownWindowsTimingProblem {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     set start [clock clicks -micro]
@@ -35477,7 +35478,7 @@ test clock-33.8 {clock clicks test, microsecond timing test} {
     set end [clock clicks -micro]
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
-test clock-33.8a {clock test, microsecond timing test} {
+test clock-33.8a {clock test, microsecond timing test} knownWindowsTimingProblem {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     set start [clock microseconds]
