@@ -892,7 +892,7 @@ Tcl_AfterObjCmd(
 	if (objc == 3) {
 	    commandPtr = objv[2];
 	} else {
-	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
+	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);
 	}
 	command = TclGetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
