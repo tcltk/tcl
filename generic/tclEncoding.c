@@ -622,13 +622,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(1);;
+    type.clientData	= INT2PTR(1);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(isLe.c);;
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
