@@ -1983,15 +1983,20 @@ proc tcltest::test {name description args} {
     }
 
     # First, run the setup script
+    set processTest 1
     set code [catch {uplevel 1 $setup} setupMsg]
     if {$code == 1} {
 	set errorInfo(setup) $::errorInfo
 	set errorCodeRes(setup) $::errorCode
+	if {$errorCodeRes(setup) eq "BYPASS-SKIPPED-TEST"} {
+	    _noticeSkipped $name $setupMsg
+	    set processTest [set code 0]
+	}
     }
     set setupFailure [expr {$code != 0}]
 
     # Only run the test body if the setup was successful
-    if {!$setupFailure} {
+    if {$processTest && !$setupFailure} {
 
 	# Register startup time
 	if {[IsVerbose msec] || [IsVerbose usec]} {
@@ -2014,16 +2019,20 @@ proc tcltest::test {name description args} {
 	if {$returnCode == 1} {
 	    set errorInfo(body) $::errorInfo
 	    set errorCodeRes(body) $::errorCode
+	    if {$errorCodeRes(body) eq "BYPASS-SKIPPED-TEST"} {
+	    	_noticeSkipped $name $actualAnswer
+		set processTest [set returnCode 0]
+	    }
 	}
     }
 
     # check if the return code matched the expected return code
     set codeFailure 0
-    if {!$setupFailure && ($returnCode ni $returnCodes)} {
+    if {$processTest && !$setupFailure && ($returnCode ni $returnCodes)} {
 	set codeFailure 1
     }
     set errorCodeFailure 0
-    if {!$setupFailure && !$codeFailure && $returnCode == 1 && \
+    if {$processTest && !$setupFailure && !$codeFailure && $returnCode == 1 && \
                 ![string match $errorCode $errorCodeRes(body)]} {
 	set errorCodeFailure 1
     }
@@ -2032,7 +2041,7 @@ proc tcltest::test {name description args} {
     # them.  If the comparison fails, then so did the test.
     set outputFailure 0
     variable outData
-    if {[info exists output] && !$codeFailure} {
+    if {$processTest && [info exists output] && !$codeFailure} {
 	if {[set outputCompare [catch {
 	    CompareStrings $outData $output $match
 	} outputMatch]] == 0} {
@@ -2044,7 +2053,7 @@ proc tcltest::test {name description args} {
 
     set errorFailure 0
     variable errData
-    if {[info exists errorOutput] && !$codeFailure} {
+    if {$processTest && [info exists errorOutput] && !$codeFailure} {
 	if {[set errorCompare [catch {
 	    CompareStrings $errData $errorOutput $match
 	} errorMatch]] == 0} {
@@ -2056,7 +2065,9 @@ proc tcltest::test {name description args} {
 
     # check if the answer matched the expected answer
     # Only check if we ran the body of the test (no setup failure)
-    if {$setupFailure || $codeFailure} {
+    if {!$processTest} {
+    	set scriptFailure 0
+    } elseif {$setupFailure || $codeFailure} {
 	set scriptFailure 0
     } elseif {[set scriptCompare [catch {
 	CompareStrings $actualAnswer $result $match
@@ -2115,6 +2126,12 @@ proc tcltest::test {name description args} {
 	if {[IsVerbose msec]} {
 	    puts [outputChannel] "++++ $name took [expr {round($t/1000.)}] ms"
 	}
+    }
+
+    # if skipped, it is safe to return here
+    if {!$processTest} {
+	incr testLevel -1
+	return
     }
 
     # if we didn't experience any failures, then we passed
@@ -2177,7 +2194,7 @@ proc tcltest::test {name description args} {
 	    puts [outputChannel] "---- errorCode(setup): $errorCodeRes(setup)"
 	}
     }
-    if {$scriptFailure} {
+    if {$processTest && $scriptFailure} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
@@ -2243,6 +2260,32 @@ proc tcltest::test {name description args} {
     incr testLevel -1
     return
 }
+
+# Skip --
+#
+# Skips a running test and add a reason to skipped "constraints". Can be used
+# to conditional intended abort of the test.
+#
+# Side Effects:  Maintains tally of total tests seen and tests skipped.
+#
+proc tcltest::Skip {reason} {
+    return -code error -errorcode BYPASS-SKIPPED-TEST $reason
+}
+
+proc tcltest::_noticeSkipped {name reason} {
+    variable testLevel
+    variable numTests
+
+    if {[IsVerbose skip]} {
+	puts [outputChannel] "++++ $name SKIPPED: $reason"
+    }
+
+    if {$testLevel == 1} {
+	incr numTests(Skipped)
+	AddToSkippedBecause $reason
+    }
+}
+
 
 # Skipped --
 #
@@ -2324,14 +2367,7 @@ proc tcltest::Skipped {name constraints} {
 	}
 
 	if {!$doTest} {
-	    if {[IsVerbose skip]} {
-		puts [outputChannel] "++++ $name SKIPPED: $constraints"
-	    }
-
-	    if {$testLevel == 1} {
-		incr numTests(Skipped)
-		AddToSkippedBecause $constraints
-	    }
+	    _noticeSkipped $name $constraints
 	    return 1
 	}
     }
