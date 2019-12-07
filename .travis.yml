@@ -17,6 +17,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
+    - name: "Linux/GCC/Shared: UTF_MAX=6"
+      os: linux
+      dist: xenial
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
     - name: "Linux/GCC/Static"
       os: linux
       dist: xenial
