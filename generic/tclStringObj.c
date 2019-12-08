@@ -1994,7 +1994,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
-	    char buf[TCL_UTF_MAX];
+	    char buf[4] = "";
 	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
@@ -3135,7 +3135,7 @@ ExtendStringRepWithUnicode(
      */
 
     int i, origLength, size = 0;
-    char *dst, buf[TCL_UTF_MAX];
+    char *dst, buf[4] = "";
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
