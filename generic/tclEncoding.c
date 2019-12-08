@@ -622,13 +622,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(1);;
+    type.clientData	= INT2PTR(1);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(isLe.c);;
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -2409,13 +2409,13 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
 	    src += TclUtfToUniChar(src, chPtr);
-	    if ((*chPtr & 0xFC00) == 0xD800) {
+	    if ((*chPtr | 0x3FF) == 0xDBFF) {
 		/* A high surrogate character is detected, handle especially */
 		Tcl_UniChar low = *chPtr;
 		if (src <= srcEnd-3) {
 		    Tcl_UtfToUniChar(src, &low);
 		}
-		if ((low & 0xFC00) != 0xDC00) {
+		if ((low | 0x3FF) != 0xDFFF) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
