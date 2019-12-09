@@ -2020,7 +2020,7 @@ proc tcltest::test {name description args} {
 	    set errorInfo(body) $::errorInfo
 	    set errorCodeRes(body) $::errorCode
 	    if {$errorCodeRes(body) eq "BYPASS-SKIPPED-TEST"} {
-	    	_noticeSkipped $name $actualAnswer
+		_noticeSkipped $name $actualAnswer
 		set processTest [set returnCode 0]
 	    }
 	}
