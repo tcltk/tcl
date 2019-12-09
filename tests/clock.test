@@ -32,10 +32,6 @@ testConstraint detroit \
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
 
-if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
-    namespace import ::tcl::unsupported::timerate
-}
-
 # TEST PLAN
 
 # clock-1:
