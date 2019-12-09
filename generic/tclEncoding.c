@@ -2347,17 +2347,24 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
 	    src += TclUtfToUniChar(src, chPtr);
-	    if ((*chPtr & 0xFC00) == 0xD800) {
-		/* A high surrogate character is detected, handle especially */
+	    if ((*chPtr | 0x7FF) == 0xDFFF) {
+		/* A surrogate character is detected, handle especially */
 		Tcl_UniChar low = *chPtr;
-		if (src <= srcEnd-3) {
-		    Tcl_UtfToUniChar(src, &low);
-		}
-		if ((low & 0xFC00) != 0xDC00) {
+		size_t len = (src <= srcEnd-3) ? Tcl_UtfToUniChar(src, &low) : 0;
+		if (((low | 0x3FF) != 0xDFFF) || !(*chPtr & 0x800)) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
 			continue;
+		} else if (TCL_UTF_MAX <= 4) {
+		    int full = (((*chPtr & 0x3FF) << 10) | (low & 0x3FF)) + 0x10000;
+		    *dst++ = (char) (((full >> 18) | 0xF0) & 0xF7);
+		    *dst++ = (char) (((full >> 12) | 0x80) & 0xBF);
+		    *dst++ = (char) (((full >> 6) | 0x80) & 0xBF);
+		    *dst++ = (char) ((full | 0x80) & 0xBF);
+			*chPtr = 0;
+		    src += len;
+		    continue;
 		}
 	    }
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
