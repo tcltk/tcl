@@ -365,26 +365,36 @@ test encoding-15.10 {UtfToUtfProc emoji character output} {
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
     list $val [format %x [scan $val %c]]
-} -result "\u4e4e 4e4e"
+} -result "\u4E4E 4e4e"
 test encoding-16.2 {Utf16ToUtfProc} -body {
-    set val [encoding convertfrom utf-16 "\xd8\xd8\xdc\xdc"]
+    set val [encoding convertfrom utf-16 "\xD8\xD8\xDC\xDC"]
     list $val [format %x [scan $val %c]]
-} -result "\U460dc 460dc"
-test encoding-16.3 {Ucs2ToUtfProc} -body {
+} -result "\U460DC 460dc"
+test encoding-16.3 {Utf16ToUtfProc} -body {
+    set val [encoding convertfrom utf-16 "\xDC\xDC"]
+    list $val [format %x [scan $val %c]]
+} -result "\uDCDC dcdc"
+test encoding-16.4 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 NN]
     list $val [format %x [scan $val %c]]
-} -result "\u4e4e 4e4e"
+} -result "\u4E4E 4e4e"
 test encoding-16.4 {Ucs2ToUtfProc} -body {
-    set val [encoding convertfrom ucs-2 "\xd8\xd8\xdc\xdc"]
+    set val [encoding convertfrom ucs-2 "\xD8\xD8\xDC\xDC"]
     list $val [format %x [scan $val %c]]
-} -result "\U460dc 460dc"
+} -result "\U460DC 460dc"
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
-    encoding convertto utf-16 "\U460dc"
-} -result "\xd8\xd8\xdc\xdc"
-test encoding-17.2 {UtfToUcs2Proc} -body {
-    encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460dc"]
-} -result "\ufffd"
+    encoding convertto utf-16 "\U460DC"
+} -result "\xD8\xD8\xDC\xDC"
+test encoding-17.2 {UtfToUtf16Proc} -body {
+    encoding convertto utf-16 "\uDCDC"
+} -result "\xDC\xDC"
+test encoding-17.3 {UtfToUtf16Proc} -body {
+    encoding convertto utf-16 "\uD8D8"
+} -result "\xD8\xD8"
+test encoding-17.4 {UtfToUcs2Proc} -body {
+    encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460DC"]
+} -result "\uFFFD"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
