@@ -1982,10 +1982,11 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    # First, run the setup script
-    set code [catch {
-		uplevel 1 [list [namespace which SetupTest] $setup]
-	} setupMsg]
+    # First, run the setup script (or a hook if it presents):
+    if {[set cmd [uplevel 1 {namespace which SetupTest}]] ne ""} {
+	set setup [list $cmd $setup]
+    }
+    set code [catch {uplevel 1 $setup} setupMsg]
     if {$code == 1} {
 	set errorInfo(setup) $::errorInfo
 	set errorCodeRes(setup) $::errorCode
@@ -2068,10 +2069,11 @@ proc tcltest::test {name description args} {
 	set scriptFailure 1
     }
 
-    # Always run the cleanup script
-    set code [catch {
-	uplevel 1 [list [namespace which CleanupTest] $cleanup]
-    } cleanupMsg]
+    # Always run the cleanup script (or a hook if it presents):
+    if {[set cmd [uplevel 1 {namespace which CleanupTest}]] ne ""} {
+	set cleanup [list $cmd $cleanup]
+    }
+    set code [catch {uplevel 1 $cleanup} cleanupMsg]
     if {$code == 1} {
 	set errorInfo(cleanup) $::errorInfo
 	set errorCodeRes(cleanup) $::errorCode
@@ -2342,8 +2344,6 @@ proc tcltest::Skipped {name constraints} {
     return 0
 }
 
-
-
 # RunTest --
 #
 # This is where the body of a test is evaluated.  The combination of
@@ -2360,36 +2360,13 @@ proc tcltest::RunTest {name script} {
 	memory tag $name
     }
 
-    set code [catch {uplevel 1 [list [
-	namespace origin EvalTest] $script]} actualAnswer copts]
+    # run the test script (or a hook if it presents):
+    if {[set cmd [uplevel 1 {namespace which EvalTest}]] ne ""} {
+	set script [list $cmd $script]
+    }
+    set code [catch {uplevel 1 $script} actualAnswer]
 
     return [list $actualAnswer $code]
-}
-
-
-proc tcltest::EvalTest script {
-    set code [catch {uplevel 1 $script} cres copts]
-    dict set copts -code $code
-    dict incr copts -level
-    return -options $copts $cres
-}
-
-
-
-# SetupTest --
-#
-# Evaluates the -setup script for a test
-
-proc tcltest::SetupTest setup {
-    uplevel 1 $setup
-}
-
-
-# CleanupTest --
-#
-# Evaluates the -cleanup script for a test
-proc tcltest::CleanupTest cleanup {
-    uplevel 1 $cleanup
 }
 
 #####################################################################
