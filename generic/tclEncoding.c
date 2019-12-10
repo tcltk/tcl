@@ -2413,7 +2413,7 @@ UtfToUtfProc(
 		/* A surrogate character is detected, handle especially */
 		Tcl_UniChar low = *chPtr;
 		size_t len = (src <= srcEnd-3) ? Tcl_UtfToUniChar(src, &low) : 0;
-		if (((low | 0x3FF) != 0xDFFF) || !(*chPtr & 0x800)) {
+		if (((low | 0x3FF) != 0xDFFF) || (*chPtr & 0x400)) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
