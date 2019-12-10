@@ -1983,7 +1983,7 @@ proc tcltest::test {name description args} {
     }
 
     # First, run the setup script (or a hook if it presents):
-    if {[set cmd [uplevel 1 {namespace which SetupTest}]] ne ""} {
+    if {[set cmd [namespace which -command [namespace current]::SetupTest]] ne ""} {
 	set setup [list $cmd $setup]
     }
     set processTest 1
@@ -2081,7 +2081,7 @@ proc tcltest::test {name description args} {
     }
 
     # Always run the cleanup script (or a hook if it presents):
-    if {[set cmd [uplevel 1 {namespace which CleanupTest}]] ne ""} {
+    if {[set cmd [namespace which -command [namespace current]::CleanupTest]] ne ""} {
 	set cleanup [list $cmd $cleanup]
     }
     set code [catch {uplevel 1 $cleanup} cleanupMsg]
@@ -2397,7 +2397,7 @@ proc tcltest::RunTest {name script} {
     }
 
     # run the test script (or a hook if it presents):
-    if {[set cmd [uplevel 1 {namespace which EvalTest}]] ne ""} {
+    if {[set cmd [namespace which -command [namespace current]::EvalTest]] ne ""} {
 	set script [list $cmd $script]
     }
     set code [catch {uplevel 1 $script} actualAnswer]
