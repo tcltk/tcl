@@ -2356,16 +2356,10 @@ UtfToUtfProc(
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
 			continue;
-		} else if (TCL_UTF_MAX <= 4) {
-		    int full = (((*chPtr & 0x3FF) << 10) | (low & 0x3FF)) + 0x10000;
-		    *dst++ = (char) (((full >> 18) | 0xF0) & 0xF7);
-		    *dst++ = (char) (((full >> 12) | 0x80) & 0xBF);
-		    *dst++ = (char) (((full >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char) ((full | 0x80) & 0xBF);
-			*chPtr = 0;
-		    src += len;
-		    continue;
 		}
+		src += len;
+		dst += Tcl_UniCharToUtf(*chPtr, dst);
+		*chPtr = low;
 	    }
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}
