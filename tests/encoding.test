@@ -321,7 +321,7 @@ test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     binary scan [teststringbytes $y] H* z
     set z
 } c080
-test encoding-15.4 {UtfToUtfProc emoji character input} -constraints knownBug -body {
+test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
