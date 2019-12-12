@@ -153,13 +153,12 @@ case-insensitive (1).
 .SH DESCRIPTION
 .PP
 These routines convert between UTF-8 strings and Unicode/Utf-16 characters.
-An Unicode character represented as an unsigned, fixed-size
-quantity.  A UTF-8 character is a Unicode character represented as
-a varying-length sequence of up to \fBTCL_UTF_MAX\fR bytes.  A multibyte UTF-8
-sequence consists of a lead byte followed by some number of trail bytes.
+A UTF-8 character is a Unicode character represented as a varying-length
+sequence of up to \fB4\fR bytes.  A multibyte UTF-8 sequence
+consists of a lead byte followed by some number of trail bytes.
 .PP
-\fBTCL_UTF_MAX\fR is the maximum number of bytes that it takes to
-represent one Unicode character in the UTF-8 representation.
+\fBTCL_UTF_MAX\fR is the maximum number of bytes that \fBTcl_UtfToUniChar\fR
+can consume in a single call.
 .PP
 \fBTcl_UniCharToUtf\fR stores the character \fIch\fR as a UTF-8 string
 in starting at \fIbuf\fR.  The return value is the number of bytes stored
