@@ -705,6 +705,9 @@ TCL_LIBS
 LIBOBJS
 AR
 RANLIB
+TOMMATH_INCLUDE
+TOMMATH_SRCS
+TOMMATH_OBJS
 ZLIB_INCLUDE
 ZLIB_SRCS
 ZLIB_OBJS
@@ -768,6 +771,7 @@ enable_man_compression
 enable_man_suffix
 with_encoding
 enable_shared
+with_system_libtommath
 enable_64bit
 enable_64bit_vis
 enable_rpath
@@ -1427,6 +1431,9 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values (default:
                           iso8859-1)
+  --with-system-libtommath
+                          use external libtommath (default: true if available,
+                          false otherwise)
   --with-tzdata           install timezone data (default: autodetect)
 
 Some influential environment variables:
@@ -4644,6 +4651,115 @@ fi
 $as_echo "#define HAVE_ZLIB 1" >>confdefs.h
 
 
+#------------------------------------------------------------------------
+#	Add stuff for libtommath
+
+libtommath_ok=yes
+
+# Check whether --with-system-libtommath was given.
+if test "${with_system_libtommath+set}" = set; then :
+  withval=$with_system_libtommath; libtommath_ok=${withval}
+fi
+
+if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+    ac_fn_c_check_header_mongrel "$LINENO" "tommath.h" "ac_cv_header_tommath_h" "$ac_includes_default"
+if test "x$ac_cv_header_tommath_h" = xyes; then :
+
+	ac_fn_c_check_type "$LINENO" "mp_int" "ac_cv_type_mp_int" "#include <tommath.h>
+"
+if test "x$ac_cv_type_mp_int" = xyes; then :
+
+else
+  libtommath_ok=no
+fi
+
+else
+
+	libtommath_ok=no
+fi
+
+
+    if test $libtommath_ok = yes; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_log_u32" >&5
+$as_echo_n "checking for library containing mp_log_u32... " >&6; }
+if ${ac_cv_search_mp_log_u32+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mp_log_u32 ();
+int
+main ()
+{
+return mp_log_u32 ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tommath; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_mp_log_u32=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_mp_log_u32+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_mp_log_u32+:} false; then :
+
+else
+  ac_cv_search_mp_log_u32=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_log_u32" >&5
+$as_echo "$ac_cv_search_mp_log_u32" >&6; }
+ac_res=$ac_cv_search_mp_log_u32
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+
+	libtommath_ok=no
+
+fi
+
+fi
+fi
+if test $libtommath_ok = yes; then :
+
+
+$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
+
+else
+
+  TOMMATH_OBJS=\${TOMMATH_OBJS}
+
+  TOMMATH_SRCS=\${TOMMATH_SRCS}
+
+  TOMMATH_INCLUDE=-I\${TOMMATH_DIR}
+
+
+fi
+
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -6894,9 +7010,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
     if test "${tcl_cv_type_64bit}" = none ; then
-
-$as_echo "#define MP_32BIT 1" >>confdefs.h
-
 
 $as_echo "#define TCL_WIDE_INT_IS_LONG 1" >>confdefs.h
 
