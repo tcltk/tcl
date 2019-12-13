@@ -73,24 +73,29 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UtfToUniChar
 
 #define TclBN_mp_add mp_add
+#define TclBN_mp_add_d mp_add_d
 #define TclBN_mp_and mp_and
 #define TclBN_mp_clamp mp_clamp
 #define TclBN_mp_clear mp_clear
 #define TclBN_mp_clear_multi mp_clear_multi
 #define TclBN_mp_cmp mp_cmp
+#define TclBN_mp_cmp_d mp_cmp_d
 #define TclBN_mp_cmp_mag mp_cmp_mag
 #define TclBN_mp_cnt_lsb mp_cnt_lsb
 #define TclBN_mp_copy mp_copy
 #define TclBN_mp_count_bits mp_count_bits
 #define TclBN_mp_div mp_div
+#define TclBN_mp_div_d mp_div_d
 #define TclBN_mp_div_2 mp_div_2
 #define TclBN_mp_div_2d mp_div_2d
 #define TclBN_mp_exch mp_exch
+#define TclBN_mp_expt_u32 mp_expt_u32
 #define TclBN_mp_get_mag_u64 mp_get_mag_u64
 #define TclBN_mp_grow mp_grow
 #define TclBN_mp_init mp_init
 #define TclBN_mp_init_copy mp_init_copy
 #define TclBN_mp_init_multi mp_init_multi
+#define TclBN_mp_init_set mp_init_set
 #define TclBN_mp_init_size mp_init_size
 #define TclBN_mp_init_i64 mp_init_i64
 #define TclBN_mp_init_u64 mp_init_u64
@@ -98,6 +103,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #define TclBN_mp_mod mp_mod
 #define TclBN_mp_mod_2d mp_mod_2d
 #define TclBN_mp_mul mp_mul
+#define TclBN_mp_mul_d mp_mul_d
 #define TclBN_mp_mul_2 mp_mul_2
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
@@ -112,11 +118,8 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #define TclBN_mp_sqr mp_sqr
 #define TclBN_mp_sqrt mp_sqrt
 #define TclBN_mp_sub mp_sub
+#define TclBN_mp_sub_d mp_sub_d
 #define TclBN_mp_signed_rsh mp_signed_rsh
-#define TclBN_mp_tc_and TclBN_mp_and
-#define TclBN_mp_tc_div_2d mp_signed_rsh
-#define TclBN_mp_tc_or TclBN_mp_or
-#define TclBN_mp_tc_xor TclBN_mp_xor
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
@@ -134,47 +137,6 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
-
-
-mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
-	return mp_expt_u32(a, b, c);
-}
-mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
-   return mp_add_d(a, b, c);
-}
-mp_err	TclBN_mp_cmp_d(const mp_int *a, unsigned int b) {
-   return mp_cmp_d(a, b);
-}
-mp_err	TclBN_mp_sub_d(const mp_int *a, unsigned int b, mp_int *c) {
-   return mp_sub_d(a, b, c);
-}
-mp_err	TclBN_mp_div_d(const mp_int *a, unsigned int b, mp_int *c, unsigned int *d) {
-   mp_digit d2;
-   mp_err result = mp_div_d(a, b, c, (d ? &d2 : NULL));
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
-mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
-   mp_err result;
-   mp_digit d2;
-
-   if ((b | (mp_digit)-1) != (mp_digit)-1) {
-      return MP_VAL;
-   }
-   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
-   if (d) {
-      *d = d2;
-   }
-   return result;
-}
-mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
-	return mp_init_set(a, b);
-}
-mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
-	return mp_mul_d(a, b, c);
-}
 
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
@@ -764,7 +726,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_signed_rsh, /* 76 */
     0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    TclBN_mp_div_ld, /* 79 */
+    0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 
