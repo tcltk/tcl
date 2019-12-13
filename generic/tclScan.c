@@ -10,7 +10,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -929,13 +929,12 @@ Tcl_ScanObjCmd(
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    mp_int big;
-		    if (mp_init(&big) != MP_OKAY) {
+		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
-			mp_set_ull(&big, (Tcl_WideUInt)wideValue);
 			Tcl_SetBignumObj(objPtr, &big);
 		    }
 		} else {
@@ -976,13 +975,12 @@ Tcl_ScanObjCmd(
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
 #ifdef TCL_WIDE_INT_IS_LONG
 		    mp_int big;
-		    if (mp_init(&big) != MP_OKAY) {
+		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
-			mp_set_ull(&big, (unsigned long)value);
 			Tcl_SetBignumObj(objPtr, &big);
 		    }
 #else

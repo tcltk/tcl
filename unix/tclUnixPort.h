@@ -155,6 +155,8 @@ typedef off_t		Tcl_SeekOffset;
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
 #endif
 #include <unistd.h>
 
