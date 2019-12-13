@@ -152,12 +152,6 @@ MODULE_SCOPE mp_err	TclBN_s_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
 #define s_mp_toom_sqr TclBN_mp_toom_sqr
 #endif /* !TCL_WITH_EXTERNAL_TOMMATH */
 
-#define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_u64(a,(unsigned int)(b)))
-#define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
-#define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),(long)(b)),MP_OKAY))
-#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
-#define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)TclBN_mp_ubin_size(mp))
-
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
@@ -275,9 +269,7 @@ EXTERN mp_err		TclBN_mp_read_radix(mp_int *a, const char *str,
 EXTERN void		TclBN_mp_rshd(mp_int *a, int shift);
 /* 38 */
 EXTERN mp_err		TclBN_mp_shrink(mp_int *a) MP_WUR;
-/* 39 */
-TCL_DEPRECATED("macro calling mp_set_u64")
-void			TclBN_mp_set(mp_int *a, unsigned int b);
+/* Slot 39 is reserved */
 /* Slot 40 is reserved */
 /* 41 */
 EXTERN mp_err		TclBN_mp_sqrt(const mp_int *a, mp_int *b) MP_WUR;
@@ -308,17 +300,11 @@ EXTERN void		TclBN_mp_zero(mp_int *a);
 /* Slot 58 is reserved */
 /* Slot 59 is reserved */
 /* Slot 60 is reserved */
-/* 61 */
-TCL_DEPRECATED("macro calling mp_init_u64")
-mp_err			TclBN_mp_init_ul(mp_int *a, unsigned long i);
-/* 62 */
-TCL_DEPRECATED("macro calling mp_set_u64")
-void			TclBN_mp_set_ul(mp_int *a, unsigned long i);
+/* Slot 61 is reserved */
+/* Slot 62 is reserved */
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a) MP_WUR;
-/* 64 */
-TCL_DEPRECATED("macro calling mp_init_i64")
-int			TclBN_mp_init_l(mp_int *bignum, long initVal);
+/* Slot 64 is reserved */
 /* 65 */
 EXTERN int		TclBN_mp_init_i64(mp_int *bignum, int64_t initVal) MP_WUR;
 /* 66 */
@@ -392,7 +378,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_read_radix) (mp_int *a, const char *str, int radix) MP_WUR; /* 36 */
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
     mp_err (*tclBN_mp_shrink) (mp_int *a) MP_WUR; /* 38 */
-    TCL_DEPRECATED_API("macro calling mp_set_u64") void (*tclBN_mp_set) (mp_int *a, unsigned int b); /* 39 */
+    void (*reserved39)(void);
     void (*reserved40)(void);
     mp_err (*tclBN_mp_sqrt) (const mp_int *a, mp_int *b) MP_WUR; /* 41 */
     mp_err (*tclBN_mp_sub) (const mp_int *a, const mp_int *b, mp_int *c) MP_WUR; /* 42 */
@@ -414,10 +400,10 @@ typedef struct TclTomMathStubs {
     void (*reserved58)(void);
     void (*reserved59)(void);
     void (*reserved60)(void);
-    TCL_DEPRECATED_API("macro calling mp_init_u64") mp_err (*tclBN_mp_init_ul) (mp_int *a, unsigned long i); /* 61 */
-    TCL_DEPRECATED_API("macro calling mp_set_u64") void (*tclBN_mp_set_ul) (mp_int *a, unsigned long i); /* 62 */
+    void (*reserved61)(void);
+    void (*reserved62)(void);
     int (*tclBN_mp_cnt_lsb) (const mp_int *a) MP_WUR; /* 63 */
-    TCL_DEPRECATED_API("macro calling mp_init_i64") int (*tclBN_mp_init_l) (mp_int *bignum, long initVal); /* 64 */
+    void (*reserved64)(void);
     int (*tclBN_mp_init_i64) (mp_int *bignum, int64_t initVal) MP_WUR; /* 65 */
     int (*tclBN_mp_init_u64) (mp_int *bignum, uint64_t initVal) MP_WUR; /* 66 */
     void (*reserved67)(void);
@@ -525,8 +511,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_rshd) /* 37 */
 #define TclBN_mp_shrink \
 	(tclTomMathStubsPtr->tclBN_mp_shrink) /* 38 */
-#define TclBN_mp_set \
-	(tclTomMathStubsPtr->tclBN_mp_set) /* 39 */
+/* Slot 39 is reserved */
 /* Slot 40 is reserved */
 #define TclBN_mp_sqrt \
 	(tclTomMathStubsPtr->tclBN_mp_sqrt) /* 41 */
@@ -554,14 +539,11 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 /* Slot 58 is reserved */
 /* Slot 59 is reserved */
 /* Slot 60 is reserved */
-#define TclBN_mp_init_ul \
-	(tclTomMathStubsPtr->tclBN_mp_init_ul) /* 61 */
-#define TclBN_mp_set_ul \
-	(tclTomMathStubsPtr->tclBN_mp_set_ul) /* 62 */
+/* Slot 61 is reserved */
+/* Slot 62 is reserved */
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
-#define TclBN_mp_init_l \
-	(tclTomMathStubsPtr->tclBN_mp_init_l) /* 64 */
+/* Slot 64 is reserved */
 #define TclBN_mp_init_i64 \
 	(tclTomMathStubsPtr->tclBN_mp_init_i64) /* 65 */
 #define TclBN_mp_init_u64 \
