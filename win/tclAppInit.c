@@ -90,14 +90,16 @@ main(
     char *dummy[])		/* Not used. */
 {
     TCHAR **argv;
+    TCHAR *p;
+    (void)dummy;
 #else
 int
 _tmain(
     int argc,			/* Number of command-line arguments. */
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
-#endif
     TCHAR *p;
+#endif
 
     /*
      * Set up the default locale to be standard "C" locale so parsing is
