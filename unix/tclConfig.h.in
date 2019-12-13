@@ -307,12 +307,6 @@
 /* No Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
-/* Use 'MP_32BIT' for libtommath */
-#undef MP_32BIT
-
-/* Default libtommath precision. */
-#undef MP_PREC
-
 /* Is no debugging enabled? */
 #undef NDEBUG
 
