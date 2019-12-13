@@ -249,8 +249,10 @@ MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
 #undef mp_sqr
 #define mp_sqr TclBN_mp_sqr
+#endif
 
 #define MP_GET_ENDIANNESS(x) \
    do{\
