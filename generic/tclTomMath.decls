@@ -141,9 +141,10 @@ declare 37 {
 declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
-declare 39 {deprecated {macro calling mp_set_u64}} {
-    void TclBN_mp_set(mp_int *a, unsigned int b)
-}
+# Removed in 9.0
+#declare 39 {deprecated {macro calling mp_set_u64}} {
+#    void TclBN_mp_set(mp_int *a, unsigned int b)
+#}
 # Removed in 9.0
 #declare 40 {nostub {is private function in libtommath}} {
 #    mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
@@ -179,18 +180,21 @@ declare 48 {
 declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
-declare 61 {deprecated {macro calling mp_init_u64}} {
-    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
-}
-declare 62 {deprecated {macro calling mp_set_u64}} {
-    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
-}
+# Removed in 9.0
+#declare 61 {deprecated {macro calling mp_init_u64}} {
+#    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
+#}
+# Removed in 9.0
+#declare 62 {deprecated {macro calling mp_set_u64}} {
+#    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
+#}
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
-declare 64 {deprecated {macro calling mp_init_i64}} {
-    int TclBN_mp_init_l(mp_int *bignum, long initVal)
-}
+# Removed in 9.0
+#declare 64 {deprecated {macro calling mp_init_i64}} {
+#    int TclBN_mp_init_l(mp_int *bignum, long initVal)
+#}
 declare 65 {
     int MP_WUR TclBN_mp_init_i64(mp_int *bignum, int64_t initVal)
 }

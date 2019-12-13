@@ -128,20 +128,6 @@
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
 
 
-mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
-{
-    TclBN_mp_set_u64(a, i);
-    return MP_OKAY;
-}
-
-static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
-{
-    TclBN_mp_set_u64(a, i);
-    return MP_OKAY;
-}
-
-#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
-
 mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
 	return mp_expt_u32(a, b, c);
 }
@@ -180,34 +166,6 @@ mp_err TclBN_mp_init_set(mp_int *a, unsigned int b) {
 }
 mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 	return mp_mul_d(a, b, c);
-}
-
-mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
-    mp_digit d2;
-    mp_err result = mp_div_d(a, 3, c, &d2);
-    if (d) {
-	*d = d2;
-    }
-    return result;
-}
-
-int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
-{
-    return TclBN_mp_expt_u32(a, b, c);
-}
-
-mp_err TclBN_mp_init_ul(mp_int *a, unsigned long b)
-{
-    return TclBN_mp_init_u64(a,b);
-}
-
-mp_err TclBN_mp_init_l(mp_int *a, long b)
-{
-    return TclBN_mp_init_i64(a,b);
-}
-
-void TclBN_mp_set(mp_int *a, unsigned int b) {
-    TclBN_mp_set_u64(a, b);
 }
 
 #ifdef _WIN32
@@ -758,7 +716,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_read_radix, /* 36 */
     TclBN_mp_rshd, /* 37 */
     TclBN_mp_shrink, /* 38 */
-    TclBN_mp_set, /* 39 */
+    0, /* 39 */
     0, /* 40 */
     TclBN_mp_sqrt, /* 41 */
     TclBN_mp_sub, /* 42 */
@@ -780,10 +738,10 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 58 */
     0, /* 59 */
     0, /* 60 */
-    TclBN_mp_init_ul, /* 61 */
-    TclBN_mp_set_ul, /* 62 */
+    0, /* 61 */
+    0, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    TclBN_mp_init_l, /* 64 */
+    0, /* 64 */
     TclBN_mp_init_i64, /* 65 */
     TclBN_mp_init_u64, /* 66 */
     0, /* 67 */
