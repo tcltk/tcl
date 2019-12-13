@@ -740,6 +740,9 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #undef mp_isodd
 #define mp_iseven(a) (!mp_isodd(a))
 #define mp_isodd(a)  (((a)->used != 0 && (((a)->dp[0] & 1) != 0)) ? MP_YES : MP_NO)
+#undef mp_sqr
+#define mp_sqr(a,b) mp_mul(a,a,b)
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
