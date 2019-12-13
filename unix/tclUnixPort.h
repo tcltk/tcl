@@ -99,8 +99,8 @@ extern "C" {
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
-    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const void *, int);
     __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
 	    char *, int, const char *, void *);
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
@@ -161,6 +161,8 @@ extern "C" {
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
 #endif
 #include <unistd.h>
 

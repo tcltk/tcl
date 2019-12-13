@@ -19,6 +19,10 @@
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
+	&& !defined(MP_32BIT) && !defined(MP_64BIT)
+#   define MP_64BIT
+#endif
 
 /*
  * We must specify the lower version we intend to support.
@@ -89,6 +93,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <limits.h>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
 #endif
 
 #ifndef __GNUC__

@@ -1,12 +1,18 @@
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
-#ifndef TOMMATH_PRIVATE_H_
-#define TOMMATH_PRIVATE_H_
+#ifndef TOMMATH_PRIV_H_
+#define TOMMATH_PRIV_H_
 
-#include <tommath.h>
+#ifdef MP_NO_STDINT
+#ifdef HAVE_STDINT_H
+#  include <stdint.h>
+#else
+#  include "../compat/stdint.h"
+#endif
+#endif
+#include "tclTomMath.h"
 #include "tommath_class.h"
-#include <limits.h>
 
 /*
  * Private symbols
@@ -118,6 +124,11 @@ do {                                                    \
 #  define MP_KARATSUBA_SQR_CUTOFF MP_DEFAULT_KARATSUBA_SQR_CUTOFF
 #  define MP_TOOM_MUL_CUTOFF      MP_DEFAULT_TOOM_MUL_CUTOFF
 #  define MP_TOOM_SQR_CUTOFF      MP_DEFAULT_TOOM_SQR_CUTOFF
+#else
+#  define MP_KARATSUBA_MUL_CUTOFF KARATSUBA_MUL_CUTOFF
+#  define MP_KARATSUBA_SQR_CUTOFF KARATSUBA_SQR_CUTOFF
+#  define MP_TOOM_MUL_CUTOFF      TOOM_MUL_CUTOFF
+#  define MP_TOOM_SQR_CUTOFF      TOOM_SQR_CUTOFF
 #endif
 
 /* define heap macros */
@@ -145,6 +156,12 @@ extern void MP_FREE(void *mem, size_t size);
 #define MP__STRINGIZE(x) ""#x""
 #define MP_HAS(x)        (sizeof(MP_STRINGIZE(BN_##x##_C)) == 1u)
 
+/* TODO: Remove private_mp_word as soon as deprecated mp_word is removed from tommath. */
+#if !defined(MP_64BIT) || defined(__GNUC__)
+#undef mp_word
+typedef private_mp_word mp_word;
+#endif
+
 #define MP_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MP_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -159,31 +176,18 @@ extern void MP_FREE(void *mem, size_t size);
 #define MP_SIZEOF_BITS(type)    ((size_t)CHAR_BIT * sizeof(type))
 #define MP_MAXFAST              (int)(1uL << (MP_SIZEOF_BITS(mp_word) - (2u * (size_t)MP_DIGIT_BIT)))
 
-#define PRIVATE_MP_WARRAY (1 << ((MP_SIZEOF_BITS(mp_word) - (2 * MP_DIGIT_BIT)) + 1))
+/* TODO: Remove PRIVATE_MP_WARRAY as soon as deprecated MP_WARRAY is removed from tommath.h */
+#undef MP_WARRAY
+#define MP_WARRAY PRIVATE_MP_WARRAY
 
-#if defined(MP_16BIT)
-typedef unsigned int mp_word;
-#elif defined(MP_64BIT) && defined(__GNUC__)
-typedef unsigned long mp_word __attribute__((mode(TI)));
-#elif defined(_WIN32)
-typedef unsigned __int64   mp_word;
-#else
-typedef unsigned long long   mp_word;
-#endif
-
-MP_STATIC_ASSERT(correct_word_size, sizeof(mp_word) == 2 * sizeof(mp_digit))
-
-/* default precision */
-#ifndef MP_PREC
-#   ifndef MP_LOW_MEM
-#      define MP_PREC 32        /* default digits of precision */
-#   else
-#      define MP_PREC 8         /* default digits of precision */
-#   endif
+/* TODO: Remove PRIVATE_MP_PREC as soon as deprecated MP_PREC is removed from tommath.h */
+#ifdef PRIVATE_MP_PREC
+#   undef MP_PREC
+#   define MP_PREC PRIVATE_MP_PREC
 #endif
 
 /* Minimum number of available digits in mp_int, MP_PREC >= MP_MIN_PREC */
-#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(Tcl_WideInt) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
+#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(uintmax_t) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
 
 MP_STATIC_ASSERT(prec_geq_min_prec, MP_PREC >= MP_MIN_PREC)
 
@@ -211,21 +215,39 @@ MP_PRIVATE mp_err s_mp_montgomery_reduce_fast(mp_int *x, const mp_int *n, mp_dig
 MP_PRIVATE mp_err s_mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode) MP_WUR;
 MP_PRIVATE mp_err s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode) MP_WUR;
 MP_PRIVATE mp_err s_mp_rand_platform(void *p, size_t n) MP_WUR;
-typedef int mp_prime_callback(unsigned char *dst, int len, void *dat);
-MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, mp_prime_callback cb, void *dat);
+MP_PRIVATE mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_prime_callback cb, void *dat);
 MP_PRIVATE void s_mp_reverse(unsigned char *s, size_t len);
 MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
-#ifndef MP_NO_STDINT
 MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
-#endif
 
-#define MP_RMAP_REVERSE_SIZE 88
-extern MP_PRIVATE const char s_mp_rmap[];
-extern MP_PRIVATE const unsigned char s_mp_rmap_reverse[];
-extern MP_PRIVATE const mp_digit s_mp_prime_tab[];
+extern MP_PRIVATE const char *const mp_s_rmap;
+extern MP_PRIVATE const uint8_t mp_s_rmap_reverse[];
+extern MP_PRIVATE const size_t mp_s_rmap_reverse_sz;
+extern MP_PRIVATE const mp_digit *s_mp_prime_tab;
+
+/* deprecated functions */
+MP_DEPRECATED(s_mp_invmod_fast) mp_err fast_mp_invmod(const mp_int *a, const mp_int *b, mp_int *c);
+MP_DEPRECATED(s_mp_montgomery_reduce_fast) mp_err fast_mp_montgomery_reduce(mp_int *x, const mp_int *n,
+      mp_digit rho);
+MP_DEPRECATED(s_mp_mul_digs_fast) mp_err fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c,
+      int digs);
+MP_DEPRECATED(s_mp_mul_high_digs_fast) mp_err fast_s_mp_mul_high_digs(const mp_int *a, const mp_int *b,
+      mp_int *c,
+      int digs);
+MP_DEPRECATED(s_mp_sqr_fast) mp_err fast_s_mp_sqr(const mp_int *a, mp_int *b);
+MP_DEPRECATED(s_mp_balance_mul) mp_err mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MP_DEPRECATED(s_mp_exptmod_fast) mp_err mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P,
+      mp_int *Y,
+      int redmode);
+MP_DEPRECATED(s_mp_invmod_slow) mp_err mp_invmod_slow(const mp_int *a, const mp_int *b, mp_int *c);
+MP_DEPRECATED(s_mp_karatsuba_mul) mp_err mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MP_DEPRECATED(s_mp_karatsuba_sqr) mp_err mp_karatsuba_sqr(const mp_int *a, mp_int *b);
+MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
+MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 
 #define MP_GET_ENDIANNESS(x) \
    do{\
@@ -249,6 +271,10 @@ extern MP_PRIVATE const mp_digit s_mp_prime_tab[];
         MP_ZERO_DIGITS(a->dp + a->used, a->alloc - a->used);                           \
     }
 
+#ifdef _MSC_VER
+/* Prevent false positive: unary minus operator applied to unsigned type, result still unsigned */
+#pragma warning(disable: 4146)
+#endif
 #define MP_SET_SIGNED(name, uname, type, utype)          \
     void name(mp_int * a, type b)                        \
     {                                                    \
