@@ -254,9 +254,6 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 #define mp_sqr TclBN_mp_sqr
 #endif
 
-#undef mp_sqr
-#define mp_sqr TclBN_mp_sqr
-
 #define MP_GET_ENDIANNESS(x) \
    do{\
       int16_t n = 0x1;                                          \
