@@ -948,8 +948,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
     fi
 
-    AC_DEFINE(MP_32BIT, 1, [Use 'MP_32BIT' for libtommath])
-
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
     AC_SUBST(CFLAGS_DEBUG)
