@@ -16,7 +16,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 
 /*

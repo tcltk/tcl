@@ -18,7 +18,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
 
@@ -7702,7 +7702,7 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		mp_init_ll(&big1, w1);
+		mp_init_i64(&big1, w1);
 		mp_add(&big2, &big1, &big2);
 		mp_clear(&big1);
 		BIG_RESULT(&big2);
@@ -8319,7 +8319,7 @@ ExecuteExtendedUnaryMathOp(
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	/* ~a = - a - 1 */
-	mp_neg(&big, &big);
+	(void)mp_neg(&big, &big);
 	mp_sub_d(&big, 1, &big);
 	BIG_RESULT(&big);
     case INST_UMINUS:
@@ -8331,12 +8331,12 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != WIDE_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    mp_init_ll(&big, w);
+	    mp_init_i64(&big, w);
 	    break;
 	default:
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	}
-	mp_neg(&big, &big);
+	(void)mp_neg(&big, &big);
 	BIG_RESULT(&big);
     }
 

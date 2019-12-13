@@ -141,9 +141,10 @@ declare 37 {
 declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
-declare 39 {
-    void TclBN_mp_set(mp_int *a, unsigned int b)
-}
+# Removed in 9.0
+#declare 39 {deprecated {macro calling mp_set_u64}} {
+#    void TclBN_mp_set(mp_int *a, unsigned int b)
+#}
 # Removed in 9.0
 #declare 40 {nostub {is private function in libtommath}} {
 #    mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
@@ -179,26 +180,26 @@ declare 48 {
 declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
-declare 61 {
-    mp_err MP_WUR TclBN_mp_init_ul(mp_int *a, unsigned long i)
-}
-declare 62 {
-    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
-}
+# Removed in 9.0
+#declare 61 {deprecated {macro calling mp_init_u64}} {
+#    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
+#}
+# Removed in 9.0
+#declare 62 {deprecated {macro calling mp_set_u64}} {
+#    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
+#}
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
-
-# Formerly internal API to allow initialisation of bignums without knowing the
-# typedefs of how a bignum works internally.
-declare 64 {
-    int TclBNInitBignumFromLong(mp_int *bignum, long initVal)
-}
+# Removed in 9.0
+#declare 64 {deprecated {macro calling mp_init_i64}} {
+#    int TclBN_mp_init_l(mp_int *bignum, long initVal)
+#}
 declare 65 {
-    int TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+    int MP_WUR TclBN_mp_init_i64(mp_int *bignum, int64_t initVal)
 }
 declare 66 {
-    int TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+    int MP_WUR TclBN_mp_init_u64(mp_int *bignum, uint64_t initVal)
 }
 
 # Removed in 9.0
@@ -207,19 +208,13 @@ declare 66 {
 #}
 # Added in libtommath 1.0.1
 declare 68 {
-    void TclBN_mp_set_ull(mp_int *a, Tcl_WideUInt i)
+    void TclBN_mp_set_u64(mp_int *a, uint64_t i)
 }
 declare 69 {
-    Tcl_WideUInt MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
+    uint64_t MP_WUR TclBN_mp_get_mag_u64(const mp_int *a)
 }
 declare 70 {
-    void TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i)
-}
-declare 71 {
-    unsigned long MP_WUR TclBN_mp_get_mag_ul(const mp_int *a)
-}
-declare 72 {
-    void TclBN_mp_set_l(mp_int *a, long i)
+    void TclBN_mp_set_i64(mp_int *a, int64_t i)
 }
 
 # Added in libtommath 1.1.0
@@ -242,6 +237,9 @@ declare 76 {
 # Added in libtommath 1.2.0
 declare 78 {
     int MP_WUR TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
+}
+declare 79 {
+    mp_err MP_WUR TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *q, uint64_t *r)
 }
 declare 80 {
     int MP_WUR TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
