@@ -3172,7 +3172,7 @@ TclZipfs_TclLibrary(void)
 #ifdef _WIN32
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char dllName[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
 #endif /* _WIN32 */
 
     /*
