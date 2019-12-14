@@ -117,6 +117,10 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
+      addons:
+        homebrew:
+          packages:
+            - libtommath
     - name: "macOS/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
@@ -124,6 +128,10 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
+      addons:
+        homebrew:
+          packages:
+            - libtommath
     - name: "macOS/Xcode 9/Shared"
       os: osx
       osx_image: xcode9
@@ -131,6 +139,10 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
+      addons:
+        homebrew:
+          packages:
+            - libtommath
     - name: "macOS/Xcode 8/Shared"
       os: osx
       osx_image: xcode8
@@ -138,6 +150,10 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
+      addons:
+        homebrew:
+          packages:
+            - libtommath
 # Test with mingw-w64 cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
@@ -263,7 +279,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - choco install make
+        - choco install -y make zip
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Shared: NO_DEPRECATED"
       os: windows

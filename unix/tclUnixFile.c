@@ -42,8 +42,8 @@ TclpFindExecutable(
     Tcl_Encoding encoding;
 #ifdef __CYGWIN__
     size_t length;
-    char buf[PATH_MAX * 2];
-    char name[PATH_MAX * TCL_UTF_MAX + 1];
+    wchar_t buf[PATH_MAX];
+    char name[PATH_MAX * 3 + 1];
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);

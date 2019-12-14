@@ -17,8 +17,8 @@ mp_err mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
     * are fixed up in the inner loop.
     */
    digs = (n->used * 2) + 1;
-   if ((digs < PRIVATE_MP_WARRAY) &&
-       (x->used <= PRIVATE_MP_WARRAY) &&
+   if ((digs < MP_WARRAY) &&
+       (x->used <= MP_WARRAY) &&
        (n->used < MP_MAXFAST)) {
       return s_mp_montgomery_reduce_fast(x, n, rho);
    }
