@@ -229,7 +229,6 @@ SRC_DIR			= @srcdir@
 TOP_DIR			= @TCL_SRC_DIR@
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
-TOMMATH_DIR		= $(TOP_DIR)/libtommath
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
@@ -242,6 +241,8 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
 ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
+TOMMATH_DIR		= $(TOP_DIR)/libtommath
+TOMMATH_INCLUDE		= @TOMMATH_INCLUDE@
 
 CC			= @CC@
 OBJEXT			= @OBJEXT@
@@ -328,16 +329,17 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
 	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_u32.o \
-	bn_mp_get_mag_ul.o bn_mp_grow.o bn_mp_init.o \
+	bn_mp_get_mag_u64.o \
+	bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
-	bn_mp_init_size.o bn_mp_init_ul.o bn_s_mp_karatsuba_mul.o \
-	bn_mp_init_l.o bn_mp_init_ll.o bn_mp_init_ull.o \
+	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
+	bn_mp_init_i64.o bn_mp_init_u64.o \
 	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
 	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
-	bn_mp_radix_size.o bn_mp_radix_smap.o \
-	bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_set_ul.o \
-	bn_mp_shrink.o bn_mp_set_l.o  \
+	bn_mp_radix_size.o bn_mp_radix_smap.o bn_mp_set_i64.o  \
+	bn_mp_read_radix.o bn_mp_rshd.o \
+	bn_mp_set_u64.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
 	bn_mp_to_ubin.o \
@@ -369,7 +371,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
+OBJS = ${TCL_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -715,8 +717,8 @@ ZLIB_SRCS = \
 # won't compile on the current machine, and they will cause problems for
 # things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
+SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -1218,7 +1220,7 @@ TCLREHDRS	= $(GENERIC_DIR)/tclRegexp.h
 COMPILEHDR	= $(GENERIC_DIR)/tclCompile.h
 FSHDR		= $(GENERIC_DIR)/tclFileSystem.h
 IOHDR		= $(GENERIC_DIR)/tclIO.h
-MATHHDRS	= $(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
+MATHHDRS	= $(GENERIC_DIR)/tclTomMath.h $(GENERIC_DIR)/tclTomMathDecls.h
 PARSEHDR	= $(GENERIC_DIR)/tclParse.h
 NREHDR		= $(GENERIC_DIR)/tclInt.h
 TRIMHDR		= $(GENERIC_DIR)/tclStringTrim.h
@@ -1630,8 +1632,8 @@ bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 bn_mp_expt_u32.o: $(TOMMATH_DIR)/bn_mp_expt_u32.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_u32.c
 
-bn_mp_get_mag_ul.o: $(TOMMATH_DIR)/bn_mp_get_mag_ul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_get_mag_ul.c
+bn_mp_get_mag_u64.o: $(TOMMATH_DIR)/bn_mp_get_mag_u64.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_get_mag_u64.c
 
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
@@ -1642,11 +1644,8 @@ bn_mp_init.o: $(TOMMATH_DIR)/bn_mp_init.c $(MATHHDRS)
 bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
 
-bn_mp_init_l.o:$(TOMMATH_DIR)/bn_mp_init_l.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_l.c
-
-bn_mp_init_ll.o:$(TOMMATH_DIR)/bn_mp_init_ll.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ll.c
+bn_mp_init_i64.o:$(TOMMATH_DIR)/bn_mp_init_i64.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_i64.c
 
 bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
@@ -1657,11 +1656,8 @@ bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c $(MATHHDRS)
 bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
 
-bn_mp_init_ul.o:$(TOMMATH_DIR)/bn_mp_init_ul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ul.c
-
-bn_mp_init_ull.o:$(TOMMATH_DIR)/bn_mp_init_ull.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_ull.c
+bn_mp_init_u64.o:$(TOMMATH_DIR)/bn_mp_init_u64.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_u64.c
 
 bn_s_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_karatsuba_mul.c
@@ -1711,14 +1707,11 @@ bn_mp_read_radix.o: $(TOMMATH_DIR)/bn_mp_read_radix.c $(MATHHDRS)
 bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
 
-bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
+bn_mp_set_i64.o: $(TOMMATH_DIR)/bn_mp_set_i64.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_i64.c
 
-bn_mp_set_l.o: $(TOMMATH_DIR)/bn_mp_set_l.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_l.c
-
-bn_mp_set_ul.o: $(TOMMATH_DIR)/bn_mp_set_ul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_ul.c
+bn_mp_set_u64.o: $(TOMMATH_DIR)/bn_mp_set_u64.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_u64.c
 
 bn_mp_shrink.o: $(TOMMATH_DIR)/bn_mp_shrink.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_shrink.c
@@ -2111,14 +2104,6 @@ gendate:
 #	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 #	rm y.tab.c
-
-# The following target generates the file generic/tclTomMath.h. It needs to be
-# run (and the results checked) after updating to a new release of libtommath.
-
-gentommath_h:
-	$(NATIVE_TCLSH) "$(TOOL_DIR)/fix_tommath_h.tcl" \
-		"$(TOMMATH_DIR)/tommath.h" \
-		> "$(GENERIC_DIR)/tclTomMath.h"
 
 #
 # Target to regenerate header files and stub files from the *.decls tables.
