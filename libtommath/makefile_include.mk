@@ -116,10 +116,10 @@ endif
 
 # adjust coverage set
 ifneq ($(filter $(_ARCH), i386 i686 x86_64 amd64 ia64),)
-   COVERAGE = test_standalone timing
+   COVERAGE = test timing
    COVERAGE_APP = ./test && ./timing
 else
-   COVERAGE = test_standalone
+   COVERAGE = test
    COVERAGE_APP = ./test
 endif
 
@@ -134,6 +134,10 @@ PREFIX   ?= /usr/local
 LIBPATH  ?= $(PREFIX)/lib
 INCPATH  ?= $(PREFIX)/include
 DATAPATH ?= $(PREFIX)/share/doc/libtommath/pdf
+
+# build & run test-suite
+check: test
+	./test
 
 #make the code coverage of the library
 #

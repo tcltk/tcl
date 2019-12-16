@@ -12,7 +12,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 #include <math.h>
 #include <assert.h>
@@ -2327,8 +2327,7 @@ ScanNumber(
 	    Tcl_Obj *bigObj = NULL;
 	    mp_int big;
 
-	    if (mp_init(&big) == MP_OKAY) {
-		mp_set_ull(&big, uwvalue);
+	    if (mp_init_u64(&big, uwvalue) == MP_OKAY) {
 		bigObj = Tcl_NewBignumObj(&big);
 	    }
 	    return bigObj;
