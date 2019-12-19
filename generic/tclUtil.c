@@ -3634,7 +3634,7 @@ TclFormatInt(
      * Generate the characters of the result backwards in the buffer.
      */
 
-    intVal = (n < 0 ? -n : n);
+    intVal = (n < 0 ? -(Tcl_WideUInt)n : (Tcl_WideUInt)n);
     i = 0;
     buffer[0] = '\0';
     do {
