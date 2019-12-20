@@ -7851,6 +7851,7 @@ cat >>confdefs.h <<\_ACEOF
 #define MODULE_SCOPE __private_extern__
 _ACEOF
 
+		tcl_cv_cc_visibility_hidden=yes
 
 fi
 
