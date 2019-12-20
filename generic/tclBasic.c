@@ -8828,10 +8828,12 @@ DTraceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)interp;
+
     if (TCL_DTRACE_TCL_PROBE_ENABLED()) {
 	char *a[10];
 	int i = 0;
-    (void)dummy;
 
 	while (i++ < 10) {
 	    a[i-1] = i < objc ? TclGetString(objv[i]) : NULL;
