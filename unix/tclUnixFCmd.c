@@ -2507,6 +2507,7 @@ GetUnixFileAttributes(
 {
     Tcl_StatBuf statBuf;
     int result;
+    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -2549,6 +2550,7 @@ SetUnixFileAttributes(
     Tcl_StatBuf statBuf;
     int result, readonly;
     const char *native;
+    (void)objIndex;
 
     if (Tcl_GetBooleanFromObj(interp, attributePtr, &readonly) != TCL_OK) {
 	return TCL_ERROR;
