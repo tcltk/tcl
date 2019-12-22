@@ -6049,6 +6049,7 @@ fi
 
 $as_echo "#define MODULE_SCOPE __private_extern__" >>confdefs.h
 
+		tcl_cv_cc_visibility_hidden=yes
 
 fi
 	    CC_SEARCH_FLAGS=""
