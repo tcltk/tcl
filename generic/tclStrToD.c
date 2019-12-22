@@ -1650,7 +1650,7 @@ MakeHighPrecisionDouble(
 	goto returnValue;
     }
     if (numSigDigs+exponent-1 < minDigits) {
-	retval = 0;
+	retval = 0.0;
 	goto returnValue;
     }
 
