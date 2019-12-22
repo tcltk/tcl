@@ -3598,37 +3598,24 @@ TclFormatInt(
     long n)			/* The integer to format. */
 {
     unsigned long intVal;
-    int i;
+    int i = 0;
     int numFormatted, j;
     static const char digits[] = "0123456789";
-
-    /*
-     * Check first whether "n" is zero.
-     */
-
-    if (n == 0) {
-	buffer[0] = '0';
-	buffer[1] = 0;
-	return 1;
-    }
 
     /*
      * Generate the characters of the result backwards in the buffer.
      */
 
     intVal = (n < 0 ? -(unsigned long)n : (unsigned long)n);
-    i = 0;
-    buffer[0] = '\0';
     do {
-	i++;
-	buffer[i] = digits[intVal % 10];
+	buffer[i++] = digits[intVal % 10];
 	intVal = intVal / 10;
     } while (intVal > 0);
     if (n < 0) {
-	i++;
-	buffer[i] = '-';
+	buffer[i++] = '-';
     }
-    numFormatted = i;
+    buffer[i] = '\0';
+    numFormatted = i--;
 
     /*
      * Now reverse the characters.
