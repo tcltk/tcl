@@ -1476,6 +1476,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
 		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
 		    [Compiler support for module scope symbols])
+		tcl_cv_cc_visibility_hidden=yes
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
