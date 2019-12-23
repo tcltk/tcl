@@ -1052,7 +1052,7 @@ Tcl_MakeFileChannel(
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
+#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
     TCLEXCEPTION_REGISTRATION registration;
 #endif
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1105,7 +1105,7 @@ Tcl_MakeFileChannel(
 
 	if (result == 0) {
 	    /*
-	     * Unable to make a duplicate. It's definately invalid at this
+	     * Unable to make a duplicate. It's definitely invalid at this
 	     * point.
 	     */
 
@@ -1118,7 +1118,7 @@ Tcl_MakeFileChannel(
 	 */
 
 	result = 0;
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
+#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
 	/*
 	 * Don't have SEH available, do things the hard way. Note that this
 	 * needs to be one block of asm, to avoid stack imbalance; also, it is
