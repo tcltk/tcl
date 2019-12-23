@@ -1645,12 +1645,12 @@ MakeHighPrecisionDouble(
      * Quick checks for over/underflow.
      */
 
-    if (numSigDigs+exponent-1 > maxDigits) {
-	retval = HUGE_VAL;
+    if ((numSigDigs == 0) || (numSigDigs-1+exponent < minDigits)) {
+	retval = 0.0;
 	goto returnValue;
     }
-    if (numSigDigs+exponent-1 < minDigits) {
-	retval = 0.0;
+    if (numSigDigs-1+exponent > maxDigits) {
+	retval = HUGE_VAL;
 	goto returnValue;
     }
 
