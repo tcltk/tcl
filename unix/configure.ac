@@ -148,50 +148,6 @@ if test "$TCLSH_PROG" = ""; then
   TCLSH_PROG='./${TCL_EXE}'
 fi
 
-#------------------------------------------------------------------------
-#	Add stuff for zlib
-#------------------------------------------------------------------------
-
-zlib_ok=yes
-AC_CHECK_HEADER([zlib.h],[
-  AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
-  zlib_ok=no])
-AS_IF([test $zlib_ok = yes], [
-  AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
-    zlib_ok=no
-  ])])
-AS_IF([test $zlib_ok = no], [
-  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
-  AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
-  AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
-])
-AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-
-#------------------------------------------------------------------------
-#	Add stuff for libtommath
-
-libtommath_ok=yes
-AC_ARG_WITH(system-libtommath,
-AC_HELP_STRING([--with-system-libtommath],
-	[use external libtommath (default: true if available, false otherwise)]),
-	libtommath_ok=${withval})
-if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
-    AC_CHECK_HEADER([tommath.h],[
-	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
-	libtommath_ok=no])
-    AS_IF([test $libtommath_ok = yes], [
-	AC_SEARCH_LIBS([mp_log_u32],[tommath],[],[
-	libtommath_ok=no
-    ])])
-fi
-AS_IF([test $libtommath_ok = yes], [
-  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
-], [
-  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
-  AC_SUBST(TOMMATH_SRCS,[\${TOMMATH_SRCS}])
-  AC_SUBST(TOMMATH_INCLUDE,[-I\${TOMMATH_DIR}])
-])
-
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -698,6 +654,50 @@ if test $tcl_ok = yes; then
     AC_DEFINE(TCL_UNLOAD_DLLS, 1, [Do we allow unloading of shared libraries?])
 fi
 AC_MSG_RESULT([$tcl_ok])
+
+#------------------------------------------------------------------------
+#	Add stuff for zlib
+#------------------------------------------------------------------------
+
+zlib_ok=yes
+AC_CHECK_HEADER([zlib.h],[
+  AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
+  zlib_ok=no])
+AS_IF([test $zlib_ok = yes], [
+  AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+    zlib_ok=no
+  ])])
+AS_IF([test $zlib_ok = no], [
+  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
+  AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
+])
+AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
+
+#------------------------------------------------------------------------
+#	Add stuff for libtommath
+
+libtommath_ok=yes
+AC_ARG_WITH(system-libtommath,
+AC_HELP_STRING([--with-system-libtommath],
+	[use external libtommath (default: true if available, false otherwise)]),
+	libtommath_ok=${withval})
+if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+    AC_CHECK_HEADER([tommath.h],[
+	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
+	libtommath_ok=no])
+    AS_IF([test $libtommath_ok = yes], [
+	AC_SEARCH_LIBS([mp_log_u32],[tommath],[],[
+	libtommath_ok=no
+    ])])
+fi
+AS_IF([test $libtommath_ok = yes], [
+  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
+], [
+  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  AC_SUBST(TOMMATH_SRCS,[\${TOMMATH_SRCS}])
+  AC_SUBST(TOMMATH_INCLUDE,[-I\${TOMMATH_DIR}])
+])
 
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has

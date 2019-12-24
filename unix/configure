@@ -675,6 +675,12 @@ ZIP_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
 DTRACE
+TOMMATH_INCLUDE
+TOMMATH_SRCS
+TOMMATH_OBJS
+ZLIB_INCLUDE
+ZLIB_SRCS
+ZLIB_OBJS
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
 INSTALL_STUB_LIB
@@ -705,12 +711,6 @@ TCL_LIBS
 LIBOBJS
 AR
 RANLIB
-TOMMATH_INCLUDE
-TOMMATH_SRCS
-TOMMATH_OBJS
-ZLIB_INCLUDE
-ZLIB_SRCS
-ZLIB_OBJS
 TCLSH_PROG
 SHARED_BUILD
 EGREP
@@ -771,7 +771,6 @@ enable_man_compression
 enable_man_suffix
 with_encoding
 enable_shared
-with_system_libtommath
 enable_64bit
 enable_64bit_vis
 enable_rpath
@@ -780,6 +779,7 @@ enable_load
 enable_symbols
 enable_langinfo
 enable_dll_unloading
+with_system_libtommath
 with_tzdata
 enable_dtrace
 enable_zipfs
@@ -4550,214 +4550,6 @@ $as_echo "No tclsh found on PATH" >&6; }
 
 if test "$TCLSH_PROG" = ""; then
   TCLSH_PROG='./${TCL_EXE}'
-fi
-
-#------------------------------------------------------------------------
-#	Add stuff for zlib
-#------------------------------------------------------------------------
-
-zlib_ok=yes
-ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-
-  ac_fn_c_check_type "$LINENO" "gz_header" "ac_cv_type_gz_header" "#include <zlib.h>
-"
-if test "x$ac_cv_type_gz_header" = xyes; then :
-
-else
-  zlib_ok=no
-fi
-
-else
-
-  zlib_ok=no
-fi
-
-
-if test $zlib_ok = yes; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing deflateSetHeader" >&5
-$as_echo_n "checking for library containing deflateSetHeader... " >&6; }
-if ${ac_cv_search_deflateSetHeader+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char deflateSetHeader ();
-int
-main ()
-{
-return deflateSetHeader ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' z; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_deflateSetHeader=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_deflateSetHeader+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_deflateSetHeader+:} false; then :
-
-else
-  ac_cv_search_deflateSetHeader=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_deflateSetHeader" >&5
-$as_echo "$ac_cv_search_deflateSetHeader" >&6; }
-ac_res=$ac_cv_search_deflateSetHeader
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-
-    zlib_ok=no
-
-fi
-
-fi
-if test $zlib_ok = no; then :
-
-  ZLIB_OBJS=\${ZLIB_OBJS}
-
-  ZLIB_SRCS=\${ZLIB_SRCS}
-
-  ZLIB_INCLUDE=-I\${ZLIB_DIR}
-
-
-fi
-
-$as_echo "#define HAVE_ZLIB 1" >>confdefs.h
-
-
-#------------------------------------------------------------------------
-#	Add stuff for libtommath
-
-libtommath_ok=yes
-
-# Check whether --with-system-libtommath was given.
-if test "${with_system_libtommath+set}" = set; then :
-  withval=$with_system_libtommath; libtommath_ok=${withval}
-fi
-
-if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
-    ac_fn_c_check_header_mongrel "$LINENO" "tommath.h" "ac_cv_header_tommath_h" "$ac_includes_default"
-if test "x$ac_cv_header_tommath_h" = xyes; then :
-
-	ac_fn_c_check_type "$LINENO" "mp_int" "ac_cv_type_mp_int" "#include <tommath.h>
-"
-if test "x$ac_cv_type_mp_int" = xyes; then :
-
-else
-  libtommath_ok=no
-fi
-
-else
-
-	libtommath_ok=no
-fi
-
-
-    if test $libtommath_ok = yes; then :
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_log_u32" >&5
-$as_echo_n "checking for library containing mp_log_u32... " >&6; }
-if ${ac_cv_search_mp_log_u32+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mp_log_u32 ();
-int
-main ()
-{
-return mp_log_u32 ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' tommath; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_mp_log_u32=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_mp_log_u32+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_mp_log_u32+:} false; then :
-
-else
-  ac_cv_search_mp_log_u32=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_log_u32" >&5
-$as_echo "$ac_cv_search_mp_log_u32" >&6; }
-ac_res=$ac_cv_search_mp_log_u32
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-
-	libtommath_ok=no
-
-fi
-
-fi
-fi
-if test $libtommath_ok = yes; then :
-
-
-$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
-
-
-else
-
-  TOMMATH_OBJS=\${TOMMATH_OBJS}
-
-  TOMMATH_SRCS=\${TOMMATH_SRCS}
-
-  TOMMATH_INCLUDE=-I\${TOMMATH_DIR}
-
-
 fi
 
 #--------------------------------------------------------------------
@@ -10001,6 +9793,214 @@ $as_echo "#define TCL_UNLOAD_DLLS 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_ok" >&5
 $as_echo "$tcl_ok" >&6; }
+
+#------------------------------------------------------------------------
+#	Add stuff for zlib
+#------------------------------------------------------------------------
+
+zlib_ok=yes
+ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+
+  ac_fn_c_check_type "$LINENO" "gz_header" "ac_cv_type_gz_header" "#include <zlib.h>
+"
+if test "x$ac_cv_type_gz_header" = xyes; then :
+
+else
+  zlib_ok=no
+fi
+
+else
+
+  zlib_ok=no
+fi
+
+
+if test $zlib_ok = yes; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing deflateSetHeader" >&5
+$as_echo_n "checking for library containing deflateSetHeader... " >&6; }
+if ${ac_cv_search_deflateSetHeader+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char deflateSetHeader ();
+int
+main ()
+{
+return deflateSetHeader ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' z; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_deflateSetHeader=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_deflateSetHeader+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_deflateSetHeader+:} false; then :
+
+else
+  ac_cv_search_deflateSetHeader=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_deflateSetHeader" >&5
+$as_echo "$ac_cv_search_deflateSetHeader" >&6; }
+ac_res=$ac_cv_search_deflateSetHeader
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+
+    zlib_ok=no
+
+fi
+
+fi
+if test $zlib_ok = no; then :
+
+  ZLIB_OBJS=\${ZLIB_OBJS}
+
+  ZLIB_SRCS=\${ZLIB_SRCS}
+
+  ZLIB_INCLUDE=-I\${ZLIB_DIR}
+
+
+fi
+
+$as_echo "#define HAVE_ZLIB 1" >>confdefs.h
+
+
+#------------------------------------------------------------------------
+#	Add stuff for libtommath
+
+libtommath_ok=yes
+
+# Check whether --with-system-libtommath was given.
+if test "${with_system_libtommath+set}" = set; then :
+  withval=$with_system_libtommath; libtommath_ok=${withval}
+fi
+
+if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+    ac_fn_c_check_header_mongrel "$LINENO" "tommath.h" "ac_cv_header_tommath_h" "$ac_includes_default"
+if test "x$ac_cv_header_tommath_h" = xyes; then :
+
+	ac_fn_c_check_type "$LINENO" "mp_int" "ac_cv_type_mp_int" "#include <tommath.h>
+"
+if test "x$ac_cv_type_mp_int" = xyes; then :
+
+else
+  libtommath_ok=no
+fi
+
+else
+
+	libtommath_ok=no
+fi
+
+
+    if test $libtommath_ok = yes; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_log_u32" >&5
+$as_echo_n "checking for library containing mp_log_u32... " >&6; }
+if ${ac_cv_search_mp_log_u32+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mp_log_u32 ();
+int
+main ()
+{
+return mp_log_u32 ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tommath; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_mp_log_u32=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_mp_log_u32+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_mp_log_u32+:} false; then :
+
+else
+  ac_cv_search_mp_log_u32=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_log_u32" >&5
+$as_echo "$ac_cv_search_mp_log_u32" >&6; }
+ac_res=$ac_cv_search_mp_log_u32
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+
+	libtommath_ok=no
+
+fi
+
+fi
+fi
+if test $libtommath_ok = yes; then :
+
+
+$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
+
+else
+
+  TOMMATH_OBJS=\${TOMMATH_OBJS}
+
+  TOMMATH_SRCS=\${TOMMATH_SRCS}
+
+  TOMMATH_INCLUDE=-I\${TOMMATH_DIR}
+
+
+fi
 
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
