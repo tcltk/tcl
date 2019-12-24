@@ -1677,6 +1677,7 @@ AddPrivatesFromClassChainToCallContext(
 		return 1;
 	    }
 	}
+	/* FALLTHRU */
     case 0:
 	return 0;
     }
@@ -1768,6 +1769,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		    methodNameObj, cbPtr, doneFilters, flags, filterDecl);
 	}
+	/* FALLTHRU */
     case 0:
 	return privateDanger;
     }
