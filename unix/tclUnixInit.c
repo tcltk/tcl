@@ -31,6 +31,9 @@
 #endif
 
 #ifdef __CYGWIN__
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
 DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
 DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
