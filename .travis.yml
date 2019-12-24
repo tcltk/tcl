@@ -109,14 +109,14 @@ matrix:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11/Shared/Unix-like"
+    - name: "macOS/Xcode 11.3/Shared/Unix-like"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.3
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 11/Shared"
+    - name: "macOS/Xcode 11.3/Shared"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.3
       env:
         - BUILD_DIR=macosx
       install: []
