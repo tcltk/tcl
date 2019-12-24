@@ -2173,8 +2173,10 @@ typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
  * Override definitions for libtommath.
  */
 
-typedef struct mp_int mp_int;
+#ifndef MP_INT_DECLARED
 #define MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#endif
 
 /*
  *----------------------------------------------------------------------------
