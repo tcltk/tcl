@@ -6892,6 +6892,15 @@ test expr-41.19 {numSigDigs == 0} {
 test expr-41.20 {numSigDigs == 0} {
     expr 0e310
 } 0.0
+test expr-41.21 {negative zero, large exponent} {
+    expr -0e309
+} -0.0
+test expr-41.22 {negative zero, large exponent} {
+    expr -0e310
+} -0.0
+test expr-41.23 {floating point overflow on significand (Bug 1de6b0629e)} {
+    expr 123[string repeat 0 309]1e-310
+} 123.0
 
 test expr-42.1 {denormals} ieeeFloatingPoint {
     expr 7e-324
