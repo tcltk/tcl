@@ -289,10 +289,10 @@ static const Tcl_WideUInt wuipow5[27] = {
 static int		AccumulateDecimalDigit(unsigned, int,
 			    Tcl_WideUInt *, mp_int *, int);
 static double		MakeHighPrecisionDouble(int signum,
-			    mp_int *significand, int nSigDigs, int exponent);
+			    mp_int *significand, int nSigDigs, long exponent);
 static double		MakeLowPrecisionDouble(int signum,
 			    Tcl_WideUInt significand, int nSigDigs,
-			    int exponent);
+			    long exponent);
 #ifdef IEEE_FLOATING_POINT
 static double		MakeNaN(int signum, Tcl_WideUInt tag);
 #endif
@@ -790,6 +790,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+		/* FALLTHRU */
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -1277,16 +1278,45 @@ TclParseNumber(
 
 	    objPtr->typePtr = &tclDoubleType;
 	    if (exponentSignum) {
+		/* 
+		 * At this point exponent>=0, so the following calculation
+		 * cannot underflow. 
+		 */
 		exponent = -exponent;
 	    }
+
+	    /*
+	     * Adjust the exponent for the number of trailing zeros that
+	     * have not been accumulated, and the number of digits after
+	     * the decimal point. Pin any overflow to LONG_MAX/LONG_MIN
+	     * respectively.
+	     */
+
+	    if (exponent >= 0) {
+		if (exponent - numDigitsAfterDp > LONG_MAX - numTrailZeros) {
+		    exponent = LONG_MAX;
+		} else {
+		    exponent = exponent - numDigitsAfterDp + numTrailZeros;
+		}
+	    } else {
+		if (exponent + numTrailZeros < LONG_MIN + numDigitsAfterDp) {
+		    exponent = LONG_MIN;
+		} else {
+		    exponent = exponent + numTrailZeros - numDigitsAfterDp;
+		}
+	    }
+
+	    /* 
+	     * The desired number is now significandWide * 10**exponent
+	     * or significandBig * 10**exponent, depending on whether
+	     * the significand has overflowed a wide int.
+	     */
 	    if (!significandOverflow) {
 		objPtr->internalRep.doubleValue = MakeLowPrecisionDouble(
-			signum, significandWide, numSigDigs,
-			numTrailZeros + exponent - numDigitsAfterDp);
+			signum, significandWide, numSigDigs, exponent);
 	    } else {
 		objPtr->internalRep.doubleValue = MakeHighPrecisionDouble(
-			signum, &significandBig, numSigDigs,
-			numTrailZeros + exponent - numDigitsAfterDp);
+			signum, &significandBig, numSigDigs, exponent);
 	    }
 	    break;
 
@@ -1467,9 +1497,9 @@ AccumulateDecimalDigit(
 static double
 MakeLowPrecisionDouble(
     int signum,			/* 1 if the number is negative, 0 otherwise */
-    Tcl_WideUInt significand,	/* Significand of the number. */
-    int numSigDigs,		/* Number of digits in the significand. */
-    int exponent)		/* Power of ten. */
+    Tcl_WideUInt significand,	/* Significand of the number */
+    int numSigDigs,		/* Number of digits in the significand */
+    long exponent)		/* Power of ten */
 {
     double retval;		/* Value of the number. */
     mp_int significandBig;	/* Significand expressed as a bignum. */
@@ -1488,6 +1518,9 @@ MakeLowPrecisionDouble(
      * Test for the easy cases.
      */
 
+    if (significand == 0) {
+	return copysign(0.0, -signum);
+    }
     if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
@@ -1580,10 +1613,10 @@ MakeLowPrecisionDouble(
 
 static double
 MakeHighPrecisionDouble(
-    int signum,			/* 1=negative, 0=nonnegative. */
-    mp_int *significand,	/* Exact significand of the number. */
-    int numSigDigs,		/* Number of significant digits. */
-    int exponent)		/* Power of 10 by which to multiply. */
+    int signum,			/* 1=negative, 0=nonnegative */
+    mp_int *significand,	/* Exact significand of the number */
+    int numSigDigs,		/* Number of significant digits */
+    long exponent)		/* Power of 10 by which to multiply */
 {
     double retval;
     int machexp;		/* Machine exponent of a power of 10. */
@@ -1599,15 +1632,18 @@ MakeHighPrecisionDouble(
     TCL_IEEE_DOUBLE_ROUNDING;
 
     /*
-     * Quick checks for over/underflow.
+     * Quick checks for zero, and over/underflow. Be careful to avoid
+     * integer overflow when calculating with 'exponent'.
      */
 
-    if (numSigDigs+exponent-1 > maxDigits) {
+    if (mp_iszero(significand)) {
+	return copysign(0.0, -signum);
+    }
+    if (exponent >= 0 && exponent-1 > maxDigits-numSigDigs) {
 	retval = HUGE_VAL;
 	goto returnValue;
-    }
-    if (numSigDigs+exponent-1 < minDigits) {
-	retval = 0;
+    } else if (exponent < 0 && numSigDigs+exponent < minDigits+1) {
+	retval = 0.0;
 	goto returnValue;
     }
 
@@ -1742,6 +1778,9 @@ RefineApproximation(
 				 * "round to even" functionality */
     double rteSignificand;	/* Significand of the round-to-even result */
     int rteExponent;		/* Exponent of the round-to-even result */
+    int shift;			/* Shift count for converting numerator
+				 * and denominator of corrector to floating
+				 * point */
     Tcl_WideInt rteSigWide;	/* Wide integer version of the significand
 				 * for testing evenness */
     int i;
@@ -1754,13 +1793,22 @@ RefineApproximation(
     if (approxResult == HUGE_VAL) {
 	return approxResult;
     }
+    significand = frexp(approxResult, &binExponent);
 
     /*
-     * Find a common denominator for the decimal and binary fractions. The
-     * common denominator will be 2**M2 + 5**M5.
+     * We are trying to compute a corrector term that, when added to the
+     * approximate result, will yield close to the exact result.
+     * The exact result is exactSignificand * 10**exponent.
+     * The approximate result is significand * 2**binExponent
+     * If exponent<0, we need to multiply the exact value by 10**-exponent
+     * to make it an integer, plus another factor of 2 to decide on rounding.
+     *  Similarly if binExponent<FP_PRECISION, we need
+     * to multiply by 2**FP_PRECISION to make the approximate value an integer.
+     *
+     * Let M = 2**M2 * 5**M5 be the least common multiple of these two
+     * multipliers.
      */
 
-    significand = frexp(approxResult, &binExponent);
     i = mantBits - binExponent;
     if (i < 0) {
 	M2 = 0;
@@ -1777,12 +1825,9 @@ RefineApproximation(
     }
 
     /*
-     * The floating point number is significand*2**binExponent. Compute the
-     * large integer significand*2**(binExponent+M2+1). The 2**-1 bit of the
-     * significand (the most significant) corresponds to the
-     * 2**(binExponent+M2 + 1) bit of 2*M2*v. Allocate enough digits to hold
-     * that quantity, then convert the significand to a large integer, scaled
-     * appropriately. Then multiply by the appropriate power of 5.
+     * Compute twoMv as 2*M*v, where v is the approximate value.
+     * This is done by bit-whacking to calculate 2**(M2+1)*significand, 
+     * and then multiplying by 5**M5.
      */
 
     msb = binExponent + M2;	/* 1008 */
@@ -1803,10 +1848,9 @@ RefineApproximation(
     }
 
     /*
-     * Collect the decimal significand as a high precision integer. The least
-     * significant bit corresponds to bit M2+exponent+1 so it will need to be
-     * shifted left by that many bits after being multiplied by
-     * 5**(M5+exponent).
+     * Compute twoMd as 2*M*d, where d is the exact value.
+     * This is done by multiplying by 5**(M5+exponent) and then multiplying
+     * by 2**(M5+exponent+1), which is, of couse, a left shift.
      */
 
     mp_init_copy(&twoMd, exactSignificand);
@@ -1816,16 +1860,22 @@ RefineApproximation(
 	}
     }
     mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
+
+    /* 
+     * Now let twoMd = twoMd - twoMv, the difference between the exact and
+     * approximate values.
+     */
+
     mp_sub(&twoMd, &twoMv, &twoMd);
 
     /*
      * The result, 2Mv-2Md, needs to be divided by 2M to yield a correction
      * term. Because 2M may well overflow a double, we need to scale the
-     * denominator by a factor of 2**binExponent-mantBits.
+     * denominator by a factor of 2**binExponent-mantBits. Place that factor
+     * times 1/2 ULP into twoMd.
      */
 
     scale = binExponent - mantBits - 1;
-
     mp_set_u64(&twoMv, 1);
     for (i=0; i<=8; ++i) {
 	if (M5 & (1 << i)) {
@@ -1839,25 +1889,36 @@ RefineApproximation(
 	mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
     }
 
+    /*
+     * Will the eventual correction term be less than, equal to, or
+     * greater than 1/2 ULP?
+     */
+
     switch (mp_cmp_mag(&twoMd, &twoMv)) {
     case MP_LT:
 	/*
-	 * If the result is less than unity, the error is less than 1/2 unit in
-	 * the last place, so there's no correction to make.
+	 * If the error is less than 1/2 ULP, there's no correction to make.
 	 */
 	mp_clear(&twoMd);
 	mp_clear(&twoMv);
 	return approxResult;
     case MP_EQ:
 	/*
-	 * If the result is exactly unity, we need to round to even.
+	 * If the error is exactly 1/2 ULP, we need to round to even.
 	 */
 	roundToEven = 1;
 	break;
     case MP_GT:
+	/*
+	 * We need to correct the result if the error exceeds 1/2 ULP.
+	 */
 	break;
     }
 
+    /*
+     * If we're in the 'round to even' case, and the significand is already
+     * even, we're done. Return the approximate result.
+     */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
 	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
@@ -1866,6 +1927,16 @@ RefineApproximation(
 	    mp_clear(&twoMv);
 	    return approxResult;
 	}
+    }
+
+    /* 
+     * Reduce the numerator and denominator of the corrector term so that
+     * they will fit in the floating point precision.
+     */
+    shift = mp_count_bits(&twoMv) - FP_PRECISION - 1;
+    if (shift > 0) {
+	mp_div_2d(&twoMv, shift, &twoMv, NULL);
+	mp_div_2d(&twoMd, shift, &twoMd, NULL);
     }
 
     /*
