@@ -233,6 +233,9 @@ typedef struct {
     const void *lpszClassName;
 } WNDCLASSW;
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
