@@ -1821,7 +1821,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS} ${LDFLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)";if test -f $(LIB_FILE).a; then $(INSTALL_DATA) $(LIB_FILE).a "$(LIB_INSTALL_DIR)"; fi;'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
@@ -1851,7 +1851,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     # The trick here is that we don't want to change the value of TCL_LIBS if
     # it is already set when tclConfig.sh had been loaded by Tk.
     AS_IF([test "x${TCL_LIBS}" = x], [
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
+        TCL_LIBS="${DL_LIBS} ${LIBS} ${LDFLAGS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
 
 	# See if the compiler supports casting to a union type.
