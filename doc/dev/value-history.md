@@ -1,6 +1,6 @@
 # History of Tcl string values
 
-#### Speculative and likely revisionist look back at Tcl strings.
+*Speculative and likely revisionist look back at Tcl strings.*
 
 ## Prehistoric Tcl (7.6)
 
