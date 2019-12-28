@@ -450,15 +450,32 @@
 
     # ----------------------------------------------------------------------
     #
-    # oo::configurable --
+    # oo::configuresupport --
     #
-    #	A metaclass that is used to make classes that can be configured. Also
-    #	its supporting classes and namespaces.
+    #	Namespace that holds all the implementation details of TIP #558.
+    #	Also includes the commands:
+    #
+    #	 * readableproperties
+    #	 * writableproperties
+    #	 * objreadableproperties
+    #	 * objwritableproperties
+    #
+    #	Those are all slot implementations that provide access to the C layer
+    #	of property support (i.e., very fast cached lookup of property names).
     #
     # ----------------------------------------------------------------------
 
     namespace eval configuresupport {
-	proc property {readslot writeslot args} {
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport --
+	#
+	#	A metaclass that is used to make classes that can be configured.
+	#
+	# ------------------------------------------------------------------
+
+	proc PropertyImpl {readslot writeslot args} {
 	    for {set i 0} {$i < [llength $args]} {incr i} {
 		# Parse the property name
 		set prop [lindex $args $i]
@@ -472,7 +489,8 @@
 		set kind readwrite
 
 		# Parse the extra options
-		while {[string match "-*" [set next [lindex $args [expr {$i + 1}]]]]} {
+		while {[set next [lindex $args [expr {$i + 1}]]
+			string match "-*" $next]} {
 		    set arg [lindex $args [incr i 2]]
 		    switch [::tcl::prefix match {-get -kind -set} $next] {
 			-get {
@@ -504,79 +522,136 @@
 		# Install the option
 		switch $kind {
 		    readable {
-			uplevel 1 [list $readslot -append $realprop]
-			uplevel 1 [list method <ReadProp$realprop> {} $getter]
+			uplevel 1 [list \
+				$readslot -append $realprop]
+			uplevel 1 [list \
+				method <ReadProp$realprop> {} $getter]
 		    }
 		    writable {
-			uplevel 1 [list $writeslot -append $realprop]
-			uplevel 1 [list method <WriteProp$realprop> {value} $setter]
+			uplevel 1 [list \
+				$writeslot -append $realprop]
+			uplevel 1 [list \
+				method <WriteProp$realprop> {value} $setter]
 		    }
 		    readwrite {
-			uplevel 1 [list $readslot -append $realprop]
-			uplevel 1 [list $writeslot -append $realprop]
-			uplevel 1 [list method <ReadProp$realprop> {} $getter]
-			uplevel 1 [list method <WriteProp$realprop> {value} $setter]
+			uplevel 1 [list \
+				$readslot -append $realprop]
+			uplevel 1 [list \
+				$writeslot -append $realprop]
+			uplevel 1 [list \
+				method <ReadProp$realprop> {} $getter]
+			uplevel 1 [list \
+				method <WriteProp$realprop> {value} $setter]
 		    }
 		}
 	    }
 	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::configurableclass,
+	# oo::configuresupport::configurableobject --
+	#
+	#	Namespaces used as implementation vectors for oo::define and
+	#	oo::objdefine when the class/instance is configurable.
+	# 
+	# ------------------------------------------------------------------
+
 	namespace eval configurableclass {
 	    proc property args {
-		tailcall ::oo::configuresupport::property \
+		tailcall ::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::readableproperties \
-		    ::oo::configuresupport::writableproperties \
-		    {*}$args
+		    ::oo::configuresupport::writableproperties {*}$args
 	    }
 	    namespace path ::oo::define
 	}
+
 	namespace eval configurableobject {
 	    proc property args {
-		tailcall ::oo::configuresupport::property \
+		tailcall ::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::objreadableproperties \
-		    ::oo::configuresupport::objwritableproperties \
-		    {*}$args
+		    ::oo::configuresupport::objwritableproperties {*}$args
 	    }
 	    namespace path ::oo::objdefine
 	}
     }
 
-    class create configurable {
-	superclass class
-	constructor {{definitionScript ""}} {
-	    next {mixin ::oo::configuresupport::configurable}
-	    next $definitionScript
-	}
-	definitionnamespace -class configuresupport::configurableclass
-	definitionnamespace -instance configuresupport::configurableobject
-    }
+    # ----------------------------------------------------------------------
+    #
+    # oo::configuresupport::configurable --
+    #
+    #	The class that contains the implementation of the actual 'configure'
+    #	method.
+    #
+    # ----------------------------------------------------------------------
 
     class create configuresupport::configurable {
+	#
+	# Configure:Match --
+	#	Support method for doing the matching of property names
+	#	(including unambiguous prefixes) to the actual real property
+	#	name.
+	# 
 	private method Configure:Match {prop kind} {
 	    set props [info object property [self] -all $kind]
 	    ::tcl::prefix match -message "property" $props $prop
 	}
+
+	#
+	# configure --
+	#	Method for providing client access to the property mechanism.
+	#	Has a user-facing API similar to that of [chan configure].
+	# 
 	method configure args {
 	    if {[llength $args] == 0} {
+		# Read all properties
 		set result {}
 		foreach prop [info object property [self] -all -readable] {
 		    dict set result $prop [my <ReadProp$prop>]
 		}
 		return $result
 	    } elseif {[llength $args] == 1} {
+		# Read a single property
 		set prop [my Configure:Match [lindex $args 0] -readable]
 		return [my <ReadProp$prop>]
 	    } elseif {[llength $args] % 2 == 0} {
+		# Set properties, one or several
 		foreach {prop value} $args {
 		    set prop [my Configure:Match $prop -writable]
 		    my <WriteProp$prop> $value
 		}
 		return
 	    } else {
+		# Invalid call
 		return -code error -errorcode {TCL WRONGARGS} \
 		    [format "wrong # args: should be \"%s\"" \
 			 "[self] configure ?-option value ...?"]
 	    }
 	}
+    }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::configurable --
+    #
+    #	A metaclass that is used to make classes that can be configured. All
+    #	the metaclass itself does is arrange for the class created to have a
+    #	'configure' method and for oo::define and oo::objdefine (on the class
+    #	and its instances) to have a property definition for setting things up
+    #	for 'configure'.
+    #
+    # ----------------------------------------------------------------------
+
+    class create configurable {
+	superclass class
+
+	constructor {{definitionScript ""}} {
+	    next {mixin ::oo::configuresupport::configurable}
+	    next $definitionScript
+	}
+
+	definitionnamespace -class configuresupport::configurableclass
+	definitionnamespace -instance configuresupport::configurableobject
     }
 }
 

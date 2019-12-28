@@ -342,7 +342,7 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
     }] {lsort [lsearch -all -not -inline $x *::delegate]}
 } -cleanup {
     interp delete $fresh
-} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::configurable ::oo::configuresupport::configurable ::oo::object ::oo::singleton} {::oo::configuresupport::objreadableproperties ::oo::configuresupport::objwritableproperties ::oo::configuresupport::readableproperties ::oo::configuresupport::writableproperties ::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class ::oo::configuresupport::configurable} {::oo::abstract ::oo::configurable ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -2424,7 +2424,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, property, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -2643,7 +2643,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, property, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -4186,7 +4186,7 @@ test oo-34.1 {TIP 380: slots - presence} -setup {
 } -result {::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot}
 test oo-34.2 {TIP 380: slots - presence} {
     lsort [info class instances oo::Slot]
-} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
+} {::oo::configuresupport::objreadableproperties ::oo::configuresupport::objwritableproperties ::oo::configuresupport::readableproperties ::oo::configuresupport::writableproperties ::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
 proc getMethods obj {
     list [lsort [info object methods $obj -all]] \
 	[lsort [info object methods $obj -private]]
@@ -5448,6 +5448,246 @@ test oo-43.13 {TIP 524: definition namespace control: user-level introspection} 
     parent destroy
     namespace delete foodef
 } -result {{} {} ::foodef {} {}}
+
+test oo-44.1 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::readableproperties -set a b c
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::readableproperties -set f e d
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::readableproperties -set a a a
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::readableproperties -set
+    lappend result [info class property c] [info class property c -writable]
+} -cleanup {
+    parent destroy
+} -result {{} {} {a b c} {} {d e f} {} a {} {} {}}
+test oo-44.2 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set a b c
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set f e d
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set a a a
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set
+    lappend result [info class property c -all] [info class property c -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {a b c} {} {d e f} {} a {} {} {}}
+test oo-44.3 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::writableproperties -set a b c
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::writableproperties -set f e d
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::writableproperties -set a a a
+    lappend result [info class property c] [info class property c -writable]
+    oo::define c ::oo::configuresupport::writableproperties -set
+    lappend result [info class property c] [info class property c -writable]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {a b c} {} {d e f} {} a {} {}}
+test oo-44.4 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set a b c
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set f e d
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set a a a
+    lappend result [info class property c -all] [info class property c -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set
+    lappend result [info class property c -all] [info class property c -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {a b c} {} {d e f} {} a {} {}}
+test oo-44.5 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    oo::class create d {superclass c}
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set a b c
+    oo::define d ::oo::configuresupport::readableproperties -set x y z
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set f e d
+    oo::define d ::oo::configuresupport::readableproperties -set r p q
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set a a h
+    oo::define d ::oo::configuresupport::readableproperties -set g h g
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define d ::oo::configuresupport::readableproperties -set
+    lappend result [info class property d -all] [info class property d -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {a b c x y z} {} {d e f p q r} {} {a g h} {} {g h} {} {} {}}
+test oo-44.6 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    oo::class create d {superclass c}
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set a b c
+    oo::define d ::oo::configuresupport::writableproperties -set x y z
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set f e d
+    oo::define d ::oo::configuresupport::writableproperties -set r p q
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set a a h
+    oo::define d ::oo::configuresupport::writableproperties -set g h g
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set
+    lappend result [info class property d -all] [info class property d -writable -all]
+    oo::define d ::oo::configuresupport::writableproperties -set
+    lappend result [info class property d -all] [info class property d -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {a b c x y z} {} {d e f p q r} {} {a g h} {} {g h} {} {}}
+test oo-44.7 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    c create o
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set a b c
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set f e d
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set a a h
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set
+    lappend result [info object property o] [info object property o -writable]
+} -cleanup {
+    parent destroy
+} -result {{} {} {a b c} {} {d e f} {} {a h} {} {} {}}
+test oo-44.8 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    c create o
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set a b c
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set f e d
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set a a h
+    lappend result [info object property o] [info object property o -writable]
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set
+    lappend result [info object property o] [info object property o -writable]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {a b c} {} {d e f} {} {a h} {} {}}
+test oo-44.9 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    oo::class create d {superclass c}
+    d create o
+    lappend result [info object property o -all] [info object property o -writable -all]
+    oo::define c ::oo::configuresupport::readableproperties -set a b
+    oo::define d ::oo::configuresupport::readableproperties -set c d
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set e f
+    lappend result [info object property o -all] [info object property o -writable -all]
+    oo::objdefine o ::oo::configuresupport::objreadableproperties -set f e d b e
+    lappend result [info object property o -all] [info object property o -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {a b c d e f} {} {a b c d e f} {}}
+test oo-44.10 {TIP 558: properties: core support} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::class create c {superclass parent}
+    oo::class create d {superclass c}
+    d create o
+    lappend result [info object property o -all] [info object property o -writable -all]
+    oo::define c ::oo::configuresupport::writableproperties -set a b
+    oo::define d ::oo::configuresupport::writableproperties -set c d
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set e f
+    lappend result [info object property o -all] [info object property o -writable -all]
+    oo::objdefine o ::oo::configuresupport::objwritableproperties -set f e d b e
+    lappend result [info object property o -all] [info object property o -writable -all]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {a b c d e f} {} {a b c d e f}}
+
+test oo-45.1 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+        variable x y
+        method report {} {
+            lappend ::result "x=$x, y=$y"
+        }
+    }
+    set pt [Point new -x 3]
+    $pt report
+    $pt configure -y 4
+    $pt report
+    lappend result [$pt configure -x],[$pt configure -y] [$pt configure]
+} -cleanup {
+    parent destroy
+} -result {{x=3, y=0} {x=3, y=4} 3,4 {-x 3 -y 4}}
+test oo-45.2 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -constraints knownBug -body {	# FIXME # FIXME # FIXME # FIXME
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    set pt [Point new -x 3 -y 4]
+    oo::objdefine $pt property z
+    $pt configure -z 5
+    lappend result [$pt configure -x],[$pt configure -y],[$pt configure -z] \
+	[$pt configure]
+} -cleanup {
+    parent destroy
+} -result {3,4,5 {-x 3 -y 4 -z 5}}
 
 cleanupTests
 return
