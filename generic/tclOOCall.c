@@ -2,9 +2,10 @@
  * tclOOCall.c --
  *
  *	This file contains the method call chain management code for the
- *	object-system core.
+ *	object-system core. It also contains everything else that does
+ *	inheritance hierarchy traversal.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2005-2019 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2098,6 +2099,201 @@ AddDefinitionNamespaceToChain(
     definePtr->list[i].definerCls = definerCls;
     definePtr->list[i].namespaceName = namespaceName;
     definePtr->num++;
+}
+
+static void
+FindClassProps(
+    Class *clsPtr,
+    int writable,
+    Tcl_HashTable *accumulator)
+{
+    int i, dummy;
+    Tcl_Obj *propName;
+    Class *mixin, *sup;
+
+  tailRecurse:
+    if (writable) {
+	FOREACH(propName, clsPtr->properties.writable) {
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	}
+    } else {
+	FOREACH(propName, clsPtr->properties.readable) {
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	}
+    }
+    if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
+	/*
+	 * We do *not* traverse upwards from the root!
+	 */
+	return;
+    }
+    FOREACH(mixin, clsPtr->mixins) {
+	FindClassProps(mixin, writable, accumulator);
+    }
+    if (clsPtr->superclasses.num == 1) {
+	clsPtr = clsPtr->superclasses.list[0];
+	goto tailRecurse;
+    }
+    FOREACH(sup, clsPtr->superclasses) {
+	FindClassProps(sup, writable, accumulator);
+    }
+}
+
+static void
+FindObjectProps(
+    Object *oPtr,
+    int writable,
+    Tcl_HashTable *accumulator)
+{
+    int i, dummy;
+    Tcl_Obj *propName;
+    Class *mixin;
+
+    if (writable) {
+	FOREACH(propName, oPtr->properties.writable) {
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	}
+    } else {
+	FOREACH(propName, oPtr->properties.readable) {
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	}
+    }
+    FOREACH(mixin, oPtr->mixins) {
+	FindClassProps(mixin, writable, accumulator);
+    }
+    FindClassProps(oPtr->selfCls, writable, accumulator);
+}
+
+Tcl_Obj *
+TclOOGetAllClassProperties(
+    Class *clsPtr,
+    int writable,
+    int *allocated)
+{
+    Tcl_HashTable hashTable;
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *propName, *result;
+    void *dummy;
+
+    /*
+     * Look in the cache.
+     */
+
+    if (clsPtr->properties.epoch == clsPtr->thisPtr->fPtr->epoch) {
+	if (writable) {
+	    if (clsPtr->properties.allWritableCache) {
+		*allocated = 0;
+		return clsPtr->properties.allWritableCache;
+	    }
+	} else {
+	    if (clsPtr->properties.allReadableCache) {
+		*allocated = 0;
+		return clsPtr->properties.allReadableCache;
+	    }
+	}
+    }
+
+    /*
+     * Gather the information. Unsorted! (Caller will sort.)
+     */
+
+    *allocated = 1;
+    Tcl_InitObjHashTable(&hashTable);
+    FindClassProps(clsPtr, writable, &hashTable);
+    result = Tcl_NewObj();
+    FOREACH_HASH(propName, dummy, &hashTable) {
+	Tcl_ListObjAppendElement(NULL, result, propName);
+    }
+    Tcl_DeleteHashTable(&hashTable);
+
+    /*
+     * Cache the information. Also purges the cache.
+     */
+
+    if (clsPtr->properties.epoch != clsPtr->thisPtr->fPtr->epoch) {
+	if (clsPtr->properties.allWritableCache) {
+	    Tcl_DecrRefCount(clsPtr->properties.allWritableCache);
+	    clsPtr->properties.allWritableCache = NULL;
+	}
+	if (clsPtr->properties.allReadableCache) {
+	    Tcl_DecrRefCount(clsPtr->properties.allReadableCache);
+	    clsPtr->properties.allReadableCache = NULL;
+	}
+    }
+    clsPtr->properties.epoch = clsPtr->thisPtr->fPtr->epoch;
+    if (writable) {
+	clsPtr->properties.allWritableCache = result;
+    } else {
+	clsPtr->properties.allReadableCache = result;
+    }
+    Tcl_IncrRefCount(result);
+    return result;
+}
+
+Tcl_Obj *
+TclOOGetAllObjectProperties(
+    Object *oPtr,
+    int writable,
+    int *allocated)
+{
+    Tcl_HashTable hashTable;
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *propName, *result;
+    void *dummy;
+
+    /*
+     * Look in the cache.
+     */
+
+    if (oPtr->properties.epoch == oPtr->fPtr->epoch) {
+	if (writable) {
+	    if (oPtr->properties.allWritableCache) {
+		*allocated = 0;
+		return oPtr->properties.allWritableCache;
+	    }
+	} else {
+	    if (oPtr->properties.allReadableCache) {
+		*allocated = 0;
+		return oPtr->properties.allReadableCache;
+	    }
+	}
+    }
+
+    /*
+     * Gather the information. Unsorted! (Caller will sort.)
+     */
+
+    *allocated = 1;
+    Tcl_InitObjHashTable(&hashTable);
+    FindObjectProps(oPtr, writable, &hashTable);
+    result = Tcl_NewObj();
+    FOREACH_HASH(propName, dummy, &hashTable) {
+	Tcl_ListObjAppendElement(NULL, result, propName);
+    }
+    Tcl_DeleteHashTable(&hashTable);
+
+    /*
+     * Cache the information.
+     */
+
+    if (oPtr->properties.epoch != oPtr->fPtr->epoch) {
+	if (oPtr->properties.allWritableCache) {
+	    Tcl_DecrRefCount(oPtr->properties.allWritableCache);
+	    oPtr->properties.allWritableCache = NULL;
+	}
+	if (oPtr->properties.allReadableCache) {
+	    Tcl_DecrRefCount(oPtr->properties.allReadableCache);
+	    oPtr->properties.allReadableCache = NULL;
+	}
+    }
+    oPtr->properties.epoch = oPtr->fPtr->epoch;
+    if (writable) {
+	oPtr->properties.allWritableCache = result;
+    } else {
+	oPtr->properties.allReadableCache = result;
+    }
+    Tcl_IncrRefCount(result);
+    return result;
 }
 
 /*

@@ -447,6 +447,137 @@
 	superclass class
 	unexport create createWithNamespace new
     }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::configurable --
+    #
+    #	A metaclass that is used to make classes that can be configured. Also
+    #	its supporting classes and namespaces.
+    #
+    # ----------------------------------------------------------------------
+
+    namespace eval configuresupport {
+	proc property {readslot writeslot args} {
+	    for {set i 0} {$i < [llength $args]} {incr i} {
+		# Parse the property name
+		set prop [lindex $args $i]
+		if {[string match "-*" $prop]} {
+		    return -code error -errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\"; must not begin with -"
+		}
+		set realprop [string cat "-" $prop]
+		set getter [format {::set [my varname %s]} $prop]
+		set setter [format {::set [my varname %s] $value} $prop]
+		set kind readwrite
+
+		# Parse the extra options
+		while {[string match "-*" [set next [lindex $args [expr {$i + 1}]]]]} {
+		    set arg [lindex $args [incr i 2]]
+		    switch [::tcl::prefix match {-get -kind -set} $next] {
+			-get {
+			    if {$i >= [llength $args]} {
+				return -code error -errorcode {TCL WRONGARGS} \
+				    "missing body to go with -get option"
+			    }
+			    set getter $arg
+			}
+			-set {
+			    if {$i >= [llength $args]} {
+				return -code error -errorcode {TCL WRONGARGS} \
+				    "missing body to go with -set option"
+			    }
+			    set getter $arg
+			}
+			-kind {
+			    if {$i >= [llength $args]} {
+				return -code error -errorcode {TCL WRONGARGS} \
+				    "missing kind value to go with -kind option"
+			    }
+			    set kind [::tcl::prefix match -message "kind" {
+				readable readwrite writable
+			    } $arg]
+			}
+		    }
+		}
+
+		# Install the option
+		switch $kind {
+		    readable {
+			uplevel 1 [list $readslot -append $realprop]
+			uplevel 1 [list method <ReadProp$realprop> {} $getter]
+		    }
+		    writable {
+			uplevel 1 [list $writeslot -append $realprop]
+			uplevel 1 [list method <WriteProp$realprop> {value} $setter]
+		    }
+		    readwrite {
+			uplevel 1 [list $readslot -append $realprop]
+			uplevel 1 [list $writeslot -append $realprop]
+			uplevel 1 [list method <ReadProp$realprop> {} $getter]
+			uplevel 1 [list method <WriteProp$realprop> {value} $setter]
+		    }
+		}
+	    }
+	}
+	namespace eval configurableclass {
+	    proc property args {
+		tailcall ::oo::configuresupport::property \
+		    ::oo::configuresupport::readableproperties \
+		    ::oo::configuresupport::writableproperties \
+		    {*}$args
+	    }
+	    namespace path ::oo::define
+	}
+	namespace eval configurableobject {
+	    proc property args {
+		tailcall ::oo::configuresupport::property \
+		    ::oo::configuresupport::objreadableproperties \
+		    ::oo::configuresupport::objwritableproperties \
+		    {*}$args
+	    }
+	    namespace path ::oo::objdefine
+	}
+    }
+
+    class create configurable {
+	superclass class
+	constructor {{definitionScript ""}} {
+	    next {mixin ::oo::configuresupport::configurable}
+	    next $definitionScript
+	}
+	definitionnamespace -class configuresupport::configurableclass
+	definitionnamespace -instance configuresupport::configurableobject
+    }
+
+    class create configuresupport::configurable {
+	private method Configure:Match {prop kind} {
+	    set props [info object property [self] -all $kind]
+	    ::tcl::prefix match -message "property" $props $prop
+	}
+	method configure args {
+	    if {[llength $args] == 0} {
+		set result {}
+		foreach prop [info object property [self] -all -readable] {
+		    dict set result $prop [my <ReadProp$prop>]
+		}
+		return $result
+	    } elseif {[llength $args] == 1} {
+		set prop [my Configure:Match [lindex $args 0] -readable]
+		return [my <ReadProp$prop>]
+	    } elseif {[llength $args] % 2 == 0} {
+		foreach {prop value} $args {
+		    set prop [my Configure:Match $prop -writable]
+		    my <WriteProp$prop> $value
+		}
+		return
+	    } else {
+		return -code error -errorcode {TCL WRONGARGS} \
+		    [format "wrong # args: should be \"%s\"" \
+			 "[self] configure ?-option value ...?"]
+	    }
+	}
+    }
 }
 
 # Local Variables:
