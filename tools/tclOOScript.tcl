@@ -18,7 +18,7 @@
     # Commands that are made available to objects by default.
     #
     namespace eval Helpers {
-	::namespace path {}
+	namespace path {}
 
 	# ------------------------------------------------------------------
 	#
@@ -465,7 +465,7 @@
     #
     # ----------------------------------------------------------------------
 
-    namespace eval configuresupport {
+    ::namespace eval configuresupport {
 
 	# ------------------------------------------------------------------
 	#
@@ -558,75 +558,127 @@
 	# ------------------------------------------------------------------
 
 	namespace eval configurableclass {
-	    proc property args {
-		tailcall ::oo::configuresupport::PropertyImpl \
+	    ::proc property args {
+		::tailcall ::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::readableproperties \
 		    ::oo::configuresupport::writableproperties {*}$args
 	    }
-	    namespace path ::oo::define
+	    ::namespace path ::oo::define
+	    ::namespace export property
 	}
 
 	namespace eval configurableobject {
-	    proc property args {
-		tailcall ::oo::configuresupport::PropertyImpl \
+	    ::proc property args {
+		::tailcall ::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::objreadableproperties \
 		    ::oo::configuresupport::objwritableproperties {*}$args
 	    }
-	    namespace path ::oo::objdefine
-	}
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::configuresupport::configurable --
-    #
-    #	The class that contains the implementation of the actual 'configure'
-    #	method.
-    #
-    # ----------------------------------------------------------------------
-
-    class create configuresupport::configurable {
-	#
-	# Configure:Match --
-	#	Support method for doing the matching of property names
-	#	(including unambiguous prefixes) to the actual real property
-	#	name.
-	# 
-	private method Configure:Match {prop kind} {
-	    set props [info object property [self] -all $kind]
-	    ::tcl::prefix match -message "property" $props $prop
+	    ::namespace path ::oo::objdefine
+	    ::namespace export property
 	}
 
+	# ------------------------------------------------------------------
 	#
-	# configure --
-	#	Method for providing client access to the property mechanism.
-	#	Has a user-facing API similar to that of [chan configure].
-	# 
-	method configure args {
-	    if {[llength $args] == 0} {
-		# Read all properties
-		set result {}
-		foreach prop [info object property [self] -all -readable] {
-		    dict set result $prop [my <ReadProp$prop>]
-		}
-		return $result
-	    } elseif {[llength $args] == 1} {
-		# Read a single property
-		set prop [my Configure:Match [lindex $args 0] -readable]
-		return [my <ReadProp$prop>]
-	    } elseif {[llength $args] % 2 == 0} {
-		# Set properties, one or several
-		foreach {prop value} $args {
-		    set prop [my Configure:Match $prop -writable]
-		    my <WriteProp$prop> $value
-		}
-		return
-	    } else {
-		# Invalid call
-		return -code error -errorcode {TCL WRONGARGS} \
-		    [format "wrong # args: should be \"%s\"" \
-			 "[self] configure ?-option value ...?"]
+	# oo::configuresupport::ReadAll --
+	#
+	#	The implementation of [$o configure] with no extra arguments.
+	#
+	# ------------------------------------------------------------------
+
+	proc ReadAll {object my} {
+	    set result {}
+	    foreach prop [info object property $object -all -readable] {
+		dict set result $prop [$my <ReadProp$prop>]
 	    }
+	    return $result
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::Match --
+	#
+	#	How to convert an imprecise property name into a full one.
+	#
+	# ------------------------------------------------------------------
+
+	proc Match {object propertyName kind} {
+	    set props [info object property $object -all $kind]
+	    ::tcl::prefix match -message "property" $props $propertyName
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::ReadOne --
+	#
+	#	The implementation of [$o configure -prop] with that single
+	#	extra argument.
+	#
+	# ------------------------------------------------------------------
+
+	proc ReadOne {object my propertyName} {
+	    set prop [Match $object $propertyName -readable]
+	    return [$my <ReadProp$prop>]
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::WriteMany --
+	#
+	#	The implementation of [$o configure -prop val ?-prop val...?].
+	#
+	# ------------------------------------------------------------------
+
+	proc WriteMany {object my setterMap} {
+	    foreach {prop value} $setterMap {
+		set prop [Match $object $prop -writable]
+		$my <WriteProp$prop> $value
+	    }
+	    return
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::configurable --
+	#
+	#	The class that contains the implementation of the actual
+	#	'configure' method (mixed into actually configurable classes).
+	#	Great care needs to be taken in these methods as they are
+	#	potentially used in classes where the current namespace is set
+	#	up very strangely.
+	#
+	# ------------------------------------------------------------------
+
+	::oo::class create configurable {
+	    private variable my
+	    #
+	    # configure --
+	    #	Method for providing client access to the property mechanism.
+	    #	Has a user-facing API similar to that of [chan configure].
+	    # 
+	    method configure args {
+		::if {![::info exists my]} {
+		    ::set my [::namespace which my]
+		}
+		::if {[::llength $args] == 0} {
+		    # Read all properties
+		    ::oo::configuresupport::ReadAll [self] $my
+		} elseif {[::llength $args] == 1} {
+		    # Read a single property
+		    ::oo::configuresupport::ReadOne [self] $my \
+			[::lindex $args 0]
+		} elseif {[::llength $args] % 2 == 0} {
+		    # Set properties, one or several
+		    ::oo::configuresupport::WriteMany [self] $my $args
+		} else {
+		    # Invalid call
+		    ::return -code error -errorcode {TCL WRONGARGS} \
+			[::format {wrong # args: should be "%s"} \
+			    "[self] configure ?-option value ...?"]
+		}
+	    }
+
+	    definitionnamespace -instance configurableobject
+	    definitionnamespace -class configurableclass
 	}
     }
 
@@ -634,11 +686,11 @@
     #
     # oo::configurable --
     #
-    #	A metaclass that is used to make classes that can be configured. All
-    #	the metaclass itself does is arrange for the class created to have a
-    #	'configure' method and for oo::define and oo::objdefine (on the class
-    #	and its instances) to have a property definition for setting things up
-    #	for 'configure'.
+    #	A metaclass that is used to make classes that can be configured in
+    #	their creation phase (and later too). All the metaclass itself does is
+    #	arrange for the class created to have a 'configure' method and for
+    #	oo::define and oo::objdefine (on the class and its instances) to have
+    #	a property definition for setting things up for 'configure'.
     #
     # ----------------------------------------------------------------------
 
@@ -651,7 +703,6 @@
 	}
 
 	definitionnamespace -class configuresupport::configurableclass
-	definitionnamespace -instance configuresupport::configurableobject
     }
 }
 

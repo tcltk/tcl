@@ -59,6 +59,7 @@ typedef struct {
 #define BUILDING_MIXINS	   0x400000
 #define TRAVERSED_MIXIN	   0x800000
 #define OBJECT_MIXIN	   0x1000000
+#define DEFINE_FOR_CLASS   0x2000000
 #define MIXIN_CONSISTENT(flags) \
     (((flags) & OBJECT_MIXIN) ||					\
 	!((flags) & BUILDING_MIXINS) == !((flags) & TRAVERSED_MIXIN))
@@ -1896,7 +1897,7 @@ TclOOGetDefineContextNamespace(
     DefineEntry staticSpace[DEFINE_CHAIN_STATIC_SIZE];
     DefineEntry *entryPtr;
     Tcl_Namespace *nsPtr = NULL;
-    int i;
+    int i, flags = (forClass ? DEFINE_FOR_CLASS : 0);
 
     define.list = staticSpace;
     define.num = 0;
@@ -1907,8 +1908,8 @@ TclOOGetDefineContextNamespace(
      * class mixins right.
      */
 
-    AddSimpleDefineNamespaces(oPtr, &define, forClass | BUILDING_MIXINS);
-    AddSimpleDefineNamespaces(oPtr, &define, forClass);
+    AddSimpleDefineNamespaces(oPtr, &define, flags | BUILDING_MIXINS);
+    AddSimpleDefineNamespaces(oPtr, &define, flags);
 
     /*
      * Go through the list until we find a namespace whose name we can
@@ -1992,7 +1993,7 @@ AddSimpleClassDefineNamespaces(
 		flags | TRAVERSED_MIXIN);
     }
 
-    if (flags & ~(TRAVERSED_MIXIN | BUILDING_MIXINS)) {
+    if (flags & DEFINE_FOR_CLASS) {
 	AddDefinitionNamespaceToChain(classPtr, classPtr->clsDefinitionNs,
 		definePtr, flags);
     } else {

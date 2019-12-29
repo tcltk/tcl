@@ -5672,7 +5672,7 @@ test oo-45.2 {TIP 558: properties: configurable class system} -setup {
     oo::class create parent
     unset -nocomplain result
     set result {}
-} -constraints knownBug -body {	# FIXME # FIXME # FIXME # FIXME
+} -body {
     oo::configurable create Point {
 	superclass parent
 	property x y
