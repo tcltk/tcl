@@ -5,7 +5,7 @@
  *	This file isn't complete in the ANSI-C sense; it only declares things
  *	that are needed by Tcl. This file is needed even on many systems with
  *	their own stdlib.h (e.g. SunOS) because not all stdlib.h files declare
- *	all the procedures needed here (such as strtod).
+ *	all the procedures needed here (such as strtol/strtoul).
  *
  * Copyright (c) 1991 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.

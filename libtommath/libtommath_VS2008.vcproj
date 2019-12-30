@@ -313,27 +313,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="bn_error.c"
+			RelativePath="bn_cutoffs.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_fast_mp_invmod.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_fast_mp_montgomery_reduce.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_fast_s_mp_mul_digs.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_fast_s_mp_mul_high_digs.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_fast_s_mp_sqr.c"
+			RelativePath="bn_deprecated.c"
 			>
 		</File>
 		<File
@@ -401,6 +385,10 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_decr.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_div.c"
 			>
 		</File>
@@ -433,27 +421,19 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_error_to_string.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_exch.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_export.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_expt_d.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_expt_d_ex.c"
+			RelativePath="bn_mp_expt_u32.c"
 			>
 		</File>
 		<File
 			RelativePath="bn_mp_exptmod.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_exptmod_fast.c"
 			>
 		</File>
 		<File
@@ -465,6 +445,14 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_from_sbin.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_from_ubin.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_fwrite.c"
 			>
 		</File>
@@ -473,23 +461,39 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_get_bit.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_get_double.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_get_int.c"
+			RelativePath="bn_mp_get_i32.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_get_long.c"
+			RelativePath="bn_mp_get_i64.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_get_long_long.c"
+			RelativePath="bn_mp_get_l.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_get_ll.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_get_mag_u32.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_get_mag_u64.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_get_mag_ul.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_get_mag_ull.c"
 			>
 		</File>
 		<File
@@ -497,7 +501,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_import.c"
+			RelativePath="bn_mp_incr.c"
 			>
 		</File>
 		<File
@@ -509,6 +513,22 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_init_i32.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_i64.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_l.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_ll.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_init_multi.c"
 			>
 		</File>
@@ -517,11 +537,23 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_init_set_int.c"
+			RelativePath="bn_mp_init_size.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_init_size.c"
+			RelativePath="bn_mp_init_u32.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_u64.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_ul.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_init_ull.c"
 			>
 		</File>
 		<File
@@ -529,23 +561,15 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_invmod_slow.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_is_square.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_jacobi.c"
+			RelativePath="bn_mp_iseven.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_karatsuba_mul.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_karatsuba_sqr.c"
+			RelativePath="bn_mp_isodd.c"
 			>
 		</File>
 		<File
@@ -554,6 +578,10 @@
 		</File>
 		<File
 			RelativePath="bn_mp_lcm.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_log_u32.c"
 			>
 		</File>
 		<File
@@ -605,14 +633,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_n_root.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_n_root_ex.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_neg.c"
 			>
 		</File>
@@ -621,15 +641,19 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_pack.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_pack_count.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_prime_fermat.c"
 			>
 		</File>
 		<File
 			RelativePath="bn_mp_prime_frobenius_underwood.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_prime_is_divisible.c"
 			>
 		</File>
 		<File
@@ -649,7 +673,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_prime_random_ex.c"
+			RelativePath="bn_mp_prime_rand.c"
 			>
 		</File>
 		<File
@@ -670,14 +694,6 @@
 		</File>
 		<File
 			RelativePath="bn_mp_read_radix.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_read_signed_bin.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_read_unsigned_bin.c"
 			>
 		</File>
 		<File
@@ -713,7 +729,15 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_mp_root_u32.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_rshd.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_sbin_size.c"
 			>
 		</File>
 		<File
@@ -725,15 +749,35 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_set_int.c"
+			RelativePath="bn_mp_set_i32.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_set_long.c"
+			RelativePath="bn_mp_set_i64.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_set_long_long.c"
+			RelativePath="bn_mp_set_l.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_set_ll.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_set_u32.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_set_u64.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_set_ul.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_mp_set_ull.c"
 			>
 		</File>
 		<File
@@ -741,7 +785,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_signed_bin_size.c"
+			RelativePath="bn_mp_signed_rsh.c"
 			>
 		</File>
 		<File
@@ -773,55 +817,23 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_tc_and.c"
+			RelativePath="bn_mp_to_radix.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_tc_div_2d.c"
+			RelativePath="bn_mp_to_sbin.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_tc_or.c"
+			RelativePath="bn_mp_to_ubin.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_tc_xor.c"
+			RelativePath="bn_mp_ubin_size.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_to_signed_bin.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_to_signed_bin_n.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_to_unsigned_bin.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_to_unsigned_bin_n.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toom_mul.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toom_sqr.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toradix.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_toradix_n.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_unsigned_bin_size.c"
+			RelativePath="bn_mp_unpack.c"
 			>
 		</File>
 		<File
@@ -837,11 +849,11 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_reverse.c"
+			RelativePath="bn_s_mp_add.c"
 			>
 		</File>
 		<File
-			RelativePath="bn_s_mp_add.c"
+			RelativePath="bn_s_mp_balance_mul.c"
 			>
 		</File>
 		<File
@@ -849,7 +861,39 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_s_mp_exptmod_fast.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_get_bit.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_invmod_fast.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_invmod_slow.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_karatsuba_mul.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_karatsuba_sqr.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_montgomery_reduce_fast.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_s_mp_mul_digs.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_mul_digs_fast.c"
 			>
 		</File>
 		<File
@@ -857,7 +901,31 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_s_mp_mul_high_digs_fast.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_prime_is_divisible.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_rand_jenkins.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_rand_platform.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_reverse.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_s_mp_sqr.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_sqr_fast.c"
 			>
 		</File>
 		<File
@@ -865,7 +933,11 @@
 			>
 		</File>
 		<File
-			RelativePath="bncore.c"
+			RelativePath="bn_s_mp_toom_mul.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_toom_sqr.c"
 			>
 		</File>
 		<File
@@ -874,6 +946,10 @@
 		</File>
 		<File
 			RelativePath="tommath_class.h"
+			>
+		</File>
+		<File
+			RelativePath="tommath_cutoffs.h"
 			>
 		</File>
 		<File

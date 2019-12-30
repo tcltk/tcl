@@ -21,7 +21,7 @@ before asking on the list, many questions have already been answered).
 	http://wiki.tcl.tk/_/ref?N=8361
 
 - Please report bugs with Tcl on Mac OS X to the tracker:
-	http://core.tcl.tk/tcl/reportlist
+	https://core.tcl-lang.org/tcl/reportlist
 
 2. Using Tcl on Mac OS X
 ------------------------
@@ -36,8 +36,8 @@ Weak-linking is available on OS X 10.2 or later, it additionally allows Tcl
 built on 10.x to run on any 10.y with x > y >= z (for a chosen z >= 2).
 
 - Tcl extensions can be installed in any of:
-	$HOME/Library/Tcl /Library/Tcl /System/Library/Tcl
-	$HOME/Library/Frameworks /Library/Frameworks /System/Library/Frameworks
+	$HOME/Library/Tcl /Library/Tcl
+	$HOME/Library/Frameworks /Library/Frameworks
 	(searched in that order).
 Given a potential package directory $pkg, Tcl on OSX checks for the file
 $pkg/Resources/Scripts/pkgIndex.tcl as well as the usual $pkg/pkgIndex.tcl.
@@ -57,7 +57,7 @@ No nroff manpages are installed by default by the GNUmakefile.
 
 - The Tcl framework can be installed in any of the system's standard
 framework directories:
-	$HOME/Library/Frameworks /Library/Frameworks /System/Library/Frameworks
+	$HOME/Library/Frameworks /Library/Frameworks
 
 
 3. Building Tcl on Mac OS X

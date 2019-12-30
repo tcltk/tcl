@@ -809,7 +809,7 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    int i, private = 0;
+    int i, isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -819,7 +819,7 @@ InfoObjectVariablesCmd(
 	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
-	private = 1;
+	isPrivate = 1;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
@@ -827,7 +827,7 @@ InfoObjectVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    if (private) {
+    if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 
 	FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
@@ -1588,7 +1588,7 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    int i, private = 0;
+    int i, isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
@@ -1598,7 +1598,7 @@ InfoClassVariablesCmd(
 	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
-	private = 1;
+	isPrivate = 1;
     }
     clsPtr = GetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {
@@ -1606,7 +1606,7 @@ InfoClassVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    if (private) {
+    if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 
 	FOREACH_STRUCT(privatePtr, clsPtr->privateVariables) {

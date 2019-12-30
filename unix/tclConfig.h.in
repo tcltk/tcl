@@ -16,6 +16,9 @@
 /* Defined when compiler supports casting to union type. */
 #undef HAVE_CAST_TO_UNION
 
+/* Define to 1 if you have the `cfmakeraw' function. */
+#undef HAVE_CFMAKERAW
+
 /* Define to 1 if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
 
@@ -31,8 +34,23 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
+/* Define to 1 if you have the declaration of `gethostbyaddr_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYADDR_R
+
+/* Define to 1 if you have the declaration of `gethostbyname_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYNAME_R
+
+/* Define to 1 if you have the declaration of `PTHREAD_MUTEX_RECURSIVE', and
+   to 0 if you don't. */
+#undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
+
 /* Is 'DIR64' in <sys/types.h>? */
 #undef HAVE_DIR64
+
+/* Is eventfd(2) supported? */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
@@ -178,6 +196,9 @@
 /* Are characters signed? */
 #undef HAVE_SIGNED_CHAR
 
+/* Do we have <stdbool.h>? */
+#undef HAVE_STDBOOL_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -216,6 +237,15 @@
 
 /* Define to 1 if `st_blocks' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
+
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
+
+/* Define to 1 if you have the <sys/event.h> header file. */
+#undef HAVE_SYS_EVENT_H
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
@@ -277,14 +307,17 @@
 /* No Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
-/* Default libtommath precision. */
-#undef MP_PREC
-
 /* Is no debugging enabled? */
 #undef NDEBUG
 
 /* Use compat implementation of getaddrinfo() and friends */
 #undef NEED_FAKE_RFC2553
+
+/* Is epoll(7) supported? */
+#undef NOTIFIER_EPOLL
+
+/* Is kqueue(2) supported? */
+#undef NOTIFIER_KQUEUE
 
 /* Is Darwin CoreFoundation unavailable for 64-bit? */
 #undef NO_COREFOUNDATION_64
@@ -394,7 +427,7 @@
 /* Does this platform have wide high-resolution clicks? */
 #undef TCL_WIDE_CLICKS
 
-/* Do Tcl_WideInt, 'long' and 'long long' all have the same size (64-bit) ? */
+/* Do 'long' and 'long long' have the same size (64-bit)? */
 #undef TCL_WIDE_INT_IS_LONG
 
 /* What type should be used to define wide integers? */
@@ -415,15 +448,15 @@
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
 
-/* Do we want to use the threaded memory allocator? */
-#undef USE_THREAD_ALLOC
-
 /* Should we use vfork() instead of fork()? */
 #undef USE_VFORK
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
+
+/* Are we building with zipfs enabled? */
+#undef ZIPFS_BUILD
 
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE

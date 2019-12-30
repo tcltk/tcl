@@ -925,7 +925,7 @@ TclCompileStringMapCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
-    char *bytes;
+    const char *bytes;
     int len;
 
     /*
@@ -1862,8 +1862,8 @@ TclCompileSwitchCmd(
      */
 
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
-	register unsigned size = tokenPtr[1].size;
-	register const char *chrs = tokenPtr[1].start;
+	unsigned size = tokenPtr[1].size;
+	const char *chrs = tokenPtr[1].start;
 
 	/*
 	 * We only process literal options, and we assume that -e, -g and -n
@@ -2602,7 +2602,7 @@ PrintJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
@@ -2631,7 +2631,7 @@ DisassembleJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    register JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = clientData;
     Tcl_Obj *mapping = Tcl_NewObj();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -4492,6 +4492,50 @@ TclCompileStreqOpCmd(
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_EQ, envPtr);
+}
+
+int
+TclCompileStrLtOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    return CompileComparisonOpCmd(interp, parsePtr, INST_STR_LT, envPtr);
+}
+
+int
+TclCompileStrLeOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    return CompileComparisonOpCmd(interp, parsePtr, INST_STR_LE, envPtr);
+}
+
+int
+TclCompileStrGtOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    return CompileComparisonOpCmd(interp, parsePtr, INST_STR_GT, envPtr);
+}
+
+int
+TclCompileStrGeOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    return CompileComparisonOpCmd(interp, parsePtr, INST_STR_GE, envPtr);
 }
 
 int

@@ -685,8 +685,8 @@ CopyGrp(
     char *buf,
     int buflen)
 {
-    register char *p = buf;
-    register int copied, len = 0;
+    char *p = buf;
+    int copied, len = 0;
 
     /*
      * Copy username.
@@ -887,7 +887,7 @@ CopyArray(
     int buflen)			/* Size of buffer. */
 {
     int i, j, len = 0;
-    char *p, **new;
+    char *p, **newBuffer;
 
     if (src == NULL) {
 	return 0;
@@ -903,7 +903,7 @@ CopyArray(
 	return -1;
     }
 
-    new = (char **) buf;
+    newBuffer = (char **) buf;
     p = buf + len;
 
     for (j = 0; j < i; j++) {
@@ -914,10 +914,10 @@ CopyArray(
 	    return -1;
 	}
 	memcpy(p, src[j], sz);
-	new[j] = p;
+	newBuffer[j] = p;
 	p = buf + len;
     }
-    new[j] = NULL;
+    newBuffer[j] = NULL;
 
     return len;
 }

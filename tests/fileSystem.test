@@ -34,6 +34,7 @@ catch {
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
 cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
@@ -312,7 +313,7 @@ test filesystem-1.37 {file normalisation with '/./'} -body {
 } -match regexp -result {^(?:[^/]|/(?:[^/]|$))+$}
 test filesystem-1.38 {file normalisation with volume relative} -setup {
     set dir [pwd]
-} -constraints {win moreThanOneDrive} -body {
+} -constraints {win moreThanOneDrive knownMsvcBug} -body {
     set path "[string range [lindex $drives 0] 0 1]foo"
     cd [lindex $drives 1]
     file norm $path

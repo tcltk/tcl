@@ -132,9 +132,8 @@ declare 28 {
 declare 29 {
     Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
-# Only available as stub-entry, for backwards-compatible stub-enabled extensions
 declare 30 {
-    void TclOldFreeObj(Tcl_Obj *objPtr)
+    void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
     int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
@@ -1198,7 +1197,7 @@ declare 335 {
     int Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToUniChar(const char *src, Tcl_UniChar *chPtr)
+    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
     int Tcl_UtfToUpper(char *src)
@@ -1253,11 +1252,11 @@ declare 353 {
 	    unsigned long numChars)
 }
 declare 354 {
-    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+    char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
-    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
+    unsigned short *Tcl_UtfToChar16DString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 {
@@ -2385,6 +2384,24 @@ declare 644 {
 	    int type, int size)
 }
 
+declare 645 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int endValue, int *indexPtr)
+}
+
+# TIP #548
+declare 646 {
+    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+}
+declare 647 {
+    char *Tcl_UniCharToUtfDString(const int *uniStr,
+	    int uniLength, Tcl_DString *dsPtr)
+}
+declare 648 {
+    int *Tcl_UtfToUniCharDString(const char *src,
+	    int length, Tcl_DString *dsPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2462,6 +2479,9 @@ export {
 }
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
+}
+export {
+    void Tcl_InitSubsystems(void)
 }
 
 # Local Variables:

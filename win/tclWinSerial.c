@@ -1291,7 +1291,7 @@ SerialWriterThread(
 	buf = infoPtr->writeBuf;
 	toWrite = infoPtr->toWrite;
 
-	myWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	myWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 
 	/*
 	 * Loop until all of the bytes are written or an error occurs.
@@ -1403,7 +1403,7 @@ TclWinSerialOpen(
      * If an open channel is specified, close it
      */
 
-    if ( handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
+    if (handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
 	return INVALID_HANDLE_VALUE;
     }
 
@@ -1413,7 +1413,7 @@ TclWinSerialOpen(
      * finished
      */
 
-    handle = CreateFile(name, access, 0, 0, OPEN_EXISTING,
+    handle = CreateFileW(name, access, 0, 0, OPEN_EXISTING,
 	    FILE_FLAG_OVERLAPPED, 0);
 
     return handle;
@@ -1486,15 +1486,15 @@ TclWinOpenSerialChannel(
 
     InitializeCriticalSection(&infoPtr->csWrite);
     if (permissions & TCL_READABLE) {
-	infoPtr->osRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->osRead.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
     }
     if (permissions & TCL_WRITABLE) {
 	/*
 	 * Initially the channel is writable and the writeThread is idle.
 	 */
 
-	infoPtr->osWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->osWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+	infoPtr->evWritable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
 			infoPtr->evWritable), 0, NULL);
@@ -1669,8 +1669,9 @@ SerialSetOptionProc(
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
-	native = Tcl_WinUtfToTChar(value, -1, &ds);
-	result = BuildCommDCB(native, &dcb);
+	Tcl_DStringInit(&ds);
+	native = Tcl_UtfToWCharDString(value, -1, &ds);
+	result = BuildCommDCBW(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {
@@ -2151,7 +2152,7 @@ SerialGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len) == 0)) {
-	char buf[TCL_UTF_MAX];
+	char buf[4];
 	valid = 1;
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
