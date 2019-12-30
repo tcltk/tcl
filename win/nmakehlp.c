@@ -643,7 +643,7 @@ SubstituteFile(
 	}
 
 	/* debug: dump the list */
-#ifdef _DEBUG
+#ifndef NDEBUG
 	{
 	    int n = 0;
 	    list_item_t *p = NULL;

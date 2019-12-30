@@ -15,7 +15,7 @@
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 
 /*
@@ -114,7 +114,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is
+ * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
  * around. This type is only created from a pre-existing string, so an
@@ -1342,7 +1342,7 @@ Tcl_ConvertElement(
 
 size_t
 Tcl_ConvertCountedElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1375,7 +1375,7 @@ Tcl_ConvertCountedElement(
 
 size_t
 TclConvertElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -2211,7 +2211,7 @@ Tcl_StringCaseMatch(
 		    if (nocase) {
 			while (*str) {
 			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==(Tcl_UniChar)Tcl_UniCharToLower(ch1)) {
+			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
 			    str += charLen;
@@ -2637,10 +2637,10 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    const char *bytes,		/* String to append. If length is -1 then this
-				 * must be null-terminated. */
+    const char *bytes,		/* String to append. If length is
+				 * TCL_AUTO_LENGTH then this must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * -1, then append all of bytes, up to null
+				 * TCL_AUTO_LENGTH, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
@@ -2664,18 +2664,18 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    size_t offset = TCL_AUTO_LENGTH;
+	    size_t index = TCL_INDEX_NONE;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
-		offset = bytes - dsPtr->string;
+		index = bytes - dsPtr->string;
 	    }
 
 	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (offset != TCL_AUTO_LENGTH) {
-		bytes = dsPtr->string + offset;
+	    if (index != TCL_INDEX_NONE) {
+		bytes = dsPtr->string + index;
 	    }
 	}
     }
@@ -3307,48 +3307,24 @@ TclFormatInt(
 				 * formatted characters are written. */
     Tcl_WideInt n)			/* The integer to format. */
 {
-    Tcl_WideInt intVal;
-    size_t i, numFormatted, j;
-    const char *digits = "0123456789";
-
-    /*
-     * Check first whether "n" is zero.
-     */
-
-    if (n == 0) {
-	buffer[0] = '0';
-	buffer[1] = 0;
-	return 1;
-    }
-
-    /*
-     * Check whether "n" is the maximum negative value. This is -2^(m-1) for
-     * an m-bit word, and has no positive equivalent; negating it produces the
-     * same value.
-     */
-
-    intVal = -n;			/* [Bug 3390638] Workaround for*/
-    if (n == -n || intVal == n) {	/* broken compiler optimizers. */
-	return sprintf(buffer, "%" TCL_LL_MODIFIER "d", n);
-    }
+    Tcl_WideUInt intVal;
+    size_t i = 0, numFormatted, j;
+    static const char digits[] = "0123456789";
 
     /*
      * Generate the characters of the result backwards in the buffer.
      */
 
-    intVal = (n < 0? -n : n);
-    i = 0;
-    buffer[0] = '\0';
+    intVal = (n < 0 ? -(Tcl_WideUInt)n : (Tcl_WideUInt)n);
     do {
-	i++;
-	buffer[i] = digits[intVal % 10];
-	intVal = intVal/10;
+	buffer[i++] = digits[intVal % 10];
+	intVal = intVal / 10;
     } while (intVal > 0);
     if (n < 0) {
-	i++;
-	buffer[i] = '-';
+	buffer[i++] = '-';
     }
-    numFormatted = i;
+    buffer[i] = '\0';
+    numFormatted = i--;
 
     /*
      * Now reverse the characters.
@@ -3419,7 +3395,7 @@ GetWideForIndex(
 
 	/* objPtr holds an integer outside the signed wide range */
 	/* Truncate to the signed wide range. */
-	*widePtr = (((mp_int *)cd)->sign != MP_ZPOS) ? WIDE_MIN : WIDE_MAX;
+	*widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
     return TCL_OK;
     }
 
@@ -3532,7 +3508,7 @@ GetWideForIndex(
 		} else {
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
-		    if (((mp_int *)cd)->sign != MP_ZPOS) {
+		    if (mp_isneg((mp_int *)cd)) {
 			*widePtr = WIDE_MIN;
 		    } else {
 			*widePtr = WIDE_MAX;
@@ -3562,7 +3538,7 @@ GetWideForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIntForIndex --
+ * Tcl_GetIntForIndex --
  *
  *	Provides an integer corresponding to the list index held in a Tcl
  *	object. The string value 'objPtr' is expected have the format
@@ -3589,7 +3565,7 @@ GetWideForIndex(
  */
 
 int
-TclGetIntForIndex(
+Tcl_GetIntForIndex(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
@@ -3685,7 +3661,7 @@ GetEndOffsetFromObj(
 
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */
-		if (((mp_int *)cd)->sign != MP_ZPOS) {
+		if (mp_isneg((mp_int *)cd)) {
 		    offset = (bytes[3] == '-') ? WIDE_MAX : WIDE_MIN;
 		} else {
 		    offset = (bytes[3] == '-') ? WIDE_MIN : WIDE_MAX;
@@ -4028,7 +4004,7 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, (void *)(pgvPtr->epoch), &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -4088,7 +4064,7 @@ TclGetProcessGlobalValue(
 	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (void *) (epoch));
+    hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
 	int dummy;
 
@@ -4121,7 +4097,7 @@ TclGetProcessGlobalValue(
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
-		(void *)(pgvPtr->epoch), &dummy);
+		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);

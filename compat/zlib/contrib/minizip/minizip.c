@@ -27,7 +27,11 @@
         #endif
 #endif
 
-#if defined(__APPLE__) || defined(IOAPI_NO_64)
+#if defined(_WIN32)
+#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+#define FTELLO_FUNC(stream) _ftelli64(stream)
+#define FSEEKO_FUNC(stream, offset, origin) _fseeki64(stream, offset, origin)
+#elif defined(__APPLE__) || defined(IOAPI_NO_64)
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
 #define FTELLO_FUNC(stream) ftello(stream)
@@ -70,8 +74,8 @@
 
 #ifdef _WIN32
 uLong filetime(f, tmzip, dt)
-    char *f;                /* name of file to get info on */
-    tm_zip *tmzip;             /* return value: access, modific. and creation times */
+    const char *f;         /* name of file to get info on */
+    tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
   int ret = 0;
@@ -94,7 +98,7 @@ uLong filetime(f, tmzip, dt)
 #else
 #if defined(unix) || defined(__APPLE__)
 uLong filetime(f, tmzip, dt)
-    char *f;               /* name of file to get info on */
+    const char *f;         /* name of file to get info on */
     tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
@@ -136,8 +140,8 @@ uLong filetime(f, tmzip, dt)
 }
 #else
 uLong filetime(f, tmzip, dt)
-    char *f;                /* name of file to get info on */
-    tm_zip *tmzip;             /* return value: access, modific. and creation times */
+    const char *f;         /* name of file to get info on */
+    tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
     return 0;

@@ -20,7 +20,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
-set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source tcl:encoding:dirs tcl:encoding:system tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable tcl:info:cmdtype tcl:info:nameofexecutable tcl:process:autopurge tcl:process:list tcl:process:purge tcl:process:status tcl:zipfs:lmkimg tcl:zipfs:lmkzip tcl:zipfs:mkimg tcl:zipfs:mkkey tcl:zipfs:mkzip tcl:zipfs:mount tcl:zipfs:mount_data tcl:zipfs:unmount unload}
+set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source tcl:encoding:dirs tcl:encoding:system tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempdir tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable tcl:info:cmdtype tcl:info:nameofexecutable tcl:process:autopurge tcl:process:list tcl:process:purge tcl:process:status tcl:zipfs:lmkimg tcl:zipfs:lmkzip tcl:zipfs:mkimg tcl:zipfs:mkkey tcl:zipfs:mkzip tcl:zipfs:mount tcl:zipfs:mount_data tcl:zipfs:unmount unload}
 
 foreach i [interp slaves] {
   interp delete $i
@@ -1836,7 +1836,7 @@ test interp-23.1 {testing hiding vs aliases: unsafe interp} -setup {
 test interp-23.2 {testing hiding vs aliases: safe interp} -setup {
     catch {interp delete a}
     set l ""
-} -constraints {unixOrPc} -body {
+} -constraints {unixOrWin} -body {
     interp create a -safe
     lappend l [lsort [interp hidden a]]
     a alias bar bar

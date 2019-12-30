@@ -110,7 +110,7 @@ static const char *tclOOSetupScript =
 "\t\t\t&& ![info object isa class $targetDelegate]\n"
 "\t\t} then {\n"
 "\t\t\tcopy $originDelegate $targetDelegate\n"
-"\t\t\tobjdefine $targetObject mixin -set \\\n"
+"\t\t\tobjdefine $targetObject ::oo::objdefine::mixin -set \\\n"
 "\t\t\t\t{*}[lmap c [info object mixin $targetObject] {\n"
 "\t\t\t\t\tif {$c eq $originDelegate} {set targetDelegate} {set c}\n"
 "\t\t\t\t}]\n"

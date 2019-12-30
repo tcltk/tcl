@@ -14,7 +14,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a0"
+TCL_PATCH_LEVEL="a2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -110,8 +110,9 @@ case ${host_alias} in
 esac
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib/libtommath; note that this is mostly done in the
+#	makefile now as we just assume that the platform hasn't got usable
+#   z.lib/tommath.lib
 #------------------------------------------------------------------------
 
 AS_IF([test "${enable_shared+set}" = "set"], [
@@ -122,17 +123,24 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ])
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
+  AC_SUBST(TOMMATH_DLL_FILE,[\${TOMMATH_DLL_FILE}])
+  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
   AS_IF([test "$do64bit" != "no"], [
+    AC_DEFINE(MP_64BIT, 1, [Using libtommath.dll in 64-bit mode])
     AS_IF([test "$GCC" == "yes"],[
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
+      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
     ], [
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
+      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
     ])
   ], [
     AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win32/zdll.lib])
+    AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 

@@ -10,7 +10,8 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tommath_private.h"
+#include "tclTomMath.h"
 
 #ifdef __CYGWIN__
 #   include <wchar.h>
@@ -29,8 +30,10 @@
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
+#undef Tcl_NewBooleanObj
 #undef Tcl_NewByteArrayObj
 #undef Tcl_NewDoubleObj
+#undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
 #undef Tcl_DbNewLongObj
@@ -39,27 +42,99 @@
 #undef Tcl_GetUnicode
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
+#undef Tcl_FindHashEntry
+#undef Tcl_CreateHashEntry
+#undef Tcl_Panic
+#undef Tcl_FindExecutable
 #undef Tcl_SetExitProc
 #undef Tcl_SetPanicProc
 #undef TclpGetPid
+#undef TclSockMinimumBuffers
+#undef Tcl_SetIntObj
+#undef Tcl_SetLongObj
+#undef TclpInetNtoa
+#undef TclWinGetServByName
+#undef TclWinGetSockOpt
+#undef TclWinSetSockOpt
+#undef TclWinNToHS
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
 #define TclStaticPackage Tcl_StaticPackage
+#undef Tcl_UniCharToUtfDString
+#undef Tcl_UtfToUniCharDString
+#undef Tcl_UtfToUniChar
 
-#ifdef TCL_MEM_DEBUG
-#   define Tcl_Alloc TclpAlloc
-#   define Tcl_Free TclpFree
-#   define Tcl_Realloc TclpRealloc
-#   undef Tcl_AttemptAlloc
-#   define Tcl_AttemptAlloc TclpAlloc
-#   undef Tcl_AttemptRealloc
-#   define Tcl_AttemptRealloc TclpRealloc
-#endif
+#define TclBN_mp_add mp_add
+#define TclBN_mp_add_d mp_add_d
+#define TclBN_mp_and mp_and
+#define TclBN_mp_clamp mp_clamp
+#define TclBN_mp_clear mp_clear
+#define TclBN_mp_clear_multi mp_clear_multi
+#define TclBN_mp_cmp mp_cmp
+#define TclBN_mp_cmp_d mp_cmp_d
+#define TclBN_mp_cmp_mag mp_cmp_mag
+#define TclBN_mp_cnt_lsb mp_cnt_lsb
+#define TclBN_mp_copy mp_copy
+#define TclBN_mp_count_bits mp_count_bits
+#define TclBN_mp_div mp_div
+#define TclBN_mp_div_d mp_div_d
+#define TclBN_mp_div_2 mp_div_2
+#define TclBN_mp_div_2d mp_div_2d
+#define TclBN_mp_exch mp_exch
+#define TclBN_mp_expt_u32 mp_expt_u32
+#define TclBN_mp_get_mag_u64 mp_get_mag_u64
+#define TclBN_mp_grow mp_grow
+#define TclBN_mp_init mp_init
+#define TclBN_mp_init_copy mp_init_copy
+#define TclBN_mp_init_multi mp_init_multi
+#define TclBN_mp_init_set mp_init_set
+#define TclBN_mp_init_size mp_init_size
+#define TclBN_mp_init_i64 mp_init_i64
+#define TclBN_mp_init_u64 mp_init_u64
+#define TclBN_mp_lshd mp_lshd
+#define TclBN_mp_mod mp_mod
+#define TclBN_mp_mod_2d mp_mod_2d
+#define TclBN_mp_mul mp_mul
+#define TclBN_mp_mul_d mp_mul_d
+#define TclBN_mp_mul_2 mp_mul_2
+#define TclBN_mp_mul_2d mp_mul_2d
+#define TclBN_mp_neg mp_neg
+#define TclBN_mp_or mp_or
+#define TclBN_mp_radix_size mp_radix_size
+#define TclBN_mp_reverse mp_reverse
+#define TclBN_mp_read_radix mp_read_radix
+#define TclBN_mp_rshd mp_rshd
+#define TclBN_mp_set_i64 mp_set_i64
+#define TclBN_mp_set_u64 mp_set_u64
+#define TclBN_mp_shrink mp_shrink
+#define TclBN_mp_sqr mp_sqr
+#define TclBN_mp_sqrt mp_sqrt
+#define TclBN_mp_sub mp_sub
+#define TclBN_mp_sub_d mp_sub_d
+#define TclBN_mp_signed_rsh mp_signed_rsh
+#define TclBN_mp_to_radix mp_to_radix
+#define TclBN_mp_to_ubin mp_to_ubin
+#define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_xor mp_xor
+#define TclBN_mp_zero mp_zero
+#define TclBN_s_mp_add s_mp_add
+#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
+#define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
+#define TclBN_s_mp_mul_digs s_mp_mul_digs
+#define TclBN_s_mp_mul_digs_fast s_mp_mul_digs_fast
+#define TclBN_s_mp_reverse s_mp_reverse
+#define TclBN_s_mp_sqr s_mp_sqr
+#define TclBN_s_mp_sqr_fast s_mp_sqr_fast
+#define TclBN_s_mp_sub s_mp_sub
+#define TclBN_mp_toom_mul s_mp_toom_mul
+#define TclBN_mp_toom_sqr s_mp_toom_sqr
 
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
+#   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
@@ -70,6 +145,7 @@ doNothing(void)
 }
 #   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
+
 static int
 TclpIsAtty(int fd)
 {
@@ -80,7 +156,7 @@ void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&TclpIsAtty, &hInstance);
+	    (const wchar_t *)&TclpIsAtty, &hInstance);
     return hInstance;
 }
 
@@ -102,37 +178,6 @@ size_t
 TclpGetPid(Tcl_Pid pid)
 {
     return (size_t) pid;
-}
-
-char *
-Tcl_WinUtfToTChar(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    return (char *)TclUtfToWCharDString(string, len, dsPtr);
-}
-
-char *
-Tcl_WinTCharToUtf(
-    const char *string,
-    size_t len,
-    Tcl_DString *dsPtr)
-{
-    Tcl_DStringInit(dsPtr);
-    if (!string) {
-	return NULL;
-    }
-    if (len == TCL_AUTO_LENGTH) {
-	len = wcslen((wchar_t *)string);
-    } else {
-	len /= 2;
-    }
-    return TclWCharToUtfDString((const WCHAR *)string, len, dsPtr);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -173,6 +218,23 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
+static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
+   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
+static int utfNcmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
+static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
+static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
+   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #endif /* __CYGWIN__ */
@@ -234,7 +296,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     0, /* 33 */
-    TclGetIntForIndex, /* 34 */
+    0, /* 34 */
     0, /* 35 */
     0, /* 36 */
     TclGetLoadedPackages, /* 37 */
@@ -250,7 +312,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 47 */
     0, /* 48 */
     0, /* 49 */
-    TclInitCompiledLocals, /* 50 */
+    0, /* 50 */
     TclInterpInit, /* 51 */
     0, /* 52 */
     TclInvokeObjectCommand, /* 53 */
@@ -458,6 +520,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
+    TclpCreateTemporaryDirectory, /* 258 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -567,10 +630,6 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    Tcl_WinUtfToTChar, /* 0 */
-    Tcl_WinTCharToUtf, /* 1 */
-#endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
@@ -597,9 +656,9 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_d, /* 14 */
     TclBN_mp_div_2, /* 15 */
     TclBN_mp_div_2d, /* 16 */
-    TclBN_mp_div_3, /* 17 */
+    0, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_d, /* 19 */
+    TclBN_mp_expt_u32, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -619,15 +678,15 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_read_radix, /* 36 */
     TclBN_mp_rshd, /* 37 */
     TclBN_mp_shrink, /* 38 */
-    TclBN_mp_set, /* 39 */
-    TclBN_mp_sqr, /* 40 */
+    0, /* 39 */
+    0, /* 40 */
     TclBN_mp_sqrt, /* 41 */
     TclBN_mp_sub, /* 42 */
     TclBN_mp_sub_d, /* 43 */
-    TclBN_mp_to_unsigned_bin, /* 44 */
-    TclBN_mp_to_unsigned_bin_n, /* 45 */
-    TclBN_mp_toradix_n, /* 46 */
-    TclBN_mp_unsigned_bin_size, /* 47 */
+    0, /* 44 */
+    0, /* 45 */
+    0, /* 46 */
+    TclBN_mp_ubin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     0, /* 50 */
@@ -641,23 +700,26 @@ const TclTomMathStubs tclTomMathStubs = {
     0, /* 58 */
     0, /* 59 */
     0, /* 60 */
-    TclBN_mp_init_set_int, /* 61 */
-    TclBN_mp_set_int, /* 62 */
+    0, /* 61 */
+    0, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
     0, /* 64 */
-    0, /* 65 */
-    0, /* 66 */
-    TclBN_mp_expt_d_ex, /* 67 */
-    TclBN_mp_set_long_long, /* 68 */
-    TclBN_mp_get_long_long, /* 69 */
-    TclBN_mp_set_long, /* 70 */
-    TclBN_mp_get_long, /* 71 */
-    TclBN_mp_get_int, /* 72 */
-    TclBN_mp_tc_and, /* 73 */
-    TclBN_mp_tc_or, /* 74 */
-    TclBN_mp_tc_xor, /* 75 */
-    TclBN_mp_tc_div_2d, /* 76 */
-    TclBN_mp_get_bit, /* 77 */
+    TclBN_mp_init_i64, /* 65 */
+    TclBN_mp_init_u64, /* 66 */
+    0, /* 67 */
+    TclBN_mp_set_u64, /* 68 */
+    TclBN_mp_get_mag_u64, /* 69 */
+    TclBN_mp_set_i64, /* 70 */
+    0, /* 71 */
+    0, /* 72 */
+    0, /* 73 */
+    0, /* 74 */
+    0, /* 75 */
+    TclBN_mp_signed_rsh, /* 76 */
+    0, /* 77 */
+    TclBN_mp_to_ubin, /* 78 */
+    0, /* 79 */
+    TclBN_mp_to_radix, /* 80 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -715,7 +777,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
-    0, /* 30 */
+    TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
     Tcl_GetByteArrayFromObj, /* 33 */
@@ -1029,7 +1091,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
     Tcl_UtfToTitle, /* 335 */
-    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToChar16, /* 336 */
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
@@ -1047,8 +1109,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsWordChar, /* 351 */
     Tcl_UniCharLen, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
-    Tcl_UniCharToUtfDString, /* 354 */
-    Tcl_UtfToUniCharDString, /* 355 */
+    Tcl_Char16ToUtfDString, /* 354 */
+    Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
     0, /* 357 */
     Tcl_FreeParse, /* 358 */
@@ -1338,6 +1400,10 @@ const TclStubs tclStubs = {
     Tcl_DecrRefCount, /* 642 */
     Tcl_IsShared, /* 643 */
     Tcl_LinkArray, /* 644 */
+    Tcl_GetIntForIndex, /* 645 */
+    Tcl_UtfToUniChar, /* 646 */
+    Tcl_UniCharToUtfDString, /* 647 */
+    Tcl_UtfToUniCharDString, /* 648 */
 };
 
 /* !END!: Do not edit above this line. */

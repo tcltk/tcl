@@ -2927,7 +2927,7 @@ FlushChannel(
 	     * there is some kind failure in the writable event machinery.
 	     *
 	     * The tls extension indeed suffers from flaws in its channel
-	     * event mgmt.  See http://core.tcl.tk/tcl/info/c31ca233ca.
+	     * event mgmt.  See https://core.tcl-lang.org/tcl/info/c31ca233ca.
 	     * Until that patch is broadly distributed, disable the
 	     * assertion checking here, so that programs using Tcl and
 	     * tls can be debugged.
@@ -4714,8 +4714,8 @@ Tcl_GetsObj(
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[TCL_UTF_MAX];
 		    int rawRead;
+		    char tmp[TCL_UTF_MAX];
 
 		    bufPtr = gs.bufPtr;
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
@@ -6269,8 +6269,8 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[TCL_UTF_MAX + 1];
 		int read, decoded, count;
+		char buffer[TCL_UTF_MAX + 1];
 
 		/*
 		 * Didn't get everything the buffer could offer
@@ -7484,7 +7484,7 @@ Tcl_OutputBuffered(
 	bytesBuffered += BytesLeft(bufPtr);
     }
     if (statePtr->curOutPtr != NULL) {
-	register ChannelBuffer *curOutPtr = statePtr->curOutPtr;
+	ChannelBuffer *curOutPtr = statePtr->curOutPtr;
 
 	if (IsBufferReady(curOutPtr)) {
 	    bytesBuffered += BytesLeft(curOutPtr);
@@ -11224,9 +11224,9 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelIntRep(
-    register Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     ResolvedChanName *resPtr;
