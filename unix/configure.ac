@@ -175,7 +175,7 @@ AC_ARG_WITH(system-libtommath,
 AC_HELP_STRING([--with-system-libtommath],
 	[use external libtommath (default: true if available, false otherwise)]),
 	libtommath_ok=${withval})
-if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     AC_CHECK_HEADER([tommath.h],[
 	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
 	libtommath_ok=no])
