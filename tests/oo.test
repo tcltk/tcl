@@ -5670,8 +5670,29 @@ test oo-45.1 {TIP 558: properties: configurable class system} -setup {
 } -result {{x=3, y=0} {x=3, y=4} 3,4 {-x 3 -y 4}}
 test oo-45.2 {TIP 558: properties: configurable class system} -setup {
     oo::class create parent
-    unset -nocomplain result
-    set result {}
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    oo::configurable create 3DPoint {
+	superclass Point
+	property z
+	constructor args {
+	    next -z 0 {*}$args
+	}
+    }
+    set pt [3DPoint new -x 3 -y 4 -z 5]
+    list [$pt configure -x],[$pt configure -y],[$pt configure -z] \
+	[$pt configure]
+} -cleanup {
+    parent destroy
+} -result {3,4,5 {-x 3 -y 4 -z 5}}
+test oo-45.3 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
 } -body {
     oo::configurable create Point {
 	superclass parent
@@ -5683,11 +5704,382 @@ test oo-45.2 {TIP 558: properties: configurable class system} -setup {
     set pt [Point new -x 3 -y 4]
     oo::objdefine $pt property z
     $pt configure -z 5
-    lappend result [$pt configure -x],[$pt configure -y],[$pt configure -z] \
+    list [$pt configure -x],[$pt configure -y],[$pt configure -z] \
 	[$pt configure]
 } -cleanup {
     parent destroy
 } -result {3,4,5 {-x 3 -y 4 -z 5}}
+test oo-45.4 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    [Point new] configure gorp
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad property "gorp": must be -x or -y}
+test oo-45.5 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    oo::configurable create 3DPoint {
+	superclass Point
+	property z
+	constructor args {
+	    next -z 0 {*}$args
+	}
+    }
+    [3DPoint new] configure gorp
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad property "gorp": must be -x, -y, or -z}
+test oo-45.6 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    [Point create p] configure -x 1 -y
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {wrong # args: should be "::p configure ?-option value ...?"}
+test oo-45.7 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+    unset -nocomplain msg
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y -kind writable
+        constructor args {
+            my configure -x 0 -y 0 {*}$args
+        }
+    }
+    Point create p
+    list [p configure -y ok] [catch {p configure -y} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {{} 1 {bad property "-y": must be -x}}
+test oo-45.8 {TIP 558: properties: configurable class system} -setup {
+    oo::class create parent
+    unset -nocomplain msg
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x y -kind readable
+        constructor args {
+            my configure -x 0 {*}$args
+	    variable y 123
+        }
+    }
+    Point create p
+    list [p configure] [p configure -y] [catch {p configure -y foo} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {{-x 0 -y 123} 123 1 {bad property "-y": must be -x}}
+
+test oo-46.1 {ITP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	variable xyz
+	property x -get {
+	    global result
+	    lappend result "get"
+	    return [lrepeat 3 $xyz]
+	} -set {
+	    global result
+	    lappend result [list set $value]
+	    set xyz [expr {$value * 3}]
+	}
+    }
+    Point create pt
+    pt configure -x 5
+    lappend result >[pt configure -x]<
+} -cleanup {
+    parent destroy
+} -result {{set 5} get {>15 15 15<}}
+test oo-46.2 {ITP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+    unset -nocomplain result
+    set result {}
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	variable xyz
+	property x -get {
+	    global result
+	    lappend result "get"
+	    return [lrepeat 3 $xyz]
+	} -set {
+	    global result
+	    lappend result [list set $value]
+	    set xyz [expr {$value * 3}]
+	} y -kind readable -get {return $xyz}
+    }
+    Point create pt
+    pt configure -x 5
+    lappend result >[pt configure -x]< [pt configure -y]
+} -cleanup {
+    parent destroy
+} -result {{set 5} get {>15 15 15<} 15}
+test oo-46.2 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	variable xyz
+	property -x -get {return $xyz}
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad property name "-x"; must not begin with -}
+test oo-46.3 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -get
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {missing body to go with -get option}
+test oo-46.4 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -set
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {missing body to go with -set option}
+test oo-46.5 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -kind
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {missing kind value to go with -kind option}
+test oo-46.6 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -get {} -set
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {missing body to go with -set option}
+test oo-46.7 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -get {} -get {return ok}
+    }
+    [Point new] configure -x
+} -cleanup {
+    parent destroy
+} -result ok
+test oo-46.8 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -kind gorp
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad kind "gorp": must be readable, readwrite, or writable}
+test oo-46.9 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property x -k reada -g {return ok}
+    }
+    [Point new] configure -x
+} -cleanup {
+    parent destroy
+} -result ok
+test oo-46.10 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	property {*}{
+	    x -kind writable
+	    y -get {return ok}
+	}
+    }
+    [Point new] configure -y
+} -cleanup {
+    parent destroy
+} -result ok
+test oo-46.11 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+    unset -nocomplain msg
+} -body {
+    oo::configurable create Point {superclass parent}
+    oo::define Point {
+	variable xy
+	property x -kind readable -get {return $xy}
+	property x -kind writable -set {set xy $value}
+	property y
+    }
+    Point create pt
+    list [catch {
+	pt configure -x ok
+    } msg] $msg [catch {
+	pt configure -x
+    } msg] $msg
+} -cleanup {
+    parent destroy
+} -result {0 {} 1 {bad property "-x": must be -y}}
+
+test oo-47.1 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property -x}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {bad property name "-x"; must not begin with -
+    while executing
+"property -x"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property -x}"} {TCLOO PROPERTY_FORMAT}}
+test oo-47.2 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property x -get}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {missing body to go with -get option
+    while executing
+"property x -get"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property x -get}"} {TCL WRONGARGS}}
+test oo-47.3 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property x -set}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {missing body to go with -set option
+    while executing
+"property x -set"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property x -set}"} {TCL WRONGARGS}}
+test oo-47.4 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property x -kind}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {missing kind value to go with -kind option
+    while executing
+"property x -kind"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property x -kind}"} {TCL WRONGARGS}}
+test oo-47.5 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property x -kind gorp}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {bad kind "gorp": must be readable, readwrite, or writable
+    while executing
+"property x -kind gorp"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property x -kind gorp}"} {TCL LOOKUP INDEX kind gorp}}
+test oo-47.6 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {superclass parent}
+    list [catch {oo::define Point {property x -gorp}} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {bad option "-gorp": must be -get, -kind, or -set
+    while executing
+"property x -gorp"
+    (in definition script for class "::Point" line 1)
+    invoked from within
+"oo::define Point {property x -gorp}"} {TCL LOOKUP INDEX option -gorp}}
+test oo-47.7 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x
+    }
+    Point create pt
+    list [catch {pt configure -gorp} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {bad property "-gorp": must be -x
+    while executing
+"pt configure -gorp"} {TCL LOOKUP INDEX property -gorp}}
+test oo-47.8 {TIP 558: properties: error details} -setup {
+    oo::class create parent
+    unset -nocomplain msg opt
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x
+    }
+    Point create pt
+    list [catch {pt configure -gorp blarg} msg opt] \
+	[dict get $opt -errorinfo] [dict get $opt -errorcode]
+} -cleanup {
+    parent destroy
+} -result {1 {bad property "-gorp": must be -x
+    while executing
+"pt configure -gorp blarg"} {TCL LOOKUP INDEX property -gorp}}
 
 cleanupTests
 return

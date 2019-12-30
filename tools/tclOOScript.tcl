@@ -466,6 +466,7 @@
     # ----------------------------------------------------------------------
 
     ::namespace eval configuresupport {
+	namespace path ::tcl
 
 	# ------------------------------------------------------------------
 	#
@@ -480,7 +481,8 @@
 		# Parse the property name
 		set prop [lindex $args $i]
 		if {[string match "-*" $prop]} {
-		    return -code error -errorcode {TCLOO PROPERTY_FORMAT} \
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
 			"bad property name \"$prop\"; must not begin with -"
 		}
 		set realprop [string cat "-" $prop]
@@ -492,27 +494,33 @@
 		while {[set next [lindex $args [expr {$i + 1}]]
 			string match "-*" $next]} {
 		    set arg [lindex $args [incr i 2]]
-		    switch [::tcl::prefix match {-get -kind -set} $next] {
+		    switch [prefix match -error [list -level 2 -errorcode \
+			    [list TCL LOOKUP INDEX option $next]] {-get -kind -set} $next] {
 			-get {
 			    if {$i >= [llength $args]} {
-				return -code error -errorcode {TCL WRONGARGS} \
+				return -code error -level 2 \
+				    -errorcode {TCL WRONGARGS} \
 				    "missing body to go with -get option"
 			    }
 			    set getter $arg
 			}
 			-set {
 			    if {$i >= [llength $args]} {
-				return -code error -errorcode {TCL WRONGARGS} \
+				return -code error -level 2 \
+				    -errorcode {TCL WRONGARGS} \
 				    "missing body to go with -set option"
 			    }
-			    set getter $arg
+			    set setter $arg
 			}
 			-kind {
 			    if {$i >= [llength $args]} {
-				return -code error -errorcode {TCL WRONGARGS} \
+				return -code error -level 2\
+				    -errorcode {TCL WRONGARGS} \
 				    "missing kind value to go with -kind option"
 			    }
-			    set kind [::tcl::prefix match -message "kind" {
+			    set kind [prefix match -message "kind" -error [list \
+				    -level 2 \
+				    -errorcode [list TCL LOOKUP INDEX kind $arg]] {
 				readable readwrite writable
 			    } $arg]
 			}
@@ -522,25 +530,29 @@
 		# Install the option
 		switch $kind {
 		    readable {
-			uplevel 1 [list \
+			uplevel 2 [list \
 				$readslot -append $realprop]
-			uplevel 1 [list \
+			uplevel 2 [list \
+				$writeslot -remove $realprop]
+			uplevel 2 [list \
 				method <ReadProp$realprop> {} $getter]
 		    }
 		    writable {
-			uplevel 1 [list \
+			uplevel 2 [list \
+				$readslot -remove $realprop]
+			uplevel 2 [list \
 				$writeslot -append $realprop]
-			uplevel 1 [list \
+			uplevel 2 [list \
 				method <WriteProp$realprop> {value} $setter]
 		    }
 		    readwrite {
-			uplevel 1 [list \
+			uplevel 2 [list \
 				$readslot -append $realprop]
-			uplevel 1 [list \
+			uplevel 2 [list \
 				$writeslot -append $realprop]
-			uplevel 1 [list \
+			uplevel 2 [list \
 				method <ReadProp$realprop> {} $getter]
-			uplevel 1 [list \
+			uplevel 2 [list \
 				method <WriteProp$realprop> {value} $setter]
 		    }
 		}
@@ -559,7 +571,7 @@
 
 	namespace eval configurableclass {
 	    ::proc property args {
-		::tailcall ::oo::configuresupport::PropertyImpl \
+		::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::readableproperties \
 		    ::oo::configuresupport::writableproperties {*}$args
 	    }
@@ -569,7 +581,7 @@
 
 	namespace eval configurableobject {
 	    ::proc property args {
-		::tailcall ::oo::configuresupport::PropertyImpl \
+		::oo::configuresupport::PropertyImpl \
 		    ::oo::configuresupport::objreadableproperties \
 		    ::oo::configuresupport::objwritableproperties {*}$args
 	    }
@@ -595,19 +607,6 @@
 
 	# ------------------------------------------------------------------
 	#
-	# oo::configuresupport::Match --
-	#
-	#	How to convert an imprecise property name into a full one.
-	#
-	# ------------------------------------------------------------------
-
-	proc Match {object propertyName kind} {
-	    set props [info object property $object -all $kind]
-	    ::tcl::prefix match -message "property" $props $propertyName
-	}
-
-	# ------------------------------------------------------------------
-	#
 	# oo::configuresupport::ReadOne --
 	#
 	#	The implementation of [$o configure -prop] with that single
@@ -616,7 +615,11 @@
 	# ------------------------------------------------------------------
 
 	proc ReadOne {object my propertyName} {
-	    set prop [Match $object $propertyName -readable]
+	    set props [info object property $object -all -readable]
+	    set prop [prefix match -message "property" -error [list\
+		    -level 2 -errorcode [list \
+			TCL LOOKUP INDEX property $propertyName]] \
+			  $props $propertyName]
 	    return [$my <ReadProp$prop>]
 	}
 
@@ -629,8 +632,12 @@
 	# ------------------------------------------------------------------
 
 	proc WriteMany {object my setterMap} {
+	    set props [info object property $object -all -writable]
 	    foreach {prop value} $setterMap {
-		set prop [Match $object $prop -writable]
+		set prop [prefix match -message "property" -error [list\
+		    -level 2 -errorcode [list \
+			TCL LOOKUP INDEX property $prop]] \
+			      $props $prop]
 		$my <WriteProp$prop> $value
 	    }
 	    return
