@@ -230,7 +230,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == TCL_AUTO_LENGTH) {
+    if (index == TCL_INDEX_NONE) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -314,7 +314,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != TCL_AUTO_LENGTH) && (environ[index] == p)) {
+    if ((index != TCL_INDEX_NONE) && (environ[index] == p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {

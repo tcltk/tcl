@@ -277,16 +277,17 @@ static struct {
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
     0, 0, 0, DEFAULT_WRITE_MAX_SIZE, 0,
+	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0},
+	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
 
 /*
  * For password rotation.
  */
 
-static const char pwrot[16] = {
-    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
-    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0
-};
+static const char pwrot[17] =
+    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
+    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
 /*
  * Table to compute CRC32.
@@ -400,9 +401,7 @@ static int		ZipChannelWrite(void *instanceData,
  * Define the ZIP filesystem dispatch table.
  */
 
-MODULE_SCOPE const Tcl_Filesystem zipfsFilesystem;
-
-const Tcl_Filesystem zipfsFilesystem = {
+static const Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
@@ -1876,7 +1875,7 @@ TclZipfs_Unmount(
 
 static int
 ZipFSMountObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1910,7 +1909,7 @@ ZipFSMountObjCmd(
 
 static int
 ZipFSMountBufferObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1962,7 +1961,7 @@ ZipFSMountBufferObjCmd(
 
 static int
 ZipFSRootObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1989,7 +1988,7 @@ ZipFSRootObjCmd(
 
 static int
 ZipFSUnmountObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2020,7 +2019,7 @@ ZipFSUnmountObjCmd(
 
 static int
 ZipFSMkKeyObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2799,7 +2798,7 @@ ZipFSMkZipOrImgObjCmd(
 
 static int
 ZipFSMkZipObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2819,7 +2818,7 @@ ZipFSMkZipObjCmd(
 
 static int
 ZipFSLMkZipObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2856,7 +2855,7 @@ ZipFSLMkZipObjCmd(
 
 static int
 ZipFSMkImgObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2877,7 +2876,7 @@ ZipFSMkImgObjCmd(
 
 static int
 ZipFSLMkImgObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2914,7 +2913,7 @@ ZipFSLMkImgObjCmd(
 
 static int
 ZipFSCanonicalObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2970,7 +2969,7 @@ ZipFSCanonicalObjCmd(
 
 static int
 ZipFSExistsObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3023,7 +3022,7 @@ ZipFSExistsObjCmd(
 
 static int
 ZipFSInfoObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3073,7 +3072,7 @@ ZipFSInfoObjCmd(
 
 static int
 ZipFSListObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3173,7 +3172,7 @@ TclZipfs_TclLibrary(void)
 #ifdef _WIN32
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char dllName[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
 #endif /* _WIN32 */
 
     /*
@@ -3270,7 +3269,7 @@ TclZipfs_TclLibrary(void)
 
 static int
 ZipFSTclLibraryObjCmd(
-    void *clientData,	/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3305,7 +3304,7 @@ ZipFSTclLibraryObjCmd(
 static int
 ZipChannelClose(
     void *instanceData,
-    Tcl_Interp *interp)		/* Current interpreter. */
+    Tcl_Interp *dummy)		/* Current interpreter. */
 {
     ZipChannel *info = instanceData;
 
@@ -4155,7 +4154,7 @@ ZipFSFilesystemSeparatorProc(
 
 static int
 ZipFSMatchInDirectoryProc(
-    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Interp *dummy,		/* Current interpreter. */
     Tcl_Obj *result,
     Tcl_Obj *pathPtr,
     const char *pattern,
@@ -4345,7 +4344,7 @@ ZipFSMatchInDirectoryProc(
 static int
 ZipFSPathInFilesystemProc(
     Tcl_Obj *pathPtr,
-    void **clientDataPtr)
+    void **dummy)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -4716,7 +4715,7 @@ ZipFSLoadFile(
  *-------------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
@@ -4866,7 +4865,11 @@ TclZipfs_AppHook(
 {
     char *archive;
 
+#ifdef _WIN32
+    Tcl_FindExecutable(NULL);
+#else /* !_WIN32 */
     Tcl_FindExecutable((*argvPtr)[0]);
+#endif /* _WIN32 */
     archive = (char *) Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
@@ -4916,7 +4919,8 @@ TclZipfs_AppHook(
 #ifdef _WIN32
 	Tcl_DString ds;
 
-	archive = Tcl_WinTCharToUtf((*argvPtr)[1], -1, &ds);
+	Tcl_DStringInit(&ds);
+	archive = Tcl_WCharToUtfDString((*argvPtr)[1], -1, &ds);
 #else /* !_WIN32 */
 	archive = (*argvPtr)[1];
 #endif /* _WIN32 */

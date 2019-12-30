@@ -108,10 +108,7 @@ EXTERN const char *	TclGetExtension(const char *name);
 EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 				CallFrame **framePtrPtr);
 /* Slot 33 is reserved */
-/* 34 */
-EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, size_t endValue,
-				size_t *indexPtr);
+/* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
 /* 37 */
@@ -145,9 +142,7 @@ EXTERN int		TclInExit(void);
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
 /* Slot 49 is reserved */
-/* 50 */
-EXTERN void		TclInitCompiledLocals(Tcl_Interp *interp,
-				CallFrame *framePtr, Namespace *nsPtr);
+/* Slot 50 is reserved */
 /* 51 */
 EXTERN int		TclInterpInit(Tcl_Interp *interp);
 /* Slot 52 is reserved */
@@ -337,7 +332,7 @@ EXTERN void		TclHandleRelease(TclHandle handle);
 EXTERN int		TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re);
 /* 151 */
 EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, size_t index,
-				int *startPtr, int *endPtr);
+				size_t *startPtr, size_t *endPtr);
 /* 152 */
 EXTERN void		TclSetLibraryPath(Tcl_Obj *pathPtr);
 /* 153 */
@@ -583,6 +578,9 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 				const char *pkgName,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
+/* 258 */
+EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj);
 
 typedef struct TclIntStubs {
     int magic;
@@ -622,7 +620,7 @@ typedef struct TclIntStubs {
     const char * (*tclGetExtension) (const char *name); /* 31 */
     int (*tclGetFrame) (Tcl_Interp *interp, const char *str, CallFrame **framePtrPtr); /* 32 */
     void (*reserved33)(void);
-    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t endValue, size_t *indexPtr); /* 34 */
+    void (*reserved34)(void);
     void (*reserved35)(void);
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
@@ -638,7 +636,7 @@ typedef struct TclIntStubs {
     void (*reserved47)(void);
     void (*reserved48)(void);
     void (*reserved49)(void);
-    void (*tclInitCompiledLocals) (Tcl_Interp *interp, CallFrame *framePtr, Namespace *nsPtr); /* 50 */
+    void (*reserved50)(void);
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
     int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
@@ -739,7 +737,7 @@ typedef struct TclIntStubs {
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
     int (*tclRegAbout) (Tcl_Interp *interp, Tcl_RegExp re); /* 150 */
-    void (*tclRegExpRangeUniChar) (Tcl_RegExp re, size_t index, int *startPtr, int *endPtr); /* 151 */
+    void (*tclRegExpRangeUniChar) (Tcl_RegExp re, size_t index, size_t *startPtr, size_t *endPtr); /* 151 */
     void (*tclSetLibraryPath) (Tcl_Obj *pathPtr); /* 152 */
     Tcl_Obj * (*tclGetLibraryPath) (void); /* 153 */
     void (*reserved154)(void);
@@ -846,6 +844,7 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
+    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -911,8 +910,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclGetFrame \
 	(tclIntStubsPtr->tclGetFrame) /* 32 */
 /* Slot 33 is reserved */
-#define TclGetIntForIndex \
-	(tclIntStubsPtr->tclGetIntForIndex) /* 34 */
+/* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
 #define TclGetLoadedPackages \
@@ -937,8 +935,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
 /* Slot 49 is reserved */
-#define TclInitCompiledLocals \
-	(tclIntStubsPtr->tclInitCompiledLocals) /* 50 */
+/* Slot 50 is reserved */
 #define TclInterpInit \
 	(tclIntStubsPtr->tclInterpInit) /* 51 */
 /* Slot 52 is reserved */
@@ -1263,6 +1260,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticPackage \
 	(tclIntStubsPtr->tclStaticPackage) /* 257 */
+#define TclpCreateTemporaryDirectory \
+	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
