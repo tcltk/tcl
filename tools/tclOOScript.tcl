@@ -600,7 +600,21 @@
 	proc ReadAll {object my} {
 	    set result {}
 	    foreach prop [info object property $object -all -readable] {
-		dict set result $prop [$my <ReadProp$prop>]
+		try {
+		    dict set result $prop [$my <ReadProp$prop>]
+		} on error {msg opt} {
+		    dict set opt -level 2
+		    return -options $opt $msg
+		} on return {msg opt} {
+		    dict incr opt -level 2
+		    return -options $opt $msg
+		} on break {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property getter for $prop did a break"
+		} on continue {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property getter for $prop did a continue"
+		}
 	    }
 	    return $result
 	}
@@ -620,7 +634,22 @@
 		    -level 2 -errorcode [list \
 			TCL LOOKUP INDEX property $propertyName]] \
 			  $props $propertyName]
-	    return [$my <ReadProp$prop>]
+	    try {
+		set value [$my <ReadProp$prop>]
+	    } on error {msg opt} {
+		dict set opt -level 2
+		return -options $opt $msg
+	    } on return {msg opt} {
+		dict incr opt -level 2
+		return -options $opt $msg
+	    } on break {} {
+		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    "property getter for $prop did a break"
+	    } on continue {} {
+		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    "property getter for $prop did a continue"
+	    }
+	    return $value
 	}
 
 	# ------------------------------------------------------------------
@@ -638,7 +667,21 @@
 		    -level 2 -errorcode [list \
 			TCL LOOKUP INDEX property $prop]] \
 			      $props $prop]
-		$my <WriteProp$prop> $value
+		try {
+		    $my <WriteProp$prop> $value
+		} on error {msg opt} {
+		    dict set opt -level 2
+		    return -options $opt $msg
+		} on return {msg opt} {
+		    dict incr opt -level 2
+		    return -options $opt $msg
+		} on break {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property setter for $prop did a break"
+		} on continue {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property setter for $prop did a continue"
+		}
 	    }
 	    return
 	}

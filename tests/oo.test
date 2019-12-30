@@ -5894,8 +5894,8 @@ test oo-46.6 {TIP 558: properties: declaration semantics} -setup {
 test oo-46.7 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
 } -body {
-    oo::configurable create Point {superclass parent}
-    oo::define Point {
+    oo::configurable create Point {
+	superclass parent
 	property x -get {} -get {return ok}
     }
     [Point new] configure -x
@@ -5905,8 +5905,8 @@ test oo-46.7 {TIP 558: properties: declaration semantics} -setup {
 test oo-46.8 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
 } -body {
-    oo::configurable create Point {superclass parent}
-    oo::define Point {
+    oo::configurable create Point {
+	superclass parent
 	property x -kind gorp
     }
 } -returnCodes error -cleanup {
@@ -5915,8 +5915,8 @@ test oo-46.8 {TIP 558: properties: declaration semantics} -setup {
 test oo-46.9 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
 } -body {
-    oo::configurable create Point {superclass parent}
-    oo::define Point {
+    oo::configurable create Point {
+	superclass parent
 	property x -k reada -g {return ok}
     }
     [Point new] configure -x
@@ -5926,8 +5926,8 @@ test oo-46.9 {TIP 558: properties: declaration semantics} -setup {
 test oo-46.10 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
 } -body {
-    oo::configurable create Point {superclass parent}
-    oo::define Point {
+    oo::configurable create Point {
+	superclass parent
 	property {*}{
 	    x -kind writable
 	    y -get {return ok}
@@ -5941,8 +5941,8 @@ test oo-46.11 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
     unset -nocomplain msg
 } -body {
-    oo::configurable create Point {superclass parent}
-    oo::define Point {
+    oo::configurable create Point {
+	superclass parent
 	variable xy
 	property x -kind readable -get {return $xy}
 	property x -kind writable -set {set xy $value}
@@ -5957,6 +5957,160 @@ test oo-46.11 {TIP 558: properties: declaration semantics} -setup {
 } -cleanup {
     parent destroy
 } -result {0 {} 1 {bad property "-x": must be -y}}
+test oo-46.12 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {return -code break}
+    }
+    while 1 {
+	[Point new] configure -x
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {property getter for -x did a break}
+test oo-46.13 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {return -code break}
+    }
+    while 1 {
+	[Point new] configure
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {property getter for -x did a break}
+test oo-46.14 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {error "boo"}
+    }
+    while 1 {
+	[Point new] configure -x
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result boo
+test oo-46.15 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {error "boo"}
+    }
+    while 1 {
+	[Point new] configure
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result boo
+test oo-46.16 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {return -code continue}
+    }
+    while 1 {
+	[Point new] configure -x
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {property getter for -x did a continue}
+test oo-46.17 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {return -level 2 ok}
+    }
+    apply {{} {
+	[Point new] configure
+	return bad
+    }}
+} -cleanup {
+    parent destroy
+} -result ok
+test oo-46.18 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {return -level 2 ok}
+    }
+    apply {{} {
+	[Point new] configure -x
+	return bad
+    }}
+} -cleanup {
+    parent destroy
+} -result ok
+test oo-46.19 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {return -code break}
+    }
+    while 1 {
+	[Point new] configure -x gorp
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {property setter for -x did a break}
+test oo-46.20 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {return -code continue}
+    }
+    while 1 {
+	[Point new] configure -x gorp
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {property setter for -x did a continue}
+test oo-46.21 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {error "boo"}
+    }
+    while 1 {
+	[Point new] configure -x gorp
+	break
+    }
+} -returnCodes error -cleanup {
+    parent destroy
+} -result boo
+test oo-46.22 {TIP 558: properties: declaration semantics} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {return -level 2 ok}
+    }
+    apply {{} {
+	[Point new] configure -x gorp
+	return bad
+    }}
+} -cleanup {
+    parent destroy
+} -result ok
 
 test oo-47.1 {TIP 558: properties: error details} -setup {
     oo::class create parent
