@@ -946,7 +946,7 @@ TclpOpenFileChannel(
 	    flags = FILE_ATTRIBUTE_READONLY;
 	}
     } else {
-	flags = GetFileAttributes(nativeName);
+	flags = GetFileAttributesW(nativeName);
 	if (flags == 0xFFFFFFFF) {
 	    flags = 0;
 	}
@@ -962,7 +962,7 @@ TclpOpenFileChannel(
      * Now we get to create the file.
      */
 
-    handle = CreateFile(nativeName, accessMode, shareMode,
+    handle = CreateFileW(nativeName, accessMode, shareMode,
 	    NULL, createMode, flags, (HANDLE) NULL);
 
     if (handle == INVALID_HANDLE_VALUE) {
@@ -1068,7 +1068,7 @@ Tcl_MakeFileChannel(
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
+#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
     TCLEXCEPTION_REGISTRATION registration;
 #endif
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1121,7 +1121,7 @@ Tcl_MakeFileChannel(
 
 	if (result == 0) {
 	    /*
-	     * Unable to make a duplicate. It's definately invalid at this
+	     * Unable to make a duplicate. It's definitely invalid at this
 	     * point.
 	     */
 
@@ -1134,7 +1134,7 @@ Tcl_MakeFileChannel(
 	 */
 
 	result = 0;
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
+#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
 	/*
 	 * Don't have SEH available, do things the hard way. Note that this
 	 * needs to be one block of asm, to avoid stack imbalance; also, it is
@@ -1571,7 +1571,7 @@ NativeIsComPort(
 	 * The 4th character must be a digit 1..9
 	 */
 
-	if ((p[3] < L'1') || (p[3] > L'9')) {
+	if ((p[3] < '1') || (p[3] > '9')) {
 	    return 0;
 	}
 	return 1;

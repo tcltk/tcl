@@ -202,8 +202,8 @@ static const Tcl_ChannelType consoleChannelType = {
  *
  * ReadConsoleBytes, WriteConsoleBytes --
  *
- *	Wrapper for ReadConsole{A,W}, that takes and returns number of bytes
- *	instead of number of TCHARS.
+ *	Wrapper for ReadConsoleW, that takes and returns number of bytes
+ *	instead of number of WCHARS.
  *
  *----------------------------------------------------------------------
  */
@@ -217,7 +217,6 @@ ReadConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
     /*
      * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return
@@ -230,11 +229,11 @@ ReadConsoleBytes(
      * will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
                              NULL);
     } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
-	*nbytesread = ntchars * tcharsize;
+	*nbytesread = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -248,12 +247,11 @@ WriteConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
-    result = WriteConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+    result = WriteConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
 	    NULL);
     if (nbyteswritten != NULL) {
-	*nbyteswritten = ntchars * tcharsize;
+	*nbyteswritten = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -1057,7 +1055,7 @@ WaitForRead(
 	    return 1;
 	}
 
-	if (PeekConsoleInput(handle, &input, 1, &count) == FALSE) {
+	if (PeekConsoleInputW(handle, &input, 1, &count) == FALSE) {
 	    /*
 	     * Check to see if the peek failed because of EOF.
 	     */
@@ -1359,7 +1357,7 @@ TclWinOpenConsoleChannel(
 	modes |= ENABLE_LINE_INPUT;
 	SetConsoleMode(infoPtr->handle, modes);
 
-	infoPtr->reader.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->reader.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->reader.thread = CreateThread(NULL, 256, ConsoleReaderThread,
 		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr,
 			infoPtr->reader.readyEvent), 0, NULL);
@@ -1368,7 +1366,7 @@ TclWinOpenConsoleChannel(
 
     if (permissions & TCL_WRITABLE) {
 
-	infoPtr->writer.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->writer.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writer.thread = CreateThread(NULL, 256, ConsoleWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writer.TI, infoPtr,
 			infoPtr->writer.readyEvent), 0, NULL);

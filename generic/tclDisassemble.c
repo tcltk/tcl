@@ -542,7 +542,7 @@ FormatInstruction(
 {
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
-    register const InstructionDesc *instDesc = &tclInstructionTable[opCode];
+    const InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
     int opnd = 0, i, j, numBytes = 1;
@@ -837,7 +837,7 @@ UpdateStringOfInstName(
     if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        sprintf(dst, "inst_%" TCL_Z_MODIFIER "d", inst);
+        sprintf(dst, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
@@ -863,8 +863,8 @@ PrintSourceToObj(
     const char *stringPtr,	/* The string to print. */
     int maxChars)		/* Maximum number of chars to print. */
 {
-    register const char *p;
-    register int i = 0, len;
+    const char *p;
+    int i = 0, len;
     Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {

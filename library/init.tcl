@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.7a2
+package require -exact Tcl 8.7a4
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -616,7 +616,9 @@ proc auto_execok name {
     }
 
     set path "[file dirname [info nameof]];.;"
-    if {[info exists env(WINDIR)]} {
+    if {[info exists env(SystemRoot)]} {
+	set windir $env(SystemRoot)
+    } elseif {[info exists env(WINDIR)]} {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {

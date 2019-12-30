@@ -64,7 +64,7 @@ TclpDlopen(
     int flags)
 {
     HINSTANCE hInstance = NULL;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
 
@@ -76,7 +76,7 @@ TclpDlopen(
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
     if (nativeName != NULL) {
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
     }
     if (hInstance == NULL) {
@@ -95,8 +95,9 @@ TclpDlopen(
         firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
-	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	Tcl_DStringInit(&ds);
+	nativeName = Tcl_UtfToWCharDString(Tcl_GetString(pathPtr), -1, &ds);
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
     }

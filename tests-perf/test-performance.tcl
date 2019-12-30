@@ -51,13 +51,13 @@ proc _test_out_total {} {
 
   set mintm 0x7fffffff
   set maxtm 0
-  set nett 0
+  set nettm 0
   set wtm 0
   set wcnt 0
   set i 0
   foreach tm $_(itm) {
     if {[llength $tm] > 6} {
-      set nett [expr {$nett + [lindex $tm 6]}]
+      set nettm [expr {$nettm + [lindex $tm 6]}]
     }
     set wtm [expr {$wtm + [lindex $tm 0]}]
     set wcnt [expr {$wcnt + [lindex $tm 2]}]
@@ -69,15 +69,15 @@ proc _test_out_total {} {
 
   puts [string repeat ** 40]
   set s [format "%d cases in %.2f sec." $tcnt [expr {([clock milliseconds] - $_(starttime)) / 1000.0}]]
-  if {$nett > 0} {
-    append s [format " (%.2f nett-sec.)" [expr {$nett / 1000.0}]]
+  if {$nettm > 0} {
+    append s [format " (%.2f net-sec.)" [expr {$nettm / 1000.0}]]
   }
   puts "Total $s:"
   lset _(m) 0 [format %.6f $wtm]
   lset _(m) 2 $wcnt
-  lset _(m) 4 [format %.3f [expr {$wcnt / (($nett ? $nett : ($tcnt * [lindex $_(reptime) 0])) / 1000.0)}]]
+  lset _(m) 4 [format %.3f [expr {$wcnt / (($nettm ? $nettm : ($tcnt * [lindex $_(reptime) 0])) / 1000.0)}]]
   if {[llength $_(m)] > 6} {
-    lset _(m) 6 [format %.3f $nett]
+    lset _(m) 6 [format %.3f $nettm]
   }
   puts $_(m)
   puts "Average:"
@@ -127,15 +127,23 @@ proc _adjust_maxcount {reptime maxcount} {
 proc _test_run {args} {
   upvar _ _
   # parse args:
-  array set _ [set _opts {-no-result 0 -uplevel 0}]
+  array set _ {-no-result 0 -uplevel 0 -convert-result {}}
   while {[llength $args] > 2} {
-    if {[set o [lindex $args 0]] ni $_opts || $_($o)} {
+    if {![info exists _([set o [lindex $args 0]])]} {
       break
     }
-    set _($o) 1
-    set args [lrange $args 1 end]
+    if {[string is boolean -strict $_($o)]} {
+      set _($o) [expr {! $_($o)}]
+      set args [lrange $args 1 end]
+    } else {
+      if {[llength $args] <= 2} {
+        return -code error "value expected for option $o"
+      }
+      set _($o) [lindex $args 1]
+      set args [lrange $args 2 end]
+    }
   }
-  unset -nocomplain _opts o
+  unset -nocomplain o
   if {[llength $args] < 2 || [llength $args] > 3} {
     return -code error "wrong # args: should be \"[lindex [info level [info level]] 0] ?-no-result? reptime lst ?outcmd?\""
   }
@@ -173,7 +181,8 @@ proc _test_run {args} {
     # if output result (and not once):
     if {!$_(-no-result)} {
       set _(r) [if 1 $_(c)]
-      if {$_(outcmd) ne {}} {{*}$_(outcmd) $_(r)}
+      if {$_(-convert-result) ne ""} { set _(r) [if 1 $_(-convert-result)] }
+      {*}$_(outcmd) $_(r)
       if {[llength $_(ittime)] > 1} { # decrement max-count
         lset _(ittime) 1 [expr {[lindex $_(ittime) 1] - 1}]
       }
