@@ -4,7 +4,7 @@
 # 	that the code can be definitely run even in safe interpreters; TclOO's
 # 	core setup is safe.
 #
-# Copyright (c) 2012-2018 Donal K. Fellows
+# Copyright (c) 2012-2019 Donal K. Fellows
 # Copyright (c) 2013 Andreas Kupries
 # Copyright (c) 2017 Gerald Lester
 #
@@ -626,10 +626,17 @@
 
 	proc ReadOne {object my propertyName} {
 	    set props [info object properties $object -all -readable]
-	    set prop [prefix match -message "property" -error [list\
-		    -level 2 -errorcode [list \
-			TCL LOOKUP INDEX property $propertyName]] \
-			  $props $propertyName]
+	    try {
+		set prop [prefix match -message "property" $props $propertyName]
+	    } on error {msg} {
+		catch {
+		    set wps [info object properties $object -all -writable]
+		    set wprop [prefix match $wps $propertyName]
+		    set msg "property \"$wprop\" is write only"
+		}
+		return -code error -level 2 -errorcode [list \
+			TCL LOOKUP INDEX property $propertyName] $msg
+	    }
 	    try {
 		set value [$my <ReadProp$prop>]
 	    } on error {msg opt} {
@@ -659,10 +666,17 @@
 	proc WriteMany {object my setterMap} {
 	    set props [info object properties $object -all -writable]
 	    foreach {prop value} $setterMap {
-		set prop [prefix match -message "property" -error [list\
-		    -level 2 -errorcode [list \
-			TCL LOOKUP INDEX property $prop]] \
-			      $props $prop]
+		try {
+		    set prop [prefix match -message "property" $props $prop]
+		} on error {msg} {
+		    catch {
+			set rps [info object properties $object -all -readable]
+			set rprop [prefix match $rps $prop]
+			set msg "property \"$rprop\" is read only"
+		    }
+		    return -code error -level 2 -errorcode [list \
+			    TCL LOOKUP INDEX property $prop] $msg
+		}
 		try {
 		    $my <WriteProp$prop> $value
 		} on error {msg opt} {

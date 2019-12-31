@@ -5773,7 +5773,7 @@ test oo-45.7 {TIP 558: properties: configurable class system} -setup {
     list [p configure -y ok] [catch {p configure -y} msg] $msg
 } -cleanup {
     parent destroy
-} -result {{} 1 {bad property "-y": must be -x}}
+} -result {{} 1 {property "-y" is write only}}
 test oo-45.8 {TIP 558: properties: configurable class system} -setup {
     oo::class create parent
     unset -nocomplain msg
@@ -5790,7 +5790,7 @@ test oo-45.8 {TIP 558: properties: configurable class system} -setup {
     list [p configure] [p configure -y] [catch {p configure -y foo} msg] $msg
 } -cleanup {
     parent destroy
-} -result {{-x 0 -y 123} 123 1 {bad property "-y": must be -x}}
+} -result {{-x 0 -y 123} 123 1 {property "-y" is read only}}
 
 test oo-46.1 {ITP 558: properties: declaration semantics} -setup {
     oo::class create parent
@@ -5946,17 +5946,18 @@ test oo-46.11 {TIP 558: properties: declaration semantics} -setup {
 	variable xy
 	property x -kind readable -get {return $xy}
 	property x -kind writable -set {set xy $value}
-	property y
     }
     Point create pt
     list [catch {
 	pt configure -x ok
     } msg] $msg [catch {
 	pt configure -x
+    } msg] $msg [catch {
+	pt configure -y 1
     } msg] $msg
 } -cleanup {
     parent destroy
-} -result {0 {} 1 {bad property "-x": must be -y}}
+} -result {0 {} 1 {property "-x" is write only} 1 {bad property "-y": must be -x}}
 test oo-46.12 {TIP 558: properties: declaration semantics} -setup {
     oo::class create parent
 } -body {
