@@ -492,7 +492,7 @@ be discovered with \fBinfo class forward\fR.
 This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
 .TP
-\fBinfo class property\fI class\fR ?\fIoptions...\fR
+\fBinfo class properties\fI class\fR ?\fIoptions...\fR
 .VS "TIP 558"
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
@@ -704,7 +704,7 @@ object named \fIobject\fR.
 This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
 .TP
-\fBinfo object property\fI object\fR ?\fIoptions...\fR
+\fBinfo object properties\fI object\fR ?\fIoptions...\fR
 .VS "TIP 558"
 This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are

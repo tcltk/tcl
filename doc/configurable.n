@@ -179,25 +179,25 @@ These slots, and their intended semantics, are:
 .
 The set of properties of a class (not including those from its superclasses)
 that may be read from when configuring an instance of the class. This slot can
-also be read with the \fBinfo class property\fR command.
+also be read with the \fBinfo class properties\fR command.
 .TP
 \fBoo::configuresupport::writableproperties\fR
 .
 The set of properties of a class (not including those from its superclasses)
 that may be written to when configuring an instance of the class. This slot
-can also be read with the \fBinfo class property\fR command.
+can also be read with the \fBinfo class properties\fR command.
 .TP
 \fBoo::configuresupport::objreadableproperties\fR
 .
 The set of properties of an object instance (not including those from its
 classes) that may be read from when configuring the object. This slot can
-also be read with the \fBinfo object property\fR command.
+also be read with the \fBinfo object properties\fR command.
 .TP
 \fBoo::configuresupport::objwritableproperties\fR
 .
 The set of properties of an object instance (not including those from its
 classes) that may be written to when configuring the object. This slot can
-also be read with the \fBinfo object property\fR command.
+also be read with the \fBinfo object properties\fR command.
 .PP
 Note that though these are slots, they are \fInot\fR in the standard
 \fBoo::define\fR or \fBoo::objdefine\fR namespaces; in order to use them
@@ -207,7 +207,7 @@ system, and not directly used by normal user code.
 .SS "IMPLEMENTATION NOTE"
 .PP
 The implementation of the \fBconfigure\fR method uses
-\fBinfo object property\fR with the \fB\-all\fR option to discover what
+\fBinfo object properties\fR with the \fB\-all\fR option to discover what
 properties it may manipulate.
 .SH EXAMPLES
 .PP

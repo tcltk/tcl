@@ -528,32 +528,24 @@
 		}
 
 		# Install the option
+		set reader <ReadProp$realprop>
+		set writer <WriteProp$realprop>
 		switch $kind {
 		    readable {
-			uplevel 2 [list \
-				$readslot -append $realprop]
-			uplevel 2 [list \
-				$writeslot -remove $realprop]
-			uplevel 2 [list \
-				method <ReadProp$realprop> {} $getter]
+			uplevel 2 [list $readslot -append $realprop]
+			uplevel 2 [list $writeslot -remove $realprop]
+			uplevel 2 [list method $reader -unexport {} $getter]
 		    }
 		    writable {
-			uplevel 2 [list \
-				$readslot -remove $realprop]
-			uplevel 2 [list \
-				$writeslot -append $realprop]
-			uplevel 2 [list \
-				method <WriteProp$realprop> {value} $setter]
+			uplevel 2 [list $readslot -remove $realprop]
+			uplevel 2 [list $writeslot -append $realprop]
+			uplevel 2 [list method $writer -unexport {value} $setter]
 		    }
 		    readwrite {
-			uplevel 2 [list \
-				$readslot -append $realprop]
-			uplevel 2 [list \
-				$writeslot -append $realprop]
-			uplevel 2 [list \
-				method <ReadProp$realprop> {} $getter]
-			uplevel 2 [list \
-				method <WriteProp$realprop> {value} $setter]
+			uplevel 2 [list $readslot -append $realprop]
+			uplevel 2 [list $writeslot -append $realprop]
+			uplevel 2 [list method $reader -unexport {} $getter]
+			uplevel 2 [list method $writer -unexport {value} $setter]
 		    }
 		}
 	    }
@@ -575,6 +567,8 @@
 		    ::oo::configuresupport::readableproperties \
 		    ::oo::configuresupport::writableproperties {*}$args
 	    }
+	    # Plural alias just in case; deliberately NOT documented!
+	    ::proc properties args {::tailcall property {*}$args}
 	    ::namespace path ::oo::define
 	    ::namespace export property
 	}
@@ -585,6 +579,8 @@
 		    ::oo::configuresupport::objreadableproperties \
 		    ::oo::configuresupport::objwritableproperties {*}$args
 	    }
+	    # Plural alias just in case; deliberately NOT documented!
+	    ::proc properties args {::tailcall property {*}$args}
 	    ::namespace path ::oo::objdefine
 	    ::namespace export property
 	}
@@ -599,7 +595,7 @@
 
 	proc ReadAll {object my} {
 	    set result {}
-	    foreach prop [info object property $object -all -readable] {
+	    foreach prop [info object properties $object -all -readable] {
 		try {
 		    dict set result $prop [$my <ReadProp$prop>]
 		} on error {msg opt} {
@@ -629,7 +625,7 @@
 	# ------------------------------------------------------------------
 
 	proc ReadOne {object my propertyName} {
-	    set props [info object property $object -all -readable]
+	    set props [info object properties $object -all -readable]
 	    set prop [prefix match -message "property" -error [list\
 		    -level 2 -errorcode [list \
 			TCL LOOKUP INDEX property $propertyName]] \
@@ -661,7 +657,7 @@
 	# ------------------------------------------------------------------
 
 	proc WriteMany {object my setterMap} {
-	    set props [info object property $object -all -writable]
+	    set props [info object properties $object -all -writable]
 	    foreach {prop value} $setterMap {
 		set prop [prefix match -message "property" -error [list\
 		    -level 2 -errorcode [list \

@@ -64,7 +64,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
     {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
-    {"property",   InfoObjectPropCmd,	    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+    {"properties", InfoObjectPropCmd,	    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -86,7 +86,7 @@ static const EnsembleImplMap infoClassCmds[] = {
     {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"property",     InfoClassPropCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+    {"properties",   InfoClassPropCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
@@ -1723,8 +1723,8 @@ InfoClassCallCmd(
  *
  * InfoClassPropCmd, InfoObjectPropCmd --
  *
- *	Implements [info class property $clsName ?$option...?] and
- *	[info object property $objName ?$option...?]
+ *	Implements [info class properties $clsName ?$option...?] and
+ *	[info object properties $objName ?$option...?]
  *
  * ----------------------------------------------------------------------
  */
@@ -1867,7 +1867,9 @@ InfoObjectPropCmd(
  * ----------------------------------------------------------------------
  *
  * SortPropList --
- *	Sort a list of names of properties. Simple support function.
+ *	Sort a list of names of properties. Simple support function. Assumes
+ *	that the list Tcl_Obj is unshared and doesn't have a string
+ *	representation.
  *
  * ----------------------------------------------------------------------
  */
