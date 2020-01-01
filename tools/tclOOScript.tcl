@@ -483,12 +483,22 @@
 		if {[string match "-*" $prop]} {
 		    return -code error -level 2 \
 			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\"; must not begin with -"
+			"bad property name \"$prop\": must not begin with -"
 		}
 		if {$prop ne [list $prop]} {
 		    return -code error -level 2 \
 			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\"; must be a simple word"
+			"bad property name \"$prop\": must be a simple word"
+		}
+		if {[string first "::" $prop] != -1} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must not contain namespace separators"
+		}
+		if {[string match {*[()]*} $prop]} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must not contain parentheses"
 		}
 		set realprop [string cat "-" $prop]
 		set getter [format {::set [my varname %s]} $prop]
