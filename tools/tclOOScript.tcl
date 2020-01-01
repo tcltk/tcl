@@ -485,6 +485,11 @@
 			-errorcode {TCLOO PROPERTY_FORMAT} \
 			"bad property name \"$prop\"; must not begin with -"
 		}
+		if {$prop ne [list $prop]} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\"; must be a simple word"
+		}
 		set realprop [string cat "-" $prop]
 		set getter [format {::set [my varname %s]} $prop]
 		set setter [format {::set [my varname %s] $value} $prop]
