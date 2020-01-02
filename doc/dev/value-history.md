@@ -22,9 +22,7 @@ arguments used by C programs to receive their command line.
 
 Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 
-~~~
-	int (Tcl_CmdProc) (ClientData, interp, int argc, char *argv[])
-~~~
+>	int **Tcl_CmdProc** (ClientData, interp, int _argc_, char *_argv_[])
 
 
 
