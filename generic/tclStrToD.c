@@ -18,6 +18,18 @@
 #include <math.h>
 
 /*
+ * Older MSVC has no copysign function, but it's available at least since
+ * MSVC++ 12.0 (that is Visual Studio 2013).
+ */
+
+#if (defined(_MSC_VER) && (_MSC_VER < 1800))
+inline static double
+copysign(double a, double b) {
+    return _copysign(a, b);
+}
+#endif
+
+/*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
  * uniquely determined by radix and by the widths of significand and exponent.
