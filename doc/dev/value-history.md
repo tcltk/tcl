@@ -18,7 +18,7 @@ The inspirations for the orignal Tcl string values were clearly the
 in-memory representations of C string literal values, and the 
 arguments used by C programs to receive their command line.
 
->	int **main**(int *argc*, char _ **argv_)
+>	int **main**(int *argc*, char **_argv_)
 
 Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 
