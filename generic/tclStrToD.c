@@ -18,6 +18,18 @@
 #include <math.h>
 
 /*
+ * Older MSVC has no copysign function, but it's available at least since
+ * MSVC++ 12.0 (that is Visual Studio 2013).
+ */
+
+#if (defined(_MSC_VER) && (_MSC_VER < 1800))
+inline static double
+copysign(double a, double b) {
+    return _copysign(a, b);
+}
+#endif
+
+/*
  * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
  * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
  */
