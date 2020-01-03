@@ -131,9 +131,7 @@ TCLAPI int		TclInExit(void);
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
 /* Slot 49 is reserved */
-/* 50 */
-TCLAPI void		TclInitCompiledLocals(Tcl_Interp *interp,
-				CallFrame *framePtr, Namespace *nsPtr);
+/* Slot 50 is reserved */
 /* 51 */
 TCLAPI int		TclInterpInit(Tcl_Interp *interp);
 /* Slot 52 is reserved */
@@ -627,7 +625,7 @@ typedef struct TclIntStubs {
     void (*reserved47)(void);
     void (*reserved48)(void);
     void (*reserved49)(void);
-    void (*tclInitCompiledLocals) (Tcl_Interp *interp, CallFrame *framePtr, Namespace *nsPtr); /* 50 */
+    void (*reserved50)(void);
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
     int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
@@ -926,8 +924,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
 /* Slot 49 is reserved */
-#define TclInitCompiledLocals \
-	(tclIntStubsPtr->tclInitCompiledLocals) /* 50 */
+/* Slot 50 is reserved */
 #define TclInterpInit \
 	(tclIntStubsPtr->tclInterpInit) /* 51 */
 /* Slot 52 is reserved */
