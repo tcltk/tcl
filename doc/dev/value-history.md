@@ -35,12 +35,13 @@ with value 0 (aka **NUL**) is not part of the string value, but marks its end.
 
 From this implementation, we see that a Tcl string in release 7.6 is a
 sequence of zero or more __char__ values from the range 1..255.
-In the C type system,
-each string element is a __char__. It is also useful to think of each string
+In the C type system, each string element is a __char__.
+It is also useful to think of each string
 element as a byte. The type name **char** suggests "character", and written
 works about Tcl from that time probably refer to a Tcl string as
 a "sequence of characters".  In later developments the terms "byte"
-and "character" have diverged in meaning.
+and "character" have diverged in meaning. There is no defined limit on the
+length of this string representation; the only limit is available memory.
 
 There is a one-to-one connection between stored memory patterns and the
 abstract notion of valid Tcl strings.  The Tcl string "cat" is always
@@ -60,12 +61,12 @@ the bytes that are passed to it as arguments (or "words"):
 
 In practice though, it has been expected that where interpretation of a
 string element value as a member of a charset matters, the ASCII encoding
-is presumed for the bytes values 1..127. This is in agreement with the
-representation of C string literals in all compilers, and it anchors the
+is presumed for the byte values 1..127. This is in agreement with the
+representation of C string literals in all C compilers, and it anchors the
 character definitions that are important to the syntax of Tcl itself. For
 instance, the newline character that terminates a command in a script is
 the byte value 0x0A . No command purporting to accept and evaluate
-script values as argument would be free to choose something else.  The
+an argument as a Tcl script would be free to choose something else.  The
 handling of byte values 128..255 showed more variation among commands that
 took any particular note of them.  Tcl provided built-in commands
 __format__ and __scan__, as well as the backslash encoding forms of
