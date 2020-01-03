@@ -73,7 +73,11 @@ __format__ and __scan__, as well as the backslash encoding forms of
 __\\xHH__ and __\\ooo__ to manage the transformation between string element
 values and the corresponding numeric values.
 
+Results
 
+Merits
+
+Binary
 
 
 
