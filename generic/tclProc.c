@@ -1099,54 +1099,6 @@ ProcWrongNumArgs(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitCompiledLocals --
- *
- *	This routine is invoked in order to initialize the compiled locals
- *	table for a new call frame.
- *
- *	DEPRECATED: functionality has been inlined elsewhere; this function
- *	remains to insure binary compatibility with Itcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	May invoke various name resolvers in order to determine which
- *	variables are being referenced at runtime.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitCompiledLocals(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    CallFrame *framePtr,	/* Call frame to initialize. */
-    Namespace *nsPtr)		/* Pointer to current namespace. */
-{
-    Var *varPtr = framePtr->compiledLocals;
-    Tcl_Obj *bodyPtr;
-    ByteCode *codePtr;
-
-    bodyPtr = framePtr->procPtr->bodyPtr;
-    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
-    if (codePtr == NULL) {
-	Tcl_Panic("body object for proc attached to frame is not a byte code type");
-    }
-
-    if (framePtr->numCompiledLocals) {
-	if (!codePtr->localCachePtr) {
-	    InitLocalCache(framePtr->procPtr) ;
-	}
-	framePtr->localCachePtr = codePtr->localCachePtr;
-	framePtr->localCachePtr->refCount++;
-    }
-
-    InitResolvedLocals(interp, codePtr, varPtr, nsPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * InitResolvedLocals --
  *
  *	This routine is invoked in order to initialize the compiled locals
