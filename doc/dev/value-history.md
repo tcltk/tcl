@@ -33,8 +33,9 @@ with (unsigned) **char** value between 1 and 255 represent an element of the
 string, stored at the correponding index of that string. The first element
 with value 0 (aka **NUL**) is not part of the string value, but marks its end.
 
-From this implementation, we see that Tcl strings in release 7.6 are sequences
-of zero or more __char__ values from the range 1..255. In the C type system,
+From this implementation, we see that a Tcl string in release 7.6 is a
+sequence of zero or more __char__ values from the range 1..255.
+In the C type system,
 each string element is a __char__. It is also useful to think of each string
 element as a byte. The type name **char** suggests "character", and written
 works about Tcl from that time probably refer to a Tcl string as
