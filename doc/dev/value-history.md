@@ -10,7 +10,7 @@ that precise definition has shifted over the years. This document is meant
 to tackle that task, based on a review of the changing interfaces and
 implementation in the Tcl source code itself.
 
-## Prehistoric Tcl (7.6)
+## Prehistoric Tcl (7.6 and earlier)
 
 **NUL** *terminated array of* **char** *(C string)*
 
@@ -39,14 +39,14 @@ In the C type system,
 each string element is a __char__. It is also useful to think of each string
 element as a byte. The type name **char** suggests "character", and written
 works about Tcl from that time probably refer to a Tcl string as
-a "sequence of characters".  In later developments the term "byte"
+a "sequence of characters".  In later developments the terms "byte"
 and "character" have diverged in meaning.
 
 There is a one-to-one connection between stored memory patterns and the
 abstract notion of valid Tcl strings.  The Tcl string "cat" is always
 represented by a 4-byte chunk of memory storing (0x63, 0x61, 0x74, 0x00).
 Any different bytes in memory represent different strings. This means
-byte comparisons are string comparisons and byte array length is string length.
+byte comparisons are string comparisons and byte array size is string length.
 The byte values themselves are what Tcl commands operate on. From early on,
 the documentation has claimed complete freedom for each command to  interpret
 the bytes that are passed to it as arguments (or "words"):
@@ -58,7 +58,19 @@ the bytes that are passed to it as arguments (or "words"):
 >	variable name, list, or Tcl script.  Different commands interpret
 >	their words differently.
 
-In practice, though...
+In practice though, it has been expected that where interpretation of a
+string element value as a member of a charset matters, the ASCII encoding
+is presumed for the bytes values 1..127. This is in agreement with the
+representation of C string literals in all compilers, and it anchors the
+character definitions that are important to the syntax of Tcl itself. For
+instance, the newline character that terminates a command in a script is
+the byte value 0x0A . No command purporting to accept and evaluate
+script values as argument would be free to choose something else.  The
+handling of byte values 128..255 showed more variation among commands that
+took any particular note of them.  Tcl provided built-in commands
+__format__ and __scan__, as well as the backslash encoding forms of
+__\\xHH__ and __\\ooo__ to manage the transformation between string element
+values and the corresponding numeric values.
 
 
 
