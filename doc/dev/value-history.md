@@ -24,11 +24,12 @@ Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 
 >	int **Tcl_CmdProc** (ClientData, interp, int _argc_, char *_argv_[])
 
-Each argument values passed to a command arrives in the form  of a (char *).
+Each argument value _argv_[_i_] passed to a command arrives in the
+form  of a (__char__ *).
 The caller is presumed to pass a non-NULL pointer to a suitably usable
-contiguous chunk of memory, interpreted as a C array of type char. The
+contiguous chunk of memory, interpreted as a C array of type **char**. The
 contents of that array determine the value.  Each element
-with (unsigned) char value between 1 and 255 represent an element of the
+with (unsigned) **char** value between 1 and 255 represent an element of the
 string, stored at the correponding index of that string. The first element
 with value 0 (aka **NUL**) is not part of the string value, but marks its end.
 
