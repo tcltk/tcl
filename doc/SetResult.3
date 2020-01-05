@@ -155,12 +155,14 @@ call; the last argument in the list must be a NULL pointer.
 instead of taking a variable number of arguments it takes an argument list.
 .PP
 .VS 8.6
-If \fIsourceInterp\fR and \fItargetInterp\fR are the same, this is a no-op.
-Otherwise, \fBTcl_TransferResult\fR moves the result from \fIsourceInterp\fR
-to \fItargetInterp\fR, and resets the result in \fIsourceInterp\fR. It
-also moves the return options dictionary as controlled by the return code
-value \fIcode\fR in the same manner as \fBTcl_GetReturnOptions\fR.  The two
-interpreters must have been created in the same thread.
+\fBTcl_TransferResult\fR transfers interpreter state from \fIsourceInterp\fR
+to \fItargetInterp\R. The two interpreters must have been created in the
+same thread.  If \fIsourceInterp\fR and \fItargetInterp\fR are the same,
+this is a no-op.  Otherwise, \fBTcl_TransferResult\fR moves the result
+from \fIsourceInterp\fR to \fItargetInterp\fR, and resets the result
+in \fIsourceInterp\fR. It also moves the return options dictionary as
+controlled by the return code value \fIcode\fR in the same manner
+as \fBTcl_GetReturnOptions\fR.
 .VE 8.6
 .SH "DEPRECATED INTERFACES"
 .SS "OLD STRING PROCEDURES"
