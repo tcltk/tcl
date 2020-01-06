@@ -1507,7 +1507,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		# Step 4 will set the necessary variables
 		DL_OBJS=""
 		SHLIB_LD_LIBS=""
-		LDFLAGS=""
 		;;
 	    *)
 		case "$arch" in
@@ -1526,7 +1525,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
+		LDFLAGS="$LDFLAGS -Wl,-export-dynamic"
 		;;
 	    esac
 	    case "$arch" in
@@ -1576,7 +1575,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])

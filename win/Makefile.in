@@ -716,7 +716,7 @@ install-private-headers: libraries
 # tcltest, i.e.:
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
-test: test-tcl test-packages
+test: test-tcl
 
 test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
