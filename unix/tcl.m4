@@ -1851,7 +1851,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     # The trick here is that we don't want to change the value of TCL_LIBS if
     # it is already set when tclConfig.sh had been loaded by Tk.
     AS_IF([test "x${TCL_LIBS}" = x], [
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${LDFLAGS} ${MATH_LIBS}"])
+        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
 
 	# See if the compiler supports casting to a union type.

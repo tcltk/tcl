@@ -1792,7 +1792,7 @@ EXTERN int		Tcl_GetErrorLine(Tcl_Interp *interp);
 EXTERN void		Tcl_SetErrorLine(Tcl_Interp *interp, int lineNum);
 /* 607 */
 EXTERN void		Tcl_TransferResult(Tcl_Interp *sourceInterp,
-				int result, Tcl_Interp *targetInterp);
+				int code, Tcl_Interp *targetInterp);
 /* 608 */
 EXTERN int		Tcl_InterpActive(Tcl_Interp *interp);
 /* 609 */
@@ -2555,7 +2555,7 @@ typedef struct TclStubs {
     int (*tcl_ParseArgsObjv) (Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv); /* 604 */
     int (*tcl_GetErrorLine) (Tcl_Interp *interp); /* 605 */
     void (*tcl_SetErrorLine) (Tcl_Interp *interp, int lineNum); /* 606 */
-    void (*tcl_TransferResult) (Tcl_Interp *sourceInterp, int result, Tcl_Interp *targetInterp); /* 607 */
+    void (*tcl_TransferResult) (Tcl_Interp *sourceInterp, int code, Tcl_Interp *targetInterp); /* 607 */
     int (*tcl_InterpActive) (Tcl_Interp *interp); /* 608 */
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */

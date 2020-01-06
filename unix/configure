@@ -6629,7 +6629,7 @@ fi
     # it is already set when tclConfig.sh had been loaded by Tk.
     if test "x${TCL_LIBS}" = x; then :
 
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${LDFLAGS} ${MATH_LIBS}"
+        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
 fi
 
 
