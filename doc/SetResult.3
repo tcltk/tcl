@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_SetResult 3 8.6 Tcl "Tcl Library Procedures"
+.TH Tcl_SetResult 3 8.7 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -195,14 +195,9 @@ is about to replace one result value with another.
 It used to be legal for programs to
 directly read and write \fIinterp->result\fR
 to manipulate the interpreter result.  The Tcl headers no longer
-permit this access by default, and C code still doing this must
+permit this access. C code still doing this must
 be updated to use supported routines \fBTcl_GetObjResult\fR,
 \fBTcl_GetStringResult\fR, \fBTcl_SetObjResult\fR, and \fBTcl_SetResult\fR.
-As a migration aid, access can be restored with the compiler directive
-.CS
-#define USE_INTERP_RESULT
-.CE
-but this is meant only to offer life support to otherwise dead code.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
 \fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how
