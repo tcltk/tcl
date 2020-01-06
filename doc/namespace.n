@@ -788,12 +788,10 @@ name.  Note that when this option is non-empty and the
 will be exactly those words that have mappings in the dictionary.
 .TP
 \fB\-parameters\fR
-.VS 8.6
 This option gives a list of named arguments (the names being used during
 generation of error messages) that are passed by the caller of the ensemble
 between the name of the ensemble and the subcommand argument. By default, it
 is the empty list.
-.VE 8.6
 .TP
 \fB\-prefixes\fR
 .
@@ -943,7 +941,6 @@ Remove all imported commands from the current namespace:
 namespace forget {*}[namespace import]
 .CE
 .PP
-.VS 8.6
 Create an ensemble for simple working with numbers, using the
 \fB\-parameters\fR option to allow the operator to be put between the first
 and second arguments.
@@ -959,7 +956,6 @@ and second arguments.
 # In use, the ensemble works like this:
 puts [do 1 plus [do 9 minus 7]]
 .CE
-.VE 8.6
 .SH "SEE ALSO"
 interp(n), upvar(n), variable(n)
 .SH KEYWORDS
