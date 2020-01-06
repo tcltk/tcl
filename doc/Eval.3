@@ -138,7 +138,7 @@ equivalent to using the \fBTCL_EVAL_GLOBAL\fR flag (see below).
 of any length, concatenates them into a single string,
 then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
 It returns the result of the command and also modifies
-\fIinterp->result\fR in the same way as \fBTcl_Eval\fR.
+the interpreter result in the same way as \fBTcl_Eval\fR.
 The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
 of arguments.  \fBTcl_VarEval\fR is now deprecated.
 
