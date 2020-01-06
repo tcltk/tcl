@@ -601,7 +601,9 @@ tcltest-real:
 # tcltest, ie:
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
-test: tcltest@EXEEXT@
+test: test-tcl
+
+test-tcl: tcltest@EXEEXT@
 	@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest@EXEEXT@ $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
@@ -1860,6 +1862,23 @@ package-generate:
 	pkgmk -o -d . -f prototype -a `arch`
 	pkgtrans -s . $(PACKAGE).`arch` $(PACKAGE)
 	rm -rf $(PACKAGE)
+
+#--------------------------------------------------------------------------
+# The list of all the targets that do not correspond to real files. This stops
+# 'make' from getting confused when someone makes an error in a rule.
+#--------------------------------------------------------------------------
+
+.PHONY: all binaries libraries objs doc html html-tcl html-tk test runtest
+.PHONY: install install-strip install-binaries install-libraries
+.PHONY: install-headers install-private-headers install-doc
+.PHONY: clean distclean depend genstubs checkstubs checkexports checkuchar
+.PHONY: shell gdb valgrind valgrindshell dist alldist rpm
+.PHONY: tclLibObjs tcltest-real test-tcl gdb-test ro-test trace-test xttest
+.PHONY: topDirName gendate gentommath_h trace-shell checkdoc
+.PHONY: install-tzdata install-msgs
+.PHONY: packages configure-packages test-packages clean-packages
+.PHONY: dist-packages distclean-packages install-packages
+.PHONY: install-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
