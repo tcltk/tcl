@@ -154,7 +154,6 @@ what to set the interpreter's background exception handler to. See the
 \fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
 .TP
 \fBinterp\fR \fBcancel \fR?\fB\-unwind\fR? ?\fB\-\|\-\fR? ?\fIpath\fR? ?\fIresult\fR?
-.VS 8.6
 Cancels the script being evaluated in the interpreter identified by
 \fIpath\fR. Without the \fB\-unwind\fR switch the evaluation stack for
 the interpreter is unwound until an enclosing catch command is found or
@@ -167,7 +166,6 @@ switches; it may be needed if \fIpath\fR is an unusual value such
 as \fB\-safe\fR. If \fIresult\fR is present, it will be used as the
 error message string; otherwise, a default error message string will be
 used.
-.VE 8.6
 .TP
 \fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 .
