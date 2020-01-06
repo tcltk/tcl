@@ -4661,7 +4661,7 @@ if test "${with_system_libtommath+set}" = set; then :
   withval=$with_system_libtommath; libtommath_ok=${withval}
 fi
 
-if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     ac_fn_c_check_header_mongrel "$LINENO" "tommath.h" "ac_cv_header_tommath_h" "$ac_includes_default"
 if test "x$ac_cv_header_tommath_h" = xyes; then :
 
