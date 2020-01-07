@@ -736,7 +736,7 @@ InitByteCodeExecution(
 				 * instruction tracing. */
 {
 #ifdef TCL_COMPILE_DEBUG
-    if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
+    if (Tcl_LinkVar(interp, "tcl_traceExec", &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
