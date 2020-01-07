@@ -3307,48 +3307,24 @@ TclFormatInt(
 				 * formatted characters are written. */
     Tcl_WideInt n)			/* The integer to format. */
 {
-    Tcl_WideInt intVal;
-    size_t i, numFormatted, j;
-    const char *digits = "0123456789";
-
-    /*
-     * Check first whether "n" is zero.
-     */
-
-    if (n == 0) {
-	buffer[0] = '0';
-	buffer[1] = 0;
-	return 1;
-    }
-
-    /*
-     * Check whether "n" is the maximum negative value. This is -2^(m-1) for
-     * an m-bit word, and has no positive equivalent; negating it produces the
-     * same value.
-     */
-
-    intVal = -n;			/* [Bug 3390638] Workaround for*/
-    if (n == -n || intVal == n) {	/* broken compiler optimizers. */
-	return sprintf(buffer, "%" TCL_LL_MODIFIER "d", n);
-    }
+    Tcl_WideUInt intVal;
+    size_t i = 0, numFormatted, j;
+    static const char digits[] = "0123456789";
 
     /*
      * Generate the characters of the result backwards in the buffer.
      */
 
-    intVal = (n < 0? -n : n);
-    i = 0;
-    buffer[0] = '\0';
+    intVal = (n < 0 ? -(Tcl_WideUInt)n : (Tcl_WideUInt)n);
     do {
-	i++;
-	buffer[i] = digits[intVal % 10];
-	intVal = intVal/10;
+	buffer[i++] = digits[intVal % 10];
+	intVal = intVal / 10;
     } while (intVal > 0);
     if (n < 0) {
-	i++;
-	buffer[i] = '-';
+	buffer[i++] = '-';
     }
-    numFormatted = i;
+    buffer[i] = '\0';
+    numFormatted = i--;
 
     /*
      * Now reverse the characters.
