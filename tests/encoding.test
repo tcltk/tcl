@@ -722,7 +722,9 @@ test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
 test encoding-28.0 {all encodings load} -body {
 	set string hello
 	foreach name [encoding names] {
-		incr count
+		if {$name ne "unicode"} {
+		    incr count
+		}
 		encoding convertto $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
@@ -730,7 +732,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 81
+} -result 85
 
 runtests
 
