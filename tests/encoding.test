@@ -717,6 +717,21 @@ test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
 } -result "expected directory list but got \"\{not a list\""
 
 }
+
+
+test encoding-28.0 {all encodings load} -body {
+	set string hello
+	foreach name [encoding names] {
+		incr count
+		encoding convertto $name $string
+
+		# discard the cached internal representation of Tcl_Encoding
+		# Unfortunately, without this, encoding 2-1 fails.
+		llength $name
+	}
+	return $count
+} -result [expr {[info exists ::tcl_precision] ? 86 : 85}]
+
 runtests
 
 }

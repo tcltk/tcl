@@ -794,7 +794,7 @@ InitByteCodeExecution(
 				 * instruction tracing. */
 {
 #ifdef TCL_COMPILE_DEBUG
-    if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
+    if (Tcl_LinkVar(interp, "tcl_traceExec", &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
@@ -1352,6 +1352,7 @@ CopyCallback(
 {
     Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
     Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
+    (void)dummy;
     (void)dummy;
 
     if (result == TCL_OK) {
@@ -2609,6 +2610,7 @@ TEBCresume(
 	TRACE(("%u => OK\n", opnd));
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     case INST_STR_CONCAT1:
 
@@ -2732,6 +2734,7 @@ TEBCresume(
 	Tcl_DecrRefCount(objPtr);
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     case INST_EXPR_STK: {
 	ByteCode *newCodePtr;
@@ -4030,6 +4033,7 @@ TEBCresume(
 	}
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     /*
      *	   End of INST_UNSET instructions.
@@ -4247,6 +4251,7 @@ TEBCresume(
 	TRACE_APPEND(("link made\n"));
 	NEXT_INST_F(5, 1, 0);
     }
+    break;
 
     /*
      *	   End of variable linking instructions.
@@ -4320,6 +4325,7 @@ TEBCresume(
 #endif
 	NEXT_INST_F(jmpOffset[b], 1, 0);
     }
+    break;
 
     case INST_JUMP_TABLE: {
 	Tcl_HashEntry *hPtr;
@@ -4345,6 +4351,7 @@ TEBCresume(
 	    NEXT_INST_F(5, 1, 0);
 	}
     }
+    break;
 
     /*
      * These two instructions are now redundant: the complete logic of the LOR
@@ -4389,6 +4396,7 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
 	NEXT_INST_F(1, 2, 1);
     }
+    break;
 
     /*
      * -----------------------------------------------------------------
@@ -4407,6 +4415,7 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     }
+    break;
     case INST_COROUTINE_NAME: {
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
@@ -4418,6 +4427,7 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     }
+    break;
     case INST_INFO_LEVEL_NUM:
 	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
@@ -5653,6 +5663,7 @@ TEBCresume(
 
 	JUMP_PEEPHOLE_F(match, 2, 2);
     }
+    break;
 
     /*
      *	   End of string-related instructions.
@@ -5843,6 +5854,7 @@ TEBCresume(
 		    wResult = w1 - w2*wResult;
 		    goto wideResultOfArithmetic;
 		}
+		break;
 
 	    case INST_RSHIFT:
 		if (w2 < 0) {
@@ -5891,6 +5903,7 @@ TEBCresume(
 		    wResult = w1 >> ((int) w2);
 		    goto wideResultOfArithmetic;
 		}
+		break;
 
 	    case INST_LSHIFT:
 		if (w2 < 0) {
@@ -6327,6 +6340,7 @@ TEBCresume(
 	TRACE_APPEND(("numeric, same Tcl_Obj\n"));
 	NEXT_INST_F(1, 0, 0);
     }
+    break;
 
     /*
      *	   End of numeric operator instructions.
@@ -6724,6 +6738,7 @@ TEBCresume(
 	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
 	NEXT_INST_F(1, 1, 0);
     }
+    break;
 
     case INST_BEGIN_CATCH4:
 	/*
@@ -7433,6 +7448,7 @@ TEBCresume(
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(5, 2, 0);
     }
+    break;
 
     /*
      *	   End of dictionary-related instructions.
@@ -7470,6 +7486,7 @@ TEBCresume(
 	    TRACE_WITH_OBJ(("=> "), objResultPtr);
 	    NEXT_INST_F(2, 0, 1);
 	}
+	break;
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);

@@ -99,6 +99,10 @@ extern "C" {
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
     __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const void *, void *);
     __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const void *, int);
     __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
@@ -106,12 +110,15 @@ extern "C" {
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
-    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int IsDebuggerPresent(void);
+    __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
 #ifndef __x86_64__
 #   define environ __cygwin_environ
