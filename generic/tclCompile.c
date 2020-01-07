@@ -779,7 +779,7 @@ TclSetByteCodeFromAny(
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
 	if (Tcl_LinkVar(interp, "tcl_traceCompile",
-		(char *) &tclTraceCompile, TCL_LINK_INT) != TCL_OK) {
+		&tclTraceCompile, TCL_LINK_INT) != TCL_OK) {
 	    Tcl_Panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
 	}
 	traceInitialized = 1;
