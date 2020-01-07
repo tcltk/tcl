@@ -35452,7 +35452,7 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
     # 60 msecs seems to be the max time slice under Windows 95/98
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
-	  "ok" : 
+	  "ok" :
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
@@ -35468,7 +35468,7 @@ test clock-33.5a {clock tests, millisecond timing test} {
     # 60 msecs seems to be the max time slice under Windows 95/98
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
-	  "ok" : 
+	  "ok" :
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
