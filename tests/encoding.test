@@ -728,7 +728,7 @@ test encoding-28.0 {all encodings load} -body {
 		encoding convertto $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
-		# Unfortunately, without this, encoding 2-1 fails.  
+		# Unfortunately, without this, encoding 2-1 fails.
 		llength $name
 	}
 	return $count

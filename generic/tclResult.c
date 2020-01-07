@@ -1176,12 +1176,12 @@ Tcl_TransferResult(
 				 * should be moved to the target interp.
 				 * After moving result, this interp's result
 				 * is reset. */
-    int code,			/* The return code value active in 
+    int code,			/* The return code value active in
 				 * sourceInterp. Controls how the return options
 				 * dictionary is retrieved from sourceInterp,
 				 * same as in Tcl_GetReturnOptions, to then be
 				 * transferred to targetInterp. */
-    Tcl_Interp *targetInterp)	/* Interp where result and return options 
+    Tcl_Interp *targetInterp)	/* Interp where result and return options
 				 * should be stored. If source and target are
 				 * the same, nothing is done. */
 {
