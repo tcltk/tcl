@@ -36,13 +36,11 @@ int
 int
 \fBTcl_SetEnsembleMappingDict\fR(\fIinterp, token, dictObj\fR)
 .sp
-.VS 8.6
 int
 \fBTcl_GetEnsembleParameterList\fR(\fIinterp, token, listObjPtr\fR)
 .sp
 int
 \fBTcl_SetEnsembleParameterList\fR(\fIinterp, token, listObj\fR)
-.VE 8.6
 .sp
 int
 \fBTcl_GetEnsembleSubcommandList\fR(\fIinterp, token, listObjPtr\fR)
@@ -163,7 +161,6 @@ All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
 must be fully qualified.
 .TP
 \fBformal pre-subcommand parameter list\fR (read-write)
-.VS 8.6
 A list of formal parameter names (the names only being used when generating
 error messages) that come at invocation of the ensemble between the name of
 the ensemble and the subcommand argument. NULL (the default) is equivalent to
@@ -174,7 +171,6 @@ respectively. The result of both of those functions is a Tcl result code
 ensemble) and the
 dictionary obtained from \fBTcl_GetEnsembleParameterList\fR should always be
 treated as immutable even if it is unshared.
-.VE 8.6
 .TP
 \fBsubcommand list\fR (read-write)
 .
