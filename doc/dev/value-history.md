@@ -14,7 +14,7 @@ implementation in the Tcl source code itself.
 
 **NUL** *terminated array of* **char** *(C string)*
 
-The inspirations for the orignal Tcl string values were clearly the
+The inspirations for the original Tcl string values were clearly the
 in-memory representations of C string literal values, and the 
 arguments used by C programs to receive their command line.
 
