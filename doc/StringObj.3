@@ -249,7 +249,9 @@ must be a NULL pointer to indicate the end of the list.
 .PP
 \fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
 except that instead of taking a variable number of arguments it takes an
-argument list.
+argument list.  Interfaces using argument lists have been found to be
+nonportable in practice. This function is deprecated and will be removed
+in Tcl 9.0.
 .PP
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.
