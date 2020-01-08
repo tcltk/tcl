@@ -15,18 +15,11 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include <float.h>
 #include <math.h>
 
-/*
- * Older MSVC has no copysign function, but it's available at least since
- * MSVC++ 12.0 (that is Visual Studio 2013).
- */
-
-#if (defined(_MSC_VER) && (_MSC_VER < 1800))
-inline static double
-copysign(double a, double b) {
-    return _copysign(a, b);
-}
+#ifdef _WIN32
+#define copysign _copysign
 #endif
 
 /*
@@ -1308,7 +1301,7 @@ TclParseNumber(
 	case DECIMAL:
 	    significandOverflow = AccumulateDecimalDigit(0, numTrailZeros-1,
 		    &significandWide, &significandBig, significandOverflow);
-	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
+	    if (!significandOverflow && (significandWide > MOST_BITS+signum)) {
 		significandOverflow = 1;
 		mp_init_u64(&significandBig, significandWide);
 	    }
@@ -1350,9 +1343,9 @@ TclParseNumber(
 
 	    objPtr->typePtr = &tclDoubleType;
 	    if (exponentSignum) {
-		/* 
+		/*
 		 * At this point exponent>=0, so the following calculation
-		 * cannot underflow. 
+		 * cannot underflow.
 		 */
 		exponent = -exponent;
 	    }
@@ -1378,7 +1371,7 @@ TclParseNumber(
 		}
 	    }
 
-	    /* 
+	    /*
 	     * The desired number is now significandWide * 10**exponent
 	     * or significandBig * 10**exponent, depending on whether
 	     * the significand has overflowed a wide int.
@@ -1405,7 +1398,7 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
-	    objPtr->internalRep.doubleValue = MakeNaN(signum,significandWide);
+	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
 #endif
@@ -1901,7 +1894,7 @@ RefineApproximation(
 
     /*
      * Compute twoMv as 2*M*v, where v is the approximate value.
-     * This is done by bit-whacking to calculate 2**(M2+1)*significand, 
+     * This is done by bit-whacking to calculate 2**(M2+1)*significand,
      * and then multiplying by 5**M5.
      */
 
@@ -1936,7 +1929,7 @@ RefineApproximation(
     }
     mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
 
-    /* 
+    /*
      * Now let twoMd = twoMd - twoMv, the difference between the exact and
      * approximate values.
      */
@@ -2004,7 +1997,7 @@ RefineApproximation(
 	}
     }
 
-    /* 
+    /*
      * Reduce the numerator and denominator of the corrector term so that
      * they will fit in the floating point precision.
      */
@@ -4421,7 +4414,8 @@ TclInitDoubleConversion(void)
 
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
-    pow10_wide = ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+    pow10_wide = (Tcl_WideUInt *)
+	    ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
@@ -4749,7 +4743,7 @@ TclCeil(
 		mp_int d;
 		mp_init(&d);
 		mp_div_2d(a, -shift, &b, &d);
-		exact = d.used == 0;
+		exact = mp_iszero(&d);
 		mp_clear(&d);
 	    } else {
 		mp_copy(a, &b);

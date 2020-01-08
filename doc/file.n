@@ -465,7 +465,6 @@ between platforms:
 .TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
 '\" TIP #210
-.VS 8.6
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
@@ -480,7 +479,6 @@ Note that temporary files are \fIonly\fR ever created on the native
 filesystem. As such, they can be relied upon to be used with operating-system
 native APIs and external programs that require a filename.
 .RE
-.VE 8.6
 .TP
 \fBfile type \fIname\fR
 .

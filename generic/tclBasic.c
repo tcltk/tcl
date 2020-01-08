@@ -1866,8 +1866,10 @@ DeleteInterpProc(
      * could have transferred ownership of the result string to Tcl.
      */
 
+#ifndef TCL_NO_DEPRECATED
     Tcl_FreeResult(interp);
     iPtr->result = NULL;
+#endif
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);

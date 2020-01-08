@@ -794,12 +794,14 @@ InitByteCodeExecution(
 				 * instruction tracing. */
 {
 #ifdef TCL_COMPILE_DEBUG
-    if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
+    if (Tcl_LinkVar(interp, "tcl_traceExec", &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
 #endif
-#ifdef TCL_COMPILE_STATS
+#ifndef TCL_COMPILE_STATS
+    (void)interp;
+#else
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
@@ -1345,11 +1347,12 @@ Tcl_ExprObj(
 static int
 CopyCallback(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     Tcl_Obj **resultPtrPtr = data[0];
     Tcl_Obj *resultPtr = data[1];
+    (void)dummy;
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1543,6 +1546,8 @@ DupExprCodeInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
+    (void)srcPtr;
+    (void)copyPtr;
     return;
 }
 
@@ -2604,6 +2609,7 @@ TEBCresume(
 	TRACE(("%u => OK\n", opnd));
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     case INST_STR_CONCAT1:
 
@@ -2727,6 +2733,7 @@ TEBCresume(
 	Tcl_DecrRefCount(objPtr);
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     case INST_EXPR_STK: {
 	ByteCode *newCodePtr;
@@ -4025,6 +4032,7 @@ TEBCresume(
 	}
 	NEXT_INST_F(5, 0, 0);
     }
+    break;
 
     /*
      *	   End of INST_UNSET instructions.
@@ -4242,6 +4250,7 @@ TEBCresume(
 	TRACE_APPEND(("link made\n"));
 	NEXT_INST_F(5, 1, 0);
     }
+    break;
 
     /*
      *	   End of variable linking instructions.
@@ -4315,6 +4324,7 @@ TEBCresume(
 #endif
 	NEXT_INST_F(jmpOffset[b], 1, 0);
     }
+    break;
 
     case INST_JUMP_TABLE: {
 	Tcl_HashEntry *hPtr;
@@ -4340,6 +4350,7 @@ TEBCresume(
 	    NEXT_INST_F(5, 1, 0);
 	}
     }
+    break;
 
     /*
      * These two instructions are now redundant: the complete logic of the LOR
@@ -4384,6 +4395,7 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
 	NEXT_INST_F(1, 2, 1);
     }
+    break;
 
     /*
      * -----------------------------------------------------------------
@@ -4402,6 +4414,7 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     }
+    break;
     case INST_COROUTINE_NAME: {
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
@@ -4413,6 +4426,7 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     }
+    break;
     case INST_INFO_LEVEL_NUM:
 	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
@@ -5648,6 +5662,7 @@ TEBCresume(
 
 	JUMP_PEEPHOLE_F(match, 2, 2);
     }
+    break;
 
     /*
      *	   End of string-related instructions.
@@ -5838,6 +5853,7 @@ TEBCresume(
 		    wResult = w1 - w2*wResult;
 		    goto wideResultOfArithmetic;
 		}
+		break;
 
 	    case INST_RSHIFT:
 		if (w2 < 0) {
@@ -5886,6 +5902,7 @@ TEBCresume(
 		    wResult = w1 >> ((int) w2);
 		    goto wideResultOfArithmetic;
 		}
+		break;
 
 	    case INST_LSHIFT:
 		if (w2 < 0) {
@@ -6322,6 +6339,7 @@ TEBCresume(
 	TRACE_APPEND(("numeric, same Tcl_Obj\n"));
 	NEXT_INST_F(1, 0, 0);
     }
+    break;
 
     /*
      *	   End of numeric operator instructions.
@@ -6719,6 +6737,7 @@ TEBCresume(
 	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
 	NEXT_INST_F(1, 1, 0);
     }
+    break;
 
     case INST_BEGIN_CATCH4:
 	/*
@@ -7428,6 +7447,7 @@ TEBCresume(
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(5, 2, 0);
     }
+    break;
 
     /*
      *	   End of dictionary-related instructions.
@@ -7465,6 +7485,7 @@ TEBCresume(
 	    TRACE_WITH_OBJ(("=> "), objResultPtr);
 	    NEXT_INST_F(2, 0, 1);
 	}
+	break;
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
@@ -8090,7 +8111,7 @@ ExecuteExtendedBinaryMathOp(
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
 	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if ((bigRemainder.used != 0) && (bigRemainder.sign != big2.sign)) {
+	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
@@ -8321,7 +8342,7 @@ ExecuteExtendedBinaryMathOp(
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
-	    oddExponent = big2.used != 0;
+	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
 	}
 
@@ -8638,7 +8659,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_mul(&big1, &big2, &bigResult);
 	    break;
 	case INST_DIV:
-	    if (big2.used == 0) {
+	    if (mp_iszero(&big2)) {
 		mp_clear(&big1);
 		mp_clear(&big2);
 		mp_clear(&bigResult);
@@ -8647,7 +8668,7 @@ ExecuteExtendedBinaryMathOp(
 	    mp_init(&bigRemainder);
 	    mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	    /* TODO: internals intrusion */
-	    if ((bigRemainder.used != 0)
+	    if (!mp_iszero(&bigRemainder)
 		    && (bigRemainder.sign != big2.sign)) {
 		/*
 		 * Convert to Tcl's integer division rules.
@@ -9056,12 +9077,12 @@ IllegalExprOperandType(
     ClientData ptr;
     int type;
     const unsigned char opcode = *pc;
-    const char *description, *operator = "unknown";
+    const char *description, *op = "unknown";
 
     if (opcode == INST_EXPON) {
-	operator = "**";
+	op = "**";
     } else if (opcode <= INST_LNOT) {
-	operator = operatorStrings[opcode - INST_LOR];
+	op = operatorStrings[opcode - INST_LOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
@@ -9085,7 +9106,7 @@ IllegalExprOperandType(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s as operand of \"%s\"", description, operator));
+	    "can't use %s as operand of \"%s\"", description, op));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 
