@@ -2270,7 +2270,7 @@ Tcl_AppendFormatToObj(
 			uw /= base;
 		    }
 #endif
-		} else if (useBig && big.used) {
+		} else if (useBig && !mp_iszero(&big)) {
 		    int leftover = (big.used * MP_DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (MP_DIGIT_BIT-leftover);
 
@@ -2309,7 +2309,7 @@ Tcl_AppendFormatToObj(
 		while (numDigits--) {
 		    int digitOffset;
 
-		    if (useBig && big.used) {
+		    if (useBig && !mp_iszero(&big)) {
 			if (index < big.used && (size_t) shift <
 				CHAR_BIT*sizeof(Tcl_WideUInt) - MP_DIGIT_BIT) {
 			    bits |= ((Tcl_WideUInt) big.dp[index++]) << shift;

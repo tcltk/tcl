@@ -648,8 +648,8 @@ It should call \fBTcl_BadChannelOption\fR which itself returns
 unrecognized.
 If \fInewValue\fR specifies a value for the option that
 is not supported or if a system call error occurs,
-the function should leave an error message in the
-\fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
+the function should leave an error message in the result
+of \fIinterp\fR if \fIinterp\fR is not NULL. The
 function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
 error code.
 .PP
