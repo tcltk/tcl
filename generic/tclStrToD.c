@@ -534,6 +534,7 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
     int explicitOctal = 0;
+    mp_err err = MP_OKAY;
 
 #define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
@@ -716,7 +717,7 @@ TclParseNumber(
 				|| (octalSignificandWide >
 					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    mp_init_u64(&octalSignificandBig,
+			    err = mp_init_u64(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -724,10 +725,17 @@ TclParseNumber(
 			octalSignificandWide =
 				(octalSignificandWide << shift) + (c - '0');
 		    } else {
-			mp_mul_2d(&octalSignificandBig, shift,
-				&octalSignificandBig);
-			mp_add_d(&octalSignificandBig, (mp_digit)(c - '0'),
-				&octalSignificandBig);
+			if (err == MP_OKAY) {
+			    err = mp_mul_2d(&octalSignificandBig, shift,
+				    &octalSignificandBig);
+			}
+			if (err == MP_OKAY) {
+			    err = mp_add_d(&octalSignificandBig, (mp_digit)(c - '0'),
+				    &octalSignificandBig);
+			}
+		    }
+		    if (err != MP_OKAY) {
+			return TCL_ERROR;
 		    }
 		}
 		if (numSigDigs != 0) {
@@ -833,16 +841,21 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			mp_init_u64(&significandBig,
+			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
 		}
 		if (!significandOverflow) {
 		    significandWide = (significandWide << shift) + d;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
-		    mp_add_d(&significandBig, (mp_digit) d, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
+		    if (err == MP_OKAY) {
+			mp_add_d(&significandBig, (mp_digit) d, &significandBig);
+		    }
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    numTrailZeros = 0;
 	    state = HEXADECIMAL;
@@ -4557,6 +4570,7 @@ Tcl_InitBignumFromDouble(
 {
     double fract;
     int expt;
+    mp_err err;
 
     /*
      * Infinite values can't convert to bignum.
@@ -4574,18 +4588,23 @@ Tcl_InitBignumFromDouble(
 
     fract = frexp(d, &expt);
     if (expt <= 0) {
-	mp_init(b);
+	err = mp_init(b);
 	mp_zero(b);
     } else {
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	mp_init_i64(b, w);
-	if (shift < 0) {
-	    mp_div_2d(b, -shift, b, NULL);
+	err = mp_init_i64(b, w);
+	if (err != MP_OKAY) {
+		/* just skip */
+	} else if (shift < 0) {
+	    err = mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
-	    mp_mul_2d(b, shift, b);
+	    err = mp_mul_2d(b, shift, b);
 	}
+    }
+    if (err != MP_OKAY) {
+	return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -4612,6 +4631,7 @@ TclBignumToDouble(
     mp_int b;
     int bits, shift, i, lsb;
     double r;
+    mp_err err;
 
 
     /*
@@ -4640,11 +4660,13 @@ TclBignumToDouble(
      * 'rounded to even'.
      */
 
-    mp_init(&b);
-    if (shift == 0) {
-	mp_copy(a, &b);
+    err = mp_init(&b);
+    if (err != MP_OKAY) {
+	/* just skip */
+    } else if (shift == 0) {
+	err = mp_copy(a, &b);
     } else if (shift > 0) {
-	mp_mul_2d(a, shift, &b);
+	err = mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
@@ -4653,12 +4675,12 @@ TclBignumToDouble(
 	     * Round to even
 	     */
 
-	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_isodd(&b)) {
+	    err = mp_div_2d(a, -shift, &b, NULL);
+	    if ((err == MP_OKAY) && mp_isodd(&b)) {
 		if (mp_isneg(&b)) {
-		    mp_sub_d(&b, 1, &b);
+		    err = mp_sub_d(&b, 1, &b);
 		} else {
-		    mp_add_d(&b, 1, &b);
+		    err = mp_add_d(&b, 1, &b);
 		}
 	    }
 	} else {
@@ -4667,13 +4689,15 @@ TclBignumToDouble(
 	     * Ordinary rounding
 	     */
 
-	    mp_div_2d(a, -1-shift, &b, NULL);
-	    if (mp_isneg(&b)) {
-		mp_sub_d(&b, 1, &b);
+	    err = mp_div_2d(a, -1-shift, &b, NULL);
+	    if (err != MP_OKAY) {
+		/* just skip */
+	    } else if (mp_isneg(&b)) {
+		err = mp_sub_d(&b, 1, &b);
 	    } else {
-		mp_add_d(&b, 1, &b);
+		err = mp_add_d(&b, 1, &b);
 	    }
-	    mp_div_2d(&b, 1, &b, NULL);
+	    err = mp_div_2d(&b, 1, &b, NULL);
 	}
     }
 
@@ -4681,8 +4705,11 @@ TclBignumToDouble(
      * Accumulate the result, one mp_digit at a time.
      */
 
+    if (err != MP_OKAY) {
+	return 0.0;
+    }
     r = 0.0;
-    for (i=b.used-1 ; i>=0 ; --i) {
+    for (i = b.used-1; i>=0; --i) {
 	r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
     }
     mp_clear(&b);
@@ -4724,10 +4751,11 @@ TclCeil(
 {
     double r = 0.0;
     mp_int b;
+    mp_err err;
 
-    mp_init(&b);
-    if (mp_isneg(a)) {
-	mp_neg(a, &b);
+    err = mp_init(&b);
+    if ((err == MP_OKAY) && mp_isneg(a)) {
+	err = mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
 	int bits = mp_count_bits(a);
@@ -4737,19 +4765,26 @@ TclCeil(
 	} else {
 	    int i, exact = 1, shift = mantBits - bits;
 
-	    if (shift > 0) {
-		mp_mul_2d(a, shift, &b);
+	    if (err != MP_OKAY) {
+		/* just skip */
+	    } else if (shift > 0) {
+		err = mp_mul_2d(a, shift, &b);
 	    } else if (shift < 0) {
 		mp_int d;
-		mp_init(&d);
-		mp_div_2d(a, -shift, &b, &d);
+		err = mp_init(&d);
+		if (err == MP_OKAY) {
+		    err = mp_div_2d(a, -shift, &b, &d);
+		}
 		exact = mp_iszero(&d);
 		mp_clear(&d);
 	    } else {
-		mp_copy(a, &b);
+		err = mp_copy(a, &b);
 	    }
-	    if (!exact) {
-		mp_add_d(&b, 1, &b);
+	    if ((err == MP_OKAY) && !exact) {
+		err = mp_add_d(&b, 1, &b);
+	    }
+	    if (err != MP_OKAY) {
+		return 0.0;
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
 		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
@@ -4781,10 +4816,11 @@ TclFloor(
 {
     double r = 0.0;
     mp_int b;
+    mp_err err;
 
-    mp_init(&b);
-    if (mp_isneg(a)) {
-	mp_neg(a, &b);
+    err = mp_init(&b);
+    if ((err == MP_OKAY) && mp_isneg(a)) {
+	err = mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
 	int bits = mp_count_bits(a);
@@ -4795,11 +4831,14 @@ TclFloor(
 	    int i, shift = mantBits - bits;
 
 	    if (shift > 0) {
-		mp_mul_2d(a, shift, &b);
+		err = mp_mul_2d(a, shift, &b);
 	    } else if (shift < 0) {
-		mp_div_2d(a, -shift, &b, NULL);
+		err = mp_div_2d(a, -shift, &b, NULL);
 	    } else {
-		mp_copy(a, &b);
+		err = mp_copy(a, &b);
+	    }
+	    if (err != MP_OKAY) {
+		return 0.0;
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
 		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
