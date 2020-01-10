@@ -850,7 +850,7 @@ TclParseNumber(
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
-			mp_add_d(&significandBig, (mp_digit) d, &significandBig);
+			err = mp_add_d(&significandBig, (mp_digit) d, &significandBig);
 		    }
 		}
 	    }
@@ -888,16 +888,21 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			mp_init_u64(&significandBig,
+			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
 		}
 		if (!significandOverflow) {
 		    significandWide = (significandWide << shift) + 1;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
-		    mp_add_d(&significandBig, (mp_digit) 1, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
+		    if (err == MP_OKAY) {
+			err = mp_add_d(&significandBig, (mp_digit) 1, &significandBig);
+		    }
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    numTrailZeros = 0;
 	    state = BINARY;
@@ -1233,14 +1238,17 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		mp_init_u64(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
 		    significandWide <<= shift;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    goto returnInteger;
 
@@ -1254,14 +1262,17 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		mp_init_u64(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
 		    significandWide <<= shift;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    goto returnInteger;
 
@@ -1275,20 +1286,20 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		mp_init_u64(&octalSignificandBig,
+		err = mp_init_u64(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
 		if (!octalSignificandOverflow) {
 		    octalSignificandWide <<= shift;
-		} else {
-		    mp_mul_2d(&octalSignificandBig, shift,
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&octalSignificandBig, shift,
 			    &octalSignificandBig);
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (octalSignificandWide > (MOST_BITS + signum)) {
-		    mp_init_u64(&octalSignificandBig,
+		if ((err == MP_OKAY) && (octalSignificandWide > (MOST_BITS + signum))) {
+		    err = mp_init_u64(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
@@ -1302,11 +1313,14 @@ TclParseNumber(
 		    }
 		}
 	    }
-	    if (octalSignificandOverflow) {
+	    if ((err == MP_OKAY) && octalSignificandOverflow) {
 		if (signum) {
-		    (void)mp_neg(&octalSignificandBig, &octalSignificandBig);
+		    err = mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
 		TclSetBignumIntRep(objPtr, &octalSignificandBig);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    break;
 
@@ -1314,14 +1328,14 @@ TclParseNumber(
 	case DECIMAL:
 	    significandOverflow = AccumulateDecimalDigit(0, numTrailZeros-1,
 		    &significandWide, &significandBig, significandOverflow);
-	    if (!significandOverflow && (significandWide > MOST_BITS+signum)) {
+	    if ((err == MP_OKAY) && !significandOverflow && (significandWide > MOST_BITS+signum)) {
 		significandOverflow = 1;
-		mp_init_u64(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
-		if (significandWide > MOST_BITS+signum) {
-		    mp_init_u64(&significandBig,
+		if ((err == MP_OKAY) && (significandWide > MOST_BITS+signum)) {
+		    err = mp_init_u64(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
@@ -1335,11 +1349,14 @@ TclParseNumber(
 		    }
 		}
 	    }
-	    if (significandOverflow) {
+	    if ((err == MP_OKAY) && significandOverflow) {
 		if (signum) {
-		    (void)mp_neg(&significandBig, &significandBig);
+		    err = mp_neg(&significandBig, &significandBig);
 		}
 		TclSetBignumIntRep(objPtr, &significandBig);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    break;
 
