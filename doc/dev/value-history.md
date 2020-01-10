@@ -224,6 +224,7 @@ much like the command __fcopy__ that would come later.
 It is more speculative, but it appears the inability to pass arbitrary
 binary data through Tcl contributed to the late development of full
 support in many image formats for Tk command __image create photo -data__.
+Tk 4 never had any built-in image format that supported this function.
 
 Since Tcl I/O could read in and write out binary data, but that data could
 not pass between commands, this forced the design of many commands to accept
