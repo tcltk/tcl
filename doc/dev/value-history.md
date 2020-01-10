@@ -123,7 +123,7 @@ _interp_->_result_. It is a welcome efficiency to avoid copies when
 possible.
 
 The third option is when the command procedure has used **ckalloc**
-to allocate the storage for _result_ and then filled in with the proper
+to allocate the storage for _result_ and then filled it with the proper
 bytes of the result value.  Then the call
 
 >	**Tcl_SetResult** (_interp_, _result_, **TCL_DYNAMIC**);
@@ -150,11 +150,30 @@ efficient.  The overall simplicity keeps the conceptual burden low,
 which enhances the utility for connecting software modules from different
 authors, the use of Tcl as a so-called "glue language".
 
+There are some deficits to contend with. The greatest complexity at work
+is the need to manage memory allocation and ownership. The solutions to
+these matters involve a significant amount of string copying. For any
+commands that treat arguments and produce results based on interpretations
+other than sequences of characters, parsing of argument strings into
+other representations suitable for command operations and the generation
+of a result strings from those other representations are costs that must
+be repeated again and again.
+
+Finally a large deficit of this value model of strings is they cannot
+include the element **NUL** within a string, even though that string
+element otherwise appears to be legal in the language. In the language
+of the day, Tcl is not _binary safe_ or _8-bit clean_.
+
+<pre>
+```
+	% Does this work?
+```
+</pre>
+
+
 Binary
 
 API
-
-
 
 
 ## Tcl 8.0
