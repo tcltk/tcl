@@ -151,15 +151,17 @@ mechanism to claim ownership. This means if the caller has any need to keep
 the result value for later use, it will need to make another copy and make
 provisions for the storage of that copy. Often this takes the form of
 calling **Tcl_SetVar** to store the value in a Tcl variable (which
-performs the housekeeping of making the copy of its _newValue_ argument.
+performs the housekeeping of making the copy of its _newValue_ argument).
 
 This system of values has several merits. It is familiar to the intended
 audience of C programmers. The representation of each string element 
 by a single byte is simple and direct and one-to-one. The result is
 a fixed-length encoding which makes random access indexing simple and
-efficient.  The overall simplicity keeps the conceptual burden low,
-which enhances the utility for connecting software modules from different
-authors, the use of Tcl as a so-called "glue language".
+efficient.  The processing of string values takes the form of iterating
+a pointer through an array, a familiar technique that compilers and hardware
+have strong history of making efficient. The overall simplicity keeps the
+conceptual burden low, which enhances the utility for connecting software
+modules from different origins, the use of Tcl as a so-called "glue language".
 
 There are some deficits to contend with. The greatest complexity at work
 is the need to manage memory allocation and ownership. The solutions to
@@ -168,7 +170,8 @@ commands that treat arguments and produce results based on interpretations
 other than sequences of characters, parsing of argument strings into
 other representations suitable for command operations and the generation
 of a result strings from those other representations are costs that must
-be repeated again and again.
+be repeated again and again, since only the string values themselves carry
+information into and out of command procedures.
 
 Finally a large deficit of this value model of strings is they cannot
 include the element **NUL** within a string, even though that string
@@ -177,12 +180,55 @@ of the day, Tcl is not _binary safe_ or _8-bit clean_.
 
 <pre>
 ```
-	% string length <\001>
+	% string length <\x01>
 	3
-	% string length <\000>
+	% string length <\x00>
 	1
 ```
 </pre>
+
+Note here that Tcl backslash substitution raises no error when asked to
+generated the **NULL** byte, even though Tcl version 7.6 has no way at
+all to do anything with that byte. At some point it gets treated as
+a string terminator.
+
+Since Tcl 7 strings are C strings, C programmers of the time were familiar
+with the issue of binary safety, and several systems of the day made use of
+solutions. Electronic mail systems had to deal with the ability to pass
+arbitrary binary data through systems where binary safety of all the components
+could no be assumed. The solution was to define a number of encoding schemes.
+Tcl 7 did not take this approach. Any encoding defined to support
+the **NUL** byte would have to borrow from some byte sequence already
+representing itself. It must have been judged that the utility of the **NUL**
+was less than the disutility of complicating the value encoding that all
+commands would need to contend with, at least for general values.
+
+As Tcl gained cross-platform channel support, the inabilty to store in a
+Tcl value the arbitrary data read in from a channel started to cause more
+and more pain. In particular it was not possible to safely copy a file,
+or transmit its contents to an output channel (as one might seek to do
+when programming a web server) with code like
+
+<pre>
+```
+	fconfigure $in -translation binary
+	fconfigure $out -translation binary
+	puts -nonewline $out [read $in]
+```
+</pre>
+
+The issue was so compelling that Tcl gained a semi-secret unsupported
+command __unsupported0__ for just this purpose with functionality
+much like the command __fcopy__ that would come later.
+
+It is more speculative, but it appears the inability to pass arbitrary
+binary data through Tcl contributed to the late development of full
+support in many image formats for Tk command __image create photo -data__.
+
+Since Tcl I/O could read in and write out binary data, but that data could
+not pass between commands, this forced the design of many commands to accept
+filename arguments to do their own I/O rather than compose with general
+language-wide I/O facilities.
 
 
 API
