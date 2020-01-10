@@ -164,11 +164,9 @@ include the element **NUL** within a string, even though that string
 element otherwise appears to be legal in the language. In the language
 of the day, Tcl is not _binary safe_ or _8-bit clean_.
 
-<pre>
 ```
 	% Does this work?
 ```
-</pre>
 
 
 Binary
