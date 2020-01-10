@@ -15,7 +15,7 @@ implementation in the Tcl source code itself.
 **NUL** *terminated array of* **char** *(C string)*
 
 The inspirations for the original Tcl string values were clearly the
-in-memory representations of C string literal values, and the 
+in-memory representations of C string literals, and the 
 arguments used by C programs to receive their command line.
 
 >	int **main**(int *argc*, char **_argv_)
@@ -27,9 +27,9 @@ Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 Each argument value _argv_[_i_] passed to a command arrives in the
 form  of a (__char__ *).
 The caller is presumed to pass a non-NULL pointer to a suitably usable
-contiguous chunk of memory, interpreted as a C array of type **char**. (The
-caller is also required to keep this memory allocated and undisturbed while
-the command procedure executes. In the days of Tcl 7, this was
+contiguous chunk of memory, interpreted as a C array of type **char**. This
+includes a duty of the caller to keep this memory allocated and undisturbed
+while the command procedure executes. (In the days of Tcl 7, this was
 trivially achieved with an assumption that all use of the Tcl library was
 single-threaded.) The contents of that array determine the string value.
 Each element with (unsigned) **char** value between 1 and 255 represent an
@@ -81,7 +81,7 @@ Each Tcl command also leaves a result value in the interpreter of evaluation,
 whether that is some result defined by the proper functioning of the
 command, or a readable message describing an error condition. In Tcl 7,
 a caller of **Tcl_Eval** has only one mechanism to retrieve that result
-value after evaluating a command, to read a (__char__ *) directly from 
+value after evaluating a command: read a (__char__ *) directly from 
 the _result_ field of the same **Tcl_Interp** struct passed to **Tcl_Eval**.
 The pointer found there points to the same kind of 
 **NUL**-terminated array of __char__ used to pass in the argument words.
@@ -99,19 +99,19 @@ a (__char__ *) _result_, it will always work to call
 
 The argument **TCL_VOLATILE** instructs the Tcl library to allocate
 a large enough block of memory to copy _result_ into, makes that copy,
-and then stores a pointer to that copy in _interp_->_result_. (As an
-implementation detail, there is also an internal field of static buffer
-space, _interp_->_resultSpace_, that is used for copy storage when possible
-as a performance benefit over always acquiring the copy storage space
-via dynamic memory allocation.) A value is stored in the
-field _interp_->_freeProc_ recording that this memory must be freed
-whenever the fields must be made available to the next command procedure,
+and then stores a pointer to that copy in _interp_->_result_. When the
+string to be copied has length no greater than **TCL_RESULT_SIZE**,
+this "allocation" takes the form of using an internal _interp_ field of
+static buffer space, avoiding dynamic memory allocation for short-enough
+results.  A record is kept in other fields of _interp_ recording
+that this memory must be freed whenever the result machinery must be
+re-initialized for the use of the next command procedure,
 a task performed by **Tcl_ResetResult**.  This general solution to
-passing back the result value always imposes the cost of copying it.
-In some situations there are other options. 
+passing back the result value using **TCL_VOLATILE** always imposes the
+cost of copying it.  In some situations there are other options. 
 
 When the result value of a command originates in a static string literal
-in the source code of the command procedure, there's no need to work
+in the source code of the command procedure, there is no need to work
 with memory management and copies. A pointer to the literal in static
 storage will be valid for the caller. The call
 
@@ -122,17 +122,28 @@ the Tcl library to directly write the pointer to the literal into
 _interp_->_result_. It is a welcome efficiency to avoid copies when
 possible.
 
-The third option is when the command procedure has used **ckalloc**
+A third option is when the command procedure has used **ckalloc**
 to allocate the storage for _result_ and then filled it with the proper
 bytes of the result value.  Then the call
 
 >	**Tcl_SetResult** (_interp_, _result_, **TCL_DYNAMIC**);
 
-instructs the Tcl library not to make another copy, but just to take
+instructs the Tcl library not to make another copy, but to take
 ownership of the allocated storage and the duty to call **ckfree**
 at the appropriate time.  It is also supported for the command procedure
 to use a custom allocator and pass a function pointer for the corresponding
 custom deallocator routine.
+
+Besides **Tcl_SetResult**, a command procedure might also build up the
+result in place inside the interp result machinery by use of the
+routines **Tcl_AppendResult** or **Tcl_AppendElement**, which places more
+of the housekeeping burdens in the Tcl library. You may also see examples
+like
+
+>	**sprintf** (_interp_->_result_, "%d", _n_);
+
+where the command procedure can be confident about not overflowing
+the **TCL_RESULT_SIZE** bytes of static buffer space.
 
 When the caller reads the result from _interp_->_result_, it is given no
 supported indication which storage protocol is in use, and no supported
