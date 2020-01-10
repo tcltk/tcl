@@ -188,7 +188,7 @@ of the day, Tcl is not _binary safe_ or _8-bit clean_.
 </pre>
 
 Note here that Tcl backslash substitution raises no error when asked to
-generated the **NULL** byte, even though Tcl version 7.6 has no way at
+generated the **NUL** byte, even though Tcl version 7.6 has no way at
 all to do anything with that byte. At some point it gets treated as
 a string terminator.
 
@@ -196,7 +196,7 @@ Since Tcl 7 strings are C strings, C programmers of the time were familiar
 with the issue of binary safety, and several systems of the day made use of
 solutions. Electronic mail systems had to deal with the ability to pass
 arbitrary binary data through systems where binary safety of all the components
-could no be assumed. The solution was to define a number of encoding schemes.
+could not be assumed. The solution was to define a number of encoding schemes.
 Tcl 7 did not take this approach. Any encoding defined to support
 the **NUL** byte would have to borrow from some byte sequence already
 representing itself. It must have been judged that the utility of the **NUL**
