@@ -54,10 +54,8 @@ type (which may be abbreviated.)  Supported filter types are:
 .RS
 .TP
 \fBdict filter \fIdictionaryValue \fBkey\fR ?\fIglobPattern ...\fR?
-.VS 8.6
 The key rule only matches those key/value pairs whose keys match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .TP
 \fBdict filter \fIdictionaryValue \fBscript {\fIkeyVariable valueVariable\fB} \fIscript\fR
 .
@@ -74,10 +72,8 @@ result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fR?\fIglobPattern ...\fR?
-.VS 8.6
 The value rule only matches those key/value pairs whose values match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .RE
 .TP
 \fBdict for {\fIkeyVariable valueVariable\fB} \fIdictionaryValue body\fR

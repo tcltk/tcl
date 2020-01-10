@@ -276,10 +276,6 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
         MP_ZERO_DIGITS(a->dp + a->used, a->alloc - a->used);                           \
     }
 
-#ifdef _MSC_VER
-/* Prevent false positive: unary minus operator applied to unsigned type, result still unsigned */
-#pragma warning(disable: 4146)
-#endif
 #define MP_SET_SIGNED(name, uname, type, utype)          \
     void name(mp_int * a, type b)                        \
     {                                                    \
