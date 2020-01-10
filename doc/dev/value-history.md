@@ -27,11 +27,15 @@ Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 Each argument value _argv_[_i_] passed to a command arrives in the
 form  of a (__char__ *).
 The caller is presumed to pass a non-NULL pointer to a suitably usable
-contiguous chunk of memory, interpreted as a C array of type **char**. The
-contents of that array determine the string value.  Each element
-with (unsigned) **char** value between 1 and 255 represent an element of the
-string, stored at the correponding index of that string. The first element
-with value 0 (aka **NUL**) is not part of the string value, but marks its end.
+contiguous chunk of memory, interpreted as a C array of type **char**. (The
+caller is also required to keep this memory allocated and undisturbed while
+the command implementation completes. In the days of Tcl 7, this was
+trivially achieved with an assumption that all use of the Tcl library was
+single-threaded.) The contents of that array determine the string value.
+Each element with (unsigned) **char** value between 1 and 255 represent an
+element of the string, stored at the correponding index of that string.
+The first element with value 0 (aka **NUL**) is not part of the string value,
+but marks its end.
 
 From this implementation, we see that a Tcl string in release 7.6 is a
 sequence of zero or more __char__ values from the range 1..255.
@@ -73,7 +77,21 @@ __format__ and __scan__, as well as the backslash encoding forms of
 __\\xHH__ and __\\ooo__ to manage the transformation between string element
 values and the corresponding numeric values.
 
-Results
+Each Tcl command also leaves a result value in the interpreter of evaluation,
+whether that is some result defined by the proper functioning of the
+command, or a readable message describing an error condition. In Tcl 7,
+a caller of **Tcl_Eval** has only one mechanism to retrieve that result
+value after evaluating a command, to read a (__char__ *) directly from 
+the _result_ field of the same **Tcl_Interp** struct passed to **Tcl_Eval**.
+The pointer found there points to the same kind of 
+**NUL**-terminated array of __char__ used to pass in the argument words.
+The set of possible return values from a command is the same as the set of
+possible arguments (and set of possible values stored in a variable),
+a sequence of zero or more __char__ values from the range 1..255.
+
+It must be arranged that the pointer in *interp*->*result* points to
+valid memory readable by the caller even after the **Tcl_CmdProc** is
+fully returned. The routine **Tcl_SetResult** offers several options.
 
 Merits
 
