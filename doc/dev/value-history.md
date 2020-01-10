@@ -122,9 +122,33 @@ the Tcl library to directly write the pointer to the literal into
 _interp_->_result_. It is a welcome efficiency to avoid copies when
 possible.
 
+The third option is when the command procedure has used **ckalloc**
+to allocate the storage for _result_ and then filled in with the proper
+bytes of the result value.  Then the call
 
+>	**Tcl_SetResult** (_interp_, _result_, **TCL_DYNAMIC**);
 
-Merits
+instructs the Tcl library not to make another copy, but just to take
+ownership of the allocated storage and the duty to call **ckfree**
+at the appropriate time.  It is also supported for the command procedure
+to use a custom allocator and pass a function pointer for the corresponding
+custom deallocator routine.
+
+When the caller reads the result from _interp_->_result_, it is given no
+supported indication which storage protocol is in use, and no supported
+mechanism to claim ownership. This means if the caller has any need to keep
+the result value for later use, it will need to make another copy and make
+provisions for the storage of that copy. Often this takes the form of
+calling **Tcl_SetVar** to store the value in a Tcl variable (which
+performs the housekeeping of making the copy of its _newValue_ argument.
+
+This system of values has several merits. It is familiar to the intended
+audience of C programmers. The representation of each string element 
+by a single byte is simple and direct and one-to-one. The result is
+a fixed-length encoding which makes random access indexing simple and
+efficient.  The overall simplicity keeps the conceptual burden low,
+which enhances the utility for connecting software modules from different
+authors, the use of Tcl as a so-called "glue language".
 
 Binary
 
