@@ -231,9 +231,16 @@ not pass between commands, this forced the design of many commands to accept
 filename arguments to do their own I/O rather than compose with general
 language-wide I/O facilities.
 
-
-API
-
+The public C API for Tcl 7.6 includes 23 routines that return
+a (__char__ *) which is a Tcl string value. It includes 73 routines
+that accept at least one (__char__ *) argument that is intended to
+be a Tcl string value. It includes 6 callback signature typedefs that
+specify callback interfaces which must accept at least one (__char__ *)
+argument that is a Tcl string value. It includes one callback signature
+typedef, **Tcl_VarTraceProc** that specfies a callback interface that
+must return a (__char__ *) that is a Tcl string value.  All of these
+components of the public API are points of potential compatibility
+concern as the conception of Tcl strings shifts over time.
 
 ## Tcl 8.0
 
