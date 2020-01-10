@@ -29,7 +29,7 @@ form  of a (__char__ *).
 The caller is presumed to pass a non-NULL pointer to a suitably usable
 contiguous chunk of memory, interpreted as a C array of type **char**. (The
 caller is also required to keep this memory allocated and undisturbed while
-the command implementation completes. In the days of Tcl 7, this was
+the command procedure executes. In the days of Tcl 7, this was
 trivially achieved with an assumption that all use of the Tcl library was
 single-threaded.) The contents of that array determine the string value.
 Each element with (unsigned) **char** value between 1 and 255 represent an
