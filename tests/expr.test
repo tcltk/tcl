@@ -6858,19 +6858,19 @@ test expr-41.13 {exponent overflow} {
 } 0.0
 test expr-41.14 {exponent overflow} {
     expr 100e-2147483651
-} 0.0 
+} 0.0
 test expr-41.15 {exponent overflow} {
     expr 1.0e-2147483648
-} 0.0 
+} 0.0
 test expr-41.16 {exponent overflow} {
     expr 1.0e-2147483649
-} 0.0 
+} 0.0
 test expr-41.17 {exponent overflow} {
     expr 1.23e-2147483646
 } 0.0
 test expr-41.18 {exponent overflow} {
     expr 1.23e-2147483647
-} 0.0 
+} 0.0
 
 test expr-41.19 {numSigDigs == 0} {
     expr 0e309
