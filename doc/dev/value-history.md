@@ -143,7 +143,7 @@ like
 >	**sprintf** (_interp_->_result_, "%d", _n_);
 
 where the command procedure can be confident about not overflowing
-the **TCL_RESULT_SIZE** bytes of static buffer space.
+the **TCL\_RESULT\_SIZE** bytes of static buffer space.
 
 When the caller reads the result from _interp_->_result_, it is given no
 supported indication which storage protocol is in use, and no supported
