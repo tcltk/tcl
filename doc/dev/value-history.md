@@ -100,7 +100,7 @@ a (__char__ *) _result_, it will always work to call
 The argument **TCL_VOLATILE** instructs the Tcl library to allocate
 a large enough block of memory to copy _result_ into, makes that copy,
 and then stores a pointer to that copy in _interp_->_result_. When the
-string to be copied has length no greater than __TCL_RESULT_SIZE__,
+string to be copied has length no greater than __TCL\_RESULT\_SIZE__,
 this "allocation" takes the form of using an internal _interp_ field of
 static buffer space, avoiding dynamic memory allocation for short-enough
 results.  A record is kept in other fields of _interp_ recording
