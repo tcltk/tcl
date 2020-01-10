@@ -10,7 +10,7 @@ that precise definition has shifted over the years. This document is meant
 to tackle that task, based on a review of the changing interfaces and
 implementation in the Tcl source code itself.
 
-## Prehistoric Tcl (7.6 and earlier)
+## Prehistoric Tcl (7.6 and earlier, pre-1997)
 
 **NUL** *terminated array of* **char** *(C string)*
 
@@ -242,7 +242,7 @@ must return a (__char__ *) that is a Tcl string value.  All of these
 components of the public API are points of potential compatibility
 concern as the conception of Tcl strings shifts over time.
 
-## Tcl 8.0
+## Tcl 8.0 (Development begun 1996, Official release 1997-1999)
 
 *Counted array of* **char**
 
