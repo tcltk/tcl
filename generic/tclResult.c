@@ -373,36 +373,6 @@ Tcl_AppendElement(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FreeResult --
- *
- *	This function frees up the memory associated with an interpreter's
- *	result, resetting the interpreter's result object.  Tcl_FreeResult is
- *	most commonly used when a function is about to replace one result
- *	value with another.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees the memory associated with interp's result but does not change
- *	any part of the error dictionary (i.e., the errorinfo and errorcode
- *	remain the same).
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_FreeResult(
-    Tcl_Interp *interp)/* Interpreter for which to free result. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    ResetObjResult(iPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_ResetResult --
  *
  *	This function resets both the interpreter's string and object results.

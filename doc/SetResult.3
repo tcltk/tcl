@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult, Tcl_FreeResult \- manipulate Tcl result
+Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult \- manipulate Tcl result
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -31,8 +31,6 @@ const char *
 \fBTcl_TransferResult\fR(\fIsourceInterp, code, targetInterp\fR)
 .sp
 \fBTcl_AppendElement\fR(\fIinterp, element\fR)
-.sp
-\fBTcl_FreeResult\fR(\fIinterp\fR)
 .SH ARGUMENTS
 .AS Tcl_FreeProc sourceInterp out
 .AP Tcl_Interp *interp out
@@ -177,14 +175,6 @@ single character
 or ends in the characters
 .QW " {" )
 then no space is added.
-.PP
-\fBTcl_FreeResult\fR performs part of the work
-of \fBTcl_ResetResult\fR.
-It frees up the memory associated with \fIinterp\fR's result.
-It also sets \fIinterp->freeProc\fR to zero, but does not
-change \fIinterp->result\fR or clear error state.
-\fBTcl_FreeResult\fR is most commonly used when a procedure
-is about to replace one result value with another.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
 \fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how
