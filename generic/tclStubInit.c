@@ -358,7 +358,7 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))dbNewLongObj)
+#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))(void *)dbNewLongObj)
 static Tcl_Obj *dbNewLongObj(
     int intValue,
     const char *file,
@@ -377,9 +377,9 @@ static Tcl_Obj *dbNewLongObj(
     return Tcl_NewIntObj(intValue);
 #endif
 }
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetIntFromObj
-#define Tcl_NewLongObj (Tcl_Obj*(*)(long))Tcl_NewIntObj
-#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))Tcl_SetIntObj
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
+#define Tcl_NewLongObj (Tcl_Obj*(*)(long))(void *)Tcl_NewIntObj
+#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))(void *)Tcl_SetIntObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -415,23 +415,23 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
+#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcmp
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
+#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
 static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
 }
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
+#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
 static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcasecmp
 static int formatInt(char *buffer, int n){
    return TclFormatInt(buffer, (long)n);
 }
-#define TclFormatInt (int(*)(char *, long))formatInt
+#define TclFormatInt (int(*)(char *, long))(void *)formatInt
 
 #endif
 
