@@ -4553,10 +4553,11 @@ int
 Tcl_InitBignumFromDouble(
     Tcl_Interp *interp,		/* For error message. */
     double d,			/* Number to convert. */
-    mp_int *b)			/* Place to store the result. */
+    void *big)			/* Place to store the result. */
 {
     double fract;
     int expt;
+    mp_int *b = (mp_int *)big;
 
     /*
      * Infinite values can't convert to bignum.
@@ -4607,11 +4608,12 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i, lsb;
     double r;
+    const mp_int *a = (const mp_int *)big;
 
 
     /*
@@ -4720,10 +4722,11 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
+    const mp_int *a = (const mp_int *)big;
 
     mp_init(&b);
     if (mp_isneg(a)) {
@@ -4777,10 +4780,11 @@ TclCeil(
 
 double
 TclFloor(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
+    const mp_int *a = (const mp_int *)big;
 
     mp_init(&b);
     if (mp_isneg(a)) {
