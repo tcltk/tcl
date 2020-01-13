@@ -454,10 +454,16 @@ const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
+    UINT acp = GetACP();
+
     Tcl_DStringInit(bufPtr);
-    Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-    wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
-    Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
+    if (acp == CP_UTF8) {
+	Tcl_DStringAppend(bufPtr, "utf-8", 5);
+    } else {
+	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
+	wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
+	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
+    }
     return Tcl_DStringValue(bufPtr);
 }
 
