@@ -694,6 +694,7 @@ TclCompileStringIsCmd(
 	    OP(		LNOT);
 	    return TCL_OK;
 	}
+    break;
 
     case STR_IS_DOUBLE: {
 	int satisfied, isEmpty;
