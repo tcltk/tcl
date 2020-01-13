@@ -233,7 +233,7 @@ language-wide I/O facilities. As channels expanded to include sockets and
 pipes the corresponding expansion of utility could not occur in commands
 coded in this way without further revisions.
 
-The public C API for Tcl 7.6 includes 23 routines that return
+The public C API for Tcl 7.6 includes 22 routines that return
 a (__char__ *) which is a Tcl string value. It includes 73 routines
 that accept at least one (__char__ *) argument that is intended to
 be a Tcl string value. It includes 6 callback signature typedefs that
