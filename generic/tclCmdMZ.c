@@ -785,7 +785,7 @@ Tcl_RegsubObjCmd(
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
-		if ((subStart >= 0) && (subEnd >= 0)) {
+		if ((subStart != TCL_INDEX_NONE) && (subEnd != TCL_INDEX_NONE)) {
 		    args[idx + numParts] = Tcl_NewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
@@ -889,7 +889,7 @@ Tcl_RegsubObjCmd(
 	    if (idx <= info.nsubs) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
-		if ((subStart >= 0) && (subEnd >= 0)) {
+		if ((subStart != TCL_INDEX_NONE) && (subEnd != TCL_INDEX_NONE)) {
 		    Tcl_AppendUnicodeToObj(resultPtr,
 			    wstring + offset + subStart, subEnd - subStart);
 		}
