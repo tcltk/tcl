@@ -248,6 +248,22 @@ concern as the conception of Tcl strings shifts over time.
 
 *Counted array of* **char**
 
+In order to remedy the deficits of the Tcl 7 value set, the implementation
+of Tcl strings had to be modified. The modification put in place by
+Tcl 8.0 was to stop treating every **NUL** byte as a marker of the end of
+a Tcl string value. Tcl would begin to permit a **NUL** byte in the internal
+portion of the __char__ arrays holding Tcl strings. Since the presence of
+a **NUL** byte would no longer (always) terminate a string, a (__char__ *)
+alone could no longer convey an arbitrary string value. New interfaces were
+defined where a (__char__ *) argument was accompanied by an __int__ argument
+that would specify how many bytes of memory at the pointer should be
+taken as the string value.  This implementation is often called a
+counted string to distinguish it from a **NUL**-terminated string. In the
+new representation, the set of valid Tcl strings is expanded. 
+In Tcl 8.0, a Tcl string is a sequence of zero or more __char__ values from
+the range 0..255.
+
+
 ## Tcl 8.1
 
 *Representation in an internal encoding*
