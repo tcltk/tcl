@@ -151,7 +151,7 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
     return MP_OKAY;
 }
 
-#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
+#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))(void *)TclBN_mp_set_long
 
 mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
 	return mp_expt_u32(a, b, c);
@@ -483,19 +483,19 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
+#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcmp
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
+#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
 static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
 }
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
+#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
 static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcasecmp
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
