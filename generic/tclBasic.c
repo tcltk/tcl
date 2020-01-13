@@ -1823,7 +1823,6 @@ DeleteInterpProc(
      * could have transferred ownership of the result string to Tcl.
      */
 
-    Tcl_FreeResult(interp);
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
