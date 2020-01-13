@@ -260,8 +260,12 @@ that would specify how many bytes of memory at the pointer should be
 taken as the string value.  This implementation is often called a
 counted string to distinguish it from a **NUL**-terminated string. In the
 new representation, the set of valid Tcl strings is expanded. 
-In Tcl 8.0, a Tcl string is a sequence of zero or more __char__ values from
-the range 0..255.
+In Tcl 8.0, a Tcl string is a sequence of zero up to **INT_MAX** __char__
+values from the range 0..255.
+
+Expanded values from expanded implementation.
+Encoding still simple.
+Size limit reasonable at the time.
 
 
 ## Tcl 8.1
