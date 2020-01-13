@@ -176,7 +176,7 @@ information into and out of command procedures.
 Finally a large deficit of this value model of strings is they cannot
 include the element **NUL** within a string, even though that string
 element otherwise appears to be legal in the language. In the language
-of the day, Tcl is not _binary safe_ or _8-bit clean_.
+of the day, Tcl 7 is not _binary safe_ or _8-bit clean_.
 
 <pre>
 ```
@@ -188,7 +188,7 @@ of the day, Tcl is not _binary safe_ or _8-bit clean_.
 </pre>
 
 Note here that Tcl backslash substitution raises no error when asked to
-generated the **NUL** byte, even though Tcl version 7.6 has no way at
+generate the **NUL** byte, even though Tcl version 7.6 has no way at
 all to do anything with that byte. At some point it gets treated as
 a string terminator.
 
@@ -229,7 +229,9 @@ Tk 4 never had any built-in image format that supported this function.
 Since Tcl I/O could read in and write out binary data, but that data could
 not pass between commands, this forced the design of many commands to accept
 filename arguments to do their own I/O rather than compose with general
-language-wide I/O facilities.
+language-wide I/O facilities. As channels expanded to include sockets and
+pipes the corresponding expansion of utility could not occur in commands
+coded in this way without further revisions.
 
 The public C API for Tcl 7.6 includes 23 routines that return
 a (__char__ *) which is a Tcl string value. It includes 73 routines
@@ -237,7 +239,7 @@ that accept at least one (__char__ *) argument that is intended to
 be a Tcl string value. It includes 6 callback signature typedefs that
 specify callback interfaces which must accept at least one (__char__ *)
 argument that is a Tcl string value. It includes one callback signature
-typedef, **Tcl_VarTraceProc** that specfies a callback interface that
+typedef, **Tcl_VarTraceProc**, that specfies a callback interface that
 must return a (__char__ *) that is a Tcl string value.  All of these
 components of the public API are points of potential compatibility
 concern as the conception of Tcl strings shifts over time.
