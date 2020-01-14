@@ -234,7 +234,7 @@ pipes the corresponding expansion of utility could not occur in commands
 coded in this way without further revisions.
 
 The public C API for Tcl 7.6 includes 22 routines that return
-a (__char__ *) which is a Tcl string value. It includes 73 routines
+a (__char__ *) which is a Tcl string value. It includes 72 routines
 that accept at least one (__char__ *) argument that is intended to
 be a Tcl string value. It includes 6 callback signature typedefs that
 specify callback interfaces which must accept at least one (__char__ *)
@@ -263,9 +263,18 @@ new representation, the set of valid Tcl strings is expanded.
 In Tcl 8.0, a Tcl string is a sequence of zero up to **INT_MAX** __char__
 values from the range 0..255.
 
-Expanded values from expanded implementation.
-Encoding still simple.
-Size limit reasonable at the time.
+For the first time the implementation defines a limit on the size of a
+Tcl value. In the context of available memory in most computing systems
+of the day, the limitation did not seem unreasonable. The new implementation
+solves the problem of storing in a Tcl value arbitrary binary data up to 2Gb
+in size.  The encoding of string elements as __char__ array elements is
+still direct, simple, one-to-one, and every string that was valid in Tcl 7
+remains valid and remains the same value in Tcl 8.0, which offers a high
+degree of accommodation of client code written for Tcl 7.
+
+
+
+
 
 
 ## Tcl 8.1
