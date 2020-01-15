@@ -541,14 +541,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       if test "$ac_cv_cross" = "yes"; then
 	case "$do64bit" in
 	    amd64|x64|yes)
-		CC="x86_64-w64-mingw32-gcc"
+		CC="x86_64-w64-mingw32-${CC}"
 		LD="x86_64-w64-mingw32-ld"
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    *)
-		CC="i686-w64-mingw32-gcc"
+		CC="i686-w64-mingw32-${CC}"
 		LD="i686-w64-mingw32-ld"
 		AR="i686-w64-mingw32-ar"
 		RANLIB="i686-w64-mingw32-ranlib"
@@ -685,9 +685,18 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
+
+	case "${CC}" in
+	    *++)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wdeclaration-after-statement"
+		;;
+	esac
 
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \[$]@"
@@ -947,8 +956,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when compiler supports casting to union type.])
 	fi
     fi
-
-    AC_DEFINE(MP_32BIT, 1, [Use 'MP_32BIT' for libtommath])
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)

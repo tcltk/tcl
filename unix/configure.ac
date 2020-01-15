@@ -25,7 +25,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="a2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -166,6 +166,30 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
+
+#------------------------------------------------------------------------
+#	Add stuff for libtommath
+
+libtommath_ok=yes
+AC_ARG_WITH(system-libtommath,
+AC_HELP_STRING([--with-system-libtommath],
+	[use external libtommath (default: true if available, false otherwise)]),
+	libtommath_ok=${withval})
+if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
+    AC_CHECK_HEADER([tommath.h],[
+	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
+	libtommath_ok=no])
+    AS_IF([test $libtommath_ok = yes], [
+	AC_CHECK_LIB([tommath],[mp_log_u32],[MATH_LIBS="$MATH_LIBS -ltommath"],[
+    libtommath_ok=no])])
+fi
+AS_IF([test $libtommath_ok = yes], [
+  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
+], [
+  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  AC_SUBST(TOMMATH_SRCS,[\${TOMMATH_SRCS}])
+  AC_SUBST(TOMMATH_INCLUDE,[-I\${TOMMATH_DIR}])
+])
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

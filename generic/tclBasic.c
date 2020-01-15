@@ -20,7 +20,7 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 #include "tclCompile.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
 
@@ -1823,7 +1823,6 @@ DeleteInterpProc(
      * could have transferred ownership of the result string to Tcl.
      */
 
-    Tcl_FreeResult(interp);
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -7138,7 +7137,7 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    mp_init_ll(&big, l);
+	    mp_init_i64(&big, l);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-l));
@@ -7169,7 +7168,7 @@ ExprAbsFunc(
 	if (mp_isneg((const mp_int *) ptr)) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
-	    mp_neg(&big, &big);
+	    (void)mp_neg(&big, &big);
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	} else {
 	unChanged:

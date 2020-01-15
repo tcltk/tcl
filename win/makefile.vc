@@ -52,28 +52,30 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,static,staticpkg,symbols,profile,unchecked,utfmax,none
+#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,utfmax,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-#		msvcrt   = Affects the static option only to switch it from
-#			   using libcmt(d) as the C runtime [by default] to
-#			   msvcrt(d). This is useful for static embedding
-#			   support.
-#		static   = Builds a static library of the core instead of a
-#			   dll.  The shell will be static (and large), as well.
-#		staticpkg= Affects the static option only to switch
-#			   tclshXX.exe to have the dde and reg extension linked
-#			   inside it.
+#		msvcrt    = Affects the static option only to switch it from
+#			    using libcmt(d) as the C runtime [by default] to
+#			    msvcrt(d). This is useful for static embedding
+#			    support.
+#		nothreads = Turns off full multithreading support (default on).
+#		pbds      =  Produce separate debug symbol files.
+#		profile   =  Adds profiling hooks.  Map file is assumed.
+#		static    = Builds a static library of the core instead of a
+#			    dll.  The shell will be static (and large), as well.
+#		staticpkg = Affects the static option only to switch
+#			    tclshXX.exe to have the dde and reg extension linked
+#			    inside it.
+#		symbols   =  Adds symbols for step debugging.
 #		thrdalloc = Use the thread allocator (shared global free pool).
-#		symbols =  Adds symbols for step debugging.
-#		profile =  Adds profiling hooks.  Map file is assumed.
 #		unchecked = Allows a symbols build to not use the debug
-#			   enabled runtime (msvcrt.dll not msvcrtd.dll
-#			   or libcmt.lib not libcmtd.lib).
-#		utfmax =   Forces Tcl_UniChar to be a 32-bit quantity in stead
-#			   of 16-bits
+#			    enabled runtime (msvcrt.dll not msvcrtd.dll
+#			    or libcmt.lib not libcmtd.lib).
+#		utfmax    = Forces a build allowing 4-byte UTF-8 sequences
+#			    internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -214,6 +216,7 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
 !endif
+	$(OUT_DIR)\tommath.lib \
 !endif
 	$(TMP_DIR)\testMain.obj
 
@@ -307,6 +310,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclZipfs.obj \
 	$(TMP_DIR)\tclZlib.obj
 
+!if $(STATIC_BUILD)
 ZLIBOBJS = \
 	$(TMP_DIR)\adler32.obj \
 	$(TMP_DIR)\compress.obj \
@@ -319,7 +323,11 @@ ZLIBOBJS = \
 	$(TMP_DIR)\trees.obj \
 	$(TMP_DIR)\uncompr.obj \
 	$(TMP_DIR)\zutil.obj
+!else
+ZLIBOBJS = $(OUT_DIR)\zdll.lib
+!endif
 
+!if $(STATIC_BUILD)
 TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_add.obj \
 	$(TMP_DIR)\bn_mp_add_d.obj \
@@ -340,17 +348,15 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_u32.obj \
-	$(TMP_DIR)\bn_mp_get_mag_ul.obj \
+	$(TMP_DIR)\bn_mp_get_mag_u64.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
-	$(TMP_DIR)\bn_mp_init_l.obj \
-	$(TMP_DIR)\bn_mp_init_ll.obj \
+	$(TMP_DIR)\bn_mp_init_i64.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
-	$(TMP_DIR)\bn_mp_init_ul.obj \
-	$(TMP_DIR)\bn_mp_init_ull.obj \
+	$(TMP_DIR)\bn_mp_init_u64.obj \
 	$(TMP_DIR)\bn_mp_lshd.obj \
 	$(TMP_DIR)\bn_mp_mod.obj \
 	$(TMP_DIR)\bn_mp_mod_2d.obj \
@@ -364,9 +370,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
-	$(TMP_DIR)\bn_mp_set.obj \
-	$(TMP_DIR)\bn_mp_set_l.obj \
-	$(TMP_DIR)\bn_mp_set_ul.obj \
+	$(TMP_DIR)\bn_mp_set_i64.obj \
+	$(TMP_DIR)\bn_mp_set_u64.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
@@ -390,6 +395,9 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_s_mp_sub.obj \
 	$(TMP_DIR)\bn_s_mp_toom_sqr.obj \
 	$(TMP_DIR)\bn_s_mp_toom_mul.obj
+!else
+TOMMATHOBJS = $(OUT_DIR)\tommath.lib
+!endif
 
 PLATFORMOBJS = \
 	$(TMP_DIR)\tclWin32Dll.obj \
@@ -454,7 +462,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
-dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
+dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
@@ -527,6 +535,27 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
+!if "$(MACHINE)" == "AMD64"
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
+!else
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win32\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win32\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win32\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
+!endif
+
+
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
 	  @if exist "%~fd\win\makefile.vc" ( \
@@ -574,21 +603,6 @@ genstubs:
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
-
-#----------------------------------------------------------------------
-# The following target generates the file generic/tclTomMath.h.
-# It needs to be run (and the results checked) after updating
-# to a new release of libtommath.
-#----------------------------------------------------------------------
-
-gentommath_h:
-!if !exist($(TCLSH))
-	@echo Build tclsh first!
-!else
-	$(TCLSH) "$(TOOLSDIR:\=/)/fix_tommath_h.tcl" \
-		"$(TOMMATHDIR:\=/)/tommath.h" \
-		> "$(GENERICDIR)\tclTomMath.h"
-!endif
 
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
@@ -738,7 +752,7 @@ gendate:
 #---------------------------------------------------------------------
 
 $(TMP_DIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
-	$(cc32) $(appcflags) /DTCL_TEST /DUNICODE /D_UNICODE /DUSE_TCL_STUBS \
+	$(cc32) $(appcflags) /DTCL_TEST /DUNICODE /D_UNICODE \
 	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
@@ -785,11 +799,11 @@ $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 ### The following objects should be built using the stub interfaces
 
 $(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
-	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
 
 
 $(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
-	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
 
 
 ### The following objects are part of the stub library and should not
@@ -891,6 +905,8 @@ install-binaries:
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(OUT_DIR)\zlib1.dll" "$(BIN_INSTALL_DIR)\"
+	@$(CPY) "$(OUT_DIR)\libtommath.dll" "$(BIN_INSTALL_DIR)\"
 !if exist($(TCLSH))
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
@@ -919,6 +935,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
