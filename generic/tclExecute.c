@@ -2689,7 +2689,6 @@ TEBCresume(
 #endif
 	TRACE(("=> drop %d items\n", objc));
 	NEXT_INST_V(1, objc, 0);
-    break;
 
     case INST_EXPAND_STKTOP: {
 	int i;
@@ -4288,7 +4287,6 @@ TEBCresume(
 	TRACE(("%d => new pc %u\n", opnd,
 		(unsigned)(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
-    break;
 
     {
 	int jmpOffset[2], b;
@@ -4483,7 +4481,6 @@ TEBCresume(
 	objResultPtr = Tcl_NewListObj(framePtr->objc, framePtr->objv);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
-    break;
     }
     {
 	Tcl_Command cmd, origCmd;
@@ -4496,7 +4493,6 @@ TEBCresume(
 	}
 	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
-    break;
 
     case INST_ORIGIN_COMMAND:
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
@@ -4519,7 +4515,6 @@ TEBCresume(
 	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
 	TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_TOS)));
 	NEXT_INST_F(1, 1, 1);
-    break;
     }
 
     /*
@@ -5687,7 +5682,6 @@ TEBCresume(
 
 	JUMP_PEEPHOLE_F(match, 2, 2);
     }
-    break;
 
     /*
      *	   End of string-related instructions.
@@ -6280,7 +6274,6 @@ TEBCresume(
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
-    break;
 
     case INST_UPLUS:
     case INST_TRY_CVT_TO_NUMERIC:
@@ -6834,7 +6827,6 @@ TEBCresume(
 	}
 	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 2*code-1));
 	NEXT_INST_F(2*code-1, 1, 0);
-    break;
     }
 
     /*
