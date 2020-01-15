@@ -987,6 +987,7 @@ NRInterpCmd(
 	    return SlaveTimeLimitCmd(interp, slaveInterp, 4, objc, objv);
 	}
     }
+    break;
     case OPT_MARKTRUSTED:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "path");
@@ -2621,6 +2622,7 @@ NRSlaveCmd(
 	    return SlaveTimeLimitCmd(interp, slaveInterp, 3, objc, objv);
 	}
     }
+    break;
     case OPT_MARKTRUSTED:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
