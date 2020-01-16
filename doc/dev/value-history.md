@@ -257,14 +257,44 @@ a **NUL** byte would no longer (always) terminate a string, a (__char__ *)
 alone could no longer convey an arbitrary string value. New interfaces were
 defined where a (__char__ *) argument was accompanied by an __int__ argument
 that would specify how many bytes of memory at the pointer should be
-taken as the string value.  This implementation is often called a
-counted string to distinguish it from a **NUL**-terminated string. In the
-new representation, the set of valid Tcl strings is expanded. 
+taken as the string value.  
+
+As an illustration, consider the Tcl 7 public routine
+
+>	int **Tcl_ScanElement** (const char * _string_, int * _flagPtr_ );
+
+It is a utility routine used in the task of generating the string value
+of a list out of the string values of its elements. The argument _string_
+is an element of the list passed in as a **NUL**-terminated string. It
+is not possible to successfully use this interface to pass in the string
+value of a list element the includes the **NUL** character. By expanding
+Tcl's value set, Tcl left many public interfaces incapable of dealing with
+the entire value set. These routines continue to do what they always did,
+and for some purposes that is good enough, but they are unsuitable for
+uses that must accommodate the new values supported in Tcl 8.0. This leads
+to the creation of an additional public routine
+
+>	int **Tcl_ScanCountedElement** (const char * _string_, int _length_, int * _flagPtr_ );
+
+The additional argument _length_ combines with the argument _string_ to
+transmit any Tcl 8.0 string value into the routine. In most interfaces
+expanded in this way, it is conventional for the _length_ argument to
+accept the value **-1** (or sometimes all negative values) as a signal
+that _string_ is **NUL**-terminated. Another advantage of this interface
+is that it is not necessary for _string_ [ _length_ ] to contain the
+byte value **NUL** . This makes it easier to pass substrings of larger
+strings without the need to copy or overwrite.
+
+This implementation is often called a
+counted string to distinguish it from a **NUL**-terminated string.
 In Tcl 8.0, a Tcl string is a sequence of zero up to **INT_MAX** __char__
 values from the range 0..255.
+In the new representation, the set of valid Tcl strings is both expanded
+and contracted.  The alphabet is expanded to include **NUL**, while a
+defined limit is imposed on length of the string sequence of elements
+from that alphabet for the first time.
 
-For the first time the implementation defines a limit on the size of a
-Tcl value. In the context of available memory in most computing systems
+In the context of available memory in most computing systems
 of the day, the limitation did not seem unreasonable. The new implementation
 solves the problem of storing in a Tcl value arbitrary binary data up to 2Gb
 in size.  The encoding of string elements as __char__ array elements is
