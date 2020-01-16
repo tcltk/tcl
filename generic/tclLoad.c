@@ -871,7 +871,7 @@ Tcl_UnloadObjCmd(
 
 		    for (ipPrevPtr = ipPtr; ipPtr != NULL;
 			    ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
-			if (ipPtr->pkgPtr == pkgPtr) {
+			if (ipPtr->pkgPtr == defaultPtr) {
 			    ipPrevPtr->nextPtr = ipPtr->nextPtr;
 			    break;
 			}
