@@ -299,10 +299,40 @@ of the day, the limitation on string length did not seem unreasonable.
 The new implementation solves the problem of storing in a Tcl value
 arbitrary binary data up to 2Gb in size.  The encoding of string elements
 as __char__ array elements is still direct, simple, one-to-one, and every
-string that was valid in Tcl 7 remains valid and remains the same value
-in Tcl 8.0, which offers a high degree of accommodation of client code
-written for Tcl 7.
+__char__ array that was a valid representation of a value in Tcl 7 remains
+valid and continues to represent the same value in Tcl 8.0, which offers a
+high degree of accommodation of client code written for Tcl 7.
 
+The public C API for Tcl 8.0 includes only 7 new routines that either
+accept or return explicitly a pair of values of type (__char__ *)
+and __int__ representing together a counted string value. A second solution
+is to include these two values as fields of a new struct, **Tcl_Obj**, and
+define new interface routines that make use of that struct.
+The **Tcl_Obj** struct introduced in Tcl 8.0 includes a field _bytes_
+of type (__char__ *) and a field _length_ of type __int__. Taken together
+these two fields are a Tcl value represented as a counted string.  The
+routine
+
+>	**Tcl_Obj** * **Tcl_NewStringObj** (__char__ * _bytes_, __int__ _length_);
+
+is used to create such a struct out of the pair of arguments defining a
+counted string.
+
+Tcl_Obj rep and Tcl_ObjCmdProc
+
+string length
+puts read combo
+
+binary command
+
+mid-migration
+	update, vwait
+	break, continue, fileevent, fconfigure, glob, pwd, seek, socket, tell
+	for, if, incr, package, load, reg*, scan, set, subst, trace, while
+
+limitations
+
+management of objPtr->bytes
 
 
 
