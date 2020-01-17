@@ -328,13 +328,33 @@ the complete binary-safe set of Tcl 8.0 values.
 It is mostly outside the scope of this document, but additional fields
 of the **Tcl_Obj** struct enable value sharing, and caching of conversion
 to other value representations. These other functions solve many of the
-defects of the Tcl 7 value representation outside of the universe of
-supported values itself. Notably these other feaures underlie substantial
-performance gains.
+defects of the Tcl 7 value representation other than the constrained
+universe of supported values itself. Notably these other feaures underlie
+substantial performance gains. Much of the published advice to adopt
+interfaces using the **Tcl_Obj** struct centers on the performance rewards
+rather than the expanded capability to include **NUL** bytes.
+
+The storage of a __char__ array by a **Tcl_Obj** has some parallels with
+the storage of a __char__ array as the result of a command evaluated
+in a **Tcl_Interp**.  However, the same functionality of **Tcl_SetResult**
+was not made available. To do so, something like a _freeProc_ field
+would need to be included in the **Tcl_Obj** struct, and concerns about
+excessive memory requirements to store every value in Tcl ruled the day.
+As a consequence, it is an implicit requirement that _objPtr_->_bytes_
+normally points to memory allocated by **ckalloc** and when sharing
+demands are all released it will be freed by a call to **ckfree**.
+The routine **Tcl_NewStringObj** makes such an allocation and copies
+the __char__ array in its _bytes_ argument into it. In contrast,
+the (__char__ *) value returned by **Tcl_GetStringFromObj** is a pointer
+to the same __char__ array that is stored by _objPtr_. The caller of
+**Tcl_GetStringFromObj** can sustain the validity of that memory by
+claiming a share on _objPtr_ with a call to **Tcl_IncrRefCount**.
+One copy cannot be avoided by this value model, but value sharing permits
+most subsequent copying to be avoided.
 
 
 
-management of objPtr->bytes
+
 
 Tcl_Obj rep and Tcl_ObjCmdProc
 
