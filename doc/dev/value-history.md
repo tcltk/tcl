@@ -287,8 +287,8 @@ strings without the need to copy or overwrite.
 
 This implementation is often called a
 counted string to distinguish it from a **NUL**-terminated string.
-In Tcl 8.0, a Tcl string is a sequence of zero up to **INT_MAX** __char__
-values from the range 0..255.
+In Tcl 8.0, every valid Tcl string is a sequence of zero up
+to **INT_MAX** __char__ values from the range 0..255.
 In the new representation, the set of valid Tcl strings is both expanded
 and contracted.  The alphabet is expanded to include **NUL**, while a
 defined limit is imposed on length of the string sequence of elements
