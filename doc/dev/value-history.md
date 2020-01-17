@@ -261,7 +261,7 @@ taken as the string value.
 
 As an illustration, consider the Tcl 7 public routine
 
->	int **Tcl_ScanElement** (const char * _string_, int * _flagPtr_ );
+>	**int** **Tcl_ScanElement** (const **char** * _string_, **int** * _flagPtr_ );
 
 It is a utility routine used in the task of generating the string value
 of a list out of the string values of its elements. The argument _string_
@@ -274,7 +274,7 @@ and for some purposes that is good enough, but they are unsuitable for
 uses that must accommodate the new values supported in Tcl 8.0. This leads
 to the creation of an additional public routine
 
->	int **Tcl_ScanCountedElement** (const char * _string_, int _length_, int * _flagPtr_ );
+>	**int** **Tcl_ScanCountedElement** (const **char** * _string_, **int** _length_, **int** * _flagPtr_ );
 
 The additional argument _length_ combines with the argument _string_ to
 transmit any Tcl 8.0 string value into the routine. In most interfaces
