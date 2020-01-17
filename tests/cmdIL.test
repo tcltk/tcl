@@ -454,14 +454,15 @@ test cmdIL-5.7 {lsort memory exhaustion} -constraints {prlimit} -body {
 	exec prlimit -p [pid $pipe] --as=80000000
     } msg]} {
 	catch {close $pipe}
-	tcltest::Skip "prlimit: set of limit is impossible, [regsub {^\s*([^\n]*).*$} $msg {\1}]"
+	tcltest::Skip "prlimit: error - [regsub {^\s*([^\n]*).*$} $msg {\1}]"
     }
     # if no error (enough memory), or error by list creation - add it as skipped test:
     if {![catch {
 	chan configure $pipe -buffering line
 	puts $pipe {
-	    # test
-	    set l [lrepeat 4000000 ""]
+	    # create list and get length (avoid too long output in interactive shells):
+	    llength [set l [lrepeat 4000000 ""]]
+	    # test OOM:
 	    puts [llength [lsort $l]]
 	    exit
 	}
@@ -470,7 +471,7 @@ test cmdIL-5.7 {lsort memory exhaustion} -constraints {prlimit} -body {
 	set pipe {}
 	set result
     } result] || [regexp {^(?:list creation failed|unable to alloc)} $result]} {
-	tcltest::Skip "prlimit: too small or too large AS-limit, result: $result"
+	tcltest::Skip "prlimit: wrong AS-limit, result: $result"
     }
     set result
     # expecting error no memory by sort
