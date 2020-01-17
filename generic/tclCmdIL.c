@@ -3992,9 +3992,11 @@ Tcl_LsortObjCmd(
     int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
+    size_t elmArrSize;
     SortElement *elementArray = NULL, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
+#   define MAXCALLOC 1024000
 #   define NUM_LISTS 30
     SortElement *subList[NUM_LISTS+1];
 				/* This array holds pointers to temporary
@@ -4317,7 +4319,19 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = ckalloc(length * sizeof(SortElement));
+    elmArrSize = length * sizeof(SortElement);
+    if (elmArrSize <= MAXCALLOC) {
+	elementArray = ckalloc(elmArrSize);
+    } else {
+	elementArray = malloc(elmArrSize);
+    }
+    if (!elementArray) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"no enough memory to proccess sort of %d items", length));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	sortInfo.resultCode = TCL_ERROR;
+	goto done;
+    }
 
     for (i=0; i < length; i++) {
 	idx = groupSize * i + groupOffset;
@@ -4450,7 +4464,11 @@ Tcl_LsortObjCmd(
 	TclStackFree(interp, sortInfo.indexv);
     }
     if (elementArray) {
-	ckfree(elementArray);
+	if (elmArrSize <= MAXCALLOC) {
+	    ckfree((char *)elementArray);
+	} else {
+	    free((char *)elementArray);
+	}
     }
     return sortInfo.resultCode;
 }
