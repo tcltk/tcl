@@ -267,7 +267,7 @@ It is a utility routine used in the task of generating the string value
 of a list out of the string values of its elements. The argument _string_
 is an element of the list passed in as a **NUL**-terminated string. It
 is not possible to successfully use this interface to pass in the string
-value of a list element the includes the **NUL** character. By expanding
+value of a list element that includes the **NUL** character. By expanding
 Tcl's value set, Tcl left many public interfaces incapable of dealing with
 the entire value set. These routines continue to do what they always did,
 and for some purposes that is good enough, but they are unsuitable for
@@ -279,7 +279,7 @@ to the creation of an additional public routine
 The additional argument _length_ combines with the argument _string_ to
 transmit any Tcl 8.0 string value into the routine. In most interfaces
 expanded in this way, it is conventional for the _length_ argument to
-accept the value **-1** (or sometimes all negative values) as a signal
+accept the value **-1** (or sometimes any negative value) as a signal
 that _string_ is **NUL**-terminated. Another advantage of this interface
 is that it is not necessary for _string_ [ _length_ ] to contain the
 byte value **NUL** . This makes it easier to pass substrings of larger
@@ -295,12 +295,13 @@ defined limit is imposed on length of the string sequence of elements
 from that alphabet for the first time.
 
 In the context of available memory in most computing systems
-of the day, the limitation did not seem unreasonable. The new implementation
-solves the problem of storing in a Tcl value arbitrary binary data up to 2Gb
-in size.  The encoding of string elements as __char__ array elements is
-still direct, simple, one-to-one, and every string that was valid in Tcl 7
-remains valid and remains the same value in Tcl 8.0, which offers a high
-degree of accommodation of client code written for Tcl 7.
+of the day, the limitation on string length did not seem unreasonable.
+The new implementation solves the problem of storing in a Tcl value
+arbitrary binary data up to 2Gb in size.  The encoding of string elements
+as __char__ array elements is still direct, simple, one-to-one, and every
+string that was valid in Tcl 7 remains valid and remains the same value
+in Tcl 8.0, which offers a high degree of accommodation of client code
+written for Tcl 7.
 
 
 
