@@ -316,7 +316,25 @@ routine
 >	**Tcl_Obj** * **Tcl_NewStringObj** (__char__ * _bytes_, __int__ _length_);
 
 is used to create such a struct out of the pair of arguments defining a
-counted string.
+counted string. The routine
+
+>	__char__ * **Tcl_GetStringFromObj** ( **Tcl_Obj** * _objPtr_, __int__ * _lengthPtr_ );
+
+provides the reverse functionality, returning a (__char__ *) value and
+writing to *_lengthPtr_ an __int__ value making up the counted string
+retrieved from _objPtr_. These routines support the transmission of
+the complete binary-safe set of Tcl 8.0 values.
+
+It is mostly outside the scope of this document, but additional fields
+of the **Tcl_Obj** struct enable value sharing, and caching of conversion
+to other value representations. These other functions solve many of the
+defects of the Tcl 7 value representation outside of the universe of
+supported values itself. Notably these other feaures underlie substantial
+performance gains.
+
+
+
+management of objPtr->bytes
 
 Tcl_Obj rep and Tcl_ObjCmdProc
 
@@ -332,7 +350,6 @@ mid-migration
 
 limitations
 
-management of objPtr->bytes
 
 
 
