@@ -234,7 +234,7 @@ pipes the corresponding expansion of utility could not occur in commands
 coded in this way without further revisions.
 
 The public C API for Tcl 7.6 includes 22 routines that return
-a (__char__ *) which is a Tcl string value. It includes 72 routines
+a (__char__ *) which is a Tcl string value. It includes 74 routines
 that accept at least one (__char__ *) argument that is intended to
 be a Tcl string value. It includes 6 callback signature typedefs that
 specify callback interfaces which must accept at least one (__char__ *)
@@ -268,7 +268,7 @@ of a list out of the string values of its elements. The argument _string_
 is an element of the list passed in as a **NUL**-terminated string. It
 is not possible to successfully use this interface to pass in the string
 value of a list element that includes the **NUL** character. By expanding
-Tcl's value set, Tcl left many public interfaces incapable of dealing with
+the Tcl value set, Tcl left many public interfaces incapable of dealing with
 the entire value set. These routines continue to do what they always did,
 and for some purposes that is good enough, but they are unsuitable for
 uses that must accommodate the new values supported in Tcl 8.0. This leads
