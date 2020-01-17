@@ -1522,7 +1522,9 @@ AccumulateDecimalDigit(
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    mp_init_u64(bignumRepPtr, w);
+	    if (mp_init_u64(bignumRepPtr, w) != MP_OKAY) {
+		return 0;
+	    }
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1542,10 +1544,12 @@ AccumulateDecimalDigit(
 	 * Up to about 8 zeros - single digit multiplication.
 	 */
 
-	mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[numZeros+1],
-		bignumRepPtr);
-	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
+	if ((mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[numZeros+1],
+		bignumRepPtr) != MP_OKAY)
+		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY))
+	return 0;
     } else {
+	mp_err err;
 	/*
 	 * More than single digit multiplication. Multiply by the appropriate
 	 * small powers of 5, and then shift. Large strings of zeroes are
@@ -1556,18 +1560,21 @@ AccumulateDecimalDigit(
 	 */
 
 	n = numZeros + 1;
-	mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
-	for (i=3; i<=7; ++i) {
+	err = mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
+	for (i = 3; (err == MP_OKAY) && (i <= 7); ++i) {
 	    if (n & (1 << i)) {
-		mp_mul(bignumRepPtr, pow5+i, bignumRepPtr);
+		err = mp_mul(bignumRepPtr, pow5+i, bignumRepPtr);
 	    }
 	}
-	while (n >= 256) {
-	    mp_mul(bignumRepPtr, pow5+8, bignumRepPtr);
+	while ((err == MP_OKAY) && (n >= 256)) {
+	    err = mp_mul(bignumRepPtr, pow5+8, bignumRepPtr);
 	    n -= 256;
 	}
-	mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr);
-	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
+	if ((err != MP_OKAY)
+		|| (mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr) != MP_OKAY)
+		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY)) {
+	    return 0;
+	}
     }
 
     return 1;
@@ -1668,7 +1675,9 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    mp_init_u64(&significandBig, significand);
+    if (mp_init_u64(&significandBig, significand) != MP_OKAY) {
+	return 0.0;
+    }
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -1717,7 +1726,7 @@ MakeHighPrecisionDouble(
     long exponent)		/* Power of 10 by which to multiply */
 {
     double retval;
-    int machexp;		/* Machine exponent of a power of 10. */
+    int machexp = 0;		/* Machine exponent of a power of 10. */
 
     /*
      * With gcc on x86, the floating point rounding mode is double-extended.
@@ -1882,6 +1891,7 @@ RefineApproximation(
     Tcl_WideInt rteSigWide;	/* Wide integer version of the significand
 				 * for testing evenness */
     int i;
+    mp_err err = MP_OKAY;
 
     /*
      * The first approximation is always low. If we find that it's HUGE_VAL,
@@ -1930,7 +1940,9 @@ RefineApproximation(
 
     msb = binExponent + M2;	/* 1008 */
     nDigits = msb / MP_DIGIT_BIT + 1;
-    mp_init_size(&twoMv, nDigits);
+    if (mp_init_size(&twoMv, nDigits) != MP_OKAY) {
+	return approxResult;
+    }
     i = (msb % MP_DIGIT_BIT + 1);
     twoMv.used = nDigits;
     significand *= SafeLdExp(1.0, i);
@@ -1940,8 +1952,9 @@ RefineApproximation(
 	significand = SafeLdExp(significand, MP_DIGIT_BIT);
     }
     for (i = 0; i <= 8; ++i) {
-	if (M5 & (1 << i)) {
-	    mp_mul(&twoMv, pow5+i, &twoMv);
+	if (M5 & (1 << i) && (mp_mul(&twoMv, pow5+i, &twoMv) != MP_OKAY)) {
+	    mp_clear(&twoMv);
+	    return approxResult;
 	}
     }
 
@@ -1951,20 +1964,27 @@ RefineApproximation(
      * by 2**(M5+exponent+1), which is, of couse, a left shift.
      */
 
-    mp_init_copy(&twoMd, exactSignificand);
-    for (i=0; i<=8; ++i) {
+    if (mp_init_copy(&twoMd, exactSignificand) != MP_OKAY) {
+	mp_clear(&twoMv);
+	return approxResult;
+    }
+    for (i = 0; (i <= 8); ++i) {
 	if ((M5 + exponent) & (1 << i)) {
-	    mp_mul(&twoMd, pow5+i, &twoMd);
+	    err = mp_mul(&twoMd, pow5+i, &twoMd);
 	}
     }
-    mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
+    }
 
     /*
      * Now let twoMd = twoMd - twoMv, the difference between the exact and
      * approximate values.
      */
 
-    mp_sub(&twoMd, &twoMv, &twoMd);
+    if (err == MP_OKAY) {
+	err = mp_sub(&twoMd, &twoMv, &twoMd);
+    }
 
     /*
      * The result, 2Mv-2Md, needs to be divided by 2M to yield a correction
@@ -1975,16 +1995,25 @@ RefineApproximation(
 
     scale = binExponent - mantBits - 1;
     mp_set_u64(&twoMv, 1);
-    for (i=0; i<=8; ++i) {
+    for (i = 0; (i <= 8) && (err == MP_OKAY); ++i) {
 	if (M5 & (1 << i)) {
-	    mp_mul(&twoMv, pow5+i, &twoMv);
+	    err = mp_mul(&twoMv, pow5+i, &twoMv);
 	}
     }
     multiplier = M2 + scale + 1;
-    if (multiplier > 0) {
-	mp_mul_2d(&twoMv, multiplier, &twoMv);
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
+    } else if (multiplier > 0) {
+	err = mp_mul_2d(&twoMv, multiplier, &twoMv);
     } else if (multiplier < 0) {
-	mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
+	err = mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
+    }
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
     }
 
     /*
@@ -2033,8 +2062,15 @@ RefineApproximation(
      */
     shift = mp_count_bits(&twoMv) - FP_PRECISION - 1;
     if (shift > 0) {
-	mp_div_2d(&twoMv, shift, &twoMv, NULL);
-	mp_div_2d(&twoMd, shift, &twoMd, NULL);
+	err = mp_div_2d(&twoMv, shift, &twoMv, NULL);
+	if (err == MP_OKAY) {
+	    err = mp_div_2d(&twoMd, shift, &twoMd, NULL);
+	}
+    }
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
     }
 
     /*
@@ -3965,7 +4001,7 @@ StrictBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    mp_init_multi(&dig, NULL);
+    mp_init(&dig);
     mp_init_u64(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
@@ -3975,8 +4011,7 @@ StrictBignumConversion(
      * Handle the case where we guess the position of the decimal point wrong.
      */
 
-    if (mp_cmp_mag(&b, &S) == MP_LT) {
-	mp_mul_d(&b, 10, &b);
+    if ((mp_cmp_mag(&b, &S) == MP_LT) && (mp_mul_d(&b, 10, &b) == MP_OKAY)) {
 	ilim =ilim1;
 	--k;
     }
@@ -3998,8 +4033,7 @@ StrictBignumConversion(
 
     *s++ = '0' + digit;
     if (++i >= ilim) {
-	mp_mul_2d(&b, 1, &b);
-	if (ShouldBankerRoundUp(&b, &S, digit&1)) {
+	if ((mp_mul_2d(&b, 1, &b) == MP_OKAY) && ShouldBankerRoundUp(&b, &S, digit&1)) {
 	    s = BumpUp(s, retval, &k);
 	}
     } else {
@@ -4036,8 +4070,8 @@ StrictBignumConversion(
 	     * Extract the next group of digits.
 	     */
 
-	    mp_div(&b, &S, &dig, &b);
-	    if (dig.used > 1) {
+
+	    if ((mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
 	    }
 	    digit = dig.dp[0];
@@ -4054,8 +4088,7 @@ StrictBignumConversion(
 	     */
 
 	    if (i == ilim) {
-		mp_mul_2d(&b, 1, &b);
-		if (ShouldBankerRoundUp(&b, &S, digit&1)) {
+		if ((mp_mul_2d(&b, 1, &b) == MP_OKAY) && ShouldBankerRoundUp(&b, &S, digit&1)) {
 		    s = BumpUp(s, retval, &k);
 		}
 		break;
@@ -4430,6 +4463,7 @@ TclInitDoubleConversion(void)
 	Tcl_WideUInt iv;
     } bitwhack;
 #endif
+    mp_err err = MP_OKAY;
 #if defined(__sgi) && defined(_COMPILER_VERSION)
     union fpc_csr mipsCR;
 
@@ -4486,16 +4520,19 @@ TclInitDoubleConversion(void)
      */
 
     for (i=0; i<9; ++i) {
-	mp_init(pow5 + i);
+	err = err || mp_init(pow5 + i);
     }
     mp_set_u64(pow5, 5);
     for (i=0; i<8; ++i) {
-	mp_sqr(pow5+i, pow5+i+1);
+	err = err || mp_sqr(pow5+i, pow5+i+1);
     }
-    mp_init_u64(pow5_13, 1220703125);
+    err = err || mp_init_u64(pow5_13, 1220703125);
     for (i = 1; i < 5; ++i) {
-	mp_init(pow5_13 + i);
-	mp_sqr(pow5_13 + i - 1, pow5_13 + i);
+	err = err || mp_init(pow5_13 + i);
+	err = err || mp_sqr(pow5_13 + i - 1, pow5_13 + i);
+    }
+    if (err != MP_OKAY) {
+	Tcl_Panic("out of memory");
     }
 
     /*
@@ -4897,6 +4934,7 @@ BignumToBiasedFrExp(
     int shift;
     int i;
     double r;
+    mp_err err = MP_OKAY;
 
     /*
      * Determine how many bits we need, and extract that many from the input.
@@ -4905,13 +4943,15 @@ BignumToBiasedFrExp(
 
     bits = mp_count_bits(a);
     shift = mantBits - 2 - bits;
-    mp_init(&b);
+    if (mp_init(&b)) {
+	return 0.0;
+    }
     if (shift > 0) {
-	mp_mul_2d(a, shift, &b);
+	err = mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
-	mp_div_2d(a, -shift, &b, NULL);
+	err = mp_div_2d(a, -shift, &b, NULL);
     } else {
-	mp_copy(a, &b);
+	err = mp_copy(a, &b);
     }
 
     /*
@@ -4919,8 +4959,10 @@ BignumToBiasedFrExp(
      */
 
     r = 0.0;
-    for (i=b.used-1; i>=0; --i) {
-	r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
+    if (err == MP_OKAY) {
+	for (i=b.used-1; i>=0; --i) {
+	    r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
+	}
     }
     mp_clear(&b);
 
