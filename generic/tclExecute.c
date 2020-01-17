@@ -8161,16 +8161,13 @@ ExecuteExtendedBinaryMathOp(
 	if (err == MP_OKAY) {
 	    err = mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	}
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	if ((err == MP_OKAY) && !mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
 
-	    err = mp_sub_d(&bigResult, 1, &bigResult);
-	    if (err == MP_OKAY) {
-		err = mp_add(&bigRemainder, &big2, &bigRemainder);
-	    }
-	    if (err != MP_OKAY) {
+	    if ((mp_sub_d(&bigResult, 1, &bigResult) != MP_OKAY)
+		    || (mp_add(&bigRemainder, &big2, &bigRemainder) != MP_OKAY)) {
 		return OUT_OF_MEMORY;
 	    }
 	}
