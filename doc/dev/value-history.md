@@ -18,11 +18,11 @@ The inspirations for the original Tcl string values were clearly the
 in-memory representations of C string literals, and the 
 arguments used by C programs to receive their command line.
 
->	int **main**(int *argc*, char **_argv_)
+>	**int** **main**(**int** *argc*, **char** **_argv_)
 
 Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 
->	int **Tcl_CmdProc** (ClientData, interp, int _argc_, char *_argv_[])
+>	**int** **Tcl_CmdProc** (**ClientData**, _interp_, **int** _argc_, **char** *_argv_[])
 
 Each argument value _argv_[_i_] passed to a command arrives in the
 form  of a (__char__ *).
@@ -350,9 +350,16 @@ to the same __char__ array that is stored by _objPtr_. The caller of
 **Tcl_GetStringFromObj** can sustain the validity of that memory by
 claiming a share on _objPtr_ with a call to **Tcl_IncrRefCount**.
 One copy cannot be avoided by this value model, but value sharing permits
-most subsequent copying to be avoided.
+most subsequent copying to be avoided. This design also imposes
+consequential costs on the "Copy on Write" strategy when over-writing
+a **Tcl_Obj** struct. No alternative to complete allocation and copy
+is available, with performance consequences for large value that have
+visible impact on scripts.
 
+With a **Tcl_Obj** struct defined as a container for any Tcl 8.0 value,
+a new signature for command procedures was defined,
 
+>	**int** **Tcl_ObjCmdProc** (**ClientData**, _interp_, **int** _objc_, **Tcl_Obj** * const _objv_[]);
 
 
 
