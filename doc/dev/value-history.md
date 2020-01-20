@@ -387,8 +387,6 @@ was adapted in Tcl 8.0
 
 <pre>
 ```
-	% string length <\x01>
-	3
 	% string length <\x00>
 	3
 ```
