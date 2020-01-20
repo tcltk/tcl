@@ -460,11 +460,18 @@ A major re-thinking of Tcl values began in 1997 as work toward Tcl 8.1
 began. The reconciliation of Unicode 1.1 and ISO-10646 into agreement
 showed a clear path forward for software to manage text encodings under
 one organized plan.  The publication of RFC 2044 describing a UTF-8
-encoding for With this new future vision of text management in
+encoding for UCS-2 in October 1996 was also a key event.
+With this new future vision of text management in
 software, the notion that programmers could benefit from being shielded
 from the need to deal with encodings rapidly vanished.  In contrast, the
 value of joining in support of a developing standard was apparent.  During
-the development of Tcl 8.1, 
+the development of Tcl 8.1, the prevailing Unicode standards were
+Unicode 2.0 and 2.1. In these definitions of Unicode, all assigned codepoints
+were in the set U+0000 through U+FFFF, the set of characters within
+UCS-2, also called the Basic Multilingual Plane.
+
+
+
 
 
 
