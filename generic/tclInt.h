@@ -4038,6 +4038,19 @@ MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
 /*
+ * TIP #542
+ */
+
+MODULE_SCOPE size_t TclUniCharLen(const Tcl_UniChar *uniStr);
+MODULE_SCOPE int TclUniCharNcmp(const Tcl_UniChar *ucs,
+				const Tcl_UniChar *uct, size_t numChars);
+MODULE_SCOPE int TclUniCharNcasecmp(const Tcl_UniChar *ucs,
+				const Tcl_UniChar *uct, size_t numChars);
+MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
+				const Tcl_UniChar *uniPattern, int nocase);
+
+
+/*
  * Just for the purposes of command-type registration.
  */
 
@@ -4545,7 +4558,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
@@ -4619,8 +4632,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 
 #ifdef WORDS_BIGENDIAN
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
-#else /* !WORDS_BIGENDIAN */
-#   define TclUniCharNcmp Tcl_UniCharNcmp
 #endif /* WORDS_BIGENDIAN */
 
 /*

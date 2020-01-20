@@ -157,7 +157,7 @@ declare 35 {
 	    double *doublePtr)
 }
 # Removed in 9.0, replaced by macro.
-#declare 36 {deprecated {No longer in use, changed to macro}} {
+#declare 36 {
 #    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 #	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
 #}
@@ -262,11 +262,11 @@ declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
 # Removed in 9.0, replaced by macro.
-#declare 66 {deprecated {No longer in use, changed to macro}} {
+#declare 66 {
 #    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
 #}
 # Removed in 9.0, replaced by macro.
-#declare 67 {deprecated {No longer in use, changed to macro}} {
+#declare 67 {
 #    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
 #	    int length)
 #}
@@ -296,11 +296,11 @@ declare 75 {
     int Tcl_AsyncReady(void)
 }
 # Removed in 9.0
-#declare 76 {deprecated {No longer in use, changed to macro}} {
+#declare 76 {
 #    void Tcl_BackgroundError(Tcl_Interp *interp)
 #}
 # Removed in 9.0:
-#declare 77 {deprecated {Use Tcl_UtfBackslash}} {
+#declare 77 {
 #    char Tcl_Backslash(const char *src, int *readPtr)
 #}
 declare 78 {
@@ -368,7 +368,7 @@ declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
 # Removed in 9.0:
-#declare 95 {deprecated {}} {
+#declare 95 {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
 #	    int numArgs, Tcl_ValueType *argTypes,
 #	    Tcl_MathProc *proc, void *clientData)
@@ -645,7 +645,7 @@ declare 173 {
 #    const char *Tcl_GetStringResult(Tcl_Interp *interp)
 #}
 # Removed in 9.0, replaced by macro.
-#declare 175 {deprecated {No longer in use, changed to macro}} {
+#declare 175 {
 #    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
 #	    int flags)
 #}
@@ -861,7 +861,7 @@ declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
 # Removed in 9.0, replaced by macro.
-#declare 237 {deprecated {No longer in use, changed to macro}} {
+#declare 237 {
 #    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
 #	    const char *newValue, int flags)
 #}
@@ -900,7 +900,7 @@ declare 243 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
 # Removed in 9.0, replaced by macro.
-#declare 247 {deprecated {No longer in use, changed to macro}} {
+#declare 247 {
 #    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 #	    Tcl_VarTraceProc *proc, ClientData clientData)
 #}
@@ -922,7 +922,7 @@ declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 # Removed in 9.0, replaced by macro.
-#declare 253 {deprecated {No longer in use, changed to macro}} {
+#declare 253 {
 #    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
 #}
 declare 254 {
@@ -930,7 +930,7 @@ declare 254 {
 	    int flags)
 }
 # Removed in 9.0, replaced by macro.
-#declare 255 {deprecated {No longer in use, changed to macro}} {
+#declare 255 {
 #    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
 #	    Tcl_VarTraceProc *proc, ClientData clientData)
 #}
@@ -943,7 +943,7 @@ declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
 # Removed in 9.0, replaced by macro.
-#declare 258 {deprecated {No longer in use, changed to macro}} {
+#declare 258 {
 #    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 #	    const char *varName, const char *localName, int flags)
 #}
@@ -956,7 +956,7 @@ declare 259 {
 #    int Tcl_VarEval(Tcl_Interp *interp, ...)
 #}
 # Removed in 9.0, replaced by macro.
-#declare 261 {deprecated {No longer in use, changed to macro}} {
+#declare 261 {
 #    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
 #	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
 #}
@@ -994,7 +994,7 @@ declare 270 {
 	    const char **termPtr)
 }
 # Removed in 9.0, replaced by macro.
-#declare 271 {deprecated {No longer in use, changed to macro}} {
+#declare 271 {
 #    const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
 #	    const char *version, int exact)
 #}
@@ -1004,13 +1004,13 @@ declare 272 {
 	    void *clientDataPtr)
 }
 # Removed in 9.0, replaced by macro.
-#declare 273 {deprecated {No longer in use, changed to macro}} {
+#declare 273 {
 #    int Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
 #	    const char *version)
 #}
 # TIP #268: The internally used new Require function is in slot 573.
 # Removed in 9.0, replaced by macro.
-#declare 274 {deprecated {No longer in use, changed to macro}} {
+#declare 274 {
 #    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 #	    const char *version, int exact)
 #}
@@ -1170,11 +1170,11 @@ declare 313 {
 	    size_t charsToRead, int appendFlag)
 }
 # Removed in 9.0, replaced by macro.
-#declare 314 {deprecated {No longer in use, changed to macro}} {
+#declare 314 {
 #    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 #}
 # Removed in 9.0, replaced by macro.
-#declare 315 {deprecated {No longer in use, changed to macro}} {
+#declare 315 {
 #    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 #}
 declare 316 {
@@ -1259,11 +1259,11 @@ declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
 # Removed in 9.0:
-#declare 341 {deprecated {Use Tcl_GetEncodingSearchPath}} {
+#declare 341 {
 #    const char *Tcl_GetDefaultEncodingDir(void)
 #}
 # Removed in 9.0:
-#declare 342 {deprecated {Use Tcl_SetEncodingSearchPath}} {
+#declare 342 {
 #    void Tcl_SetDefaultEncodingDir(const char *path)
 #}
 declare 343 {
@@ -1293,13 +1293,15 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
-    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
-}
-declare 353 {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
-}
+# Removed in 9.0:
+#declare 352 {
+#    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+#}
+# Removed in 9.0:
+#declare 353 {
+#    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+#	    size_t numChars)
+#}
 declare 354 {
     char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    size_t uniLength, Tcl_DString *dsPtr)
@@ -1313,7 +1315,7 @@ declare 356 {
 	    int flags)
 }
 # Removed in 9.0:
-#declare 357 {deprecated {Use Tcl_EvalTokensStandard}} {
+#declare 357 {
 #    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 #	    int count)
 #}
@@ -1402,16 +1404,17 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 # Removed in 9.0, replaced by macro.
-#declare 382 {deprecated {No longer in use, changed to macro}} {
+#declare 382 {
 #    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 #}
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
-declare 384 {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    size_t length)
-}
+# Removed in 9.0
+#declare 384 {
+#    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+#	    size_t length)
+#}
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
 	    Tcl_Obj *patternObj)
@@ -1534,14 +1537,16 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
-declare 419 {
-    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
-}
-declare 420 {
-    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-	    const Tcl_UniChar *uniPattern, int nocase)
-}
+# Removed in 9.0:
+#declare 419 {
+#    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+#	    size_t numChars)
+#}
+# Removed in 9.0:
+#declare 420 {
+#    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
+#	    const Tcl_UniChar *uniPattern, int nocase)
+#}
 # Removed in 9.0, as it is actually a macro:
 #declare 421 {
 #    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
@@ -1600,13 +1605,13 @@ declare 434 {
 
 # TIP#15 (math function introspection) dkf
 # Removed in 9.0:
-#declare 435 {deprecated {}} {
+#declare 435 {
 #    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 #	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 #	    Tcl_MathProc **procPtr, void **clientDataPtr)
 #}
 # Removed in 9.0:
-#declare 436 {deprecated {}} {
+#declare 436 {
 #    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 #}
 # TIP#36 (better access to 'subst') dkf
