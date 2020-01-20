@@ -788,7 +788,7 @@ Tcl_UtfFindFirst(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
@@ -837,7 +837,7 @@ Tcl_UtfFindLast(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
@@ -880,7 +880,7 @@ Tcl_UtfNext(
     Tcl_UniChar ch = 0;
     size_t len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	len += TclUtfToUniChar(src + len, &ch);
     }
@@ -962,20 +962,20 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch = 0;
     int fullchar = 0;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	size_t len = 0;
 #endif
 
     src += TclUtfToUniChar(src, &ch);
     while (index--) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	src += (len = TclUtfToUniChar(src, &ch));
 #else
 	src += TclUtfToUniChar(src, &ch);
 #endif
     }
     fullchar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	/* If last Tcl_UniChar was a high surrogate, combine with low surrogate */
 	(void)TclUtfToUniChar(src, &ch);
@@ -991,7 +991,7 @@ Tcl_UniCharAtIndex(
  * Tcl_UtfAtIndex --
  *
  *	Returns a pointer to the specified character (not byte) position in
- *	the UTF-8 string. If TCL_UTF_MAX <= 4, characters > U+FFFF count as
+ *	the UTF-8 string. If TCL_UTF_MAX <= 3, characters > U+FFFF count as
  *	2 positions, but then the pointer should never be placed between
  *	the two positions.
  *
@@ -1022,7 +1022,7 @@ Tcl_UtfAtIndex(
 	    src += TclUtfToUniChar(src, &ch);
 #endif
 	}
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	/* Index points at character following high Surrogate */
 	src += TclUtfToUniChar(src, &ch);
@@ -1119,7 +1119,7 @@ Tcl_UtfToUpper(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	upChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1181,7 +1181,7 @@ Tcl_UtfToLower(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1246,7 +1246,7 @@ Tcl_UtfToTitle(
     if (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	titleChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1266,7 +1266,7 @@ Tcl_UtfToTitle(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1378,7 +1378,7 @@ Tcl_UtfNcmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1429,7 +1429,7 @@ Tcl_UtfNcasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1478,7 +1478,7 @@ TclUtfCmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1524,7 +1524,7 @@ TclUtfCasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1648,7 +1648,7 @@ Tcl_UniCharToTitle(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharLen --
+ * TclUniCharLen --
  *
  *	Find the length of a UniChar string. The str input must be null
  *	terminated.
@@ -1663,7 +1663,7 @@ Tcl_UniCharToTitle(
  */
 
 size_t
-Tcl_UniCharLen(
+TclUniCharLen(
     const Tcl_UniChar *uniStr)	/* Unicode string to find length of. */
 {
     size_t len = 0;
@@ -1678,7 +1678,7 @@ Tcl_UniCharLen(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharNcmp --
+ * TclUniCharNcmp --
  *
  *	Compare at most numChars unichars of string ucs to string uct.
  *	Both ucs and uct are assumed to be at least numChars unichars long.
@@ -1693,7 +1693,7 @@ Tcl_UniCharLen(
  */
 
 int
-Tcl_UniCharNcmp(
+TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     size_t numChars)	/* Number of unichars to compare. */
@@ -1722,7 +1722,7 @@ Tcl_UniCharNcmp(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharNcasecmp --
+ * TclUniCharNcasecmp --
  *
  *	Compare at most numChars unichars of string ucs to string uct case
  *	insensitive. Both ucs and uct are assumed to be at least numChars
@@ -1738,7 +1738,7 @@ Tcl_UniCharNcmp(
  */
 
 int
-Tcl_UniCharNcasecmp(
+TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     size_t numChars)	/* Number of unichars to compare. */
@@ -2068,7 +2068,7 @@ Tcl_UniCharIsWordChar(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharCaseMatch --
+ * TclUniCharCaseMatch --
  *
  *	See if a particular Unicode string matches a particular pattern.
  *	Allows case insensitivity. This is the Unicode equivalent of the char*
@@ -2089,7 +2089,7 @@ Tcl_UniCharIsWordChar(
  */
 
 int
-Tcl_UniCharCaseMatch(
+TclUniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
@@ -2156,7 +2156,7 @@ Tcl_UniCharCaseMatch(
 			}
 		    }
 		}
-		if (Tcl_UniCharCaseMatch(uniStr, uniPattern, nocase)) {
+		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
 		    return 1;
 		}
 		if (*uniStr == 0) {
@@ -2262,7 +2262,7 @@ Tcl_UniCharCaseMatch(
  *
  *	See if a particular Unicode string matches a particular pattern.
  *	Allows case insensitivity. This is the Unicode equivalent of the char*
- *	Tcl_StringCaseMatch. This variant of Tcl_UniCharCaseMatch uses counted
+ *	Tcl_StringCaseMatch. This variant of TclUniCharCaseMatch uses counted
  *	Strings, so embedded NULLs are allowed.
  *
  * Results:

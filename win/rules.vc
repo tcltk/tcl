@@ -684,7 +684,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
 # CONFIG_CHECK - 1 -> check current build configuration against Tcl
 #           configuration (ignored for Tcl itself)
-# TCL_UTF_MAX=6 - forces a build using 32-bit Tcl_UniChar in stead of 16-bit.
+# TCL_UTF_MAX=4 - forces a build allowing 4-byte UTF-8 sequences internally.
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -754,8 +754,8 @@ USE_THREAD_ALLOC= 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "utfmax"]
-!message *** Force 32-bit Tcl_UniChar
-TCL_UTF_MAX = 6
+!message *** Force allowing 4-byte UTF-8 sequences internally
+TCL_UTF_MAX = 4
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1353,8 +1353,8 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !endif
 
-!if "$(TCL_UTF_MAX)" == "6"
-OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=6
+!if "$(TCL_UTF_MAX)" == "4"
+OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=4
 !endif
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
