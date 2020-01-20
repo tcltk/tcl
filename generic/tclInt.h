@@ -4057,8 +4057,6 @@ MODULE_SCOPE int	TclFullFinalizationRequested(void);
 MODULE_SCOPE size_t TclUniCharLen(const Tcl_UniChar *uniStr);
 MODULE_SCOPE int TclUniCharNcmp(const Tcl_UniChar *ucs,
 				const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-				const Tcl_UniChar *unicode, size_t length);
 MODULE_SCOPE int TclUniCharNcasecmp(const Tcl_UniChar *ucs,
 				const Tcl_UniChar *uct, size_t numChars);
 MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
