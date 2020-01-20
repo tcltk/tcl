@@ -371,7 +371,7 @@ new signature have the ability to receive the complete argument set of
 Tcl 8.0 as arguments.  An arbitrary Tcl 8.0 value can be returned 
 using a call to **Tcl_SetObjResult**.  One of these commands can be
 evaluated by use of the old routine **Tcl_Eval** or the new routine
-**Tcl_EvalObj** when the script to be evaluated itself includes
+**Tcl_EvalObj** when the script to be evaluated itself might include
 the __NUL__ byte. The caller then retrieves the result of the evaluated
 command with a call to **Tcl_GetObjResult**.  A new routine
 **Tcl_GetStringResult** allows the interpreter result to be retrieved
@@ -445,11 +445,29 @@ demonstrated.
 Others are largely masked by the use of the bytecode compiler and 
 execution engine, also new in Tcl 8.0.
 
-limitations
+Several routines, both public and private, and a number of established
+data structures continue to make use of **NUL**-terminated strings. Because
+of this, although the fully general set of Tcl values includes all
+binary sequences, several components of Tcl remain limited, and may
+not include the **NUL** byte. Examples include command names, namespace names,
+channel names, channel type names, **Tcl_ObjType** names, and likely more.
 
-## Tcl 8.1
+## Tcl 8.1 (Development begun 1997, Official release 1999-)
 
-*Representation in an internal encoding*
+*Representation with an encoding of the Unicode Universal Character Set (UCS)*
+
+A major re-thinking of Tcl values began in 1997 as work toward Tcl 8.1
+began. The reconciliation of Unicode 1.1 and ISO-10646 into agreement
+showed a clear path forward for software to manage text encodings under
+one organized plan.  The publication of RFC 2044 describing a UTF-8
+encoding for With this new future vision of text management in
+software, the notion that programmers could benefit from being shielded
+from the need to deal with encodings rapidly vanished.  In contrast, the
+value of joining in support of a developing standard was apparent.  During
+the development of Tcl 8.1, 
+
+
+
 
 
 
