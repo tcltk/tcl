@@ -301,15 +301,18 @@ arbitrary binary data up to 2Gb in size.  The encoding of string elements
 as __char__ array elements is still direct, simple, one-to-one, and every
 __char__ array that was a valid representation of a value in Tcl 7 remains
 valid and continues to represent the same value in Tcl 8.0, which offers a
-high degree of accommodation of client code written for Tcl 7.
+high degree of accommodation of client code written for Tcl 7. Every
+collection of bytes in the __char__ array represents a valid string, so
+there is no need to consider how any routine ought to respond to an invalid
+input.
 
 The public C API for Tcl 8.0 includes only 7 new routines that either
 accept or return explicitly a pair of values of type (__char__ *)
 and __int__ representing together a counted string value. A second solution
 is to include these two values as fields of a new struct, **Tcl_Obj**, and
 define new interface routines that make use of that struct.
-The **Tcl_Obj** struct introduced in Tcl 8.0 includes a field _bytes_
-of type (__char__ *) and a field _length_ of type __int__. Taken together
+The **Tcl_Obj** struct introduced in Tcl 8.0 includes a (__char__ *) 
+field _bytes_ and an __int__ field _length_.  Taken together
 these two fields are a Tcl value represented as a counted string.  The
 routine
 
@@ -326,10 +329,10 @@ retrieved from _objPtr_. These routines support the transmission of
 the complete binary-safe set of Tcl 8.0 values.
 
 It is mostly outside the scope of this document, but additional fields
-of the **Tcl_Obj** struct enable value sharing, and caching of conversion
+of the **Tcl_Obj** struct enable value sharing, and caching of conversions
 to other value representations. These other functions solve many of the
 defects of the Tcl 7 value representation other than the constrained
-universe of supported values itself. Notably these other feaures underlie
+universe of supported values itself. Notably these other features enable
 substantial performance gains. Much of the published advice to adopt
 interfaces using the **Tcl_Obj** struct centers on the performance rewards
 rather than the expanded capability to include **NUL** bytes.
@@ -348,27 +351,63 @@ the __char__ array in its _bytes_ argument into it. In contrast,
 the (__char__ *) value returned by **Tcl_GetStringFromObj** is a pointer
 to the same __char__ array that is stored by _objPtr_. The caller of
 **Tcl_GetStringFromObj** can sustain the validity of that memory by
-claiming a share on _objPtr_ with a call to **Tcl_IncrRefCount**.
-One copy cannot be avoided by this value model, but value sharing permits
-most subsequent copying to be avoided. This design also imposes
-consequential costs on the "Copy on Write" strategy when over-writing
-a **Tcl_Obj** struct. No alternative to complete allocation and copy
-is available, with performance consequences for large value that have
-visible impact on scripts.
+claiming a share on _objPtr_ with a call to **Tcl_IncrRefCount** and
+then later releasing that claim with a call to **Tcl_DecrRefCount**.
+One complete copy of the __char__ array contents cannot be avoided by this
+value model, but value sharing permits most subsequent copying to be avoided.
+This design also imposes consequential costs on the "Copy on Write" strategy
+when over-writing a **Tcl_Obj** struct. No alternative to complete
+allocation and copy is available, with performance consequences for
+large values that have visible impact on scripts.
 
 With a **Tcl_Obj** struct defined as a container for any Tcl 8.0 value,
 a new signature for command procedures was defined,
 
 >	**int** **Tcl_ObjCmdProc** (**ClientData**, _interp_, **int** _objc_, **Tcl_Obj** * const _objv_[]);
 
+and a new public routine **Tcl_CreateObjCommand** to create commands 
+implemented using the new command procedure signature. Commands using the
+new signature have the ability to receive the complete argument set of
+Tcl 8.0 as arguments.  An arbitrary Tcl 8.0 value can be returned 
+using a call to **Tcl_SetObjResult**.  One of these commands can be
+evaluated by use of the old routine **Tcl_Eval** or the new routine
+**Tcl_EvalObj** when the script to be evaluated itself includes
+the __NUL__ byte. The caller then retrieves the result of the evaluated
+command with a call to **Tcl_GetObjResult**.  A new routine
+**Tcl_GetStringResult** allows the interpreter result to be retrieved
+as a **NUL**-terminated string, with the corresponding truncation at
+any **NUL** byte that might be in it. This is not a recommended routine,
+but it is an improvement over direct access to the _interp_->_result_
+field, which Tcl 8.0 declares deprecated.  All Tcl operations that need
+to support the complete new Tcl value set had to be revised to make use
+of new facilities and interfaces.
 
+Continuing earlier illustrations, we can see that the **string** command
+was adapted in Tcl 8.0
 
-Tcl_Obj rep and Tcl_ObjCmdProc
+<pre>
+```
+	% string length <\x01>
+	3
+	% string length <\x00>
+	3
+```
+</pre>
 
-string length
-puts read combo
+Likewise the **puts** and **read** commands are fully binary safe, so
+that 
 
-binary command
+<pre>
+```
+	fconfigure $in -translation binary
+	fconfigure $out -translation binary
+	puts -nonewline $out [read $in]
+```
+</pre>
+
+now faithfully copies all bytes from one channel to another. Tcl 8.0
+also introduces new commands **binary format** and **binary scan**
+that Tcl programs can use to process binary values.
 
 mid-migration
 	update, vwait
