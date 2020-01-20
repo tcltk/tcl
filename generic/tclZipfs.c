@@ -430,7 +430,7 @@ static const Tcl_Filesystem zipfsFilesystem = {
     NULL, /* renameFileProc */
     NULL, /* copyDirectoryProc */
     NULL, /* lstatProc */
-    (Tcl_FSLoadFileProc *) ZipFSLoadFile,
+    (Tcl_FSLoadFileProc *)(void *)ZipFSLoadFile,
     NULL, /* getCwdProc */
     NULL, /* chdirProc */
 };
@@ -4682,7 +4682,7 @@ ZipFSLoadFile(
 	Tcl_DecrRefCount(objs[1]);
     }
 
-    loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
+    loadFileProc = (Tcl_FSLoadFileProc2 *)(void *)tclNativeFilesystem.loadFileProc;
     if (loadFileProc) {
 	ret = loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
     } else {
