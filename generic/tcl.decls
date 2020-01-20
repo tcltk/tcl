@@ -1290,13 +1290,15 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
-    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
-}
-declare 353 {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
-}
+# Removed in 9.0:
+#declare 352 {
+#    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+#}
+# Removed in 9.0:
+#declare 353 {deprecated {Use Tcl_UtfNcmp}} {
+#    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+#	    size_t numChars)
+#}
 declare 354 {
     char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
 	    size_t uniLength, Tcl_DString *dsPtr)
@@ -1385,10 +1387,10 @@ declare 376 {
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
-declare 378 {
+declare 378 {deprecated {Use Tcl_UniCharToUtfDString}} {
     Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, size_t numChars)
 }
-declare 379 {
+declare 379 {deprecated {Use Tcl_UniCharToUtfDString}} {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    size_t numChars)
 }
@@ -1405,10 +1407,11 @@ declare 381 {
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
-declare 384 {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    size_t length)
-}
+# Removed in 9.0, replaced by macro.
+#declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
+#    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+#	    size_t length)
+#}
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
 	    Tcl_Obj *patternObj)
@@ -1531,14 +1534,16 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
-declare 419 {
-    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
-}
-declare 420 {
-    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-	    const Tcl_UniChar *uniPattern, int nocase)
-}
+# Removed in 9.0:
+#declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
+#    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+#	    size_t numChars)
+#}
+# Removed in 9.0:
+#declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
+#    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
+#	    const Tcl_UniChar *uniPattern, int nocase)
+#}
 # Removed in 9.0, as it is actually a macro:
 #declare 421 {
 #    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
@@ -1591,7 +1596,7 @@ declare 433 {
 }
 
 # introduced in 8.4a3
-declare 434 {
+declare 434 {deprecated {Use Tcl_UtfToUniCharDString}} {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 

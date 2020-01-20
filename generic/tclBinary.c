@@ -1349,7 +1349,7 @@ BinaryFormatCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1] = "";
+	char buf[5] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1720,7 +1720,7 @@ BinaryScanCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1] = "";
+	char buf[5] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';

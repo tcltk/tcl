@@ -553,7 +553,7 @@ Tcl_GetUniChar(
 	return -1;
     }
     ch = stringPtr->unicode[index];
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
     if ((ch & 0xF800) == 0xD800) {
 	if (ch & 0x400) {
@@ -710,7 +710,7 @@ Tcl_GetRange(
     if (last < first) {
 	return Tcl_NewObj();
     }
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
     if ((first + 1 > 1) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
@@ -1165,7 +1165,7 @@ Tcl_AppendToObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendUnicodeToObj --
+ * TclAppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
  *	efficient manner possible. Length must be >= 0.
@@ -1180,7 +1180,7 @@ Tcl_AppendToObj(
  */
 
 void
-Tcl_AppendUnicodeToObj(
+TclAppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
@@ -1189,7 +1189,7 @@ Tcl_AppendUnicodeToObj(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
+	Tcl_Panic("%s called with shared object", "TclAppendUnicodeToObj");
     }
 
     if (length == 0) {
@@ -2509,7 +2509,7 @@ AppendPrintfToObjVA(
 		    end = q;
 		}
 
-		q = bytes + TCL_UTF_MAX;
+		q = bytes + 4;
 		while ((bytes < end) && (bytes < q)
 			&& ((*bytes & 0xC0) == 0x80)) {
 		    bytes++;
@@ -2832,7 +2832,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+	TclAppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
 		(count - done) * length);
     } else {
 	/*
@@ -3299,7 +3299,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) TclGetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) TclGetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
+		memCmpFn = (memCmpFn_t)TclUniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
@@ -3324,7 +3324,7 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+			memCmpFn = (memCmpFn_t) TclUniCharNcmp;
 		    }
 		}
 	    }
@@ -3889,7 +3889,7 @@ TclStringReplace(
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
 	if (first + count < (size_t)numChars) {
-	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
+	    TclAppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}
 
