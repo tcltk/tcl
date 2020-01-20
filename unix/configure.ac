@@ -180,9 +180,8 @@ if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
 	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
 	libtommath_ok=no])
     AS_IF([test $libtommath_ok = yes], [
-	AC_SEARCH_LIBS([mp_log_u32],[tommath],[],[
-	libtommath_ok=no
-    ])])
+	AC_CHECK_LIB([tommath],[mp_log_u32],[MATH_LIBS="$MATH_LIBS -ltommath"],[
+    libtommath_ok=no])])
 fi
 AS_IF([test $libtommath_ok = yes], [
   AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])

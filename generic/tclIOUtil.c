@@ -171,7 +171,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjCopyDirectory,
     TclpObjLstat,
     /* Needs casts since we're using version_2. */
-    (Tcl_FSLoadFileProc *) TclpDlopen,
+    (Tcl_FSLoadFileProc *)(void *) TclpDlopen,
     (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
     TclpObjChdir
 };
@@ -3177,7 +3177,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(fsPtr->loadFileProc))
+	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
