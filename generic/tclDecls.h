@@ -1143,12 +1143,10 @@ EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
 /* 378 */
-TCL_DEPRECATED("Use Tcl_UniCharToUtfDString")
-Tcl_Obj *		Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
 				int numChars);
 /* 379 */
-TCL_DEPRECATED("Use Tcl_UniCharToUtfDString")
-void			Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
+EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode, int numChars);
 /* 380 */
 EXTERN int		Tcl_GetCharLength(Tcl_Obj *objPtr);
@@ -1304,8 +1302,7 @@ EXTERN int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length);
 /* 433 */
 EXTERN Tcl_ThreadId	Tcl_GetChannelThread(Tcl_Channel channel);
 /* 434 */
-TCL_DEPRECATED("Use Tcl_UtfToUniCharDString")
-Tcl_UniChar *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
+EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
 				int *lengthPtr);
 /* 435 */
 TCL_DEPRECATED("")
@@ -2334,8 +2331,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
-    TCL_DEPRECATED_API("Use Tcl_UniCharToUtfDString") Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
-    TCL_DEPRECATED_API("Use Tcl_UniCharToUtfDString") void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
+    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
@@ -2390,7 +2387,7 @@ typedef struct TclStubs {
     char * (*tcl_AttemptDbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 431 */
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, int length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
-    TCL_DEPRECATED_API("Use Tcl_UtfToUniCharDString") Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
+    Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
     TCL_DEPRECATED_API("") int (*tcl_GetMathFuncInfo) (Tcl_Interp *interp, const char *name, int *numArgsPtr, Tcl_ValueType **argTypesPtr, Tcl_MathProc **procPtr, ClientData *clientDataPtr); /* 435 */
     TCL_DEPRECATED_API("") Tcl_Obj * (*tcl_ListMathFuncs) (Tcl_Interp *interp, const char *pattern); /* 436 */
     Tcl_Obj * (*tcl_SubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 437 */

@@ -1337,10 +1337,10 @@ declare 376 {
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
-declare 378 {deprecated {Use Tcl_UniCharToUtfDString}} {
+declare 378 {
     Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
 }
-declare 379 {deprecated {Use Tcl_UniCharToUtfDString}} {
+declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    int numChars)
 }
@@ -1540,7 +1540,7 @@ declare 433 {
 }
 
 # introduced in 8.4a3
-declare 434 {deprecated {Use Tcl_UtfToUniCharDString}} {
+declare 434 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
