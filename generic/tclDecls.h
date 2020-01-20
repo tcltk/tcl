@@ -1013,12 +1013,10 @@ EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
 /* 378 */
-TCL_DEPRECATED("Use Tcl_UniCharToUtfDString")
-Tcl_Obj *		Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
 				size_t numChars);
 /* 379 */
-TCL_DEPRECATED("Use Tcl_UniCharToUtfDString")
-void			Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
+EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode, size_t numChars);
 /* 380 */
 EXTERN size_t		Tcl_GetCharLength(Tcl_Obj *objPtr);
@@ -1156,8 +1154,7 @@ EXTERN int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr,
 /* 433 */
 EXTERN Tcl_ThreadId	Tcl_GetChannelThread(Tcl_Channel channel);
 /* 434 */
-TCL_DEPRECATED("Use Tcl_UtfToUniCharDString")
-Tcl_UniChar *		Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
+EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
 				int *lengthPtr);
 /* Slot 435 is reserved */
 /* Slot 436 is reserved */
@@ -2174,8 +2171,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, size_t offset, size_t nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
-    TCL_DEPRECATED_API("Use Tcl_UniCharToUtfDString") Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, size_t numChars); /* 378 */
-    TCL_DEPRECATED_API("Use Tcl_UniCharToUtfDString") void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t numChars); /* 379 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, size_t numChars); /* 378 */
+    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t numChars); /* 379 */
     size_t (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 381 */
     void (*reserved382)(void);
@@ -2230,7 +2227,7 @@ typedef struct TclStubs {
     void * (*tcl_AttemptDbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 431 */
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, size_t length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
-    TCL_DEPRECATED_API("Use Tcl_UtfToUniCharDString") Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
+    Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
     void (*reserved435)(void);
     void (*reserved436)(void);
     Tcl_Obj * (*tcl_SubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 437 */
