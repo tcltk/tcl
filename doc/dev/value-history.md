@@ -407,19 +407,47 @@ that
 
 now faithfully copies all bytes from one channel to another. Tcl 8.0
 also introduces new commands **binary format** and **binary scan**
-that Tcl programs can use to process binary values.
+that Tcl programs can use to process binary values. In Tcl 8.0, these
+commands operate directly on the counted string in _objPtr_->_bytes_.
 
-mid-migration
-	update, vwait
-	break, continue, fileevent, fconfigure, glob, pwd, seek, socket, tell
-	for, if, incr, package, load, reg*, scan, set, subst, trace, while
+A deployed collection of extension commands written for Tcl 7 could
+still be used by Tcl 8.0.  Since these commands were implemented by
+command procedures using the **Tcl_CmdProc** signature, they could
+only accept **NUL**-terminated strings as arguments. Attempts to pass
+any argument value to them that included a **NUL** byte would only
+pass the truncated value. Note that this remains within the very
+free requirements of an arbitrary Tcl command. Each command is free to
+interpret its arguments as it chooses, including the choice to
+truncate them at the first **NUL**.  A Tcl 7 command would produce a
+result within the constrained value set, but that is acceptable.
+If the command records that result via direct write to _interp_->_result_
+that is deprecated and formally unsupported, but in practice tolerated
+and functional. Such an approach allowed for a gentle, even lazy, approach
+to migration to new capabilities.  All of the public Tcl 7 routines that
+accept or return **NUL**-terminated strings noted in the earlier section
+continue to be supported public routines in Tcl 8.0, doing what they do,
+with all the implicit limitations.  The model in place was clearly an
+expectation that all commands would migrate in time, but there was not
+a big hurry.  Several routines incapable of supporting the expanded
+Tcl value model were declared deprecated as a prod toward eventual migration.
+
+Tcl 8.0 itself did not fully convert all of its built-in commands. At least
+23 **Tcl_CmdProc** command procedures persist within it. Some can be
+demonstrated.
+
+<pre>
+```
+	% set foo <\x00>
+	<>
+	% subst {$foo}
+	<
+```
+</pre>
+
+Others are largely masked by the use of the bytecode compiler and 
+execution engine, also new in Tcl 8.0.
 
 limitations
-
-
-
-
-
 
 ## Tcl 8.1
 
