@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_WCharToUtfDString, Tcl_UtfToWCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -120,6 +120,12 @@ A null-terminated Unicode string.
 A null-terminated UTF-16 string.
 .AP "const wchar_t" *wStr in
 A null-terminated wchar_t string.
+.AP "const unsigned short" *utf16s in
+A null-terminated utf-16 string.
+.AP "const unsigned short" *utf16t in
+A null-terminated utf-16 string.
+.AP "const unsigned short" *utf16Pattern in
+A null-terminated utf-16 string.
 .AP int length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
@@ -148,11 +154,11 @@ case-insensitive (1).
 .PP
 These routines convert between UTF-8 strings and Unicode/Utf-16 characters.
 A UTF-8 character is a Unicode character represented as a varying-length
-sequence of up to \fBTCL_UTF_MAX\fR bytes.  A multibyte UTF-8 sequence
+sequence of up to \fB4\fR bytes.  A multibyte UTF-8 sequence
 consists of a lead byte followed by some number of trail bytes.
 .PP
-\fBTCL_UTF_MAX\fR is the maximum number of bytes that it takes to
-represent one Unicode character in the UTF-8 representation.
+\fBTCL_UTF_MAX\fR is the maximum number of bytes that \fBTcl_UtfToUniChar\fR
+can consume in a single call.
 .PP
 \fBTcl_UniCharToUtf\fR stores the character \fIch\fR as a UTF-8 string
 in starting at \fIbuf\fR.  The return value is the number of bytes stored
