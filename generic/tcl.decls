@@ -1244,10 +1244,10 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
+declare 352 {deprecated {Use Tcl_GetCharLength}} {
     int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 }
-declare 353 {
+declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
@@ -1356,7 +1356,7 @@ declare 382 {deprecated {No longer in use, changed to macro}} {
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {
+declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    int length)
 }
@@ -1482,11 +1482,11 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
-declare 419 {
+declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
-declare 420 {
+declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
