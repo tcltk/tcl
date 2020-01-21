@@ -303,7 +303,7 @@ static double		MakeNaN(int signum, Tcl_WideUInt tag);
 #endif
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
-static void		MulPow5(mp_int *, unsigned, mp_int *);
+static mp_err	MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
 static int 		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
 static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
@@ -2109,7 +2109,7 @@ RefineApproximation(
  *----------------------------------------------------------------------
  */
 
-static inline void
+static inline mp_err
 MulPow5(
     mp_int *base, 		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
@@ -2118,23 +2118,25 @@ MulPow5(
     mp_int *p = base;
     int n13 = n / 13;
     int r = n % 13;
+    mp_err err = MP_OKAY;
 
     if (r != 0) {
-	mp_mul_d(p, dpow5[r], result);
+	err = mp_mul_d(p, dpow5[r], result);
 	p = result;
     }
     r = 0;
-    while (n13 != 0) {
+    while ((err == MP_OKAY) && (n13 != 0)) {
 	if (n13 & 1) {
-	    mp_mul(p, pow5_13+r, result);
+	    err = mp_mul(p, pow5_13+r, result);
 	    p = result;
 	}
 	n13 >>= 1;
 	++r;
     }
-    if (p != result) {
-	mp_copy(p, result);
+    if ((err == MP_OKAY) && (p != result)) {
+	err = mp_copy(p, result);
     }
+    return err;
 }
 
 /*
@@ -3334,8 +3336,7 @@ ShouldBankerRoundUpToNextPowD(
      * 2**(MP_DIGIT_BIT*sd)
      */
 
-    mp_add(b, m, temp);
-    if (temp->used <= sd) {	/* Too few digits to be > s */
+    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {	/* Too few digits to be > s */
 	return 0;
     }
     if (temp->used > sd+1 || temp->dp[sd] > 1) {
@@ -3403,23 +3404,31 @@ ShorteningBignumConversionPowD(
     int i;			/* Index in the output buffer. */
     mp_int temp;
     int r1;
+    mp_err err = MP_OKAY;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * mminus = 5**m5
      */
 
-    mp_init_u64(&b, bw);
-    mp_init_set(&mminus, 1);
-    MulPow5(&b, b5, &b);
-    mp_mul_2d(&b, b2, &b);
+    if ((retval == NULL) || (mp_init_u64(&b, bw) != MP_OKAY)) {
+	return NULL;
+    }
+    if (mp_init_set(&mminus, 1) != MP_OKAY) {
+	mp_clear(&b);
+	return NULL;
+    }
+    err = MulPow5(&b, b5, &b);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&b, b2, &b);
+    }
 
     /*
      * Adjust if the logarithm was guessed wrong.
      */
 
-    if (b.used <= sd) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (b.used <= sd)) {
+	err = mp_mul_d(&b, 10, &b);
 	++m2plus; ++m2minus; ++m5;
 	ilim = ilim1;
 	--k;
@@ -3430,13 +3439,21 @@ ShorteningBignumConversionPowD(
      * mplus = 5**m5 * 2**m2plus
      */
 
-    mp_mul_2d(&mminus, m2minus, &mminus);
-    MulPow5(&mminus, m5, &mminus);
-    if (m2plus > m2minus) {
-	mp_init_copy(&mplus, &mminus);
-	mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&mminus, m2minus, &mminus);
     }
-    mp_init(&temp);
+    if (err == MP_OKAY) {
+	err = MulPow5(&mminus, m5, &mminus);
+    }
+    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	err = mp_init_copy(&mplus, &mminus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+	}
+    }
+    if (err == MP_OKAY) {
+	err = mp_init(&temp);
+    }
 
     /*
      * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
@@ -3518,10 +3535,14 @@ ShorteningBignumConversionPowD(
 	 * Advance to the next digit.
 	 */
 
-	mp_mul_d(&b, 10, &b);
-	mp_mul_d(&mminus, 10, &mminus);
-	if (m2plus > m2minus) {
-	    mp_mul_2d(&mminus, m2plus-m2minus, &mplus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_d(&b, 10, &b);
+	}
+	if (err == MP_OKAY) {
+	    err = mp_mul_d(&mminus, 10, &mminus);
+	}
+	if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	    err = mp_mul_2d(&mminus, m2plus-m2minus, &mplus);
 	}
 	++i;
     }
@@ -3540,7 +3561,7 @@ ShorteningBignumConversionPowD(
     if (endPtr) {
 	*endPtr = s;
     }
-    return retval;
+    return (err == MP_OKAY) ? retval : NULL;
 }
 
 /*
@@ -3787,23 +3808,33 @@ ShorteningBignumConversion(
     int minit = 1;		/* Fudge factor for when we misguess k. */
     int i;
     int r1;
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * S = 2**s2 * 5*s5
      */
 
-    mp_init_u64(&b, bw);
-    mp_mul_2d(&b, b2, &b);
-    mp_init_set(&S, 1);
-    MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
+    if ((retval == NULL) || (mp_init_u64(&b, bw) != MP_OKAY)) {
+	return NULL;
+    }
+    err = mp_mul_2d(&b, b2, &b);
+    if (err == MP_OKAY) {
+	mp_init_set(&S, 1);
+    }
+    if (err == MP_OKAY) {
+	MulPow5(&S, s5, &S);
+    }
+    if (err == MP_OKAY) {
+	mp_mul_2d(&S, s2, &S);
+    }
 
     /*
      * Handle the case where we guess the position of the decimal point wrong.
      */
 
-    if (mp_cmp_mag(&b, &S) == MP_LT) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (mp_cmp_mag(&b, &S) == MP_LT)) {
+	err = mp_mul_d(&b, 10, &b);
 	minit = 10;
 	ilim =ilim1;
 	--k;

@@ -4719,7 +4719,7 @@ Tcl_GetsObj(
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
 			    gs.rawRead, statePtr->inputEncodingFlags
 				| TCL_ENCODING_NO_TERMINATE, &gs.state, tmp,
-			    TCL_UTF_MAX, &rawRead, NULL, NULL);
+			    sizeof(tmp), &rawRead, NULL, NULL);
 		    bufPtr->nextRemoved += rawRead;
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
@@ -6282,7 +6282,7 @@ ReadChars(
 
 		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
-		&statePtr->inputEncodingState, buffer, TCL_UTF_MAX + 1,
+		&statePtr->inputEncodingState, buffer, sizeof(buffer),
 		&read, &decoded, &count);
 
 		if (count == 2) {
