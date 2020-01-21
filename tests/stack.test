@@ -12,6 +12,8 @@
 package require tcltest 2
 namespace import ::tcltest::*
 
+testConstraint noOsx [expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]
+
 # Note that a failure in this test results in a crash of the executable.
 # In order to avoid that, we do a basic check of the current stacksize.
 # This size can be changed with ulimit (ksh/bash/sh) or limit (csh/tcsh).
@@ -68,7 +70,7 @@ test stack-2.1 {maxNestingDepth reached on infinite recursion} -constraints {
     
 # Make sure that there is enough stack to run regexp even if we're
 # close to the recursion limit. [Bug 947070] [Patch 746378]
-test stack-3.1 {enough room for regexp near recursion limit} -body {
+test stack-3.1 {enough room for regexp near recursion limit} -constraints noOsx -body {
     # do this in a sub process in case it segfaults
     exec [interpreter] << {
 	interp recursionlimit {} 10000
