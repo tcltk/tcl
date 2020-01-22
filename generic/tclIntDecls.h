@@ -582,6 +582,9 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* 259 */
+EXTERN void		TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+				const Tcl_UniChar *unicode, size_t length);
+/* 260 */
 EXTERN int		TclMSB(size_t n);
 
 typedef struct TclIntStubs {
@@ -847,7 +850,8 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
-    int (*tclMSB) (size_t n); /* 259 */
+    void (*tclAppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 259 */
+    int (*tclMSB) (size_t n); /* 260 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1265,8 +1269,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticPackage) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+#define TclAppendUnicodeToObj \
+	(tclIntStubsPtr->tclAppendUnicodeToObj) /* 259 */
 #define TclMSB \
-	(tclIntStubsPtr->tclMSB) /* 259 */
+	(tclIntStubsPtr->tclMSB) /* 260 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

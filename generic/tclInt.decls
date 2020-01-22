@@ -1065,7 +1065,12 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
+# TIP 542
 declare 259 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+	    const Tcl_UniChar *unicode, size_t length)
+}
+declare 260 {
     int	TclMSB(size_t n)
 }
 
