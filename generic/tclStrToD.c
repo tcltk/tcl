@@ -3609,21 +3609,26 @@ StrictBignumConversionPowD(
     mp_digit digit;		/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Index in the output buffer. */
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      */
 
-    mp_init_u64(&b, bw);
-    MulPow5(&b, b5, &b);
-    mp_mul_2d(&b, b2, &b);
+    if (mp_init_u64(&b, bw) != MP_OKAY) {
+	return NULL;
+    }
+    err = MulPow5(&b, b5, &b);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&b, b2, &b);
+    }
 
     /*
      * Adjust if the logarithm was guessed wrong.
      */
 
-    if (b.used <= sd) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (b.used <= sd)) {
+	err = mp_mul_d(&b, 10, &b);
 	ilim = ilim1;
 	--k;
     }
@@ -3634,7 +3639,7 @@ StrictBignumConversionPowD(
      */
 
     i = 1;
-    for (;;) {
+    while (err == MP_OKAY) {
 	if (b.used <= sd) {
 	    digit = 0;
 	} else {
@@ -3666,7 +3671,7 @@ StrictBignumConversionPowD(
 	 * Advance to the next digit.
 	 */
 
-	mp_mul_d(&b, 10, &b);
+	err = mp_mul_d(&b, 10, &b);
 	++i;
     }
 
@@ -3748,8 +3753,9 @@ ShouldBankerRoundUpToNext(
      * Compare b and S-m: this is the same as comparing B+m and S.
      */
 
-    mp_init(&temp);
-    mp_add(b, m, &temp);
+    if ((mp_init(&temp) != MP_OKAY) || (mp_add(b, m, &temp) != MP_OKAY)) {
+	return 0;
+    }
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
     switch(r) {
@@ -3820,13 +3826,13 @@ ShorteningBignumConversion(
     }
     err = mp_mul_2d(&b, b2, &b);
     if (err == MP_OKAY) {
-	mp_init_set(&S, 1);
+	err = mp_init_set(&S, 1);
     }
     if (err == MP_OKAY) {
-	MulPow5(&S, s5, &S);
+	err = MulPow5(&S, s5, &S);
     }
     if (err == MP_OKAY) {
-	mp_mul_2d(&S, s2, &S);
+	err = mp_mul_2d(&S, s2, &S);
     }
 
     /*
@@ -3844,21 +3850,29 @@ ShorteningBignumConversion(
      * mminus = 2**m2minus * 5**m5
      */
 
-    mp_init_set(&mminus, minit);
-    mp_mul_2d(&mminus, m2minus, &mminus);
-    if (m2plus > m2minus) {
-	mp_init_copy(&mplus, &mminus);
-	mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+    if (err == MP_OKAY) {
+	err = mp_init_set(&mminus, minit);
+    }
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&mminus, m2minus, &mminus);
+    }
+    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	err = mp_init_copy(&mplus, &mminus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+	}
     }
 
     /*
      * Loop through the digits.
      */
 
-    mp_init(&dig);
+    if (err == MP_OKAY) {
+	err = mp_init(&dig);
+    }
     i = 1;
-    for (;;) {
-	mp_div(&b, &S, &dig, &b);
+    while (err == MP_OKAY) {
+	err = mp_div(&b, &S, &dig, &b);
 	if (dig.used > 1 || dig.dp[0] >= 10) {
 	    Tcl_Panic("wrong digit!");
 	}
@@ -3871,7 +3885,7 @@ ShorteningBignumConversion(
 
 	r1 = mp_cmp_mag(&b, (m2plus > m2minus)? &mplus : &mminus);
 	if (r1 == MP_LT || (r1 == MP_EQ && (dPtr->w.word1 & 1) == 0)) {
-	    mp_mul_2d(&b, 1, &b);
+	    err = mp_mul_2d(&b, 1, &b);
 	    if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		++digit;
 		if (digit == 10) {
@@ -3906,8 +3920,8 @@ ShorteningBignumConversion(
 	 */
 
 	*s++ = '0' + digit;
-	if (i == ilim) {
-	    mp_mul_2d(&b, 1, &b);
+	if ((err == MP_OKAY) && (i == ilim)) {
+	    err = mp_mul_2d(&b, 1, &b);
 	    if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		s = BumpUp(s, retval, &k);
 	    }
@@ -3918,17 +3932,21 @@ ShorteningBignumConversion(
 	 * Advance to the next digit.
 	 */
 
-	if (s5 > 0) {
+	if ((err == MP_OKAY) && (s5 > 0)) {
 	    /*
 	     * Can possibly shorten the denominator.
 	     */
 
-	    mp_mul_2d(&b, 1, &b);
-	    mp_mul_2d(&mminus, 1, &mminus);
-	    if (m2plus > m2minus) {
-		mp_mul_2d(&mplus, 1, &mplus);
+	    err = mp_mul_2d(&b, 1, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_2d(&mminus, 1, &mminus);
 	    }
-	    mp_div_d(&S, 5, &S, NULL);
+	    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+		err = mp_mul_2d(&mplus, 1, &mplus);
+	    }
+	    if (err == MP_OKAY) {
+		err = mp_div_d(&S, 5, &S, NULL);
+	    }
 	    --s5;
 
 	    /*
@@ -3958,11 +3976,13 @@ ShorteningBignumConversion(
 	     * 10**42  16 trips
 	     * thereafter no gain.
 	     */
-	} else {
-	    mp_mul_d(&b, 10, &b);
-	    mp_mul_d(&mminus, 10, &mminus);
-	    if (m2plus > m2minus) {
-		mp_mul_2d(&mplus, 10, &mplus);
+	} else if (err == MP_OKAY) {
+	    err = mp_mul_d(&b, 10, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_d(&mminus, 10, &mminus);
+	    }
+	    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+		err = mp_mul_2d(&mplus, 10, &mplus);
 	    }
 	}
 
@@ -4026,17 +4046,30 @@ StrictBignumConversion(
     int digit;			/* Current digit of the result. */
     int g;			/* Size of the current digit ground. */
     int i, j;
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * S = 2**s2 * 5*s5
      */
 
-    mp_init(&dig);
-    mp_init_u64(&b, bw);
-    mp_mul_2d(&b, b2, &b);
-    mp_init_set(&S, 1);
-    MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
+    if (mp_init(&dig) != MP_OKAY) {
+	return NULL;
+    }
+    if (mp_init_u64(&b, bw) != MP_OKAY) {
+	mp_clear(&dig);
+	return NULL;
+    }
+    err = mp_mul_2d(&b, b2, &b);
+    if (err == MP_OKAY) {
+ 	err = mp_init_set(&S, 1);
+    }
+    if (err == MP_OKAY) {
+	err = MulPow5(&S, s5, &S);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&S, s2, &S);
+	}
+    }
 
     /*
      * Handle the case where we guess the position of the decimal point wrong.
@@ -4052,7 +4085,7 @@ StrictBignumConversion(
      */
 
     i = 0;
-    mp_div(&b, &S, &dig, &b);
+    err = mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
 	Tcl_Panic("wrong digit!");
     }
@@ -4068,7 +4101,7 @@ StrictBignumConversion(
 	    s = BumpUp(s, retval, &k);
 	}
     } else {
-	for (;;) {
+	while (err == MP_OKAY) {
 	    /*
 	     * Shift by a group of digits.
 	     */
@@ -4078,16 +4111,20 @@ StrictBignumConversion(
 		g = DIGIT_GROUP;
 	    }
 	    if (s5 >= g) {
-		mp_div_d(&S, dpow5[g], &S, NULL);
+		err = mp_div_d(&S, dpow5[g], &S, NULL);
 		s5 -= g;
 	    } else if (s5 > 0) {
-		mp_div_d(&S, dpow5[s5], &S, NULL);
-		mp_mul_d(&b, dpow5[g - s5], &b);
+		err = mp_div_d(&S, dpow5[s5], &S, NULL);
+		if (err == MP_OKAY) {
+		    err = mp_mul_d(&b, dpow5[g - s5], &b);
+		}
 		s5 = 0;
 	    } else {
-		mp_mul_d(&b, dpow5[g], &b);
+		err = mp_mul_d(&b, dpow5[g], &b);
 	    }
-	    mp_mul_2d(&b, g, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_2d(&b, g, &b);
+	    }
 
 	    /*
 	     * As with the shortening bignum conversion, it's possible at this
@@ -4102,7 +4139,7 @@ StrictBignumConversion(
 	     */
 
 
-	    if ((mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
+	    if ((err != MP_OKAY) || (mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
 	    }
 	    digit = dig.dp[0];
