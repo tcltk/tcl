@@ -40,6 +40,9 @@
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
 #undef Tcl_GetUnicode
+#undef Tcl_GetUnicodeFromObj
+#undef Tcl_NewUnicodeObj
+#undef Tcl_SetUnicodeObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -63,6 +66,16 @@
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+
+#if TCL_UTF_MAX > 3
+static void uniCodePanic() {
+    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
+}
+#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *)) uniCodePanic
+#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, Tcl_UniChar *)) uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, Tcl_UniChar)) uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int)) uniCodePanic
+#endif
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -218,10 +231,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcmp
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
@@ -230,10 +239,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
 }
 #define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
-static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcasecmp
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -521,6 +526,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    TclAppendUnicodeToObj, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1107,8 +1113,8 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_UniCharLen, /* 352 */
-    Tcl_UniCharNcmp, /* 353 */
+    0, /* 352 */
+    0, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
@@ -1139,7 +1145,7 @@ const TclStubs tclStubs = {
     Tcl_GetUniChar, /* 381 */
     0, /* 382 */
     Tcl_GetRange, /* 383 */
-    Tcl_AppendUnicodeToObj, /* 384 */
+    0, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
     Tcl_GetAllocMutex, /* 387 */
@@ -1174,8 +1180,8 @@ const TclStubs tclStubs = {
     Tcl_SpliceChannel, /* 416 */
     Tcl_ClearChannelHandlers, /* 417 */
     Tcl_IsChannelExisting, /* 418 */
-    Tcl_UniCharNcasecmp, /* 419 */
-    Tcl_UniCharCaseMatch, /* 420 */
+    0, /* 419 */
+    0, /* 420 */
     0, /* 421 */
     0, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */

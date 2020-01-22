@@ -259,12 +259,16 @@ VarHashCreateVar(
 	switch (*pc) {							\
 	case INST_JUMP_FALSE1:						\
 	    NEXT_INST_F(((condition)? 2 : TclGetInt1AtPtr(pc+1)), (cleanup), 0); \
+	break; \
 	case INST_JUMP_TRUE1:						\
 	    NEXT_INST_F(((condition)? TclGetInt1AtPtr(pc+1) : 2), (cleanup), 0); \
+	break; \
 	case INST_JUMP_FALSE4:						\
 	    NEXT_INST_F(((condition)? 5 : TclGetInt4AtPtr(pc+1)), (cleanup), 0); \
+	break; \
 	case INST_JUMP_TRUE4:						\
 	    NEXT_INST_F(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
+	break; \
 	default:							\
 	    if ((condition) < 0) {					\
 		TclNewIntObj(objResultPtr, -1);				\
@@ -272,6 +276,7 @@ VarHashCreateVar(
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
 	    NEXT_INST_F(0, (cleanup), 1);				\
+	break; \
 	}								\
     } while (0)
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
@@ -280,12 +285,16 @@ VarHashCreateVar(
 	switch (*pc) {							\
 	case INST_JUMP_FALSE1:						\
 	    NEXT_INST_V(((condition)? 2 : TclGetInt1AtPtr(pc+1)), (cleanup), 0); \
+	break; \
 	case INST_JUMP_TRUE1:						\
 	    NEXT_INST_V(((condition)? TclGetInt1AtPtr(pc+1) : 2), (cleanup), 0); \
+	break; \
 	case INST_JUMP_FALSE4:						\
 	    NEXT_INST_V(((condition)? 5 : TclGetInt4AtPtr(pc+1)), (cleanup), 0); \
+	break; \
 	case INST_JUMP_TRUE4:						\
 	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
+	break; \
 	default:							\
 	    if ((condition) < 0) {					\
 		TclNewIntObj(objResultPtr, -1);				\
@@ -293,6 +302,7 @@ VarHashCreateVar(
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
 	    NEXT_INST_V(0, (cleanup), 1);				\
+	break; \
 	}								\
     } while (0)
 #else /* TCL_COMPILE_DEBUG */
@@ -2519,23 +2529,27 @@ TEBCresume(
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
 	TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc+1)), objResultPtr);
 	NEXT_INST_F(5, 0, 1);
+    break;
 
     case INST_POP:
 	TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
 	NEXT_INST_F(1, 0, 0);
+    break;
 
     case INST_DUP:
 	objResultPtr = OBJ_AT_TOS;
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    break;
 
     case INST_OVER:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	objResultPtr = OBJ_AT_DEPTH(opnd);
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_F(5, 0, 1);
+    break;
 
     case INST_REVERSE: {
 	Tcl_Obj **a, **b;
@@ -2566,6 +2580,7 @@ TEBCresume(
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
+    break;
 
     case INST_CONCAT_STK:
 	/*
@@ -2577,6 +2592,7 @@ TEBCresume(
 	objResultPtr = Tcl_ConcatObj(opnd, &OBJ_AT_DEPTH(opnd-1));
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(5, opnd, 1);
+    break;
 
     case INST_EXPAND_START:
 	/*
@@ -2598,6 +2614,7 @@ TEBCresume(
 	PUSH_TAUX_OBJ(objPtr);
 	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
 	NEXT_INST_F(1, 0, 0);
+    break;
 
     case INST_EXPAND_DROP:
 	/*
@@ -2724,6 +2741,7 @@ TEBCresume(
 
 	TclNewObj(objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    break;
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -4097,6 +4115,7 @@ TEBCresume(
 	TRACE(("%d => new pc %u\n", opnd,
 		(unsigned)(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
+    break;
 
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
@@ -4221,6 +4240,7 @@ TEBCresume(
 	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    break;
     case INST_INFO_LEVEL_ARGS: {
 	int level;
 	CallFrame *framePtr = iPtr->varFramePtr;
@@ -5259,14 +5279,14 @@ TEBCresume(
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
-		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    TclAppendUnicodeToObj(objResultPtr, p, ustring1-p);
 		    p = ustring1 + length2;
 		} else {
 		    p += length2;
 		}
 		ustring1 = p - 1;
 
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
+		TclAppendUnicodeToObj(objResultPtr, ustring3, length3);
 	    }
 	}
 	if (p != ustring1) {
@@ -5274,7 +5294,7 @@ TEBCresume(
 	     * Put the rest of the unmapped chars onto result.
 	     */
 
-	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	    TclAppendUnicodeToObj(objResultPtr, p, ustring1 - p);
 	}
     doneStringMap:
 	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
@@ -5453,7 +5473,6 @@ TEBCresume(
 
 	JUMP_PEEPHOLE_F(match, 2, 2);
     }
-    break;
 
     /*
      *	   End of string-related instructions.
@@ -5883,6 +5902,7 @@ TEBCresume(
 		TclSetIntObj(valuePtr, wResult);
 		TRACE(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 1, 0);
+	    break;
 
 	    case INST_DIV:
 		if (w2 == 0) {
@@ -6022,6 +6042,7 @@ TEBCresume(
 	    /* -NaN => NaN */
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
+	break;
 	case TCL_NUMBER_INT:
 	    w1 = *((const Tcl_WideInt *) ptr1);
 	    if (w1 != WIDE_MIN) {
@@ -6147,6 +6168,7 @@ TEBCresume(
 	}
 	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    break;
 
     case INST_BREAK:
 	/*
@@ -6378,6 +6400,7 @@ TEBCresume(
 		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
+    break;
 
     case INST_END_CATCH:
 	catchTop--;
@@ -6387,6 +6410,7 @@ TEBCresume(
 	result = TCL_OK;
 	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
+    break;
 
     case INST_PUSH_RESULT:
 	objResultPtr = Tcl_GetObjResult(interp);
@@ -6400,11 +6424,13 @@ TEBCresume(
 	Tcl_IncrRefCount(objPtr);
 	iPtr->objResultPtr = objPtr;
 	NEXT_INST_F(1, 0, -1);
+    break;
 
     case INST_PUSH_RETURN_CODE:
 	TclNewIntObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
 	NEXT_INST_F(1, 0, 1);
+    break;
 
     case INST_PUSH_RETURN_OPTIONS:
 	DECACHE_STACK_INFO();
@@ -6412,6 +6438,7 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    break;
 
     case INST_RETURN_CODE_BRANCH: {
 	int code;
@@ -6451,6 +6478,7 @@ TEBCresume(
 	}
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(1, 1, 0);
+    break;
 
     case INST_DICT_EXISTS: {
 	int found;
@@ -8452,6 +8480,7 @@ TclCompareTwoNumbers(
 	    mp_clear(&big2);
 	    return compare;
 	}
+    break;
 
     case TCL_NUMBER_DOUBLE:
 	d1 = *((const double *)ptr1);
@@ -8498,6 +8527,7 @@ TclCompareTwoNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d1, &big1);
 	    goto bigCompare;
 	}
+    break;
 
     case TCL_NUMBER_BIG:
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -8534,10 +8564,11 @@ TclCompareTwoNumbers(
 	    mp_clear(&big2);
 	    return compare;
 	}
+    break;
     default:
 	Tcl_Panic("unexpected number type");
-	return TCL_ERROR;
     }
+    return TCL_ERROR;
 }
 
 #ifdef TCL_COMPILE_DEBUG
