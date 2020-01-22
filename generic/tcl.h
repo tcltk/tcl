@@ -839,7 +839,7 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_WRITES	 0x20
 #define TCL_TRACE_UNSETS	 0x40
 #define TCL_TRACE_DESTROYED	 0x80
-#define TCL_INTERP_DESTROYED	 0x100
+
 #define TCL_LEAVE_ERR_MSG	 0x200
 #define TCL_TRACE_ARRAY		 0x800
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
