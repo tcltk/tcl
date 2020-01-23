@@ -639,7 +639,8 @@ EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, const int flags);
 /* Slot 257 is reserved */
-/* 258 */
+/* Slot 258 is reserved */
+/* 259 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct TclIntStubs {
@@ -904,7 +905,8 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*reserved257)(void);
-    void (*tclUnusedStubEntry) (void); /* 258 */
+    void (*reserved258)(void);
+    void (*tclUnusedStubEntry) (void); /* 259 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1347,8 +1349,9 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclPtrUnsetVar \
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 /* Slot 257 is reserved */
+/* Slot 258 is reserved */
 #define TclUnusedStubEntry \
-	(tclIntStubsPtr->tclUnusedStubEntry) /* 258 */
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 259 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

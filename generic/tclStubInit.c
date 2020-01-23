@@ -742,7 +742,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     0, /* 257 */
-    TclUnusedStubEntry, /* 258 */
+    0, /* 258 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
