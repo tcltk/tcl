@@ -164,7 +164,7 @@ TestbignumobjCmd(
     };
     int index, varIndex;
     const char *string;
-    mp_int bignumValue, newValue;
+    mp_int bignumValue;
     Tcl_Obj **varPtr;
 
     if (objc < 3) {
@@ -237,19 +237,16 @@ TestbignumobjCmd(
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (mp_init(&newValue) != MP_OKAY
-		|| (mp_mul_d(&bignumValue, 10, &newValue) != MP_OKAY)) {
+	if (mp_mul_d(&bignumValue, 10, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    mp_clear(&newValue);
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("error in mp_mul_d", -1));
 	    return TCL_ERROR;
 	}
-	mp_clear(&bignumValue);
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetBignumObj(varPtr[varIndex], &newValue);
+	    Tcl_SetBignumObj(varPtr[varIndex], &bignumValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewBignumObj(&newValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewBignumObj(&bignumValue));
 	}
 	break;
 
@@ -265,24 +262,20 @@ TestbignumobjCmd(
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (mp_init(&newValue) != MP_OKAY
-		|| (mp_div_d(&bignumValue, 10, &newValue, NULL) != MP_OKAY)) {
+	if (mp_div_d(&bignumValue, 10, &bignumValue, NULL) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    mp_clear(&newValue);
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("error in mp_div_d", -1));
 	    return TCL_ERROR;
 	}
-	mp_clear(&bignumValue);
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetBignumObj(varPtr[varIndex], &newValue);
+	    Tcl_SetBignumObj(varPtr[varIndex], &bignumValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewBignumObj(&newValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewBignumObj(&bignumValue));
 	}
 	break;
 
-    case BIGNUM_ISEVEN: {
-	mp_err err;
+    case BIGNUM_ISEVEN:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
 	    return TCL_ERROR;
@@ -294,18 +287,19 @@ TestbignumobjCmd(
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    err = mp_mod_2d(&bignumValue, 1, &bignumValue);
-    if (err == MP_OKAY && !mp_iszero(&bignumValue)) {
-	err = MP_ERR;
-    }
+	if (mp_mod_2d(&bignumValue, 1, &bignumValue) != MP_OKAY) {
+	    mp_clear(&bignumValue);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("error in mp_mod_2d", -1));
+	    return TCL_ERROR;
+	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], err == MP_OKAY);
+	    Tcl_SetIntObj(varPtr[varIndex], mp_iszero(&bignumValue));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(err == MP_OKAY));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iszero(&bignumValue)));
 	}
 	mp_clear(&bignumValue);
-    }
-    break;
+	break;
 
     case BIGNUM_RADIXSIZE:
 	if (objc != 3) {
