@@ -46,9 +46,9 @@ while \fBconcat\fR with the same arguments will return
 \fBa b c d e f {g h}\fR
 .CE
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
-lrepeat(n),
-lreplace(n), lsearch(n), lset(n), lsort(n)
+lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, quoting
 '\"Local Variables:
