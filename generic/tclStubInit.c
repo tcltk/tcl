@@ -558,7 +558,8 @@ TclIntStubs tclIntStubs = {
     NULL, /* 255 */
     NULL, /* 256 */
     NULL, /* 257 */
-    TclUnusedStubEntry, /* 258 */
+    NULL, /* 258 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
