@@ -3392,7 +3392,14 @@ GetBignumFromObj(
 		mp_int temp;
 
 		UNPACK_BIGNUM(objPtr, temp);
-		mp_init_copy(bignumValue, &temp);
+		if (mp_init_copy(bignumValue, &temp) != MP_OKAY) {
+		    if (interp != NULL) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to unpack bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		    }
+		    return TCL_ERROR;
+		}
 	    } else {
 		UNPACK_BIGNUM(objPtr, *bignumValue);
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
