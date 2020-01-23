@@ -281,7 +281,8 @@ TestbignumobjCmd(
 	}
 	break;
 
-    case BIGNUM_ISEVEN:
+    case BIGNUM_ISEVEN: {
+	mp_err err;
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
 	    return TCL_ERROR;
@@ -293,13 +294,18 @@ TestbignumobjCmd(
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+    err = mp_mod_2d(&bignumValue, 1, &bignumValue);
+    if (err == MP_OKAY && !mp_iszero(&bignumValue)) {
+	err = MP_ERR;
+    }
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], !mp_isodd(&bignumValue));
+	    Tcl_SetIntObj(varPtr[varIndex], err == MP_OKAY);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(!mp_isodd(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(err == MP_OKAY));
 	}
 	mp_clear(&bignumValue);
-	break;
+    }
+    break;
 
     case BIGNUM_RADIXSIZE:
 	if (objc != 3) {
