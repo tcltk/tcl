@@ -380,7 +380,7 @@ declare 93 {
 }
 # Removed in 8.5:
 #declare 94 {
-#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#    int TclProcInterpProc(void *clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
 #}
 # Replaced by Tcl_FSStat in 8.4:
@@ -553,7 +553,7 @@ declare 138 {
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
+#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
@@ -608,11 +608,11 @@ declare 153 {
 
 # moved to tclTest.c (static) in 8.3.2/8.4a2
 #declare 154 {
-#    int TclTestChannelCmd(ClientData clientData,
+#    int TclTestChannelCmd(void *clientData,
 #    Tcl_Interp *interp, int argc, char **argv)
 #}
 #declare 155 {
-#    int TclTestChannelEventCmd(ClientData clientData,
+#    int TclTestChannelEventCmd(void *clientData,
 #	     Tcl_Interp *interp, int argc, char **argv)
 #}
 
@@ -1033,6 +1033,10 @@ declare 257 {
 declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
+}
+
+declare 259 {
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################
