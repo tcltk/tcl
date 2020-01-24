@@ -49,8 +49,9 @@ Using \fBlappend\fR to build up a list of numbers.
 1 2 3 4 5
 .CE
 .SH "SEE ALSO"
-list(n), lindex(n), linsert(n), llength(n), lset(n),
-lsort(n), lrange(n)
+list(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 append, element, list, variable
 .\" Local variables:

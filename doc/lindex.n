@@ -115,8 +115,9 @@ set idx 3
       \fI\(-> f\fR
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), linsert(n), llength(n), lsearch(n),
-lset(n), lsort(n), lrange(n), lreplace(n),
+list(n), lappend(n), lassign(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, index, list

@@ -182,10 +182,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
-    } else {                                                            \
-	if ((bignum).alloc > 0x7fff) {                                  \
-	    mp_shrink(&(bignum));                                       \
-	}                                                               \
+    } else if (((bignum).alloc <= 0x7fff) || (mp_shrink(&(bignum))) == MP_OKAY) { \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));            \
@@ -2890,14 +2887,20 @@ TclGetWideBitsFromObj(
 	}
 	if (objPtr->typePtr == &tclBignumType) {
 	    mp_int big;
+	    mp_err err;
 
 	    Tcl_WideUInt value = 0, scratch;
 	    size_t numBytes;
 	    unsigned char *bytes = (unsigned char *) &scratch;
 
 	    Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	    mp_mod_2d(&big, (int) (CHAR_BIT * sizeof(Tcl_WideInt)), &big);
-	    mp_to_ubin(&big, bytes, sizeof(Tcl_WideInt), &numBytes);
+	    err = mp_mod_2d(&big, (int) (CHAR_BIT * sizeof(Tcl_WideInt)), &big);
+	    if (err == MP_OKAY) {
+		err = mp_to_ubin(&big, bytes, sizeof(Tcl_WideInt), &numBytes);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
+	    }
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
@@ -3137,7 +3140,9 @@ GetBignumFromObj(
 		mp_int temp;
 
 		TclUnpackBignum(objPtr, temp);
-		mp_init_copy(bignumValue, &temp);
+		if (mp_init_copy(bignumValue, &temp) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
 	    } else {
 		TclUnpackBignum(objPtr, *bignumValue);
 		/* Optimized TclFreeIntRep */
@@ -3156,8 +3161,10 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    mp_init_i64(bignumValue,
-		    objPtr->internalRep.wideValue);
+	    if (mp_init_i64(bignumValue,
+		    objPtr->internalRep.wideValue) != MP_OKAY) {
+		return TCL_ERROR;
+	    }
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
