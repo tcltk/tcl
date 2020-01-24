@@ -18,11 +18,11 @@ The inspirations for the original Tcl string values were clearly the
 in-memory representations of C string literals, and the 
 arguments used by C programs to receive their command line.
 
->	**int** **main**(**int** *argc*, **char** **_argv_)
+>	**int** **main** ( **int** *argc*, **char** **_argv_)
 
 Every command in Tcl 7 is implemented by a **Tcl_CmdProc** with signature
 
->	**int** **Tcl_CmdProc** (**ClientData**, _interp_, **int** _argc_, **char** *_argv_[])
+>	**int** **Tcl_CmdProc** ( **ClientData**, _interp_, **int** _argc_, **char** *_argv_[])
 
 Each argument value _argv_[_i_] passed to a command arrives in the
 form  of a (__char__ *).
@@ -363,7 +363,7 @@ large values that have visible impact on scripts.
 With a **Tcl_Obj** struct defined as a container for any Tcl 8.0 value,
 a new signature for command procedures was defined,
 
->	**int** **Tcl_ObjCmdProc** (**ClientData**, _interp_, **int** _objc_, **Tcl_Obj** * const _objv_[]);
+>	**int** **Tcl_ObjCmdProc** ( **ClientData**, _interp_, **int** _objc_, **Tcl_Obj** * const _objv_[]);
 
 and a new public routine **Tcl_CreateObjCommand** to create commands 
 implemented using the new command procedure signature. Commands using the
