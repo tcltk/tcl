@@ -288,7 +288,7 @@ matrix:
       before_install: &makepreinst
         - choco install -y make zip
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: UTF_MAX"
+    - name: "Windows/GCC/Shared: UTF_MAX=3"
       os: windows
       compiler: gcc
       env:

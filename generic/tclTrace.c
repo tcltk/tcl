@@ -79,8 +79,7 @@ typedef struct {
  * TCL_TRACE_EXEC_DIRECT	- This execution trace is triggered directly
  *				  by the command being traced, not because of
  *				  an internal trace.
- * The flags 'TCL_TRACE_DESTROYED' and 'TCL_INTERP_DESTROYED' may also be used
- * in command execution traces.
+ * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
  */
 
 #define TCL_TRACE_ENTER_DURING_EXEC	4
@@ -2645,13 +2644,6 @@ TclCallVarTraces(
     }
 
     /*
-     * Ignore any caller-provided TCL_INTERP_DESTROYED flag.  Only we can
-     * set it correctly.
-     */
-
-    flags &= ~TCL_INTERP_DESTROYED;
-
-    /*
      * Invoke traces on the array containing the variable, if relevant.
      */
 
@@ -2672,9 +2664,6 @@ TclCallVarTraces(
 	    Tcl_Preserve(tracePtr);
 	    if (state == NULL) {
 		state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, code);
-	    }
-	    if (Tcl_InterpDeleted((Tcl_Interp *) iPtr)) {
-		flags |= TCL_INTERP_DESTROYED;
 	    }
 	    result = tracePtr->traceProc(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
@@ -2716,9 +2705,6 @@ TclCallVarTraces(
 	    Tcl_Preserve(tracePtr);
 	    if (state == NULL) {
 		state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, code);
-	    }
-	    if (Tcl_InterpDeleted((Tcl_Interp *) iPtr)) {
-		flags |= TCL_INTERP_DESTROYED;
 	    }
 	    result = tracePtr->traceProc(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
