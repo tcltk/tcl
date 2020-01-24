@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,utfmax,none
+#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -74,8 +74,6 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utfmax    = Forces a build allowing 4-byte UTF-8 sequences
-#			    internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -437,7 +435,7 @@ PKGSDIR		= $(ROOT)\pkgs
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DMP_WUR=
+PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
