@@ -71,8 +71,9 @@ elements to
 {elements to}
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lset(n), lremove(n), lreplace(n), lsort(n),
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, range, sublist
