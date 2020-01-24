@@ -435,6 +435,24 @@ demonstrated.
 
 <pre>
 ```
+	% regsub -all y zyz|zyz x foo
+	2
+	% set foo
+	zxz|zxz
+	% regsub -all y zyz\x00zyz x foo
+	1
+	% set foo
+	zxz
+```
+</pre>
+
+Others are largely masked by the use of the bytecode compiler and 
+execution engine, also new in Tcl 8.0.
+In other built-in commands, the use of routines with these interface
+limitations leads to similar failures.
+
+<pre>
+```
 	% set foo <\x00>
 	<>
 	% subst {$foo}
@@ -442,15 +460,13 @@ demonstrated.
 ```
 </pre>
 
-Others are largely masked by the use of the bytecode compiler and 
-execution engine, also new in Tcl 8.0.
-
 Several routines, both public and private, and a number of established
 data structures continue to make use of **NUL**-terminated strings. Because
 of this, although the fully general set of Tcl values includes all
-binary sequences, several components of Tcl remain limited, and may
-not include the **NUL** byte. Examples include command names, namespace names,
-channel names, channel type names, **Tcl_ObjType** names, and likely more.
+binary sequences, several components of Tcl remain limited in release 8.0,
+and may not include the **NUL** byte. Examples include command names,
+namespace names, channel names, channel type names, **Tcl_ObjType** names,
+and likely more.
 
 ## Tcl 8.1 (Development begun 1997, Official release 1999-)
 
