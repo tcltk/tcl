@@ -149,7 +149,7 @@ static void uniCodePanic() {
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
-
+#define TclUnusedStubEntry NULL
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -972,6 +972,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

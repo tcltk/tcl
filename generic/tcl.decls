@@ -523,7 +523,7 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 147 {
+declare 147 {deprecated {see TIP #559. Use Tcl_ResetResult}} {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
 declare 148 {
