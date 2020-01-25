@@ -4015,7 +4015,22 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #ifdef TCL_NO_DEPRECATED
+#undef Tcl_FreeResult
+#undef Tcl_AppendResultVA
+#undef Tcl_AppendStringsToObjVA
+#undef Tcl_SetErrorCodeVA
+#undef Tcl_VarEvalVA
+#undef Tcl_PanicVA
 #undef Tcl_GetStringResult
+#undef Tcl_GetDefaultEncodingDir
+#undef Tcl_SetDefaultEncodingDir
+#undef Tcl_UniCharLen
+#undef Tcl_UniCharNcmp
+#undef Tcl_EvalTokens
+#undef Tcl_UniCharNcasecmp
+#undef Tcl_UniCharCaseMatch
+#undef Tcl_GetMathFuncInfo
+#undef Tcl_ListMathFuncs
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #undef Tcl_Eval
 #define Tcl_Eval(interp, objPtr) \
