@@ -480,6 +480,35 @@ software, the notion that programmers could benefit from being shielded
 from the need to deal with encodings rapidly vanished.  In contrast, the
 value of joining in support of a developing standard was apparent.  
 
+The Tcl _changes_ file records an entry (in part):
+
+<pre>
+```
+6/18/97 (new feature) Tcl now supports international character sets:
+    - All C APIs now accept UTF-8 strings instead of iso8859-1 strings,
+      wherever you see "char *", unless explicitly noted otherwise.
+    - All Tcl strings represented in UTF-8, which is a convenient
+      multi-byte encoding of Unicode.  Variable names, procedure names,
+      and all other values in Tcl may include arbitrary Unicode characters.
+      For example, the Tcl command "string length" returns how many
+      Unicode characters are in the argument string.
+    - For Java compatibility, embedded null bytes in C strings are
+      represented as \xC080 in UTF-8 strings, but the null byte at the end
+      of a UTF-8 string remains \0.  Thus Tcl strings once again do not
+      contain null bytes, except for termination bytes.
+    - For Java compatibility, "\uXXXX" is used in Tcl to enter a Unicode
+      character.  "\u0000" through "\uffff" are acceptable Unicode
+      characters.
+```
+</pre>
+
+The corresponding development patch is no longer available.  The relevant
+code development record for Tcl starts up on September 21, 1998, with the
+source code of something close to the Tcl 8.1a2 release ...
+
+
+
+
 Missing code dev history.  changes file
 
 Development at Sun.
