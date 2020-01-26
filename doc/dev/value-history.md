@@ -503,13 +503,16 @@ The Tcl _changes_ file records an entry (in part):
 </pre>
 
 The corresponding development patch is no longer available.  The relevant
-code development record for Tcl starts up on September 21, 1998, with the
-source code of something close to the Tcl 8.1a2 release ...
+code development fossil record for Tcl starts up on September 21, 1998,
+with the source code of something close to the Tcl 8.1a2 release (apparently
+released February 24, 1998). We also have the Tcl 8.1a1 release
+(January 23, 1998). The absence of relevant entries in the _changes_ file
+suggests the  "international character set" support in the Tcl 8.1a1
+release is what was committed in June, 1997. We can only speculate what
+development effort, what judgments and what referrals to what sources
+played out in the development of that first implementation patch.
 
 
-
-
-Missing code dev history.  changes file
 
 Development at Sun.
 
