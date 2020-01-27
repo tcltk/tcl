@@ -910,7 +910,7 @@ const TclStubs tclStubs = {
     0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
-    Tcl_FreeResult, /* 147 */
+    0, /* 147 */
     Tcl_GetAlias, /* 148 */
     Tcl_GetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */

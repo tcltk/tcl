@@ -542,9 +542,10 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 147 {
-    void Tcl_FreeResult(Tcl_Interp *interp)
-}
+# Removed in 9.0, TIP 559
+#declare 147 {
+#    void Tcl_FreeResult(Tcl_Interp *interp)
+#}
 declare 148 {
     int Tcl_GetAlias(Tcl_Interp *interp, const char *slaveCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
