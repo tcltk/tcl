@@ -570,10 +570,10 @@ summarized in the table
 	U+0000 - U+007F		0bbbbbbb
 	U+0080 - U+07FF		110bbbbb 10bbbbbb
 	U+0800 - U+FFFF		1110bbbb (10bbbbbb)2
-
 	U+00010000 - U+001FFFFF	11110bbb (10bbbbbb)3
 	U+00200000 - U+03FFFFFF	111110bb (10bbbbbb)4
 	U+04000000 - U+7FFFFFFF	1111110b (10bbbbbb)5
+```
 <\pre>
 
 
