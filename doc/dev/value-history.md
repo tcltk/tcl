@@ -547,14 +547,35 @@ as UCS-2, The trivial encoding of its codepoints as 2-byte integer values
 was also called UCS-2. Less formally, but very commonly the character
 set UCS-2 was called "Unicode", and two-byte codepoint values were called
 "Unicode characters", emphasizing the much smaller table, and smaller
-indices of the Unicode project.
+indices of the Unicode project. The notation **U+_HHHH_** for codepoint
+values was also in use.
 
 At the time, a migration away from single-byte encodings like ASCII
 or ISO-8859-1 to either UCS-2 or UCS-4 was a tough sell. A doubling
 or quadrupling of memory and network traffic requirements for the sake
 of additional characters that many applications had no need to handle
 was not a welcome proposition. It was clear that a variable-length encoding
-that softened the costs involved would be needed.
+that softened the costs involved would be needed. Appendix F of The
+Unicode Standard, Version 1.1 (1993) contains a description of
+what was called the File System Safe UCS Transformation Format (FSS-UTF).
+FSS-UTF is a variable-length byte-oriented encoding of UCS codepoints.
+The implementation code in Tcl 8.1 more closely matches this specification
+than anything bearing the name UTF-8.  The encoding rules of FSS-UTF are
+summarized in the table
+
+<pre>
+```
+	Codepoints		Encoding
+	----------		--------
+	U+0000 - U+007F		0bbbbbbb
+	U+0080 - U+07FF		110bbbbb 10bbbbbb
+	U+0800 - U+FFFF		1110bbbb (10bbbbbb)2
+
+	U+00010000 - U+001FFFFF	11110bbb (10bbbbbb)3
+	U+00200000 - U+03FFFFFF	111110bb (10bbbbbb)4
+	U+04000000 - U+7FFFFFFF	1111110b (10bbbbbb)5
+```
+<\pre>
 
 
 During the development of Tcl 8.1, the prevailing Unicode standards were
