@@ -607,17 +607,17 @@ three encoded bytes, and Tcl 8.1 source code uses **TCL\_UTF\_MAX**
 to represent that limit. It is useful in sizing buffers where encoded
 string are to be written.  The public header for Tcl 8.1 includes
 
->	#define **TCL\_UTF\_MAX**	3
+>	\#define **TCL\_UTF\_MAX**	3
 
 and
 
->	typedef unsigned short Tcl_UniChar;
+>	typedef **unsigned short Tcl_UniChar**;
 
 However, the body of **Tcl_UniCharToUtf** includes code to
 encode up to six-byte sequences representing up to 31-bit codepoints,
 protected by a conditional compiler directive
 
->	#if **TCL\_UTF\_MAX** > 3
+>	\#if **TCL\_UTF\_MAX** > 3
 
 It is clear 
 
