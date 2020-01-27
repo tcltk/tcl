@@ -584,7 +584,42 @@ encode higher codepoints that were less frequently used.  A footnote
 in Appendix F makes the observation that encoded sequences of three bytes
 are sufficient to cover all 16-bit codepoints of UCS-2 (Unicode). The
 longer encodings of four through six bytes prepared the way to cover
-codepoints in UCS-4 up to 31 bits.
+codepoints in UCS-4 up to 31 bits.  (Side observation: it would be
+straightforward to continue the table of encoding rules by one more
+line, using the lead byte **0xFE** to introduce a sequence of six trail
+bytes. This would be a seven byte encoding that could encode up to 36 bits,
+easily covering the remainder of the 32-bit range of all of UCS-4.  It 
+seems the value of keeping byte **0xFE** out of encoded streams outweighed
+the failure to encode the upper half of UCS-4, which had no forseeable use.
+The bytes **0xFE** and **0xFF** together make up a Byte Order Mark that
+is used to determine endianness of UCS-2 data. When neither byte appears
+in UTF-8 or FSS-UTF the confidence of that interpretation is boldened.)
+
+In Tcl 8.1, "UTF-8" encoding is accomplished by the routine
+
+>	**int** **Tcl_UniCharToUtf** ( **int** *ch*, **char** *_str_);
+
+The routine is (nearly) a direct translation of the table of encoding rules
+of FSF-UTF.  However it is clear that a decision was made that Tcl would
+support "Unicode" which meant UCS-2 which meant 16-bit codepoints as
+"Uncode characters".  Unicode characters require a maximum of
+three encoded bytes, and Tcl 8.1 source code uses **TCL\_UTF\_MAX**
+to represent that limit. It is useful in sizing buffers where encoded
+string are to be written.  The public header for Tcl 8.1 includes
+
+>	#define **TCL\_UTF\_MAX**	3
+
+and
+
+>	typedef unsigned short Tcl_UniChar;
+
+However, the body of **Tcl_UniCharToUtf** includes code to
+encode up to six-byte sequences representing up to 31-bit codepoints,
+protected by a conditional compiler directive
+
+>	#if **TCL\_UTF\_MAX** > 3
+
+It is clear 
 
 
 
