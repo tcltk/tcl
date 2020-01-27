@@ -532,10 +532,30 @@ from standard UTF-8 from Java as well.
 
 To appreciate the choices made by Tcl in how to implement support for the
 "international character set", it is helpful to review some of the basics
-of encoding, and the players and offered standards of the time.
+of encoding, and the players and offered standards of the time.  Two efforts
+at defining a single Universal Coded Character Set (UCS) were active 
+during the 1990s, ISO-10646 and Unicode.  The common task was to define
+a mapping from integer index values (codepoints) to the character assigned
+to the row of the character set table identified by the codepoint. The
+ISO-10646 effort conceived of a table with 4-byte (32-bit) indices, with
+space for up to 2^32 characters.  They gave the name UCS-4 to both this
+conceptual character set and the trivial encoding of its codepoints
+as 4-byte integer values.  In contrast, the Unicode effort proposed
+a character set table with up to 2^16 characters, indexed by 2-byte (16 bit)
+indices.  This (potentially) smaller character set was formally known
+as UCS-2, The trivial encoding of its codepoints as 2-byte integer values
+was also called UCS-2. Less formally, but very commonly the character
+set UCS-2 was called "Unicode", and two-byte codepoint values were called
+"Unicode characters", emphasizing the much smaller table, and smaller
+indices of the Unicode project.
 
+At the time, a migration away from single-byte encodings like ASCII
+or ISO-8859-1 to either UCS-2 or UCS-4 was a tough sell. A doubling
+or quadrupling of memory and network traffic requirements for the sake
+of additional characters that many applications had no need to handle
+was not a welcome proposition. It was clear that a variable-length encoding
+that softened the costs involved would be needed.
 
-UCS-4 v UCS-2 (== "Unicode")
 
 During the development of Tcl 8.1, the prevailing Unicode standards were
 Unicode 2.0 and 2.1. In these definitions of Unicode, all assigned codepoints
