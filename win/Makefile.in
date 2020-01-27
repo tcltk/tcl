@@ -837,7 +837,7 @@ install-binaries: binaries
 install-libraries-zipfs-shared: libraries
 
 install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
