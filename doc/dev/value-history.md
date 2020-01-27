@@ -574,7 +574,7 @@ summarized in the table
 	U+00200000 - U+03FFFFFF	111110bb (10bbbbbb)4
 	U+04000000 - U+7FFFFFFF	1111110b (10bbbbbb)5
 ```
-<\pre>
+</pre>
 
 
 During the development of Tcl 8.1, the prevailing Unicode standards were
