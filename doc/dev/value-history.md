@@ -503,10 +503,10 @@ The Tcl _changes_ file records an entry (in part):
 </pre>
 
 The corresponding development patch is no longer available.  The relevant
-code development fossil record for Tcl starts up on September 21, 1998,
-with the source code of something close to the Tcl 8.1a2 release (apparently
-released February 24, 1998). We also have the Tcl 8.1a1 release
-(January 23, 1998). The absence of relevant entries in the _changes_ file
+code development fossil record for Tcl starts on September 21, 1998,
+with the source code of something close to the Tcl 8.1a2 release
+(February 24, 1998). We also have the Tcl 8.1a1 release (January 23, 1998).
+The absence of relevant entries in the _changes_ file
 suggests the  "international character set" support in the Tcl 8.1a1
 release is what was committed in June, 1997. We can only speculate what
 development effort, what judgments and what referrals to what sources
@@ -515,7 +515,7 @@ patch. Our speculation is informed, though, by what we know and can reasonably
 infer from the technical environment where this work took place.
 
 The claim that Tcl 8.1 strings are stored in UTF-8 is false, strictly
-speaking. Neither the encoding used nor the encodings accepted in Tcl 8.1
+speaking. Neither the encoding generated nor the encoding accepted by Tcl 8.1
 follow the precise specification of UTF-8. Not the specification in place
 today, nor any of the specifications in place near the time of this work.
 As the _changes_ entry notes, a number of implementation choices are claimed
@@ -523,7 +523,7 @@ to serve "Java compatibility". Tcl development at this time took place
 at Sun Microsystems, which was also the home of Java. It appears that
 "Java compatibility" isn't a statement about any sort of interoperability,
 but about following the same conventions for the sake of programmer
-familiarity.  Tcl 8.1 syntax added the **\\u_HHHH_** syntax as a way for
+familiarity.  Tcl 8.1 added the **\\u_HHHH_** syntax as a way for
 scripts to specify Unicode characters using only the ASCII characters.
 This is the same syntax Java uses for the same thing. The "compatibility"
 at work is a reduction of cognitive burden by using the same solution to
@@ -536,7 +536,7 @@ of encoding, and the players and offered standards of the time.  Two efforts
 at defining a single Universal Coded Character Set (UCS) were active 
 during the 1990s, ISO-10646 and Unicode.  The common task was to define
 a mapping from integer index values (codepoints) to the character assigned
-to the row of the character set table identified by the codepoint. The
+to the location in the character set table identified by the codepoint. The
 ISO-10646 effort conceived of a table with 4-byte (32-bit) indices, with
 space for up to 2^32 characters.  They gave the name UCS-4 to both this
 conceptual character set and the trivial encoding of its codepoints
@@ -548,14 +548,15 @@ was also called UCS-2. Less formally, but very commonly the character
 set UCS-2 was called "Unicode", and two-byte codepoint values were called
 "Unicode characters", emphasizing the much smaller table, and smaller
 indices of the Unicode project. The notation **U+_HHHH_** for codepoint
-values was also in use.
+values was also in use. In the mid-1990s, no codepoints outside UCS-2
+were assigned by either effort.
 
 At the time, a migration away from single-byte encodings like ASCII
 or ISO-8859-1 to either UCS-2 or UCS-4 was a tough sell. A doubling
 or quadrupling of memory and network traffic requirements for the sake
 of additional characters that many applications had no need to handle
 was not a welcome proposition. It was clear that a variable-length encoding
-that softened the costs involved would be needed. Appendix F of The
+that beter managed the costs involved would be needed. Appendix F of The
 Unicode Standard, Version 1.1 (1993) contains a description of
 what was called the File System Safe UCS Transformation Format (FSS-UTF).
 FSS-UTF is a variable-length byte-oriented encoding of UCS codepoints.
@@ -576,6 +577,16 @@ summarized in the table
 	U+04000000 - U+7FFFFFFF	1111110b (10bbbbbb)5
 ```
 </pre>
+
+FSS-UTF encodes each codepoint in the ASCII range as a single-byte,
+the same byte already in use for that character.  Longer byte seqeunces
+encode higher codepoints that were less frequently used.  A footnote
+in Appendix F makes the observation that encoded sequences of three bytes
+are sufficient to cover all 16-bit codepoints of UCS-2 (Unicode). The
+longer encodings of four through six bytes prepared the way to cover
+codepoints in UCS-4 up to 31 bits.
+
+
 
 
 
