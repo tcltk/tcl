@@ -523,20 +523,19 @@ to serve "Java compatibility". Tcl development at this time took place
 at Sun Microsystems, which was also the home of Java. It appears that
 "Java compatibility" isn't a statement about any sort of interoperability,
 but about following the same conventions for the sake of programmer
-familiarity.  Tcl 8.1 syntax added the **\u_HHHH_** syntax as a way for
+familiarity.  Tcl 8.1 syntax added the **\\u_HHHH_** syntax as a way for
 scripts to specify Unicode characters using only the ASCII characters.
+This is the same syntax Java uses for the same thing. The "compatibility"
+at work is a reduction of cognitive burden by using the same solution to
+the same problem in two languages.  Tcl copied some other deviations
+from standard UTF-8 from Java as well.
 
-t the one
+To appreciate the choices made by Tcl in how to implement support for the
+"international character set", it is helpful to review some of the basics
+of encoding, and the players and offered standards of the time.
 
-"UTF-8" is false.
 
 UCS-4 v UCS-2 (== "Unicode")
-
-
-
-
-
-Development at Sun.
 
 During the development of Tcl 8.1, the prevailing Unicode standards were
 Unicode 2.0 and 2.1. In these definitions of Unicode, all assigned codepoints
