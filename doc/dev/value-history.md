@@ -510,7 +510,27 @@ released February 24, 1998). We also have the Tcl 8.1a1 release
 suggests the  "international character set" support in the Tcl 8.1a1
 release is what was committed in June, 1997. We can only speculate what
 development effort, what judgments and what referrals to what sources
-and standards played out in the development of that first implementation patch.
+and standards played out in the development of that first implementation
+patch. Our speculation is informed, though, by what we know and can reasonably
+infer from the technical environment where this work took place.
+
+The claim that Tcl 8.1 strings are stored in UTF-8 is false, strictly
+speaking. Neither the encoding used nor the encodings accepted in Tcl 8.1
+follow the precise specification of UTF-8. Not the specification in place
+today, nor any of the specifications in place near the time of this work.
+As the _changes_ entry notes, a number of implementation choices are claimed
+to serve "Java compatibility". Tcl development at this time took place
+at Sun Microsystems, which was also the home of Java. It appears that
+"Java compatibility" isn't a statement about any sort of interoperability,
+but about following the same conventions for the sake of programmer
+familiarity.  Tcl 8.1 syntax added the **\u_HHHH_** syntax as a way for
+scripts to specify Unicode characters using only the ASCII characters.
+
+t the one
+
+"UTF-8" is false.
+
+UCS-4 v UCS-2 (== "Unicode")
 
 
 
