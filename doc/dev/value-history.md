@@ -578,6 +578,8 @@ summarized in the table
 </pre>
 
 
+
+
 During the development of Tcl 8.1, the prevailing Unicode standards were
 Unicode 2.0 and 2.1. In these definitions of Unicode, all assigned codepoints
 were in the set U+0000 through U+FFFF, the set of characters within
