@@ -19,6 +19,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
+testConstraint prlimit [expr {[testConstraint macOrUnix] && ![catch { exec prlimit -n }]}]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort
@@ -519,6 +520,39 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 test cmdIL-5.6 {lsort with multiple list-style index options} {
     lsort -index {1 2 3} -index 0 {{a b} {c d} {b e}}
 } {{a b} {b e} {c d}}
+test cmdIL-5.7 {lsort memory exhaustion} -constraints {prlimit} -body {
+    # test it in child process (with limited address space):
+    set pipe {}
+    if {[catch {
+	set pipe [open |[list [interpreter]] r+]
+	exec prlimit -p [pid $pipe] --as=80000000
+    } msg]} {
+	catch {close $pipe}
+	tcltest::Skip "prlimit: error - [regsub {^\s*([^\n]*).*$} $msg {\1}]"
+    }
+    # if no error (enough memory), or error by list creation - add it as skipped test:
+    if {![catch {
+	chan configure $pipe -buffering line
+	puts $pipe {
+	    # create list and get length (avoid too long output in interactive shells):
+	    llength [set l [lrepeat 4000000 ""]]
+	    # test OOM:
+	    puts [llength [lsort $l]]
+	    exit
+	}
+	set result [read $pipe]
+	close $pipe
+	set pipe {}
+	set result
+    } result] || [regexp {^(?:list creation failed|unable to (?:re)?alloc)} $result]} {
+	tcltest::Skip "prlimit: wrong AS-limit, result: $result"
+    }
+    set result
+    # expecting error no memory by sort
+} -cleanup {
+    if {$pipe ne ""} { catch { close $pipe } }
+    unset -nocomplain pipe line result
+} -result {no enough memory to proccess sort of 4000000 items}
 
 # Compiled version
 test cmdIL-6.1 {lassign command syntax} -returnCodes error -body {
