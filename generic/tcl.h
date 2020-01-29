@@ -1400,10 +1400,12 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
 
+#ifndef TCL_NO_DEPRECATED
 #define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 #define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
 #define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
+#endif
 #define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
@@ -1426,8 +1428,12 @@ typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
+#else
+#define Tcl_DriverSeekProc Tcl_DriverWideSeekProc
+#endif
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
@@ -1478,9 +1484,13 @@ typedef struct Tcl_ChannelType {
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
+#ifdef TCL_NO_DEPRECATED
+    void *notUsed;
+#else
     Tcl_DriverSeekProc *seekProc;
 				/* Function to call to seek on the channel.
 				 * May be NULL. */
+#endif
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;

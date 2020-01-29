@@ -696,7 +696,9 @@ TclChanCreateObjCmd(
 	    clonePtr->blockModeProc = NULL;
 	}
 	if (!(methods & FLAG(METH_SEEK))) {
+#ifndef TCL_NO_DEPRECATED
 	    clonePtr->seekProc = NULL;
+#endif
 	    clonePtr->wideSeekProc = NULL;
 	}
 

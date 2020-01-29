@@ -27,8 +27,10 @@ static int		TransformInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		TransformOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 static int		TransformSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCodePtr);
+#endif
 static int		TransformSetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
@@ -122,7 +124,11 @@ static const Tcl_ChannelType transformChannelType = {
     TransformCloseProc,		/* Close proc. */
     TransformInputProc,		/* Input proc. */
     TransformOutputProc,	/* Output proc. */
+#ifndef TCL_NO_DEPRECATED
     TransformSeekProc,		/* Seek proc. */
+#else
+    NULL,
+#endif
     TransformSetOptionProc,	/* Set option proc. */
     TransformGetOptionProc,	/* Get option proc. */
     TransformWatchProc,		/* Initialize notifier. */
@@ -808,6 +814,7 @@ TransformOutputProc(
     return toWrite;
 }
 
+#ifndef TCL_NO_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -838,7 +845,7 @@ TransformSeekProc(
     TransformChannelData *dataPtr = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
-    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
+    Tcl_DriverSeekProc *parentSeekProc = parentType->seekProc;
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
@@ -874,6 +881,7 @@ TransformSeekProc(
     return parentSeekProc(Tcl_GetChannelInstanceData(parent), offset, mode,
 	    errorCodePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -905,7 +913,9 @@ TransformWideSeekProc(
     TransformChannelData *dataPtr = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
-    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
+#ifndef TCL_NO_DEPRECATED
+    Tcl_DriverSeekProc *parentSeekProc = parentType->seekProc;
+#endif
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
     ClientData parentData = Tcl_GetChannelInstanceData(parent);
@@ -916,11 +926,13 @@ TransformWideSeekProc(
 	 * location. Simply pass the request down.
 	 */
 
-	if (parentWideSeekProc != NULL) {
-	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
+	if (parentWideSeekProc == NULL) {
+	    return parentSeekProc(parentData, 0, mode, errorCodePtr);
 	}
+#endif
 
-	return parentSeekProc(parentData, 0, mode, errorCodePtr);
+	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
     }
 
     /*
@@ -948,25 +960,26 @@ TransformWideSeekProc(
      * If we have a wide seek capability, we should stick with that.
      */
 
-    if (parentWideSeekProc != NULL) {
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
+    if (parentWideSeekProc == NULL) {
+	/*
+	 * We're transferring to narrow seeks at this point; this is a bit complex
+	 * because we have to check whether the seek is possible first (i.e.
+	 * whether we are losing information in truncating the bits of the
+	 * offset). Luckily, there's a defined error for what happens when trying
+	 * to go out of the representable range.
+	 */
+
+	if (offset<LONG_MIN || offset>LONG_MAX) {
+	    *errorCodePtr = EOVERFLOW;
+	    return -1;
+	}
+
+	return parentSeekProc(parentData, offset,
+		mode, errorCodePtr);
     }
-
-    /*
-     * We're transferring to narrow seeks at this point; this is a bit complex
-     * because we have to check whether the seek is possible first (i.e.
-     * whether we are losing information in truncating the bits of the
-     * offset). Luckily, there's a defined error for what happens when trying
-     * to go out of the representable range.
-     */
-
-    if (offset<LONG_MIN || offset>LONG_MAX) {
-	*errorCodePtr = EOVERFLOW;
-	return -1;
-    }
-
-    return parentSeekProc(parentData, offset,
-	    mode, errorCodePtr);
+#endif
+    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*

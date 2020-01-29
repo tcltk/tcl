@@ -256,6 +256,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
 #   define Tcl_FreeResult 0
+#   define Tcl_ChannelSeekProc 0
 #else
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
