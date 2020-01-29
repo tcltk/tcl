@@ -204,7 +204,7 @@ static void		ZlibTransformTimerRun(void *clientData);
 
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
-    TCL_CHANNEL_VERSION_3,
+    TCL_CHANNEL_VERSION_5,
     ZlibTransformClose,
     ZlibTransformInput,
     ZlibTransformOutput,
