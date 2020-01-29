@@ -492,18 +492,19 @@ ChanSeek(
      * type and non-NULL.
      */
 
-    if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
-	    chanPtr->typePtr->wideSeekProc != NULL) {
-	return chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) ||
+	    chanPtr->typePtr->wideSeekProc == NULL) {
+	if (offset<LONG_MIN || offset>LONG_MAX) {
+	    *errnoPtr = EOVERFLOW;
+	    return -1;
+	}
+	return chanPtr->typePtr->seekProc(chanPtr->instanceData,
 		offset, mode, errnoPtr);
     }
+#endif
 
-    if (offset<LONG_MIN || offset>LONG_MAX) {
-	*errnoPtr = EOVERFLOW;
-	return -1;
-    }
-
-    return chanPtr->typePtr->seekProc(chanPtr->instanceData,
+    return chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
 	    offset, mode, errnoPtr);
 }
 
@@ -1639,9 +1640,6 @@ Tcl_CreateChannel(
     }
     if (NULL == typePtr->watchProc) {
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
-    }
-    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
-	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
     }
 
     /*
@@ -4215,12 +4213,15 @@ WillWrite(
 {
     int inputBuffered;
 
-    if ((chanPtr->typePtr->seekProc != NULL) &&
-            ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
-        int ignore;
+    if (((chanPtr->typePtr->wideSeekProc != NULL)
+#ifndef TCL_NO_DEPRECATED
+	    || (chanPtr->typePtr->seekProc != NULL)
+#endif
+	    ) && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
+	int ignore;
 
-        DiscardInputQueued(chanPtr->state, 0);
-        ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
+	DiscardInputQueued(chanPtr->state, 0);
+	ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
     }
 }
 
@@ -4237,8 +4238,11 @@ WillRead(
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
-    if ((chanPtr->typePtr->seekProc != NULL)
-            && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+    if (((chanPtr->typePtr->wideSeekProc != NULL)
+#ifndef TCL_NO_DEPRECATED
+	    || (chanPtr->typePtr->seekProc != NULL)
+#endif
+	    ) && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
 	/*
 	 * CAVEAT - The assumption here is that FlushChannel() will push out
 	 * the bytes of any writes that are in progress.  Since this is a
@@ -6997,7 +7001,11 @@ Tcl_Seek(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if ((chanPtr->typePtr->wideSeekProc == NULL)
+#ifndef TCL_NO_DEPRECATED
+	    && (chanPtr->typePtr->seekProc == NULL)
+#endif
+    ) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -7161,7 +7169,11 @@ Tcl_Tell(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if ((chanPtr->typePtr->wideSeekProc == NULL)
+#ifndef TCL_NO_DEPRECATED
+	    && (chanPtr->typePtr->seekProc == NULL)
+#endif
+	) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -10499,22 +10511,17 @@ Tcl_ChannelVersion(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
-	return TCL_CHANNEL_VERSION_2;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_3) {
-	return TCL_CHANNEL_VERSION_3;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_4) {
-	return TCL_CHANNEL_VERSION_4;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_5) {
-	return TCL_CHANNEL_VERSION_5;
-    } else {
+#ifndef TCL_NO_DEPRECATED
+    if ((chanTypePtr->version > (Tcl_ChannelTypeVersion) 0x7)
+	    || (chanTypePtr->version < (Tcl_ChannelTypeVersion) 0x1)) {
 	/*
 	 * In <v2 channel versions, the version field is occupied by the
 	 * Tcl_DriverBlockModeProc
 	 */
-
 	return TCL_CHANNEL_VERSION_1;
     }
+#endif
+    return chanTypePtr->version;
 }
 
 /*
@@ -10564,15 +10571,15 @@ Tcl_ChannelBlockModeProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->blockModeProc;
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	/*
+	 * The v1 structure had the blockModeProc in a different place.
+	 */
+	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
     }
-
-    /*
-     * The v1 structure had the blockModeProc in a different place.
-     */
-
-    return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
+#endif
+    return chanTypePtr->blockModeProc;
 }
 
 /*
@@ -10671,6 +10678,7 @@ Tcl_ChannelOutputProc(
     return chanTypePtr->outputProc;
 }
 
+#ifndef TCL_NO_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -10694,6 +10702,7 @@ Tcl_ChannelSeekProc(
 {
     return chanTypePtr->seekProc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -10812,10 +10821,12 @@ Tcl_ChannelFlushProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->flushProc;
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->flushProc;
 }
 
 /*
@@ -10839,10 +10850,12 @@ Tcl_ChannelHandlerProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->handlerProc;
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->handlerProc;
 }
 
 /*
@@ -10866,10 +10879,12 @@ Tcl_ChannelWideSeekProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
-	return chanTypePtr->wideSeekProc;
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->wideSeekProc;
 }
 
 /*
@@ -10894,10 +10909,12 @@ Tcl_ChannelThreadActionProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
-	return chanTypePtr->threadActionProc;
+#ifndef TCL_NO_DEPRECATED
+    if (!HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->threadActionProc;
 }
 
 /*

@@ -1218,7 +1218,8 @@ EXTERN Tcl_DriverInputProc * Tcl_ChannelInputProc(
 EXTERN Tcl_DriverOutputProc * Tcl_ChannelOutputProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 405 */
-EXTERN Tcl_DriverSeekProc * Tcl_ChannelSeekProc(
+TCL_DEPRECATED("Use Tcl_ChannelWideSeekProc")
+Tcl_DriverSeekProc *	Tcl_ChannelSeekProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 406 */
 EXTERN Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc(
@@ -2359,7 +2360,7 @@ typedef struct TclStubs {
     Tcl_DriverClose2Proc * (*tcl_ChannelClose2Proc) (const Tcl_ChannelType *chanTypePtr); /* 402 */
     Tcl_DriverInputProc * (*tcl_ChannelInputProc) (const Tcl_ChannelType *chanTypePtr); /* 403 */
     Tcl_DriverOutputProc * (*tcl_ChannelOutputProc) (const Tcl_ChannelType *chanTypePtr); /* 404 */
-    Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 405 */
+    TCL_DEPRECATED_API("Use Tcl_ChannelWideSeekProc") Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 405 */
     Tcl_DriverSetOptionProc * (*tcl_ChannelSetOptionProc) (const Tcl_ChannelType *chanTypePtr); /* 406 */
     Tcl_DriverGetOptionProc * (*tcl_ChannelGetOptionProc) (const Tcl_ChannelType *chanTypePtr); /* 407 */
     Tcl_DriverWatchProc * (*tcl_ChannelWatchProc) (const Tcl_ChannelType *chanTypePtr); /* 408 */
@@ -4170,5 +4171,10 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
+
+#ifdef TCL_NO_DEPRECATED
+#undef Tcl_ChannelSeekProc
+#define Tcl_ChannelSeekProc Tcl_ChannelWideSeekProc
+#endif
 
 #endif /* _TCLDECLS */
