@@ -446,38 +446,65 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 } -result 0 -cleanup {
     rename test_lsort ""
 }
-test cmdIL-5.7 {lsort memory exhaustion} -constraints {prlimit} -body {
-    # test it in child process (with limited address space):
+proc test-with-limit args {
+    set body [lindex $args end]
+    array set in [lrange $args 0 end-1]
+    # test in child process (with limits):
     set pipe {}
     if {[catch {
+	# start new process:
 	set pipe [open |[list [interpreter]] r+]
-	exec prlimit -p [pid $pipe] --as=80000000
-    } msg]} {
+	set ppid [pid $pipe]
+	# create prlimit args:
+	set args {}
+	if {[info exists in(-memory)]} {
+	    # with limited address space, so try to retrieve current memory (using ps, vsz is in KB):
+	    if {[catch {
+		incr in(-memory) [expr {[lindex [exec ps -hq $ppid -o vsz] end] * 1024}]
+	    }]} {
+		# ps failed, use default size 20MB:
+		incr in(-memory) 20000000
+		# + size of locale-archive (may be up to 100MB):
+		incr in(-memory) [expr {
+		    [file exists /usr/lib/locale/locale-archive] ? [file size /usr/lib/locale/locale-archive] : 0
+		}]
+	    }
+	    append args --as=$in(-memory)
+	}
+	# apply limits:
+	exec prlimit -p $ppid {*}$args
+    } msg opt]} {
 	catch {close $pipe}
 	tcltest::Skip "prlimit: error - [regsub {^\s*([^\n]*).*$} $msg {\1}]"
     }
     # if no error (enough memory), or error by list creation - add it as skipped test:
-    if {![catch {
+    catch {
 	chan configure $pipe -buffering line
-	puts $pipe {
-	    # create list and get length (avoid too long output in interactive shells):
-	    llength [set l [lrepeat 4000000 ""]]
-	    # test OOM:
-	    puts [llength [lsort $l]]
-	    exit
-	}
+	puts $pipe "puts \[$body\]"
+	puts $pipe exit
 	set result [read $pipe]
 	close $pipe
 	set pipe {}
 	set result
-    } result] || [regexp {^(?:list creation failed|unable to alloc)} $result]} {
+    } result opt
+    if {$pipe ne ""} { catch { close $pipe } }
+    return {*}$opt $result
+}
+test cmdIL-5.7 {lsort memory exhaustion} -constraints {prlimit} -body {
+    # test it in child process (with limited address space):
+    if {![catch {
+	# ca. 80MB extra memory on x64 system would be enough to sort the half (2M) items:
+        test-with-limit -memory [expr {$tcl_platform(pointerSize)*3 * 2000000 + $tcl_platform(pointerSize)*4000000}] {
+	    # create list and get length (avoid too long output in interactive shells):
+	    llength [set l [lrepeat 4000000 ""]]
+	    # test OOM:
+	    llength [lsort $l]
+	}
+    } result] || [regexp {^(?:list creation failed|unable to (?:re)?alloc)} $result]} {
 	tcltest::Skip "prlimit: wrong AS-limit, result: $result"
     }
     set result
     # expecting error no memory by sort
-} -cleanup {
-    if {$pipe ne ""} { catch { close $pipe } }
-    unset -nocomplain pipe line result
 } -result {no enough memory to proccess sort of 4000000 items}
 
 # Compiled version
