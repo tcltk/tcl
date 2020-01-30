@@ -1136,7 +1136,8 @@ TcpClose2Proc(
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = instanceData;
-    int errorCode = 0;
+    int readError = 0;
+    int writeError = 0;
 
     /*
      * Shutdown the OS socket handle.
@@ -1153,13 +1154,13 @@ TcpClose2Proc(
 
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->sockets->fd, SD_RECEIVE) == SOCKET_ERROR)) {
 	TclWinConvertError((DWORD) WSAGetLastError());
-	errorCode = Tcl_GetErrno();
+	readError = Tcl_GetErrno();
     }
-    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->sockets->fd, SD_SEND) == SOCKET_ERROR) && (errorCode != 0)) {
+    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->sockets->fd, SD_SEND) == SOCKET_ERROR)) {
 	TclWinConvertError((DWORD) WSAGetLastError());
-	errorCode = Tcl_GetErrno();
+	writeError = Tcl_GetErrno();
     }
-    return errorCode;
+    return (readError != 0) ? readError : writeError;
 }
 
 /*
