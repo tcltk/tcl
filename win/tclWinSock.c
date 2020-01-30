@@ -1137,25 +1137,13 @@ TcpClose2Proc(
 {
     TcpState *statePtr = instanceData;
     int errorCode = 0;
-    int sd;
 
     /*
      * Shutdown the OS socket handle.
      */
 
-    switch(flags) {
-    case TCL_CLOSE_READ:
-	sd = SD_RECEIVE;
-	break;
-    case TCL_CLOSE_WRITE:
-	sd = SD_SEND;
-	break;
-    default:
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "socket close2proc called bidirectionally", -1));
-	}
-	return TCL_ERROR;
+    if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
+	return TcpCloseProc(instanceData, interp);
     }
 
     /*
@@ -1163,11 +1151,14 @@ TcpClose2Proc(
      * TCL_WRITABLE so this should never be called for a server socket.
      */
 
-    if (shutdown(statePtr->sockets->fd, sd) == SOCKET_ERROR) {
+    if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->sockets->fd, SD_RECEIVE) == SOCKET_ERROR)) {
 	TclWinConvertError((DWORD) WSAGetLastError());
 	errorCode = Tcl_GetErrno();
     }
-
+    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->sockets->fd, SD_SEND) == SOCKET_ERROR) && (errorCode != 0)) {
+	TclWinConvertError((DWORD) WSAGetLastError());
+	errorCode = Tcl_GetErrno();
+    }
     return errorCode;
 }
 
