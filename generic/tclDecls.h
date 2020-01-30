@@ -4172,9 +4172,4 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#ifdef TCL_NO_DEPRECATED
-#undef Tcl_ChannelSeekProc
-#define Tcl_ChannelSeekProc Tcl_ChannelWideSeekProc
-#endif
-
 #endif /* _TCLDECLS */

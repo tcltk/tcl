@@ -27,12 +27,6 @@
 #define EOK	0
 #endif
 
-/* DUPLICATE of HaveVersion() in tclIO.c // TODO - MODULE_SCOPE */
-#ifndef TCL_NO_DEPRECATED
-static int		HaveVersion(const Tcl_ChannelType *typePtr,
-			    Tcl_ChannelTypeVersion minimumVersion);
-#endif
-
 /*
  * Signatures of all functions used in the C layer of the reflection.
  */
@@ -47,8 +41,10 @@ static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
 static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
+#endif
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -69,7 +65,11 @@ static const Tcl_ChannelType tclRTransformType = {
     ReflectClose,		/* Close channel, clean instance data. */
     ReflectInput,		/* Handle read request. */
     ReflectOutput,		/* Handle write request. */
+#ifndef TCL_NO_DEPRECATED
     ReflectSeek,		/* Move location of access point. */
+#else
+	NULL,			/* Move location of access point. */
+#endif
     ReflectSetOption,		/* Set options. */
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
@@ -1333,22 +1333,6 @@ ReflectSeekWide(
     Channel *parent = (Channel *) rtPtr->parent;
     Tcl_WideInt curPos;		/* Position on the device. */
 
-    const Tcl_ChannelType *channelType =
-	    Tcl_GetChannelType(rtPtr->parent);
-
-    /*
-     * Fail if the parent channel is not seekable.
-     */
-
-    if ((channelType->wideSeekProc == NULL)
-#ifndef TCL_NO_DEPRECATED
-	    && (channelType->seekProc == NULL)
-#endif
-    ) {
-	Tcl_SetErrno(EINVAL);
-	return -1;
-    }
-
     /*
      * Check if we can leave out involving the Tcl level, i.e. transformation
      * handler. This is true for tell requests, and transformations which
@@ -1392,25 +1376,24 @@ ReflectSeekWide(
      * non-NULL...
      */
 
+    if (Tcl_ChannelWideSeekProc(parent->typePtr) == NULL) {
 #ifndef TCL_NO_DEPRECATED
-    if (!HaveVersion(parent->typePtr, TCL_CHANNEL_VERSION_3) ||
-	parent->typePtr->wideSeekProc == NULL) {
 	if (offset < LONG_MIN || offset > LONG_MAX) {
 	    *errorCodePtr = EOVERFLOW;
 	    curPos = -1;
 	} else {
-	    curPos = parent->typePtr->seekProc(
-		    parent->instanceData, offset, seekMode,
+	    curPos = Tcl_ChannelSeekProc(parent->typePtr)(
+	    parent->instanceData, offset, seekMode,
 	    errorCodePtr);
 	}
-    } else {
-	curPos = parent->typePtr->wideSeekProc(parent->instanceData, offset,
-		seekMode, errorCodePtr);
-    }
 #else
-    curPos = parent->typePtr->wideSeekProc(parent->instanceData, offset,
-	    seekMode, errorCodePtr);
+	*errorCodePtr = EINVAL;
+	curPos = -1;
 #endif
+    } else {
+    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
+    		seekMode, errorCodePtr);
+    }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
     }
@@ -1420,6 +1403,7 @@ ReflectSeekWide(
     return curPos;
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 ReflectSeek(
     ClientData clientData,
@@ -1437,6 +1421,7 @@ ReflectSeek(
     return ReflectSeekWide(clientData, offset, seekMode,
 	    errorCodePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -3402,35 +3387,6 @@ TransformLimit(
     Tcl_RestoreInterpState(rtPtr->interp, sr);
     return 1;
 }
-
-/* DUPLICATE of HaveVersion() in tclIO.c
- *----------------------------------------------------------------------
- *
- * HaveVersion --
- *
- *	Return whether a channel type is (at least) of a given version.
- *
- * Results:
- *	True if the minimum version is exceeded by the version actually
- *	present.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-static int
-HaveVersion(
-    const Tcl_ChannelType *chanTypePtr,
-    Tcl_ChannelTypeVersion minimumVersion)
-{
-    Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
-
-    return PTR2INT(actualVersion) >= PTR2INT(minimumVersion);
-}
-#endif
 
 /*
  * Local Variables:

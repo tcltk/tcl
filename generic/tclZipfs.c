@@ -390,7 +390,11 @@ static int		ZipChannelGetFile(void *instanceData,
 			    int direction, void **handlePtr);
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
+#ifndef TCL_NO_DEPRECATED
 static int		ZipChannelSeek(void *instanceData, long offset,
+			    int mode, int *errloc);
+#endif
+static Tcl_WideInt ZipChannelWideSeek(void *instanceData, Tcl_WideInt offset,
 			    int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
@@ -445,7 +449,11 @@ static Tcl_ChannelType ZipChannelType = {
     ZipChannelClose,	    /* Close channel, clean instance data */
     ZipChannelRead,	    /* Handle read request */
     ZipChannelWrite,	    /* Handle write request */
+#ifndef TCL_NO_DEPRECATED
     ZipChannelSeek,	    /* Move location of access point, NULL'able */
+#else
+	NULL,	    /* Move location of access point, NULL'able */
+#endif
     NULL,		    /* Set options, NULL'able */
     NULL,		    /* Get options, NULL'able */
     ZipChannelWatchChannel, /* Initialize notifier */
@@ -454,7 +462,7 @@ static Tcl_ChannelType ZipChannelType = {
     NULL,		    /* Set blocking mode for raw channel, NULL'able */
     NULL,		    /* Function to flush channel, NULL'able */
     NULL,		    /* Function to handle event, NULL'able */
-    NULL,		    /* Wide seek function, NULL'able */
+	ZipChannelWideSeek,	    /* Wide seek function, NULL'able */
     NULL,		    /* Thread action function, NULL'able */
     NULL,		    /* Truncate function, NULL'able */
 };
@@ -3472,7 +3480,7 @@ ZipChannelWrite(
 /*
  *-------------------------------------------------------------------------
  *
- * ZipChannelSeek --
+ * ZipChannelWideSeek --
  *
  *	This function is called to position file pointer of channel.
  *
@@ -3485,15 +3493,15 @@ ZipChannelWrite(
  *-------------------------------------------------------------------------
  */
 
-static int
-ZipChannelSeek(
+static Tcl_WideInt
+ZipChannelWideSeek(
     void *instanceData,
-    long offset,
+	Tcl_WideInt offset,
     int mode,
     int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
-    unsigned long end;
+    size_t end;
 
     if (!info->isWriting && (info->isDirectory < 0)) {
 	/*
@@ -3525,20 +3533,32 @@ ZipChannelSeek(
 	return -1;
     }
     if (info->isWriting) {
-	if ((unsigned long) offset > info->maxWrite) {
+	if ((size_t) offset > info->maxWrite) {
 	    *errloc = EINVAL;
 	    return -1;
 	}
-	if ((unsigned long) offset > info->numBytes) {
+	if ((size_t) offset > info->numBytes) {
 	    info->numBytes = offset;
 	}
-    } else if ((unsigned long) offset > end) {
+    } else if ((size_t) offset > end) {
 	*errloc = EINVAL;
 	return -1;
     }
-    info->numRead = (unsigned long) offset;
+    info->numRead = (size_t) offset;
     return info->numRead;
 }
+
+#ifndef TCL_NO_DEPRECATED
+static int
+ZipChannelSeek(
+    void *instanceData,
+    long offset,
+    int mode,
+    int *errloc)
+{
+    return ZipChannelWideSeek(instanceData, offset, mode, errloc);
+}
+#endif
 
 /*
  *-------------------------------------------------------------------------

@@ -127,7 +127,7 @@ static const Tcl_ChannelType transformChannelType = {
 #ifndef TCL_NO_DEPRECATED
     TransformSeekProc,		/* Seek proc. */
 #else
-    NULL,
+    NULL,			/* Seek proc. */
 #endif
     TransformSetOptionProc,	/* Set option proc. */
     TransformGetOptionProc,	/* Get option proc. */
@@ -814,7 +814,6 @@ TransformOutputProc(
     return toWrite;
 }
 
-#ifndef TCL_NO_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -835,6 +834,7 @@ TransformOutputProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 TransformSeekProc(
     ClientData instanceData,	/* The channel to manipulate. */
@@ -845,7 +845,7 @@ TransformSeekProc(
     TransformChannelData *dataPtr = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
-    Tcl_DriverSeekProc *parentSeekProc = parentType->seekProc;
+    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
@@ -914,7 +914,7 @@ TransformWideSeekProc(
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
 #ifndef TCL_NO_DEPRECATED
-    Tcl_DriverSeekProc *parentSeekProc = parentType->seekProc;
+    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
 #endif
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
@@ -926,13 +926,16 @@ TransformWideSeekProc(
 	 * location. Simply pass the request down.
 	 */
 
+	if (parentWideSeekProc != NULL) {
+	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 #ifndef TCL_NO_DEPRECATED
-	if (parentWideSeekProc == NULL) {
+	} else if (parentSeekProc) {
 	    return parentSeekProc(parentData, 0, mode, errorCodePtr);
-	}
 #endif
-
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+	} else {
+	    *errorCodePtr = EINVAL;
+	    return -1;
+	}
     }
 
     /*
@@ -960,7 +963,6 @@ TransformWideSeekProc(
      * If we have a wide seek capability, we should stick with that.
      */
 
-#ifndef TCL_NO_DEPRECATED
     if (parentWideSeekProc == NULL) {
 	/*
 	 * We're transferring to narrow seeks at this point; this is a bit complex
@@ -970,6 +972,7 @@ TransformWideSeekProc(
 	 * to go out of the representable range.
 	 */
 
+#ifndef TCL_NO_DEPRECATED
 	if (offset<LONG_MIN || offset>LONG_MAX) {
 	    *errorCodePtr = EOVERFLOW;
 	    return -1;
@@ -977,9 +980,12 @@ TransformWideSeekProc(
 
 	return parentSeekProc(parentData, offset,
 		mode, errorCodePtr);
-    }
+#else
+	*errorCodePtr = EINVAL;
+	return -1;
 #endif
-    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+    }
+	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*

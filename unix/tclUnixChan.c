@@ -128,8 +128,10 @@ static int		FileInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+#ifndef TCL_NO_DEPRECATED
 static int		FileSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCode);
+#endif
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
@@ -164,7 +166,11 @@ static const Tcl_ChannelType fileChannelType = {
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
+#ifndef TCL_NO_DEPRECATED
     FileSeekProc,		/* Seek proc. */
+#else
+	NULL,
+#endif
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
@@ -432,7 +438,7 @@ TtyCloseProc(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 static int
 FileSeekProc(
     ClientData instanceData,	/* File state. */
@@ -473,6 +479,7 @@ FileSeekProc(
     }
     return (int) newLoc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

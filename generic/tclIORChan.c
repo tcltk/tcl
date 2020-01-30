@@ -46,8 +46,10 @@ static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
 static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
+#endif
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -68,7 +70,11 @@ static const Tcl_ChannelType tclRChannelType = {
     ReflectClose,	   /* Close channel, clean instance data	  */
     ReflectInput,	   /* Handle read request			  */
     ReflectOutput,	   /* Handle write request			  */
+#ifndef TCL_NO_DEPRECATED
     ReflectSeek,	   /* Move location of access point.	NULL'able */
+#else
+    NULL,
+#endif
     ReflectSetOption,	   /* Set options.			NULL'able */
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
@@ -81,7 +87,7 @@ static const Tcl_ChannelType tclRChannelType = {
 #if TCL_THREADS
     ReflectThread,         /* thread action, tracking owner */
 #else
-    NULL,		   /* thread action */
+	(void *)-1,		   /* thread action */
 #endif
     NULL		   /* truncate */
 };
@@ -1616,6 +1622,7 @@ ReflectSeekWide(
     goto stop;
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 ReflectSeek(
     ClientData clientData,
@@ -1633,6 +1640,7 @@ ReflectSeek(
     return ReflectSeekWide(clientData, offset, seekMode,
 	    errorCodePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
