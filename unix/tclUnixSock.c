@@ -658,7 +658,8 @@ TcpClose2Proc(
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = instanceData;
-    int errorCode = 0;
+    int readError = 0;
+    int writeError = 0;
 
     /*
      * Shutdown the OS socket handle.
@@ -667,12 +668,12 @@ TcpClose2Proc(
 	return TcpCloseProc(instanceData, interp);
     }
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
-	errorCode = errno;
+	readError = errno;
     }
-    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0) && (errorCode != 0)) {
-	errorCode = errno;
+    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
+	writeError = errno;
     }
-    return errorCode;
+    return (readError != 0) ? readError : writeError;
 }
 
 /*
