@@ -1485,7 +1485,7 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
 #ifdef TCL_NO_DEPRECATED
-    void *notUsed;
+    struct something_undefined *notUsed;
 #else
     Tcl_DriverSeekProc *seekProc;
 				/* Function to call to seek on the channel.
