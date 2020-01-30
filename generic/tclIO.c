@@ -204,8 +204,6 @@ static Tcl_Encoding	GetBinaryEncoding();
 static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
-static int		HaveVersion(const Tcl_ChannelType *typePtr,
-			    Tcl_ChannelTypeVersion minimumVersion);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 			    GetsState *gsPtr);
 static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
@@ -492,9 +490,8 @@ ChanSeek(
      * type and non-NULL.
      */
 
-    if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
-	    chanPtr->typePtr->wideSeekProc != NULL) {
-	return chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
+    if (Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL) {
+	return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
 		offset, mode, errnoPtr);
     }
 
@@ -503,7 +500,7 @@ ChanSeek(
 	return -1;
     }
 
-    return chanPtr->typePtr->seekProc(chanPtr->instanceData,
+    return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
 	    offset, mode, errnoPtr);
 }
 
@@ -4216,7 +4213,7 @@ WillWrite(
 {
     int inputBuffered;
 
-    if ((chanPtr->typePtr->seekProc != NULL) &&
+    if ((Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL) &&
             ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
         int ignore;
 
@@ -4238,7 +4235,7 @@ WillRead(
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
-    if ((chanPtr->typePtr->seekProc != NULL)
+    if ((Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL)
             && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
 	/*
 	 * CAVEAT - The assumption here is that FlushChannel() will push out
@@ -7001,7 +6998,7 @@ Tcl_Seek(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -7165,7 +7162,7 @@ Tcl_Tell(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -10488,49 +10485,15 @@ Tcl_ChannelVersion(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
-	return TCL_CHANNEL_VERSION_2;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_3) {
-	return TCL_CHANNEL_VERSION_3;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_4) {
-	return TCL_CHANNEL_VERSION_4;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_5) {
-	return TCL_CHANNEL_VERSION_5;
-    } else {
+    if ((chanTypePtr->version < TCL_CHANNEL_VERSION_2)
+	    || (chanTypePtr->version > TCL_CHANNEL_VERSION_5)) {
 	/*
 	 * In <v2 channel versions, the version field is occupied by the
 	 * Tcl_DriverBlockModeProc
 	 */
-
 	return TCL_CHANNEL_VERSION_1;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * HaveVersion --
- *
- *	Return whether a channel type is (at least) of a given version.
- *
- * Results:
- *	True if the minimum version is exceeded by the version actually
- *	present.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-HaveVersion(
-    const Tcl_ChannelType *chanTypePtr,
-    Tcl_ChannelTypeVersion minimumVersion)
-{
-    Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
-
-    return (PTR2INT(actualVersion)) >= (PTR2INT(minimumVersion));
+    return chanTypePtr->version;
 }
 
 /*
@@ -10553,15 +10516,14 @@ Tcl_ChannelBlockModeProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->blockModeProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	/*
+	 * The v1 structure had the blockModeProc in a different place.
+	 */
+	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
     }
 
-    /*
-     * The v1 structure had the blockModeProc in a different place.
-     */
-
-    return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
+    return chanTypePtr->blockModeProc;
 }
 
 /*
@@ -10801,10 +10763,10 @@ Tcl_ChannelFlushProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->flushProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->flushProc;
 }
 
 /*
@@ -10828,10 +10790,10 @@ Tcl_ChannelHandlerProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->handlerProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->handlerProc;
 }
 
 /*
@@ -10855,10 +10817,10 @@ Tcl_ChannelWideSeekProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
-	return chanTypePtr->wideSeekProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_3) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->wideSeekProc;
 }
 
 /*
@@ -10883,10 +10845,10 @@ Tcl_ChannelThreadActionProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
-	return chanTypePtr->threadActionProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_4) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->threadActionProc;
 }
 
 /*
@@ -11198,10 +11160,10 @@ Tcl_ChannelTruncateProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
-	return chanTypePtr->truncateProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_5) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->truncateProc;
 }
 
 /*
