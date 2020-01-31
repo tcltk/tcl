@@ -462,7 +462,7 @@ static Tcl_ChannelType ZipChannelType = {
     NULL,		    /* Set blocking mode for raw channel, NULL'able */
     NULL,		    /* Function to flush channel, NULL'able */
     NULL,		    /* Function to handle event, NULL'able */
-	ZipChannelWideSeek,	    /* Wide seek function, NULL'able */
+    ZipChannelWideSeek,	/* Wide seek function, NULL'able */
     NULL,		    /* Thread action function, NULL'able */
     NULL,		    /* Truncate function, NULL'able */
 };
@@ -1294,7 +1294,7 @@ ZipFSCatalogFilesystem(
 
     *zf = *zf0;
     zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    Tcl_CreateExitHandler(ZipfsExitHandler, (ClientData)zf);
+    Tcl_CreateExitHandler(ZipfsExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
     zf->name = ckalloc(zf->nameLength + 1);
@@ -1860,7 +1860,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
-    Tcl_DeleteExitHandler(ZipfsExitHandler, (ClientData)zf);
+    Tcl_DeleteExitHandler(ZipfsExitHandler, zf);
     ckfree(zf);
     unmounted = 1;
   done:
@@ -3480,7 +3480,7 @@ ZipChannelWrite(
 /*
  *-------------------------------------------------------------------------
  *
- * ZipChannelWideSeek --
+ * ZipChannelSeek/ZipChannelWideSeek --
  *
  *	This function is called to position file pointer of channel.
  *
@@ -3496,7 +3496,7 @@ ZipChannelWrite(
 static Tcl_WideInt
 ZipChannelWideSeek(
     void *instanceData,
-	Tcl_WideInt offset,
+    Tcl_WideInt offset,
     int mode,
     int *errloc)
 {
