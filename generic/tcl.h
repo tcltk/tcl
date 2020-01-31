@@ -1428,12 +1428,8 @@ typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
-#ifndef TCL_NO_DEPRECATED
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
-#else
-#define Tcl_DriverSeekProc Tcl_DriverWideSeekProc
-#endif
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
@@ -1478,19 +1474,15 @@ typedef struct Tcl_ChannelType {
 				/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;
 				/* Function to call to close the channel, or
-				 * TCL_CLOSE2PROC if the close2Proc should be
+				 * NULL or TCL_CLOSE2PROC if the close2Proc should be
 				 * used instead. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
-#ifdef TCL_NO_DEPRECATED
-    struct something_undefined *notUsed;
-#else
     Tcl_DriverSeekProc *seekProc;
 				/* Function to call to seek on the channel.
 				 * May be NULL. */
-#endif
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;

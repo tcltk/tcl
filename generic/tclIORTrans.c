@@ -32,7 +32,7 @@
  */
 
 static int		ReflectClose(ClientData clientData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ReflectInput(ClientData clientData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		ReflectOutput(ClientData clientData, const char *buf,
@@ -62,7 +62,7 @@ static int		ReflectNotify(ClientData clientData, int mask);
 static const Tcl_ChannelType tclRTransformType = {
     "tclrtransform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel. */
-    ReflectClose,		/* Close channel, clean instance data. */
+    TCL_CLOSE2PROC,		/* Close channel, clean instance data. */
     ReflectInput,		/* Handle read request. */
     ReflectOutput,		/* Handle write request. */
 #ifndef TCL_NO_DEPRECATED
@@ -74,7 +74,7 @@ static const Tcl_ChannelType tclRTransformType = {
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
     ReflectHandle,		/* Get OS handle from the channel. */
-    NULL,			/* No close2 support. NULL'able. */
+	ReflectClose,		/* No close2 support. NULL'able. */
     ReflectBlock,		/* Set blocking/nonblocking. */
     NULL,			/* Flush channel. Not used by core.
 				 * NULL'able. */
@@ -885,7 +885,8 @@ UnmarshallErrorResult(
 static int
 ReflectClose(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    int flags)
 {
     ReflectedTransform *rtPtr = clientData;
     int errorCode, errorCodeSet = 0;
@@ -895,6 +896,10 @@ ReflectClose(
 				/* Map of reflected transforms with handlers
 				 * in this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (TclInThreadExit()) {
 	/*
