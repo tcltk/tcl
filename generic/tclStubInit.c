@@ -504,7 +504,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-#if TCL_UTF_MAX < 4
+#if TCL_UTF_MAX < 4 && !defined(TCL_NO_DEPRECATED)
 static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
