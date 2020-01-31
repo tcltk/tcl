@@ -374,11 +374,12 @@ ChanClose(
     Channel *chanPtr,
     Tcl_Interp *interp)
 {
-    if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
+#ifndef TCL_NO_DEPRECATED
+    if ((chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) && (chanPtr->typePtr->closeProc != NULL)) {
 	return chanPtr->typePtr->closeProc(chanPtr->instanceData, interp);
-    } else {
-	return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
     }
+#endif
+    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
 
 static inline int
@@ -1630,9 +1631,18 @@ Tcl_CreateChannel(
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
     assert(typePtr->typeName != NULL);
-    if (NULL == typePtr->closeProc) {
-	Tcl_Panic("channel type %s must define closeProc", typePtr->typeName);
+#ifndef TCL_NO_DEPRECATED
+    if (((NULL == typePtr->closeProc) || (TCL_CLOSE2PROC == typePtr->closeProc)) && (typePtr->close2Proc == NULL)) {
+	Tcl_Panic("channel type %s must define closeProc or close2Proc", typePtr->typeName);
     }
+#else
+    if (Tcl_ChannelVersion(typePtr) < TCL_CHANNEL_VERSION_5) {
+	Tcl_Panic("channel type %s must be version TCL_CHANNEL_VERSION_5", typePtr->typeName);
+    }
+    if (typePtr->close2Proc == NULL) {
+	Tcl_Panic("channel type %s must define close2Proc", typePtr->typeName);
+    }
+#endif
     if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
     }
@@ -1643,16 +1653,8 @@ Tcl_CreateChannel(
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
     }
 #ifndef TCL_NO_DEPRECATED
-    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
+    if ((NULL != typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
 	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
-    }
-#elif 1 /* TODO: Too strict for backwards compatibility, just make sure for the Tcl core for now. */
-    if (NULL != typePtr->notUsed) {
-	Tcl_Panic("channel type %s cannot have seekProc", typePtr->typeName);
-    }
-#else
-    if ((NULL!=typePtr->notUsed) && (NULL == typePtr->wideSeekProc)) {
-	Tcl_Panic("channel type %s must define wideSeekProc if defining seekProc", typePtr->typeName);
     }
 #endif
 
@@ -3396,7 +3398,7 @@ Tcl_Close(
 				 * channel. */
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
-    int result;			/* Of calling FlushChannel. */
+    int result = 0;			/* Of calling FlushChannel. */
     int flushcode;
     int stickyError;
 
@@ -3497,12 +3499,14 @@ Tcl_Close(
      * it anymore and this will help avoid deadlocks on some channel types.
      */
 
-    if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
-	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
-		TCL_CLOSE_READ);
-    } else {
-	result = 0;
+#ifndef TCL_NO_DEPRECATED
+    if ((chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) || (chanPtr->typePtr->closeProc == NULL)) {
+	/* If this half-close fails, just continue the full close */
+	(void)chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
     }
+#else
+    (void)chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
+#endif
 
     /*
      * The call to FlushChannel will flush any queued output and invoke the
@@ -3562,19 +3566,17 @@ Tcl_Close(
  *
  * Tcl_CloseEx --
  *
- *	Closes one side of a channel, read or write.
+ *	Closes one side of a channel, read or write, close all.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Closes one direction of the channel.
+ *	Closes one direction of the channel, or do a full close.
  *
  * NOTE:
  *	Tcl_CloseEx closes the specified direction of the channel as far as
- *	the user is concerned. The channel keeps existing however. You cannot
- *	calls this function to close the last possible direction of the
- *	channel. Use Tcl_Close for that.
+ *	the user is concerned. If flags = 0, this is equivalent to Tcl_Close.
  *
  *----------------------------------------------------------------------
  */
@@ -3594,10 +3596,18 @@ Tcl_CloseEx(
 	return TCL_OK;
     }
 
-    /* TODO: assert flags validity ? */
-
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
+
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == 0) {
+	return Tcl_Close(interp, chan);
+    }
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == (TCL_READABLE | TCL_WRITABLE)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"double-close of channels not supported by %ss",
+		chanPtr->typePtr->typeName));
+	return TCL_ERROR;
+    }
 
     /*
      * Does the channel support half-close anyway? Error if not.
@@ -3605,7 +3615,7 @@ Tcl_CloseEx(
 
     if (!chanPtr->typePtr->close2Proc) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "half-close of channels not supported by %ss",
+		"half-close of channels not supported by %ss",
 		chanPtr->typePtr->typeName));
 	return TCL_ERROR;
     }
@@ -10585,6 +10595,7 @@ Tcl_ChannelBlockModeProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_DriverCloseProc *
 Tcl_ChannelCloseProc(
     const Tcl_ChannelType *chanTypePtr)
@@ -10592,6 +10603,7 @@ Tcl_ChannelCloseProc(
 {
     return chanTypePtr->closeProc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

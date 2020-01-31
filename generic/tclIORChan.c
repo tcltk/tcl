@@ -32,7 +32,7 @@
  */
 
 static int		ReflectClose(ClientData clientData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ReflectInput(ClientData clientData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		ReflectOutput(ClientData clientData, const char *buf,
@@ -67,7 +67,7 @@ static void     TimerRunWrite(ClientData clientData);
 static const Tcl_ChannelType tclRChannelType = {
     "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    ReflectClose,	   /* Close channel, clean instance data	  */
+    TCL_CLOSE2PROC,	   /* Close channel, clean instance data	  */
     ReflectInput,	   /* Handle read request			  */
     ReflectOutput,	   /* Handle write request			  */
 #ifndef TCL_NO_DEPRECATED
@@ -79,7 +79,7 @@ static const Tcl_ChannelType tclRChannelType = {
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
     NULL,		   /* Get OS handle from the channel.	NULL'able */
-    NULL,		   /* No close2 support.		NULL'able */
+	ReflectClose,	   /* No close2 support.		NULL'able */
     ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
     NULL,		   /* Flush channel. Not used by core.	NULL'able */
     NULL,		   /* Handle events.			NULL'able */
@@ -1158,7 +1158,8 @@ TclChanCaughtErrorBypass(
 static int
 ReflectClose(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     ReflectedChannel *rcPtr = clientData;
     int result;			/* Result code for 'close' */
@@ -1167,6 +1168,10 @@ ReflectClose(
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     const Tcl_ChannelType *tctPtr;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (TclInThreadExit()) {
 	/*
