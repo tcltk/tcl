@@ -288,7 +288,8 @@ EXTERN void		Tcl_CallWhenDeleted(Tcl_Interp *interp,
 EXTERN void		Tcl_CancelIdleCall(Tcl_IdleProc *idleProc,
 				ClientData clientData);
 /* 81 */
-EXTERN int		Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan);
+TCL_DEPRECATED("Use Tcl_CloseEx")
+int			Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan);
 /* 82 */
 EXTERN int		Tcl_CommandComplete(const char *cmd);
 /* 83 */
@@ -1652,18 +1653,18 @@ EXTERN void		Tcl_QueryTimeProc(Tcl_GetTimeProc **getProc,
 EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 555 */
-EXTERN Tcl_Obj *	Tcl_NewBignumObj(mp_int *value);
+EXTERN Tcl_Obj *	Tcl_NewBignumObj(void *value);
 /* 556 */
-EXTERN Tcl_Obj *	Tcl_DbNewBignumObj(mp_int *value, const char *file,
+EXTERN Tcl_Obj *	Tcl_DbNewBignumObj(void *value, const char *file,
 				int line);
 /* 557 */
-EXTERN void		Tcl_SetBignumObj(Tcl_Obj *obj, mp_int *value);
+EXTERN void		Tcl_SetBignumObj(Tcl_Obj *obj, void *value);
 /* 558 */
 EXTERN int		Tcl_GetBignumFromObj(Tcl_Interp *interp,
-				Tcl_Obj *obj, mp_int *value);
+				Tcl_Obj *obj, void *value);
 /* 559 */
 EXTERN int		Tcl_TakeBignumFromObj(Tcl_Interp *interp,
-				Tcl_Obj *obj, mp_int *value);
+				Tcl_Obj *obj, void *value);
 /* 560 */
 EXTERN int		Tcl_TruncateChannel(Tcl_Channel chan,
 				Tcl_WideInt length);
@@ -1682,7 +1683,7 @@ EXTERN void		Tcl_SetChannelError(Tcl_Channel chan, Tcl_Obj *msg);
 EXTERN void		Tcl_GetChannelError(Tcl_Channel chan, Tcl_Obj **msg);
 /* 566 */
 EXTERN int		Tcl_InitBignumFromDouble(Tcl_Interp *interp,
-				double initval, mp_int *toInit);
+				double initval, void *toInit);
 /* 567 */
 EXTERN Tcl_Obj *	Tcl_GetNamespaceUnknownHandler(Tcl_Interp *interp,
 				Tcl_Namespace *nsPtr);
@@ -2029,7 +2030,7 @@ typedef struct TclStubs {
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, ClientData clientData); /* 80 */
-    int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
+    TCL_DEPRECATED_API("Use Tcl_CloseEx") int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
     int (*tcl_CommandComplete) (const char *cmd); /* 82 */
     char * (*tcl_Concat) (int argc, const char *const *argv); /* 83 */
     int (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
@@ -2511,18 +2512,18 @@ typedef struct TclStubs {
     void (*tcl_SetTimeProc) (Tcl_GetTimeProc *getProc, Tcl_ScaleTimeProc *scaleProc, ClientData clientData); /* 552 */
     void (*tcl_QueryTimeProc) (Tcl_GetTimeProc **getProc, Tcl_ScaleTimeProc **scaleProc, ClientData *clientData); /* 553 */
     Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) (const Tcl_ChannelType *chanTypePtr); /* 554 */
-    Tcl_Obj * (*tcl_NewBignumObj) (mp_int *value); /* 555 */
-    Tcl_Obj * (*tcl_DbNewBignumObj) (mp_int *value, const char *file, int line); /* 556 */
-    void (*tcl_SetBignumObj) (Tcl_Obj *obj, mp_int *value); /* 557 */
-    int (*tcl_GetBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value); /* 558 */
-    int (*tcl_TakeBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value); /* 559 */
+    Tcl_Obj * (*tcl_NewBignumObj) (void *value); /* 555 */
+    Tcl_Obj * (*tcl_DbNewBignumObj) (void *value, const char *file, int line); /* 556 */
+    void (*tcl_SetBignumObj) (Tcl_Obj *obj, void *value); /* 557 */
+    int (*tcl_GetBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, void *value); /* 558 */
+    int (*tcl_TakeBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, void *value); /* 559 */
     int (*tcl_TruncateChannel) (Tcl_Channel chan, Tcl_WideInt length); /* 560 */
     Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) (const Tcl_ChannelType *chanTypePtr); /* 561 */
     void (*tcl_SetChannelErrorInterp) (Tcl_Interp *interp, Tcl_Obj *msg); /* 562 */
     void (*tcl_GetChannelErrorInterp) (Tcl_Interp *interp, Tcl_Obj **msg); /* 563 */
     void (*tcl_SetChannelError) (Tcl_Channel chan, Tcl_Obj *msg); /* 564 */
     void (*tcl_GetChannelError) (Tcl_Channel chan, Tcl_Obj **msg); /* 565 */
-    int (*tcl_InitBignumFromDouble) (Tcl_Interp *interp, double initval, mp_int *toInit); /* 566 */
+    int (*tcl_InitBignumFromDouble) (Tcl_Interp *interp, double initval, void *toInit); /* 566 */
     Tcl_Obj * (*tcl_GetNamespaceUnknownHandler) (Tcl_Interp *interp, Tcl_Namespace *nsPtr); /* 567 */
     int (*tcl_SetNamespaceUnknownHandler) (Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *handlerPtr); /* 568 */
     int (*tcl_GetEncodingFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr); /* 569 */
@@ -4172,5 +4173,10 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
+
+#if !defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS)
+#undef Tcl_Close
+#define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
+#endif
 
 #endif /* _TCLDECLS */
