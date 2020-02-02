@@ -3058,8 +3058,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE void	TclInitBignumFromWideInt(void *, Tcl_WideInt);
-MODULE_SCOPE void	TclInitBignumFromWideUInt(void *, Tcl_WideUInt);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
