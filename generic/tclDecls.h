@@ -4174,7 +4174,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#if !defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS)
+#if defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS)
 #undef Tcl_Close
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 #endif
