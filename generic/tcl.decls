@@ -299,7 +299,7 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, ClientData clientData)
 }
-declare 81 {
+declare 81 {deprecated {Use Tcl_CloseEx}} {
     int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 82 {
@@ -2009,19 +2009,19 @@ declare 554 {
 
 # TIP#237 (arbitrary-precision integers) kbk
 declare 555 {
-    Tcl_Obj *Tcl_NewBignumObj(mp_int *value)
+    Tcl_Obj *Tcl_NewBignumObj(void *value)
 }
 declare 556 {
-    Tcl_Obj *Tcl_DbNewBignumObj(mp_int *value, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewBignumObj(void *value, const char *file, int line)
 }
 declare 557 {
-    void Tcl_SetBignumObj(Tcl_Obj *obj, mp_int *value)
+    void Tcl_SetBignumObj(Tcl_Obj *obj, void *value)
 }
 declare 558 {
-    int Tcl_GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
+    int Tcl_GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, void *value)
 }
 declare 559 {
-    int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
+    int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, void *value)
 }
 
 # TIP #208 ('chan' command) jeffh
@@ -2050,7 +2050,7 @@ declare 565 {
 # TIP #237 (additional conversion functions for bignum support) kbk/dgp
 declare 566 {
     int Tcl_InitBignumFromDouble(Tcl_Interp *interp, double initval,
-	    mp_int *toInit)
+	    void *toInit)
 }
 
 # TIP#181 (namespace unknown command) dgp for Neil Madden
