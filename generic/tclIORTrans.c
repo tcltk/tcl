@@ -27,10 +27,6 @@
 #define EOK	0
 #endif
 
-/* DUPLICATE of HaveVersion() in tclIO.c // TODO - MODULE_SCOPE */
-static int		HaveVersion(const Tcl_ChannelType *typePtr,
-			    Tcl_ChannelTypeVersion minimumVersion);
-
 /*
  * Signatures of all functions used in the C layer of the reflection.
  */
@@ -1386,15 +1382,14 @@ ReflectSeekWide(
      * non-NULL...
      */
 
-    if (HaveVersion(parent->typePtr, TCL_CHANNEL_VERSION_3) &&
-	parent->typePtr->wideSeekProc != NULL) {
-	curPos = parent->typePtr->wideSeekProc(parent->instanceData, offset,
+    if (Tcl_ChannelWideSeekProc(parent->typePtr) != NULL) {
+	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
 		seekMode, errorCodePtr);
     } else if (offset < LONG_MIN || offset > LONG_MAX) {
 	*errorCodePtr = EOVERFLOW;
 	curPos = -1;
     } else {
-	curPos = parent->typePtr->seekProc(
+	curPos = Tcl_ChannelSeekProc(parent->typePtr)(
 		parent->instanceData, offset, seekMode,
 		errorCodePtr);
     }
@@ -3388,33 +3383,6 @@ TransformLimit(
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_RestoreInterpState(rtPtr->interp, sr);
     return 1;
-}
-
-/* DUPLICATE of HaveVersion() in tclIO.c
- *----------------------------------------------------------------------
- *
- * HaveVersion --
- *
- *	Return whether a channel type is (at least) of a given version.
- *
- * Results:
- *	True if the minimum version is exceeded by the version actually
- *	present.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-HaveVersion(
-    const Tcl_ChannelType *chanTypePtr,
-    Tcl_ChannelTypeVersion minimumVersion)
-{
-    Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
-
-    return PTR2INT(actualVersion) >= PTR2INT(minimumVersion);
 }
 
 /*
