@@ -970,7 +970,7 @@ proc tcltest::testConstraint {constraint {value ""}} {
 	return $testConstraints($constraint)
     }
     # Check for boolean values
-    if {[catch {expr {$value && $value}} msg]} {
+    if {[catch {expr {$value && 1}} msg]} {
 	return -code error $msg
     }
     if {[limitConstraints] && ($constraint ni $Option(-constraints))} {
