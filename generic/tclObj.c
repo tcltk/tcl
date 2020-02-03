@@ -3495,14 +3495,14 @@ UpdateStringOfBignum(
 
 Tcl_Obj *
 Tcl_NewBignumObj(
-    mp_int *bignumValue)
+    void *bignumValue)
 {
     return Tcl_DbNewBignumObj(bignumValue, "unknown", 0);
 }
 #else
 Tcl_Obj *
 Tcl_NewBignumObj(
-    mp_int *bignumValue)
+    void *bignumValue)
 {
     Tcl_Obj *objPtr;
 
@@ -3533,7 +3533,7 @@ Tcl_NewBignumObj(
 #ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewBignumObj(
-    mp_int *bignumValue,
+    void *bignumValue,
     const char *file,
     int line)
 {
@@ -3546,7 +3546,7 @@ Tcl_DbNewBignumObj(
 #else
 Tcl_Obj *
 Tcl_DbNewBignumObj(
-    mp_int *bignumValue,
+    void *bignumValue,
     const char *file,
     int line)
 {
@@ -3658,9 +3658,9 @@ int
 Tcl_GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
-    mp_int *bignumValue)	/* Returned bignum value. */
+    void *bignumValue)	/* Returned bignum value. */
 {
-    return GetBignumFromObj(interp, objPtr, 1, bignumValue);
+    return GetBignumFromObj(interp, objPtr, 1, (mp_int *)bignumValue);
 }
 
 /*
@@ -3693,9 +3693,9 @@ int
 Tcl_TakeBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
-    mp_int *bignumValue)	/* Returned bignum value. */
+    void *bignumValue)	/* Returned bignum value. */
 {
-    return GetBignumFromObj(interp, objPtr, 0, bignumValue);
+    return GetBignumFromObj(interp, objPtr, 0, (mp_int *)bignumValue);
 }
 
 /*
@@ -3718,12 +3718,13 @@ Tcl_TakeBignumFromObj(
 void
 Tcl_SetBignumObj(
     Tcl_Obj *objPtr,		/* Object to set */
-    mp_int *bignumValue)	/* Value to store */
+    void *big)	/* Value to store */
 {
     Tcl_WideUInt value = 0;
     size_t numBytes;
     Tcl_WideUInt scratch;
     unsigned char *bytes = (unsigned char *) &scratch;
+    mp_int *bignumValue = (mp_int *) big;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
@@ -3771,8 +3772,9 @@ Tcl_SetBignumObj(
 void
 TclSetBignumIntRep(
     Tcl_Obj *objPtr,
-    mp_int *bignumValue)
+    void *big)
 {
+    mp_int *bignumValue = (mp_int *)big;
     objPtr->typePtr = &tclBignumType;
     PACK_BIGNUM(*bignumValue, objPtr);
 
