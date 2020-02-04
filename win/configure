@@ -669,7 +669,6 @@ EXTRA_CFLAGS
 CFG_TCL_EXPORT_FILE_SUFFIX
 CFG_TCL_UNSHARED_LIB_SUFFIX
 CFG_TCL_SHARED_LIB_SUFFIX
-TCL_DBGX
 TCL_BIN_DIR
 TCL_SRC_DIR
 TCL_DLL_FILE
@@ -5176,7 +5175,6 @@ fi
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 
 $as_echo "#define NDEBUG 1" >>confdefs.h
 
@@ -5188,7 +5186,6 @@ $as_echo "no" >&6; }
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=""
 	if test "$tcl_ok" = "yes"; then
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (standard debugging)" >&5
 $as_echo "yes (standard debugging)" >&6; }
@@ -5371,7 +5368,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win
-
 
 
 
