@@ -535,9 +535,9 @@ To appreciate the choices made by Tcl in how to implement support for the
 of encoding, and the players and offered standards of the time.  Two efforts
 at defining a single Universal Coded Character Set (UCS) were active 
 during the 1990s, ISO-10646 and Unicode.  The common task was to define
-a mapping from integer index values (codepoints) to the character assigned
+a mapping from each integer index value (codepoint) to a character assigned
 to the location in the character set table identified by the codepoint. The
-ISO-10646 effort conceived of a table with 4-byte (32-bit) indices, with
+ISO-10646 effort conceived of a table with 4-byte (32-bit) codepoints, with
 space for up to 2^32 characters.  They gave the name UCS-4 to both this
 conceptual character set and the trivial encoding of its codepoints
 as 4-byte integer values.  In contrast, the Unicode effort proposed
@@ -547,16 +547,16 @@ as UCS-2, The trivial encoding of its codepoints as 2-byte integer values
 was also called UCS-2. Less formally, but very commonly the character
 set UCS-2 was called "Unicode", and two-byte codepoint values were called
 "Unicode characters", emphasizing the much smaller table, and smaller
-indices of the Unicode project. The notation **U+_HHHH_** for codepoint
+codepoints of the Unicode project. The notation **U+_HHHH_** for codepoint
 values was also in use. In the mid-1990s, no codepoints outside UCS-2
-were assigned by either effort.
+were assigned by either UCS project.
 
 At the time, a migration away from single-byte encodings like ASCII
 or ISO-8859-1 to either UCS-2 or UCS-4 was a tough sell. A doubling
 or quadrupling of memory and network traffic requirements for the sake
 of additional characters that many applications had no need to handle
 was not a welcome proposition. It was clear that a variable-length encoding
-that beter managed the costs involved would be needed. Appendix F of The
+that better managed the costs involved would be needed. Appendix F of The
 Unicode Standard, Version 1.1 (1993) contains a description of
 what was called the File System Safe UCS Transformation Format (FSS-UTF).
 FSS-UTF is a variable-length byte-oriented encoding of UCS codepoints.
@@ -584,7 +584,9 @@ encode higher codepoints that were less frequently used.  A footnote
 in Appendix F makes the observation that encoded sequences of three bytes
 are sufficient to cover all 16-bit codepoints of UCS-2 (Unicode). The
 longer encodings of four through six bytes prepared the way to cover
-codepoints in UCS-4 up to 31 bits.  (Side observation: it would be
+codepoints in UCS-4 up to 31 bits.
+
+(Side observation: it would be
 straightforward to continue the table of encoding rules by one more
 line, using the lead byte **0xFE** to introduce a sequence of six trail
 bytes. This would be a seven byte encoding that could encode up to 36 bits,
@@ -619,7 +621,23 @@ protected by a conditional compiler directive
 
 >	\#if **TCL\_UTF\_MAX** > 3
 
-It is clear 
+It is clear that the immediate Unicode support in Tcl was intentionally
+limited to UCS-2, while conventions and migration supports were put in place
+so that a future (binary incompatible) version of Tcl would expand its support
+to UCS-4 with FSS-UTF encoding sequences of up to six bytes, at some point
+where the considerable cost in memory and processing burden traded off
+against the benefits of support for whatever future codepoint assignments
+outside of UCS-2 compelled support.
+
+
+
+Assigned codepoints
+
+decoding and strictness
+
+UTF-16 and surrogate pairs
+
+Compat with 8.0
 
 
 
