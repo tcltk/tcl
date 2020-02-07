@@ -208,6 +208,29 @@ test ooProp-1.10 {TIP 558: properties: core support} -setup {
 } -cleanup {
     parent destroy
 } -result {{} {} {} {a b c d e f} {} {a b c d e f}}
+test ooProp-1.11 {TIP 558: properties: core support cache} -setup {
+    oo::class create parent
+    unset -nocomplain result
+} -body {
+    oo::class create m {
+	superclass parent
+	::oo::configuresupport::readableproperties -set a
+	::oo::configuresupport::writableproperties -set c
+    }
+    oo::class create c {
+	superclass parent
+	::oo::configuresupport::readableproperties -set b
+	::oo::configuresupport::writableproperties -set d
+    }
+    c create o
+    lappend result [info object properties o -all -readable] \
+	[info object properties o -all -writable]
+    oo::objdefine o mixin m
+    lappend result [info object properties o -all -readable] \
+	[info object properties o -all -writable]
+} -cleanup {
+    parent destroy
+} -result {b d {a b} {c d}}
 
 test ooProp-2.1 {TIP 558: properties: configurable class system} -setup {
     oo::class create parent

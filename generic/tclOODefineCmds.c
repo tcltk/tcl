@@ -60,6 +60,7 @@ struct DeclaredSlot {
  */
 
 static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
+static inline void	BumpInstanceEpoch(Object *oPtr);
 static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 			    Tcl_Namespace *const namespacePtr);
 static inline void	GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
@@ -204,6 +205,33 @@ BumpGlobalEpoch(
 /*
  * ----------------------------------------------------------------------
  *
+ * BumpInstanceEpoch --
+ *
+ *	Advances the epoch and clears the property cache of an object. The
+ *	equivalent for classes is BumpGlobalEpoch(), as classes have a more
+ *	complex set of relationships to other entities.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+BumpInstanceEpoch(
+    Object *oPtr)
+{
+    oPtr->epoch++;
+    if (oPtr->properties.allReadableCache) {
+	Tcl_DecrRefCount(oPtr->properties.allReadableCache);
+	oPtr->properties.allReadableCache = NULL;
+    }
+    if (oPtr->properties.allWritableCache) {
+	Tcl_DecrRefCount(oPtr->properties.allWritableCache);
+	oPtr->properties.allWritableCache = NULL;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * RecomputeClassCacheFlag --
  *
  *	Determine whether the object is prototypical of its class, and hence
@@ -280,7 +308,7 @@ TclOOObjectSetFilters(
 	oPtr->filters.num = numFilters;
 	oPtr->flags &= ~USE_CLASS_CACHE;
     }
-    oPtr->epoch++;		/* Only this object can be affected. */
+    BumpInstanceEpoch(oPtr);	/* Only this object can be affected. */
 }
 
 /*
@@ -403,7 +431,7 @@ TclOOObjectSetMixins(
 	    }
 	}
     }
-    oPtr->epoch++;
+    BumpInstanceEpoch(oPtr);
 }
 
 /*
@@ -1494,7 +1522,7 @@ TclOODefineClassObjCmd(
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
-	    oPtr->epoch++;
+	    BumpInstanceEpoch(oPtr);
 	}
     }
     return TCL_OK;
@@ -1704,7 +1732,7 @@ TclOODefineDeleteMethodObjCmd(
     }
 
     if (isInstanceDeleteMethod) {
-	oPtr->epoch++;
+	BumpInstanceEpoch(oPtr);
     } else {
 	BumpGlobalEpoch(interp, oPtr->classPtr);
     }
@@ -1864,7 +1892,7 @@ TclOODefineExportObjCmd(
 
     if (changed) {
 	if (isInstanceExport) {
-	    oPtr->epoch++;
+	    BumpInstanceEpoch(oPtr);
 	} else {
 	    BumpGlobalEpoch(interp, clsPtr);
 	}
@@ -2082,7 +2110,7 @@ TclOODefineRenameMethodObjCmd(
     }
 
     if (isInstanceRenameMethod) {
-	oPtr->epoch++;
+	BumpInstanceEpoch(oPtr);
     } else {
 	BumpGlobalEpoch(interp, oPtr->classPtr);
     }
@@ -2176,7 +2204,7 @@ TclOODefineUnexportObjCmd(
 
     if (changed) {
 	if (isInstanceUnexport) {
-	    oPtr->epoch++;
+	    BumpInstanceEpoch(oPtr);
 	} else {
 	    BumpGlobalEpoch(interp, clsPtr);
 	}
