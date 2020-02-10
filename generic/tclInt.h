@@ -3981,6 +3981,8 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
  * the public interface.
  */
 
+MODULE_SCOPE Tcl_Obj *	TclObjGetVarScalarNoTrace(Tcl_Interp *interp,
+			    Tcl_Obj *namePtr, int flags);
 MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
 			    const char *msg, const int createPart1,
