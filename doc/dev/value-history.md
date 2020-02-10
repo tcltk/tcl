@@ -650,7 +650,7 @@ far smaller and more constrained that the general set of all byte sequences.
 When we claim that Tcl 8.1 strings are kept in the UTF-8 encoding, we
 imply that Tcl 8.1 strings are constrained to a much smaller set of byte
 sequences than were permitted for Tcl 8.0 strings.  This raises questions
-about both compatibility and handling of non-conformant byte sequences.
+about both compatibility and decoding of non-conformant byte sequences.
 
 
 
