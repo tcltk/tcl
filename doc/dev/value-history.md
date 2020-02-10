@@ -621,6 +621,19 @@ protected by a conditional compiler directive
 
 >	\#if **TCL\_UTF\_MAX** > 3
 
+With the default setting, Tcl is able to encode a total of 65,536
+distinct values of the *ch* codepoint argument. These are all the
+codepoints of UCS-2, the complete capacity of Unicode 1.1. When
+**Tcl_UniCharToUtf** is passed a *ch* argument outisde that supported
+range, the codepoint **U+FFFD** is encoded in its place. Unicode 1.1
+assigns this codepoint the name **REPLACEMENT CHARACTER**. Unicode
+prescribes the use of **U+FFFD** to replace an incoming character
+whose value is unrepresentable.  In a configuration of Tcl 8.1 with
+**TCL\_UTF\_MAX** set to 6, the **REPLACEMENT CHARACTER** would
+replace only the *ch* values in the upper half of UCS-4.  Note that
+Tcl 8.1 has made a design choice here to handle errors or unsupported
+operations via replacement, and not via raising an error.
+
 It is clear that the immediate Unicode support in Tcl was intentionally
 limited to UCS-2, while conventions and migration supports were put in place
 so that a future (binary incompatible) version of Tcl would expand its support
@@ -629,9 +642,19 @@ where the considerable cost in memory and processing burden traded off
 against the benefits of support for whatever future codepoint assignments
 outside of UCS-2 compelled support.
 
+The capacity of UCS-2 is a table of 65,536 codepoints. However, Unicode 1.1
+assigns characters to only 40,635 rows in that table. If we generate all
+possible sequences of those 40,635 assigned codepoints, and then encode
+each sequence via the FSS-UTF rules, we generate a set of byte sequences
+far smaller and more constrained that the general set of all byte sequences.
+When we claim that Tcl 8.1 strings are kept in the UTF-8 encoding, we
+imply that Tcl 8.1 strings are constrained to a much smaller set of byte
+sequences than were permitted for Tcl 8.0 strings.  This raises questions
+about both compatibility and handling of non-conformant byte sequences.
 
 
-Assigned codepoints
+
+
 
 decoding and strictness
 
