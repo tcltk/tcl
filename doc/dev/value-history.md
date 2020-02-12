@@ -670,13 +670,16 @@ one day be assigned. Tcl 8.1 imposes no conditions on the encoding of any
 The standards specifying text encodings publish in the mid-1990s were quite
 clear and explicit about the right way to do things. They were often less
 demanding and specific about how to respond in the presence of errors. The
-spirit of Postel's Robustness Principle,
+spirit of Postel's Robustness Principle
 
->	*Be liberal in what you accept, and conservative in what you send.*,
+>	*Be liberal in what you accept, and conservative in what you send.*
 
 held considerable influence at the time. Many implementations chose to
-accommodate input errors, especially when that was the natural results
-of laziness.
+accommodate input errors, especially when that was the natural result
+of laziness. For example, the specification of FSS-UTF and all specifications
+for UTF-8 are completely clear and explicit that the proper encoding
+of the codepoint **U+0000** is the byte value **0x00**, (our old friend
+the **NUL** byte!).
 
 
 
