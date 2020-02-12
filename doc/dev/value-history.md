@@ -697,7 +697,13 @@ exactly that. The text of Appendix A.2 of The Unicode Standard 2.0
 >	implementations do not need to check that the shortest encoding
 >	is being used, which simplifies the conversion algorithm.
 
+Whether or not the Tcl developers were explicitly following this advice,
+the routine in Tcl 8.1 for decoding Unicode codepoints from the
+encoded byte sequences,
 
+>	**int** **Tcl_UtfToUniChar** ( **const char** *_str_, **Tcl_UniChar** *_chPtr_),
+
+implements the same forgiving support for overlong byte sequences.
 
 
 
