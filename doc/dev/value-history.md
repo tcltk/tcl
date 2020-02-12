@@ -579,7 +579,7 @@ summarized in the table
 </pre>
 
 FSS-UTF encodes each codepoint in the ASCII range as a single-byte,
-the same byte already in use for that character.  Longer byte seqeunces
+the same byte already used by ASCII for that character.  Longer byte seqeunces
 encode higher codepoints that were less frequently used.  A footnote
 in Appendix F makes the observation that encoded sequences of three bytes
 are sufficient to cover all 16-bit codepoints of UCS-2 (Unicode). The
@@ -597,17 +597,17 @@ The bytes **0xFE** and **0xFF** together make up a Byte Order Mark that
 is used to determine endianness of UCS-2 data. When neither byte appears
 in UTF-8 or FSS-UTF the confidence of that interpretation is boldened.)
 
-In Tcl 8.1, "UTF-8" encoding is accomplished by the routine
+In Tcl 8.1, encoding of Unicode codepoints is accomplished by the routine
 
 >	**int** **Tcl_UniCharToUtf** ( **int** *ch*, **char** *_str_);
 
 The routine is (nearly) a direct translation of the table of encoding rules
-of FSF-UTF.  However it is clear that a decision was made that Tcl would
+of FSS-UTF.  However it is clear that a decision was made that Tcl would
 support "Unicode" which meant UCS-2 which meant 16-bit codepoints as
-"Uncode characters".  Unicode characters require a maximum of
+"Unicode characters".  Unicode characters require a maximum of
 three encoded bytes, and Tcl 8.1 source code uses **TCL\_UTF\_MAX**
 to represent that limit. It is useful in sizing buffers where encoded
-string are to be written.  The public header for Tcl 8.1 includes
+strings are to be written.  The public header for Tcl 8.1 includes
 
 >	\#define **TCL\_UTF\_MAX**	3
 
@@ -616,23 +616,23 @@ and
 >	typedef **unsigned short Tcl_UniChar**;
 
 However, the body of **Tcl_UniCharToUtf** includes code to
-encode up to six-byte sequences representing up to 31-bit codepoints,
-protected by a conditional compiler directive
+encode up to six-byte sequences as prescribed by FSS-UTF representing
+up to 31-bit codepoints, protected by a conditional compiler directive
 
->	\#if **TCL\_UTF\_MAX** > 3
+>	\#if **TCL\_UTF\_MAX** > 3 .
 
 With the default setting, Tcl is able to encode a total of 65,536
 distinct values of the *ch* codepoint argument. These are all the
 codepoints of UCS-2, the complete capacity of Unicode 1.1. When
-**Tcl_UniCharToUtf** is passed a *ch* argument outisde that supported
+**Tcl_UniCharToUtf** is passed a *ch* argument outside that supported
 range, the codepoint **U+FFFD** is encoded in its place. Unicode 1.1
 assigns this codepoint the name **REPLACEMENT CHARACTER**. Unicode
 prescribes the use of **U+FFFD** to replace an incoming character
 whose value is unrepresentable.  In a configuration of Tcl 8.1 with
 **TCL\_UTF\_MAX** set to 6, the **REPLACEMENT CHARACTER** would
 replace only the *ch* values in the upper half of UCS-4.  Note that
-Tcl 8.1 has made a design choice here to handle errors or unsupported
-operations via replacement, and not via raising an error.
+Tcl 8.1 has made a design choice here to handle unsupported inputs
+via replacement, and not via raising an error.
 
 It is clear that the immediate Unicode support in Tcl was intentionally
 limited to UCS-2, while conventions and migration supports were put in place
@@ -650,7 +650,8 @@ far smaller and more constrained that the general set of all byte sequences.
 When we claim that Tcl 8.1 strings are kept in the UTF-8 encoding, we
 imply that Tcl 8.1 strings are constrained to a much smaller set of byte
 sequences than were permitted for Tcl 8.0 strings.  This raises questions
-about both compatibility and decoding of non-conformant byte sequences.
+about both compatibility and what a decoder should do with a non-conformant
+byte sequence.
 
 
 
