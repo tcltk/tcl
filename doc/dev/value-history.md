@@ -653,6 +653,30 @@ sequences than were permitted for Tcl 8.0 strings.  This raises questions
 about both compatibility and what a decoder should do with a non-conformant
 byte sequence.
 
+It is an expected feature of the Unicode character set that more characters
+are to be added over time.  The number of assigned codepoints grows as new
+versions of the Unicode standard are codified and published.  Because
+support for standards always lags their publication, software written in
+conformance to one version of Unicode is likely to encounter data produced
+in conformance to a later version.  In light of this, the best practice is
+to accommodate and preserve unassigned codepoints as much as possible.
+Software written to support Unicode 1.1 can then accept Unicode 2 data streams,pass them through and output them again undamaged. In this way a middleware
+written to an obsolete Unicode standard can still support providers and
+clients that seek to use characters assigned only in a later standard.
+Unicode 1.1 left open the possibility that any codepoint in UCS-2 might
+one day be assigned. Tcl 8.1 imposes no conditions on the encoding of any
+**Tcl_UniChar** value at all.
+
+The standards specifying text encodings publish in the mid-1990s were quite
+clear and explicit about the right way to do things. They were often less
+demanding and specific about how to respond in the presence of errors. The
+spirit of Postel's Robustness Principle,
+
+>	*Be liberal in what you accept, and conservative in what you send.*,
+
+held considerable influence at the time. Many implementations chose to
+accommodate input errors, especially when that was the natural results
+of laziness.
 
 
 
