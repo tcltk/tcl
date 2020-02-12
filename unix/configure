@@ -4661,7 +4661,7 @@ if test "${with_system_libtommath+set}" = set; then :
   withval=$with_system_libtommath; libtommath_ok=${withval}
 fi
 
-if test x"${libtommath_ok}" == x -o x"${libtommath_ok}" != xno; then
+if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     ac_fn_c_check_header_mongrel "$LINENO" "tommath.h" "ac_cv_header_tommath_h" "$ac_includes_default"
 if test "x$ac_cv_header_tommath_h" = xyes; then :
 
@@ -4681,12 +4681,13 @@ fi
 
     if test $libtommath_ok = yes; then :
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mp_log_u32" >&5
-$as_echo_n "checking for library containing mp_log_u32... " >&6; }
-if ${ac_cv_search_mp_log_u32+:} false; then :
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mp_log_u32 in -ltommath" >&5
+$as_echo_n "checking for mp_log_u32 in -ltommath... " >&6; }
+if ${ac_cv_lib_tommath_mp_log_u32+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltommath  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -4705,40 +4706,22 @@ return mp_log_u32 ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' tommath; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_mp_log_u32=$ac_res
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tommath_mp_log_u32=yes
+else
+  ac_cv_lib_tommath_mp_log_u32=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_mp_log_u32+:} false; then :
-  break
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
 fi
-done
-if ${ac_cv_search_mp_log_u32+:} false; then :
-
-else
-  ac_cv_search_mp_log_u32=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mp_log_u32" >&5
-$as_echo "$ac_cv_search_mp_log_u32" >&6; }
-ac_res=$ac_cv_search_mp_log_u32
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tommath_mp_log_u32" >&5
+$as_echo "$ac_cv_lib_tommath_mp_log_u32" >&6; }
+if test "x$ac_cv_lib_tommath_mp_log_u32" = xyes; then :
+  MATH_LIBS="$MATH_LIBS -ltommath"
 else
 
-	libtommath_ok=no
-
+    libtommath_ok=no
 fi
 
 fi
@@ -5330,7 +5313,7 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}.dll.a'
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$@.a"
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cygwin version of gcc" >&5
 $as_echo_n "checking for Cygwin version of gcc... " >&6; }
@@ -5845,7 +5828,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
 	    if test $doRpath = yes; then :
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -6601,7 +6583,7 @@ fi
     if test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""; then :
 
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         if test "${SHLIB_SUFFIX}" = ".dll"; then :
 
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)";if test -f $(LIB_FILE).a; then $(INSTALL_DATA) $(LIB_FILE).a "$(LIB_INSTALL_DIR)"; fi;'
@@ -6751,7 +6733,6 @@ else
 fi
 
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'

@@ -523,7 +523,7 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 147 {
+declare 147 {deprecated {see TIP #559. Use Tcl_ResetResult}} {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
 declare 148 {
@@ -1244,10 +1244,10 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {
+declare 352 {deprecated {Use Tcl_GetCharLength}} {
     int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 }
-declare 353 {
+declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
@@ -1356,7 +1356,7 @@ declare 382 {deprecated {No longer in use, changed to macro}} {
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {
+declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    int length)
 }
@@ -1482,11 +1482,11 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
-declare 419 {
+declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
 	    unsigned long numChars)
 }
-declare 420 {
+declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
@@ -2009,19 +2009,19 @@ declare 554 {
 
 # TIP#237 (arbitrary-precision integers) kbk
 declare 555 {
-    Tcl_Obj *Tcl_NewBignumObj(mp_int *value)
+    Tcl_Obj *Tcl_NewBignumObj(void *value)
 }
 declare 556 {
-    Tcl_Obj *Tcl_DbNewBignumObj(mp_int *value, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewBignumObj(void *value, const char *file, int line)
 }
 declare 557 {
-    void Tcl_SetBignumObj(Tcl_Obj *obj, mp_int *value)
+    void Tcl_SetBignumObj(Tcl_Obj *obj, void *value)
 }
 declare 558 {
-    int Tcl_GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
+    int Tcl_GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, void *value)
 }
 declare 559 {
-    int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
+    int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, void *value)
 }
 
 # TIP #208 ('chan' command) jeffh
@@ -2050,7 +2050,7 @@ declare 565 {
 # TIP #237 (additional conversion functions for bignum support) kbk/dgp
 declare 566 {
     int Tcl_InitBignumFromDouble(Tcl_Interp *interp, double initval,
-	    mp_int *toInit)
+	    void *toInit)
 }
 
 # TIP#181 (namespace unknown command) dgp for Neil Madden
@@ -2221,7 +2221,7 @@ declare 606 {
 
 # TIP#307 (move results between interpreters) dkf
 declare 607 {
-    void Tcl_TransferResult(Tcl_Interp *sourceInterp, int result,
+    void Tcl_TransferResult(Tcl_Interp *sourceInterp, int code,
 	    Tcl_Interp *targetInterp)
 }
 

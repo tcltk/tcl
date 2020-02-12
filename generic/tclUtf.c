@@ -787,7 +787,7 @@ Tcl_UtfFindFirst(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
@@ -835,7 +835,7 @@ Tcl_UtfFindLast(
     while (1) {
 	len = TclUtfToUniChar(src, &find);
 	fullchar = find;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
@@ -878,7 +878,7 @@ Tcl_UtfNext(
     Tcl_UniChar ch = 0;
     int len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	len += TclUtfToUniChar(src + len, &ch);
     }
@@ -960,19 +960,19 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch = 0;
     int fullchar = 0;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	int len = 0;
 #endif
 
     while (index-- >= 0) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	src += (len = TclUtfToUniChar(src, &ch));
 #else
 	src += TclUtfToUniChar(src, &ch);
 #endif
     }
     fullchar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	/* If last Tcl_UniChar was a high surrogate, combine with low surrogate */
 	(void)TclUtfToUniChar(src, &ch);
@@ -988,7 +988,7 @@ Tcl_UniCharAtIndex(
  * Tcl_UtfAtIndex --
  *
  *	Returns a pointer to the specified character (not byte) position in
- *	the UTF-8 string. If TCL_UTF_MAX <= 4, characters > U+FFFF count as
+ *	the UTF-8 string. If TCL_UTF_MAX <= 3, characters > U+FFFF count as
  *	2 positions, but then the pointer should never be placed between
  *	the two positions.
  *
@@ -1013,7 +1013,7 @@ Tcl_UtfAtIndex(
 	len = TclUtfToUniChar(src, &ch);
 	src += len;
     }
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
 	/* Index points at character following high Surrogate */
 	src += TclUtfToUniChar(src, &ch);
@@ -1110,7 +1110,7 @@ Tcl_UtfToUpper(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	upChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1172,7 +1172,7 @@ Tcl_UtfToLower(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1237,7 +1237,7 @@ Tcl_UtfToTitle(
     if (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	titleChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1257,7 +1257,7 @@ Tcl_UtfToTitle(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
@@ -1369,7 +1369,7 @@ Tcl_UtfNcmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1420,7 +1420,7 @@ Tcl_UtfNcasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1469,7 +1469,7 @@ TclUtfCmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1515,7 +1515,7 @@ TclUtfCasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {

@@ -40,6 +40,14 @@
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
 #undef Tcl_GetUnicode
+#undef Tcl_GetUnicodeFromObj
+#undef Tcl_AppendUnicodeToObj
+#undef Tcl_NewUnicodeObj
+#undef Tcl_SetUnicodeObj
+#undef Tcl_UniCharNcasecmp
+#undef Tcl_UniCharCaseMatch
+#undef Tcl_UniCharLen
+#undef Tcl_UniCharNcmp
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -63,6 +71,21 @@
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+
+#if TCL_UTF_MAX > 3
+static void uniCodePanic() {
+    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
+}
+#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *)) uniCodePanic
+#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, Tcl_UniChar *)) uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, Tcl_UniChar)) uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int)) uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int)) uniCodePanic
+#   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long)) uniCodePanic
+#   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int)) uniCodePanic
+#   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *)) uniCodePanic
+#   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long)) uniCodePanic
+#endif
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_and mp_and
@@ -126,7 +149,7 @@
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
-
+#define TclUnusedStubEntry NULL
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -151,7 +174,7 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
     return MP_OKAY;
 }
 
-#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))TclBN_mp_set_long
+#define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))(void *)TclBN_mp_set_long
 
 mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
 	return mp_expt_u32(a, b, c);
@@ -232,6 +255,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_NewLongObj 0
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
+#   define Tcl_FreeResult 0
 #else
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
@@ -480,22 +504,24 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
+#if TCL_UTF_MAX < 4 && !defined(TCL_NO_DEPRECATED)
 static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
+#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcmp
 static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
 #define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+#endif
+static int utfNcmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
+static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -591,6 +617,13 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
 #   define Tcl_GetUnicode 0
+#if TCL_UTF_MAX < 4
+#   define Tcl_AppendUnicodeToObj 0
+#   define Tcl_UniCharCaseMatch 0
+#   define Tcl_UniCharLen 0
+#   define Tcl_UniCharNcasecmp 0
+#   define Tcl_UniCharNcmp 0
+#endif
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
@@ -940,6 +973,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

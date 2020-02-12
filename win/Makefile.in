@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING -DMP_FIXED_CUTOFFS -DMP_NO_STDINT -DMP_WUR=
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -834,7 +834,7 @@ install-binaries: binaries
 install-libraries-zipfs-shared: libraries
 
 install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \

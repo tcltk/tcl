@@ -1866,8 +1866,10 @@ DeleteInterpProc(
      * could have transferred ownership of the result string to Tcl.
      */
 
+#ifndef TCL_NO_DEPRECATED
     Tcl_FreeResult(interp);
     iPtr->result = NULL;
+#endif
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -7673,10 +7675,16 @@ ExprIsqrtFunc(
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) sqrt(d)));
     } else {
 	mp_int root;
+	mp_err err;
 
-	mp_init(&root);
-	mp_sqrt(&big, &root);
+	err = mp_init(&root);
+	if (err == MP_OKAY) {
+	    err = mp_sqrt(&big, &root);
+	}
 	mp_clear(&big);
+	if (err != MP_OKAY) {
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&root));
     }
     return TCL_OK;
@@ -7722,10 +7730,17 @@ ExprSqrtFunc(
     if ((d >= 0.0) && TclIsInfinite(d)
 	    && (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK)) {
 	mp_int root;
+	mp_err err;
 
-	mp_init(&root);
-	mp_sqrt(&big, &root);
+	err = mp_init(&root);
+	if (err == MP_OKAY) {
+	    err = mp_sqrt(&big, &root);
+	}
 	mp_clear(&big);
+	if (err != MP_OKAY) {
+	    mp_clear(&root);
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(TclBignumToDouble(&root)));
 	mp_clear(&root);
     } else {
@@ -7891,7 +7906,9 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    mp_init_i64(&big, l);
+	    if (mp_init_i64(&big, l) != MP_OKAY) {
+		return TCL_ERROR;
+	    }
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-l));
@@ -7922,7 +7939,9 @@ ExprAbsFunc(
 	if (mp_isneg((const mp_int *) ptr)) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
-	    (void)mp_neg(&big, &big);
+	    if (mp_neg(&big, &big) != MP_OKAY) {
+		return TCL_ERROR;
+	    }
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	} else {
 	unChanged:
@@ -8258,15 +8277,19 @@ ExprRoundFunc(
 	}
 	if ((intPart >= (double)max) || (intPart <= (double)min)) {
 	    mp_int big;
+	    mp_err err = MP_OKAY;
 
 	    if (Tcl_InitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
 	    }
 	    if (fractPart <= -0.5) {
-		mp_sub_d(&big, 1, &big);
+		err = mp_sub_d(&big, 1, &big);
 	    } else if (fractPart >= 0.5) {
-		mp_add_d(&big, 1, &big);
+		err = mp_add_d(&big, 1, &big);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
