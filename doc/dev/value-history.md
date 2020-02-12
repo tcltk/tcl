@@ -49,7 +49,8 @@ length of this string representation; the only limit is available memory.
 
 There is a one-to-one connection between stored memory patterns and the
 abstract notion of valid Tcl strings.  The Tcl string "cat" is always
-represented by a 4-byte chunk of memory storing (0x63, 0x61, 0x74, 0x00).
+represented by a 4-byte chunk of memory storing
+(**0x63**, **0x61**, **0x74**, **0x00**).
 Any different bytes in memory represent different strings. This means
 byte comparisons are string comparisons and byte array size is string length.
 The byte values themselves are what Tcl commands operate on. From early on,
@@ -69,7 +70,7 @@ is presumed for the byte values 1..127. This is in agreement with the
 representation of C string literals in all C compilers, and it anchors the
 character definitions that are important to the syntax of Tcl itself. For
 instance, the newline character that terminates a command in a script is
-the byte value 0x0A . No command purporting to accept and evaluate
+the byte value **0x0A** . No command purporting to accept and evaluate
 an argument as a Tcl script would be free to choose something else.  The
 handling of byte values 128..255 showed more variation among commands that
 took any particular note of them.  Tcl provided built-in commands
@@ -663,14 +664,17 @@ to accommodate and preserve unassigned codepoints as much as possible.
 Software written to support Unicode 1.1 can then accept Unicode 2 data streams,pass them through and output them again undamaged. In this way a middleware
 written to an obsolete Unicode standard can still support providers and
 clients that seek to use characters assigned only in a later standard.
+The middleware would fail to properly answer any questions about the
+later-assigned characters, such as a **string is alpha** test, but could
+still not be immediately useless.
 Unicode 1.1 left open the possibility that any codepoint in UCS-2 might
 one day be assigned. Tcl 8.1 imposes no conditions on the encoding of any
 **Tcl_UniChar** value at all.
 
-The standards specifying text encodings publish in the mid-1990s were quite
+The standards specifying text encodings published in the mid-1990s were quite
 clear and explicit about the right way to do things. They were often less
 demanding and specific about how to respond in the presence of errors. The
-spirit of Postel's Robustness Principle
+spirit of the Postel Robustness Principle
 
 >	*Be liberal in what you accept, and conservative in what you send.*
 
@@ -679,12 +683,24 @@ accommodate input errors, especially when that was the natural result
 of laziness. For example, the specification of FSS-UTF and all specifications
 for UTF-8 are completely clear and explicit that the proper encoding
 of the codepoint **U+0000** is the byte value **0x00**, (our old friend
-the **NUL** byte!).
+the **NUL** byte!). However, inspection of the FSS-UTF encoding rules
+quickly reveals that the multi-byte encoding strategies have room to
+encode all the codepoints that already have a proper encoding as a single
+byte.  Unless we take active steps to prevent it, a decoding procedure
+will happily decode the byte sequences (**0xC0**, **0x80**) or
+(**0xE0**, **0x80**, **0x80**) as the codepoint **U+0000**.  Both
+Unicode 1.1 and Unicode 2.0 include sample decoder routines that do
+exactly that. The text of Appendix A.2 of The Unicode Standard 2.0
+(which contains one definition of UTF-8 from 1996) explicitly states,
+
+>	When converting from UTF-8 to Unicode values, however,
+>	implementations do not need to check that the shortest encoding
+>	is being used, which simplifies the conversion algorithm.
 
 
 
 
-decoding and strictness
+
 
 UTF-16 and surrogate pairs
 
