@@ -247,6 +247,9 @@ record instead of a value. Otherwise, it is similar to
 .PP
 \fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
 instead of taking a variable number of arguments it takes an argument list.
+Interfaces using argument lists have been found to be nonportable in practice.
+This function is deprecated and will be removed in Tcl 9.0.
+
 .PP
 The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
 of the \fB\-errorline\fR return option without the overhead of a full

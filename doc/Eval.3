@@ -156,7 +156,8 @@ of arguments.  \fBTcl_VarEval\fR is now deprecated.
 .PP
 \fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that
 instead of taking a variable number of arguments it takes an argument
-list. Like \fBTcl_VarEval\fR, \fBTcl_VarEvalVA\fR is deprecated.
+list. Interfaces using argument lists have been found to be nonportable
+in practice. This function is deprecated and will be removed in Tcl 9.0.
 
 .SH "FLAG BITS"
 .PP

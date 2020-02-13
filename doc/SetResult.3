@@ -145,6 +145,8 @@ call; the last argument in the list must be a NULL pointer.
 .PP
 \fBTcl_AppendResultVA\fR is the same as \fBTcl_AppendResult\fR except that
 instead of taking a variable number of arguments it takes an argument list.
+Interfaces using argument lists have been found to be nonportable in practice.
+This function is deprecated and will be removed in Tcl 9.0.
 .PP
 \fBTcl_TransferResult\fR transfers interpreter state from \fIsourceInterp\fR
 to \fItargetInterp\fR. The two interpreters must have been created in the
