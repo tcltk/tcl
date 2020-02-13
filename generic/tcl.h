@@ -1993,14 +1993,23 @@ typedef struct Tcl_Config {
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
 typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
 
+#if 0
 /*
  *----------------------------------------------------------------------------
- * Override definitions for libtommath.
+ * We would like to provide an anonymous structure "mp_int" here, which is
+ * compatible with libtommath's "mp_int", but without duplicating anything
+ * from <tommath.h> or including <tommath.h> here. But the libtommath project
+ * didn't honor our request. See: <https://github.com/libtom/libtommath/pull/473>
+ *
+ * That's why this part is commented out, and we are using (void *) in
+ * various API's in stead of the more correct (mp_int *).
  */
 
 #ifndef MP_INT_DECLARED
 #define MP_INT_DECLARED
 typedef struct mp_int mp_int;
+#endif
+
 #endif
 
 /*
