@@ -227,8 +227,10 @@ The same thing for a flattened list:
       \fI\(-> {a abc b bcd}\fR
 .CE
 .SH "SEE ALSO"
-foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
-lset(n), lsort(n), lrange(n), lreplace(n),
+foreach(n), 
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 binary search, linear search,

@@ -119,7 +119,7 @@ in a hierarchical relationship, and the management of aliases, commands
 that when invoked in one interpreter execute a command in another
 interpreter. The return value for those procedures that return an \fBint\fR
 is either \fBTCL_OK\fR or \fBTCL_ERROR\fR. If \fBTCL_ERROR\fR is returned
-then the \fBresult\fR field of the interpreter contains an error message.
+then the interpreter's result contains an error message.
 .PP
 \fBTcl_CreateSlave\fR creates a new interpreter as a slave of \fIinterp\fR.
 It also creates a slave command named \fIslaveName\fR in \fIinterp\fR which
@@ -158,12 +158,12 @@ If no such slave interpreter exists, \fBNULL\fR is returned.
 \fIinterp\fR. If \fIinterp\fR has no master (it is a
 top-level interpreter) then \fBNULL\fR is returned.
 .PP
-\fBTcl_GetInterpPath\fR sets the \fIresult\fR field in \fIaskingInterp\fR
-to the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
+\fBTcl_GetInterpPath\fR stores in the result of \fIaskingInterp\fR
+the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
 \fIslaveInterp\fR must be a slave of \fIaskingInterp\fR. If the computation
 of the relative path succeeds, \fBTCL_OK\fR is returned, else
-\fBTCL_ERROR\fR is returned and the \fIresult\fR field in
-\fIaskingInterp\fR contains the error message.
+\fBTCL_ERROR\fR is returned and an error message is stored as the
+result of \fIaskingInterp\fR.
 .PP
 \fBTcl_CreateAlias\fR creates a command named \fIslaveCmd\fR in
 \fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
@@ -198,33 +198,33 @@ the set of hidden commands to the set of exposed commands, putting
 it under the name
 \fIcmdName\fR.
 \fIHiddenCmdName\fR must be the name of an existing hidden
-command, or the operation will return \fBTCL_ERROR\fR and leave an error
-message in the \fIresult\fR field in \fIinterp\fR.
+command, or the operation will return \fBTCL_ERROR\fR and
+leave an error message as the result of \fIinterp\fR.
 If an exposed command named \fIcmdName\fR already exists,
-the operation returns \fBTCL_ERROR\fR and leaves an error message in the
-value result of \fIinterp\fR.
+the operation returns \fBTCL_ERROR\fR and leaves an error message as
+the result of \fIinterp\fR.
 If the operation succeeds, it returns \fBTCL_OK\fR.
-After executing this command, attempts to use \fIcmdName\fR in a call to
-\fBTcl_Eval\fR or with the Tcl \fBeval\fR command will again succeed.
+After executing this command, attempts to use \fIcmdName\fR in any
+script evaluation mechanism will again succeed.
 .PP
 \fBTcl_HideCommand\fR moves the command named \fIcmdName\fR from the set of
 exposed commands to the set of hidden commands, under the name
 \fIhiddenCmdName\fR.
 \fICmdName\fR must be the name of an existing exposed
 command, or the operation will return \fBTCL_ERROR\fR and leave an error
-message in the value result of \fIinterp\fR.
+message as the result of \fIinterp\fR.
 Currently both \fIcmdName\fR and \fIhiddenCmdName\fR must not contain
 namespace qualifiers, or the operation will return \fBTCL_ERROR\fR and
-leave an error message in the value result of \fIinterp\fR.
+leave an error message as the result of \fIinterp\fR.
 The \fICmdName\fR will be looked up in the global namespace, and not
 relative to the current namespace, even if the current namespace is not the
 global one.
 If a hidden command whose name is \fIhiddenCmdName\fR already
-exists, the operation also returns \fBTCL_ERROR\fR and the \fIresult\fR
-field in \fIinterp\fR contains an error message.
+exists, the operation also returns \fBTCL_ERROR\fR and an error
+message is left as the result of \fIinterp\fR.
 If the operation succeeds, it returns \fBTCL_OK\fR.
-After executing this command, attempts to use \fIcmdName\fR in a call to
-\fBTcl_Eval\fR or with the Tcl \fBeval\fR command will fail.
+After executing this command, attempts to use \fIcmdName\fR in
+any script evaluation mechanism will fail.
 .PP
 For a description of the Tcl interface to multiple interpreters, see
 \fIinterp(n)\fR.

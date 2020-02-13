@@ -853,7 +853,6 @@ SetupAppendBuffer(
     Tcl_FreeResult((Tcl_Interp *) iPtr);
     iPtr->result = iPtr->appendResult;
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -883,7 +882,6 @@ Tcl_FreeResult(
 {
     Interp *iPtr = (Interp *) interp;
 
-#ifndef TCL_NO_DEPRECATED
     if (iPtr->freeProc != NULL) {
 	if (iPtr->freeProc == TCL_DYNAMIC) {
 	    ckfree(iPtr->result);
@@ -893,10 +891,10 @@ Tcl_FreeResult(
 	iPtr->freeProc = 0;
     }
 
-#endif /* !TCL_NO_DEPRECATED */
     ResetObjResult(iPtr);
 }
-
+#endif /* !TCL_NO_DEPRECATED */
+
 /*
  *----------------------------------------------------------------------
  *
