@@ -687,32 +687,22 @@ TcpClose2Proc(
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = instanceData;
-    int errorCode = 0;
-    int sd;
+    int readError = 0;
+    int writeError = 0;
 
     /*
      * Shutdown the OS socket handle.
      */
-
-    switch(flags) {
-    case TCL_CLOSE_READ:
-        sd = SHUT_RD;
-        break;
-    case TCL_CLOSE_WRITE:
-        sd = SHUT_WR;
-        break;
-    default:
-        if (interp) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                    "socket close2proc called bidirectionally", -1));
-        }
-        return TCL_ERROR;
+    if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
+	return TcpCloseProc(instanceData, interp);
     }
-    if (shutdown(statePtr->fds.fd,sd) < 0) {
-	errorCode = errno;
+    if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
+	readError = errno;
     }
-
-    return errorCode;
+    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
+	writeError = errno;
+    }
+    return (readError != 0) ? readError : writeError;
 }
 
 /*
