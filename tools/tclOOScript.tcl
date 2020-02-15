@@ -153,9 +153,9 @@
 	    if {![info object isa class $d]} {
 		continue
 	    }
-	    define $delegate ::oo::define::superclass -append $d
+	    define $delegate ::oo::define::superclass -appendifnew $d
 	}
-	objdefine $class ::oo::objdefine::mixin -append $delegate
+	objdefine $class ::oo::objdefine::mixin -appendifnew $delegate
     }
 
     # ----------------------------------------------------------------------
@@ -257,7 +257,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Get {} {
+	method Get -unexport {} {
 	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
 	}
 
@@ -270,7 +270,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Set list {
+	method Set -unexport list {
 	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
 	}
 
@@ -284,7 +284,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Resolve list {
+	method Resolve -unexport list {
 	    return $list
 	}
 
@@ -297,25 +297,35 @@
 	#
 	# ------------------------------------------------------------------
 
-	method -set args {
+	method -set -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    tailcall my Set $args
 	}
-	method -append args {
+	method -append -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$current {*}$args]
 	}
-	method -clear {} {tailcall my Set {}}
-	method -prepend args {
+	method -appendifnew -export args {
+	    set my [namespace which my]
+	    set current [uplevel 1 [list $my Get]]
+	    set args [lmap a $args {
+		set a [uplevel 1 [list $my Resolve $a]]
+		if {$a in $current} continue
+		set a
+	    }]
+	    tailcall my Set [list {*}$current {*}$args]
+	}
+	method -clear -export {} {tailcall my Set {}}
+	method -prepend -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$args {*}$current]
 	}
-	method -remove args {
+	method -remove -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
@@ -326,7 +336,7 @@
 
 	# Default handling
 	forward --default-operation my -append
-	method unknown {args} {
+	method unknown -unexport {args} {
 	    set def --default-operation
 	    if {[llength $args] == 0} {
 		tailcall my $def
@@ -336,9 +346,8 @@
 	    next {*}$args
 	}
 
-	# Set up what is exported and what isn't
-	export -set -append -clear -prepend -remove
-	unexport unknown destroy
+	# Hide destroy
+	unexport destroy
     }
 
     # Set the default operation differently for these slots
@@ -356,7 +365,7 @@
     #
     # ----------------------------------------------------------------------
 
-    define object method <cloned> {originObject} {
+    define object method <cloned> -unexport {originObject} {
 	# Copy over the procedures from the original namespace
 	foreach p [info procs [info object namespace $originObject]::*] {
 	    set args [info args $p]
@@ -397,7 +406,7 @@
     #
     # ----------------------------------------------------------------------
 
-    define class method <cloned> {originObject} {
+    define class method <cloned> -unexport {originObject} {
 	next $originObject
 	# Rebuild the class inheritance delegation class
 	::oo::UpdateClassDelegatesAfterClone $originObject [self]
@@ -424,7 +433,7 @@
 			::return -code error -errorcode {TCLOO SINGLETON} \
 			    "may not destroy a singleton object"
 		    }
-		    method <cloned> {originObject} {
+		    method <cloned> -unexport {originObject} {
 			::return -code error -errorcode {TCLOO SINGLETON} \
 			    "may not clone a singleton object"
 		    }
@@ -730,7 +739,7 @@
 	    #	Method for providing client access to the property mechanism.
 	    #	Has a user-facing API similar to that of [chan configure].
 	    # 
-	    method configure args {
+	    method configure -export args {
 		::if {![::info exists my]} {
 		    ::set my [::namespace which my]
 		}

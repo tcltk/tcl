@@ -4163,7 +4163,7 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
 } -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
 }] -result \
-    {unknown method "-grill": must be -append, -clear, -prepend, -remove, -set, contents or ops}
+    {unknown method "-grill": must be -append, -appendifnew, -clear, -prepend, -remove, -set, contents or ops}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -4193,25 +4193,25 @@ proc getMethods obj {
 }
 test oo-34.3 {TIP 380: slots - presence} {
     getMethods oo::define::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.4 {TIP 380: slots - presence} {
     getMethods oo::define::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.5 {TIP 380: slots - presence} {
     getMethods oo::define::superclass
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.6 {TIP 380: slots - presence} {
     getMethods oo::define::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.7 {TIP 380: slots - presence} {
     getMethods oo::objdefine::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.8 {TIP 380: slots - presence} {
     getMethods oo::objdefine::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.10 {TIP 516: slots - resolution} -setup {
     oo::class create parent
     set result {}

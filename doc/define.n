@@ -493,6 +493,12 @@ the slot:
 .
 This appends the given \fImember\fR elements to the slot definition.
 .TP
+\fIslot\fR \fB\-appendifnew\fR ?\fImember ...\fR?
+.VS TIP558
+This appends the given \fImember\fR elements to the slot definition if they
+do not already exist.
+.VE TIP558
+.TP
 \fIslot\fR \fB\-clear\fR
 .
 This sets the slot definition to the empty list.
