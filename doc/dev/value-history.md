@@ -718,7 +718,7 @@ this modification of the encoding rules.  Java 1.1, another language
 developed by Sun Microsystems at the same time, made the same modification.
 
 The modification is not without its problems.  One feature of the proper
-UTF-8 encoding scheme is that a sorting of endoded byte sequences matches
+UTF-8 encoding scheme is that a sorting of encoded byte sequences matches
 the sorting of the UCS-2 sequences they encode.  Not so when custom
 modifications are in place.  Likewise, byte-for-byte comparisons of
 byte sequences in a proper UTF-8 encoding reliably transfer to
@@ -741,15 +741,15 @@ reject these other sequences, either by raising an error, or by inserting
 the **REPLACEMENT CHARACTER** in suitable places to mark the non-conformant
 input.  This is not what **Tcl_UtfToUniChar** does.  Instead when any
 byte is encountered that is invalid by the modified rules of UTF-8 already
-desribed, that byte is taken as an encoding of the code-point with the
+described, that byte is taken as an encoding of the code-point with the
 same value as the byte value.  That is, when the modified UTF-8 encoding
 fails to be satisfied, the ISO-8859-1 encoding of Tcl 8.0 is assumed instead.
 Furthermore, this is not just a quiet accommodation, or perhaps an error
 in implementation. It is the explict documented behavior of
 **Tcl_UtfToUniChar** in Tcl 8.1.
 
->	If the input is not in proper UTF‐8 format, Tcl_UtfToUniChar will
->	store the first byte of src in *chPtr  as a Tcl_UniChar between
+>	If the input is not in proper UTF‐8 format, Tcl\_UtfToUniChar will
+>	store the first byte of src in *chPtr  as a Tcl\_UniChar between
 >	0x0000 and 0x00ff and return 1.
 
 The reasoning behind this encoding choice is not explicitly recorded
@@ -762,17 +762,14 @@ as the same two bytes as Tcl 8.0, but begins to treat the byte
 sequence (**0xC0**, **0x80**) as a representation of **NUL** isn't
 much of a compatibility accommodation to rely upon.
 
+Compat with 8.0
+ByteArrays
 
+UCS-2 sequences
 
 Two-tier encoding.
 
-
 UTF-16 and surrogate pairs
-
-Compat with 8.0
-
-
-
 
 
 
@@ -783,9 +780,6 @@ UCS-2, also called the Basic Multilingual Plane.
 
 The publication of RFC 2044 describing a UTF-8
 encoding for UCS-2 in October 1996 was also a key event.
-
-
-
 
 
 
