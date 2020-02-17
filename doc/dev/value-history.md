@@ -635,7 +635,7 @@ replace only the *ch* values in the upper half of UCS-4.  Note that
 Tcl 8.1 has made a design choice here to handle unsupported inputs
 via replacement, and not via raising an error.
 
-It is clear that the immediate Unicode support in Tcl was intentionally
+It is clear that the Unicode support provided by Tcl 8.1 was intentionally
 limited to UCS-2, while conventions and migration supports were put in place
 so that a future (binary incompatible) version of Tcl would expand its support
 to UCS-4 with FSS-UTF encoding sequences of up to six bytes, at some point
@@ -705,7 +705,66 @@ encoded byte sequences,
 
 implements the same forgiving support for overlong byte sequences.
 
+In the context of the still incomplete transition from the Tcl 7 to
+the Tcl 8.0 conventions for string values, and the lingering difficulties
+in handling the **NUL** byte, the forgiving nature of the UTF-8 decoders
+presented a clear opportunity.  If the decoder is equally happy to receive
+the byte sequence (**0xC0**, **0x80**) as a representation of **U+0000**,
+why not have the encoder encode it that way in the first place?  With
+this modification, encoded byte sequences return to not having the **NUL**
+byte in them at all, and we sweep away the remnants of a difficult
+transition (while admittedly adding a new one).  Tcl chose to adopt
+this modification of the encoding rules.  Java 1.1, another language
+developed by Sun Microsystems at the same time, made the same modification.
 
+The modification is not without its problems.  One feature of the proper
+UTF-8 encoding scheme is that a sorting of endoded byte sequences matches
+the sorting of the UCS-2 sequences they encode.  Not so when custom
+modifications are in place.  Likewise, byte-for-byte comparisons of
+byte sequences in a proper UTF-8 encoding reliably transfer to
+character-for-character comparisons of the UCS-2 strings they encode.
+This is especially important when testing for equality as is vital
+in searches. When any character has multiple acceptable encodings,
+the fully correct implementation of these matters becomes much more
+complex.  It is also a complication that when a custom encoding
+does not match any standard specification, it becomes impossible to document
+what encoding is supported in short and precise ways. Either a long
+document spelling out the rules that are in place must be written, or
+else false claims are made about using "UTF-8" supplemented by haphazard
+revelations to the curious questioners of all the exceptions
+and transgressions that are acutally in place.
+
+That is not the end. Even when all overlong encodings of all codepoints
+of UCS-2 are accepted, there are still many, many more byte sequences
+to consider.  A scheme demanding UTF-8 encoding would be expected to
+reject these other sequences, either by raising an error, or by inserting
+the **REPLACEMENT CHARACTER** in suitable places to mark the non-conformant
+input.  This is not what **Tcl_UtfToUniChar** does.  Instead when any
+byte is encountered that is invalid by the modified rules of UTF-8 already
+desribed, that byte is taken as an encoding of the code-point with the
+same value as the byte value.  That is, when the modified UTF-8 encoding
+fails to be satisfied, the ISO-8859-1 encoding of Tcl 8.0 is assumed instead.
+Furthermore, this is not just a quiet accommodation, or perhaps an error
+in implementation. It is the explict documented behavior of
+**Tcl_UtfToUniChar** in Tcl 8.1.
+
+>	If the input is not in proper UTF‐8 format, Tcl_UtfToUniChar will
+>	store the first byte of src in *chPtr  as a Tcl_UniChar between
+>	0x0000 and 0x00ff and return 1.
+
+The reasoning behind this encoding choice is not explicitly recorded
+in any known place.  This does not appear to be a choice copied from
+Java.  It seems a reasonable guess to presume this is intended to offer
+some measure of compatibility to deployed callers of Tcl 7 and Tcl 8.0,
+though the effectiveness of that strategy is questionable to say the least.
+A Tcl 8.1 that continues to treat the byte sequence (**0xC0**, **0x20**)
+as the same two bytes as Tcl 8.0, but begins to treat the byte
+sequence (**0xC0**, **0x80**) as a representation of **NUL** isn't
+much of a compatibility accommodation to rely upon.
+
+
+
+Two-tier encoding.
 
 
 UTF-16 and surrogate pairs
