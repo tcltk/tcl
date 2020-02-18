@@ -2514,7 +2514,9 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
-	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
+	    ? (int)(objPtr)->internalRep.wideValue : \
+	    (((objPtr)->internalRep.wideValue > (endValue)) \
+	    ? (endValue) + 1 : TCL_INDEX_NONE)), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*

@@ -3886,10 +3886,10 @@ Tcl_GetIntForIndex(
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
+    if ((wide < 0) || (endValue < -1)) {
 	*indexPtr = -1;
-    } else if (wide > INT_MAX) {
-	*indexPtr = INT_MAX;
+    } else if (wide > endValue) {
+	*indexPtr = endValue + 1;
     } else {
 	*indexPtr = (int) wide;
     }

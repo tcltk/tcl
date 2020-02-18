@@ -219,7 +219,7 @@ test lsetComp-2.8 {lset, compiled, list of args, error } {
 	set x { {1 2} {3 4} }
 	lset x {1 5} 5
     }
-} "1 {list index out of range}"
+} {0 {{1 2} {3 4 5}}}
 
 test lsetComp-2.9 {lset, compiled, list of args, error - is string preserved} {
     set ::x { { 1 2 } { 3 4 } }
@@ -227,7 +227,7 @@ test lsetComp-2.9 {lset, compiled, list of args, error - is string preserved} {
 	lset ::x { 1 5 } 5
     }
     list $::x [lindex $::x 1]
-} "{ { 1 2 } { 3 4 } } { 3 4 }"
+} {{{ 1 2 } {3 4 5}} {3 4 5}}
 
 test lsetComp-3.1 {lset, compiled, flat args, not a simple var name} {
     evalInProc {
@@ -412,7 +412,7 @@ test lsetComp-3.8 {lset, compiled, flat args, error } {
 	set x { {1 2} {3 4} }
 	lset x 1 5 5
     }
-} "1 {list index out of range}"
+} {0 {{1 2} {3 4 5}}}
 
 test lsetComp-3.9 {lset, compiled, flat args, error - is string preserved} {
     set ::x { { 1 2 } { 3 4 } }
@@ -420,7 +420,7 @@ test lsetComp-3.9 {lset, compiled, flat args, error - is string preserved} {
 	lset ::x 1 5 5
     }
     list $::x [lindex $::x 1]
-} "{ { 1 2 } { 3 4 } } { 3 4 }"
+} {{{ 1 2 } {3 4 5}} {3 4 5}}
 
 catch { rename evalInProc {} }
 catch { unset ::x }

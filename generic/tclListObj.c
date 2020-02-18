@@ -1602,20 +1602,6 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index > elemCount
-		|| (valuePtr == NULL && index >= elemCount)) {
-	    /* ...the index points outside the sublist. */
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("list index out of range", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-			valuePtr == NULL ? "LPOP" : "LSET",
-			"BADINDEX", NULL);
-	    }
-	    result = TCL_ERROR;
-	    break;
-	}
-
 	/*
 	 * No error conditions.  As long as we're not yet on the last index,
 	 * determine the next sublist for the next pass through the loop, and
@@ -1625,7 +1611,7 @@ TclLsetFlat(
 
 	if (--indexCount) {
 	    parentList = subListPtr;
-	    if (index == elemCount) {
+	    if (index >= elemCount || index < 0) {
 		subListPtr = Tcl_NewObj();
 	    } else {
 		subListPtr = elemPtrs[index];
@@ -1643,7 +1629,9 @@ TclLsetFlat(
 	     * and store another copy.
 	     */
 
-	    if (index == elemCount) {
+	    if (index < 0) {
+		Tcl_ListObjReplace(NULL, parentList, 0, 0, 1, &subListPtr);
+	    } else if (index >= elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListPtr);
 	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListPtr);
@@ -1732,8 +1720,13 @@ TclLsetFlat(
     TclListObjLength(NULL, subListPtr, &len);
     if (valuePtr == NULL) {
 	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
-    } else if (index == len) {
+	TclInvalidateStringRep(subListPtr);
+    } else if (index < 0) {
+	Tcl_ListObjReplace(NULL, subListPtr, 0, 0, 1, &valuePtr);
+	TclInvalidateStringRep(subListPtr);
+    } else if (index >= len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
+	TclInvalidateStringRep(subListPtr);
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
 	TclInvalidateStringRep(subListPtr);
