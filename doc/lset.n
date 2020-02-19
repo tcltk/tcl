@@ -51,7 +51,8 @@ replaced with \fInewValue\fR.  This new list is stored in the
 variable \fIvarName\fR, and is also the return value from the \fBlset\fR
 command.
 .PP
-If \fIindex\fR is negative it is threated as being 0
+If \fIindex\fR is negative, then the given element will be prepended
+to the list.
 .PP
 If \fIindex\fR is greater or equal to the number of elements in \fI$varName\fR,
 then the given element is appended to the list.
@@ -79,7 +80,8 @@ or
 replaces element 2 of sublist 1 with \fInewValue\fR.
 .PP
 The \fBlset\fR command can change the size
-of a list only by appending an element (setting the one after the current
+of a list only by prepending an element (setting the first argument, moving the
+remaining ones up) or appending an element (setting the one after the current
 end).
 .SH EXAMPLES
 .PP
