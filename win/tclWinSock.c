@@ -343,35 +343,36 @@ InitializeHostName(
     int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
+    Tcl_DStringInit(&ds);
 
-    if (GetComputerNameW(wbuf, &length) != 0) {
+    if (TclpHasSockets(NULL) == TCL_OK) {
 	/*
-	 * Convert string from native to UTF then change to lowercase.
+	 * The buffer size of 256 is recommended by the MSDN page that
+	 * documents gethostname() as being always adequate.
 	 */
-
-	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *)wbuf, -1, &ds));
-
+	
+	Tcl_DString inDs;
+	
+	Tcl_DStringInit(&inDs);
+	Tcl_DStringSetLength(&inDs, 256);
+	if (gethostname(Tcl_DStringValue(&inDs),
+		Tcl_DStringLength(&inDs)) == 0) {
+	    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+		    &ds);
+	}
+	Tcl_DStringFree(&inDs);
     } else {
-	Tcl_DStringInit(&ds);
-	if (TclpHasSockets(NULL) == TCL_OK) {
+	/*
+	 * Check for the netbios name
+	 */
+	WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
+	DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
+	if (GetComputerNameW(wbuf, &length) != 0) {
 	    /*
-	     * The buffer size of 256 is recommended by the MSDN page that
-	     * documents gethostname() as being always adequate.
+	     * Convert string from native to UTF then change to lowercase.
 	     */
-
-	    Tcl_DString inDs;
-
-	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 256);
-	    if (gethostname(Tcl_DStringValue(&inDs),
-		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
-			&ds);
-	    }
-	    Tcl_DStringFree(&inDs);
+	    Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *)wbuf, -1, &ds));
 	}
     }
 
