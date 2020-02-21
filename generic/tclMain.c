@@ -118,7 +118,7 @@ static void		Prompt(Tcl_Interp *interp, InteractiveState *isPtr);
 static void		StdinProc(ClientData clientData, int mask);
 static void		FreeMainInterp(ClientData clientData);
 
-#if !defined(_WIN32) || defined(UNICODE)
+#if !defined(_WIN32) || defined(UNICODE) && !defined(TCL_ASCII_MAIN)
 static Tcl_ThreadDataKey dataKey;
 
 /*
