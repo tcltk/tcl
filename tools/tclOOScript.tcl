@@ -311,12 +311,13 @@
 	method -appendifnew -export args {
 	    set my [namespace which my]
 	    set current [uplevel 1 [list $my Get]]
-	    set args [lmap a $args {
+	    foreach a $args {
 		set a [uplevel 1 [list $my Resolve $a]]
-		if {$a in $current} continue
-		set a
-	    }]
-	    tailcall my Set [list {*}$current {*}$args]
+		if {$a ni $current} {
+		    lappend current $a
+		}
+	    }
+	    tailcall my Set $current
 	}
 	method -clear -export {} {tailcall my Set {}}
 	method -prepend -export args {
