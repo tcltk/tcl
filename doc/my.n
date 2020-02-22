@@ -23,7 +23,7 @@ package require TclOO
 The \fBmy\fR command is used to allow methods of objects to invoke methods
 of the object (or its class),
 .VS TIP478
-and he \fBmyclass\fR command is used to allow methods of objects to invoke
+and the \fBmyclass\fR command is used to allow methods of objects to invoke
 methods of the current class of the object \fIas an object\fR.
 .VE TIP478
 In particular, the set of valid values for
