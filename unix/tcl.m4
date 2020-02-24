@@ -1142,7 +1142,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     AS_IF([test "$GCC" = yes], [
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wpointer-arith"
     ], [CFLAGS_WARNING=""])
     AC_CHECK_TOOL(AR, ar)
     STLIB_LD='${AR} cr'
