@@ -363,12 +363,12 @@ InitializeHostName(
     unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
+    WCHAR wbuf[256];
+    DWORD length = sizeof(wbuf)/sizeof(WCHAR);
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerNameW(wbuf, &length) != 0) {
+    if (GetComputerNameExW(ComputerNameDnsFullyQualified, wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
