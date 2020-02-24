@@ -47,7 +47,7 @@ MODULE_SCOPE TclWinProcs tclWinProcs;
 
 MODULE_SCOPE char	TclWinDriveLetterForVolMountPoint(
 			    const WCHAR *mountPoint);
-MODULE_SCOPE void	TclWinEncodingsCleanup();
+MODULE_SCOPE void	TclWinEncodingsCleanup(void);
 MODULE_SCOPE void	TclWinInit(HINSTANCE hInst);
 MODULE_SCOPE TclFile	TclWinMakeFile(HANDLE handle);
 MODULE_SCOPE Tcl_Channel TclWinOpenConsoleChannel(HANDLE handle,
