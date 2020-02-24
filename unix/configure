@@ -6649,7 +6649,7 @@ fi
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = yes; then
 
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wpointer-arith"
 
 else
   CFLAGS_WARNING=""
@@ -7576,7 +7576,6 @@ fi
 		# Step 4 will set the necessary variables
 		DL_OBJS=""
 		SHLIB_LD_LIBS=""
-		LDFLAGS=""
 		;;
 	    *)
 		case "$arch" in
@@ -7598,7 +7597,7 @@ fi
 
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
+		LDFLAGS="$LDFLAGS -Wl,-export-dynamic"
 		;;
 	    esac
 	    case "$arch" in
