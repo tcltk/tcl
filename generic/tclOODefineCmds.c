@@ -2438,9 +2438,14 @@ ClassMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int mixinc, i;
+    int mixinc, i, isNew;
     Tcl_Obj **mixinv;
-    Class **mixins;
+    Class **mixins;			/* The references to the classes to
+					 * actually install. */
+    Tcl_HashTable uniqueCheck;		/* Note that this hash table is just
+					 * used as a set of class references;
+					 * it has no payload values and keys
+					 * are always pointers. */
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2462,12 +2467,20 @@ ClassMixinSet(
     }
 
     mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
 	    i--;
+	    goto freeAndError;
+	}
+	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "class should only be a direct mixin once", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",NULL);
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2479,11 +2492,13 @@ ClassMixinSet(
     }
 
     TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
     TclStackFree(interp, mixins);
     return TCL_OK;
 
   freeAndError:
     TclStackFree(interp, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
     return TCL_ERROR;
 }
 
@@ -2598,7 +2613,6 @@ ClassSuperSet(
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
-		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j = 0; j < i; j++) {
@@ -2615,7 +2629,7 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
-		for (; i > 0; i--) {
+		for (; i-- > 0;) {
 		    TclOODecrRefCount(superclasses[i]->thisPtr);
 		}
 		ckfree(superclasses);
@@ -2841,7 +2855,7 @@ ObjFilterSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectMixinGet, ObjectMixinSet --
+ * ObjMixinGet, ObjMixinSet --
  *
  *	Implementation of the "mixin" slot accessors of the "oo::objdefine"
  *	command.
@@ -2890,10 +2904,14 @@ ObjMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int mixinc;
+    int mixinc, i, isNew;
     Tcl_Obj **mixinv;
-    Class **mixins;
-    int i;
+    Class **mixins;			/* The references to the classes to
+					 * actually install. */
+    Tcl_HashTable uniqueCheck;		/* Note that this hash table is just
+					 * used as a set of class references;
+					 * it has no payload values and keys
+					 * are always pointers. */
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2909,19 +2927,31 @@ ObjMixinSet(
     }
 
     mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
-	    TclStackFree(interp, mixins);
-	    return TCL_ERROR;
+	    goto freeAndError;
+	}
+	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "class should only be a direct mixin once", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",NULL);
+	    goto freeAndError;
 	}
     }
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);
     TclStackFree(interp, mixins);
     return TCL_OK;
+
+  freeAndError:
+    TclStackFree(interp, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
+    return TCL_ERROR;
 }
 
 /*

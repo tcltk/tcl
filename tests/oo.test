@@ -1650,10 +1650,7 @@ test oo-11.5 {OO: cleanup} {
     # No segmentation fault
     return done
 } done
-
-test oo-11.6.1 {
-    OO: cleanup of when an class is mixed into itself
-} -constraints memory -body {
+test oo-11.6 {OO: cleanup of when an class is mixed into itself} memory {
     leaktest {
 	interp create interp1
 	oo::class create obj1
@@ -1661,13 +1658,8 @@ test oo-11.6.1 {
 	rename obj1 {}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.2 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -constraints memory -body {
+} 0
+test oo-11.7 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} memory {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -1678,13 +1670,8 @@ test oo-11.6.2 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.3 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -constraints memory -body {
+} 0
+test oo-11.8 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} memory {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -1697,13 +1684,8 @@ test oo-11.6.3 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.4 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -body {
+} 0
+test oo-11.9 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} -body {
     oo::class create obj1
     ::oo::define obj1 {self mixin [self]}
 
@@ -2184,6 +2166,31 @@ test oo-14.8 {OO: class mixin order - Bug 1998221} -setup {
     }
     [cls new] test
 } -result {mix cls}
+test oo-14.9 {OO: class mixins must be unique in list} -setup {
+    oo::class create parent
+} -body {
+    oo::class create A {superclass parent}
+    oo::class create B {
+	superclass parent
+	mixin A
+    }
+    oo::define B mixin -append A
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {class should only be a direct mixin once}
+test oo-14.10 {OO: instance mixins must be unique in list} -setup {
+    oo::class create parent
+} -body {
+    oo::class create A {superclass parent}
+    oo::class create B {
+	superclass parent
+	constructor {} {oo::objdefine [self] mixin A}
+    }
+    B create obj
+    oo::objdefine obj {mixin -append A}
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {class should only be a direct mixin once}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass
@@ -4163,7 +4170,21 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
 } -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
 }] -result \
-    {unknown method "-grill": must be -append, -clear, -prepend, -remove, -set, contents or ops}
+    {unknown method "-grill": must be -append, -appendifnew, -clear, -prepend, -remove, -set, contents or ops}
+test oo-33.5 {TIP 567: slots -appendifnew} -setup [SampleSlotSetup {
+    set s [SampleSlot new]
+    
+}] -body {
+    list \
+	[$s -clear
+	 $s contents] \
+	[$s -append p q r
+	 $s contents] \
+	[$s -appendifnew q s r t p
+	 $s contents]
+} -cleanup [SampleSlotCleanup {
+    rename $s {}
+}] -result {{} {p q r} {p q r s t}}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -4193,25 +4214,25 @@ proc getMethods obj {
 }
 test oo-34.3 {TIP 380: slots - presence} {
     getMethods oo::define::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.4 {TIP 380: slots - presence} {
     getMethods oo::define::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.5 {TIP 380: slots - presence} {
     getMethods oo::define::superclass
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.6 {TIP 380: slots - presence} {
     getMethods oo::define::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.7 {TIP 380: slots - presence} {
     getMethods oo::objdefine::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.8 {TIP 380: slots - presence} {
     getMethods oo::objdefine::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.10 {TIP 516: slots - resolution} -setup {
     oo::class create parent
     set result {}
