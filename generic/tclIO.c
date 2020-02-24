@@ -200,7 +200,7 @@ static int		FilterInputBytes(Channel *chanPtr,
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
 static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
-static Tcl_Encoding	GetBinaryEncoding();
+static Tcl_Encoding	GetBinaryEncoding(void);
 static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
