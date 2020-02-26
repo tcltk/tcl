@@ -1697,9 +1697,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	{
-	    int flags = TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0);
-
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, flags, 0);
+	    BBEmitInstInt1(assemEnvPtr, tblIdx, TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
 	}
 	break;
 
