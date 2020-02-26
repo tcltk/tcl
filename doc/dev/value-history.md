@@ -31,8 +31,8 @@ contiguous chunk of memory, interpreted as a C array of type **char**. This
 includes a duty of the caller to keep this memory allocated and undisturbed
 while the command procedure executes. (In the days of Tcl 7, this was
 trivially achieved with an assumption that all use of the Tcl library was
-single-threaded.) The contents of that array determine the string value.
-Each element with (unsigned) **char** value between 1 and 255 represent an
+single-threaded.) The elements of that array determine the string value.
+Each element with (unsigned) **char** value between 1 and 255 represents an
 element of the string, stored at the correponding index of that string.
 The first element with value 0 (aka **NUL**) is not part of the string value,
 but marks its end.
@@ -224,7 +224,7 @@ much like the command __fcopy__ that would come later.
 
 It is more speculative, but it appears the inability to pass arbitrary
 binary data through Tcl contributed to the late development of full
-support in many image formats for Tk command __image create photo -data__.
+support of many image formats for Tk command __image create photo -data__.
 Tk 4 never had any built-in image format that supported this function.
 
 Since Tcl I/O could read in and write out binary data, but that data could
@@ -292,7 +292,7 @@ In Tcl 8.0, every valid Tcl string is a sequence of zero up
 to **INT_MAX** __char__ values from the range 0..255.
 In the new representation, the set of valid Tcl strings is both expanded
 and contracted.  The alphabet is expanded to include **NUL**, while a
-defined limit is imposed on length of the string sequence of elements
+defined limit is imposed on the length of the string sequence of elements
 from that alphabet for the first time.
 
 In the context of available memory in most computing systems
@@ -519,10 +519,10 @@ The claim that Tcl 8.1 strings are stored in UTF-8 is false, strictly
 speaking. Neither the encoding generated nor the encoding accepted by Tcl 8.1
 follow the precise specification of UTF-8. Not the specification in place
 today, nor any of the specifications in place near the time of this work.
-As the _changes_ entry notes, a number of implementation choices are claimed
-to serve "Java compatibility". Tcl development at this time took place
-at Sun Microsystems, which was also the home of Java. It appears that
-"Java compatibility" isn't a statement about any sort of interoperability,
+As the _changes_ entry indicates, a number of implementation choices are
+claimed to serve "Java compatibility". Tcl development at this time took
+place at Sun Microsystems, which was also the home of Java. It appears that
+"Java compatibility" is not a statement about any sort of interoperability,
 but about following the same conventions for the sake of programmer
 familiarity.  Tcl 8.1 added the **\\u_HHHH_** syntax as a way for
 scripts to specify Unicode characters using only the ASCII characters.
@@ -759,17 +759,28 @@ some measure of compatibility to deployed callers of Tcl 7 and Tcl 8.0,
 though the effectiveness of that strategy is questionable to say the least.
 A Tcl 8.1 that continues to treat the byte sequence (**0xC0**, **0x20**)
 as the same two bytes as Tcl 8.0, but begins to treat the byte
-sequence (**0xC0**, **0x80**) as a representation of **NUL** isn't
+sequence (**0xC0**, **0x80**) as a representation of **NUL** is not
 much of a compatibility accommodation to rely upon.
+
+many-to-one, interpretive freedom, (parse of \n)
+variable length
 
 Compat with 8.0
 ByteArrays
 
 UCS-2 sequences
+bytes v chars
 
-Two-tier encoding.
+Two-tier encoding. 
+
+Threading & memory validity
+
+API Counts?
+
+NUL naming limitations
 
 UTF-16 and surrogate pairs
+
 
 
 
