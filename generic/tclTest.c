@@ -564,7 +564,7 @@ Tcltest_Init(
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
-    static const char *specialOptions[] = {
+    static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
