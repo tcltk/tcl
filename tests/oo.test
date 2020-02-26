@@ -313,6 +313,40 @@ test oo-1.18.3 {Bug 21c144f0f5} -setup {
 } -cleanup {
     interp delete slave
 }
+test oo-1.18.4 {correct handling of cleanup in superclass set error} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	oo::class create A
+	oo::class create B {
+	    superclass oo::class
+	    constructor {} {
+		next {superclass A}
+		next {superclass -append A}
+	    }
+	}
+	[B create C] create d
+    }
+} -returnCodes error -cleanup {
+    interp delete slave
+} -result {class should only be a direct superclass once}
+test oo-1.18.5 {correct handling of cleanup in superclass set error} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	oo::class create A
+	oo::class create B {
+	    superclass oo::class
+	    constructor {c} {
+		next {superclass A}
+		next [list superclass -append {*}$c]
+	    }
+	}
+	[B create C {B C}] create d
+    }
+} -returnCodes error -cleanup {
+    interp delete slave
+} -result {attempt to form circular dependency graph}
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]

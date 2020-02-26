@@ -227,7 +227,7 @@ The same thing for a flattened list:
       \fI\(-> {a abc b bcd}\fR
 .CE
 .SH "SEE ALSO"
-foreach(n), 
+foreach(n),
 list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
 lreverse(n), lset(n), lsort(n),

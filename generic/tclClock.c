@@ -1052,7 +1052,7 @@ ConvertUTCToLocalUsingC(
     time_t tock;
     struct tm *timeVal;		/* Time after conversion */
     int diff;			/* Time zone diff local-Greenwich */
-    char buffer[8];		/* Buffer for time zone name */
+    char buffer[16];		/* Buffer for time zone name */
 
     /*
      * Use 'localtime' to determine local year, month, day, time of day.
