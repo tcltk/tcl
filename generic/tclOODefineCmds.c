@@ -2613,7 +2613,6 @@ ClassSuperSet(
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
-		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j = 0; j < i; j++) {
@@ -2630,7 +2629,7 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
-		for (; i > 0; i--) {
+		for (; i-- > 0 ;) {
 		    TclOODecrRefCount(superclasses[i]->thisPtr);
 		}
 		ckfree(superclasses);

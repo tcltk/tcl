@@ -4226,7 +4226,7 @@ $as_echo "using shared flags" >&6; }
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wdeclaration-after-statement"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wdeclaration-after-statement -Wstrict-prototypes"
 		;;
 	esac
 
