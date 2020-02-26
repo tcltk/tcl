@@ -254,7 +254,7 @@ TclSetEnv(
 	oldValue = NULL;
 	nameLength = strlen(name);
     } else {
-	const char *env;
+	const char *oldEnv;
 
 	/*
 	 * Compare the new value to the existing value. If they're the same
@@ -264,8 +264,8 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	env = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envString);
-	if (strcmp(value, env + (length + 1)) == 0) {
+	oldEnv = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envString);
+	if (strcmp(value, oldEnv + (length + 1)) == 0) {
 	    Tcl_DStringFree(&envString);
 	    Tcl_MutexUnlock(&envMutex);
 	    return;

@@ -4069,7 +4069,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    int indexc;
+	    int sortindex;
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
@@ -4080,7 +4080,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
-	    if (TclListObjGetElements(interp, objv[i+1], &indexc,
+	    if (TclListObjGetElements(interp, objv[i+1], &sortindex,
 		    &indexv) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4094,7 +4094,7 @@ Tcl_LsortObjCmd(
 	     * options is done.
 	     */
 
-	    for (j=0 ; j<indexc ; j++) {
+	    for (j=0 ; j<sortindex ; j++) {
 		int encoded = 0;
 		int result = TclIndexEncode(interp, indexv[j],
 			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
