@@ -129,7 +129,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static const Tcl_ObjType endOffsetType = {
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -3886,10 +3886,10 @@ Tcl_GetIntForIndex(
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
+    if ((wide < 0) || (endValue < -1)) {
 	*indexPtr = -1;
-    } else if (wide > INT_MAX) {
-	*indexPtr = INT_MAX;
+    } else if (wide > endValue + 1) {
+	*indexPtr = endValue + 1;
     } else {
 	*indexPtr = (int) wide;
     }
@@ -3923,7 +3923,7 @@ GetEndOffsetFromObj(
     Tcl_ObjIntRep *irPtr;
     Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
 
-    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
@@ -3980,13 +3980,13 @@ GetEndOffsetFromObj(
 
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
+	Tcl_StoreIntRep(objPtr, &tclEndOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
 
     if (endValue == (size_t)-1) {
-        *widePtr = offset - 1;
+        *widePtr = (offset >= 0) ? (offset - 1) : -1;
     } else if (offset < 0) {
         /* Different signs, sum cannot overflow */
         *widePtr = endValue + offset;

@@ -1600,6 +1600,20 @@ TclLsetFlat(
 	    indexArray++;
 	    break;
 	}
+	if (index >= elemCount) {
+		/* Since TclGetIntForIndexM() clamps on elemCount as upper bound,
+		 * find out if the real index value was larger than that. */
+		Tcl_ObjIntRep *irPtr;
+		irPtr = TclFetchIntRep(*indexArray, &tclIntType);
+		if (irPtr) {
+		    index = irPtr->wideValue;
+		} else {
+		    irPtr = TclFetchIntRep(*indexArray, &tclEndOffsetType);
+		    if (irPtr) {
+			index = elemCount + irPtr->wideValue - 1;
+		    }
+		}
+	}
 	indexArray++;
 
 	if (index < 0 || index > elemCount
