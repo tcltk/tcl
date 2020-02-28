@@ -142,7 +142,7 @@ static int		ConsoleBlockModeProc(ClientData instanceData,
 			    int mode);
 static void		ConsoleCheckProc(ClientData clientData, int flags);
 static int		ConsoleCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ConsoleEventProc(Tcl_Event *evPtr, int flags);
 static void		ConsoleExitHandler(ClientData clientData);
 static int		ConsoleGetHandleProc(ClientData instanceData,
@@ -180,7 +180,7 @@ static BOOL		WriteConsoleBytes(HANDLE hConsole,
 static const Tcl_ChannelType consoleChannelType = {
     "console",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    ConsoleCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     ConsoleInputProc,		/* Input proc. */
     ConsoleOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -188,7 +188,7 @@ static const Tcl_ChannelType consoleChannelType = {
     ConsoleGetOptionProc,	/* Get option proc. */
     ConsoleWatchProc,		/* Set up notifier to watch the channel. */
     ConsoleGetHandleProc,	/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+    ConsoleCloseProc,		/* close2proc. */
     ConsoleBlockModeProc,	/* Set blocking or non-blocking mode. */
     NULL,			/* Flush proc. */
     NULL,			/* Handler proc. */
@@ -537,13 +537,18 @@ ConsoleBlockModeProc(
 static int
 ConsoleCloseProc(
     ClientData instanceData,	/* Pointer to ConsoleInfo structure. */
-    Tcl_Interp *dummy)		/* For error reporting. */
+    Tcl_Interp *dummy,		/* For error reporting. */
+    int flags)
 {
     ConsoleInfo *consolePtr = (ConsoleInfo *)instanceData;
     int errorCode = 0;
     ConsoleInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Clean up the background thread if necessary. Note that this must be

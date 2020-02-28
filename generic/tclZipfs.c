@@ -385,13 +385,11 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ZipChannelGetFile(void *instanceData,
 			    int direction, void **handlePtr);
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-static int		ZipChannelSeek(void *instanceData, long offset,
-			    int mode, int *errloc);
 static Tcl_WideInt ZipChannelWideSeek(void *instanceData, Tcl_WideInt offset,
 			    int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
@@ -444,15 +442,15 @@ static const Tcl_Filesystem zipfsFilesystem = {
 static Tcl_ChannelType ZipChannelType = {
     "zip",		    /* Type name. */
     TCL_CHANNEL_VERSION_5,
-    ZipChannelClose,	    /* Close channel, clean instance data */
+    NULL,	    /* Close channel, clean instance data */
     ZipChannelRead,	    /* Handle read request */
     ZipChannelWrite,	    /* Handle write request */
-    ZipChannelSeek,	    /* Move location of access point, NULL'able */
+	NULL,	    /* Move location of access point, NULL'able */
     NULL,		    /* Set options, NULL'able */
     NULL,		    /* Get options, NULL'able */
     ZipChannelWatchChannel, /* Initialize notifier */
     ZipChannelGetFile,	    /* Get OS handle from the channel */
-    NULL,		    /* 2nd version of close channel, NULL'able */
+	ZipChannelClose,	    /* 2nd version of close channel, NULL'able */
     NULL,		    /* Set blocking mode for raw channel, NULL'able */
     NULL,		    /* Function to flush channel, NULL'able */
     NULL,		    /* Function to handle event, NULL'able */
@@ -938,7 +936,7 @@ ZipFSCloseArchive(
 	zf->ptrToFree = NULL;
     }
     if (zf->chan) {
-	Tcl_Close(interp, zf->chan);
+	Tcl_CloseEx(interp, zf->chan, 0);
 	zf->chan = NULL;
     }
 }
@@ -1141,7 +1139,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "file read error");
 	    goto error;
 	}
-	Tcl_Close(interp, zf->chan);
+	Tcl_CloseEx(interp, zf->chan, 0);
 	zf->chan = NULL;
     } else {
 #ifdef _WIN32
@@ -2139,11 +2137,11 @@ ZipAddFile(
 #ifdef _WIN32
 	/* hopefully a directory */
 	if (strcmp("permission denied", Tcl_PosixError(interp)) == 0) {
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	    return TCL_OK;
 	}
 #endif /* _WIN32 */
-	Tcl_Close(interp, in);
+	Tcl_CloseEx(interp, in, 0);
 	return TCL_ERROR;
     } else {
 	Tcl_Obj *pathObj = Tcl_NewStringObj(path, -1);
@@ -2162,12 +2160,12 @@ ZipAddFile(
 	len = Tcl_Read(in, buf, bufsize);
 	if (len == TCL_IO_FAILURE) {
 	    if (nbyte == 0 && errno == EISDIR) {
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_OK;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("read error on \"%s\": %s",
 		    path, Tcl_PosixError(interp)));
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	    return TCL_ERROR;
 	}
 	if (len == 0) {
@@ -2179,7 +2177,7 @@ ZipAddFile(
     if (Tcl_Seek(in, 0, SEEK_SET) == -1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("seek error on \"%s\": %s",
 		path, Tcl_PosixError(interp)));
-	Tcl_Close(interp, in);
+	Tcl_CloseEx(interp, in, 0);
 	return TCL_ERROR;
     }
     pos[0] = Tcl_Tell(out);
@@ -2190,7 +2188,7 @@ ZipAddFile(
     wrerr:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error on %s: %s", path, Tcl_PosixError(interp)));
-	Tcl_Close(interp, in);
+	Tcl_CloseEx(interp, in, 0);
 	return TCL_ERROR;
     }
     if ((len + pos[0]) & 3) {
@@ -2224,7 +2222,7 @@ ZipAddFile(
 			i);
 
 		Tcl_AppendObjToErrorInfo(interp, eiPtr);
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    ret = Tcl_GetObjResult(interp);
@@ -2234,7 +2232,7 @@ ZipAddFile(
 			i);
 
 		Tcl_AppendObjToErrorInfo(interp, eiPtr);
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    ch = (int) (r * 256);
@@ -2253,7 +2251,7 @@ ZipAddFile(
 	if (len != 12) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "write error on %s: %s", path, Tcl_PosixError(interp)));
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	    return TCL_ERROR;
 	}
 	memcpy(keys0, keys, sizeof(keys0));
@@ -2271,7 +2269,7 @@ ZipAddFile(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"compression init error on \"%s\"", path));
 	Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "DEFLATE_INIT", NULL);
-	Tcl_Close(interp, in);
+	Tcl_CloseEx(interp, in, 0);
 	return TCL_ERROR;
     }
     do {
@@ -2280,7 +2278,7 @@ ZipAddFile(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "read error on %s: %s", path, Tcl_PosixError(interp)));
 	    deflateEnd(&stream);
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	    return TCL_ERROR;
 	}
 	stream.avail_in = len;
@@ -2295,7 +2293,7 @@ ZipAddFile(
 			"deflate error on %s", path));
 		Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "DEFLATE", NULL);
 		deflateEnd(&stream);
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    olen = sizeof(obuf) - stream.avail_out;
@@ -2311,7 +2309,7 @@ ZipAddFile(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
 		deflateEnd(&stream);
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    nbytecompr += olen;
@@ -2329,7 +2327,7 @@ ZipAddFile(
 	}
 	if (Tcl_Seek(out, pos[2], SEEK_SET) != pos[2]) {
 	seekErr:
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "seek error: %s", Tcl_PosixError(interp)));
 	    return TCL_ERROR;
@@ -2341,7 +2339,7 @@ ZipAddFile(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"read error on \"%s\": %s",
 			path, Tcl_PosixError(interp)));
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    } else if (len == 0) {
 		break;
@@ -2357,7 +2355,7 @@ ZipAddFile(
 	    if (Tcl_Write(out, buf, len) != len) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    nbytecompr += len;
@@ -2367,7 +2365,7 @@ ZipAddFile(
 	pos[1] = Tcl_Tell(out);
 	Tcl_TruncateChannel(out, pos[1]);
     }
-    Tcl_Close(interp, in);
+    Tcl_CloseEx(interp, in, 0);
 
     hPtr = Tcl_CreateHashEntry(fileHash, zpath, &isNew);
     if (!isNew) {
@@ -2585,7 +2583,7 @@ ZipFSMkZipOrImgObjCmd(
 		Tcl_DecrRefCount(list);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
-		Tcl_Close(interp, out);
+		Tcl_CloseEx(interp, out, 0);
 		if (zf == &zf0) {
 		    ZipFSCloseArchive(interp, zf);
 		} else {
@@ -2618,7 +2616,7 @@ ZipFSMkZipOrImgObjCmd(
 	    if (!in) {
 		memset(passBuf, 0, sizeof(passBuf));
 		Tcl_DecrRefCount(list);
-		Tcl_Close(interp, out);
+		Tcl_CloseEx(interp, out, 0);
 		return TCL_ERROR;
 	    }
 	    i = Tcl_Seek(in, 0, SEEK_END);
@@ -2628,8 +2626,8 @@ ZipFSMkZipOrImgObjCmd(
 		Tcl_DecrRefCount(list);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"%s: %s", errMsg, Tcl_PosixError(interp)));
-		Tcl_Close(interp, out);
-		Tcl_Close(interp, in);
+		Tcl_CloseEx(interp, out, 0);
+		Tcl_CloseEx(interp, in, 0);
 		return TCL_ERROR;
 	    }
 	    Tcl_Seek(in, 0, SEEK_SET);
@@ -2651,7 +2649,7 @@ ZipFSMkZipOrImgObjCmd(
 		    goto cperr;
 		}
 	    }
-	    Tcl_Close(interp, in);
+	    Tcl_CloseEx(interp, in, 0);
 	}
 	len = strlen(passBuf);
 	if (len > 0) {
@@ -2660,7 +2658,7 @@ ZipFSMkZipOrImgObjCmd(
 		Tcl_DecrRefCount(list);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"write error: %s", Tcl_PosixError(interp)));
-		Tcl_Close(interp, out);
+		Tcl_CloseEx(interp, out, 0);
 		return TCL_ERROR;
 	    }
 	}
@@ -2776,9 +2774,9 @@ ZipFSMkZipOrImgObjCmd(
 
   done:
     if (ret == TCL_OK) {
-	ret = Tcl_Close(interp, out);
+	ret = Tcl_CloseEx(interp, out, 0);
     } else {
-	Tcl_Close(interp, out);
+	Tcl_CloseEx(interp, out, 0);
     }
     Tcl_DecrRefCount(list);
     for (hPtr = Tcl_FirstHashEntry(&fileHash, &search); hPtr;
@@ -3332,10 +3330,15 @@ ZipFSTclLibraryObjCmd(
 static int
 ZipChannelClose(
     void *instanceData,
-    Tcl_Interp *dummy)		/* Current interpreter. */
+    Tcl_Interp *dummy,		/* Current interpreter. */
+    int flags)
 {
     ZipChannel *info = (ZipChannel *)instanceData;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (info->iscompr && info->ubuf) {
 	Tcl_Free(info->ubuf);
@@ -3561,16 +3564,6 @@ ZipChannelWideSeek(
     }
     info->numRead = (size_t) offset;
     return info->numRead;
-}
-
-static int
-ZipChannelSeek(
-    void *instanceData,
-    long offset,
-    int mode,
-    int *errloc)
-{
-    return ZipChannelWideSeek(instanceData, offset, mode, errloc);
 }
 
 /*

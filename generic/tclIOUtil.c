@@ -1733,7 +1733,7 @@ Tcl_FSEvalFileEx(
     if (encodingName != NULL) {
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
+	    Tcl_CloseEx(interp,chan,0);
 	    return result;
 	}
     }
@@ -1746,7 +1746,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1761,14 +1761,14 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	goto end;
     }
 
@@ -1869,7 +1869,7 @@ TclNREvalFile(
     if (encodingName != NULL) {
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
+	    Tcl_CloseEx(interp, chan, 0);
 	    return TCL_ERROR;
 	}
     }
@@ -1882,7 +1882,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1898,7 +1898,7 @@ TclNREvalFile(
 
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1906,7 +1906,7 @@ TclNREvalFile(
 	return TCL_ERROR;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -2238,7 +2238,7 @@ Tcl_FSOpenFileChannel(
 			"could not seek to end of file while opening \"%s\": %s",
 			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
-	    Tcl_Close(NULL, retVal);
+	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
 	if (binary) {
@@ -3248,11 +3248,11 @@ Tcl_LoadFile(
 	}
 	buffer = TclpLoadMemoryGetBuffer(interp, size);
 	if (!buffer) {
-	    Tcl_Close(interp, data);
+	    Tcl_CloseEx(interp, data, 0);
 	    goto mustCopyToTempAnyway;
 	}
 	ret = Tcl_Read(data, (char *)buffer, size);
-	Tcl_Close(interp, data);
+	Tcl_CloseEx(interp, data, 0);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
@@ -4251,7 +4251,7 @@ TclCrossFilesystemCopy(
 	 * Could not open an input channel.  Why didn't the caller check this?
 	 */
 
-	Tcl_Close(interp, out);
+	Tcl_CloseEx(interp, out, 0);
 	goto done;
     }
 
@@ -4268,8 +4268,8 @@ TclCrossFilesystemCopy(
      * If the copy failed, assume that copy channel left an error message.
      */
 
-    Tcl_Close(interp, in);
-    Tcl_Close(interp, out);
+    Tcl_CloseEx(interp, in, 0);
+    Tcl_CloseEx(interp, out, 0);
 
     /*
      * Set modification date of copied file.

@@ -374,11 +374,7 @@ ChanClose(
     Channel *chanPtr,
     Tcl_Interp *interp)
 {
-    if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
-	return chanPtr->typePtr->closeProc(chanPtr->instanceData, interp);
-    } else {
-	return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
-    }
+    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
 
 static inline int
@@ -490,18 +486,13 @@ ChanSeek(
      * type and non-NULL.
      */
 
-    if (Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL) {
-	return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-		offset, mode, errnoPtr);
-    }
-
-    if (offset<LONG_MIN || offset>LONG_MAX) {
-	*errnoPtr = EOVERFLOW;
+    if (Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL) {
+	*errnoPtr = EINVAL;
 	return -1;
     }
 
-    return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-	    offset, mode, errnoPtr);
+	return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
+		offset, mode, errnoPtr);
 }
 
 static inline void
@@ -677,7 +668,7 @@ TclFinalizeIOSubsystem(void)
 		 * interpreter will close the channel when it gets destroyed.
 		 */
 
-		(void) Tcl_Close(NULL, (Tcl_Channel) chanPtr);
+		(void) Tcl_CloseEx(NULL, (Tcl_Channel) chanPtr, 0);
 	    } else {
 		/*
 		 * The refcount is greater than zero, so flush the channel.
@@ -1047,7 +1038,7 @@ DeleteChannelTable(
 	statePtr->epoch++;
 	if (statePtr->refCount-- <= 1) {
 	    if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
-		(void) Tcl_Close(interp, (Tcl_Channel) chanPtr);
+		(void) Tcl_CloseEx(interp, (Tcl_Channel) chanPtr, 0);
 	    }
 	}
 
@@ -1270,11 +1261,11 @@ Tcl_UnregisterChannel(
 	Tcl_Preserve(statePtr);
 	if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    /*
-	     * We don't want to re-enter Tcl_Close().
+	     * We don't want to re-enter Tcl_CloseEx().
 	     */
 
 	    if (!GotFlag(statePtr, CHANNEL_CLOSED)) {
-		if (Tcl_Close(interp, chan) != TCL_OK) {
+		if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 		    SetFlag(statePtr, CHANNEL_CLOSED);
 		    Tcl_Release(statePtr);
 		    return TCL_ERROR;
@@ -1626,8 +1617,11 @@ Tcl_CreateChannel(
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
     assert(typePtr->typeName != NULL);
-    if (NULL == typePtr->closeProc) {
-	Tcl_Panic("channel type %s must define closeProc", typePtr->typeName);
+    if (Tcl_ChannelVersion(typePtr) != TCL_CHANNEL_VERSION_5) {
+	Tcl_Panic("channel type %s must be version TCL_CHANNEL_VERSION_5", typePtr->typeName);
+    }
+    if (typePtr->close2Proc == NULL) {
+	Tcl_Panic("channel type %s must define close2Proc", typePtr->typeName);
     }
     if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
@@ -1637,9 +1631,6 @@ Tcl_CreateChannel(
     }
     if (NULL == typePtr->watchProc) {
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
-    }
-    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
-	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
     }
 
     /*
@@ -2186,7 +2177,7 @@ Tcl_UnstackChannel(
 	 */
 
 	if (statePtr->refCount + 1 <= 1) {
-	    if (Tcl_Close(interp, chan) != TCL_OK) {
+	    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 		/*
 		 * TIP #219, Tcl Channel Reflection API.
 		 * "TclChanCaughtErrorBypass" is not required here, it was
@@ -3134,7 +3125,7 @@ CloseChannel(
 
 	ChannelFree(chanPtr);
 
-	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
+	return Tcl_CloseEx(interp, (Tcl_Channel) downChanPtr, 0);
     }
 
     /*
@@ -3373,7 +3364,7 @@ Tcl_SpliceChannel(
 
 	/* ARGSUSED */
 int
-Tcl_Close(
+TclClose(
     Tcl_Interp *interp,		/* Interpreter for errors. */
     Tcl_Channel chan)		/* The channel being closed. Must not be
 				 * referenced in any interpreter. */
@@ -3382,7 +3373,7 @@ Tcl_Close(
 				 * channel. */
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
-    int result;			/* Of calling FlushChannel. */
+    int result = 0;			/* Of calling FlushChannel. */
     int flushcode;
     int stickyError;
 
@@ -3483,12 +3474,7 @@ Tcl_Close(
      * it anymore and this will help avoid deadlocks on some channel types.
      */
 
-    if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
-	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
-		TCL_CLOSE_READ);
-    } else {
-	result = 0;
-    }
+    (void)chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
 
     /*
      * The call to FlushChannel will flush any queued output and invoke the
@@ -3548,19 +3534,17 @@ Tcl_Close(
  *
  * Tcl_CloseEx --
  *
- *	Closes one side of a channel, read or write.
+ *	Closes one side of a channel, read or write, close all.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Closes one direction of the channel.
+ *	Closes one direction of the channel, or do a full close.
  *
  * NOTE:
  *	Tcl_CloseEx closes the specified direction of the channel as far as
- *	the user is concerned. The channel keeps existing however. You cannot
- *	calls this function to close the last possible direction of the
- *	channel. Use Tcl_Close for that.
+ *	the user is concerned. If flags = 0, this is equivalent to Tcl_Close.
  *
  *----------------------------------------------------------------------
  */
@@ -3580,10 +3564,18 @@ Tcl_CloseEx(
 	return TCL_OK;
     }
 
-    /* TODO: assert flags validity ? */
-
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
+
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == 0) {
+	return TclClose(interp, chan);
+    }
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == (TCL_READABLE | TCL_WRITABLE)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"double-close of channels not supported by %ss",
+		chanPtr->typePtr->typeName));
+	return TCL_ERROR;
+    }
 
     /*
      * Does the channel support half-close anyway? Error if not.
@@ -3591,7 +3583,7 @@ Tcl_CloseEx(
 
     if (!chanPtr->typePtr->close2Proc) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "half-close of channels not supported by %ss",
+		"half-close of channels not supported by %ss",
 		chanPtr->typePtr->typeName));
 	return TCL_ERROR;
     }
@@ -4214,12 +4206,12 @@ WillWrite(
 {
     int inputBuffered;
 
-    if ((Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL) &&
-            ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
-        int ignore;
+    if (((Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL)
+	    ) && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
+	int ignore;
 
-        DiscardInputQueued(chanPtr->state, 0);
-        ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
+	DiscardInputQueued(chanPtr->state, 0);
+	ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
     }
 }
 
@@ -4236,8 +4228,8 @@ WillRead(
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
-    if ((Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL)
-            && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+    if (((Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL)
+	    ) && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
 	/*
 	 * CAVEAT - The assumption here is that FlushChannel() will push out
 	 * the bytes of any writes that are in progress.  Since this is a
@@ -7000,7 +6992,8 @@ Tcl_Seek(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL) {
+    if ((Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL)
+    ) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -7164,7 +7157,8 @@ Tcl_Tell(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL) {
+    if ((Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL)
+    ) {
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -10488,14 +10482,6 @@ Tcl_ChannelVersion(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if ((chanTypePtr->version < TCL_CHANNEL_VERSION_2)
-	    || (chanTypePtr->version > TCL_CHANNEL_VERSION_5)) {
-	/*
-	 * In <v2 channel versions, the version field is occupied by the
-	 * Tcl_DriverBlockModeProc
-	 */
-	return TCL_CHANNEL_VERSION_1;
-    }
     return chanTypePtr->version;
 }
 
@@ -10519,38 +10505,7 @@ Tcl_ChannelBlockModeProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
-	/*
-	 * The v1 structure had the blockModeProc in a different place.
-	 */
-	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
-    }
-
     return chanTypePtr->blockModeProc;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ChannelCloseProc --
- *
- *	Return the Tcl_DriverCloseProc of the channel type.
- *
- * Results:
- *	A pointer to the proc.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_DriverCloseProc *
-Tcl_ChannelCloseProc(
-    const Tcl_ChannelType *chanTypePtr)
-				/* Pointer to channel type. */
-{
-    return chanTypePtr->closeProc;
 }
 
 /*
@@ -10623,30 +10578,6 @@ Tcl_ChannelOutputProc(
 				/* Pointer to channel type. */
 {
     return chanTypePtr->outputProc;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ChannelSeekProc --
- *
- *	Return the Tcl_DriverSeekProc of the channel type.
- *
- * Results:
- *	A pointer to the proc.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_DriverSeekProc *
-Tcl_ChannelSeekProc(
-    const Tcl_ChannelType *chanTypePtr)
-				/* Pointer to channel type. */
-{
-    return chanTypePtr->seekProc;
 }
 
 /*
@@ -10766,9 +10697,6 @@ Tcl_ChannelFlushProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
-	return NULL;
-    }
     return chanTypePtr->flushProc;
 }
 
@@ -10793,9 +10721,6 @@ Tcl_ChannelHandlerProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
-	return NULL;
-    }
     return chanTypePtr->handlerProc;
 }
 
@@ -10820,9 +10745,6 @@ Tcl_ChannelWideSeekProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_3) {
-	return NULL;
-    }
     return chanTypePtr->wideSeekProc;
 }
 
@@ -10848,9 +10770,6 @@ Tcl_ChannelThreadActionProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_4) {
-	return NULL;
-    }
     return chanTypePtr->threadActionProc;
 }
 

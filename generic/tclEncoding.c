@@ -1638,7 +1638,7 @@ LoadEncodingFile(
 		"invalid encoding file \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
-    Tcl_Close(NULL, chan);
+    Tcl_CloseEx(NULL, chan, 0);
 
     return encoding;
 }

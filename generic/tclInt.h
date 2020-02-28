@@ -4099,7 +4099,7 @@ MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
-
+MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
 /*
  * TIP #508: [array default]
  */

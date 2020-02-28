@@ -32,7 +32,7 @@
  */
 
 static int		ReflectClose(ClientData clientData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ReflectInput(ClientData clientData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		ReflectOutput(ClientData clientData, const char *buf,
@@ -46,8 +46,6 @@ static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
 static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
-static int		ReflectSeek(ClientData clientData, long offset,
-			    int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -65,15 +63,15 @@ static void     TimerRunWrite(ClientData clientData);
 static const Tcl_ChannelType tclRChannelType = {
     "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    ReflectClose,	   /* Close channel, clean instance data	  */
+    NULL,	   /* Close channel, clean instance data	  */
     ReflectInput,	   /* Handle read request			  */
     ReflectOutput,	   /* Handle write request			  */
-    ReflectSeek,	   /* Move location of access point.	NULL'able */
+    NULL,
     ReflectSetOption,	   /* Set options.			NULL'able */
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
     NULL,		   /* Get OS handle from the channel.	NULL'able */
-    NULL,		   /* No close2 support.		NULL'able */
+	ReflectClose,	   /* No close2 support.		NULL'able */
     ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
     NULL,		   /* Flush channel. Not used by core.	NULL'able */
     NULL,		   /* Handle events.			NULL'able */
@@ -81,7 +79,7 @@ static const Tcl_ChannelType tclRChannelType = {
 #if TCL_THREADS
     ReflectThread,         /* thread action, tracking owner */
 #else
-    NULL,		   /* thread action */
+	(void *)-1,		   /* thread action */
 #endif
     NULL		   /* truncate */
 };
@@ -697,7 +695,6 @@ TclChanCreateObjCmd(
 	    clonePtr->blockModeProc = NULL;
 	}
 	if (!(methods & FLAG(METH_SEEK))) {
-	    clonePtr->seekProc = NULL;
 	    clonePtr->wideSeekProc = NULL;
 	}
 
@@ -1153,7 +1150,8 @@ TclChanCaughtErrorBypass(
 static int
 ReflectClose(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     int result;			/* Result code for 'close' */
@@ -1162,6 +1160,10 @@ ReflectClose(
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     const Tcl_ChannelType *tctPtr;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (TclInThreadExit()) {
 	/*
@@ -1615,24 +1617,6 @@ ReflectSeekWide(
     *errorCodePtr = EINVAL;
     newLoc = -1;
     goto stop;
-}
-
-static int
-ReflectSeek(
-    ClientData clientData,
-    long offset,
-    int seekMode,
-    int *errorCodePtr)
-{
-    /*
-     * This function can be invoked from a transformation which is based on
-     * standard seeking, i.e. non-wide. Because of this we have to implement
-     * it, a dummy is not enough. We simply delegate the call to the wide
-     * routine.
-     */
-
-    return ReflectSeekWide(clientData, offset, seekMode,
-	    errorCodePtr);
 }
 
 /*

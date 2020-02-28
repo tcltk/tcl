@@ -121,15 +121,13 @@ typedef struct {
 
 static int		FileBlockModeProc(void *instanceData, int mode);
 static int		FileCloseProc(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		FileGetHandleProc(void *instanceData,
 			    int direction, void **handlePtr);
 static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static int		FileSeekProc(void *instanceData, long offset,
-			    int mode, int *errorCode);
 static int		FileTruncateProc(void *instanceData,
 			    Tcl_WideInt length);
 static Tcl_WideInt	FileWideSeekProc(void *instanceData,
@@ -137,7 +135,7 @@ static Tcl_WideInt	FileWideSeekProc(void *instanceData,
 static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtyGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -161,15 +159,15 @@ static int		TtySetOptionProc(void *instanceData,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-    FileSeekProc,		/* Seek proc. */
+	NULL,
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    FileCloseProc,		/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -187,7 +185,7 @@ static const Tcl_ChannelType fileChannelType = {
 static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TtyCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -195,7 +193,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    TtyCloseProc,			/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -353,11 +351,16 @@ FileOutputProc(
 static int
 FileCloseProc(
     void *instanceData,	/* File state. */
-    Tcl_Interp *dummy)		/* For error reporting - unused. */
+    Tcl_Interp *dummy,		/* For error reporting - unused. */
+    int flags)
 {
     FileState *fsPtr = (FileState *)instanceData;
     int errorCode = 0;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     Tcl_DeleteFileHandler(fsPtr->fd);
 
@@ -379,10 +382,14 @@ FileCloseProc(
 static int
 TtyCloseProc(
     void *instanceData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     TtyState *ttyPtr = (TtyState*)instanceData;
 
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
     /*
      * If we've been asked by the user to drain or flush, do so now.
      */
@@ -411,69 +418,9 @@ TtyCloseProc(
      * Delegate to close for files.
      */
 
-    return FileCloseProc(instanceData, interp);
+    return FileCloseProc(instanceData, interp, flags);
 }
 #endif /* SUPPORTS_TTY */
-
-/*
- *----------------------------------------------------------------------
- *
- * FileSeekProc --
- *
- *	This function is called by the generic IO level to move the access
- *	point in a file based channel.
- *
- * Results:
- *	-1 if failed, the new position if successful. An output argument
- *	contains the POSIX error code if an error occurred, or zero.
- *
- * Side effects:
- *	Moves the location at which the channel will be accessed in future
- *	operations.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-FileSeekProc(
-    void *instanceData,	/* File state. */
-    long offset,		/* Offset to seek to. */
-    int mode,			/* Relative to where should we seek? Can be
-				 * one of SEEK_START, SEEK_SET or SEEK_END. */
-    int *errorCodePtr)		/* To store error code. */
-{
-    FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt oldLoc, newLoc;
-
-    /*
-     * Save our current place in case we need to roll-back the seek.
-     */
-
-    oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
-    if (oldLoc == -1) {
-	/*
-	 * Bad things are happening. Error out...
-	 */
-
-	*errorCodePtr = errno;
-	return -1;
-    }
-
-    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
-
-    /*
-     * Check for expressability in our return type, and roll-back otherwise.
-     */
-
-    if (newLoc > INT_MAX) {
-	*errorCodePtr = EOVERFLOW;
-	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
-	return -1;
-    } else {
-	*errorCodePtr = (newLoc == -1) ? errno : 0;
-    }
-    return (int) newLoc;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1738,7 +1685,7 @@ TclpOpenFileChannel(
 
 	if (Tcl_SetChannelOption(interp, fsPtr->fileState.channel,
 		"-translation", translation) != TCL_OK) {
-	    Tcl_Close(NULL, fsPtr->fileState.channel);
+	    Tcl_CloseEx(NULL, fsPtr->fileState.channel, 0);
 	    return NULL;
 	}
     }
