@@ -128,8 +128,10 @@ static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+#ifndef TCL_NO_DEPRECATED
 static int		FileSeekProc(void *instanceData, long offset,
 			    int mode, int *errorCode);
+#endif
 static int		FileTruncateProc(void *instanceData,
 			    Tcl_WideInt length);
 static Tcl_WideInt	FileWideSeekProc(void *instanceData,
