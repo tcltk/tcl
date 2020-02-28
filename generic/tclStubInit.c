@@ -67,7 +67,7 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX <= 3
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }

@@ -21,7 +21,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 catch {unset x}
 
 # Some tests require support for 4-byte UTF-8 sequences
-testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint fullutf [expr {[string length \U010000] == 1}]
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
     expr {"\x01" eq [testbytestring "\x01"]}
@@ -84,12 +84,12 @@ test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestrin
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
     string length [testbytestring "\xE4\xB9\x8E"]
 } {1}
-test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {tip389 testbytestring} -body {
+test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF0\x90\x80\x80"]
-} -result {2}
-test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {tip389 testbytestring} -body {
+} -result {1}
+test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
-} -result {2}
+} -result {1}
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
     string length [testbytestring "\xF0\x8F\xBF\xBF"]
 } {4}
