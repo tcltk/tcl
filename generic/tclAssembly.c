@@ -770,7 +770,7 @@ BBEmitInst1or4(
 
 int
 Tcl_AssembleObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -780,7 +780,7 @@ Tcl_AssembleObjCmd(
      * because there needs to be one in place to execute bytecode.
      */
 
-    return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, clientData, objc, objv);
 }
 
 int
@@ -1707,9 +1707,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	{
-	    int flags = TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0);
-
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, flags, 0);
+	    BBEmitInstInt1(assemEnvPtr, tblIdx, TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
 	}
 	break;
 

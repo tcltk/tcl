@@ -102,7 +102,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -110,6 +110,7 @@ TesteventloopCmd(
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
@@ -178,7 +179,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -187,6 +188,7 @@ TestvolumetypeCmd(
     int found;
     char volType[VOL_BUF_SIZE];
     const char *path;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
@@ -257,6 +259,7 @@ TestwinclockCmd(
     Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -293,12 +296,13 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    ClientData clientData,	/* Unused */
+    ClientData dummy,	/* Unused */
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ms");
@@ -363,6 +367,7 @@ TestExceptionCmd(
 	EXCEPTION_GUARD_PAGE, EXCEPTION_INVALID_HANDLE, CONTROL_C_EXIT
     };
     int cmd;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
@@ -466,7 +471,7 @@ TestplatformChmod(
 	    goto done;
 	}
 
-	secDesc = Tcl_Alloc(secDescLen);
+	secDesc = (BYTE *)Tcl_Alloc(secDescLen);
 	if (!GetFileSecurityA(nativePath, infoBits,
 		(PSECURITY_DESCRIPTOR) secDesc, secDescLen, &secDescLen2)
 		|| (secDescLen < secDescLen2)) {
@@ -478,7 +483,7 @@ TestplatformChmod(
      * Get the World SID.
      */
 
-    userSid = Tcl_Alloc(GetSidLengthRequired((UCHAR) 1));
+    userSid = (SID *)Tcl_Alloc(GetSidLengthRequired((UCHAR) 1));
     InitializeSid(userSid, &userSidAuthority, (BYTE) 1);
     *(GetSidSubAuthority(userSid, 0)) = SECURITY_WORLD_RID;
 
@@ -504,7 +509,7 @@ TestplatformChmod(
 
     newAclSize = ACLSize.AclBytesInUse + sizeof(ACCESS_DENIED_ACE)
 	    + GetLengthSid(userSid) - sizeof(DWORD);
-    newAcl = Tcl_Alloc(newAclSize);
+    newAcl = (PACL) Tcl_Alloc(newAclSize);
 
     /*
      * Initialize the new ACL.
@@ -631,6 +636,7 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

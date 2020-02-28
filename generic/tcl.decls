@@ -314,9 +314,10 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
-declare 81 {
-    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
-}
+# Removed in 9.0:
+#declare 81 {
+#    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
+#}
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
@@ -1471,10 +1472,11 @@ declare 400 {
     Tcl_DriverBlockModeProc *Tcl_ChannelBlockModeProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 401 {
-    Tcl_DriverCloseProc *Tcl_ChannelCloseProc(
-	    const Tcl_ChannelType *chanTypePtr)
-}
+# Removed in 9.0
+#declare 401 {
+#    Tcl_DriverCloseProc *Tcl_ChannelCloseProc(
+#	    const Tcl_ChannelType *chanTypePtr)
+#}
 declare 402 {
     Tcl_DriverClose2Proc *Tcl_ChannelClose2Proc(
 	    const Tcl_ChannelType *chanTypePtr)
@@ -1487,10 +1489,11 @@ declare 404 {
     Tcl_DriverOutputProc *Tcl_ChannelOutputProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 405 {
-    Tcl_DriverSeekProc *Tcl_ChannelSeekProc(
-	    const Tcl_ChannelType *chanTypePtr)
-}
+# Removed in 9.0
+#declare 405 {
+#    Tcl_DriverSeekProc *Tcl_ChannelSeekProc(
+#	    const Tcl_ChannelType *chanTypePtr)
+#}
 declare 406 {
     Tcl_DriverSetOptionProc *Tcl_ChannelSetOptionProc(
 	    const Tcl_ChannelType *chanTypePtr)

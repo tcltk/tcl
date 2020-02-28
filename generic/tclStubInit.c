@@ -75,7 +75,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX <= 3
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
@@ -844,7 +844,7 @@ const TclStubs tclStubs = {
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
-    Tcl_Close, /* 81 */
+    0, /* 81 */
     Tcl_CommandComplete, /* 82 */
     Tcl_Concat, /* 83 */
     Tcl_ConvertElement, /* 84 */
@@ -1172,11 +1172,11 @@ const TclStubs tclStubs = {
     Tcl_ChannelName, /* 398 */
     Tcl_ChannelVersion, /* 399 */
     Tcl_ChannelBlockModeProc, /* 400 */
-    Tcl_ChannelCloseProc, /* 401 */
+    0, /* 401 */
     Tcl_ChannelClose2Proc, /* 402 */
     Tcl_ChannelInputProc, /* 403 */
     Tcl_ChannelOutputProc, /* 404 */
-    Tcl_ChannelSeekProc, /* 405 */
+    0, /* 405 */
     Tcl_ChannelSetOptionProc, /* 406 */
     Tcl_ChannelGetOptionProc, /* 407 */
     Tcl_ChannelWatchProc, /* 408 */

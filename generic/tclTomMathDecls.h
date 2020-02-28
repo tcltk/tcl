@@ -56,9 +56,14 @@
 #   define MODULE_SCOPE extern
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 MODULE_SCOPE mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b);
 MODULE_SCOPE mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r);
-
+#ifdef __cplusplus
+}
+#endif
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 

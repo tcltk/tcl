@@ -596,7 +596,7 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = Tcl_Alloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = (const char **)Tcl_Alloc((((*argcPtr) + 1) * sizeof(char *)) + size);
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -830,7 +830,7 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(2, pair, 0);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
@@ -1252,6 +1252,7 @@ Tcl_GlobObjCmd(
     };
     enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
     Tcl_GlobTypeData *globTypes = NULL;
+    (void)dummy;
 
     globFlags = 0;
     join = 0;
@@ -1463,7 +1464,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = (Tcl_GlobTypeData *)TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -2502,7 +2503,7 @@ DoGlob(
 Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
-    return Tcl_Alloc(sizeof(Tcl_StatBuf));
+    return (Tcl_StatBuf *)Tcl_Alloc(sizeof(Tcl_StatBuf));
 }
 
 /*
@@ -2620,6 +2621,7 @@ Tcl_GetBlockSizeFromStat(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return statPtr->st_blksize;
 #else
+    (void)statPtr;
     /*
      * Not a great guess, but will do...
      */

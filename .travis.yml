@@ -10,13 +10,13 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC/Shared: UTF_MAX=4"
+    - name: "Linux/GCC/Shared: UTF_MAX=3"
       os: linux
       dist: bionic
       compiler: gcc
       env:
         - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
+        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
     - name: "Linux/GCC/Static"
       os: linux
       dist: bionic
@@ -31,6 +31,14 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+# C++ build.
+    - name: "Linux/G++/Shared"
+      os: linux
+      dist: bionic
+      compiler: g++
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -202,15 +210,6 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc test
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -239,15 +238,6 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC-x86/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -276,13 +266,22 @@ matrix:
       before_install: &makepreinst
         - choco install -y make zip
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: UTF_MAX=4"
+    - name: "Windows/GCC/Shared: UTF_MAX=3"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
-        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=4"
+        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
       before_install: *makepreinst
+    - name: "Windows/G++/Shared"
+      os: windows
+      compiler: g++
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CC=g++ --enable-64bit"
+      before_install: *makepreinst
+      script:
+        - make all tcltest
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -304,13 +303,22 @@ matrix:
       env:
         - BUILD_DIR=win
       before_install: *makepreinst
-    - name: "Windows/GCC-x86/Shared: UTF_MAX=4"
+    - name: "Windows/GCC-x86/Shared: UTF_MAX=3"
       os: windows
       compiler: gcc
       env:
         - BUILD_DIR=win
-        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=4"
+        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
       before_install: *makepreinst
+    - name: "Windows/G++-x86/Shared"
+      os: windows
+      compiler: g++
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CC=g++"
+      before_install: *makepreinst
+      script:
+        - make all tcltest
     - name: "Windows/GCC-x86/Static"
       os: windows
       compiler: gcc

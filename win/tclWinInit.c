@@ -211,7 +211,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
-    *valuePtr = Tcl_Alloc(length);
+    *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -348,7 +348,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -396,7 +396,7 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = Tcl_Alloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -629,7 +629,7 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = Tcl_Alloc(length + 1);
+    nameUpper = (char *)Tcl_Alloc(length + 1);
     memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 

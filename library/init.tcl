@@ -60,13 +60,13 @@ namespace eval tcl {
     if {$Dir ni $::auto_path} {
 	lappend ::auto_path $Dir
     }
-    catch {
+    if {[info exists ::tcl_pkgPath]} { catch {
 	foreach Dir $::tcl_pkgPath {
 	    if {$Dir ni $::auto_path} {
 		lappend ::auto_path $Dir
 	    }
 	}
-    }
+    }}
 
     if {![interp issafe]} {
         variable Path [encoding dirs]

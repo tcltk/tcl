@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,utfmax,none
+#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -74,8 +74,6 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utfmax    = Forces a build allowing 4-byte UTF-8 sequences
-#			    internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -470,8 +468,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.2 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.4 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
 runtest: setup $(TCLTEST) dlls
