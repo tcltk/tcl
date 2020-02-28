@@ -182,7 +182,7 @@ static void		TimerSetupProc(ClientData clientData, int flags);
 static ThreadSpecificData *
 InitTimer(void)
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -211,9 +211,10 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    (void)dummy;
 
     Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
     if (tsdPtr != NULL) {
@@ -297,7 +298,7 @@ TclCreateAbsoluteTimerHandler(
     TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    timerHandlerPtr = ckalloc(sizeof(TimerHandler));
+    timerHandlerPtr = (TimerHandler *)ckalloc(sizeof(TimerHandler));
 
     /*
      * Fill in fields for the event.
@@ -398,11 +399,12 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
 	    || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)) {
@@ -456,12 +458,13 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
 	/*
@@ -488,7 +491,7 @@ TimerCheckProc(
 	if (blockTime.sec == 0 && blockTime.usec == 0 &&
 		!tsdPtr->timerPending) {
 	    tsdPtr->timerPending = 1;
-	    timerEvPtr = ckalloc(sizeof(Tcl_Event));
+	    timerEvPtr = (Tcl_Event *)ckalloc(sizeof(Tcl_Event));
 	    timerEvPtr->proc = TimerHandlerEventProc;
 	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
 	}
@@ -526,6 +529,7 @@ TimerHandlerEventProc(
     Tcl_Time time;
     int currentTimerId;
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)evPtr;
 
     /*
      * Do nothing if timers aren't enabled. This leaves the event on the
@@ -625,7 +629,7 @@ Tcl_DoWhenIdle(
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    idlePtr = ckalloc(sizeof(IdleHandler));
+    idlePtr = (IdleHandler *)ckalloc(sizeof(IdleHandler));
     idlePtr->proc = proc;
     idlePtr->clientData = clientData;
     idlePtr->generation = tsdPtr->idleGeneration;
@@ -779,7 +783,7 @@ TclServiceIdle(void)
 	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(
-    ClientData clientData,	/* Unused */
+    ClientData dummy,	/* Unused */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -795,6 +799,7 @@ Tcl_AfterObjCmd(
     };
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -806,9 +811,9 @@ Tcl_AfterObjCmd(
      * doesn't already exist.
      */
 
-    assocPtr = Tcl_GetAssocData(interp, "tclAfter", NULL);
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, "tclAfter", NULL);
     if (assocPtr == NULL) {
-	assocPtr = ckalloc(sizeof(AfterAssocData));
+	assocPtr = (AfterAssocData *)ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
@@ -845,7 +850,7 @@ Tcl_AfterObjCmd(
 	if (objc == 2) {
 	    return AfterDelay(interp, ms);
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = (AfterInfo *)ckalloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -925,7 +930,7 @@ Tcl_AfterObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = (AfterInfo *)ckalloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -1150,7 +1155,7 @@ static void
 AfterProc(
     ClientData clientData)	/* Describes command to execute. */
 {
-    AfterInfo *afterPtr = clientData;
+    AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
     AfterInfo *prevPtr;
     int result;
@@ -1253,10 +1258,11 @@ static void
 AfterCleanupProc(
     ClientData clientData,	/* Points to AfterAssocData for the
 				 * interpreter. */
-    Tcl_Interp *interp)		/* Interpreter that is being deleted. */
+    Tcl_Interp *dummy)		/* Interpreter that is being deleted. */
 {
-    AfterAssocData *assocPtr = clientData;
+    AfterAssocData *assocPtr = (AfterAssocData *)clientData;
     AfterInfo *afterPtr;
+    (void)dummy;
 
     while (assocPtr->firstAfterPtr != NULL) {
 	afterPtr = assocPtr->firstAfterPtr;

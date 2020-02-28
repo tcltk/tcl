@@ -847,7 +847,7 @@ ZipFSLookup(
 
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, filename);
     if (hPtr) {
-	z = Tcl_GetHashValue(hPtr);
+	z = (ZipEntry *)Tcl_GetHashValue(hPtr);
     }
     return z;
 }
@@ -935,7 +935,7 @@ ZipFSCloseArchive(
 #else /* !_WIN32 */
     if ((zf->data != MAP_FAILED) && !zf->ptrToFree) {
 	munmap(zf->data, zf->length);
-	zf->data = MAP_FAILED;
+	zf->data = (unsigned char *)MAP_FAILED;
     }
 #endif /* _WIN32 */
 
@@ -1105,7 +1105,7 @@ ZipFSOpenArchive(
     zf->data = NULL;
     zf->mountHandle = INVALID_HANDLE_VALUE;
 #else /* !_WIN32 */
-    zf->data = MAP_FAILED;
+    zf->data = (unsigned char *)MAP_FAILED;
 #endif /* _WIN32 */
     zf->length = 0;
     zf->numFiles = 0;
@@ -1134,7 +1134,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-	zf->ptrToFree = zf->data = attemptckalloc(zf->length);
+	zf->ptrToFree = zf->data = (unsigned char *)attemptckalloc(zf->length);
 	if (!zf->ptrToFree) {
 	    ZIPFS_ERROR(interp, "out of memory");
 	    if (interp) {
@@ -1163,13 +1163,13 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "invalid file size");
 	    goto error;
 	}
-	zf->mountHandle = CreateFileMapping((HANDLE) handle, 0, PAGE_READONLY,
+	zf->mountHandle = CreateFileMappingW((HANDLE) handle, 0, PAGE_READONLY,
 		0, zf->length, 0);
 	if (zf->mountHandle == INVALID_HANDLE_VALUE) {
 	    ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	    goto error;
 	}
-	zf->data = MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0,
+	zf->data = (unsigned char *)MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0,
 		zf->length);
 	if (!zf->data) {
 	    ZIPFS_POSIX_ERROR(interp, "file mapping failed");
@@ -1265,7 +1265,7 @@ ZipFSCatalogFilesystem(
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {
-	    zf = Tcl_GetHashValue(hPtr);
+	    zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s is already mounted on %s", zf->name, mountPoint));
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "MOUNTED", NULL);
@@ -1274,7 +1274,7 @@ ZipFSCatalogFilesystem(
 	ZipFSCloseArchive(interp, zf0);
 	return TCL_ERROR;
     }
-    zf = attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
+    zf = (ZipFile *)attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
     if (!zf) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
@@ -1287,11 +1287,11 @@ ZipFSCatalogFilesystem(
     Unlock();
 
     *zf = *zf0;
-    zf->mountPoint = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    zf->mountPoint = (char *)Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     Tcl_CreateExitHandler(ZipfsExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
     zf->nameLength = strlen(zipname);
-    zf->name = ckalloc(zf->nameLength + 1);
+    zf->name = (char *)ckalloc(zf->nameLength + 1);
     memcpy(zf->name, zipname, zf->nameLength + 1);
     zf->entries = NULL;
     zf->topEnts = NULL;
@@ -1310,7 +1310,7 @@ ZipFSCatalogFilesystem(
     if (mountPoint[0] != '\0') {
 	hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, mountPoint, &isNew);
 	if (isNew) {
-	    z = ckalloc(sizeof(ZipEntry));
+	    z = (ZipEntry *)ckalloc(sizeof(ZipEntry));
 	    Tcl_SetHashValue(hPtr, z);
 
 	    z->tnext = NULL;
@@ -1324,7 +1324,7 @@ ZipFSCatalogFilesystem(
 	    z->numBytes = z->numCompressedBytes = 0;
 	    z->compressMethod = ZIP_COMPMETH_STORED;
 	    z->data = NULL;
-	    z->name = Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
+	    z->name = (char *)Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -1405,7 +1405,7 @@ ZipFSCatalogFilesystem(
 	}
 	Tcl_DStringSetLength(&fpBuf, 0);
 	fullpath = CanonicalPath(mountPoint, path, &fpBuf, 1);
-	z = ckalloc(sizeof(ZipEntry));
+	z = (ZipEntry *)ckalloc(sizeof(ZipEntry));
 	z->name = NULL;
 	z->tnext = NULL;
 	z->depth = CountSlashes(fullpath);
@@ -1437,7 +1437,7 @@ ZipFSCatalogFilesystem(
 	    ckfree(z);
 	} else {
 	    Tcl_SetHashValue(hPtr, z);
-	    z->name = Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
+	    z->name = (char *)Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 	    z->next = zf->entries;
 	    zf->entries = z;
 	    if (isdir && (mountPoint[0] == '\0') && (z->depth == 1)) {
@@ -1459,7 +1459,7 @@ ZipFSCatalogFilesystem(
 		    if (!isNew) {
 			break;
 		    }
-		    zd = ckalloc(sizeof(ZipEntry));
+		    zd = (ZipEntry *)ckalloc(sizeof(ZipEntry));
 		    zd->name = NULL;
 		    zd->tnext = NULL;
 		    zd->depth = CountSlashes(dir);
@@ -1473,7 +1473,7 @@ ZipFSCatalogFilesystem(
 		    zd->compressMethod = ZIP_COMPMETH_STORED;
 		    zd->data = NULL;
 		    Tcl_SetHashValue(hPtr, zd);
-		    zd->name = Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
+		    zd->name = (char *)Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 		    zd->next = zf->entries;
 		    zf->entries = zd;
 		    if ((mountPoint[0] == '\0') && (zd->depth == 1)) {
@@ -1559,7 +1559,7 @@ ListMountPoints(
 	if (!interp) {
 	    return TCL_OK;
 	}
-	zf = Tcl_GetHashValue(hPtr);
+	zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	Tcl_AppendElement(interp, zf->mountPoint);
 	Tcl_AppendElement(interp, zf->name);
     }
@@ -1596,7 +1596,7 @@ DescribeMounted(
     if (interp) {
 	hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mountPoint);
 	if (hPtr) {
-	    zf = Tcl_GetHashValue(hPtr);
+	    zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(zf->name, -1));
 	    return TCL_OK;
 	}
@@ -1673,7 +1673,7 @@ TclZipfs_Mount(
 	    return TCL_ERROR;
 	}
     }
-    zf = attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
+    zf = (ZipFile *)attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
     if (!zf) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
@@ -1754,7 +1754,7 @@ TclZipfs_MountBuffer(
      * Have both a mount point and data to mount there.
      */
 
-    zf = attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
+    zf = (ZipFile *)attemptckalloc(sizeof(ZipFile) + strlen(mountPoint) + 1);
     if (!zf) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
@@ -1765,7 +1765,7 @@ TclZipfs_MountBuffer(
     zf->isMemBuffer = 1;
     zf->length = datalen;
     if (copy) {
-	zf->data = attemptckalloc(datalen);
+	zf->data = (unsigned char *)attemptckalloc(datalen);
 	if (!zf->data) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "out of memory", (char *) NULL);
@@ -1835,7 +1835,7 @@ TclZipfs_Unmount(
 	goto done;
     }
 
-    zf = Tcl_GetHashValue(hPtr);
+    zf = (ZipFile *)Tcl_GetHashValue(hPtr);
     if (zf->numOpen > 0) {
 	ZIPFS_ERROR(interp, "filesystem is busy");
 	ret = TCL_ERROR;
@@ -1888,6 +1888,8 @@ ZipFSMountObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		 "?mountpoint? ?zipfile? ?password?");
@@ -1925,6 +1927,7 @@ ZipFSMountBufferObjCmd(
     const char *mountPoint;	/* Mount point path. */
     unsigned char *data;
     int length;
+    (void)dummy;
 
     if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
@@ -1974,6 +1977,10 @@ ZipFSRootObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
     Tcl_SetObjResult(interp, Tcl_NewStringObj(ZIPFS_VOLUME, -1));
     return TCL_OK;
 }
@@ -2001,6 +2008,8 @@ ZipFSUnmountObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
 	return TCL_ERROR;
@@ -2034,6 +2043,7 @@ ZipFSMkKeyObjCmd(
 {
     int len, i = 0;
     char *pw, passBuf[264];
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "password");
@@ -2373,7 +2383,7 @@ ZipAddFile(
 	return TCL_ERROR;
     }
 
-    z = ckalloc(sizeof(ZipEntry));
+    z = (ZipEntry *)ckalloc(sizeof(ZipEntry));
     Tcl_SetHashValue(hPtr, z);
     z->name = NULL;
     z->tnext = NULL;
@@ -2388,7 +2398,7 @@ ZipAddFile(
     z->numCompressedBytes = nbytecompr;
     z->compressMethod = compMeth;
     z->data = NULL;
-    z->name = Tcl_GetHashKey(fileHash, hPtr);
+    z->name = (char *)Tcl_GetHashKey(fileHash, hPtr);
     z->next = NULL;
 
     /*
@@ -2563,7 +2573,7 @@ ZipFSMkZipOrImgObjCmd(
 	WriteLock();
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 		hPtr = Tcl_NextHashEntry(&search)) {
-	    zf = Tcl_GetHashValue(hPtr);
+	    zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	    if (strcmp(zf->name, imgName) == 0) {
 		isMounted = 1;
 		zf->numOpen++;
@@ -2724,7 +2734,7 @@ ZipFSMkZipOrImgObjCmd(
 	if (!hPtr) {
 	    continue;
 	}
-	z = Tcl_GetHashValue(hPtr);
+	z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 	len = strlen(z->name);
 	ZipWriteInt(buf + ZIP_CENTRAL_SIG_OFFS, ZIP_CENTRAL_HEADER_SIG);
 	ZipWriteShort(buf + ZIP_CENTRAL_VERSIONMADE_OFFS, ZIP_MIN_VERSION);
@@ -2779,7 +2789,7 @@ ZipFSMkZipOrImgObjCmd(
     Tcl_DecrRefCount(list);
     for (hPtr = Tcl_FirstHashEntry(&fileHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	z = Tcl_GetHashValue(hPtr);
+	z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 	ckfree(z);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -2811,6 +2821,8 @@ ZipFSMkZipObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc < 3 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "outfile indir ?strip? ?password?");
 	return TCL_ERROR;
@@ -2831,6 +2843,8 @@ ZipFSLMkZipObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "outfile inlist ?password?");
 	return TCL_ERROR;
@@ -2868,6 +2882,8 @@ ZipFSMkImgObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc < 3 || objc > 6) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"outfile indir ?strip? ?password? ?infile?");
@@ -2889,6 +2905,8 @@ ZipFSLMkImgObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc < 3 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "outfile inlist ?password infile?");
 	return TCL_ERROR;
@@ -2930,6 +2948,7 @@ ZipFSCanonicalObjCmd(
     char *filename = NULL;
     char *result;
     Tcl_DString dPath;
+    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
@@ -2985,6 +3004,7 @@ ZipFSExistsObjCmd(
     char *filename;
     int exists;
     Tcl_DString ds;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
@@ -3037,6 +3057,7 @@ ZipFSInfoObjCmd(
 {
     char *filename;
     ZipEntry *z;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
@@ -3090,6 +3111,7 @@ ZipFSListObjCmd(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *result = Tcl_GetObjResult(interp);
+    (void)dummy;
 
     if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?(-glob|-regexp)? ?pattern?");
@@ -3119,7 +3141,7 @@ ZipFSListObjCmd(
     if (pattern) {
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = Tcl_GetHashValue(hPtr);
+	    ZipEntry *z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	    if (Tcl_StringMatch(z->name, pattern)) {
 		Tcl_ListObjAppendElement(interp, result,
@@ -3129,7 +3151,7 @@ ZipFSListObjCmd(
     } else if (regexp) {
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = Tcl_GetHashValue(hPtr);
+	    ZipEntry *z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	    if (Tcl_RegExpExec(interp, regexp, z->name, z->name)) {
 		Tcl_ListObjAppendElement(interp, result,
@@ -3139,7 +3161,7 @@ ZipFSListObjCmd(
     } else {
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = Tcl_GetHashValue(hPtr);
+	    ZipEntry *z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	    Tcl_ListObjAppendElement(interp, result,
 		    Tcl_NewStringObj(z->name, -1));
@@ -3282,6 +3304,10 @@ ZipFSTclLibraryObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
     if (!Tcl_IsSafe(interp)) {
 	Tcl_Obj *pResult = TclZipfs_TclLibrary();
 
@@ -3314,7 +3340,8 @@ ZipChannelClose(
     void *instanceData,
     Tcl_Interp *dummy)		/* Current interpreter. */
 {
-    ZipChannel *info = instanceData;
+    ZipChannel *info = (ZipChannel *)instanceData;
+    (void)dummy;
 
     if (info->iscompr && info->ubuf) {
 	ckfree(info->ubuf);
@@ -3326,7 +3353,7 @@ ZipChannelClose(
     }
     if (info->isWriting) {
 	ZipEntry *z = info->zipEntryPtr;
-	unsigned char *newdata = attemptckrealloc(info->ubuf, info->numRead);
+	unsigned char *newdata = (unsigned char *)attemptckrealloc(info->ubuf, info->numRead);
 
 	if (newdata) {
 	    if (z->data) {
@@ -3574,6 +3601,9 @@ ZipChannelWatchChannel(
     void *instanceData,
     int mask)
 {
+    (void)instanceData;
+    (void)mask;
+
     return;
 }
 
@@ -3600,6 +3630,10 @@ ZipChannelGetFile(
     int direction,
     void **handlePtr)
 {
+    (void)instanceData;
+    (void)direction;
+    (void)handlePtr;
+
     return TCL_ERROR;
 }
 
@@ -3631,6 +3665,7 @@ ZipChannelOpen(
     ZipChannel *info;
     int i, ch, trunc, wr, flags = 0;
     char cname[128];
+    (void)permissions;
 
     if ((mode & O_APPEND)
 	    || ((ZipFS.wrmax <= 0) && (mode & (O_WRONLY | O_RDWR)))) {
@@ -3687,7 +3722,7 @@ ZipChannelOpen(
     } else {
 	flags = TCL_WRITABLE;
     }
-    info = attemptckalloc(sizeof(ZipChannel));
+    info = (ZipChannel *)attemptckalloc(sizeof(ZipChannel));
     if (!info) {
 	ZIPFS_ERROR(interp, "out of memory");
 	if (interp) {
@@ -3705,7 +3740,7 @@ ZipChannelOpen(
 	info->maxWrite = ZipFS.wrmax;
 	info->iscompr = 0;
 	info->isEncrypted = 0;
-	info->ubuf = attemptckalloc(info->maxWrite);
+	info->ubuf = (unsigned char *)attemptckalloc(info->maxWrite);
 	if (!info->ubuf) {
 	merror0:
 	    if (info->ubuf) {
@@ -3763,7 +3798,7 @@ ZipChannelOpen(
 		    unsigned int j;
 
 		    stream.avail_in -= 12;
-		    cbuf = attemptckalloc(stream.avail_in);
+		    cbuf = (unsigned char *)attemptckalloc(stream.avail_in);
 		    if (!cbuf) {
 			goto merror0;
 		    }
@@ -3863,7 +3898,7 @@ ZipChannelOpen(
 	    stream.avail_in = z->numCompressedBytes;
 	    if (info->isEncrypted) {
 		stream.avail_in -= 12;
-		ubuf = attemptckalloc(stream.avail_in);
+		ubuf = (unsigned char *)attemptckalloc(stream.avail_in);
 		if (!ubuf) {
 		    info->ubuf = NULL;
 		    goto merror;
@@ -3876,7 +3911,7 @@ ZipChannelOpen(
 	    } else {
 		stream.next_in = info->ubuf;
 	    }
-	    stream.next_out = info->ubuf = attemptckalloc(info->numBytes);
+	    stream.next_out = info->ubuf = (unsigned char *)attemptckalloc(info->numBytes);
 	    if (!info->ubuf) {
 	    merror:
 		if (ubuf) {
@@ -4153,6 +4188,8 @@ static Tcl_Obj *
 ZipFSFilesystemSeparatorProc(
     Tcl_Obj *pathPtr)
 {
+    (void)pathPtr;
+
     return Tcl_NewStringObj("/", -1);
 }
 
@@ -4190,6 +4227,7 @@ ZipFSMatchInDirectoryProc(
     size_t len;
     char *pat, *prefix, *path;
     Tcl_DString dsPref;
+    (void)dummy;
 
     if (!normPathPtr) {
 	return -1;
@@ -4237,7 +4275,7 @@ ZipFSMatchInDirectoryProc(
 	}
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 		hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipFile *zf = Tcl_GetHashValue(hPtr);
+	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 
 	    if (zf->mountPointLen == 0) {
 		ZipEntry *z;
@@ -4288,7 +4326,7 @@ ZipFSMatchInDirectoryProc(
     if (!pattern || (pattern[0] == '\0')) {
 	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
 	if (hPtr) {
-	    ZipEntry *z = Tcl_GetHashValue(hPtr);
+	    ZipEntry *z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	    if ((dirOnly < 0) || (!dirOnly && !z->isDirectory)
 		    || (dirOnly && z->isDirectory)) {
@@ -4308,7 +4346,7 @@ ZipFSMatchInDirectoryProc(
     }
 
     l = strlen(pattern);
-    pat = ckalloc(len + l + 2);
+    pat = (char *)ckalloc(len + l + 2);
     memcpy(pat, path, len);
     while ((len > 1) && (pat[len - 1] == '/')) {
 	--len;
@@ -4321,7 +4359,7 @@ ZipFSMatchInDirectoryProc(
     scnt = CountSlashes(pat);
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	ZipEntry *z = Tcl_GetHashValue(hPtr);
+	ZipEntry *z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
 		|| (!dirOnly && z->isDirectory))) {
@@ -4375,6 +4413,7 @@ ZipFSPathInFilesystemProc(
     int ret = -1;
     size_t len;
     char *path;
+    (void)dummy;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
@@ -4397,7 +4436,7 @@ ZipFSPathInFilesystemProc(
 
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	ZipFile *zf = Tcl_GetHashValue(hPtr);
+	ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
 	    ZipEntry *z;
@@ -4476,6 +4515,9 @@ ZipFSFileAttrStringsProc(
 	"-permissions",
 	NULL,
     };
+    (void)pathPtr;
+    (void)objPtrRef;
+
     return attrs;
 }
 
@@ -4577,6 +4619,10 @@ ZipFSFileAttrsSetProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj *objPtr)
 {
+    (void)index;
+    (void)pathPtr;
+    (void)objPtr;
+
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unsupported operation", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ZIPFS", "UNSUPPORTED_OP", NULL);
@@ -4600,6 +4646,7 @@ static Tcl_Obj *
 ZipFSFilesystemPathTypeProc(
     Tcl_Obj *pathPtr)
 {
+    (void)pathPtr;
     return Tcl_NewStringObj("zip", -1);
 }
 
@@ -4892,10 +4939,11 @@ TclZipfs_AppHook(
     char *archive;
 
 #ifdef _WIN32
+    (void)argvPtr;
     Tcl_FindExecutable(NULL);
-#else /* !_WIN32 */
+#else
     Tcl_FindExecutable((*argvPtr)[0]);
-#endif /* _WIN32 */
+#endif
     archive = (char *) Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
@@ -4995,6 +5043,8 @@ TclZipfs_AppHook(
 #ifdef _WIN32
 	Tcl_DStringFree(&ds);
 #endif /* _WIN32 */
+#else
+	(void)argcPtr;
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
     return TCL_OK;

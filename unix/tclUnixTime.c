@@ -58,7 +58,7 @@ static void		NativeGetTime(Tcl_Time *timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -511,6 +511,8 @@ NativeScaleTime(
     Tcl_Time *timePtr,
     ClientData clientData)
 {
+    (void)timePtr;
+    (void)clientData;
     /* Native scale is 1:1. Nothing is done */
 }
 
@@ -534,9 +536,10 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    ClientData dummy)
 {
     struct timeval tv;
+    (void)dummy;
 
     (void) gettimeofday(&tv, NULL);
     timePtr->sec = tv.tv_sec;
@@ -578,7 +581,7 @@ SetTZIfNecessary(void)
 	} else {
 	    ckfree(lastTZ);
 	}
-	lastTZ = ckalloc(strlen(newTZ) + 1);
+	lastTZ = (char *)ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);
     }
     Tcl_MutexUnlock(&tmMutex);
@@ -603,8 +606,9 @@ SetTZIfNecessary(void)
 
 static void
 CleanupMemory(
-    ClientData ignored)
+    ClientData dummy)
 {
+    (void)dummy;
     ckfree(lastTZ);
 }
 #endif /* TCL_NO_DEPRECATED */

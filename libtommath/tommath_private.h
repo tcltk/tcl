@@ -194,6 +194,9 @@ MP_STATIC_ASSERT(prec_geq_min_prec, MP_PREC >= MP_MIN_PREC)
 /* random number source */
 extern MP_PRIVATE mp_err(*s_mp_rand_source)(void *out, size_t size);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* lowlevel functions, do not call! */
 MP_PRIVATE mp_bool s_mp_get_bit(const mp_int *a, unsigned int b);
 MP_PRIVATE mp_err s_mp_add(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
@@ -248,6 +251,10 @@ MP_DEPRECATED(s_mp_karatsuba_sqr) mp_err mp_karatsuba_sqr(const mp_int *a, mp_in
 MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 #undef mp_sqr
