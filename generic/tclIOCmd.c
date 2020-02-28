@@ -967,7 +967,7 @@ Tcl_ExecObjCmd(
 	 */
 
 	TclGetAndDetachPids(interp, chan);
-	if (Tcl_Close(interp, chan) != TCL_OK) {
+	if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -999,7 +999,7 @@ Tcl_ExecObjCmd(
      * string.
      */
 
-    result = Tcl_Close(interp, chan);
+    result = Tcl_CloseEx(interp, chan, 0);
     Tcl_AppendObjToObj(resultPtr, Tcl_GetObjResult(interp));
 
     /*
@@ -1405,7 +1405,7 @@ AcceptCallbackProc(
 	 * the client socket - just close it.
 	 */
 
-	Tcl_Close(NULL, chan);
+	Tcl_CloseEx(NULL, chan, 0);
     }
 }
 

@@ -76,7 +76,7 @@ static int		FileBlockProc(ClientData instanceData, int mode);
 static void		FileChannelExitHandler(ClientData clientData);
 static void		FileCheckProc(ClientData clientData, int flags);
 static int		FileCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
 static int		FileGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
@@ -85,8 +85,6 @@ static int		FileInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static int		FileSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCode);
 static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode);
 static void		FileSetupProc(ClientData clientData, int flags);
@@ -105,15 +103,15 @@ static int		NativeIsComPort(const WCHAR *nativeName);
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-    FileSeekProc,		/* Seek proc. */
+	NULL,
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
     FileGetHandleProc,		/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+    FileCloseProc,		/* close2proc. */
     FileBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -390,13 +388,18 @@ FileBlockProc(
 static int
 FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
-    Tcl_Interp *dummy)		/* Not used. */
+    Tcl_Interp *dummy,		/* Not used. */
+    int flags)
 {
     FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Remove the file from the watch list.
@@ -441,84 +444,6 @@ FileCloseProc(
     }
     Tcl_Free(fileInfoPtr);
     return errorCode;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FileSeekProc --
- *
- *	Seeks on a file-based channel. Returns the new position.
- *
- * Results:
- *	-1 if failed, the new position if successful. If failed, it also sets
- *	*errorCodePtr to the error code.
- *
- * Side effects:
- *	Moves the location at which the channel will be accessed in future
- *	operations.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-FileSeekProc(
-    ClientData instanceData,	/* File state. */
-    long offset,		/* Offset to seek to. */
-    int mode,			/* Relative to where should we seek? */
-    int *errorCodePtr)		/* To store error code. */
-{
-    FileInfo *infoPtr = (FileInfo *)instanceData;
-    LONG newPos, newPosHigh, oldPos, oldPosHigh;
-    DWORD moveMethod;
-
-    *errorCodePtr = 0;
-    if (mode == SEEK_SET) {
-	moveMethod = FILE_BEGIN;
-    } else if (mode == SEEK_CUR) {
-	moveMethod = FILE_CURRENT;
-    } else {
-	moveMethod = FILE_END;
-    }
-
-    /*
-     * Save our current place in case we need to roll-back the seek.
-     */
-
-    oldPosHigh = 0;
-    oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == (LONG) INVALID_SET_FILE_POINTER) {
-	DWORD winError = GetLastError();
-
-	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
-	    *errorCodePtr = errno;
-	    return -1;
-	}
-    }
-
-    newPosHigh = (offset < 0 ? -1 : 0);
-    newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
-    if (newPos == (LONG) INVALID_SET_FILE_POINTER) {
-	DWORD winError = GetLastError();
-
-	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
-	    *errorCodePtr = errno;
-	    return -1;
-	}
-    }
-
-    /*
-     * Check for expressability in our return type, and roll-back otherwise.
-     */
-
-    if (newPosHigh != 0) {
-	*errorCodePtr = EOVERFLOW;
-	SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
-	return -1;
-    }
-    return (int) newPos;
 }
 
 /*
@@ -1320,7 +1245,7 @@ TclpGetDefaultStdChannel(
     if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\032 {}")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
-	Tcl_Close(NULL, channel);
+	Tcl_CloseEx(NULL, channel, 0);
 	return (Tcl_Channel) NULL;
     }
     return channel;

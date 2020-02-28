@@ -160,7 +160,7 @@ typedef struct {
 
 static Tcl_CmdDeleteProc	ZlibStreamCmdDelete;
 static Tcl_DriverBlockModeProc	ZlibTransformBlockMode;
-static Tcl_DriverCloseProc	ZlibTransformClose;
+static Tcl_DriverClose2Proc	ZlibTransformClose;
 static Tcl_DriverGetHandleProc	ZlibTransformGetHandle;
 static Tcl_DriverGetOptionProc	ZlibTransformGetOption;
 static Tcl_DriverHandlerProc	ZlibTransformEventHandler;
@@ -205,7 +205,7 @@ static void		ZlibTransformTimerRun(void *clientData);
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
     TCL_CHANNEL_VERSION_5,
-    ZlibTransformClose,
+    NULL,
     ZlibTransformInput,
     ZlibTransformOutput,
     NULL,			/* seekProc */
@@ -213,7 +213,7 @@ static const Tcl_ChannelType zlibChannelType = {
     ZlibTransformGetOption,
     ZlibTransformWatch,
     ZlibTransformGetHandle,
-    NULL,			/* close2Proc */
+	ZlibTransformClose,			/* close2Proc */
     ZlibTransformBlockMode,
     NULL,			/* flushProc */
     ZlibTransformEventHandler,
@@ -2905,11 +2905,16 @@ ZlibStreamHeaderCmd(
 static int
 ZlibTransformClose(
     void *instanceData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
     int e, result = TCL_OK;
     size_t written;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Delete the support timer.

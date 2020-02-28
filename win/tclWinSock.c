@@ -280,7 +280,7 @@ static Tcl_DriverGetHandleProc	TcpGetHandleProc;
 static const Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TcpCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -2108,11 +2108,11 @@ Tcl_OpenTcpClient(
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
 	    "-translation", "auto crlf")) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     } else if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
 	    "-eofchar", "")) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;
@@ -2360,7 +2360,7 @@ Tcl_OpenTcpServerEx(
 	SendSelectMessage(tsdPtr, SELECT, statePtr);
 	if (Tcl_SetChannelOption(interp, statePtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-	    Tcl_Close(NULL, statePtr->channel);
+	    Tcl_CloseEx(NULL, statePtr->channel, 0);
 	    return NULL;
 	}
 	return statePtr->channel;
@@ -2433,12 +2433,12 @@ TcpAccept(
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, newInfoPtr->channel);
+	Tcl_CloseEx(NULL, newInfoPtr->channel, 0);
 	return;
     }
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-	Tcl_Close(NULL, newInfoPtr->channel);
+	Tcl_CloseEx(NULL, newInfoPtr->channel, 0);
 	return;
     }
 

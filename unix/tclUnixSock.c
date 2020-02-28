@@ -157,7 +157,7 @@ static void		WrapNotify(void *clientData, int mask);
 static const Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TcpCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -1419,7 +1419,7 @@ Tcl_OpenTcpClient(
             statePtr, TCL_READABLE | TCL_WRITABLE);
     if (Tcl_SetChannelOption(interp, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;
@@ -1486,7 +1486,7 @@ TclpMakeTcpClientChannelMode(
 	    statePtr, mode);
     if (Tcl_SetChannelOption(NULL, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;

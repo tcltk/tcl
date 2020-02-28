@@ -69,7 +69,7 @@ static int		SetupStdFile(TclFile file, int type);
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TCL_CLOSE2PROC,		/* Close proc. */
+    NULL,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */

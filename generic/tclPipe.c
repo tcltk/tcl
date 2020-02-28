@@ -351,7 +351,7 @@ TclCleanupChildren(
 		Tcl_DecrRefCount(objPtr);
 	    }
 	}
-	Tcl_Close(NULL, errorChan);
+	Tcl_CloseEx(NULL, errorChan, 0);
     }
 
     /*

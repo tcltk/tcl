@@ -250,7 +250,7 @@ Tcl_SourceRCFile(
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
 	    if (c != NULL) {
-		Tcl_Close(NULL, c);
+		Tcl_CloseEx(NULL, c, 0);
 		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {

@@ -1226,10 +1226,6 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
 
-#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
-#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
-#define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
-#define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
 #define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
@@ -1298,7 +1294,7 @@ typedef struct Tcl_ChannelType {
 				/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;
 				/* Function to call to close the channel, or
-				 * TCL_CLOSE2PROC if the close2Proc should be
+				 * NULL or TCL_CLOSE2PROC if the close2Proc should be
 				 * used instead. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
