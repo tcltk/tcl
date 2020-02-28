@@ -1585,9 +1585,9 @@ test assemble-15.7 {listIndexImm} {
     }
     -result c
 }
-test assemble-15.8 {listIndexImm} {
+test assemble-15.8 {listIndexImm} -constraints nonPortable -body {
     assemble {push {a b c}; listIndexImm end+2}
-} {}
+} -result {}
 test assemble-15.9 {listIndexImm} {
     assemble {push {a b c}; listIndexImm -1-1}
 } {}

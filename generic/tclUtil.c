@@ -3694,6 +3694,11 @@ GetWideForIndex(
     if (code == TCL_OK) {
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+	    if ( *(Tcl_WideInt *)cd > (Tcl_WideInt)(endValue + 1)) {
+		goto parseError2;
+	    }
+#endif
 	    *widePtr = *(Tcl_WideInt *)cd;
 	    return TCL_OK;
 	}
@@ -3704,12 +3709,24 @@ GetWideForIndex(
 
 	/* objPtr holds an integer outside the signed wide range */
 	/* Truncate to the signed wide range. */
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+	if (!mp_isneg((mp_int *)cd)) {
+	    goto parseError2;
+	}
+	*widePtr = WIDE_MIN;
+#else
 	*widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
-    return TCL_OK;
+#endif
+	return TCL_OK;
     }
 
     /* objPtr does not hold a number, check the end+/- format... */
     if (GetEndOffsetFromObj(objPtr, endValue, widePtr) == TCL_OK) {
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+	if ( *widePtr > (Tcl_WideInt)(endValue + 1)) {
+		goto parseError2;
+	}
+#endif
 	return TCL_OK;
     }
 
@@ -3813,15 +3830,23 @@ GetWideForIndex(
 
 		if (numType == TCL_NUMBER_INT) {
 		    /* sum holds an integer in the signed wide range */
-			*widePtr = *(Tcl_WideInt *)cd;
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+		    if ( *(Tcl_WideInt *)cd > (Tcl_WideInt)(endValue + 1)) {
+			goto parseError2;
+		    }
+#endif
+		    *widePtr = *(Tcl_WideInt *)cd;
 		} else {
 		    /* sum holds an integer outside the signed wide range */
 		    /* Truncate to the signed wide range. */
-		    if (mp_isneg((mp_int *)cd)) {
-			*widePtr = WIDE_MIN;
-		    } else {
-			*widePtr = WIDE_MAX;
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+		    if (!mp_isneg((mp_int *)cd)) {
+			goto parseError2;
 		    }
+		    *widePtr = WIDE_MIN;
+#else
+		    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+#endif
 		}
 		Tcl_DecrRefCount(sum);
 	    }
@@ -3832,7 +3857,7 @@ GetWideForIndex(
     /* Report a parse error. */
   parseError:
     if (interp != NULL) {
-        char * bytes = TclGetString(objPtr);
+        const char * bytes = TclGetString(objPtr);
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "bad index \"%s\": must be integer?[+-]integer? or"
                 " end?[+-]integer?", bytes));
@@ -3843,6 +3868,18 @@ GetWideForIndex(
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
     }
     return TCL_ERROR;
+
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+    /* Report a "index out of range" error-message. */
+  parseError2:
+    if (interp != NULL) {
+        const char *bytes = TclGetString(objPtr);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "index \"%s\" out of range", bytes));
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", NULL);
+    }
+    return TCL_ERROR;
+#endif
 }
 
 /*
