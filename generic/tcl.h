@@ -265,7 +265,7 @@ typedef void *ClientData;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32)
+#   if defined(_MSC_VER) || defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)

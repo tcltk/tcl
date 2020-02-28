@@ -180,8 +180,10 @@ FileInit(void)
 
 static void
 FileChannelExitHandler(
-    ClientData clientData)	/* Old window proc */
+    ClientData dummy)	/* Old window proc */
 {
+    (void)dummy;
+
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
 
@@ -204,12 +206,13 @@ FileChannelExitHandler(
 
 void
 FileSetupProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -247,12 +250,13 @@ FileSetupProc(
 
 static void
 FileCheckProc(
-    ClientData data,		/* Not used. */
+    ClientData dummy,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -267,7 +271,7 @@ FileCheckProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !TEST_FLAG(infoPtr->flags, FILE_PENDING)) {
 	    SET_FLAG(infoPtr->flags, FILE_PENDING);
-	    evPtr = Tcl_Alloc(sizeof(FileEvent));
+	    evPtr = (FileEvent *)Tcl_Alloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -350,7 +354,7 @@ FileBlockProc(
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
 
     /*
      * Files on Windows can not be switched between blocking and nonblocking,
@@ -386,12 +390,13 @@ FileBlockProc(
 static int
 FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
-    Tcl_Interp *interp)		/* Not used. */
+    Tcl_Interp *dummy)		/* Not used. */
 {
-    FileInfo *fileInfoPtr = instanceData;
+    FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
+    (void)dummy;
 
     /*
      * Remove the file from the watch list.
@@ -463,7 +468,7 @@ FileSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
     DWORD moveMethod;
 
@@ -541,7 +546,7 @@ FileWideSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD moveMethod;
     LONG newPos, newPosHigh;
 
@@ -591,7 +596,7 @@ FileTruncateProc(
     ClientData instanceData,	/* File state. */
     Tcl_WideInt length)		/* Length to truncate at. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
 
     /*
@@ -669,7 +674,7 @@ FileInputProc(
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD bytesRead;
 
     *errorCode = 0;
@@ -724,7 +729,7 @@ FileOutputProc(
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD bytesWritten;
 
     *errorCode = 0;
@@ -771,7 +776,7 @@ FileWatchProc(
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     Tcl_Time blockTime = { 0, 0 };
 
     /*
@@ -809,7 +814,7 @@ FileGetHandleProc(
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
     ClientData *handlePtr)	/* Where to store the handle.  */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
 
     if (!TEST_FLAG(direction, infoPtr->validMask)) {
 	return TCL_ERROR;
@@ -854,7 +859,7 @@ TclpOpenFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
 
-    nativeName = Tcl_FSGetNativePath(pathPtr);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1365,7 +1370,7 @@ TclWinOpenFileChannel(
 	}
     }
 
-    infoPtr = Tcl_Alloc(sizeof(FileInfo));
+    infoPtr = (FileInfo *)Tcl_Alloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global
@@ -1456,7 +1461,7 @@ FileThreadActionProc(
     int action)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
 	infoPtr->nextPtr = tsdPtr->firstFilePtr;
