@@ -22,13 +22,15 @@
 static int		TransformBlockModeProc(ClientData instanceData,
 			    int mode);
 static int		TransformCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		TransformInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		TransformOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 static int		TransformSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCodePtr);
+#endif
 static int		TransformSetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
@@ -119,15 +121,19 @@ static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 static const Tcl_ChannelType transformChannelType = {
     "transform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TransformCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     TransformInputProc,		/* Input proc. */
     TransformOutputProc,	/* Output proc. */
+#ifndef TCL_NO_DEPRECATED
     TransformSeekProc,		/* Seek proc. */
+#else
+    NULL,			/* Seek proc. */
+#endif
     TransformSetOptionProc,	/* Set option proc. */
     TransformGetOptionProc,	/* Get option proc. */
     TransformWatchProc,		/* Initialize notifier. */
     TransformGetFileHandleProc,	/* Get OS handles out of channel. */
-    NULL,			/* close2proc */
+    TransformCloseProc,		/* close2proc */
     TransformBlockModeProc,	/* Set blocking/nonblocking mode.*/
     NULL,			/* Flush proc. */
     TransformNotifyProc,	/* Handling of events bubbling up. */
@@ -533,9 +539,14 @@ TransformBlockModeProc(
 static int
 TransformCloseProc(
     ClientData instanceData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Important: In this procedure 'dataPtr->self' already points to the
@@ -828,6 +839,7 @@ TransformOutputProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 TransformSeekProc(
     ClientData instanceData,	/* The channel to manipulate. */
@@ -874,6 +886,7 @@ TransformSeekProc(
     return parentSeekProc(Tcl_GetChannelInstanceData(parent), offset, mode,
 	    errorCodePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -905,7 +918,9 @@ TransformWideSeekProc(
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
     const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
+#ifndef TCL_NO_DEPRECATED
     Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
+#endif
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
     ClientData parentData = Tcl_GetChannelInstanceData(parent);
@@ -918,9 +933,14 @@ TransformWideSeekProc(
 
 	if (parentWideSeekProc != NULL) {
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
+	} else if (parentSeekProc) {
+	    return parentSeekProc(parentData, 0, mode, errorCodePtr);
+#endif
+	} else {
+	    *errorCodePtr = EINVAL;
+	    return -1;
 	}
-
-	return parentSeekProc(parentData, 0, mode, errorCodePtr);
     }
 
     /*
@@ -948,25 +968,29 @@ TransformWideSeekProc(
      * If we have a wide seek capability, we should stick with that.
      */
 
-    if (parentWideSeekProc != NULL) {
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
-    }
+    if (parentWideSeekProc == NULL) {
+	/*
+	 * We're transferring to narrow seeks at this point; this is a bit complex
+	 * because we have to check whether the seek is possible first (i.e.
+	 * whether we are losing information in truncating the bits of the
+	 * offset). Luckily, there's a defined error for what happens when trying
+	 * to go out of the representable range.
+	 */
 
-    /*
-     * We're transferring to narrow seeks at this point; this is a bit complex
-     * because we have to check whether the seek is possible first (i.e.
-     * whether we are losing information in truncating the bits of the
-     * offset). Luckily, there's a defined error for what happens when trying
-     * to go out of the representable range.
-     */
+#ifndef TCL_NO_DEPRECATED
+	if (offset<LONG_MIN || offset>LONG_MAX) {
+	    *errorCodePtr = EOVERFLOW;
+	    return -1;
+	}
 
-    if (offset<LONG_MIN || offset>LONG_MAX) {
-	*errorCodePtr = EOVERFLOW;
+	return parentSeekProc(parentData, offset,
+		mode, errorCodePtr);
+#else
+	*errorCodePtr = EINVAL;
 	return -1;
+#endif
     }
-
-    return parentSeekProc(parentData, offset,
-	    mode, errorCodePtr);
+	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*

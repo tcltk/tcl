@@ -32,7 +32,7 @@
  */
 
 static int		ReflectClose(ClientData clientData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ReflectInput(ClientData clientData, char *buf,
 			    int toRead, int *errorCodePtr);
 static int		ReflectOutput(ClientData clientData, const char *buf,
@@ -41,8 +41,10 @@ static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
 static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+#ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
+#endif
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -60,15 +62,19 @@ static int		ReflectNotify(ClientData clientData, int mask);
 static const Tcl_ChannelType tclRTransformType = {
     "tclrtransform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel. */
-    ReflectClose,		/* Close channel, clean instance data. */
+    TCL_CLOSE2PROC,		/* Close channel, clean instance data. */
     ReflectInput,		/* Handle read request. */
     ReflectOutput,		/* Handle write request. */
+#ifndef TCL_NO_DEPRECATED
     ReflectSeek,		/* Move location of access point. */
+#else
+	NULL,			/* Move location of access point. */
+#endif
     ReflectSetOption,		/* Set options. */
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
     ReflectHandle,		/* Get OS handle from the channel. */
-    NULL,			/* No close2 support. NULL'able. */
+	ReflectClose,		/* No close2 support. NULL'able. */
     ReflectBlock,		/* Set blocking/nonblocking. */
     NULL,			/* Flush channel. Not used by core.
 				 * NULL'able. */
@@ -881,7 +887,8 @@ UnmarshallErrorResult(
 static int
 ReflectClose(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    int flags)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
     int errorCode, errorCodeSet = 0;
@@ -891,6 +898,10 @@ ReflectClose(
 				/* Map of reflected transforms with handlers
 				 * in this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (TclInThreadExit()) {
 	/*
@@ -1329,18 +1340,6 @@ ReflectSeekWide(
     Channel *parent = (Channel *) rtPtr->parent;
     Tcl_WideInt curPos;		/* Position on the device. */
 
-    Tcl_DriverSeekProc *seekProc =
-	    Tcl_ChannelSeekProc(Tcl_GetChannelType(rtPtr->parent));
-
-    /*
-     * Fail if the parent channel is not seekable.
-     */
-
-    if (seekProc == NULL) {
-	Tcl_SetErrno(EINVAL);
-	return -1;
-    }
-
     /*
      * Check if we can leave out involving the Tcl level, i.e. transformation
      * handler. This is true for tell requests, and transformations which
@@ -1384,16 +1383,23 @@ ReflectSeekWide(
      * non-NULL...
      */
 
-    if (Tcl_ChannelWideSeekProc(parent->typePtr) != NULL) {
-	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-		seekMode, errorCodePtr);
-    } else if (offset < LONG_MIN || offset > LONG_MAX) {
-	*errorCodePtr = EOVERFLOW;
+    if (Tcl_ChannelWideSeekProc(parent->typePtr) == NULL) {
+#ifndef TCL_NO_DEPRECATED
+	if (offset < LONG_MIN || offset > LONG_MAX) {
+	    *errorCodePtr = EOVERFLOW;
+	    curPos = -1;
+	} else {
+	    curPos = Tcl_ChannelSeekProc(parent->typePtr)(
+	    parent->instanceData, offset, seekMode,
+	    errorCodePtr);
+	}
+#else
+	*errorCodePtr = EINVAL;
 	curPos = -1;
+#endif
     } else {
-	curPos = Tcl_ChannelSeekProc(parent->typePtr)(
-		parent->instanceData, offset, seekMode,
-		errorCodePtr);
+    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
+    		seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
@@ -1404,6 +1410,7 @@ ReflectSeekWide(
     return curPos;
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 ReflectSeek(
     ClientData clientData,
@@ -1421,6 +1428,7 @@ ReflectSeek(
     return ReflectSeekWide(clientData, offset, seekMode,
 	    errorCodePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

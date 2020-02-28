@@ -76,7 +76,7 @@ static int		FileBlockProc(ClientData instanceData, int mode);
 static void		FileChannelExitHandler(ClientData clientData);
 static void		FileCheckProc(ClientData clientData, int flags);
 static int		FileCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
 static int		FileGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
@@ -85,8 +85,10 @@ static int		FileInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+#ifndef TCL_NO_DEPRECATED
 static int		FileSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCode);
+#endif
 static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode);
 static void		FileSetupProc(ClientData clientData, int flags);
@@ -105,15 +107,19 @@ static int		NativeIsComPort(const WCHAR *nativeName);
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
+#ifndef TCL_NO_DEPRECATED
     FileSeekProc,		/* Seek proc. */
+#else
+	NULL,
+#endif
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
     FileGetHandleProc,		/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+    FileCloseProc,		/* close2proc. */
     FileBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -390,13 +396,18 @@ FileBlockProc(
 static int
 FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
-    Tcl_Interp *dummy)		/* Not used. */
+    Tcl_Interp *dummy,		/* Not used. */
+    int flags)
 {
     FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Remove the file from the watch list.
@@ -460,7 +471,7 @@ FileCloseProc(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 static int
 FileSeekProc(
     ClientData instanceData,	/* File state. */
@@ -520,6 +531,7 @@ FileSeekProc(
     }
     return (int) newPos;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

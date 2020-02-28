@@ -385,13 +385,15 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 static void		ZipfsExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		ZipChannelGetFile(void *instanceData,
 			    int direction, void **handlePtr);
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
+#ifndef TCL_NO_DEPRECATED
 static int		ZipChannelSeek(void *instanceData, long offset,
 			    int mode, int *errloc);
+#endif
 static Tcl_WideInt ZipChannelWideSeek(void *instanceData, Tcl_WideInt offset,
 			    int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
@@ -444,15 +446,19 @@ static const Tcl_Filesystem zipfsFilesystem = {
 static Tcl_ChannelType ZipChannelType = {
     "zip",		    /* Type name. */
     TCL_CHANNEL_VERSION_5,
-    ZipChannelClose,	    /* Close channel, clean instance data */
+    TCL_CLOSE2PROC,	    /* Close channel, clean instance data */
     ZipChannelRead,	    /* Handle read request */
     ZipChannelWrite,	    /* Handle write request */
+#ifndef TCL_NO_DEPRECATED
     ZipChannelSeek,	    /* Move location of access point, NULL'able */
+#else
+	NULL,	    /* Move location of access point, NULL'able */
+#endif
     NULL,		    /* Set options, NULL'able */
     NULL,		    /* Get options, NULL'able */
     ZipChannelWatchChannel, /* Initialize notifier */
     ZipChannelGetFile,	    /* Get OS handle from the channel */
-    NULL,		    /* 2nd version of close channel, NULL'able */
+	ZipChannelClose,	    /* 2nd version of close channel, NULL'able */
     NULL,		    /* Set blocking mode for raw channel, NULL'able */
     NULL,		    /* Function to flush channel, NULL'able */
     NULL,		    /* Function to handle event, NULL'able */
@@ -3338,10 +3344,15 @@ ZipFSTclLibraryObjCmd(
 static int
 ZipChannelClose(
     void *instanceData,
-    Tcl_Interp *dummy)		/* Current interpreter. */
+    Tcl_Interp *dummy,		/* Current interpreter. */
+    int flags)
 {
     ZipChannel *info = (ZipChannel *)instanceData;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     if (info->iscompr && info->ubuf) {
 	ckfree(info->ubuf);
@@ -3569,6 +3580,7 @@ ZipChannelWideSeek(
     return info->numRead;
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 ZipChannelSeek(
     void *instanceData,
@@ -3578,6 +3590,7 @@ ZipChannelSeek(
 {
     return ZipChannelWideSeek(instanceData, offset, mode, errloc);
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------

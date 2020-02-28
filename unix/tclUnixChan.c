@@ -121,7 +121,7 @@ typedef struct {
 
 static int		FileBlockModeProc(void *instanceData, int mode);
 static int		FileCloseProc(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		FileGetHandleProc(void *instanceData,
 			    int direction, void **handlePtr);
 static int		FileInputProc(void *instanceData, char *buf,
@@ -137,7 +137,7 @@ static Tcl_WideInt	FileWideSeekProc(void *instanceData,
 static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc(void *instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtyGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -161,15 +161,19 @@ static int		TtySetOptionProc(void *instanceData,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
+#ifndef TCL_NO_DEPRECATED
     FileSeekProc,		/* Seek proc. */
+#else
+	NULL,
+#endif
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    FileCloseProc,		/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -187,7 +191,7 @@ static const Tcl_ChannelType fileChannelType = {
 static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TtyCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -195,7 +199,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    TtyCloseProc,			/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -353,11 +357,16 @@ FileOutputProc(
 static int
 FileCloseProc(
     void *instanceData,	/* File state. */
-    Tcl_Interp *dummy)		/* For error reporting - unused. */
+    Tcl_Interp *dummy,		/* For error reporting - unused. */
+    int flags)
 {
     FileState *fsPtr = (FileState *)instanceData;
     int errorCode = 0;
     (void)dummy;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     Tcl_DeleteFileHandler(fsPtr->fd);
 
@@ -379,10 +388,14 @@ FileCloseProc(
 static int
 TtyCloseProc(
     void *instanceData,
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+	int flags)
 {
     TtyState *ttyPtr = (TtyState*)instanceData;
 
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
     /*
      * If we've been asked by the user to drain or flush, do so now.
      */
@@ -411,7 +424,7 @@ TtyCloseProc(
      * Delegate to close for files.
      */
 
-    return FileCloseProc(instanceData, interp);
+    return FileCloseProc(instanceData, interp, flags);
 }
 #endif /* SUPPORTS_TTY */
 
@@ -433,7 +446,7 @@ TtyCloseProc(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 static int
 FileSeekProc(
     void *instanceData,	/* File state. */
@@ -474,6 +487,7 @@ FileSeekProc(
     }
     return (int) newLoc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
