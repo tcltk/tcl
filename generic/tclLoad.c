@@ -140,6 +140,7 @@ Tcl_LoadObjCmd(
     enum options {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
     };
+    (void)dummy;
 
     while (objc > 2) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -271,7 +272,7 @@ Tcl_LoadObjCmd(
      */
 
     if (pkgPtr != NULL) {
-	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpPackage *)Tcl_GetAssocData(target, "tclLoad", NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->pkgPtr == pkgPtr) {
 		code = TCL_OK;
@@ -401,12 +402,12 @@ Tcl_LoadObjCmd(
 	 * Create a new record to describe this package.
 	 */
 
-	pkgPtr = Tcl_Alloc(sizeof(LoadedPackage));
+	pkgPtr = (LoadedPackage *)Tcl_Alloc(sizeof(LoadedPackage));
 	len = strlen(fullFileName) + 1;
-	pkgPtr->fileName	   = Tcl_Alloc(len);
+	pkgPtr->fileName	   = (char *)Tcl_Alloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
 	len = Tcl_DStringLength(&pkgName) + 1;
-	pkgPtr->packageName	   = Tcl_Alloc(len);
+	pkgPtr->packageName	   = (char *)Tcl_Alloc(len);
 	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
 	pkgPtr->initProc	   = initProc;
@@ -505,8 +506,8 @@ Tcl_LoadObjCmd(
      * static packages at the head of the linked list!
      */
 
-    ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    ipPtr = Tcl_Alloc(sizeof(InterpPackage));
+    ipFirstPtr = (InterpPackage *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = (InterpPackage *)Tcl_Alloc(sizeof(InterpPackage));
     ipPtr->pkgPtr = pkgPtr;
     ipPtr->nextPtr = ipFirstPtr;
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
@@ -560,6 +561,7 @@ Tcl_UnloadObjCmd(
     enum options {
 	UNLOAD_NOCOMPLAIN, UNLOAD_KEEPLIB, UNLOAD_LAST
     };
+    (void)dummy;
 
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
@@ -718,7 +720,7 @@ Tcl_UnloadObjCmd(
 
     code = TCL_ERROR;
     if (pkgPtr != NULL) {
-	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpPackage *)Tcl_GetAssocData(target, "tclLoad", NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->pkgPtr == pkgPtr) {
 		code = TCL_OK;
@@ -873,7 +875,7 @@ Tcl_UnloadObjCmd(
 		 * Remove this library from the interpreter's library cache.
 		 */
 
-		ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+		ipFirstPtr = (InterpPackage *)Tcl_GetAssocData(target, "tclLoad", NULL);
 		ipPtr = ipFirstPtr;
 		if (ipPtr->pkgPtr == defaultPtr) {
 		    ipFirstPtr = ipFirstPtr->nextPtr;
@@ -980,10 +982,10 @@ Tcl_StaticPackage(
      */
 
     if (pkgPtr == NULL) {
-	pkgPtr = Tcl_Alloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	= Tcl_Alloc(1);
+	pkgPtr = (LoadedPackage *)Tcl_Alloc(sizeof(LoadedPackage));
+	pkgPtr->fileName	= (char *)Tcl_Alloc(1);
 	pkgPtr->fileName[0]	= 0;
-	pkgPtr->packageName	= Tcl_Alloc(strlen(pkgName) + 1);
+	pkgPtr->packageName	= (char *)Tcl_Alloc(strlen(pkgName) + 1);
 	strcpy(pkgPtr->packageName, pkgName);
 	pkgPtr->loadHandle	= NULL;
 	pkgPtr->initProc	= initProc;
@@ -1001,7 +1003,7 @@ Tcl_StaticPackage(
 	 * it's already loaded.
 	 */
 
-	ipFirstPtr = Tcl_GetAssocData(interp, "tclLoad", NULL);
+	ipFirstPtr = (InterpPackage *)Tcl_GetAssocData(interp, "tclLoad", NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->pkgPtr == pkgPtr) {
 		return;
@@ -1013,7 +1015,7 @@ Tcl_StaticPackage(
 	 * loaded.
 	 */
 
-	ipPtr = Tcl_Alloc(sizeof(InterpPackage));
+	ipPtr = (InterpPackage *)Tcl_Alloc(sizeof(InterpPackage));
 	ipPtr->pkgPtr = pkgPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
@@ -1089,7 +1091,7 @@ TclGetLoadedPackagesEx(
     if (target == NULL) {
 	return TCL_ERROR;
     }
-    ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = (InterpPackage *)Tcl_GetAssocData(target, "tclLoad", NULL);
 
     /*
      * Return information about all of the available packages.
@@ -1150,11 +1152,12 @@ static void
 LoadCleanupProc(
     ClientData clientData,	/* Pointer to first InterpPackage structure
 				 * for interp. */
-    Tcl_Interp *interp)		/* Interpreter that is being deleted. */
+    Tcl_Interp *dummy)		/* Interpreter that is being deleted. */
 {
     InterpPackage *ipPtr, *nextPtr;
+    (void)dummy;
 
-    ipPtr = clientData;
+    ipPtr = (InterpPackage *)clientData;
     while (ipPtr != NULL) {
 	nextPtr = ipPtr->nextPtr;
 	Tcl_Free(ipPtr);

@@ -1088,7 +1088,7 @@ Tcl_Realloc(
     void *ptr,
     size_t size)
 {
-    char *result;
+    void *result;
 
     result = TclpRealloc(ptr, size);
 

@@ -93,7 +93,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/pkg/lib 2>/dev/null` \
-			`ls -d /usr/lib/tcl8.7 2>/dev/null` \
+			`ls -d /usr/lib/tcl9.0 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl9.0 2>/dev/null` \
@@ -229,8 +229,8 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 			`ls -d /usr/lib/tk8.7 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
-			`ls -d /usr/local/lib/tk9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tk9.0 2>/dev/null` \
+			`ls -d /usr/local/lib/tk8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tk8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tkConfig.sh" ; then
 			ac_cv_c_tkconfig="`(cd $i; pwd)`"
@@ -966,7 +966,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	case "${CC}" in
+	    *++)
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
+		;;
+	esac
+
     ], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""

@@ -870,7 +870,7 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
-    argv = Tcl_Alloc((size * sizeof(char *)) + length + 1);
+    argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -1571,7 +1571,7 @@ Tcl_Merge(
      */
 
     if (argc == 0) {
-	result = Tcl_Alloc(1);
+	result = (char *)Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -1583,7 +1583,7 @@ Tcl_Merge(
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = Tcl_Alloc(argc);
+	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1595,7 +1595,7 @@ Tcl_Merge(
      * Pass two: copy into the result area.
      */
 
-    result = Tcl_Alloc(bytesNeeded);
+    result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1954,7 +1954,7 @@ Tcl_Concat(
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = Tcl_Alloc(bytesNeeded + argc);
+    result = (char *)Tcl_Alloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	size_t triml, trimr, elemLength;
@@ -2386,6 +2386,7 @@ TclByteArrayMatch(
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
+    (void)flags;
 
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
@@ -2659,7 +2660,7 @@ Tcl_DStringAppend(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2672,7 +2673,7 @@ Tcl_DStringAppend(
 		index = bytes - dsPtr->string;
 	    }
 
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (index != TCL_INDEX_NONE) {
 		bytes = dsPtr->string + index;
@@ -2762,7 +2763,7 @@ Tcl_DStringAppendElement(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2775,7 +2776,7 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
@@ -2852,12 +2853,12 @@ Tcl_DStringSetLength(
 	    dsPtr->spaceAvl = length + 1;
 	}
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 	}
     }
     dsPtr->length = length;
@@ -3092,7 +3093,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *interp,		/* Not used */
+    Tcl_Interp *dummy,		/* Not used. */
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3102,6 +3103,7 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
+    (void)dummy;
 
     /*
      * Handle NaN.
@@ -3859,7 +3861,7 @@ ClearHash(
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *objPtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	Tcl_DecrRefCount(objPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -3889,10 +3891,10 @@ GetThreadHash(
     Tcl_ThreadDataKey *keyPtr)
 {
     Tcl_HashTable **tablePtrPtr =
-	    Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
+	    (Tcl_HashTable **)Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
 
     if (NULL == *tablePtrPtr) {
-	*tablePtrPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
+	*tablePtrPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_CreateThreadExitHandler(FreeThreadHash, *tablePtrPtr);
 	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
     }
@@ -3917,7 +3919,7 @@ static void
 FreeThreadHash(
     ClientData clientData)
 {
-    Tcl_HashTable *tablePtr = clientData;
+    Tcl_HashTable *tablePtr = (Tcl_HashTable *)clientData;
 
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
@@ -3939,7 +3941,7 @@ static void
 FreeProcessGlobalValue(
     ClientData clientData)
 {
-    ProcessGlobalValue *pgvPtr = clientData;
+    ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *)clientData;
 
     pgvPtr->epoch++;
     pgvPtr->numBytes = 0;
@@ -3988,7 +3990,7 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
-    pgvPtr->value = Tcl_Alloc(pgvPtr->numBytes + 1);
+    pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
     memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -4052,7 +4054,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
-	    pgvPtr->value = Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
+	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
@@ -4102,7 +4104,7 @@ TclGetProcessGlobalValue(
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
     }
-    return Tcl_GetHashValue(hPtr);
+    return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 }
 
 /*

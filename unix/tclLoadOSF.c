@@ -128,7 +128,7 @@ TclpDlopen(
     } else {
 	pkg++;
     }
-    newHandle = Tcl_Alloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
