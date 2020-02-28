@@ -299,7 +299,7 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, ClientData clientData)
 }
-declare 81 {
+declare 81 {deprecated {Use Tcl_CloseEx}} {
     int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 82 {
@@ -1415,7 +1415,7 @@ declare 400 {
     Tcl_DriverBlockModeProc *Tcl_ChannelBlockModeProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 401 {
+declare 401 {deprecated {Use Tcl_ChannelClose2Proc}} {
     Tcl_DriverCloseProc *Tcl_ChannelCloseProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
@@ -1431,7 +1431,7 @@ declare 404 {
     Tcl_DriverOutputProc *Tcl_ChannelOutputProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 405 {
+declare 405 {deprecated {Use Tcl_ChannelWideSeekProc}} {
     Tcl_DriverSeekProc *Tcl_ChannelSeekProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
