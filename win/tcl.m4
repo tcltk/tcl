@@ -685,7 +685,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -694,7 +694,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wdeclaration-after-statement"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
 		;;
 	esac
 

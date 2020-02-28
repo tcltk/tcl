@@ -497,7 +497,7 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
 
 int
 TclChanPushObjCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -524,6 +524,7 @@ TclChanPushObjCmd(
 				 * in this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
+    (void)dummy;
 
     /*
      * Syntax:   chan push CHANNEL CMDPREFIX
@@ -742,7 +743,7 @@ TclChanPushObjCmd(
 
 int
 TclChanPopObjCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -760,6 +761,7 @@ TclChanPopObjCmd(
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
     int mode;			/* Channel r/w mode */
+    (void)dummy;
 
     /*
      * Number of arguments...
@@ -881,7 +883,7 @@ ReflectClose(
     ClientData clientData,
     Tcl_Interp *interp)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
     int errorCode, errorCodeSet = 0;
     int result = TCL_OK;	/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
@@ -1057,7 +1059,7 @@ ReflectInput(
     int toRead,
     int *errorCodePtr)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
     int gotBytes, copied, readBytes;
     Tcl_Obj *bufObj;
 
@@ -1250,7 +1252,7 @@ ReflectOutput(
     int toWrite,
     int *errorCodePtr)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * The following check can be done before thread redirection, because we
@@ -1323,7 +1325,7 @@ ReflectSeekWide(
     int seekMode,
     int *errorCodePtr)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
     Channel *parent = (Channel *) rtPtr->parent;
     Tcl_WideInt curPos;		/* Position on the device. */
 
@@ -1442,7 +1444,7 @@ ReflectWatch(
     ClientData clientData,
     int mask)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
     Tcl_DriverWatchProc *watchProc;
 
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(rtPtr->parent));
@@ -1493,7 +1495,7 @@ ReflectBlock(
     ClientData clientData,
     int nonblocking)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * Transformations simply record the blocking mode in their C level
@@ -1528,7 +1530,7 @@ ReflectSetOption(
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * Transformations have no options. Thus the call is passed down unchanged
@@ -1570,7 +1572,7 @@ ReflectGetOption(
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * Transformations have no options. Thus the call is passed down unchanged
@@ -1618,7 +1620,7 @@ ReflectHandle(
     int direction,
     ClientData *handlePtr)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * Transformations have no handle of their own. As such we simply query
@@ -1653,7 +1655,7 @@ ReflectNotify(
     ClientData clientData,
     int mask)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * An event occured in the underlying channel.
@@ -1753,8 +1755,9 @@ NewReflectedTransform(
     int listc;
     Tcl_Obj **listv;
     int i;
+    (void)mode;
 
-    rtPtr = ckalloc(sizeof(ReflectedTransform));
+    rtPtr = (ReflectedTransform *)ckalloc(sizeof(ReflectedTransform));
 
     /* rtPtr->chan: Assigned by caller. Dummy data here. */
     /* rtPtr->methods: Assigned by caller. Dummy data here. */
@@ -1801,7 +1804,7 @@ NewReflectedTransform(
      */
 
     rtPtr->argc = listc + 2;
-    rtPtr->argv = ckalloc(sizeof(Tcl_Obj *) * (listc+4));
+    rtPtr->argv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * (listc+4));
 
     /*
      * Duplicate object references.
@@ -2106,10 +2109,10 @@ static ReflectedTransformMap *
 GetReflectedTransformMap(
     Tcl_Interp *interp)
 {
-    ReflectedTransformMap *rtmPtr = Tcl_GetAssocData(interp, RTMKEY, NULL);
+    ReflectedTransformMap *rtmPtr = (ReflectedTransformMap *)Tcl_GetAssocData(interp, RTMKEY, NULL);
 
     if (rtmPtr == NULL) {
-	rtmPtr = ckalloc(sizeof(ReflectedTransformMap));
+	rtmPtr = (ReflectedTransformMap *)ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RTMKEY,
 		(Tcl_InterpDeleteProc *) DeleteReflectedTransformMap, rtmPtr);
@@ -2164,11 +2167,11 @@ DeleteReflectedTransformMap(
      * this interp.
      */
 
-    rtmPtr = clientData;
+    rtmPtr = (ReflectedTransformMap *)clientData;
     for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
-	rtPtr = Tcl_GetHashValue(hPtr);
+	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	rtPtr->dead = 1;
 	Tcl_DeleteHashEntry(hPtr);
@@ -2192,7 +2195,7 @@ DeleteReflectedTransformMap(
     for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	rtPtr = Tcl_GetHashValue(hPtr);
+	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	if (rtPtr->interp != interp) {
 	    /*
@@ -2272,7 +2275,7 @@ GetThreadReflectedTransformMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rtmPtr) {
-	tsdPtr->rtmPtr = ckalloc(sizeof(ReflectedTransformMap));
+	tsdPtr->rtmPtr = (ReflectedTransformMap *)ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&tsdPtr->rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedTransformMap, NULL);
     }
@@ -2300,13 +2303,14 @@ GetThreadReflectedTransformMap(void)
 
 static void
 DeleteThreadReflectedTransformMap(
-    ClientData clientData)	/* The per-thread data structure. */
+    ClientData dummy)	/* The per-thread data structure. */
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
     ForwardingResult *resultPtr;
+    (void)dummy;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2324,7 +2328,7 @@ DeleteThreadReflectedTransformMap(
     for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
-	ReflectedTransform *rtPtr = Tcl_GetHashValue(hPtr);
+	ReflectedTransform *rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	rtPtr->dead = 1;
 	FreeReflectedTransformArgs(rtPtr);
@@ -2407,8 +2411,8 @@ ForwardOpToOwnerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = ckalloc(sizeof(ForwardingEvent));
-    resultPtr = ckalloc(sizeof(ForwardingResult));
+    evPtr = (ForwardingEvent *)ckalloc(sizeof(ForwardingEvent));
+    resultPtr = (ForwardingResult *)ckalloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -2519,6 +2523,7 @@ ForwardProc(
 				/* Map of reflected channels with handlers in
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    (void)mask;
 
     /*
      * Ignore the event if no one is waiting for its result anymore.
@@ -2601,7 +2606,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = ckalloc(bytec);
+		paramPtr->transform.buf = (char *)ckalloc(bytec);
 		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
@@ -2635,7 +2640,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = ckalloc(bytec);
+		paramPtr->transform.buf = (char *)ckalloc(bytec);
 		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
@@ -2664,7 +2669,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = ckalloc(bytec);
+		paramPtr->transform.buf = (char *)ckalloc(bytec);
 		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
@@ -2691,7 +2696,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = ckalloc(bytec);
+		paramPtr->transform.buf = (char *)ckalloc(bytec);
 		memcpy(paramPtr->transform.buf, bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
@@ -2751,7 +2756,7 @@ static void
 SrcExitProc(
     ClientData clientData)
 {
-    ForwardingEvent *evPtr = clientData;
+    ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
     ForwardingResult *resultPtr;
     ForwardParam *paramPtr;
 
@@ -2891,7 +2896,7 @@ static void
 TimerRun(
     ClientData clientData)
 {
-    ReflectedTransform *rtPtr = clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     rtPtr->timer = NULL;
     Tcl_NotifyChannel(rtPtr->chan, TCL_READABLE);

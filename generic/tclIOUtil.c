@@ -82,7 +82,6 @@ static void		Disclaim(void);
 static void *		DivertFindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		DivertUnloadFile(Tcl_LoadHandle loadHandle);
-
 
 /*
  * Functions that provide native filesystem support. They are private and
@@ -417,7 +416,7 @@ static void
 FsThrExitProc(
     ClientData cd)
 {
-    ThreadSpecificData *tsdPtr = cd;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
 
     /*
@@ -579,7 +578,7 @@ FsRecacheFilesystemList(void)
     list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = ckalloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -853,7 +852,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = ckalloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -1933,9 +1932,9 @@ EvalFileCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *oldScriptFile = data[0];
-    Tcl_Obj *pathPtr = data[1];
-    Tcl_Obj *objPtr = data[2];
+    Tcl_Obj *oldScriptFile = (Tcl_Obj *)data[0];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *objPtr = (Tcl_Obj *)data[2];
 
     /*
      * Restore the original iPtr->scriptFile value, but because the value may
@@ -2318,6 +2317,8 @@ NativeFileAttrStrings(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
+    (void)pathPtr;
+    (void)objPtrRef;
     return tclpFileAttrStrings;
 }
 
@@ -3026,6 +3027,7 @@ Tcl_FSLoadFile(
     const char *symbols[3];
     void *procPtrs[2];
     int res;
+    (void)unloadProcPtr;
 
     symbols[0] = sym1;
     symbols[1] = sym2;
@@ -3101,6 +3103,7 @@ skipUnlink(
 
 
 #ifdef hpux
+    (void)shlibFile;
     return 1;
 #else
     char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
@@ -3109,7 +3112,9 @@ skipUnlink(
 	return atoi(skipstr);
     }
 
-#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef TCL_TEMPLOAD_NO_UNLINK
+    (void)shlibFile;
+#else
 /* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
  * this automatic overriding of unlink is included.
  */
@@ -3245,7 +3250,7 @@ Tcl_LoadFile(
 	    Tcl_Close(interp, data);
 	    goto mustCopyToTempAnyway;
 	}
-	ret = Tcl_Read(data, buffer, size);
+	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_Close(interp, data);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
@@ -3360,7 +3365,7 @@ Tcl_LoadFile(
      * Divert the unloading in order to unload and cleanup the temporary file.
      */
 
-    tvdlPtr = ckalloc(sizeof(FsDivertLoad));
+    tvdlPtr = (FsDivertLoad *)ckalloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information in order to clean up the diverted
@@ -3401,7 +3406,7 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    divertedLoadHandle = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -4684,6 +4689,7 @@ NativeFilesystemSeparator(
     Tcl_Obj *pathPtr)
 {
     const char *separator = NULL; /* lint */
+    (void)pathPtr;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:

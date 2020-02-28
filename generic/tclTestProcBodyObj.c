@@ -45,9 +45,9 @@ typedef struct CmdTable {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(ClientData dummy,
+static int	ProcBodyTestProcObjCmd(void *dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int	ProcBodyTestCheckObjCmd(ClientData dummy,
+static int	ProcBodyTestCheckObjCmd(void *dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
@@ -228,7 +228,7 @@ ProcBodyTestInitInternal(
 
 static int
 ProcBodyTestProcObjCmd(
-    ClientData dummy,		/* context; not used */
+    void *dummy,		/* context; not used */
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
@@ -240,6 +240,7 @@ ProcBodyTestProcObjCmd(
     Tcl_Obj *bodyObjPtr;
     Tcl_Obj *myobjv[5];
     int result;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "newName argsList bodyName");
@@ -327,12 +328,13 @@ ProcBodyTestProcObjCmd(
 
 static int
 ProcBodyTestCheckObjCmd(
-    ClientData dummy,		/* context; not used */
+    void *dummy,		/* context; not used */
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");

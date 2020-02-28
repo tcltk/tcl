@@ -31,6 +31,9 @@
 #endif
 
 #ifdef __CYGWIN__
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #endif
@@ -39,6 +42,9 @@ DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
 DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+#ifdef __cplusplus
+}
+#endif
 
 #define NUMPROCESSORS 11
 static const char *const processors[NUMPROCESSORS] = {
@@ -540,7 +546,7 @@ TclpInitLibraryPath(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     str = TclGetString(pathPtr);
     *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -1059,6 +1065,10 @@ MacOSXGetLibraryPath(
     foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp,
 	    "com.tcltk.tcllibrary", TCL_FRAMEWORK_VERSION, 0, maxPathLen,
 	    tclLibPath);
+#else
+    (void)interp;
+    (void)maxPathLen;
+    (void)tclLibPath;
 #endif
 
     return foundInFramework;

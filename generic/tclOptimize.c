@@ -429,9 +429,9 @@ void
 TclOptimizeBytecode(
     void *envPtr)
 {
-    ConvertZeroEffectToNOP(envPtr);
-    AdvanceJumps(envPtr);
-    TrimUnreachable(envPtr);
+    ConvertZeroEffectToNOP((CompileEnv *)envPtr);
+    AdvanceJumps((CompileEnv *)envPtr);
+    TrimUnreachable((CompileEnv *)envPtr);
 }
 
 /*
