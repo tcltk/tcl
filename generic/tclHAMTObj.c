@@ -430,6 +430,8 @@ HamtCreateCmd(
     }
     Tcl_SetObjResult(interp, hamtObj);
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -501,6 +503,8 @@ HamtGetCmd(
     }
     Tcl_SetObjResult(interp, val);
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -578,6 +582,8 @@ HamtMergeCmd(
     Tcl_SetObjResult(interp, NewHAMTObj(accum));
     TclHAMTDisclaim(accum);
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -628,6 +634,8 @@ HamtRemoveCmd(
     Tcl_SetObjResult(interp, NewHAMTObj(old));
     TclHAMTDisclaim(old);
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -679,6 +687,8 @@ HamtReplaceCmd(
     Tcl_SetObjResult(interp, NewHAMTObj(old));
     TclHAMTDisclaim(old);
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -718,6 +728,8 @@ HamtSizeCmd(
 
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)TclHAMTSize(hamt)));
     return TCL_OK;
+
+    (void)dummy;
 }
 
 /*
@@ -754,6 +766,8 @@ HamtInfoCmd(
 
     Tcl_SetObjResult(interp, TclHAMTInfo(hamt));
     return TCL_OK;
+
+    (void)dummy;
 }
 
 #if 0

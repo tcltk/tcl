@@ -965,6 +965,8 @@ DupByteCodeInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
+    (void)srcPtr;
+    (void)copyPtr;
     return;
 }
 
@@ -1156,7 +1158,7 @@ CleanupByteCode(
 		(char *) codePtr);
 
 	if (hePtr) {
-	    ReleaseCmdWordData(Tcl_GetHashValue(hePtr));
+	    ReleaseCmdWordData((ExtCmdLoc *)Tcl_GetHashValue(hePtr));
 	    Tcl_DeleteHashEntry(hePtr);
 	}
     }
@@ -1182,11 +1184,12 @@ CleanupByteCode(
 
 static int
 IsCompactibleCompileEnv(
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     CompileEnv *envPtr)
 {
     unsigned char *pc;
     int size;
+    (void)dummy;
 
     /*
      * Special: procedures in the '::tcl' namespace (or its children) are
@@ -1504,7 +1507,7 @@ TclInitCompileEnv(
      * non-compiling evaluator
      */
 
-    envPtr->extCmdMapPtr = Tcl_Alloc(sizeof(ExtCmdLoc));
+    envPtr->extCmdMapPtr = (ExtCmdLoc *)Tcl_Alloc(sizeof(ExtCmdLoc));
     envPtr->extCmdMapPtr->loc = NULL;
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
@@ -1560,7 +1563,7 @@ TclInitCompileEnv(
 	 * ...) which may make change the type as well.
 	 */
 
-	CmdFrame *ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	CmdFrame *ctxPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 	int pc = 0;
 
 	*ctxPtr = *invoker;
@@ -2467,7 +2470,7 @@ TclCompileTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2508,7 +2511,7 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = Tcl_Realloc(clPosition,
+			clPosition = (int *)Tcl_Realloc(clPosition,
                                 maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;
@@ -2773,6 +2776,7 @@ TclCompileNoOp(
 {
     Tcl_Token *tokenPtr;
     int i;
+    (void)cmdPtr;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
@@ -2884,7 +2888,7 @@ TclInitByteCode(
 	namespacePtr = envPtr->iPtr->globalNsPtr;
     }
 
-    p = Tcl_Alloc(structureSize);
+    p = (unsigned char *)Tcl_Alloc(structureSize);
     codePtr = (ByteCode *) p;
     codePtr->interpHandle = TclHandlePreserve(iPtr->handle);
     codePtr->compileEpoch = iPtr->compileEpoch;
@@ -3094,7 +3098,7 @@ TclFindCompiledLocal(
 
     if (create || (name == NULL)) {
 	localVar = procPtr->numCompiledLocals;
-	localPtr = Tcl_Alloc(offsetof(CompiledLocal, name) + nameBytes + 1);
+	localPtr = (CompiledLocal *)Tcl_Alloc(offsetof(CompiledLocal, name) + nameBytes + 1);
 	if (procPtr->firstLocalPtr == NULL) {
 	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	} else {
@@ -3144,7 +3148,7 @@ TclExpandCodeArray(
     void *envArgPtr)		/* Points to the CompileEnv whose code array
 				 * must be enlarged. */
 {
-    CompileEnv *envPtr = envArgPtr;
+    CompileEnv *envPtr = (CompileEnv *)envArgPtr;
 				/* The CompileEnv containing the code array to
 				 * be doubled in size. */
 
@@ -3158,14 +3162,14 @@ TclExpandCodeArray(
     size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
-	envPtr->codeStart = Tcl_Realloc(envPtr->codeStart, newBytes);
+	envPtr->codeStart = (unsigned char *)Tcl_Realloc(envPtr->codeStart, newBytes);
     } else {
 	/*
 	 * envPtr->codeStart isn't a Tcl_Alloc'd pointer, so we must code a
 	 * Tcl_Realloc equivalent for ourselves.
 	 */
 
-	unsigned char *newPtr = Tcl_Alloc(newBytes);
+	unsigned char *newPtr = (unsigned char *)Tcl_Alloc(newBytes);
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
@@ -3261,16 +3265,16 @@ EnterCmdWordData(
 	size_t newElems = (currElems ? 2*currElems : 1);
 	size_t newBytes = newElems * sizeof(ECL);
 
-	eclPtr->loc = Tcl_Realloc(eclPtr->loc, newBytes);
+	eclPtr->loc = (ECL *)Tcl_Realloc(eclPtr->loc, newBytes);
 	eclPtr->nloc = newElems;
     }
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
-    ePtr->line = Tcl_Alloc(numWords * sizeof(int));
-    ePtr->next = Tcl_Alloc(numWords * sizeof(int *));
+    ePtr->line = (int *)Tcl_Alloc(numWords * sizeof(int));
+    ePtr->next = (int **)Tcl_Alloc(numWords * sizeof(int *));
     ePtr->nline = numWords;
-    wwlines = Tcl_Alloc(numWords * sizeof(int));
+    wwlines = (int *)Tcl_Alloc(numWords * sizeof(int));
 
     last = cmd;
     wordLine = line;
@@ -3339,17 +3343,17 @@ TclCreateExceptRange(
 
 	if (envPtr->mallocedExceptArray) {
 	    envPtr->exceptArrayPtr =
-		    Tcl_Realloc(envPtr->exceptArrayPtr, newBytes);
+		    (ExceptionRange *)Tcl_Realloc(envPtr->exceptArrayPtr, newBytes);
 	    envPtr->exceptAuxArrayPtr =
-		    Tcl_Realloc(envPtr->exceptAuxArrayPtr, newBytes2);
+		    (ExceptionAux *)Tcl_Realloc(envPtr->exceptAuxArrayPtr, newBytes2);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a Tcl_Alloc'd pointer, so we must
 	     * code a Tcl_Realloc equivalent for ourselves.
 	     */
 
-	    ExceptionRange *newPtr = Tcl_Alloc(newBytes);
-	    ExceptionAux *newPtr2 = Tcl_Alloc(newBytes2);
+	    ExceptionRange *newPtr = (ExceptionRange *)Tcl_Alloc(newBytes);
+	    ExceptionAux *newPtr2 = (ExceptionAux *)Tcl_Alloc(newBytes2);
 
 	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
 	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
@@ -3452,11 +3456,11 @@ TclAddLoopBreakFixup(
 	auxPtr->allocBreakTargets *= 2;
 	auxPtr->allocBreakTargets += 2;
 	if (auxPtr->breakTargets) {
-	    auxPtr->breakTargets = Tcl_Realloc(auxPtr->breakTargets,
+	    auxPtr->breakTargets = (unsigned int *)Tcl_Realloc(auxPtr->breakTargets,
 		    sizeof(int) * auxPtr->allocBreakTargets);
 	} else {
 	    auxPtr->breakTargets =
-		    Tcl_Alloc(sizeof(int) * auxPtr->allocBreakTargets);
+		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocBreakTargets);
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
@@ -3478,11 +3482,11 @@ TclAddLoopContinueFixup(
 	auxPtr->allocContinueTargets *= 2;
 	auxPtr->allocContinueTargets += 2;
 	if (auxPtr->continueTargets) {
-	    auxPtr->continueTargets = Tcl_Realloc(auxPtr->continueTargets,
+	    auxPtr->continueTargets = (unsigned int *)Tcl_Realloc(auxPtr->continueTargets,
 		    sizeof(int) * auxPtr->allocContinueTargets);
 	} else {
 	    auxPtr->continueTargets =
-		    Tcl_Alloc(sizeof(int) * auxPtr->allocContinueTargets);
+		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocContinueTargets);
 	}
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =

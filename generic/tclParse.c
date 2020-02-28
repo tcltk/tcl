@@ -298,7 +298,7 @@ SetTokensFromAny (interp, objPtr)
 {
     int numBytes;
     const char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
-    TokenIntRep *tirPtr = Tcl_Alloc(sizeof(TokenIntRep));
+    TokenIntRep *tirPtr = (TokenIntRep *)Tcl_Alloc(sizeof(TokenIntRep));
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
@@ -450,7 +450,7 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
     Tcl_Token **lastTokenPtrPtr;/* Return pointer to last token */
     const char **termPtr;	/* Return the terminating character in string */
 {
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     Tcl_Token *result;
 
     if (numBytes == TCL_AUTO_LENGTH) {
@@ -467,10 +467,10 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
      * We'll transfer the tokens to the caller.
      */
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	result = Tcl_Realloc(parsePtr->tokenPtr,
+	result = (Tcl_Token *)Tcl_Realloc(parsePtr->tokenPtr,
 		parsePtr->numTokens * sizeof(Tcl_Token));
     } else {
-	result = Tcl_Alloc(parsePtr->numTokens * sizeof(Tcl_Token));
+	result = (Tcl_Token *)Tcl_Alloc(parsePtr->numTokens * sizeof(Tcl_Token));
 	memcpy(result, parsePtr->tokenPtr, 
 		(size_t) (parsePtr->numTokens * sizeof(Tcl_Token)));
     }
@@ -1635,7 +1635,7 @@ ParseTokens(
 
 	    src++;
 	    numBytes--;
-	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+	    nestedPtr = (Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
 		const char *curEnd;
 
@@ -2086,7 +2086,7 @@ Tcl_ParseVar(
 {
     Tcl_Obj *objPtr;
     int code;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (TCL_OK != TclParseVarName(interp, start, -1, parsePtr,
 	    PARSE_USE_INTERNAL_TOKENS)) {
@@ -2590,7 +2590,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2640,7 +2640,7 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = Tcl_Realloc(clPosition,
+			clPosition = (int *)Tcl_Realloc(clPosition,
 				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;

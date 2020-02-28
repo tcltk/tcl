@@ -125,7 +125,7 @@ TclSetupEnv(
 	    char *p2;
 
 	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], -1, &envString);
-	    p2 = strchr(p1, '=');
+	    p2 = (char *)strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
 		 * This condition seem to happen occasionally under some
@@ -174,7 +174,7 @@ TclSetupEnv(
 
     for (hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr!=NULL;
 	    hPtr=Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *elemName = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *elemName = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclObjUnsetVar2(interp, varNamePtr, elemName, TCL_GLOBAL_ONLY);
     }
@@ -241,7 +241,7 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = Tcl_Alloc((length + 5) * sizeof(char *));
+	    char **newEnviron = (char **)Tcl_Alloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
@@ -256,7 +256,7 @@ TclSetEnv(
 	oldValue = NULL;
 	nameLength = strlen(name);
     } else {
-	const char *env;
+	const char *oldEnv;
 
 	/*
 	 * Compare the new value to the existing value. If they're the same
@@ -266,8 +266,8 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	env = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envString);
-	if (strcmp(value, env + (length + 1)) == 0) {
+	oldEnv = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envString);
+	if (strcmp(value, oldEnv + (length + 1)) == 0) {
 	    Tcl_DStringFree(&envString);
 	    Tcl_MutexUnlock(&envMutex);
 	    return;
@@ -285,7 +285,7 @@ TclSetEnv(
      */
 
     valueLength = strlen(value);
-    p = Tcl_Alloc(nameLength + valueLength + 2);
+    p = (char *)Tcl_Alloc(nameLength + valueLength + 2);
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
@@ -295,7 +295,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = Tcl_Realloc(p, Tcl_DStringLength(&envString) + 1);
+    p = (char *)Tcl_Realloc(p, Tcl_DStringLength(&envString) + 1);
     memcpy(p, p2, Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
@@ -381,7 +381,7 @@ Tcl_PutEnv(
      */
 
     name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
-    value = strchr(name, '=');
+    value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
 	value[0] = '\0';
@@ -455,18 +455,18 @@ TclUnsetEnv(
      */
 
 #if defined(_WIN32)
-    string = Tcl_Alloc(length + 2);
+    string = (char *)Tcl_Alloc(length + 2);
     memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = Tcl_Alloc(length + 1);
+    string = (char *)Tcl_Alloc(length + 1);
     memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = Tcl_Realloc(string, Tcl_DStringLength(&envString) + 1);
+    string = (char *)Tcl_Realloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
@@ -580,7 +580,7 @@ TclGetEnv(
 	/* ARGSUSED */
 static char *
 EnvTraceProc(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */
@@ -588,6 +588,7 @@ EnvTraceProc(
 				 * whole array is being deleted (UTF-8). */
     int flags)			/* Indicates what's happening. */
 {
+	(void)dummy;
     /*
      * For array traces, let TclSetupEnv do all the work.
      */

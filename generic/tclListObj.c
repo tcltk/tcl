@@ -62,7 +62,7 @@ const Tcl_ObjType tclListType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclListType);		\
-	(listRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
@@ -124,7 +124,7 @@ NewListIntRep(
 	return NULL;
     }
 
-    listRepPtr = Tcl_AttemptAlloc(LIST_SIZE(objc));
+    listRepPtr = (List *)Tcl_AttemptAlloc(LIST_SIZE(objc));
     if (listRepPtr == NULL) {
 	if (p) {
 	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
@@ -314,6 +314,8 @@ Tcl_DbNewListObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
     return Tcl_NewListObj(objc, objv);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -697,18 +699,18 @@ Tcl_ListObjAppendElement(
 
 	attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -1034,18 +1036,18 @@ Tcl_ListObjReplace(
 	List *newPtr = NULL;
 	int attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)Tcl_AttemptRealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -1662,8 +1664,8 @@ TclLsetFlat(
 	 */
 
 	irPtr = TclFetchIntRep(objPtr, &tclListType);
-	listRepPtr = irPtr->twoPtrValue.ptr1;
-	chainPtr = irPtr->twoPtrValue.ptr2;
+	listRepPtr = (List *)irPtr->twoPtrValue.ptr1;
+	chainPtr = (Tcl_Obj *)irPtr->twoPtrValue.ptr2;
 
 	if (result == TCL_OK) {
 
@@ -2158,7 +2160,7 @@ UpdateStringOfList(
 	 * We know numElems <= LIST_MAX, so this is safe.
 	 */
 
-	flagPtr = Tcl_Alloc(numElems);
+	flagPtr = (char *)Tcl_Alloc(numElems);
     }
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {

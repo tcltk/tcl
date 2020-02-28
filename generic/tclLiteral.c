@@ -115,6 +115,8 @@ TclDeleteLiteralTable(
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable((Interp *) interp);
+#else
+    (void)interp;
 #endif /*TCL_COMPILE_DEBUG*/
 
     /*
@@ -293,7 +295,7 @@ CreateLiteral(
     }
 #endif
 
-    globalPtr = Tcl_Alloc(sizeof(LiteralEntry));
+    globalPtr = (LiteralEntry *)Tcl_Alloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     globalPtr->refCount = 1;
@@ -418,7 +420,7 @@ TclRegisterLiteral(
 				 * the literal should not be shared accross
 				 * namespaces. */
 {
-    CompileEnv *envPtr = ePtr;
+    CompileEnv *envPtr = (CompileEnv *)ePtr;
     Interp *iPtr = envPtr->iPtr;
     Namespace *nsPtr = NULL;
     Tcl_Obj *objPtr;
@@ -594,6 +596,8 @@ TclAddLiteralObj(
     Tcl_IncrRefCount(objPtr);
 
     return objIndex;
+
+    (void)litPtrPtr;
 }
 
 /*
@@ -638,14 +642,14 @@ ExpandLocalLiteralArray(
     }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = Tcl_Realloc(currArrayPtr, newSize);
+	newArrayPtr = (Tcl_Obj *)Tcl_Realloc(currArrayPtr, newSize);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a Tcl_Alloc'd pointer, so we must
 	 * code a Tcl_Realloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = Tcl_Alloc(newSize);
+	newArrayPtr = (Tcl_Obj *)Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -851,7 +855,7 @@ RebuildLiteralTable(
     }
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = Tcl_Alloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
+    tablePtr->buckets = (LiteralEntry **)Tcl_Alloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
 	*newChainPtr = NULL;
@@ -982,7 +986,7 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = Tcl_Alloc(NUM_COUNTERS*60 + 300);
+    result = (char *)Tcl_Alloc(NUM_COUNTERS*60 + 300);
     sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);

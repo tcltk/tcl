@@ -212,7 +212,7 @@ Tcl_Release(
 
 	Tcl_MutexUnlock(&preserveMutex);
 	if (freeProc) {
-	    freeProc(clientData);
+	    freeProc((char *)clientData);
 	}
 	return;
     }
@@ -289,7 +289,7 @@ Tcl_EventuallyFree(
      * No reference for this block.  Free it now.
      */
 
-    freeProc(clientData);
+    freeProc((char *)clientData);
 }
 
 /*
@@ -322,7 +322,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = Tcl_Alloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)Tcl_Alloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG

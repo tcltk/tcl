@@ -101,9 +101,9 @@ Tcl_AddInterpResolvers(
      * list, so that it overrides existing schemes.
      */
 
-    resPtr = Tcl_Alloc(sizeof(ResolverScheme));
+    resPtr = (ResolverScheme *)Tcl_Alloc(sizeof(ResolverScheme));
     len = strlen(name) + 1;
-    resPtr->name = Tcl_Alloc(len);
+    resPtr->name = (char *)Tcl_Alloc(len);
     memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
@@ -265,7 +265,7 @@ BumpCmdRefEpochs(
 #ifndef BREAK_NAMESPACE_COMPAT
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	Namespace *childNsPtr = Tcl_GetHashValue(entry);
+	Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
 	BumpCmdRefEpochs(childNsPtr);
     }

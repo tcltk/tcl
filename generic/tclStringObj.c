@@ -142,7 +142,7 @@ GrowStringBuffer(
     }
     if (flag == 0 || stringPtr->allocated > 0) {
 	attempt = 2 * needed;
-	ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
@@ -154,7 +154,7 @@ GrowStringBuffer(
 	    size_t growth = (extra > limit) ? limit : extra;
 
 	    attempt = needed + growth;
-	    ptr = Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
 	}
     }
     if (ptr == NULL) {
@@ -163,7 +163,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
-	ptr = Tcl_Realloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1);
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
@@ -337,6 +337,9 @@ Tcl_DbNewStringObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+    (void)file;
+    (void)line;
+
     return Tcl_NewStringObj(bytes, length);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -830,9 +833,9 @@ Tcl_SetObjLength(
 	     * Need to enlarge the buffer.
 	     */
 	    if (objPtr->bytes == &tclEmptyString) {
-		objPtr->bytes = Tcl_Alloc(length + 1);
+		objPtr->bytes = (char *)Tcl_Alloc(length + 1);
 	    } else {
-		objPtr->bytes = Tcl_Realloc(objPtr->bytes, length + 1);
+		objPtr->bytes = (char *)Tcl_Realloc(objPtr->bytes, length + 1);
 	    }
 	    stringPtr->allocated = length;
 	}
@@ -923,9 +926,9 @@ Tcl_AttemptSetObjLength(
 	    char *newBytes;
 
 	    if (objPtr->bytes == &tclEmptyString) {
-		newBytes = Tcl_AttemptAlloc(length + 1);
+		newBytes = (char *)Tcl_AttemptAlloc(length + 1);
 	    } else {
-		newBytes = Tcl_AttemptRealloc(objPtr->bytes, length + 1);
+		newBytes = (char *)Tcl_AttemptRealloc(objPtr->bytes, length + 1);
 	    }
 	    if (newBytes == NULL) {
 		return 0;
@@ -3478,7 +3481,7 @@ TclStringFirst(
 	     * starting at check and stopping when there's not enough room
 	     * for the needle left.
 	     */
-	    check = memchr(check, bn[0], (end + 1 - ln) - check);
+	    check = (unsigned char *)memchr(check, bn[0], (end + 1 - ln) - check);
 	    if (check == NULL) {
 		/* Leading byte not found -> needle cannot be found. */
 		return TCL_IO_FAILURE;
@@ -4056,9 +4059,11 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
+    (void)dummy;
+
     if (!TclHasIntRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 

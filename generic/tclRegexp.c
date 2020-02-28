@@ -122,7 +122,7 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 
@@ -915,7 +915,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = Tcl_Alloc(sizeof(TclRegexp));
+    regexpPtr = (TclRegexp*)Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -970,7 +970,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    Tcl_Alloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    (regmatch_t*)Tcl_Alloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -996,7 +996,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = Tcl_Alloc(length + 1);
+    tsdPtr->patterns[0] = (char *)Tcl_Alloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1052,11 +1052,12 @@ FreeRegexp(
 
 static void
 FinalizeRegexp(
-    ClientData clientData)	/* Not used. */
+    ClientData dummy)	/* Not used. */
 {
     int i;
     TclRegexp *regexpPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)dummy;
 
     for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
 	regexpPtr = tsdPtr->regexps[i];

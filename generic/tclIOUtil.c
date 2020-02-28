@@ -82,7 +82,6 @@ static void		Disclaim(void);
 static void *		DivertFindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		DivertUnloadFile(Tcl_LoadHandle loadHandle);
-
 
 /*
  * Functions that provide native filesystem support. They are private and
@@ -417,7 +416,7 @@ static void
 FsThrExitProc(
     ClientData cd)
 {
-    ThreadSpecificData *tsdPtr = cd;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
 
     /*
@@ -579,7 +578,7 @@ FsRecacheFilesystemList(void)
     list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = Tcl_Alloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -853,7 +852,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = Tcl_Alloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -1733,7 +1732,7 @@ Tcl_FSEvalFileEx(
     if (encodingName != NULL) {
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
+	    Tcl_CloseEx(interp,chan,0);
 	    return result;
 	}
     }
@@ -1746,7 +1745,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1761,14 +1760,14 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	goto end;
     }
 
@@ -1869,7 +1868,7 @@ TclNREvalFile(
     if (encodingName != NULL) {
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
+	    Tcl_CloseEx(interp, chan, 0);
 	    return TCL_ERROR;
 	}
     }
@@ -1882,7 +1881,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1898,7 +1897,7 @@ TclNREvalFile(
 
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp)));
@@ -1906,7 +1905,7 @@ TclNREvalFile(
 	return TCL_ERROR;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -1933,9 +1932,9 @@ EvalFileCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *oldScriptFile = data[0];
-    Tcl_Obj *pathPtr = data[1];
-    Tcl_Obj *objPtr = data[2];
+    Tcl_Obj *oldScriptFile = (Tcl_Obj *)data[0];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *objPtr = (Tcl_Obj *)data[2];
 
     /*
      * Restore the original iPtr->scriptFile value, but because the value may
@@ -2238,7 +2237,7 @@ Tcl_FSOpenFileChannel(
 			"could not seek to end of file while opening \"%s\": %s",
 			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
-	    Tcl_Close(NULL, retVal);
+	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
 	if (binary) {
@@ -2318,6 +2317,8 @@ NativeFileAttrStrings(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
+    (void)pathPtr;
+    (void)objPtrRef;
     return tclpFileAttrStrings;
 }
 
@@ -3026,6 +3027,7 @@ Tcl_FSLoadFile(
     const char *symbols[3];
     void *procPtrs[2];
     int res;
+    (void)unloadProcPtr;
 
     symbols[0] = sym1;
     symbols[1] = sym2;
@@ -3101,6 +3103,7 @@ skipUnlink(
 
 
 #ifdef hpux
+    (void)shlibFile;
     return 1;
 #else
     char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
@@ -3109,7 +3112,9 @@ skipUnlink(
 	return atoi(skipstr);
     }
 
-#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef TCL_TEMPLOAD_NO_UNLINK
+    (void)shlibFile;
+#else
 /* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
  * this automatic overriding of unlink is included.
  */
@@ -3242,11 +3247,11 @@ Tcl_LoadFile(
 	}
 	buffer = TclpLoadMemoryGetBuffer(interp, size);
 	if (!buffer) {
-	    Tcl_Close(interp, data);
+	    Tcl_CloseEx(interp, data, 0);
 	    goto mustCopyToTempAnyway;
 	}
-	ret = Tcl_Read(data, buffer, size);
-	Tcl_Close(interp, data);
+	ret = Tcl_Read(data, (char *)buffer, size);
+	Tcl_CloseEx(interp, data, 0);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
@@ -3360,7 +3365,7 @@ Tcl_LoadFile(
      * Divert the unloading in order to unload and cleanup the temporary file.
      */
 
-    tvdlPtr = Tcl_Alloc(sizeof(FsDivertLoad));
+    tvdlPtr = (FsDivertLoad *)Tcl_Alloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information in order to clean up the diverted
@@ -3401,7 +3406,7 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    divertedLoadHandle = Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -4245,7 +4250,7 @@ TclCrossFilesystemCopy(
 	 * Could not open an input channel.  Why didn't the caller check this?
 	 */
 
-	Tcl_Close(interp, out);
+	Tcl_CloseEx(interp, out, 0);
 	goto done;
     }
 
@@ -4262,8 +4267,8 @@ TclCrossFilesystemCopy(
      * If the copy failed, assume that copy channel left an error message.
      */
 
-    Tcl_Close(interp, in);
-    Tcl_Close(interp, out);
+    Tcl_CloseEx(interp, in, 0);
+    Tcl_CloseEx(interp, out, 0);
 
     /*
      * Set modification date of copied file.
@@ -4684,6 +4689,7 @@ NativeFilesystemSeparator(
     Tcl_Obj *pathPtr)
 {
     const char *separator = NULL; /* lint */
+    (void)pathPtr;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:

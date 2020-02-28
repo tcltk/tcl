@@ -96,7 +96,7 @@ static const Tcl_ObjType ensembleCmdType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
-	(ecRepPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -151,7 +151,7 @@ NewNsObj(
 
 int
 TclNamespaceEnsembleCmd(
-    ClientData dummy,
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -164,6 +164,7 @@ TclNamespaceEnsembleCmd(
     Tcl_Obj *listObj;
     const char *simpleName;
     int index, done;
+    (void)dummy;
 
     if (nsPtr == NULL || nsPtr->flags & NS_DYING) {
 	if (!Tcl_InterpDeleted(interp)) {
@@ -675,7 +676,7 @@ TclCreateEnsembleInNs(
     EnsembleConfig *ensemblePtr;
     Tcl_Command token;
 
-    ensemblePtr = Tcl_Alloc(sizeof(EnsembleConfig));
+    ensemblePtr = (EnsembleConfig *)Tcl_Alloc(sizeof(EnsembleConfig));
     token = TclNRCreateCommandInNs(interp, name,
 	    (Tcl_Namespace *) nameNsPtr, TclEnsembleImplementationCmd,
 	    NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
@@ -798,7 +799,7 @@ Tcl_SetEnsembleSubcommandList(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->subcmdList;
     ensemblePtr->subcmdList = subcmdList;
     if (subcmdList != NULL) {
@@ -874,7 +875,7 @@ Tcl_SetEnsembleParameterList(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->parameterList;
     ensemblePtr->parameterList = paramList;
     if (paramList != NULL) {
@@ -974,7 +975,7 @@ Tcl_SetEnsembleMappingDict(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldDict = ensemblePtr->subcommandDict;
     ensemblePtr->subcommandDict = mapDict;
     if (mapDict != NULL) {
@@ -1049,7 +1050,7 @@ Tcl_SetEnsembleUnknownHandler(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->unknownHandler;
     ensemblePtr->unknownHandler = unknownList;
     if (unknownList != NULL) {
@@ -1105,7 +1106,7 @@ Tcl_SetEnsembleFlags(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     wasCompiled = ensemblePtr->flags & ENSEMBLE_COMPILE;
 
     /*
@@ -1183,7 +1184,7 @@ Tcl_GetEnsembleSubcommandList(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *subcmdListPtr = ensemblePtr->subcmdList;
     return TCL_OK;
 }
@@ -1225,7 +1226,7 @@ Tcl_GetEnsembleParameterList(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *paramListPtr = ensemblePtr->parameterList;
     return TCL_OK;
 }
@@ -1267,7 +1268,7 @@ Tcl_GetEnsembleMappingDict(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *mapDictPtr = ensemblePtr->subcommandDict;
     return TCL_OK;
 }
@@ -1308,7 +1309,7 @@ Tcl_GetEnsembleUnknownHandler(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *unknownListPtr = ensemblePtr->unknownHandler;
     return TCL_OK;
 }
@@ -1349,7 +1350,7 @@ Tcl_GetEnsembleFlags(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *flagsPtr = ensemblePtr->flags;
     return TCL_OK;
 }
@@ -1390,7 +1391,7 @@ Tcl_GetEnsembleNamespace(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *namespacePtrPtr = (Tcl_Namespace *) ensemblePtr->nsPtr;
     return TCL_OK;
 }
@@ -1690,7 +1691,7 @@ NsEnsembleImplementationCmdNR(
     int objc,
     Tcl_Obj *const objv[])
 {
-    EnsembleConfig *ensemblePtr = clientData;
+    EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
 				/* The ensemble itself. */
     Tcl_Obj *prefixObj;		/* An object containing the prefix words of
 				 * the command that implements the
@@ -1763,7 +1764,7 @@ NsEnsembleImplementationCmdNR(
 	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
-		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
+		prefixObj = (Tcl_Obj *)Tcl_GetHashValue(ensembleCmd->hPtr);
 		Tcl_IncrRefCount(prefixObj);
 		if (ensembleCmd->fix) {
 		    TclSpellFix(interp, objv, objc, subIdx, subObj, ensembleCmd->fix);
@@ -1866,7 +1867,7 @@ NsEnsembleImplementationCmdNR(
 	TclSpellFix(interp, objv, objc, subIdx, subObj, fix);
     }
 
-    prefixObj = Tcl_GetHashValue(hPtr);
+    prefixObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
     Tcl_IncrRefCount(prefixObj);
   runResultingSubcommand:
 
@@ -1987,10 +1988,11 @@ NsEnsembleImplementationCmdNR(
 
 int
 TclClearRootEnsemble(
-    ClientData data[],
+    ClientData dummy[],
     Tcl_Interp *interp,
     int result)
 {
+	(void)dummy;
     TclResetRewriteEnsemble(interp, 1);
     return result;
 }
@@ -2094,11 +2096,12 @@ TclResetRewriteEnsemble(
 static int
 FreeER(
     ClientData data[],
-    Tcl_Interp *interp,
+    Tcl_Interp *dummy,
     int result)
 {
     Tcl_Obj **tmp = (Tcl_Obj **) data[0];
     Tcl_Obj **store = (Tcl_Obj **) data[1];
+    (void)dummy;
 
     Tcl_Free(store);
     Tcl_Free(tmp);
@@ -2176,9 +2179,9 @@ TclSpellFix(
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
     }  else {
-	Tcl_Obj **tmp = Tcl_Alloc(3 * sizeof(Tcl_Obj *));
+	Tcl_Obj **tmp = (Tcl_Obj **)Tcl_Alloc(3 * sizeof(Tcl_Obj *));
 
-	store = Tcl_Alloc(size * sizeof(Tcl_Obj *));
+	store = (Tcl_Obj **)Tcl_Alloc(size * sizeof(Tcl_Obj *));
 	memcpy(store, iPtr->ensembleRewrite.sourceObjs,
 		size * sizeof(Tcl_Obj *));
 
@@ -2418,7 +2421,7 @@ MakeCachedEnsembleCommand(
 	 * our own.
 	 */
 
-	ensembleCmd = Tcl_Alloc(sizeof(EnsembleCmdRep));
+	ensembleCmd = (EnsembleCmdRep *)Tcl_Alloc(sizeof(EnsembleCmdRep));
 	ECRSetIntRep(objPtr, ensembleCmd);
     }
 
@@ -2467,7 +2470,7 @@ ClearTable(
         Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hash, &search);
 
         while (hPtr != NULL) {
-            Tcl_Obj *prefixObj = Tcl_GetHashValue(hPtr);
+            Tcl_Obj *prefixObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
             Tcl_DecrRefCount(prefixObj);
             hPtr = Tcl_NextHashEntry(&search);
         }
@@ -2480,7 +2483,7 @@ static void
 DeleteEnsembleConfig(
     ClientData clientData)
 {
-    EnsembleConfig *ensemblePtr = clientData;
+    EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
     Namespace *nsPtr = ensemblePtr->nsPtr;
 
     /*
@@ -2695,7 +2698,7 @@ BuildEnsembleConfig(
      */
 
     ensemblePtr->subcommandArrayPtr =
-	    Tcl_Alloc(sizeof(char *) * hash->numEntries);
+	    (char **)Tcl_Alloc(sizeof(char *) * hash->numEntries);
 
     /*
      * Fill array from both ends as this makes us less likely to end up with
@@ -2719,12 +2722,12 @@ BuildEnsembleConfig(
     j = hash->numEntries;
     hPtr = Tcl_FirstHashEntry(hash, &search);
     while (hPtr != NULL) {
-	ensemblePtr->subcommandArrayPtr[i++] = Tcl_GetHashKey(hash, hPtr);
+	ensemblePtr->subcommandArrayPtr[i++] = (char *)Tcl_GetHashKey(hash, hPtr);
 	hPtr = Tcl_NextHashEntry(&search);
 	if (hPtr == NULL) {
 	    break;
 	}
-	ensemblePtr->subcommandArrayPtr[--j] = Tcl_GetHashKey(hash, hPtr);
+	ensemblePtr->subcommandArrayPtr[--j] = (char *)Tcl_GetHashKey(hash, hPtr);
 	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
@@ -2816,7 +2819,7 @@ DupEnsembleCmdRep(
     Tcl_Obj *copyPtr)
 {
     EnsembleCmdRep *ensembleCmd;
-    EnsembleCmdRep *ensembleCopy = Tcl_Alloc(sizeof(EnsembleCmdRep));
+    EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)Tcl_Alloc(sizeof(EnsembleCmdRep));
 
     ECRGetIntRep(objPtr, ensembleCmd);
     ECRSetIntRep(copyPtr, ensembleCopy);

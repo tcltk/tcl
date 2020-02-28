@@ -2281,13 +2281,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = Tcl_Alloc(9);
+	retval = (char *)Tcl_Alloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = Tcl_Alloc(4);
+	retval = (char *)Tcl_Alloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2318,7 +2318,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = Tcl_Alloc(2);
+    char *retval = (char *)Tcl_Alloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -2864,7 +2864,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = Tcl_Alloc(len + 1);
+    retval = (char *)Tcl_Alloc(len + 1);
     if (ilim == 0) {
 	d -= 5.;
 	if (d > eps.d) {
@@ -2975,7 +2975,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3139,7 +3139,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3150,6 +3150,7 @@ StrictInt64Conversion(
     int digit;			/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Current position in the output buffer. */
+    (void)dPtr;
 
     /*
      * Adjust if the logarithm was guessed wrong.
@@ -3339,7 +3340,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3547,7 +3548,7 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3555,6 +3556,7 @@ StrictBignumConversionPowD(
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Index in the output buffer. */
     mp_err err;
+    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5
@@ -3747,7 +3749,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = Tcl_Alloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -3982,7 +3984,7 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = Tcl_Alloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -3992,6 +3994,7 @@ StrictBignumConversion(
     int g;			/* Size of the current digit ground. */
     int i, j;
     mp_err err;
+    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5

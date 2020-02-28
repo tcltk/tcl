@@ -23,8 +23,7 @@
 
 static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
+static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		GetLocationInformation(Proc *procPtr,
@@ -135,7 +134,7 @@ TclPrintByteCodeObj(
     Tcl_Interp *interp,		/* Used only for getting location info. */
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = DisassembleByteCodeObj(interp, objPtr);
+    Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
 
     fprintf(stdout, "\n%s", TclGetString(bufPtr));
     Tcl_DecrRefCount(bufPtr);
@@ -251,7 +250,6 @@ TclPrintSource(
 
 static Tcl_Obj *
 DisassembleByteCodeObj(
-    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
     ByteCode *codePtr;
@@ -951,8 +949,7 @@ PrintSourceToObj(
 
 static Tcl_Obj *
 DisassembleByteCodeAsDicts(
-    Tcl_Interp *interp,		/* Used for looking up the CmdFrame for the
-				 * procedure, if one exists. */
+    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
     ByteCode *codePtr;
@@ -961,6 +958,7 @@ DisassembleByteCodeAsDicts(
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength;
     int i, val, line;
+    (void)dummy;
 
     ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
 
@@ -1582,7 +1580,7 @@ Tcl_DisassembleObjCmd(
 		    TclGetString(objv[3]), NULL);
 	    return TCL_ERROR;
 	}
-	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of method", -1));
@@ -1632,7 +1630,7 @@ Tcl_DisassembleObjCmd(
 		DisassembleByteCodeAsDicts(interp, codeObjPtr));
     } else {
 	Tcl_SetObjResult(interp,
-		DisassembleByteCodeObj(interp, codeObjPtr));
+		DisassembleByteCodeObj(codeObjPtr));
     }
     return TCL_OK;
 }

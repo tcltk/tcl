@@ -617,7 +617,7 @@ ParseExpr(
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
-    nodes = Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
+    nodes = (OpNode *)Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	errCode = "NOMEM";
@@ -661,7 +661,7 @@ ParseExpr(
 
 	    do {
 	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = Tcl_AttemptRealloc(nodes, size * sizeof(OpNode));
+		newPtr = (OpNode *)Tcl_AttemptRealloc(nodes, size * sizeof(OpNode));
 	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
@@ -910,7 +910,7 @@ ParseExpr(
 
 	    case SCRIPT:
 	      if (parseOnly) {
-		Tcl_Parse *nestedPtr =
+		Tcl_Parse *nestedPtr = (Tcl_Parse *)
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
@@ -1832,7 +1832,7 @@ Tcl_ParseExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */
-    Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
     if (numBytes == TCL_AUTO_LENGTH) {
@@ -2150,7 +2150,7 @@ TclCompileExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
 
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
@@ -2220,7 +2220,7 @@ ExecConstantExprTree(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    envPtr = TclStackAlloc(interp, sizeof(CompileEnv));
+    envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
@@ -2562,7 +2562,7 @@ TclSingleOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
     OpNode nodes[2];
     Tcl_Obj *const *litObjv = objv + 1;
@@ -2620,10 +2620,10 @@ TclSortingOpCmd(
     if (objc < 3) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
-	TclOpCmdClientData *occdPtr = clientData;
-	Tcl_Obj **litObjv = TclStackAlloc(interp,
+	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+	Tcl_Obj **litObjv = (Tcl_Obj **)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(Tcl_Obj *));
-	OpNode *nodes = TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
+	OpNode *nodes = (OpNode *)TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
@@ -2695,7 +2695,7 @@ TclVariadicOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
     int code;
 
@@ -2750,7 +2750,7 @@ TclVariadicOpCmd(
 	return code;
     } else {
 	Tcl_Obj *const *litObjv = objv + 1;
-	OpNode *nodes = TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
+	OpNode *nodes = (OpNode *)TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
@@ -2814,7 +2814,7 @@ TclNoIdentOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    TclOpCmdClientData *occdPtr = clientData;
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
