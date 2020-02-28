@@ -473,8 +473,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.2 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.4 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)" registry]
 <<
 
 runtest: setup $(TCLTEST) dlls

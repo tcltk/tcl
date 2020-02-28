@@ -402,7 +402,7 @@ BuildProcessStatusObj(
 
 static int
 ProcessListObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -411,6 +411,7 @@ ProcessListObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -453,7 +454,7 @@ ProcessListObjCmd(
 
 static int
 ProcessStatusObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -475,6 +476,7 @@ ProcessStatusObjCmd(
     enum switches {
 	STATUS_WAIT, STATUS_LAST
     };
+    (void)dummy;
 
     while (objc > 1) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -601,7 +603,7 @@ ProcessStatusObjCmd(
 
 static int
 ProcessPurgeObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -614,6 +616,7 @@ ProcessPurgeObjCmd(
     int result;
     int i;
     int pid;
+    (void)dummy;
 
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
@@ -701,11 +704,13 @@ ProcessPurgeObjCmd(
 
 static int
 ProcessAutopurgeObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?flag?");
 	return TCL_ERROR;

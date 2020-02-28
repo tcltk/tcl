@@ -370,6 +370,8 @@ Tcl_DbNewByteArrayObj(
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
 #else /* if not TCL_MEM_DEBUG */
+    (void)file;
+    (void)line;
     return Tcl_NewByteArrayObj(bytes, length);
 #endif /* TCL_MEM_DEBUG */
 }
@@ -411,7 +413,7 @@ Tcl_SetByteArrayObj(
     if (length < 0) {
 	length = 0;
     }
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
@@ -520,7 +522,7 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(irPtr);
     if (newLength > byteArrayPtr->allocated) {
-	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
+	byteArrayPtr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
 	byteArrayPtr->allocated = newLength;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -547,7 +549,7 @@ Tcl_SetByteArrayLength(
 
 static int
 SetByteArrayFromAny(
-    Tcl_Interp *interp,		/* Not used. */
+    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     size_t length;
@@ -557,6 +559,7 @@ SetByteArrayFromAny(
     Tcl_UniChar ch = 0;
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
+    (void)dummy;
 
     if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
@@ -569,7 +572,7 @@ SetByteArrayFromAny(
     length = objPtr->length;
     srcEnd = src + length;
 
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
@@ -645,7 +648,7 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &tclByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -666,7 +669,7 @@ DupProperByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &properByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -809,7 +812,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = 2 * needed;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -821,7 +824,7 @@ TclAppendBytesToByteArray(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -829,7 +832,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = needed;
-	    ptr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
@@ -912,6 +915,7 @@ BinaryFormatCmd(
     const char *errorString;
     const char *errorValue, *str;
     int offset, size, length;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -1413,12 +1417,12 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, length;
+    int offset, size, length, i;
 
-    int i;
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
     Tcl_HashTable *numberCachePtr;
+    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1946,8 +1950,8 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	switch (length) {
 	case 4:
@@ -1970,8 +1974,8 @@ CopyNumber(
 	break;
     }
     case 2: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[4];
 	toPtr[1] = fromPtr[5];
@@ -1984,8 +1988,8 @@ CopyNumber(
 	break;
     }
     case 3: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[3];
 	toPtr[1] = fromPtr[2];
@@ -2294,7 +2298,7 @@ ScanNumber(
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
 	    if (!isNew) {
-		return Tcl_GetHashValue(hPtr);
+		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
@@ -2417,7 +2421,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	Tcl_Obj *value = Tcl_GetHashValue(hEntry);
+	Tcl_Obj *value = (Tcl_Obj *)Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);
@@ -2463,7 +2467,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2472,6 +2476,7 @@ BinaryEncodeHex(
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
     int offset = 0, count = 0;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
@@ -2507,7 +2512,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2518,6 +2523,7 @@ BinaryDecodeHex(
     int i, index, value, size, count = 0, cut = 0, strict = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -2626,7 +2632,7 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2639,6 +2645,7 @@ BinaryEncode64(
     int offset, i, index, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2732,7 +2739,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2746,6 +2753,7 @@ BinaryEncodeUu(
     int wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2849,7 +2857,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2861,6 +2869,7 @@ BinaryDecodeUu(
     unsigned char c;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -3012,7 +3021,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3025,6 +3034,7 @@ BinaryDecode64(
     int i, index, size, cut = 0, count = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
+    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
