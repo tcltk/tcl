@@ -123,14 +123,14 @@ Tcl_RecordAndEvalObj(
     int result, call = 1;
     Tcl_CmdInfo info;
     HistoryObjs *histObjsPtr =
-	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
      * Create the references to the [::history add] command if necessary.
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = Tcl_Alloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)Tcl_Alloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -204,9 +204,10 @@ Tcl_RecordAndEvalObj(
 static void
 DeleteHistoryObjs(
     ClientData clientData,
-    Tcl_Interp *interp)
+    Tcl_Interp *dummy)
 {
-    HistoryObjs *histObjsPtr = clientData;
+    HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
+    (void)dummy;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

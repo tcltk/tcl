@@ -265,7 +265,7 @@ typedef void *ClientData;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32)
+#   if defined(_MSC_VER) || defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)
@@ -1226,10 +1226,6 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
 
-#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
-#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
-#define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
-#define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
 #define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
@@ -1298,7 +1294,7 @@ typedef struct Tcl_ChannelType {
 				/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;
 				/* Function to call to close the channel, or
-				 * TCL_CLOSE2PROC if the close2Proc should be
+				 * NULL or TCL_CLOSE2PROC if the close2Proc should be
 				 * used instead. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
@@ -1937,14 +1933,14 @@ typedef struct Tcl_EncodingType {
 /*
  * The maximum number of bytes that are necessary to represent a single
  * Unicode character in UTF-8. The valid values are 3 and 4
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3,
- * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If > 3,
- * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
- * is the default and recommended mode.
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If > 3,
+ * then Tcl_UniChar must be 4-bytes in size (UCS-4) (the default). If == 3,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2). Since Tcl 9.0, UCS-4
+ * mode is the default and recommended mode.
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#define TCL_UTF_MAX		4
 #endif
 
 /*
