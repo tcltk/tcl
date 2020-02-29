@@ -642,14 +642,14 @@ ExpandLocalLiteralArray(
     }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = (Tcl_Obj *)Tcl_Realloc(currArrayPtr, newSize);
+	newArrayPtr = (Tcl_Obj **)Tcl_Realloc(currArrayPtr, newSize);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a Tcl_Alloc'd pointer, so we must
 	 * code a Tcl_Realloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = (Tcl_Obj *)Tcl_Alloc(newSize);
+	newArrayPtr = (Tcl_Obj **)Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
