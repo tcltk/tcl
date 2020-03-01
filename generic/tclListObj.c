@@ -1610,9 +1610,8 @@ TclLsetFlat(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%s\" out of range", Tcl_GetString(indexArray[-1])));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-			valuePtr == NULL ? "LPOP" : "LSET",
-			"BADINDEX", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			"OUTOFRANGE", NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -1805,8 +1804,8 @@ TclListObjSetElement(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%d\" out of range", index));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
-			"BADINDEX", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
+			"OUTOFRANGE", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1827,8 +1826,8 @@ TclListObjSetElement(
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%d\" out of range", index));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
-		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
+		    "OUTOFRANGE", NULL);
 	}
 	return TCL_ERROR;
     }
