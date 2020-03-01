@@ -1566,7 +1566,7 @@ TclFillTableWithExports(
     for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	int objc;
 	Tcl_Obj **objv;
-	char *nsCmdName = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+	char *nsCmdName = (char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 
 	Tcl_ListObjGetElements(NULL, nsPtr->exportPatternList, &objc, &objv);
 	while (objc--) {

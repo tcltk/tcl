@@ -77,7 +77,7 @@ static
 void ObjClaim(
     ClientData clientData)
 {
-    Tcl_Obj *objPtr = clientData;
+    Tcl_Obj *objPtr = (Tcl_Obj *)clientData;
 
     Tcl_IncrRefCount(objPtr);
 }
@@ -86,7 +86,7 @@ static
 void ObjDisclaim(
     ClientData clientData)
 {
-    Tcl_Obj *objPtr = clientData;
+    Tcl_Obj *objPtr = (Tcl_Obj *)clientData;
 
     Tcl_DecrRefCount(objPtr);
 }
@@ -114,8 +114,8 @@ int ObjKeyIsEqual(
     ClientData k1,
     ClientData k2)
 {
-    Tcl_Obj *objPtr1 = k1;
-    Tcl_Obj *objPtr2 = k2;
+    Tcl_Obj *objPtr1 = (Tcl_Obj *)k1;
+    Tcl_Obj *objPtr2 = (Tcl_Obj *)k2;
     const char *p1, *p2;
     size_t l1, l2;
 
@@ -162,7 +162,7 @@ static
 size_t ObjKeyHash(
     ClientData key)               /* Key from which to compute hash value. */
 {
-    Tcl_Obj *objPtr = key;
+    Tcl_Obj *objPtr = (Tcl_Obj *)key;
     const char *string = TclGetString(objPtr);
     size_t length = objPtr->length;
     size_t result = 0;
@@ -286,10 +286,10 @@ SetHamtFromAny(
     TclHAMTDisclaim(old);
     old = unlocked;
     for (i = 0; i < objc; i += 2) {
-	TclHAMT new = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
-	TclHAMTClaim(new);
+	TclHAMT hamt = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
+	TclHAMTClaim(hamt);
 	TclHAMTDisclaim(old);
-	old = new;
+	old = hamt;
     }
 
     TclFreeIntRep(objPtr);
@@ -423,6 +423,7 @@ HamtCreateCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *hamtObj = Tcl_NewListObj(objc - 1, objv + 1);
+    (void)dummy;
 
     if (NULL == GetHAMTFromObj(interp, hamtObj)) {
 	Tcl_DecrRefCount(hamtObj);
@@ -430,8 +431,6 @@ HamtCreateCmd(
     }
     Tcl_SetObjResult(interp, hamtObj);
     return TCL_OK;
-
-    (void)dummy;
 }
 
 /*
@@ -459,6 +458,7 @@ HamtGetCmd(
 {
     TclHAMT hamt;
     Tcl_Obj *val = NULL;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "hamt ?key ...?");
@@ -503,8 +503,6 @@ HamtGetCmd(
     }
     Tcl_SetObjResult(interp, val);
     return TCL_OK;
-
-    (void)dummy;
 }
 
 /*
@@ -532,6 +530,7 @@ HamtMergeCmd(
 {
     TclHAMT accum;
     int i;
+    (void)dummy;
 
     if (objc == 1) {
 	/*
@@ -567,23 +566,21 @@ HamtMergeCmd(
     TclHAMTClaim(accum);
 
     for (i=2 ; i<objc ; i++) {
-	TclHAMT new, hamt;
+	TclHAMT newHamt, hamt;
 
 	hamt = GetHAMTFromObj(interp, objv[i]);
 	if (NULL == hamt) {
 	    TclHAMTDisclaim(accum);
 	    return TCL_ERROR;
 	}
-	new = TclHAMTMerge(accum, hamt);
-	TclHAMTClaim(new);
+	newHamt = TclHAMTMerge(accum, hamt);
+	TclHAMTClaim(newHamt);
 	TclHAMTDisclaim(accum);
-	accum = new;
+	accum = newHamt;
     }
     Tcl_SetObjResult(interp, NewHAMTObj(accum));
     TclHAMTDisclaim(accum);
     return TCL_OK;
-
-    (void)dummy;
 }
 
 /*
@@ -609,8 +606,9 @@ HamtRemoveCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    TclHAMT old, new;
+    TclHAMT old, hamt;
     int i;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "hamt ?key ...?");
@@ -625,17 +623,15 @@ HamtRemoveCmd(
     TclHAMTClaim(old);
 
     for (i=2 ; i<objc ; i++) {
-	new = TclHAMTRemove(old, objv[i], NULL);
-	TclHAMTClaim(new);
+	hamt = TclHAMTRemove(old, objv[i], NULL);
+	TclHAMTClaim(hamt);
 	TclHAMTDisclaim(old);
-	old = new;
+	old = hamt;
     }
 
     Tcl_SetObjResult(interp, NewHAMTObj(old));
     TclHAMTDisclaim(old);
     return TCL_OK;
-
-    (void)dummy;
 }
 
 /*
@@ -661,7 +657,7 @@ HamtReplaceCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    TclHAMT old, new;
+    TclHAMT old, hamt;
     int i;
 
     if ((objc < 2) || (objc & 1)) {
@@ -678,10 +674,10 @@ HamtReplaceCmd(
     }
     TclHAMTClaim(old);
     for (i=2 ; i<objc ; i+=2) {
-	new = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
-	TclHAMTClaim(new);
+	hamt = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
+	TclHAMTClaim(hamt);
 	TclHAMTDisclaim(old);
-	old = new;
+	old = hamt;
     }
 
     Tcl_SetObjResult(interp, NewHAMTObj(old));

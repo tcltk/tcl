@@ -4196,7 +4196,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetInt4AtPtr(pc+1);
-	jtPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
+	jtPtr = (JumptableInfo *)BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	TRACE(("%d \"%.20s\" => ", opnd, O2S(OBJ_AT_TOS)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
 	if (hPtr != NULL) {
@@ -6218,7 +6218,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
+	infoPtr = (ForeachInfo *)BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	numLists = infoPtr->numLists;
 	TRACE(("%u => ", opnd));
 
@@ -6908,7 +6908,7 @@ TEBCresume(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	TRACE(("%u => ", opnd));
 	varPtr = LOCAL(opnd);
-	duiPtr = BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
+	duiPtr = (DictUpdateInfo *)BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -6968,7 +6968,7 @@ TEBCresume(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	TRACE(("%u => ", opnd));
 	varPtr = LOCAL(opnd);
-	duiPtr = BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
+	duiPtr = (DictUpdateInfo *)BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}

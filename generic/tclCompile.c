@@ -2203,13 +2203,13 @@ TclCompileScript(
 }
 
 static void
-CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting.
+CompileScriptTokens(
+    Tcl_Interp *interp,		/* Used for error and status reporting.
 				 * Also serves as context for finding and
 				 * compiling commands.  May not be NULL. */
-    Tcl_Token *tokens;
-    Tcl_Token *lastTokenPtr;
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    Tcl_Token *tokens,
+    Tcl_Token *lastTokenPtr,
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
     int numCommands = tokens[0].numComponents;

@@ -197,10 +197,10 @@ typedef struct TokenIntRep {
  */
 
 static void
-FreeTokensInternalRep(objPtr)
-    Tcl_Obj *objPtr;
+FreeTokensInternalRep(
+    Tcl_Obj *objPtr)
 {
-    TokenIntRep *tirPtr = objPtr->internalRep.otherValuePtr;
+    TokenIntRep *tirPtr = (TokenIntRep *)objPtr->internalRep.otherValuePtr;
 
     if (tirPtr->scriptObjPtr) {
 	if (tirPtr->scriptObjPtr == objPtr) {
@@ -250,11 +250,11 @@ FreeTokensInternalRep(objPtr)
  */
 
 static void
-DupTokensInternalRep(srcPtr, dupPtr)
-    Tcl_Obj *srcPtr;            /* Object with internal rep to copy. */
-    Tcl_Obj *dupPtr;            /* Object with internal rep to set. */
+DupTokensInternalRep(
+    Tcl_Obj *srcPtr,            /* Object with internal rep to copy. */
+    Tcl_Obj *dupPtr)            /* Object with internal rep to set. */
 {
-    TokenIntRep *tirPtr = srcPtr->internalRep.otherValuePtr;
+    TokenIntRep *tirPtr = (TokenIntRep *)srcPtr->internalRep.otherValuePtr;
 
     if (tirPtr->scriptObjPtr == NULL) {
 	/* Record and preserve the objPtr holding the parsed script */
@@ -291,9 +291,9 @@ DupTokensInternalRep(srcPtr, dupPtr)
  */
 
 static int
-SetTokensFromAny (interp, objPtr)
-    Tcl_Interp *interp;	/* Not used. */
-    Tcl_Obj *objPtr;	/* Value for which to generate Tcl_Token array by
+SetTokensFromAny (
+    Tcl_Interp *interp,	/* Not used. */
+    Tcl_Obj *objPtr)	/* Value for which to generate Tcl_Token array by
 			 * parsing the string value */
 {
     int numBytes;
@@ -351,7 +351,7 @@ static void
 UpdateStringOfTokens(
     Tcl_Obj *objPtr)
 {
-    TokenIntRep *tirPtr = objPtr->internalRep.otherValuePtr;
+    TokenIntRep *tirPtr = (TokenIntRep *)objPtr->internalRep.otherValuePtr;
     int length;
     char *bytes;
 
@@ -412,9 +412,9 @@ TclTokensCopy(
  */
 
 Tcl_Token *
-TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
-    Tcl_Obj *objPtr;   		 /* Value to parse and return tokens for */
-    Tcl_Token **lastTokenPtrPtr; /* If not NULL, fill with pointer to last
+TclGetTokensFromObj(
+    Tcl_Obj *objPtr,   		 /* Value to parse and return tokens for */
+    Tcl_Token **lastTokenPtrPtr) /* If not NULL, fill with pointer to last
 				  * token in the token array */
 {
     TokenIntRep *tirPtr;
@@ -422,7 +422,7 @@ TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
     if (objPtr->typePtr != &tokensType) {
 	SetTokensFromAny(NULL, objPtr);
     }
-    tirPtr = objPtr->internalRep.otherValuePtr;
+    tirPtr = (TokenIntRep *)objPtr->internalRep.otherValuePtr;
     if (lastTokenPtrPtr != NULL) {
 	*lastTokenPtrPtr = tirPtr->lastTokenPtr;
     }
@@ -442,13 +442,13 @@ TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
  */
 
 Tcl_Token *
-TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
-    Tcl_Interp *interp;
-    const char *script;		/* The string to parse */
-    size_t numBytes;		/* Length of string in bytes */
-    int flags;			/* Bit flags that control parsing details. */
-    Tcl_Token **lastTokenPtrPtr;/* Return pointer to last token */
-    const char **termPtr;	/* Return the terminating character in string */
+TclParseScript(
+    Tcl_Interp *interp,
+    const char *script,		/* The string to parse */
+    size_t numBytes,		/* Length of string in bytes */
+    int flags,			/* Bit flags that control parsing details. */
+    Tcl_Token **lastTokenPtrPtr,/* Return pointer to last token */
+    const char **termPtr)	/* Return the terminating character in string */
 {
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     Tcl_Token *result;
@@ -483,11 +483,11 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
 }
 
 void
-ParseScript(script, numBytes, flags, parsePtr)
-    const char *script;		/* The string to parse */
-    size_t numBytes;		/* Length of string in bytes */
-    int flags;			/* Bit flags that control parsing details. */
-    Tcl_Parse *parsePtr;
+ParseScript(
+    const char *script,		/* The string to parse */
+    size_t numBytes,		/* Length of string in bytes */
+    int flags,			/* Bit flags that control parsing details. */
+    Tcl_Parse *parsePtr)
 {
     const char *p, *end;
     int nested = (flags & PARSE_NESTED);
