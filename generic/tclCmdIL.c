@@ -3421,8 +3421,8 @@ Tcl_LsearchObjCmd(
 		}
 		if (encoded == (int)TCL_INDEX_NONE) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" cannot select an element "
-			    "from any list", TclGetString(indices[j])));
+			    "index \"%s\" out of range",
+			    TclGetString(indices[j])));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
 			    "OUTOFRANGE", NULL);
 		    result = TCL_ERROR;
@@ -4142,8 +4142,8 @@ Tcl_LsortObjCmd(
 
 		if ((result == TCL_OK) && (encoded == (int)TCL_INDEX_NONE)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" cannot select an element "
-			    "from any list", TclGetString(indexv[j])));
+			    "index \"%s\" out of range",
+			    TclGetString(indexv[j])));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
 			    "OUTOFRANGE", NULL);
 		    result = TCL_ERROR;
