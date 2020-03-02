@@ -288,8 +288,7 @@ EXTERN void		Tcl_CallWhenDeleted(Tcl_Interp *interp,
 EXTERN void		Tcl_CancelIdleCall(Tcl_IdleProc *idleProc,
 				ClientData clientData);
 /* 81 */
-TCL_DEPRECATED("Use Tcl_CloseEx")
-int			Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan);
+EXTERN int		Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan);
 /* 82 */
 EXTERN int		Tcl_CommandComplete(const char *cmd);
 /* 83 */
@@ -2030,7 +2029,7 @@ typedef struct TclStubs {
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, ClientData clientData); /* 80 */
-    TCL_DEPRECATED_API("Use Tcl_CloseEx") int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
+    int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
     int (*tcl_CommandComplete) (const char *cmd); /* 82 */
     char * (*tcl_Concat) (int argc, const char *const *argv); /* 83 */
     int (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
