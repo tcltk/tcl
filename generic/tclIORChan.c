@@ -87,7 +87,7 @@ static const Tcl_ChannelType tclRChannelType = {
 #if TCL_THREADS
     ReflectThread,         /* thread action, tracking owner */
 #else
-	(void *)-1,		   /* thread action */
+	NULL,		   /* thread action */
 #endif
     NULL		   /* truncate */
 };
@@ -1347,8 +1347,8 @@ ReflectInput(
 	if (p.base.code != TCL_OK) {
 	    if (p.base.code < 0) {
 		/*
-                 * No error message, this is an errno signal.
-                 */
+		 * No error message, this is an errno signal.
+		 */
 
 		*errorCodePtr = -p.base.code;
 	    } else {
@@ -1453,8 +1453,8 @@ ReflectOutput(
 	if (p.base.code != TCL_OK) {
 	    if (p.base.code < 0) {
 		/*
-                 * No error message, this is an errno signal.
-                 */
+		 * No error message, this is an errno signal.
+		 */
 
 		*errorCodePtr = -p.base.code;
 	    } else {
@@ -2645,8 +2645,8 @@ DeleteReflectedChannelMap(
 	evPtr = resultPtr->evPtr;
 
 	/*
-         * Basic crash safety until this routine can get revised [3411310]
-         */
+	 * Basic crash safety until this routine can get revised [3411310]
+	 */
 
 	if (evPtr == NULL) {
 	    continue;
@@ -2796,8 +2796,8 @@ DeleteThreadReflectedChannelMap(
 	evPtr = resultPtr->evPtr;
 
 	/*
-         * Basic crash safety until this routine can get revised [3411310]
-         */
+	 * Basic crash safety until this routine can get revised [3411310]
+	 */
 
 	if (evPtr == NULL ) {
 	    continue;
