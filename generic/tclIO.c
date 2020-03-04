@@ -3500,20 +3500,17 @@ Tcl_Close(
      * it anymore and this will help avoid deadlocks on some channel types.
      */
 
+    if (
 #ifndef TCL_NO_DEPRECATED
-    if ((chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) || (chanPtr->typePtr->closeProc == NULL)) {
+	    (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) || 
+#endif
+	    (chanPtr->typePtr->closeProc == NULL)) {
 	/* If this half-close gives a EINVAL, just continue the full close */
 	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
 	if (result == EINVAL) {
 	    result = 0;
 	}
     }
-#else
-    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
-    if (result == EINVAL) {
-	result = 0;
-    }
-#endif
 
     /*
      * The call to FlushChannel will flush any queued output and invoke the
