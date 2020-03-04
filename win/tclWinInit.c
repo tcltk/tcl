@@ -157,7 +157,7 @@ TclpInitPlatform(void)
      */
     handle = GetModuleHandleW(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
+	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
 	    "CancelSynchronousIo");
 }
 
@@ -525,7 +525,7 @@ TclpSetVariables(
     if (!osInfoInitialized) {
 	HMODULE handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
+		(int(__stdcall *)(void *))(void *)GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);

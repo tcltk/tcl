@@ -652,7 +652,7 @@ Tcl_ParseCommand(
 				 * close bracket should be considered
 				 * a command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    register Tcl_Parse *parsePtr)
+    Tcl_Parse *parsePtr)
     				/* See TclParseCommand */
 {
     int code = TclParseCommand(interp, start, numBytes,
@@ -2164,7 +2164,7 @@ Tcl_ParseBraces(
     Tcl_Interp *interp,		/* See ParseBraces */
     const char *start,		/* See ParseBraces */
     size_t	numBytes,	/* See ParseBraces */
-    register Tcl_Parse *parsePtr,
+    Tcl_Parse *parsePtr,
     				/* See ParseBraces */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means
