@@ -219,7 +219,7 @@ FindSymbol(
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
 	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
-	proc = (void *)GetProcAddress(hInstance, sym2);
+	proc = (Tcl_PackageInitProc *)(void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
