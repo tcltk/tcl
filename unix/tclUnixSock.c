@@ -631,6 +631,9 @@ TcpCloseProc(
         freeaddrinfo(statePtr->myaddrlist);
     }
     ckfree(statePtr);
+    if (interp && errorCode) {
+	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
+    }
     return errorCode;
 }
 
@@ -660,6 +663,7 @@ TcpClose2Proc(
     TcpState *statePtr = instanceData;
     int readError = 0;
     int writeError = 0;
+    int errorCode = 0;
 
     /*
      * Shutdown the OS socket handle.
@@ -673,7 +677,12 @@ TcpClose2Proc(
     if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
 	writeError = errno;
     }
-    return (readError != 0) ? readError : writeError;
+
+    errorCode = (readError != 0) ? readError : writeError;
+    if (interp && errorCode) {
+	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
+    }
+    return errorCode;
 }
 
 /*
