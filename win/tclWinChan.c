@@ -76,6 +76,8 @@ static void		FileChannelExitHandler(ClientData clientData);
 static void		FileCheckProc(ClientData clientData, int flags);
 static int		FileCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
+static int		FileClose2Proc(ClientData instanceData,
+			    Tcl_Interp *interp, int flags);
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
 static int		FileGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
@@ -111,7 +113,7 @@ static const Tcl_ChannelType fileChannelType = {
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
     FileGetHandleProc,		/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+	FileClose2Proc,		/* close2proc. */
     FileBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -360,7 +362,7 @@ FileBlockProc(
 /*
  *----------------------------------------------------------------------
  *
- * FileCloseProc --
+ * FileCloseProc/FileClose2Proc --
  *
  *	Closes the IO channel.
  *
@@ -426,6 +428,18 @@ FileCloseProc(
     }
     ckfree(fileInfoPtr);
     return errorCode;
+}
+
+static int
+FileClose2Proc(
+    ClientData instanceData,	/* Pointer to FileInfo structure. */
+    Tcl_Interp *interp,		/* Not used. */
+	int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0) {
+	return FileCloseProc(instanceData, interp);
+    }
+    return EINVAL;
 }
 
 /*
