@@ -160,6 +160,8 @@ static int		SerialBlockProc(ClientData instanceData, int mode);
 static void		SerialCheckProc(ClientData clientData, int flags);
 static int		SerialCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
+static int		SerialClose2Proc(ClientData instanceData,
+			    Tcl_Interp *interp, int flags);
 static int		SerialEventProc(Tcl_Event *evPtr, int flags);
 static void		SerialExitHandler(ClientData clientData);
 static int		SerialGetHandleProc(ClientData instanceData,
@@ -203,7 +205,7 @@ static const Tcl_ChannelType serialChannelType = {
     SerialGetOptionProc,	/* Get option proc. */
     SerialWatchProc,		/* Set up notifier to watch the channel. */
     SerialGetHandleProc,	/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+    SerialClose2Proc,			/* close2proc. */
     SerialBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -572,7 +574,7 @@ SerialBlockProc(
 /*
  *----------------------------------------------------------------------
  *
- * SerialCloseProc --
+ * SerialCloseProc/SerialClose2Proc --
  *
  *	Closes a serial based IO channel.
  *
@@ -663,6 +665,18 @@ SerialCloseProc(
 	return result;
     }
     return errorCode;
+}
+
+static int
+SerialClose2Proc(
+    ClientData instanceData,    /* Pointer to SerialInfo structure. */
+    Tcl_Interp *interp,		/* For error reporting. */
+	int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0) {
+	return SerialCloseProc(instanceData, interp);
+    }
+    return EINVAL;
 }
 
 /*
