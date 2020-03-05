@@ -146,6 +146,11 @@ extern "C" {
 #   else
 #	define TCL_NORETURN1 /* nothing */
 #   endif
+#   if defined(__cplusplus)
+#	define TCL_UNUSED(T) T
+#   else
+#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
+#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
@@ -156,6 +161,11 @@ extern "C" {
 #	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
+#   if defined(__cplusplus)
+#	define TCL_UNUSED(T) T
+#   else
+#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
+#   endif
 #endif
 
 /*
