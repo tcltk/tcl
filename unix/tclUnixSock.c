@@ -228,9 +228,9 @@ InitializeHostName(
 	    char *dot = strchr(u.nodename, '.');
 
 	    if (dot != NULL) {
-		char *node = ckalloc(dot - u.nodename + 1);
+		char *node = (char *)ckalloc(dot - u.nodename + 1);
 
-		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
 		ckfree(node);
@@ -320,8 +320,10 @@ Tcl_GetHostName(void)
 
 int
 TclpHasSockets(
-    Tcl_Interp *interp)		/* Not used. */
+    Tcl_Interp *dummy)		/* Not used. */
 {
+    (void)dummy;
+
     return TCL_OK;
 }
 
@@ -372,7 +374,7 @@ TcpBlockModeProc(
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     if (mode == TCL_MODE_BLOCKING) {
 	CLEAR_BITS(statePtr->flags, TCP_NONBLOCKING);
@@ -505,7 +507,7 @@ TcpInputProc(
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int bytesRead;
 
     *errorCodePtr = 0;
@@ -555,7 +557,7 @@ TcpOutputProc(
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int written;
 
     *errorCodePtr = 0;
@@ -593,11 +595,12 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
-    Tcl_Interp *interp)		/* For error reporting - unused. */
+    Tcl_Interp *dummy)		/* For error reporting - unused. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
     TcpFdList *fds;
+    (void)dummy;
 
     /*
      * Delete a file handler that may be active for this socket if this is a
@@ -631,9 +634,6 @@ TcpCloseProc(
         freeaddrinfo(statePtr->myaddrlist);
     }
     ckfree(statePtr);
-    if (interp && errorCode) {
-	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
-    }
     return errorCode;
 }
 
@@ -657,19 +657,19 @@ TcpCloseProc(
 static int
 TcpClose2Proc(
     ClientData instanceData,	/* The socket to close. */
-    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Interp *dummy,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     int readError = 0;
     int writeError = 0;
-    int errorCode = 0;
+    (void)dummy;
 
     /*
      * Shutdown the OS socket handle.
      */
     if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
-	return TcpCloseProc(instanceData, interp);
+	return TcpCloseProc(instanceData, NULL);
     }
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
 	readError = errno;
@@ -677,12 +677,7 @@ TcpClose2Proc(
     if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
 	writeError = errno;
     }
-
-    errorCode = (readError != 0) ? readError : writeError;
-    if (interp && errorCode) {
-	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
-    }
-    return errorCode;
+    return (readError != 0) ? readError : writeError;
 }
 
 /*
@@ -821,7 +816,7 @@ TcpGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store the computed value;
 				 * initialized by caller. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     size_t len = 0;
 
     WaitForConnect(statePtr, NULL);
@@ -1013,7 +1008,7 @@ TcpWatchProc(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     if (statePtr->acceptProc != NULL) {
         /*
@@ -1086,7 +1081,8 @@ TcpGetHandleProc(
     int direction,		/* Not used. */
     ClientData *handlePtr)	/* Where to store the handle. */
 {
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
+    (void)direction;
 
     *handlePtr = INT2PTR(statePtr->fds.fd);
     return TCL_OK;
@@ -1111,7 +1107,9 @@ TcpAsyncCallback(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    TcpConnect(NULL, clientData);
+    (void)mask;
+
+    TcpConnect(NULL, (TcpState *)clientData);
 }
 
 /*
@@ -1370,7 +1368,7 @@ Tcl_OpenTcpClient(
      * Allocate a new TcpState for this socket.
      */
 
-    statePtr = ckalloc(sizeof(TcpState));
+    statePtr = (TcpState *)ckalloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
     statePtr->cachedBlocking = TCL_MODE_BLOCKING;
@@ -1449,7 +1447,7 @@ TclpMakeTcpClientChannelMode(
     TcpState *statePtr;
     char channelName[SOCK_CHAN_LENGTH];
 
-    statePtr = ckalloc(sizeof(TcpState));
+    statePtr = (TcpState *)ckalloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
@@ -1609,14 +1607,14 @@ Tcl_OpenTcpServer(
              * Allocate a new TcpState for this socket.
              */
 
-            statePtr = ckalloc(sizeof(TcpState));
+            statePtr = (TcpState *)ckalloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
             sprintf(channelName, SOCK_TEMPLATE, (long) statePtr);
             newfds = &statePtr->fds;
         } else {
-            newfds = ckalloc(sizeof(TcpFdList));
+            newfds = (TcpFdList *)ckalloc(sizeof(TcpFdList));
             memset(newfds, (int) 0, sizeof(TcpFdList));
             fds->next = newfds;
         }
@@ -1680,13 +1678,14 @@ TcpAccept(
     ClientData data,		/* Callback token. */
     int mask)			/* Not used. */
 {
-    TcpFdList *fds = data;	/* Client data of server socket. */
+    TcpFdList *fds = (TcpFdList *)data;	/* Client data of server socket. */
     int newsock;		/* The new client socket */
     TcpState *newSockState;	/* State for new socket. */
     address addr;		/* The remote address */
     socklen_t len;		/* For accept interface */
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
+    (void)mask;
 
     len = sizeof(addr);
     newsock = accept(fds->fd, &addr.sa, &len);
@@ -1701,7 +1700,7 @@ TcpAccept(
 
     (void) fcntl(newsock, F_SETFD, FD_CLOEXEC);
 
-    newSockState = ckalloc(sizeof(TcpState));
+    newSockState = (TcpState *)ckalloc(sizeof(TcpState));
     memset(newSockState, 0, sizeof(TcpState));
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;
