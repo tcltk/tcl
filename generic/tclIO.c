@@ -377,15 +377,6 @@ ChanClose(
     return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
 
-static inline int
-ChanCloseHalf(
-    Channel *chanPtr,
-    Tcl_Interp *interp,
-    int flags)
-{
-    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, flags);
-}
-
 /*
  *---------------------------------------------------------------------------
  *
@@ -3475,7 +3466,7 @@ TclClose(
      */
 
     result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
-    if (result == EINVAL) {
+    if ((result == EINVAL) || result == ENOTCONN) {
 	result = 0;
     }
 
@@ -3520,13 +3511,17 @@ TclClose(
      * message set up to now.
      */
 
-    if (flushcode != 0 && interp != NULL
+    if (flushcode != 0) {
+	/* flushcode has precedence, if available */
+	result = flushcode;
+    }
+    if ((result != 0) && (result != TCL_ERROR) && (interp != NULL)
 	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp))) {
-	Tcl_SetErrno(flushcode);
+	Tcl_SetErrno(result);
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(Tcl_PosixError(interp), -1));
     }
-    if ((flushcode != 0) || (result != 0)) {
+    if (result != 0) {
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -3822,7 +3817,7 @@ CloseChannelPart(
      * message in the interp.
      */
 
-    result = ChanCloseHalf(chanPtr, interp, flags);
+    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, NULL, flags);
 
     /*
      * If we are being called synchronously, report either any latent error on
@@ -4227,7 +4222,7 @@ WillRead(
 	 * Prevent read attempts on a closed channel.
 	 */
 
-        DiscardInputQueued(chanPtr->state, 0);
+	DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -4243,9 +4238,9 @@ WillRead(
 	 * blocking mode.
 	 */
 
-        if (FlushChannel(NULL, chanPtr, 0) != 0) {
-            return -1;
-        }
+	if (FlushChannel(NULL, chanPtr, 0) != 0) {
+	return -1;
+	}
     }
     return 0;
 }

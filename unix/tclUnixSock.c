@@ -624,11 +624,12 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *interp)	/* For error reporting  */
+    Tcl_Interp *dummy)	/* For error reporting - unused  */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
     TcpFdList *fds;
+    (void)dummy;
 
     /*
      * Delete a file handler that may be active for this socket if this is a
@@ -662,9 +663,6 @@ TcpCloseProc(
         freeaddrinfo(statePtr->myaddrlist);
     }
     Tcl_Free(statePtr);
-    if (interp && errorCode) {
-	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
-    }
     return errorCode;
 }
 
@@ -688,19 +686,19 @@ TcpCloseProc(
 static int
 TcpClose2Proc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Interp *dummy,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int readError = 0;
     int writeError = 0;
-    int errorCode = 0;
+    (void)dummy;
 
     /*
      * Shutdown the OS socket handle.
      */
     if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
-	return TcpCloseProc(instanceData, interp);
+	return TcpCloseProc(instanceData, NULL);
     }
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
 	readError = errno;
@@ -708,12 +706,7 @@ TcpClose2Proc(
     if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
 	writeError = errno;
     }
-
-    errorCode = (readError != 0) ? readError : writeError;
-    if (interp && errorCode) {
-	Tcl_SetResult(interp, (char *)Tcl_PosixError(interp), TCL_STATIC);
-    }
-    return errorCode;
+    return (readError != 0) ? readError : writeError;
 }
 
 /*
