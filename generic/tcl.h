@@ -81,15 +81,16 @@ extern "C" {
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
 #endif
-#ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
-#endif
 
 #ifndef TCL_THREADS
 #   define TCL_THREADS 1
 #endif
 #endif /* !TCL_NO_DEPRECATED */
+
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
 
 /*
  * A special definition used to allow this header file to be included from
