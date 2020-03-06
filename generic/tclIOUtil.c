@@ -1228,15 +1228,12 @@ FsAddMountsToGlobResult(
 
 void
 Tcl_FSMountsChanged(
-    const Tcl_Filesystem *fsPtr)
-{
+    TCL_UNUSED(const Tcl_Filesystem *) /*fsPtr*/)
     /*
      * fsPtr is currently unused.  In the future it might invalidate files for
      * a particular filesystem, or take some other more advanced action.
      */
-
-    (void)fsPtr;
-
+{
     /*
      * Increment the filesystem epoch to invalidate every existing cached
      * internal representation.
@@ -2314,11 +2311,9 @@ Tcl_FSUtime(
 
 static const char *const *
 NativeFileAttrStrings(
-    Tcl_Obj *pathPtr,
-    Tcl_Obj **objPtrRef)
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj **))
 {
-    (void)pathPtr;
-    (void)objPtrRef;
     return tclpFileAttrStrings;
 }
 
@@ -3020,14 +3015,11 @@ Tcl_FSLoadFile(
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
 				 * object.  Can be passed to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
-				/* A place to store a pointer to the function
-				 * that unloads the object. */
+    TCL_UNUSED(Tcl_FSUnloadFileProc **))
 {
     const char *symbols[3];
     void *procPtrs[2];
     int res;
-    (void)unloadProcPtr;
 
     symbols[0] = sym1;
     symbols[1] = sym2;
@@ -4686,10 +4678,9 @@ Tcl_FSPathSeparator(
 
 static Tcl_Obj *
 NativeFilesystemSeparator(
-    Tcl_Obj *pathPtr)
+    TCL_UNUSED(Tcl_Obj *) /*pathPtr*/)
 {
     const char *separator = NULL; /* lint */
-    (void)pathPtr;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
