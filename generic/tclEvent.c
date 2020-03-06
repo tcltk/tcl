@@ -311,7 +311,7 @@ HandleBgErrors(
 
 int
 TclDefaultBgErrorHandlerObjCmd(
-    void *dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -320,7 +320,6 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_Obj *tempObjv[2];
     int result, code, level;
     Tcl_InterpState saved;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
@@ -598,11 +597,10 @@ TclGetBgErrorHandler(
 static void
 BgErrorDeleteProc(
     void *clientData,	/* Pointer to ErrAssocData structure. */
-    Tcl_Interp *dummy)		/* Interpreter being deleted. */
+    TCL_UNUSED(Tcl_Interp *))
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
     BgError *errPtr;
-    (void)dummy;
 
     while (assocPtr->firstBgPtr != NULL) {
 	errPtr = assocPtr->firstBgPtr;
@@ -1401,14 +1399,13 @@ TclInThreadExit(void)
 	/* ARGSUSED */
 int
 Tcl_VwaitObjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int done, foundEvent;
     const char *nameString;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1466,14 +1463,13 @@ Tcl_VwaitObjCmd(
 	/* ARGSUSED */
 static char *
 VwaitVarProc(
-    void *clientData,	/* Pointer to integer to set to 1. */
+    void *clientData,		/* Pointer to integer to set to 1. */
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable. */
     const char *name2,		/* Second part of variable name. */
-    int flags)			/* Information about what happened. */
+    TCL_UNUSED(int) /*flags*/)	/* Information about what happened. */
 {
     int *donePtr = (int *)clientData;
-    (void)flags;
 
     *donePtr = 1;
     Tcl_UntraceVar2(interp, name1, name2, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
@@ -1501,7 +1497,7 @@ VwaitVarProc(
 	/* ARGSUSED */
 int
 Tcl_UpdateObjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1510,7 +1506,6 @@ Tcl_UpdateObjCmd(
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
     enum updateOptions {OPT_IDLETASKS};
-    (void)dummy;
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
