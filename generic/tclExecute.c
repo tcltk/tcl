@@ -798,6 +798,7 @@ ReleaseDictIterator(
  *----------------------------------------------------------------------
  */
 
+#if defined(TCL_COMPILE_STATS) || defined(TCL_COMPILE_DEBUG)
 static void
 InitByteCodeExecution(
     Tcl_Interp *interp)		/* Interpreter for which the Tcl variable
@@ -810,12 +811,19 @@ InitByteCodeExecution(
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
 #endif
-#ifndef TCL_COMPILE_STATS
-    (void)interp;
-#else
+#ifdef TCL_COMPILE_STATS
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
+
+#else
+
+static void
+InitByteCodeExecution(
+    TCL_UNUSED(Tcl_Interp *))
+{
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1358,13 +1366,11 @@ Tcl_ExprObj(
 static int
 CopyCallback(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
     Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
     Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
-    (void)dummy;
-    (void)dummy;
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1555,11 +1561,9 @@ CompileExprObj(
 
 static void
 DupExprCodeInternalRep(
-    Tcl_Obj *srcPtr,
-    Tcl_Obj *copyPtr)
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj *))
 {
-    (void)srcPtr;
-    (void)copyPtr;
     return;
 }
 
