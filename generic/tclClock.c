@@ -1645,14 +1645,13 @@ WeekdayOnOrBefore(
 
 int
 ClockGetenvObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     const char *varName;
     const char *varValue;
-    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1731,7 +1730,7 @@ ThreadSafeLocalTime(
 
 int
 ClockClicksObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
@@ -1745,7 +1744,6 @@ ClockClicksObjCmd(
     int index = CLICKS_NATIVE;
     Tcl_Time now;
     Tcl_WideInt clicks = 0;
-    (void)clientData;
 
     switch (objc) {
     case 1:
@@ -1802,13 +1800,12 @@ ClockClicksObjCmd(
 
 int
 ClockMillisecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -1840,12 +1837,11 @@ ClockMillisecondsObjCmd(
 
 int
 ClockMicrosecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    (void)clientData;
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
@@ -1992,13 +1988,12 @@ ClockParseformatargsObjCmd(
 
 int
 ClockSecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
