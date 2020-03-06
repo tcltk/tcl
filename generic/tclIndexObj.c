@@ -540,7 +540,7 @@ TclInitPrefixCmd(
 
 static int
 PrefixMatchObjCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -556,7 +556,6 @@ PrefixMatchObjCmd(
     enum matchOptions {
 	PRFMATCH_ERROR, PRFMATCH_EXACT, PRFMATCH_MESSAGE
     };
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? table string");
@@ -665,7 +664,7 @@ PrefixMatchObjCmd(
 
 static int
 PrefixAllObjCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -673,7 +672,6 @@ PrefixAllObjCmd(
     int tableObjc, result, t, length, elemLength;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "table string");
@@ -723,7 +721,7 @@ PrefixAllObjCmd(
 
 static int
 PrefixLongestObjCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -731,7 +729,6 @@ PrefixLongestObjCmd(
     int tableObjc, result, i, t, length, elemLength, resultLength;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "table string");
