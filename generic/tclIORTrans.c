@@ -503,7 +503,7 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
 
 int
 TclChanPushObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -530,7 +530,6 @@ TclChanPushObjCmd(
 				 * in this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
-    (void)dummy;
 
     /*
      * Syntax:   chan push CHANNEL CMDPREFIX
@@ -749,7 +748,7 @@ TclChanPushObjCmd(
 
 int
 TclChanPopObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -767,7 +766,6 @@ TclChanPopObjCmd(
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
     int mode;			/* Channel r/w mode */
-    (void)dummy;
 
     /*
      * Number of arguments...
@@ -1755,7 +1753,7 @@ static ReflectedTransform *
 NewReflectedTransform(
     Tcl_Interp *interp,
     Tcl_Obj *cmdpfxObj,
-    int mode,
+    TCL_UNUSED(int) /*mode*/,
     Tcl_Obj *handleObj,
     Tcl_Channel parentChan)
 {
@@ -1763,7 +1761,6 @@ NewReflectedTransform(
     int listc;
     Tcl_Obj **listv;
     int i;
-    (void)mode;
 
     rtPtr = (ReflectedTransform *)ckalloc(sizeof(ReflectedTransform));
 
@@ -2311,14 +2308,13 @@ GetThreadReflectedTransformMap(void)
 
 static void
 DeleteThreadReflectedTransformMap(
-    ClientData dummy)	/* The per-thread data structure. */
+    TCL_UNUSED(ClientData))
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
     ForwardingResult *resultPtr;
-    (void)dummy;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2506,7 +2502,7 @@ ForwardOpToOwnerThread(
 static int
 ForwardProc(
     Tcl_Event *evGPtr,
-    int mask)
+    TCL_UNUSED(int) /*mask*/)
 {
     /*
      * Notes regarding access to the referenced data.
@@ -2531,7 +2527,6 @@ ForwardProc(
 				/* Map of reflected channels with handlers in
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    (void)mask;
 
     /*
      * Ignore the event if no one is waiting for its result anymore.
