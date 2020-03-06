@@ -47,13 +47,12 @@ static int		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
-    (void)dummy;
     return FileCopyRename(interp, objc, objv, 0);
 }
 
@@ -77,13 +76,12 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
-    (void)dummy;
     return FileCopyRename(interp, objc, objv, 1);
 }
 
@@ -216,7 +214,7 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -226,7 +224,6 @@ TclFileMakeDirsCmd(
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
-    (void)dummy;
 
     result = TCL_OK;
     for (i = 1; i < objc; i++) {
@@ -341,7 +338,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -349,7 +346,6 @@ TclFileDeleteCmd(
     int i, force, result;
     Tcl_Obj *errfile;
     Tcl_Obj *errorBuffer = NULL;
-    (void)dummy;
 
     i = FileForceOption(interp, objc - 1, objv + 1, &force);
     if (i < 0) {
@@ -950,7 +946,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -961,7 +957,6 @@ TclFileAttrsCmd(
     Tcl_Obj *objStrings = NULL;
     int numObjStrings = -1;
     Tcl_Obj *filePtr;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?-option value ...?");
@@ -1167,14 +1162,13 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
     int index;
-    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-linktype? linkname ?target?");
@@ -1319,13 +1313,12 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1371,7 +1364,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1385,7 +1378,6 @@ TclFileTemporaryCmd(
 				/* Pieces of template. Each piece is NULL if
 				 * it is omitted. The platform temporary file
 				 * engine might ignore some pieces. */
-    (void)dummy;
 
     if (objc < 1 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?nameVar? ?template?");
@@ -1531,7 +1523,7 @@ TclFileTemporaryCmd(
 
 int
 TclFileTempDirCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1542,7 +1534,6 @@ TclFileTempDirCmd(
 				/* Pieces of template. Each piece is NULL if
 				 * it is omitted. The platform temporary file
 				 * engine might ignore some pieces. */
-    (void)dummy;
 
     if (objc < 1 || objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?template?");

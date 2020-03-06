@@ -417,7 +417,7 @@ static void		SrcExitProc(ClientData clientData);
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
 static ReflectedChannelMap *	GetThreadReflectedChannelMap(void);
-static void		DeleteThreadReflectedChannelMap(ClientData clientData);
+static Tcl_ExitProc	DeleteThreadReflectedChannelMap;
 
 #endif /* TCL_THREADS */
 
@@ -444,8 +444,7 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
-static void		DeleteReflectedChannelMap(ClientData clientData,
-			    Tcl_Interp *interp);
+static Tcl_InterpDeleteProc	DeleteReflectedChannelMap;
 static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
 static void		MarkDead(ReflectedChannel *rcPtr);
 
@@ -490,7 +489,7 @@ static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo
 
 int
 TclChanCreateObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -516,7 +515,6 @@ TclChanCreateObjCmd(
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
-    (void)dummy;
 
     /*
      * Syntax:   chan create MODE CMDPREFIX
@@ -769,7 +767,7 @@ typedef struct {
 static int
 ReflectEventRun(
     Tcl_Event *ev,
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     /* OWNER thread
      *
@@ -779,7 +777,6 @@ ReflectEventRun(
      */
 
     ReflectEvent *e = (ReflectEvent *) ev;
-    (void)flags;
 
     Tcl_NotifyChannel(e->rcPtr->chan, e->events);
     return 1;
@@ -808,7 +805,7 @@ ReflectEventDelete(
 
 int
 TclChanPostEventObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -837,7 +834,6 @@ TclChanPostEventObjCmd(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    (void)dummy;
 
     /*
      * Number of arguments...
@@ -2488,8 +2484,7 @@ GetReflectedChannelMap(
     if (rcmPtr == NULL) {
 	rcmPtr = (ReflectedChannelMap *)Tcl_Alloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, RCMKEY,
-		(Tcl_InterpDeleteProc *) DeleteReflectedChannelMap, rcmPtr);
+	Tcl_SetAssocData(interp, RCMKEY, DeleteReflectedChannelMap, rcmPtr);
     }
     return rcmPtr;
 }
@@ -2715,14 +2710,13 @@ GetThreadReflectedChannelMap(void)
 
 static void
 DeleteThreadReflectedChannelMap(
-    ClientData dummy)	/* The per-thread data structure. */
+    TCL_UNUSED(ClientData))
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedChannelMap *rcmPtr; /* The map */
     ForwardingResult *resultPtr;
-    (void)dummy;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2940,7 +2934,7 @@ ForwardOpToHandlerThread(
 static int
 ForwardProc(
     Tcl_Event *evGPtr,
-    int mask)
+    TCL_UNUSED(int) /* mask */)
 {
     /*
      * HANDLER thread.
@@ -2969,7 +2963,6 @@ ForwardProc(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
                                  * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    (void)mask;
 
     /*
      * Ignore the event if no one is waiting for its result anymore.
