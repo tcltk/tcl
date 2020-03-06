@@ -151,7 +151,7 @@ NewNsObj(
 
 int
 TclNamespaceEnsembleCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -164,7 +164,6 @@ TclNamespaceEnsembleCmd(
     Tcl_Obj *listObj;
     const char *simpleName;
     int index, done;
-    (void)dummy;
 
     if (nsPtr == NULL || nsPtr->flags & NS_DYING) {
 	if (!Tcl_InterpDeleted(interp)) {
@@ -1988,11 +1987,10 @@ NsEnsembleImplementationCmdNR(
 
 int
 TclClearRootEnsemble(
-    ClientData dummy[],
+    TCL_UNUSED(ClientData *),
     Tcl_Interp *interp,
     int result)
 {
-	(void)dummy;
     TclResetRewriteEnsemble(interp, 1);
     return result;
 }
@@ -2096,12 +2094,11 @@ TclResetRewriteEnsemble(
 static int
 FreeER(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
     Tcl_Obj **tmp = (Tcl_Obj **) data[0];
     Tcl_Obj **store = (Tcl_Obj **) data[1];
-    (void)dummy;
 
     ckfree(store);
     ckfree(tmp);
