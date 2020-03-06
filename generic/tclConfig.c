@@ -41,13 +41,10 @@ typedef struct {
  * Static functions in this file:
  */
 
-static int		QueryConfigObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj *const *objv);
-static void		QueryConfigDelete(ClientData clientData);
+static Tcl_ObjCmdProc		QueryConfigObjCmd;
+static Tcl_CmdDeleteProc	QueryConfigDelete;
+static Tcl_InterpDeleteProc	ConfigDictDeleteProc;
 static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
-static void		ConfigDictDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -393,12 +390,9 @@ GetConfigDict(
 static void
 ConfigDictDeleteProc(
     ClientData clientData,	/* Pointer to Tcl_Obj. */
-    Tcl_Interp *dummy)		/* Interpreter being deleted. */
+    TCL_UNUSED(Tcl_Interp *))
 {
-    Tcl_Obj *pDB = (Tcl_Obj *)clientData;
-    (void)dummy;
-
-    Tcl_DecrRefCount(pDB);
+    Tcl_DecrRefCount((Tcl_Obj *)clientData);
 }
 
 /*
