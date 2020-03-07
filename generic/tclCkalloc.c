@@ -631,7 +631,7 @@ Tcl_DbCkfree(
 
     if (memp->tagPtr != NULL) {
 	if ((memp->tagPtr->refCount-- <= 1) && (curTagPtr != memp->tagPtr)) {
-	    TclpFree((char *) memp->tagPtr);
+	    TclpFree(memp->tagPtr);
 	}
     }
 
@@ -648,7 +648,7 @@ Tcl_DbCkfree(
     if (allocHead == memp) {
 	allocHead = memp->flink;
     }
-    TclpFree((char *) memp);
+    TclpFree(memp);
     Tcl_MutexUnlock(ckallocMutexPtr);
 }
 
@@ -859,7 +859,7 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
-	    TclpFree((char *) curTagPtr);
+	    TclpFree(curTagPtr);
 	}
 	len = strlen(TclGetString(objv[2]));
 	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(len));
@@ -1047,7 +1047,7 @@ void *
 Tcl_AttemptAlloc(
     size_t size)
 {
-    return TclpAlloc(size);
+    return (char *)TclpAlloc(size);
 }
 
 void *
@@ -1056,7 +1056,7 @@ Tcl_AttemptDbCkalloc(
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return TclpAlloc(size);
+    return (char *)TclpAlloc(size);
 }
 
 /*
@@ -1117,7 +1117,7 @@ Tcl_AttemptRealloc(
     void *ptr,
     size_t size)
 {
-    return TclpRealloc(ptr, size);
+    return (char *)TclpRealloc(ptr, size);
 }
 
 void *
@@ -1127,7 +1127,7 @@ Tcl_AttemptDbCkrealloc(
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return TclpRealloc(ptr, size);
+    return (char *)TclpRealloc(ptr, size);
 }
 
 /*
@@ -1232,7 +1232,7 @@ TclFinalizeMemorySubsystem(void)
     Tcl_MutexLock(ckallocMutexPtr);
 
     if (curTagPtr != NULL) {
-	TclpFree((char *) curTagPtr);
+	TclpFree(curTagPtr);
 	curTagPtr = NULL;
     }
     allocHead = NULL;
