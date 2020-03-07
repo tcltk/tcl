@@ -77,13 +77,10 @@ static inline void	InitClassPath(Tcl_Interp * interp, Class *clsPtr);
 static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
-static void		KillFoundation(ClientData clientData,
-			    Tcl_Interp *interp);
+static Tcl_InterpDeleteProc	KillFoundation;
 static void		MyDeleted(ClientData clientData);
 static void		ObjectNamespaceDeleted(ClientData clientData);
-static void		ObjectRenamedTrace(ClientData clientData,
-			    Tcl_Interp *interp, const char *oldName,
-			    const char *newName, int flags);
+static Tcl_CommandTraceProc	ObjectRenamedTrace;
 static inline void	RemoveClass(Class **list, int num, int idx);
 static inline void	RemoveObject(Object **list, int num, int idx);
 static inline void	SquelchCachedName(Object *oPtr);
@@ -569,13 +566,11 @@ DeletedHelpersNamespace(
 
 static void
 KillFoundation(
-    ClientData dummy,	/* Pointer to the OO system foundation
-				 * structure. */
-    Tcl_Interp *interp)		/* The interpreter containing the OO system
-				 * foundation. */
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp)	/* The interpreter containing the OO system
+			 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    (void)dummy;
 
     TclDecrRefCount(fPtr->unknownMethodNameObj);
     TclDecrRefCount(fPtr->constructorName);
@@ -819,15 +814,12 @@ MyClassDeleted(
 static void
 ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
-    Tcl_Interp *interp,		/* The interpreter containing the object. */
-    const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* What it's getting renamed to. (unused) */
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(const char *) /*oldName*/,
+    TCL_UNUSED(const char *) /*newName*/,
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = (Object *)clientData;
-    (void)interp;
-    (void)oldName;
-    (void)newName;
 
     /*
      * If this is a rename and not a delete of the object, we just flush the
@@ -2765,10 +2757,9 @@ TclOOObjectCmdCore(
 static int
 FinalizeObjectCall(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    (void)dummy;
     /*
      * Dispose of the call chain, which drops the lock on the object's
      * structure.
@@ -2927,11 +2918,10 @@ TclNRObjectContextInvokeNext(
 static int
 FinalizeNext(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
-    (void)dummy;
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
