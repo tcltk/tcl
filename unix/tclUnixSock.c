@@ -624,7 +624,7 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *dummy)		/* For error reporting - unused. */
+    Tcl_Interp *dummy)	/* For error reporting - unused  */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
@@ -686,18 +686,19 @@ TcpCloseProc(
 static int
 TcpClose2Proc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Interp *dummy,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int readError = 0;
     int writeError = 0;
+    (void)dummy;
 
     /*
      * Shutdown the OS socket handle.
      */
     if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
-	return TcpCloseProc(instanceData, interp);
+	return TcpCloseProc(instanceData, NULL);
     }
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
 	readError = errno;

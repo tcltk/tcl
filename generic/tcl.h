@@ -56,6 +56,23 @@ extern "C" {
 #define TCL_VERSION	    "9.0"
 #define TCL_PATCH_LEVEL	    "9.0a2"
 
+#if defined(RC_INVOKED)
+/*
+ * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
+ * quotation marks), JOIN joins two arguments.
+ */
+
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+#endif /* RC_INVOKED */
+
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
+
 /*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
@@ -90,6 +107,11 @@ extern "C" {
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   if defined(__cplusplus)
+#	define TCL_UNUSED(T) T
+#   else
+#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
+#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
@@ -100,6 +122,11 @@ extern "C" {
 #	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
+#   if defined(__cplusplus)
+#	define TCL_UNUSED(T) T
+#   else
+#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
+#   endif
 #endif
 
 /*
@@ -1185,7 +1212,7 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * interface.
  */
 
-#define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *) 1)
+#define TCL_CLOSE2PROC		NULL
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
@@ -1205,16 +1232,12 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  */
 
 typedef int	(Tcl_DriverBlockModeProc) (void *instanceData, int mode);
-typedef int	(Tcl_DriverCloseProc) (void *instanceData,
-			Tcl_Interp *interp);
 typedef int	(Tcl_DriverClose2Proc) (void *instanceData,
 			Tcl_Interp *interp, int flags);
 typedef int	(Tcl_DriverInputProc) (void *instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (void *instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
-typedef int	(Tcl_DriverSeekProc) (void *instanceData, long offset,
-			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
@@ -1257,17 +1280,14 @@ typedef struct Tcl_ChannelType {
 				 * type. */
     Tcl_ChannelTypeVersion version;
 				/* Version of the channel type. */
-    Tcl_DriverCloseProc *closeProc;
-				/* Function to call to close the channel, or
-				 * NULL or TCL_CLOSE2PROC if the close2Proc should be
-				 * used instead. */
+    void *closeProc;
+				/* Not used any more. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
-    Tcl_DriverSeekProc *seekProc;
-				/* Function to call to seek on the channel.
-				 * May be NULL. */
+    void *seekProc;
+				/* Not used any more. */
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;
@@ -1285,9 +1305,6 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverBlockModeProc *blockModeProc;
 				/* Set blocking mode for the raw channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_2 channels or later.
-     */
     Tcl_DriverFlushProc *flushProc;
 				/* Function to call to flush a channel. May be
 				 * NULL. */
@@ -1295,26 +1312,15 @@ typedef struct Tcl_ChannelType {
 				/* Function to call to handle a channel event.
 				 * This will be passed up the stacked channel
 				 * chain. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_3 channels or later.
-     */
     Tcl_DriverWideSeekProc *wideSeekProc;
 				/* Function to call to seek on the channel
 				 * which can handle 64-bit offsets. May be
 				 * NULL, and must be NULL if seekProc is
 				 * NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_4 channels or later.
-     * TIP #218, Channel Thread Actions.
-     */
     Tcl_DriverThreadActionProc *threadActionProc;
 				/* Function to call to notify the driver of
 				 * thread specific activity for a channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_5 channels or later.
-     * TIP #208, File Truncation.
-     */
     Tcl_DriverTruncateProc *truncateProc;
 				/* Function to call to truncate the underlying
 				 * file to a particular length. May be NULL if

@@ -1331,12 +1331,10 @@ static int
 BadEnsembleSubcommand(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /* objv */)
 {
     const UnsafeEnsembleInfo *infoPtr = (const UnsafeEnsembleInfo *)clientData;
-    (void)objc;
-    (void)objv;
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
             "not allowed to invoke subcommand %s of %s",
@@ -3241,13 +3239,12 @@ Tcl_GetCommandInfoFromToken(
 
 const char *
 Tcl_GetCommandName(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Command command)	/* Token for command returned by a previous
 				 * call to Tcl_CreateCommand. The command must
 				 * not have been deleted. */
 {
     Command *cmdPtr = (Command *) command;
-    (void)dummy;
 
     if ((cmdPtr == NULL) || (cmdPtr->hPtr == NULL)) {
 	/*
@@ -3690,12 +3687,11 @@ CallCommandTraces(
 static int
 CancelEvalProc(
     ClientData clientData,	/* Interp to cancel the script in progress. */
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     int code)			/* Current return code from command. */
 {
     CancelInfo *cancelInfo = (CancelInfo *)clientData;
     Interp *iPtr;
-    (void)dummy;
 
     if (cancelInfo != NULL) {
 	Tcl_MutexLock(&cancelLock);
@@ -4177,7 +4173,7 @@ static int
 EvalObjvCore(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
     Command *cmdPtr = NULL, *preCmdPtr = (Command *)data[0];
     int flags = PTR2INT(data[1]);
@@ -4186,7 +4182,6 @@ EvalObjvCore(
     Interp *iPtr = (Interp *) interp;
     Namespace *lookupNsPtr = NULL;
     int enterTracesDone = 0;
-    (void)result;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4338,14 +4333,13 @@ static int
 Dispatch(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
     Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
     ClientData clientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
-    (void)result;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
@@ -6434,7 +6428,7 @@ TclObjInvoke(
 
 int
 TclNRInvoke(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -6444,7 +6438,6 @@ TclNRInvoke(
     const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
     Command *cmdPtr;
-    (void)dummy;
 
     cmdName = TclGetString(objv[0]);
     hTblPtr = iPtr->hiddenCmdTablePtr;
@@ -6478,12 +6471,11 @@ TclNRInvoke(
 
 static int
 NRPostInvoke(
-    ClientData dummy[],		/* Not used. */
+    TCL_UNUSED(ClientData *),
     Tcl_Interp *interp,
     int result)
 {
     Interp *iPtr = (Interp *)interp;
-    (void)dummy;
 
     iPtr->numLevels--;
     return result;
@@ -6717,7 +6709,7 @@ Tcl_GetVersion(
 
 static int
 ExprCeilFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -6726,7 +6718,6 @@ ExprCeilFunc(
     int code;
     double d;
     mp_int big;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -6758,7 +6749,7 @@ ExprCeilFunc(
 
 static int
 ExprFloorFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -6767,7 +6758,6 @@ ExprFloorFunc(
     int code;
     double d;
     mp_int big;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -6799,7 +6789,7 @@ ExprFloorFunc(
 
 static int
 ExprIsqrtFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
@@ -6811,7 +6801,6 @@ ExprIsqrtFunc(
     mp_int big;
     int exact = 0;		/* Flag ==1 if the argument can be represented
 				 * in a double as an exact integer. */
-    (void)dummy;
 
     /*
      * Check syntax.
@@ -6906,7 +6895,7 @@ ExprIsqrtFunc(
 
 static int
 ExprSqrtFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -6915,7 +6904,6 @@ ExprSqrtFunc(
     int code;
     double d;
     mp_int big;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7075,7 +7063,7 @@ ExprBinaryFunc(
 
 static int
 ExprAbsFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7084,7 +7072,6 @@ ExprAbsFunc(
     ClientData ptr;
     int type;
     mp_int big;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7175,14 +7162,13 @@ ExprAbsFunc(
 
 static int
 ExprBoolFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     int value;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7197,14 +7183,13 @@ ExprBoolFunc(
 
 static int
 ExprDoubleFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     double dResult;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7225,7 +7210,7 @@ ExprDoubleFunc(
 
 static int
 ExprIntFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7234,7 +7219,6 @@ ExprIntFunc(
     double d;
     int type;
     ClientData ptr;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7282,14 +7266,13 @@ ExprIntFunc(
 
 static int
 ExprWideFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Tcl_WideInt wResult;
-    (void)dummy;
 
     if (ExprIntFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
@@ -7304,7 +7287,7 @@ ExprWideFunc(
  */
 static int
 ExprMaxMinFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7315,7 +7298,6 @@ ExprMaxMinFunc(
     double d;
     int type, i;
     ClientData ptr;
-    (void)dummy;
 
     if (objc < 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7345,31 +7327,29 @@ ExprMaxMinFunc(
 
 static int
 ExprMaxFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    (void)dummy;
     return ExprMaxMinFunc(NULL, interp, objc, objv, MP_GT);
 }
 
 static int
 ExprMinFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    (void)dummy;
     return ExprMaxMinFunc(NULL, interp, objc, objv, MP_LT);
 }
 
 static int
 ExprRandFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7380,7 +7360,6 @@ ExprRandFunc(
     long tmp;			/* Algorithm assumes at least 32 bits. Only
 				 * long guarantees that. See below. */
     Tcl_Obj *oResult;
-    (void)dummy;
 
     if (objc != 1) {
 	MathFuncWrongNumArgs(interp, 1, objc, objv);
@@ -7463,7 +7442,7 @@ ExprRandFunc(
 
 static int
 ExprRoundFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7472,7 +7451,6 @@ ExprRoundFunc(
     double d;
     ClientData ptr;
     int type;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7543,15 +7521,14 @@ ExprRoundFunc(
 
 static int
 ExprSrandFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_WideInt w = 0;			/* Initialized to avoid compiler warning. */
-    (void)dummy;
+    Tcl_WideInt w = 0;		/* Initialized to avoid compiler warning. */
 
     /*
      * Convert argument and use it to reset the seed.
@@ -7733,7 +7710,7 @@ ClassifyDouble(
 
 static int
 ExprIsFiniteFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7742,7 +7719,6 @@ ExprIsFiniteFunc(
     double d;
     ClientData ptr;
     int type, result = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7765,7 +7741,7 @@ ExprIsFiniteFunc(
 
 static int
 ExprIsInfinityFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7774,7 +7750,6 @@ ExprIsInfinityFunc(
     double d;
     ClientData ptr;
     int type, result = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7796,7 +7771,7 @@ ExprIsInfinityFunc(
 
 static int
 ExprIsNaNFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7805,7 +7780,6 @@ ExprIsNaNFunc(
     double d;
     ClientData ptr;
     int type, result = 1;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7827,7 +7801,7 @@ ExprIsNaNFunc(
 
 static int
 ExprIsNormalFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7836,7 +7810,6 @@ ExprIsNormalFunc(
     double d;
     ClientData ptr;
     int type, result = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7858,7 +7831,7 @@ ExprIsNormalFunc(
 
 static int
 ExprIsSubnormalFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7867,7 +7840,6 @@ ExprIsSubnormalFunc(
     double d;
     ClientData ptr;
     int type, result = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7889,7 +7861,7 @@ ExprIsSubnormalFunc(
 
 static int
 ExprIsUnorderedFunc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7898,7 +7870,6 @@ ExprIsUnorderedFunc(
     double d;
     ClientData ptr;
     int type, result = 0;
-    (void)dummy;
 
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
@@ -7931,7 +7902,7 @@ ExprIsUnorderedFunc(
 
 static int
 FloatClassifyObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -7941,7 +7912,6 @@ FloatClassifyObjCmd(
     Tcl_Obj *objPtr;
     ClientData ptr;
     int type;
-    (void)dummy;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
@@ -8041,14 +8011,11 @@ MathFuncWrongNumArgs(
 
 static int
 DTraceObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
+    TCL_UNUSED(ClientData),
+    TCL_UNUSED(Tcl_Interp *),
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    (void)dummy;
-    (void)interp;
-
     if (TCL_DTRACE_TCL_PROBE_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -8428,13 +8395,12 @@ TclSetTailcall(
 
 int
 TclNRTailcallObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    (void)dummy;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?command? ?arg ...?");
@@ -8534,11 +8500,10 @@ TclNRTailcallEval(
 int
 TclNRReleaseValues(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
     int i = 0;
-    (void)dummy;
 
     while (i < 4) {
 	if (data[i]) {
@@ -8623,7 +8588,7 @@ TclNRYieldObjCmd(
 
 int
 TclNRYieldToObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -8631,7 +8596,6 @@ TclNRYieldToObjCmd(
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8678,9 +8642,8 @@ static int
 RewindCoroutineCallback(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
-    (void)result;
     return Tcl_RestoreInterpState(interp, (Tcl_InterpState)data[0]);
 }
 
@@ -8830,13 +8793,12 @@ int
 TclNRCoroutineActivateCallback(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     int type = PTR2INT(data[1]);
     int numLevels, unused;
     int *stackLevel = &unused;
-    (void)result;
 
     if (!corPtr->stackLevel) {
         /*
@@ -8910,12 +8872,11 @@ static int
 TclNREvalList(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
     int objc;
     Tcl_Obj **objv;
     Tcl_Obj *listPtr = (Tcl_Obj *)data[0];
-    (void)result;
 
     Tcl_IncrRefCount(listPtr);
 
@@ -8937,14 +8898,13 @@ TclNREvalList(
 
 static int
 CoroTypeObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr;
     CoroutineData *corPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "coroName");
@@ -9028,14 +8988,13 @@ GetCoroutineFromObj(
 
 static int
 TclNRCoroInjectObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    (void)dummy;
 
     /*
      * Usage more or less like tailcall:
@@ -9074,7 +9033,7 @@ TclNRCoroInjectObjCmd(
 
 static int
 TclNRCoroProbeObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9083,7 +9042,6 @@ TclNRCoroProbeObjCmd(
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     int numLevels, unused;
     int *stackLevel = &unused;
-    (void)dummy;
 
     /*
      * Usage more or less like tailcall:
@@ -9174,7 +9132,7 @@ static int
 InjectHandler(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
@@ -9182,7 +9140,6 @@ InjectHandler(
     ClientData isProbe = data[3];
     int objc;
     Tcl_Obj **objv;
-    (void)result;
 
     if (!isProbe) {
         /*
@@ -9269,14 +9226,13 @@ InjectHandlerPostCall(
 
 static int
 NRInjectObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    (void)dummy;
 
     /*
      * Usage more or less like tailcall:
@@ -9379,7 +9335,7 @@ TclNRInterpCoroutine(
 
 int
 TclNRCoroutineObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -9390,7 +9346,6 @@ TclNRCoroutineObjCmd(
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr,
 	*inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
     Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -9513,13 +9468,12 @@ TclNRCoroutineObjCmd(
 
 int
 TclInfoCoroutineCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
