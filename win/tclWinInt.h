@@ -40,10 +40,6 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
 #endif
-#ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
-#endif
 
 /*
  * Declarations of functions that are not accessible by way of the
