@@ -309,13 +309,9 @@ Tcl_Obj *
 Tcl_DbNewListObj(
     int objc,			/* Count of objects referenced by objv. */
     Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
     return Tcl_NewListObj(objc, objv);
 }
 #endif /* TCL_MEM_DEBUG */

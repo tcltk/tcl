@@ -80,12 +80,9 @@ static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(void *clientData);
 static int		CloneProcedureMethod(Tcl_Interp *interp,
 			    void *clientData, void **newClientData);
-static void		MethodErrorHandler(Tcl_Interp *interp,
-			    Tcl_Obj *procNameObj);
-static void		ConstructorErrorHandler(Tcl_Interp *interp,
-			    Tcl_Obj *procNameObj);
-static void		DestructorErrorHandler(Tcl_Interp *interp,
-			    Tcl_Obj *procNameObj);
+static ProcErrorProc	MethodErrorHandler;
+static ProcErrorProc	ConstructorErrorHandler;
+static ProcErrorProc	DestructorErrorHandler;
 static Tcl_Obj *	RenderDeclarerName(void *clientData);
 static int		InvokeForwardMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
@@ -93,13 +90,8 @@ static int		InvokeForwardMethod(void *clientData,
 static void		DeleteForwardMethod(void *clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    void *clientData, void **newClientData);
-static int		ProcedureMethodVarResolver(Tcl_Interp *interp,
-			    const char *varName, Tcl_Namespace *contextNs,
-			    int flags, Tcl_Var *varPtr);
-static int		ProcedureMethodCompiledVarResolver(Tcl_Interp *interp,
-			    const char *varName, int length,
-			    Tcl_Namespace *contextNs,
-			    Tcl_ResolvedVarInfo **rPtrPtr);
+static Tcl_ResolveVarProc	ProcedureMethodVarResolver;
+static Tcl_ResolveCompiledVarProc	ProcedureMethodCompiledVarResolver;
 
 /*
  * The types of methods defined by the core OO system.
@@ -135,7 +127,7 @@ static const Tcl_MethodType fwdMethodType = {
 
 Tcl_Method
 Tcl_NewInstanceMethod(
-    Tcl_Interp *dummy,		/* Unused. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Object object,		/* The object that has the method attached to
 				 * it. */
     Tcl_Obj *nameObj,		/* The name of the method. May be NULL; if so,
@@ -146,14 +138,13 @@ Tcl_NewInstanceMethod(
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
-    void *clientData)	/* Some data associated with the particular
+    void *clientData)		/* Some data associated with the particular
 				 * method to be created. */
 {
     Object *oPtr = (Object *) object;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
-    (void)dummy;
 
     if (nameObj == NULL) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
@@ -209,7 +200,7 @@ Tcl_NewInstanceMethod(
 
 Tcl_Method
 Tcl_NewMethod(
-    Tcl_Interp *dummy,		/* The interpreter containing the class. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Class cls,		/* The class to attach the method to. */
     Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
 				 * for constructors or destructors); if so, up
@@ -219,14 +210,13 @@ Tcl_NewMethod(
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
-    void *clientData)	/* Some data associated with the particular
+    void *clientData)		/* Some data associated with the particular
 				 * method to be created. */
 {
     Class *clsPtr = (Class *) cls;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew;
-    (void)dummy;
 
     if (nameObj == NULL) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
@@ -962,12 +952,11 @@ ProcedureMethodVarResolver(
     Tcl_Interp *interp,
     const char *varName,
     Tcl_Namespace *contextNs,
-    int flags,
+    TCL_UNUSED(int) /*flags*/,	/* Ignoring variable access flags (???) */
     Tcl_Var *varPtr)
 {
     int result;
     Tcl_ResolvedVarInfo *rPtr = NULL;
-    (void)flags;
 
     result = ProcedureMethodCompiledVarResolver(interp, varName,
 	    strlen(varName), contextNs, &rPtr);
@@ -1111,16 +1100,14 @@ ProcedureMethodCompiledVarDelete(
 
 static int
 ProcedureMethodCompiledVarResolver(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     const char *varName,
     int length,
-    Tcl_Namespace *contextNs,
+    TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtrPtr)
 {
     OOResVarInfo *infoPtr;
     Tcl_Obj *variableObj = Tcl_NewStringObj(varName, length);
-    (void)dummy;
-    (void)contextNs;
 
     /*
      * Do not create resolvers for cases that contain namespace separators or
@@ -1184,6 +1171,8 @@ RenderDeclarerName(
  * ----------------------------------------------------------------------
  */
 
+/* TODO: Check whether Tcl_AppendLimitedToObj() can work here. */
+
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
 	((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
@@ -1191,7 +1180,8 @@ RenderDeclarerName(
 static void
 MethodErrorHandler(
     Tcl_Interp *interp,
-    Tcl_Obj *methodNameObj)
+    TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
+	/* We pull the method name out of context instead of from argument */
 {
     size_t nameLen, objectNameLen;
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
@@ -1199,7 +1189,6 @@ MethodErrorHandler(
     const char *objectName, *kindName, *methodName =
 	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
-    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1223,14 +1212,14 @@ MethodErrorHandler(
 static void
 ConstructorErrorHandler(
     Tcl_Interp *interp,
-    Tcl_Obj *methodNameObj)
+    TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
+		/* Ignore. We know it is the constructor. */
 {
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     size_t objectNameLen;
-    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1253,14 +1242,14 @@ ConstructorErrorHandler(
 static void
 DestructorErrorHandler(
     Tcl_Interp *interp,
-    Tcl_Obj *methodNameObj)
+    TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
+		/* Ignore. We know it is the destructor. */
 {
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     size_t objectNameLen;
-    (void)methodNameObj;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1535,13 +1524,12 @@ DeleteForwardMethod(
 
 static int
 CloneForwardMethod(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     void *clientData,
     void **newClientData)
 {
     ForwardMethod *fmPtr = (ForwardMethod *)clientData;
     ForwardMethod *fm2Ptr = (ForwardMethod *)Tcl_Alloc(sizeof(ForwardMethod));
-    (void)dummy;
 
     fm2Ptr->prefixObj = fmPtr->prefixObj;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
