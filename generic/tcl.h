@@ -66,12 +66,11 @@ extern "C" {
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
 #endif
-#endif /* RC_INVOKED */
-
 #ifndef JOIN
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+#endif /* RC_INVOKED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -107,11 +106,6 @@ extern "C" {
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
-#   if defined(__cplusplus)
-#	define TCL_UNUSED(T) T
-#   else
-#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
-#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
@@ -122,11 +116,6 @@ extern "C" {
 #	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
-#   if defined(__cplusplus)
-#	define TCL_UNUSED(T) T
-#   else
-#	define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
-#   endif
 #endif
 
 /*
