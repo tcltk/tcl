@@ -580,7 +580,7 @@ TclGetEnv(
 	/* ARGSUSED */
 static char *
 EnvTraceProc(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */
@@ -588,7 +588,6 @@ EnvTraceProc(
 				 * whole array is being deleted (UTF-8). */
     int flags)			/* Indicates what's happening. */
 {
-	(void)dummy;
     /*
      * For array traces, let TclSetupEnv do all the work.
      */

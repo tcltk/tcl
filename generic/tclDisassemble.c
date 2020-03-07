@@ -21,8 +21,7 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
+static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Obj *objPtr);
 static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
@@ -131,7 +130,7 @@ GetLocationInformation(
 
 void
 TclPrintByteCodeObj(
-    Tcl_Interp *interp,		/* Used only for getting location info. */
+    TCL_UNUSED(Tcl_Interp *),	/* Stuck with this in internal stubs */
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
     Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
@@ -949,7 +948,6 @@ PrintSourceToObj(
 
 static Tcl_Obj *
 DisassembleByteCodeAsDicts(
-    Tcl_Interp *dummy,		/* Not used. */
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
     ByteCode *codePtr;
@@ -958,7 +956,6 @@ DisassembleByteCodeAsDicts(
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength;
     int i, val, line;
-    (void)dummy;
 
     ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
 
@@ -1627,7 +1624,7 @@ Tcl_DisassembleObjCmd(
     }
     if (clientData) {
 	Tcl_SetObjResult(interp,
-		DisassembleByteCodeAsDicts(interp, codeObjPtr));
+		DisassembleByteCodeAsDicts(codeObjPtr));
     } else {
 	Tcl_SetObjResult(interp,
 		DisassembleByteCodeObj(codeObjPtr));

@@ -580,7 +580,7 @@ TclpRealloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (char *)(overPtr+1);
+	return (void *)(overPtr+1);
     }
     maxSize = 1 << (i+3);
     expensive = 0;

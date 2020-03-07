@@ -628,12 +628,11 @@ IsSpecial(
 
 static int
 SetInvalidRealFromAny(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)
 {
     size_t length;
     const char *str, *endPtr;
-    (void)dummy;
 
     str = TclGetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
@@ -747,8 +746,11 @@ static char *
 LinkTraceProc(
     ClientData clientData,	/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
-    const char *name1,		/* First part of variable name. */
-    const char *name2,		/* Second part of variable name. */
+    TCL_UNUSED(const char *) /*name1*/,
+    TCL_UNUSED(const char *) /*name2*/,
+				/* Links can only be made to global variables,
+				 * so we can find them with need to resolve
+				 * caller-supplied name in caller context. */
     int flags)			/* Miscellaneous additional information. */
 {
     Link *linkPtr = (Link *)clientData;
@@ -764,8 +766,6 @@ LinkTraceProc(
     int objc;
     Tcl_Obj **objv;
     int i;
-    (void)name1;
-    (void)name2;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
