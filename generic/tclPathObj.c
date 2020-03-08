@@ -1385,14 +1385,13 @@ AppendPath(
 
 Tcl_Obj *
 TclFSMakePathRelative(
-    Tcl_Interp *dummy,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* The path we have. */
     Tcl_Obj *cwdPtr)		/* Make it relative to this. */
 {
     int cwdLen, len;
     const char *tempStr;
     Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
-    (void)dummy;
 
     if (irPtr) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
@@ -1457,11 +1456,10 @@ TclFSMakePathRelative(
 
 static int
 MakePathFromNormalized(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     FsPath *fsPathPtr;
-    (void)dummy;
 
     if (TclHasIntRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
@@ -2512,9 +2510,8 @@ UpdateStringOfFsPath(
 int
 TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
-    ClientData *dummy)
+    TCL_UNUSED(ClientData *))
 {
-    (void)dummy;
     /*
      * A special case is required to handle the empty path "". This is a valid
      * path (i.e. the user should be able to do 'file exists ""' without
