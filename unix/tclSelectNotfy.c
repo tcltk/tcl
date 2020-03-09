@@ -376,7 +376,7 @@ Tcl_InitNotifier(void)
 
 void
 Tcl_FinalizeNotifier(
-    ClientData clientData)		/* Not used. */
+    ClientData clientData)
 {
     if (tclNotifierHooks.finalizeNotifierProc) {
 	tclNotifierHooks.finalizeNotifierProc(clientData);
@@ -928,7 +928,7 @@ Tcl_WaitForEvent(
 #if TCL_THREADS
 static TCL_NORETURN void
 NotifierThreadProc(
-    ClientData dummy)	/* Not used. */
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask;
@@ -940,7 +940,6 @@ NotifierThreadProc(
     struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
     int numFdBits = 0;
-    (void)dummy;
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
