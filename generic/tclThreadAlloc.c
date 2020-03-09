@@ -134,8 +134,8 @@ static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
 static void	PutBlocks(Cache *cachePtr, int bucket, int numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
-static Block *	Ptr2Block(char *ptr);
-static char *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
+static Block *	Ptr2Block(void *ptr);
+static void *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
 static void	PutObjs(Cache *fromPtr, int numMove);
 
@@ -299,7 +299,7 @@ TclFreeAllocCache(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
     unsigned int reqSize)
 {
@@ -378,7 +378,7 @@ TclpAlloc(
 
 void
 TclpFree(
-    char *ptr)
+    void *ptr)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -435,9 +435,9 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *ptr,
+    void *ptr,
     unsigned int reqSize)
 {
     Cache *cachePtr;
@@ -510,7 +510,7 @@ TclpRealloc(
 	memcpy(newPtr, ptr, reqSize);
 	TclpFree(ptr);
     }
-    return (char *)newPtr;
+    return newPtr;
 }
 
 /*
@@ -804,7 +804,7 @@ PutObjs(
  *----------------------------------------------------------------------
  */
 
-static char *
+static void *
 Block2Ptr(
     Block *blockPtr,
     int bucket,
@@ -819,12 +819,12 @@ Block2Ptr(
 #if RCHECK
     ((unsigned char *)(ptr))[reqSize] = MAGIC;
 #endif
-    return (char *) ptr;
+    return ptr;
 }
 
 static Block *
 Ptr2Block(
-    char *ptr)
+    void *ptr)
 {
     Block *blockPtr;
 
@@ -872,11 +872,9 @@ LockBucket(
 
 static void
 UnlockBucket(
-    Cache *cachePtr,
+    TCL_UNUSED(Cache *),
     int bucket)
 {
-    (void)cachePtr;
-
     Tcl_MutexUnlock(bucketInfo[bucket].lockPtr);
 }
 

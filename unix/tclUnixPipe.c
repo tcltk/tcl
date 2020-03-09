@@ -268,10 +268,9 @@ TclpTempFileName(void)
 Tcl_Obj *
 TclpTempFileNameForLibrary(
     Tcl_Interp *interp,		/* Tcl interpreter. */
-    Tcl_Obj *path)		/* Path name of the library in the VFS. */
+    TCL_UNUSED(Tcl_Obj *) /*path*/)
 {
     Tcl_Obj *retval = TclpTempFileName();
-    (void)path;
 
     if (retval == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -811,10 +810,9 @@ Tcl_CreatePipe(
     Tcl_Interp *interp,		/* Errors returned in result. */
     Tcl_Channel *rchan,		/* Returned read side. */
     Tcl_Channel *wchan,		/* Returned write side. */
-    int flags)			/* Reserved for future use. */
+    TCL_UNUSED(int) /*flags*/)	/* Reserved for future use. */
 {
     int fileNums[2];
-    (void)flags;
 
     if (pipe(fileNums) < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("pipe creation failed: %s",
@@ -1254,7 +1252,7 @@ Tcl_WaitPid(
 	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
-    void *dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -1263,7 +1261,6 @@ Tcl_PidObjCmd(
     PipeState *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
-    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");

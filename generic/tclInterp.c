@@ -222,15 +222,12 @@ static int		AliasDelete(Tcl_Interp *interp,
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *slaveInterp);
-static int		AliasNRCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		AliasObjCmdDeleteProc(ClientData clientData);
+static Tcl_ObjCmdProc		AliasNRCmd;
+static Tcl_CmdDeleteProc	AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static void		InterpInfoDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
+static Tcl_InterpDeleteProc	InterpInfoDeleteProc;
 static int		SlaveBgerror(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -254,7 +251,7 @@ static int		SlaveInvokeHidden(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		SlaveMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp);
-static void		SlaveObjCmdDeleteProc(ClientData clientData);
+static Tcl_CmdDeleteProc	SlaveObjCmdDeleteProc;
 static int		SlaveRecursionLimit(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -525,7 +522,7 @@ TclInterpInit(
 
 static void
 InterpInfoDeleteProc(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp)		/* Interp being deleted. All commands for
 				 * slave interps should already be deleted. */
 {
@@ -533,7 +530,6 @@ InterpInfoDeleteProc(
     Slave *slavePtr;
     Master *masterPtr;
     Target *targetPtr;
-    (void)dummy;
 
     interpInfoPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
 
@@ -605,7 +601,7 @@ InterpInfoDeleteProc(
 	/* ARGSUSED */
 int
 Tcl_InterpObjCmd(
-    ClientData clientData,		/* Unused. */
+    ClientData clientData,
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
@@ -615,7 +611,7 @@ Tcl_InterpObjCmd(
 
 static int
 NRInterpCmd(
-    ClientData dummy,		/* Unused. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
@@ -639,7 +635,6 @@ NRInterpCmd(
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
 	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
@@ -4239,11 +4234,10 @@ DeleteScriptLimitCallback(
 static void
 CallScriptLimitCallback(
     ClientData clientData,
-    Tcl_Interp *dummy)		/* Interpreter which failed the limit */
+    TCL_UNUSED(Tcl_Interp *))
 {
     ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
     int code;
-    (void)dummy;
 
     if (Tcl_InterpDeleted(limitCBPtr->interp)) {
 	return;

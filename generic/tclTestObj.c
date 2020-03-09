@@ -42,23 +42,14 @@ static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, int varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    const char *string, int *indexPtr);
 static void		SetVarToObj(Tcl_Obj **varPtr, int varIndex, Tcl_Obj *objPtr);
-static int		TestbignumobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestbooleanobjCmd(void *dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		TestdoubleobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestindexobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestintobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int 		TestlistobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TeststringobjCmd(void *dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TestbignumobjCmd;
+static Tcl_ObjCmdProc	TestbooleanobjCmd;
+static Tcl_ObjCmdProc	TestdoubleobjCmd;
+static Tcl_ObjCmdProc	TestindexobjCmd;
+static Tcl_ObjCmdProc	TestintobjCmd;
+static Tcl_ObjCmdProc	TestlistobjCmd;
+static Tcl_ObjCmdProc	TestobjCmd;
+static Tcl_ObjCmdProc	TeststringobjCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -158,7 +149,7 @@ TclObjTest_Init(
 
 static int
 TestbignumobjCmd(
-    void *dummy,	/* unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -174,7 +165,6 @@ TestbignumobjCmd(
     const char *string;
     mp_int bignumValue;
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -358,7 +348,7 @@ TestbignumobjCmd(
 
 static int
 TestbooleanobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -366,7 +356,6 @@ TestbooleanobjCmd(
     int varIndex, boolValue;
     const char *index, *subCmd;
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -459,7 +448,7 @@ TestbooleanobjCmd(
 
 static int
 TestdoubleobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -468,7 +457,6 @@ TestdoubleobjCmd(
     double doubleValue;
     const char *index, *subCmd, *string;
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -578,7 +566,7 @@ TestdoubleobjCmd(
 
 static int
 TestindexobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -596,7 +584,6 @@ TestindexobjCmd(
 	int index;		/* Selected index into table. */
     };
     struct IndexRep *indexRep;
-    (void)dummy;
 
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {
@@ -669,7 +656,7 @@ TestindexobjCmd(
 
 static int
 TestintobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -678,7 +665,6 @@ TestintobjCmd(
     Tcl_WideInt wideValue;
     const char *index, *subCmd, *string;
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -874,7 +860,7 @@ TestintobjCmd(
 
 static int
 TestlistobjCmd(
-    void *dummy,	/* Not used */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
@@ -897,7 +883,6 @@ TestlistobjCmd(
     int first;			/* First index in the list */
     int count;			/* Count of elements in a list */
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg...?");
@@ -972,7 +957,7 @@ TestlistobjCmd(
 
 static int
 TestobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -981,7 +966,6 @@ TestobjCmd(
     const char *index, *subCmd, *string;
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
-    (void)dummy;
 
     if (objc < 2) {
 	wrongNumArgs:
@@ -1185,7 +1169,7 @@ TestobjCmd(
 
 static int
 TeststringobjCmd(
-    void *dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1201,7 +1185,6 @@ TeststringobjCmd(
 	"set", "set2", "setlength", "maxchars", "appendself",
 	"appendself2", NULL
     };
-    (void)dummy;
 
     if (objc < 3) {
 	wrongNumArgs:

@@ -1220,7 +1220,7 @@ DoTildeSubst(
 	/* ARGSUSED */
 int
 Tcl_GlobObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1241,7 +1241,6 @@ Tcl_GlobObjCmd(
     };
     enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
     Tcl_GlobTypeData *globTypes = NULL;
-    (void)dummy;
 
     globFlags = 0;
     join = 0;
@@ -2634,21 +2633,25 @@ Tcl_GetBlocksFromStat(
 #endif
 }
 
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return statPtr->st_blksize;
+}
 #else
-    (void)statPtr;
+unsigned
+Tcl_GetBlockSizeFromStat(
+    TCL_UNUSED(const Tcl_StatBuf *))
+{
     /*
      * Not a great guess, but will do...
      */
 
     return GUESSED_BLOCK_SIZE;
-#endif
 }
+#endif
 
 /*
  * Local Variables:

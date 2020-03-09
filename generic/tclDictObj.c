@@ -23,62 +23,44 @@ struct Dict;
  * Prototypes for functions defined later in this file:
  */
 
-static void		DeleteDict(struct Dict *dict);
-static int		DictAppendCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictCreateCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictGetDefCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictLappendCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictMergeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictRemoveCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictReplaceCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictUpdateCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictValuesCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictWithCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static void		DupDictInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void		FreeDictInternalRep(Tcl_Obj *dictPtr);
-static void		InvalidateDictChain(Tcl_Obj *dictObj);
-static int		SetDictFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		UpdateStringOfDict(Tcl_Obj *dictPtr);
-static Tcl_HashEntry *	AllocChainEntry(Tcl_HashTable *tablePtr,void *keyPtr);
-static inline void	InitChainTable(struct Dict *dict);
-static inline void	DeleteChainTable(struct Dict *dict);
-static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
-			    Tcl_Obj *keyPtr, int *newPtr);
-static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
-static Tcl_NRPostProc	FinalizeDictUpdate;
-static Tcl_NRPostProc	FinalizeDictWith;
-static Tcl_ObjCmdProc	DictForNRCmd;
-static Tcl_ObjCmdProc	DictMapNRCmd;
-static Tcl_NRPostProc	DictForLoopCallback;
-static Tcl_NRPostProc	DictMapLoopCallback;
+static void			DeleteDict(struct Dict *dict);
+static Tcl_ObjCmdProc		DictAppendCmd;
+static Tcl_ObjCmdProc		DictCreateCmd;
+static Tcl_ObjCmdProc		DictExistsCmd;
+static Tcl_ObjCmdProc		DictFilterCmd;
+static Tcl_ObjCmdProc		DictGetCmd;
+static Tcl_ObjCmdProc		DictGetDefCmd;
+static Tcl_ObjCmdProc		DictIncrCmd;
+static Tcl_ObjCmdProc		DictInfoCmd;
+static Tcl_ObjCmdProc		DictKeysCmd;
+static Tcl_ObjCmdProc		DictLappendCmd;
+static Tcl_ObjCmdProc		DictMergeCmd;
+static Tcl_ObjCmdProc		DictRemoveCmd;
+static Tcl_ObjCmdProc		DictReplaceCmd;
+static Tcl_ObjCmdProc		DictSetCmd;
+static Tcl_ObjCmdProc		DictSizeCmd;
+static Tcl_ObjCmdProc		DictUnsetCmd;
+static Tcl_ObjCmdProc		DictUpdateCmd;
+static Tcl_ObjCmdProc		DictValuesCmd;
+static Tcl_ObjCmdProc		DictWithCmd;
+static Tcl_DupInternalRepProc	DupDictInternalRep;
+static Tcl_FreeInternalRepProc	FreeDictInternalRep;
+static void			InvalidateDictChain(Tcl_Obj *dictObj);
+static Tcl_SetFromAnyProc	SetDictFromAny;
+static Tcl_UpdateStringProc	UpdateStringOfDict;
+static Tcl_AllocHashEntryProc	AllocChainEntry;
+static inline void		InitChainTable(struct Dict *dict);
+static inline void		DeleteChainTable(struct Dict *dict);
+static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
+					Tcl_Obj *keyPtr, int *newPtr);
+static inline int		DeleteChainEntry(struct Dict *dict,
+					Tcl_Obj *keyPtr);
+static Tcl_NRPostProc		FinalizeDictUpdate;
+static Tcl_NRPostProc		FinalizeDictWith;
+static Tcl_ObjCmdProc		DictForNRCmd;
+static Tcl_ObjCmdProc		DictMapNRCmd;
+static Tcl_NRPostProc		DictForLoopCallback;
+static Tcl_NRPostProc		DictMapLoopCallback;
 
 /*
  * Table of dict subcommand names and implementations.
@@ -240,12 +222,11 @@ typedef struct {
 
 static Tcl_HashEntry *
 AllocChainEntry(
-    Tcl_HashTable *tablePtr,
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     ChainEntry *cPtr;
-    (void)tablePtr;
 
     cPtr = (ChainEntry *)ckalloc(sizeof(ChainEntry));
     cPtr->entry.key.objPtr = objPtr;
@@ -1462,12 +1443,12 @@ Tcl_NewDictObj(void)
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewDictObj(
     const char *file,
     int line)
 {
-#ifdef TCL_MEM_DEBUG
     Tcl_Obj *dictPtr;
     Dict *dict;
 
@@ -1480,12 +1461,16 @@ Tcl_DbNewDictObj(
     dict->refCount = 1;
     DictSetIntRep(dictPtr, dict);
     return dictPtr;
-#else /* !TCL_MEM_DEBUG */
-    (void)file;
-    (void)line;
-    return Tcl_NewDictObj();
-#endif
 }
+#else /* !TCL_MEM_DEBUG */
+Tcl_Obj *
+Tcl_DbNewDictObj(
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    return Tcl_NewDictObj();
+}
+#endif
 
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
@@ -1509,14 +1494,13 @@ Tcl_DbNewDictObj(
 
 static int
 DictCreateCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictObj;
     int i;
-    (void)dummy;
 
     /*
      * Must have an even number of arguments; note that number of preceding
@@ -1560,14 +1544,13 @@ DictCreateCmd(
 
 static int
 DictGetCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr = NULL;
     int result;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1654,7 +1637,7 @@ DictGetCmd(
 
 static int
 DictGetDefCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1662,7 +1645,6 @@ DictGetDefCmd(
     Tcl_Obj *dictPtr, *keyPtr, *valuePtr, *defaultPtr;
     Tcl_Obj *const *keyPath;
     int numKeys;
-    (void)dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key default");
@@ -1720,14 +1702,13 @@ DictGetDefCmd(
 
 static int
 DictReplaceCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
     int i;
-    (void)dummy;
 
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
@@ -1769,14 +1750,13 @@ DictReplaceCmd(
 
 static int
 DictRemoveCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
     int i;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1818,7 +1798,7 @@ DictRemoveCmd(
 
 static int
 DictMergeCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1827,7 +1807,6 @@ DictMergeCmd(
     int allocatedDict = 0;
     int i, done;
     Tcl_DictSearch search;
-    (void)dummy;
 
     if (objc == 1) {
 	/*
@@ -1906,14 +1885,13 @@ DictMergeCmd(
 
 static int
 DictKeysCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *listPtr;
     const char *pattern = NULL;
-    (void)dummy;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -1986,7 +1964,7 @@ DictKeysCmd(
 
 static int
 DictValuesCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1995,7 +1973,6 @@ DictValuesCmd(
     Tcl_DictSearch search;
     int done;
     const char *pattern;
-    (void)dummy;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -2047,13 +2024,12 @@ DictValuesCmd(
 
 static int
 DictSizeCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     int result, size;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2086,13 +2062,12 @@ DictSizeCmd(
 
 static int
 DictExistsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary key ?key ...?");
@@ -2129,14 +2104,13 @@ DictExistsCmd(
 
 static int
 DictInfoCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Dict *dict;
     char *statsStr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2174,14 +2148,13 @@ DictInfoCmd(
 
 static int
 DictIncrCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     int code = TCL_OK;
     Tcl_Obj *dictPtr, *valuePtr = NULL;
-    (void)dummy;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?increment?");
@@ -2295,14 +2268,13 @@ DictIncrCmd(
 
 static int
 DictLappendCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
     int i, allocatedDict = 0, allocatedValue = 0;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2383,14 +2355,13 @@ DictLappendCmd(
 
 static int
 DictAppendCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
     int allocatedDict = 0;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2486,7 +2457,7 @@ DictAppendCmd(
 
 static int
 DictForNRCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2496,7 +2467,6 @@ DictForNRCmd(
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
     int varc, done;
-    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2682,7 +2652,7 @@ DictForLoopCallback(
 
 static int
 DictMapNRCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2691,7 +2661,6 @@ DictMapNRCmd(
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
     int varc, done;
-    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2895,14 +2864,13 @@ DictMapLoopCallback(
 
 static int
 DictSetCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
     int result, allocatedDict = 0;
-    (void)dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
@@ -2956,14 +2924,13 @@ DictSetCmd(
 
 static int
 DictUnsetCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
     int result, allocatedDict = 0;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
@@ -3016,7 +2983,7 @@ DictUnsetCmd(
 
 static int
 DictFilterCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3033,7 +3000,6 @@ DictFilterCmd(
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
     const char *pattern;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
@@ -3302,7 +3268,7 @@ DictFilterCmd(
 
 static int
 DictUpdateCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3310,7 +3276,6 @@ DictUpdateCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
     int i, dummy;
-    (void)clientData;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3461,14 +3426,13 @@ FinalizeDictUpdate(
 
 static int
 DictWithCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *keysPtr, *pathPtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName ?key ...? script");

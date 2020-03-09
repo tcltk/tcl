@@ -115,7 +115,7 @@ static void		LoadCleanupProc(ClientData clientData,
 
 int
 Tcl_LoadObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -140,7 +140,6 @@ Tcl_LoadObjCmd(
     enum options {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
     };
-    (void)dummy;
 
     while (objc > 2) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -543,7 +542,7 @@ Tcl_LoadObjCmd(
 
 int
 Tcl_UnloadObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -563,7 +562,6 @@ Tcl_UnloadObjCmd(
     enum options {
 	UNLOAD_NOCOMPLAIN, UNLOAD_KEEPLIB, UNLOAD_LAST
     };
-    (void)dummy;
 
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
@@ -1154,10 +1152,9 @@ static void
 LoadCleanupProc(
     ClientData clientData,	/* Pointer to first InterpPackage structure
 				 * for interp. */
-    Tcl_Interp *dummy)		/* Interpreter that is being deleted. */
+    TCL_UNUSED(Tcl_Interp *))
 {
     InterpPackage *ipPtr, *nextPtr;
-    (void)dummy;
 
     ipPtr = (InterpPackage *)clientData;
     while (ipPtr != NULL) {

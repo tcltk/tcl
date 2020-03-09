@@ -87,7 +87,7 @@ static const Tcl_ChannelType tclRChannelType = {
 #if TCL_THREADS
     ReflectThread,         /* thread action, tracking owner */
 #else
-	(void *)-1,		   /* thread action */
+	NULL,		   /* thread action */
 #endif
     NULL		   /* truncate */
 };
@@ -425,7 +425,7 @@ static void		SrcExitProc(ClientData clientData);
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
 static ReflectedChannelMap *	GetThreadReflectedChannelMap(void);
-static void		DeleteThreadReflectedChannelMap(ClientData clientData);
+static Tcl_ExitProc	DeleteThreadReflectedChannelMap;
 
 #endif /* TCL_THREADS */
 
@@ -452,8 +452,7 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
-static void		DeleteReflectedChannelMap(ClientData clientData,
-			    Tcl_Interp *interp);
+static Tcl_InterpDeleteProc	DeleteReflectedChannelMap;
 static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
 static void		MarkDead(ReflectedChannel *rcPtr);
 
@@ -498,7 +497,7 @@ static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo
 
 int
 TclChanCreateObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -524,7 +523,6 @@ TclChanCreateObjCmd(
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
-    (void)dummy;
 
     /*
      * Syntax:   chan create MODE CMDPREFIX
@@ -780,7 +778,7 @@ typedef struct {
 static int
 ReflectEventRun(
     Tcl_Event *ev,
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     /* OWNER thread
      *
@@ -790,7 +788,6 @@ ReflectEventRun(
      */
 
     ReflectEvent *e = (ReflectEvent *) ev;
-    (void)flags;
 
     Tcl_NotifyChannel(e->rcPtr->chan, e->events);
     return 1;
@@ -819,7 +816,7 @@ ReflectEventDelete(
 
 int
 TclChanPostEventObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -848,7 +845,6 @@ TclChanPostEventObjCmd(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    (void)dummy;
 
     /*
      * Number of arguments...
@@ -1347,8 +1343,8 @@ ReflectInput(
 	if (p.base.code != TCL_OK) {
 	    if (p.base.code < 0) {
 		/*
-                 * No error message, this is an errno signal.
-                 */
+		 * No error message, this is an errno signal.
+		 */
 
 		*errorCodePtr = -p.base.code;
 	    } else {
@@ -1453,8 +1449,8 @@ ReflectOutput(
 	if (p.base.code != TCL_OK) {
 	    if (p.base.code < 0) {
 		/*
-                 * No error message, this is an errno signal.
-                 */
+		 * No error message, this is an errno signal.
+		 */
 
 		*errorCodePtr = -p.base.code;
 	    } else {
@@ -2519,8 +2515,7 @@ GetReflectedChannelMap(
     if (rcmPtr == NULL) {
 	rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, RCMKEY,
-		(Tcl_InterpDeleteProc *) DeleteReflectedChannelMap, rcmPtr);
+	Tcl_SetAssocData(interp, RCMKEY, DeleteReflectedChannelMap, rcmPtr);
     }
     return rcmPtr;
 }
@@ -2645,8 +2640,8 @@ DeleteReflectedChannelMap(
 	evPtr = resultPtr->evPtr;
 
 	/*
-         * Basic crash safety until this routine can get revised [3411310]
-         */
+	 * Basic crash safety until this routine can get revised [3411310]
+	 */
 
 	if (evPtr == NULL) {
 	    continue;
@@ -2746,14 +2741,13 @@ GetThreadReflectedChannelMap(void)
 
 static void
 DeleteThreadReflectedChannelMap(
-    ClientData dummy)	/* The per-thread data structure. */
+    TCL_UNUSED(ClientData))
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedChannelMap *rcmPtr; /* The map */
     ForwardingResult *resultPtr;
-    (void)dummy;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2796,8 +2790,8 @@ DeleteThreadReflectedChannelMap(
 	evPtr = resultPtr->evPtr;
 
 	/*
-         * Basic crash safety until this routine can get revised [3411310]
-         */
+	 * Basic crash safety until this routine can get revised [3411310]
+	 */
 
 	if (evPtr == NULL ) {
 	    continue;
@@ -2971,7 +2965,7 @@ ForwardOpToHandlerThread(
 static int
 ForwardProc(
     Tcl_Event *evGPtr,
-    int mask)
+    TCL_UNUSED(int) /* mask */)
 {
     /*
      * HANDLER thread.
@@ -3000,7 +2994,6 @@ ForwardProc(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
                                  * this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    (void)mask;
 
     /*
      * Ignore the event if no one is waiting for its result anymore.

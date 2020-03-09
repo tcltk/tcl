@@ -1230,16 +1230,13 @@ TraversalCopy(
 static int
 TraversalDelete(
     Tcl_DString *srcPtr,	/* Source pathname (native). */
-    Tcl_DString *dummy,	/* Destination pathname (not used). */
-    const Tcl_StatBuf *statBufPtr,
-				/* Stat info for file specified by srcPtr. */
+    TCL_UNUSED(Tcl_DString *),
+    TCL_UNUSED(const Tcl_StatBuf *),
     int type,			/* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
-    (void)dummy;
-    (void)statBufPtr;
 
     switch (type) {
     case DOTREE_F:
@@ -1282,14 +1279,17 @@ TraversalDelete(
 
 static int
 CopyFileAtts(
-    const char *src,		/* Path name of source file (native). */
+#ifdef MAC_OSX_TCL
+    const char *src,	/* Path name of source file (native). */
+#else
+    TCL_UNUSED(const char *) /*src*/,
+#endif
     const char *dst,		/* Path name of target file (native). */
     const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
     struct utimbuf tval;
     mode_t newMode;
-    (void)src;
 
     newMode = statBufPtr->st_mode
 	    & (S_ISUID | S_ISGID | S_IRWXU | S_IRWXG | S_IRWXO);
@@ -1341,14 +1341,13 @@ CopyFileAtts(
 static int
 GetGroupAttribute(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     struct group *groupPtr;
     int result;
-    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1396,14 +1395,13 @@ GetGroupAttribute(
 static int
 GetOwnerAttribute(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     struct passwd *pwPtr;
     int result;
-    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1449,13 +1447,12 @@ GetOwnerAttribute(
 static int
 GetPermissionsAttribute(
     Tcl_Interp *interp,		    /* The interp we are using for errors. */
-    int objIndex,		    /* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		    /* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	    /* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
-    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -1492,14 +1489,13 @@ GetPermissionsAttribute(
 static int
 SetGroupAttribute(
     Tcl_Interp *interp,		/* The interp for error reporting. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New group for file. */
 {
     Tcl_WideInt gid;
     int result;
     const char *native;
-    (void)objIndex;
 
     if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
@@ -1559,14 +1555,13 @@ SetGroupAttribute(
 static int
 SetOwnerAttribute(
     Tcl_Interp *interp,		/* The interp for error reporting. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* New owner for file. */
 {
     Tcl_WideInt uid;
     int result;
     const char *native;
-    (void)objIndex;
 
     if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
@@ -1626,7 +1621,7 @@ SetOwnerAttribute(
 static int
 SetPermissionsAttribute(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
@@ -1636,7 +1631,6 @@ SetPermissionsAttribute(
     const char *native;
     const char *modeStringPtr = TclGetString(attributePtr);
     int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
-    (void)objIndex;
 
     /*
      * First supply support for octal number format
@@ -1749,7 +1743,7 @@ TclpObjListVolumes(void)
 
 static int
 GetModeFromPermString(
-    Tcl_Interp *dummy,		/* The interp we are using for errors. */
+    TCL_UNUSED(Tcl_Interp *),
     const char *modeStringPtr, /* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
@@ -1758,7 +1752,6 @@ GetModeFromPermString(
 				 * is passed in), to allow for the chmod style
 				 * manipulation. */
     int i,n, who, op, what, op_found, who_found;
-    (void)dummy;
 
     /*
      * We start off checking for an "rwxrwxrwx" style permissions string
@@ -1937,7 +1930,7 @@ GetModeFromPermString(
 
 int
 TclpObjNormalizePath(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize. */
     int nextCheckpoint)		/* offset to start at in pathPtr.  Must either
@@ -1956,7 +1949,6 @@ TclpObjNormalizePath(
 #ifndef NO_REALPATH
     char normPath[MAXPATHLEN];
 #endif
-    (void)dummy;
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
@@ -2501,13 +2493,12 @@ SetUnixFileAttributes(
 static int
 GetUnixFileAttributes(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
-    (void)objIndex;
 
     result = TclpObjStat(fileName, &statBuf);
 
@@ -2543,14 +2534,13 @@ GetUnixFileAttributes(
 static int
 SetUnixFileAttributes(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     Tcl_StatBuf statBuf;
     int result, readonly;
     const char *native;
-    (void)objIndex;
 
     if (Tcl_GetBooleanFromObj(interp, attributePtr, &readonly) != TCL_OK) {
 	return TCL_ERROR;

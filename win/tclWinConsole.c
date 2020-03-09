@@ -317,10 +317,8 @@ ConsoleInit(void)
 
 static void
 ConsoleExitHandler(
-    ClientData dummy)	/* Old window proc. */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     Tcl_DeleteEventSource(ConsoleSetupProc, ConsoleCheckProc, NULL);
 }
 
@@ -343,10 +341,8 @@ ConsoleExitHandler(
 
 static void
 ProcExitHandler(
-    ClientData dummy)	/* Old window proc. */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     Tcl_MutexLock(&consoleMutex);
     initialized = 0;
     Tcl_MutexUnlock(&consoleMutex);
@@ -371,14 +367,13 @@ ProcExitHandler(
 
 void
 ConsoleSetupProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     int block = 1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -426,13 +421,12 @@ ConsoleSetupProc(
 
 static void
 ConsoleCheckProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleInfo *infoPtr;
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -537,14 +531,13 @@ ConsoleBlockModeProc(
 static int
 ConsoleCloseProc(
     ClientData instanceData,	/* Pointer to ConsoleInfo structure. */
-    Tcl_Interp *dummy,		/* For error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
     ConsoleInfo *consolePtr = (ConsoleInfo *)instanceData;
     int errorCode = 0;
     ConsoleInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
 	return EINVAL;
@@ -995,11 +988,10 @@ ConsoleWatchProc(
 static int
 ConsoleGetHandleProc(
     ClientData instanceData,	/* The console state. */
-    int direction,		/* TCL_READABLE or TCL_WRITABLE. */
+    TCL_UNUSED(int) /*direction*/,
     ClientData *handlePtr)	/* Where to store the handle. */
 {
     ConsoleInfo *infoPtr = (ConsoleInfo *)instanceData;
-    (void)direction;
 
     *handlePtr = infoPtr->handle;
     return TCL_OK;

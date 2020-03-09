@@ -697,8 +697,7 @@ static void		EnterCmdStartData(CompileEnv *envPtr,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
-			    CompileEnv *envPtr);
+static int		IsCompactibleCompileEnv(CompileEnv *envPtr);
 static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
@@ -851,7 +850,7 @@ TclSetByteCodeFromAny(
 
     if (Tcl_GetMaster(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
-	    && IsCompactibleCompileEnv(interp, &compEnv)) {
+	    && IsCompactibleCompileEnv(&compEnv)) {
 	TclFreeCompileEnv(&compEnv);
 	iPtr->compiledProcPtr = procPtr;
 	TclInitCompileEnv(interp, &compEnv, stringPtr, length,
@@ -962,11 +961,9 @@ SetByteCodeFromAny(
 
 static void
 DupByteCodeInternalRep(
-    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
+    TCL_UNUSED(Tcl_Obj *) /*srcPtr*/,
+    TCL_UNUSED(Tcl_Obj *) /*copyPtr*/)
 {
-    (void)srcPtr;
-    (void)copyPtr;
     return;
 }
 
@@ -1176,12 +1173,10 @@ CleanupByteCode(
 
 static int
 IsCompactibleCompileEnv(
-    Tcl_Interp *dummy,
     CompileEnv *envPtr)
 {
     unsigned char *pc;
     int size;
-    (void)dummy;
 
     /*
      * Special: procedures in the '::tcl' namespace (or its children) are
@@ -2740,13 +2735,11 @@ TclCompileNoOp(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
     int i;
-    (void)cmdPtr;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {

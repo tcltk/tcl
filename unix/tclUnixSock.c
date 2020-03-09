@@ -338,10 +338,8 @@ Tcl_GetHostName(void)
 
 int
 TclpHasSockets(
-    Tcl_Interp *dummy)		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *))
 {
-    (void)dummy;
-
     return TCL_OK;
 }
 
@@ -627,12 +625,11 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *dummy)		/* For error reporting - unused. */
+    TCL_UNUSED(Tcl_Interp *))
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int errorCode = 0;
     TcpFdList *fds;
-    (void)dummy;
 
     /*
      * Delete a file handler that may be active for this socket if this is a
@@ -689,7 +686,7 @@ TcpCloseProc(
 static int
 TcpClose2Proc(
     void *instanceData,	/* The socket to close. */
-    Tcl_Interp *interp,		/* For error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
     int flags)			/* Flags that indicate which side to close. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
@@ -700,7 +697,7 @@ TcpClose2Proc(
      * Shutdown the OS socket handle.
      */
     if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
-	return TcpCloseProc(instanceData, interp);
+	return TcpCloseProc(instanceData, NULL);
     }
     if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
 	readError = errno;
@@ -1109,11 +1106,10 @@ TcpWatchProc(
 static int
 TcpGetHandleProc(
     void *instanceData,	/* The socket state. */
-    int direction,		/* Not used. */
+    TCL_UNUSED(int) /*direction*/,
     void **handlePtr)	/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    (void)direction;
 
     *handlePtr = INT2PTR(statePtr->fds.fd);
     return TCL_OK;
@@ -1134,12 +1130,8 @@ TcpGetHandleProc(
 static void
 TcpAsyncCallback(
     void *clientData,	/* The socket state. */
-    int mask)			/* Events of interest; an OR-ed combination of
-				 * TCL_READABLE, TCL_WRITABLE and
-				 * TCL_EXCEPTION. */
+    TCL_UNUSED(int) /*mask*/)
 {
-    (void)mask;
-
     TcpConnect(NULL, (TcpState *)clientData);
 }
 
@@ -1770,7 +1762,7 @@ Tcl_OpenTcpServerEx(
 static void
 TcpAccept(
     void *data,		/* Callback token. */
-    int mask)			/* Not used. */
+    TCL_UNUSED(int) /*mask*/)
 {
     TcpFdList *fds = (TcpFdList *)data;	/* Client data of server socket. */
     int newsock;		/* The new client socket */
@@ -1779,7 +1771,6 @@ TcpAccept(
     socklen_t len;		/* For accept interface */
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
-    (void)mask;
 
     len = sizeof(addr);
     newsock = accept(fds->fd, &addr.sa, &len);
