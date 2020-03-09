@@ -33,21 +33,14 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static int		TesteventloopCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestvolumetypeCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestSizeCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TesteventloopCmd;
+static Tcl_ObjCmdProc	TestvolumetypeCmd;
+static Tcl_ObjCmdProc	TestwinclockCmd;
+static Tcl_ObjCmdProc	TestwinsleepCmd;
+static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -105,7 +98,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -113,7 +106,6 @@ TesteventloopCmd(
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
@@ -182,7 +174,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -191,7 +183,6 @@ TestvolumetypeCmd(
     int found;
     char volType[VOL_BUF_SIZE];
     const char *path;
-    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
@@ -249,7 +240,7 @@ TestvolumetypeCmd(
 
 static int
 TestwinclockCmd(
-    ClientData dummy,		/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -262,7 +253,6 @@ TestwinclockCmd(
     Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
-    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -299,13 +289,12 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ms");
@@ -320,12 +309,11 @@ TestwinsleepCmd(
 
 static int
 TestSizeCmd(
-    ClientData dummy,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    (void)dummy;
 
     if (objc != 2) {
 	goto syntax;
@@ -370,7 +358,7 @@ syntax:
 
 static int
 TestExceptionCmd(
-    ClientData dummy,			/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,			/* Tcl interpreter */
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
@@ -397,7 +385,6 @@ TestExceptionCmd(
 	EXCEPTION_GUARD_PAGE, EXCEPTION_INVALID_HANDLE, CONTROL_C_EXIT
     };
     int cmd;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
@@ -660,13 +647,12 @@ TestplatformChmod(
 
 static int
 TestchmodCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
