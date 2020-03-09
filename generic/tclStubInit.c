@@ -270,9 +270,9 @@ mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
     return result;
 }
 
-int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
+int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c,
+    TCL_UNUSED(int) /*fast*/)
 {
-    (void)fast;
     return TclBN_mp_expt_u32(a, b, c);
 }
 
