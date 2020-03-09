@@ -61,13 +61,12 @@ TclpDlopen(
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     HINSTANCE hInstance = NULL;
     const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
-    (void)flags;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -282,14 +281,9 @@ UnloadFile(
 
 int
 TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_DString *))
 {
-    (void)fileName;
-    (void)bufPtr;
-
     return 0;
 }
 

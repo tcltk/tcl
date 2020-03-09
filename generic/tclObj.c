@@ -749,7 +749,7 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    ClientData dummy)
+    TCL_UNUSED(ClientData))
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
@@ -758,7 +758,6 @@ TclThreadFinalizeContLines(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
-    (void)dummy;
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
@@ -959,11 +958,11 @@ Tcl_ConvertToType(
  *--------------------------------------------------------------
  */
 
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
 void
 TclDbDumpActiveObjects(
     FILE *outFile)
 {
-#if TCL_THREADS && defined(TCL_MEM_DEBUG)
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
@@ -988,10 +987,14 @@ TclDbDumpActiveObjects(
 	    }
 	}
     }
-#else
-	(void)outFile;
-#endif
 }
+#else
+void
+TclDbDumpActiveObjects(
+    TCL_UNUSED(FILE *))
+{
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1161,14 +1164,9 @@ Tcl_DbNewObj(
 
 Tcl_Obj *
 Tcl_DbNewObj(
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
-
     return Tcl_NewObj();
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2235,14 +2233,9 @@ Tcl_DbNewDoubleObj(
 Tcl_Obj *
 Tcl_DbNewDoubleObj(
     double dblValue,	/* Double used to initialize the object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
-
     return Tcl_NewDoubleObj(dblValue);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2727,14 +2720,9 @@ Tcl_DbNewWideIntObj(
     Tcl_WideInt wideValue,
 				/* Long integer used to initialize the new
 				 * object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
-
     return Tcl_NewWideIntObj(wideValue);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -3112,12 +3100,9 @@ Tcl_DbNewBignumObj(
 Tcl_Obj *
 Tcl_DbNewBignumObj(
     void *bignumValue,
-    const char *file,
-    int line)
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
-
     return Tcl_NewBignumObj(bignumValue);
 }
 #endif
@@ -3501,6 +3486,7 @@ Tcl_IsShared(
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 void
 Tcl_DbIncrRefCount(
     Tcl_Obj *objPtr,	/* The object we are registering a reference
@@ -3510,7 +3496,6 @@ Tcl_DbIncrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-#ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
@@ -3539,12 +3524,19 @@ Tcl_DbIncrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
-#else
-    (void)file;
-    (void)line;
-#endif /* TCL_MEM_DEBUG */
     ++(objPtr)->refCount;
 }
+#else /* !TCL_MEM_DEBUG */
+void
+Tcl_DbIncrRefCount(
+    Tcl_Obj *objPtr,	/* The object we are registering a reference
+				 * to. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    ++(objPtr)->refCount;
+}
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -3567,6 +3559,7 @@ Tcl_DbIncrRefCount(
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 void
 Tcl_DbDecrRefCount(
     Tcl_Obj *objPtr,	/* The object we are releasing a reference
@@ -3576,7 +3569,6 @@ Tcl_DbDecrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-#ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
@@ -3605,15 +3597,24 @@ Tcl_DbDecrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
-#else
-    (void)file;
-    (void)line;
-#endif /* TCL_MEM_DEBUG */
 
     if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
     }
 }
+#else /* !TCL_MEM_DEBUG */
+void
+Tcl_DbDecrRefCount(
+    Tcl_Obj *objPtr,	/* The object we are releasing a reference
+				 * to. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    if (objPtr->refCount-- <= 1) {
+	TclFreeObj(objPtr);
+    }
+}
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -3639,10 +3640,15 @@ Tcl_DbDecrRefCount(
 int
 Tcl_DbIsShared(
     Tcl_Obj *objPtr,	/* The object to test for being shared. */
+#ifdef TCL_MEM_DEBUG
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
+#else
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+#endif
 {
 #ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == 0x61616161) {
@@ -3673,9 +3679,6 @@ Tcl_DbIsShared(
 	}
     }
 # endif /* TCL_THREADS */
-#else
-    (void)file;
-    (void)line;
 #endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
@@ -3739,12 +3742,11 @@ Tcl_InitObjHashTable(
 
 static Tcl_HashEntry *
 AllocObjEntry(
-    Tcl_HashTable *dummy,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
-    (void)dummy;
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
@@ -3861,14 +3863,13 @@ TclFreeObjEntry(
 
 TCL_HASH_TYPE
 TclHashObjKey(
-    Tcl_HashTable *dummy,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     const char *string = TclGetString(objPtr);
     size_t length = objPtr->length;
     TCL_HASH_TYPE result = 0;
-    (void)dummy;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4263,13 +4264,12 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *descObj;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");

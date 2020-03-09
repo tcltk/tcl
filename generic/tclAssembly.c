@@ -785,7 +785,7 @@ Tcl_AssembleObjCmd(
 
 int
 TclNRAssembleObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -794,7 +794,6 @@ TclNRAssembleObjCmd(
     Tcl_Obj* backtrace;		/* Object where extra error information is
 				 * constructed. */
 
-    (void)dummy;
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
 	return TCL_ERROR;
@@ -959,8 +958,7 @@ TclCompileAssembleCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
@@ -968,7 +966,6 @@ TclCompileAssembleCmd(
     int numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     int depth = envPtr->currStackDepth;
-    (void)cmdPtr;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -4312,11 +4309,9 @@ AddBasicBlockRangeToErrorInfo(
 
 static void
 DupAssembleCodeInternalRep(
-    Tcl_Obj *srcPtr,
-    Tcl_Obj *copyPtr)
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj *))
 {
-    (void)srcPtr;
-    (void)copyPtr;
     return;
 }
 

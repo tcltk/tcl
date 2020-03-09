@@ -336,6 +336,7 @@ Tcl_NewByteArrayObj(
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
@@ -346,18 +347,25 @@ Tcl_DbNewByteArrayObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
-#else /* if not TCL_MEM_DEBUG */
-    (void)file;
-    (void)line;
-    return Tcl_NewByteArrayObj(bytes, length);
-#endif /* TCL_MEM_DEBUG */
 }
+#else /* if not TCL_MEM_DEBUG */
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
+				 * new object. */
+    size_t length,		/* Length of the array of bytes, which must be
+				 * >= 0. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    return Tcl_NewByteArrayObj(bytes, length);
+}
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *---------------------------------------------------------------------------
@@ -579,12 +587,11 @@ TclNarrowToBytes(
 
 static int
 SetByteArrayFromAny(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
-    (void)dummy;
 
     /* TODO: Consider imposing this check on callers. */
     if (TclHasIntRep(objPtr, &properByteArrayType)) {
@@ -868,7 +875,7 @@ TclInitBinaryCmd(
 
 static int
 BinaryFormatCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -891,7 +898,6 @@ BinaryFormatCmd(
     const char *errorValue, *str;
     int offset, size;
     size_t length;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -1379,7 +1385,7 @@ BinaryFormatCmd(
 
 int
 BinaryScanCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1403,7 +1409,6 @@ BinaryScanCmd(
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
     Tcl_HashTable *numberCachePtr;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2452,7 +2457,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2461,7 +2466,6 @@ BinaryEncodeHex(
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
     size_t offset = 0, count = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
@@ -2502,7 +2506,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2514,7 +2518,6 @@ BinaryDecodeHex(
     size_t count = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
-    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -2623,7 +2626,7 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2637,7 +2640,6 @@ BinaryEncode64(
     size_t offset, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
-    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2735,7 +2737,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2749,7 +2751,6 @@ BinaryEncodeUu(
     size_t j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
-    (void)dummy;
 
     if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2862,7 +2863,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2875,7 +2876,6 @@ BinaryDecodeUu(
     unsigned char c;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
-    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
@@ -3027,7 +3027,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3041,7 +3041,6 @@ BinaryDecode64(
     size_t count = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
-    (void)dummy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");

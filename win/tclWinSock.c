@@ -258,12 +258,12 @@ static int		FindFDInList(TcpState *statePtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
 static void		TcpThreadActionProc(ClientData instanceData,
 			    int action);
+static int		TcpCloseProc(void *, Tcl_Interp *);
 
 static Tcl_EventCheckProc	SocketCheckProc;
 static Tcl_EventProc		SocketEventProc;
 static Tcl_EventSetupProc	SocketSetupProc;
 static Tcl_DriverBlockModeProc	TcpBlockModeProc;
-static Tcl_DriverCloseProc	TcpCloseProc;
 static Tcl_DriverClose2Proc	TcpClose2Proc;
 static Tcl_DriverSetOptionProc	TcpSetOptionProc;
 static Tcl_DriverGetOptionProc	TcpGetOptionProc;
@@ -1038,13 +1038,12 @@ TcpOutputProc(
 static int
 TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
-    Tcl_Interp *dummy)		/* Unused. */
+    TCL_UNUSED(Tcl_Interp *))
 {
     TcpState *statePtr = (TcpState *)instanceData;
     /* TIP #218 */
     int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1185,7 +1184,7 @@ TcpSetOptionProc(
     ClientData instanceData,	/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to set. */
-    const char *value)		/* New value for option. */
+    TCL_UNUSED(const char *) /*value*/)		/* New value for option. */
 {
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     TcpState *statePtr = instanceData;
@@ -1193,7 +1192,6 @@ TcpSetOptionProc(
 #else
     (void)instanceData;
 #endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
-    (void)value;
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1666,11 +1664,10 @@ TcpWatchProc(
 static int
 TcpGetHandleProc(
     ClientData instanceData,	/* The socket state. */
-    int direction,		/* Not used. */
+    TCL_UNUSED(int) /*direction*/,
     ClientData *handlePtr)	/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    (void)direction;
 
     *handlePtr = INT2PTR(statePtr->sockets->fd);
     return TCL_OK;
@@ -2616,10 +2613,8 @@ SocketsEnabled(void)
     /* ARGSUSED */
 static void
 SocketExitHandler(
-    ClientData dummy)		/* Not used. */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     Tcl_MutexLock(&socketMutex);
 
     /*
@@ -2652,13 +2647,12 @@ SocketExitHandler(
 
 void
 SocketSetupProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -2698,13 +2692,12 @@ SocketSetupProc(
 
 static void
 SocketCheckProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
     SocketEvent *evPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;

@@ -1427,13 +1427,11 @@ TraversalCopy(
 static int
 TraversalDelete(
     const WCHAR *nativeSrc,	/* Source pathname to delete. */
-    const WCHAR *dstPtr,	/* Not used. */
+    TCL_UNUSED(const WCHAR *) /*dstPtr*/,
     int type,			/* Reason for call - see TraverseWinTree() */
     Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
-    (void)dstPtr;
-
     switch (type) {
     case DOTREE_F:
 	if (TclpDeleteFile(nativeSrc) == TCL_OK) {
@@ -1592,7 +1590,7 @@ GetWinFileAttributes(
 static int
 ConvertFileNameFormat(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file. */
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
@@ -1600,7 +1598,6 @@ ConvertFileNameFormat(
     int pathc, i;
     Tcl_Obj *splitPath;
     size_t length;
-    (void)objIndex;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 
@@ -1895,10 +1892,8 @@ CannotSetAttribute(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file. */
-    Tcl_Obj *attributePtr)	/* The new value of the attribute. */
+    TCL_UNUSED(Tcl_Obj *) /*attributePtr*/)
 {
-    (void)attributePtr;
-
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
 	    tclpFileAttrStrings[objIndex], TclGetString(fileName)));

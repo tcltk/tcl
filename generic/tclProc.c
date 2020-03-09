@@ -34,8 +34,7 @@ typedef struct {
 static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
-static int		InitArgsAndLocals(Tcl_Interp *interp,
-			    Tcl_Obj *procNameObj, int skip);
+static int		InitArgsAndLocals(Tcl_Interp *interp, int skip);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
@@ -152,7 +151,7 @@ static const Tcl_ObjType lambdaType = {
 	/* ARGSUSED */
 int
 Tcl_ProcObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -163,7 +162,6 @@ Tcl_ProcObjCmd(
     const char *simpleName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
-    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
@@ -199,8 +197,8 @@ Tcl_ProcObjCmd(
      * Create the data structure to represent the procedure.
      */
 
-    if (TclCreateProc(interp, nsPtr, simpleName, objv[2], objv[3],
-	    &procPtr) != TCL_OK) {
+    if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, objv[2],
+	    objv[3], &procPtr) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
 	Tcl_AddErrorInfo(interp, simpleName);
 	Tcl_AddErrorInfo(interp, "\")");
@@ -398,7 +396,7 @@ Tcl_ProcObjCmd(
 int
 TclCreateProc(
     Tcl_Interp *interp,		/* Interpreter containing proc. */
-    Namespace *nsPtr,		/* Namespace containing this proc. */
+    TCL_UNUSED(Namespace *) /*nsPtr*/,
     const char *procName,	/* Unqualified name of this proc. */
     Tcl_Obj *argsPtr,		/* Description of arguments. */
     Tcl_Obj *bodyPtr,		/* Command body. */
@@ -411,7 +409,6 @@ TclCreateProc(
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0;
-    (void)nsPtr;
 
     ProcGetIntRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -890,17 +887,17 @@ Uplevel_Callback(
 	/* ARGSUSED */
 int
 Tcl_UplevelObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRUplevelObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -912,7 +909,6 @@ TclNRUplevelObjCmd(
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
-    (void)dummy;
 
     if (objc < 2) {
     uplevelSyntax:
@@ -1322,7 +1318,6 @@ static int
 InitArgsAndLocals(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
     int skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
 {
@@ -1332,7 +1327,6 @@ InitArgsAndLocals(
     Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
-    (void)procNameObj;
 
     ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1646,7 +1640,7 @@ TclNRInterpProcCore(
     CallFrame *freePtr;
     ByteCode *codePtr;
 
-    result = InitArgsAndLocals(interp, procNameObj, skip);
+    result = InitArgsAndLocals(interp, skip);
     if (result != TCL_OK) {
 	freePtr = iPtr->framePtr;
 	Tcl_PopCallFrame(interp);	/* Pop but do not free. */
@@ -2575,17 +2569,17 @@ TclGetLambdaFromObj(
 
 int
 Tcl_ApplyObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRApplyObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2595,7 +2589,6 @@ TclNRApplyObjCmd(
     int result;
     Tcl_Namespace *nsPtr;
     ApplyExtraData *extraPtr;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg ...?");

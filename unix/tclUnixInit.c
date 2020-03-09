@@ -1052,26 +1052,27 @@ TclpFindVariable(
  */
 
 #ifdef HAVE_COREFOUNDATION
+#ifdef TCL_FRAMEWORK
 static int
 MacOSXGetLibraryPath(
     Tcl_Interp *interp,
     int maxPathLen,
     char *tclLibPath)
 {
-    int foundInFramework = TCL_ERROR;
-
-#ifdef TCL_FRAMEWORK
-    foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp,
+    return Tcl_MacOSXOpenVersionedBundleResources(interp,
 	    "com.tcltk.tcllibrary", TCL_FRAMEWORK_VERSION, 0, maxPathLen,
 	    tclLibPath);
-#else
-    (void)interp;
-    (void)maxPathLen;
-    (void)tclLibPath;
-#endif
-
-    return foundInFramework;
 }
+#else
+static int
+MacOSXGetLibraryPath(
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(char *))
+{
+    return TCL_ERROR;
+}
+#endif
 #endif /* HAVE_COREFOUNDATION */
 
 /*
