@@ -228,7 +228,7 @@ ProcBodyTestInitInternal(
 
 static int
 ProcBodyTestProcObjCmd(
-    void *dummy,		/* context; not used */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
@@ -240,7 +240,6 @@ ProcBodyTestProcObjCmd(
     Tcl_Obj *bodyObjPtr;
     Tcl_Obj *myobjv[5];
     int result;
-    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "newName argsList bodyName");
@@ -328,13 +327,12 @@ ProcBodyTestProcObjCmd(
 
 static int
 ProcBodyTestCheckObjCmd(
-    void *dummy,		/* context; not used */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;
-    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");

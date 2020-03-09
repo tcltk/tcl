@@ -34,17 +34,15 @@ static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
  *---------------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
 void
 TclpFindExecutable(
-    const char *argv0)		/* The value of the application's argv[0]
-				 * (native). */
+    TCL_UNUSED(const char *) /*argv0*/)
 {
     Tcl_Encoding encoding;
-#ifdef __CYGWIN__
     size_t length;
     wchar_t buf[PATH_MAX];
     char name[PATH_MAX * 3 + 1];
-    (void)argv0;
 
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, PATH_MAX);
@@ -56,7 +54,14 @@ TclpFindExecutable(
     encoding = Tcl_GetEncoding(NULL, NULL);
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(name, length), encoding);
+}
 #else
+void
+TclpFindExecutable(
+    const char *argv0)		/* The value of the application's argv[0]
+				 * (native). */
+{
+    Tcl_Encoding encoding;
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
@@ -194,8 +199,8 @@ TclpFindExecutable(
 
   done:
     Tcl_DStringFree(&buffer);
-#endif
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1021,9 +1026,8 @@ TclpObjLink(
 
 Tcl_Obj *
 TclpFilesystemPathType(
-    Tcl_Obj *pathPtr)
+    TCL_UNUSED(Tcl_Obj *))
 {
-    (void)pathPtr;
     /*
      * All native paths are of the same type.
      */

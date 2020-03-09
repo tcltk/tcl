@@ -129,7 +129,7 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -139,7 +139,6 @@ TestfilehandlerCmd(
     static int initialized = 0;
     char buffer[4000];
     TclFile file;
-    (void)dummy;
 
     /*
      * NOTE: When we make this code work on Windows also, the following
@@ -344,7 +343,7 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -353,7 +352,6 @@ TestfilewaitCmd(
     Tcl_Channel channel;
     int fd;
     ClientData data;
-    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "file readable|writable|both timeout");
@@ -413,13 +411,12 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Obj *saveName;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "argv0");
@@ -456,13 +453,12 @@ TestfindexecutableCmd(
 
 static int
 TestforkCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
-    (void)dummy;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -503,7 +499,7 @@ TestforkCmd(
 
 static int
 TestalarmCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -511,7 +507,6 @@ TestalarmCmd(
 #ifdef SA_RESTART
     unsigned int sec = 1;
     struct sigaction action;
-    (void)dummy;
 
     if (objc > 1) {
 	Tcl_GetIntFromObj(interp, objv[1], (int *)&sec);
@@ -533,7 +528,6 @@ TestalarmCmd(
     (void) alarm(sec);
     return TCL_OK;
 #else
-    (void)dummy;
 
     Tcl_AppendResult(interp,
 	    "warning: sigaction SA_RESTART not support on this platform",
@@ -560,10 +554,8 @@ TestalarmCmd(
 
 static void
 AlarmHandler(
-    int signum)
+    TCL_UNUSED(int) /*signum*/)
 {
-    (void)signum;
-
     gotsig = "1";
 }
 
@@ -585,15 +577,11 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *))
 {
-    (void)dummy;
-    (void)objc;
-    (void)objv;
-
     Tcl_AppendResult(interp, gotsig, NULL);
     gotsig = "0";
     return TCL_OK;
@@ -620,13 +608,12 @@ TestgotsigCmd(
 
 static int
 TestchmodCmd(
-    ClientData dummy,			/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
     int i, mode;
-    (void)dummy;
 
     if (objc < 2) {
     Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
