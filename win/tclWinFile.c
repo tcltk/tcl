@@ -2522,7 +2522,7 @@ TclpFilesystemPathType(
 
 int
 TclpObjNormalizePath(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
 				 * normalize */
     int nextCheckpoint)	        /* offset to start at in pathPtr */
@@ -2533,7 +2533,6 @@ TclpObjNormalizePath(
     Tcl_Obj *temp = NULL;
     int isDrive = 1;
     Tcl_DString ds;		/* Some workspace. */
-    (void)dummy;
 
     Tcl_DStringInit(&dsNorm);
     path = TclGetString(pathPtr);

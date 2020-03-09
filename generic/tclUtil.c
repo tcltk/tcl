@@ -2382,11 +2382,10 @@ TclByteArrayMatch(
 				/* Pattern, which may contain special
 				 * characters. */
     size_t ptnLen,			/* Length of Pattern */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
-    (void)flags;
 
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
@@ -3093,7 +3092,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3103,7 +3102,6 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
-    (void)dummy;
 
     /*
      * Handle NaN.

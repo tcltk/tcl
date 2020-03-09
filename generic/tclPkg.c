@@ -215,12 +215,11 @@ Tcl_PkgProvideEx(
 static void
 PkgFilesCleanupProc(
     ClientData clientData,
-    Tcl_Interp *dummy)
+    TCL_UNUSED(Tcl_Interp *))
 {
     PkgFiles *pkgFiles = (PkgFiles *) clientData;
     Tcl_HashSearch search;
     Tcl_HashEntry *entry;
-    (void)dummy;
 
     while (pkgFiles->names) {
 	PkgName *name = pkgFiles->names;
@@ -434,14 +433,13 @@ static int
 PkgRequireCore(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int))
 {
     const char *name = (const char *)data[0];
     int reqc = PTR2INT(data[1]);
     Tcl_Obj **reqv = (Tcl_Obj **)data[2];
     int code = CheckAllRequirements(interp, reqc, reqv);
     Require *reqPtr;
-    (void)result;
 
     if (code != TCL_OK) {
 	return code;
@@ -466,7 +464,7 @@ static int
 PkgRequireCoreStep1(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int))
 {
     Tcl_DString command;
     char *script;
@@ -474,7 +472,6 @@ PkgRequireCoreStep1(
     int reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name /* Name of desired package. */;
-    (void)result;
 
     /*
      * If we've got the package in the DB already, go on to actually loading
@@ -561,7 +558,7 @@ static int
 PkgRequireCoreFinal(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int))
 {
     Require *reqPtr = (Require *)data[0];
     int reqc = PTR2INT(data[1]), satisfies;
@@ -569,7 +566,6 @@ PkgRequireCoreFinal(
     char *pkgVersionI;
     void *clientDataPtr = reqPtr->clientDataPtr;
     const char *name = reqPtr->name; /* Name of desired package. */
-    (void)result;
 
     if (reqPtr->pkgPtr->version == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -613,11 +609,9 @@ PkgRequireCoreFinal(
 static int
 PkgRequireCoreCleanup(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    (void)dummy;
-
     Tcl_Free(data[0]);
     return result;
 }
@@ -626,7 +620,7 @@ static int
 SelectPackage(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    TCL_UNUSED(int))
 {
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
     char *availVersion, *bestVersion, *bestStableVersion;
@@ -638,7 +632,6 @@ SelectPackage(
     const char *name = reqPtr->name;
     Package *pkgPtr = reqPtr->pkgPtr;
     Interp *iPtr = (Interp *) interp;
-    (void)result;
 
     /*
      * Check whether we're already attempting to load some version of this
@@ -1018,20 +1011,18 @@ Tcl_PkgPresentEx(
  */
 int
 Tcl_PackageObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    (void)dummy;
-
-    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, NULL, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
 	/* ARGSUSED */
 int
 TclNRPackageObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1057,7 +1048,6 @@ TclNRPackageObjCmd(
     const char *argv2, *argv3, *argv4;
     char *iva = NULL, *ivb = NULL;
     Tcl_Obj *objvListPtr, **newObjvPtr;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1507,11 +1497,9 @@ TclNRPackageObjCmd(
 static int
 TclNRPackageObjCmdCleanup(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    (void)dummy;
-
     TclDecrRefCount((Tcl_Obj *) data[0]);
     TclDecrRefCount((Tcl_Obj *) data[1]);
     return result;

@@ -184,7 +184,7 @@ typedef struct {
 	/* ARGSUSED */
 int
 Tcl_TraceObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -209,7 +209,6 @@ Tcl_TraceObjCmd(
 	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
 #endif
     };
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1041,8 +1040,7 @@ ClientData
 Tcl_CommandTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing command. */
     const char *cmdName,	/* Name of command. */
-    int flags,			/* OR-ed combo or TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY (can be 0). */
+    TCL_UNUSED(int) /*flags*/,
     Tcl_CommandTraceProc *proc,	/* Function assocated with trace. */
     ClientData prevClientData)	/* If non-NULL, gives last value returned by
 				 * this function, so this call will return the
@@ -1051,7 +1049,6 @@ Tcl_CommandTraceInfo(
 {
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    (void)flags;
 
     cmdPtr = (Command *) Tcl_FindCommand(interp, cmdName, NULL,
 	    TCL_LEAVE_ERR_MSG);
@@ -1425,8 +1422,7 @@ TclCheckExecutionTraces(
     Tcl_Interp *interp,		/* The current interpreter. */
     const char *command,	/* Pointer to beginning of the current command
 				 * string. */
-    size_t numChars,		/* The number of characters in 'command' which
-				 * are part of the command string. */
+    TCL_UNUSED(size_t) /*numChars*/,
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
@@ -1439,7 +1435,6 @@ TclCheckExecutionTraces(
     int curLevel;
     int traceCode = TCL_OK;
     Tcl_InterpState state = NULL;
-    (void)numChars;
 
     if (cmdPtr->tracePtr == NULL) {
 	return traceCode;
@@ -1766,7 +1761,7 @@ TraceExecutionProc(
     Tcl_Interp *interp,
     int level,
     const char *command,
-    Tcl_Command cmdInfo,
+    TCL_UNUSED(Tcl_Command),
     int objc,
     struct Tcl_Obj *const objv[])
 {
@@ -1776,7 +1771,6 @@ TraceExecutionProc(
     int flags = tcmdPtr->curFlags;
     int code = tcmdPtr->curCode;
     int traceCode = TCL_OK;
-    (void)cmdInfo;
 
     if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
 	/*

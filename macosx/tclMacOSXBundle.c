@@ -12,6 +12,7 @@
  */
 
 #include "tclPort.h"
+#include "tclInt.h"
 
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
@@ -197,7 +198,7 @@ Tcl_MacOSXOpenBundleResources(
 
 int
 Tcl_MacOSXOpenVersionedBundleResources(
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,
@@ -208,7 +209,6 @@ Tcl_MacOSXOpenVersionedBundleResources(
     CFBundleRef bundleRef, versionedBundleRef = NULL;
     CFStringRef bundleNameRef;
     CFURLRef libURL;
-    (void)dummy;
 
     libraryPath[0] = '\0';
 
