@@ -434,6 +434,8 @@ Tcl_GetByteArrayFromObj(
 
     if (irPtr == NULL) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+
+	    /* TODO: Reconsider claiming a length for failed conversion. */
 	    if (lengthPtr != NULL) {
 		*lengthPtr = 0;
 	    }
@@ -488,6 +490,8 @@ Tcl_SetByteArrayLength(
 	if (length == 0) {
 	    Tcl_SetByteArrayObj(objPtr, NULL, 0);
 	} else if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+
+	    /* TODO: Consider a length limit on conversion attempt. */
 	    return NULL;
 	}
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
@@ -510,6 +514,8 @@ Tcl_SetByteArrayLength(
  * SetByteArrayFromAny --
  *
  *	Generate the ByteArray internal rep from the string rep.
+ *
+ *	TODO: Consider length limit on conversion.
  *
  * Results:
  *	The return value is always TCL_OK.
@@ -580,6 +586,7 @@ SetByteArrayFromAny(
     Tcl_ObjIntRep ir;
     (void)dummy;
 
+    /* TODO: Consider imposing this check on callers. */
     if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
     }
