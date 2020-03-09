@@ -328,7 +328,7 @@ static void		CastOutPowersOf2(int *, int *, int *);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 			    int, int, int, int, int, int, int, int, int,
 			    int, int, int *, char **);
-static char *		StrictInt64Conversion(Double *, Tcl_WideUInt,
+static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
 			    int, int, int *, char **);
 static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
@@ -340,7 +340,7 @@ static char *		ShorteningBignumConversionPowD(Double *dPtr,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversionPowD(Double *dPtr,
+static char *		StrictBignumConversionPowD(
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -354,7 +354,7 @@ static char *		ShorteningBignumConversion(Double *dPtr,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversion(Double *dPtr,
+static char *		StrictBignumConversion(
 			    Tcl_WideUInt bw, int b2,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -3117,7 +3117,6 @@ ShorteningInt64Conversion(
 
 static inline char *
 StrictInt64Conversion(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3142,7 +3141,6 @@ StrictInt64Conversion(
     int digit;			/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Current position in the output buffer. */
-    (void)dPtr;
 
     /*
      * Adjust if the logarithm was guessed wrong.
@@ -3526,7 +3524,6 @@ ShorteningBignumConversionPowD(
 
 static inline char *
 StrictBignumConversionPowD(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3548,7 +3545,6 @@ StrictBignumConversionPowD(
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Index in the output buffer. */
     mp_err err;
-    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5
@@ -3965,7 +3961,6 @@ ShorteningBignumConversion(
 
 static inline char *
 StrictBignumConversion(
-    Double *dPtr,		/* Original number being converted. */
     Tcl_WideUInt bw,		/* Integer significand and exponent. */
     int b2,			/* Scale factor for the significand. */
     int s2, int s5,		/* Scale factors for denominator. */
@@ -3986,7 +3981,6 @@ StrictBignumConversion(
     int g;			/* Size of the current digit ground. */
     int i, j;
     mp_err err;
-    (void)dPtr;
 
     /*
      * b = bw * 2**b2 * 5**b5
@@ -4405,7 +4399,7 @@ TclDoubleDigits(
 	     * operations.
 	     */
 
-	    return StrictInt64Conversion(&d, bw, b2, b5, s2, s5, k,
+	    return StrictInt64Conversion(bw, b2, b5, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	} else if (s5 == 0) {
 	    /*
@@ -4422,7 +4416,7 @@ TclDoubleDigits(
 		b2 += delta;
 		s2 += delta;
 	    }
-	    return StrictBignumConversionPowD(&d, bw, b2, b5,
+	    return StrictBignumConversionPowD(bw, b2, b5,
 		    s2/MP_DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
 	} else {
 	    /*
@@ -4432,7 +4426,7 @@ TclDoubleDigits(
 	     * fewer mp_int divisions.
 	     */
 
-	    return StrictBignumConversion(&d, bw, b2, s2, s5, k,
+	    return StrictBignumConversion(bw, b2, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	}
     }
