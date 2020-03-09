@@ -281,13 +281,9 @@ UnloadFile(
 
 int
 TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
+    TCL_UNUSED(const char *) /*fileName*/,
+    TCL_UNUSED(Tcl_DString *))
 {
-    (void)fileName;
-    (void)bufPtr;
     return 0;
 }
 
