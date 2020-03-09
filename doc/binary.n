@@ -561,7 +561,7 @@ stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 8-bit quantities using an expression
 like:
 .CS
-set num [expr { $num & 0xff }]
+set num [expr { $num & 0xFF }]
 .CE
 .RE
 .IP \fBs\fR 5
@@ -580,7 +580,7 @@ stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 16-bit quantities using an expression
 like:
 .CS
-set num [expr { $num & 0xffff }]
+set num [expr { $num & 0xFFFF }]
 .CE
 .RE
 .IP \fBS\fR 5
@@ -619,7 +619,7 @@ stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 32-bit quantities using an expression
 like:
 .CS
-set num [expr { $num & 0xffffffff }]
+set num [expr { $num & 0xFFFFFFFF }]
 .CE
 .RE
 .IP \fBI\fR 5

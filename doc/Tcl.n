@@ -146,19 +146,19 @@ Audible alert (bell) (0x7).
 Backspace (0x8).
 .TP 7
 \e\fBf\fR
-Form feed (0xc).
+Form feed (0xC).
 .TP 7
 \e\fBn\fR
-Newline (0xa).
+Newline (0xA).
 .TP 7
 \e\fBr\fR
-Carriage-return (0xd).
+Carriage-return (0xD).
 .TP 7
 \e\fBt\fR
 Tab (0x9).
 .TP 7
 \e\fBv\fR
-Vertical tab (0xb).
+Vertical tab (0xB).
 .TP 7
 \e\fB<newline>\fIwhiteSpace\fR
 .
