@@ -2475,11 +2475,10 @@ TclByteArrayMatch(
 				/* Pattern, which may contain special
 				 * characters. */
     int ptnLen,			/* Length of Pattern */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
-    (void)flags;
 
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
@@ -3264,7 +3263,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3275,7 +3274,6 @@ Tcl_PrintDouble(
     char *digits;
     char *end;
     int *precisionPtr = (int *)Tcl_GetThreadData(&precisionKey, sizeof(int));
-    (void)dummy;
 
     /*
      * Handle NaN.
@@ -3441,7 +3439,7 @@ Tcl_PrintDouble(
 	/* ARGSUSED */
 char *
 TclPrecTraceProc(
-    ClientData clientData,	/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable. */
     const char *name2,		/* Second part of variable name. */
