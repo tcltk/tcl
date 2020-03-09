@@ -332,14 +332,9 @@ Tcl_DbNewStringObj(
     size_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If -1,
 				 * use bytes up to the first NUL byte. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
-
     return Tcl_NewStringObj(bytes, length);
 }
 #endif /* TCL_MEM_DEBUG */
@@ -4059,11 +4054,9 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    (void)dummy;
-
     if (!TclHasIntRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 
