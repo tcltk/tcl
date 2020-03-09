@@ -188,8 +188,7 @@ static void		ArrayPopulateSearch(Tcl_Interp *interp,
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
 static Tcl_NRPostProc   ArrayForLoopCallback;
-static int		ArrayForNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
@@ -1528,13 +1527,12 @@ TclPtrGetVarIdx(
 	/* ARGSUSED */
 int
 Tcl_SetObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValueObj;
-    (void)dummy;
 
     if (objc == 2) {
 	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
@@ -2824,14 +2822,13 @@ UnsetVarStruct(
 	/* ARGSUSED */
 int
 Tcl_UnsetObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, flags = TCL_LEAVE_ERR_MSG;
     const char *name;
-    (void)dummy;
 
     if (objc == 1) {
 	/*
@@ -2893,7 +2890,7 @@ Tcl_UnsetObjCmd(
 	/* ARGSUSED */
 int
 Tcl_AppendObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2902,7 +2899,6 @@ Tcl_AppendObjCmd(
     Tcl_Obj *varValuePtr = NULL;
 				/* Initialized to avoid compiler warning. */
     int i;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -2960,7 +2956,7 @@ Tcl_AppendObjCmd(
 	/* ARGSUSED */
 int
 Tcl_LappendObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2969,7 +2965,6 @@ Tcl_LappendObjCmd(
     int numElems, createdNewObj;
     Var *varPtr, *arrayPtr;
     int result;
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -3167,17 +3162,17 @@ ArrayObjNext(
 
 static int
 ArrayForObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, clientData, objc, objv);
 }
 
 static int
 ArrayForNRCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3186,7 +3181,6 @@ ArrayForNRCmd(
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
     int isArray, numVars;
-    (void)dummy;
 
     /*
      * array for {k v} a body
@@ -3409,7 +3403,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3417,7 +3411,6 @@ ArrayStartSearchCmd(
     Var *varPtr;
     int isArray;
     ArraySearch *searchPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
@@ -3506,7 +3499,7 @@ ArrayDoneSearch(
 	/* ARGSUSED */
 static int
 ArrayAnyMoreCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3516,7 +3509,6 @@ ArrayAnyMoreCmd(
     Tcl_Obj *varNameObj, *searchObj;
     int gotValue, isArray;
     ArraySearch *searchPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3586,7 +3578,7 @@ ArrayAnyMoreCmd(
 	/* ARGSUSED */
 static int
 ArrayNextElementCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3595,7 +3587,6 @@ ArrayNextElementCmd(
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
     int isArray;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3668,7 +3659,7 @@ ArrayNextElementCmd(
 	/* ARGSUSED */
 static int
 ArrayDoneSearchCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3678,7 +3669,6 @@ ArrayDoneSearchCmd(
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
     int isArray;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3730,14 +3720,13 @@ ArrayDoneSearchCmd(
 	/* ARGSUSED */
 static int
 ArrayExistsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
     int isArray;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
@@ -3772,7 +3761,7 @@ ArrayExistsCmd(
 	/* ARGSUSED */
 static int
 ArrayGetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3783,7 +3772,6 @@ ArrayGetCmd(
     Tcl_HashSearch search;
     const char *pattern;
     int i, count, result, isArray;
-    (void)dummy;
 
     switch (objc) {
     case 2:
@@ -3933,7 +3921,7 @@ ArrayGetCmd(
 	/* ARGSUSED */
 static int
 ArrayNamesCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3947,7 +3935,6 @@ ArrayNamesCmd(
     Tcl_HashSearch search;
     const char *pattern = NULL;
     int isArray, mode = OPT_GLOB;
-    (void)dummy;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
@@ -4102,7 +4089,7 @@ TclFindArrayPtrElements(
 	/* ARGSUSED */
 static int
 ArraySetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4111,7 +4098,6 @@ ArraySetCmd(
     Tcl_Obj *arrayElemObj;
     Var *varPtr, *arrayPtr;
     int result, i;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
@@ -4279,7 +4265,7 @@ ArraySetCmd(
 	/* ARGSUSED */
 static int
 ArraySizeCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4288,7 +4274,6 @@ ArraySizeCmd(
     Tcl_HashSearch search;
     Var *varPtr2;
     int isArray, size = 0;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
@@ -4340,7 +4325,7 @@ ArraySizeCmd(
 	/* ARGSUSED */
 static int
 ArrayStatsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4349,7 +4334,6 @@ ArrayStatsCmd(
     Tcl_Obj *varNameObj;
     char *stats;
     int isArray;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
@@ -4396,7 +4380,7 @@ ArrayStatsCmd(
 	/* ARGSUSED */
 static int
 ArrayUnsetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4407,7 +4391,6 @@ ArrayUnsetCmd(
     const char *pattern;
     const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
     int isArray;
-    (void)dummy;
 
     switch (objc) {
     case 2:
@@ -5023,7 +5006,7 @@ Tcl_GetVariableFullName(
 
 int
 Tcl_GlobalObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5033,7 +5016,6 @@ Tcl_GlobalObjCmd(
     const char *varName;
     const char *tail;
     int result, i;
-    (void)dummy;
 
     /*
      * If we are not executing inside a Tcl procedure, just return.
@@ -5128,7 +5110,7 @@ Tcl_GlobalObjCmd(
 
 int
 Tcl_VariableObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5139,7 +5121,6 @@ Tcl_VariableObjCmd(
     Tcl_Obj *varValuePtr;
     int i, result;
     Tcl_Obj *varNamePtr, *tailPtr;
-    (void)dummy;
 
     for (i=1 ; i<objc ; i+=2) {
 	/*
@@ -5263,7 +5244,7 @@ Tcl_VariableObjCmd(
 	/* ARGSUSED */
 int
 Tcl_UpvarObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5271,7 +5252,6 @@ Tcl_UpvarObjCmd(
     CallFrame *framePtr;
     int result, hasLevel;
     Tcl_Obj *levelObj;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -6075,7 +6055,7 @@ ObjFindNamespaceVar(
 
 int
 TclInfoVarsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6090,7 +6070,6 @@ TclInfoVarsCmd(
     Tcl_Obj *listPtr, *elemObjPtr, *varNamePtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Obj *simplePatternPtr = NULL;
-    (void)dummy;
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -6267,7 +6246,7 @@ TclInfoVarsCmd(
 
 int
 TclInfoGlobalsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6277,7 +6256,6 @@ TclInfoGlobalsCmd(
     Tcl_HashSearch search;
     Var *varPtr;
     Tcl_Obj *listPtr, *varNamePtr, *patternPtr;
-    (void)dummy;
 
     if (objc == 1) {
 	pattern = NULL;
@@ -6361,14 +6339,13 @@ TclInfoGlobalsCmd(
 
 int
 TclInfoLocalsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *patternPtr, *listPtr;
-    (void)dummy;
 
     if (objc == 1) {
 	patternPtr = NULL;
@@ -6577,13 +6554,12 @@ TclInitVarHashTable(
 
 static Tcl_HashEntry *
 AllocVarEntry(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr;
     Var *varPtr;
-    (void)tablePtr;
 
     varPtr = (Var *)ckalloc(sizeof(VarInHash));
     varPtr->flags = VAR_IN_HASHTABLE;
@@ -6669,7 +6645,7 @@ CompareVarKeys(
 	/* ARGSUSED */
 static int
 ArrayDefaultCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6681,7 +6657,6 @@ ArrayDefaultCmd(
     Tcl_Obj *arrayNameObj, *defaultValueObj;
     Var *varPtr, *arrayPtr;
     int isArray, option;
-    (void)dummy;
 
     /*
      * Parse arguments.
