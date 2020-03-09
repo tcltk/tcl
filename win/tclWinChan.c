@@ -178,10 +178,8 @@ FileInit(void)
 
 static void
 FileChannelExitHandler(
-    ClientData dummy)	/* Old window proc */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
 
@@ -204,13 +202,12 @@ FileChannelExitHandler(
 
 void
 FileSetupProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -248,13 +245,12 @@ FileSetupProc(
 
 static void
 FileCheckProc(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    (void)dummy;
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
@@ -388,14 +384,13 @@ FileBlockProc(
 static int
 FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
     FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
-    (void)dummy;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
 	return EINVAL;
