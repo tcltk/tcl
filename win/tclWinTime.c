@@ -413,12 +413,9 @@ Tcl_GetTime(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData dummy)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
-    (void)timePtr;
-    (void)dummy;
-
     /*
      * Native scale is 1:1. Nothing is done.
      */
@@ -652,10 +649,9 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData dummy)
+    TCL_UNUSED(ClientData))
 {
     Tcl_WideInt usecSincePosixEpoch;
-    (void)dummy;
 
     /*
      * Try to use high resolution timer.
@@ -698,10 +694,8 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    ClientData dummy)		/* Client data is unused */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     SetEvent(timeInfo.exitEvent);
 
     /*
@@ -979,11 +973,10 @@ ComputeGMT(
 
 static DWORD WINAPI
 CalibrationThread(
-    LPVOID arg)
+    TCL_UNUSED(LPVOID))
 {
     FILETIME curFileTime;
     DWORD waitResult;
-    (void)arg;
 
     /*
      * Get initial system time and performance counter.

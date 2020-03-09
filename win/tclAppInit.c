@@ -87,11 +87,10 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    char *dummy[])		/* Not used. */
+    TCL_UNUSED(char **))
 {
     TCHAR **argv;
     TCHAR *p;
-    (void)dummy;
 #else
 int
 _tmain(
