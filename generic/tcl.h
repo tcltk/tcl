@@ -265,7 +265,7 @@ typedef void *ClientData;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32)
+#   if defined(_MSC_VER) || defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)
@@ -1220,16 +1220,12 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * interface.
  */
 
-#define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *) 1)
+#define TCL_CLOSE2PROC		NULL
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
 
-#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
-#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
-#define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
-#define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
 #define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
@@ -1244,16 +1240,12 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  */
 
 typedef int	(Tcl_DriverBlockModeProc) (void *instanceData, int mode);
-typedef int	(Tcl_DriverCloseProc) (void *instanceData,
-			Tcl_Interp *interp);
 typedef int	(Tcl_DriverClose2Proc) (void *instanceData,
 			Tcl_Interp *interp, int flags);
 typedef int	(Tcl_DriverInputProc) (void *instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (void *instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
-typedef int	(Tcl_DriverSeekProc) (void *instanceData, long offset,
-			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
@@ -1296,17 +1288,14 @@ typedef struct Tcl_ChannelType {
 				 * type. */
     Tcl_ChannelTypeVersion version;
 				/* Version of the channel type. */
-    Tcl_DriverCloseProc *closeProc;
-				/* Function to call to close the channel, or
-				 * TCL_CLOSE2PROC if the close2Proc should be
-				 * used instead. */
+    void *closeProc;
+				/* Not used any more. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
-    Tcl_DriverSeekProc *seekProc;
-				/* Function to call to seek on the channel.
-				 * May be NULL. */
+    void *seekProc;
+				/* Not used any more. */
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;
@@ -1324,9 +1313,6 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverBlockModeProc *blockModeProc;
 				/* Set blocking mode for the raw channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_2 channels or later.
-     */
     Tcl_DriverFlushProc *flushProc;
 				/* Function to call to flush a channel. May be
 				 * NULL. */
@@ -1334,26 +1320,15 @@ typedef struct Tcl_ChannelType {
 				/* Function to call to handle a channel event.
 				 * This will be passed up the stacked channel
 				 * chain. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_3 channels or later.
-     */
     Tcl_DriverWideSeekProc *wideSeekProc;
 				/* Function to call to seek on the channel
 				 * which can handle 64-bit offsets. May be
 				 * NULL, and must be NULL if seekProc is
 				 * NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_4 channels or later.
-     * TIP #218, Channel Thread Actions.
-     */
     Tcl_DriverThreadActionProc *threadActionProc;
 				/* Function to call to notify the driver of
 				 * thread specific activity for a channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_5 channels or later.
-     * TIP #208, File Truncation.
-     */
     Tcl_DriverTruncateProc *truncateProc;
 				/* Function to call to truncate the underlying
 				 * file to a particular length. May be NULL if
@@ -1937,14 +1912,14 @@ typedef struct Tcl_EncodingType {
 /*
  * The maximum number of bytes that are necessary to represent a single
  * Unicode character in UTF-8. The valid values are 3 and 4
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3,
- * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If > 3,
- * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
- * is the default and recommended mode.
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If > 3,
+ * then Tcl_UniChar must be 4-bytes in size (UCS-4) (the default). If == 3,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2). Since Tcl 9.0, UCS-4
+ * mode is the default and recommended mode.
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#define TCL_UTF_MAX		4
 #endif
 
 /*
@@ -1993,14 +1968,23 @@ typedef struct Tcl_Config {
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
 typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
 
+#if 0
 /*
  *----------------------------------------------------------------------------
- * Override definitions for libtommath.
+ * We would like to provide an anonymous structure "mp_int" here, which is
+ * compatible with libtommath's "mp_int", but without duplicating anything
+ * from <tommath.h> or including <tommath.h> here. But the libtommath project
+ * didn't honor our request. See: <https://github.com/libtom/libtommath/pull/473>
+ *
+ * That's why this part is commented out, and we are using (void *) in
+ * various API's in stead of the more correct (mp_int *).
  */
 
 #ifndef MP_INT_DECLARED
 #define MP_INT_DECLARED
 typedef struct mp_int mp_int;
+#endif
+
 #endif
 
 /*

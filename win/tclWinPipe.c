@@ -203,7 +203,7 @@ static void		PipeThreadActionProc(ClientData instanceData,
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TCL_CLOSE2PROC,		/* Close proc. */
+    NULL,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -310,7 +310,7 @@ TclpFinalizePipes(void)
 
 void
 PipeSetupProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -363,7 +363,7 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -402,7 +402,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = Tcl_Alloc(sizeof(PipeEvent));
+	    evPtr = (PipeEvent *)Tcl_Alloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -433,7 +433,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = Tcl_Alloc(sizeof(WinFile));
+    filePtr = (WinFile *)Tcl_Alloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -1763,7 +1763,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = Tcl_Alloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = (PipeInfo *)Tcl_Alloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1856,7 +1856,7 @@ Tcl_CreatePipe(
     Tcl_Interp *interp,		/* Errors returned in result.*/
     Tcl_Channel *rchan,		/* Where to return the read side. */
     Tcl_Channel *wchan,		/* Where to return the write side. */
-    int flags)			/* Reserved for future use. */
+    TCL_UNUSED(int) /*flags*/)	/* Reserved for future use. */
 {
     HANDLE readHandle, writeHandle;
     SECURITY_ATTRIBUTES sec;
@@ -1917,7 +1917,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
@@ -2303,7 +2303,7 @@ PipeOutputProc(
 		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
+	    infoPtr->writeBuf = (char *)Tcl_Alloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2711,7 +2711,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     size_t id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = Tcl_Alloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo*)Tcl_Alloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2743,7 +2743,7 @@ TclWinAddProcess(
 	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -2812,7 +2812,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3189,9 +3189,9 @@ PipeThreadActionProc(
 
 Tcl_Channel
 TclpOpenTemporaryFile(
-    Tcl_Obj *dirObj,
+    TCL_UNUSED(Tcl_Obj *) /*dirObj*/,
     Tcl_Obj *basenameObj,
-    Tcl_Obj *extensionObj,
+    TCL_UNUSED(Tcl_Obj *) /*extensionObj*/,
     Tcl_Obj *resultingNameObj)
 {
     WCHAR name[MAX_PATH];
@@ -3287,9 +3287,9 @@ TclPipeThreadCreateTI(
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = Tcl_Alloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)Tcl_Alloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;

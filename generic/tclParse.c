@@ -1144,7 +1144,7 @@ ParseTokens(
 
 	    src++;
 	    numBytes--;
-	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+	    nestedPtr = (Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
 		const char *curEnd;
 
@@ -1532,7 +1532,7 @@ Tcl_ParseVar(
 {
     Tcl_Obj *objPtr;
     int code;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, -1, parsePtr, 0) != TCL_OK) {
 	TclStackFree(interp, parsePtr);
@@ -2014,7 +2014,7 @@ TclSubstParse(
 
 		Tcl_Token *tokenPtr;
 		const char *lastTerm = parsePtr->term;
-		Tcl_Parse *nestedPtr =
+		Tcl_Parse *nestedPtr = (Tcl_Parse *)
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		while (TCL_OK ==
@@ -2156,7 +2156,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2206,7 +2206,7 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = Tcl_Realloc(clPosition,
+			clPosition = (int *)Tcl_Realloc(clPosition,
 				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;

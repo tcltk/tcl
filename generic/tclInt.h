@@ -39,6 +39,19 @@
 #   endif
 #endif
 
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
+
+#if defined(__cplusplus)
+#   define TCL_UNUSED(T) T
+#elif defined(__GNUC__) && (__GNUC__ > 2)
+#   define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
+#else
+#   define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
+#endif
+
 /*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
@@ -2845,11 +2858,11 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
-MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
+MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    size_t strLen, const unsigned char *pattern,
 			    size_t ptnLen, int flags);
-MODULE_SCOPE double	TclCeil(const mp_int *a);
+MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
@@ -2930,7 +2943,7 @@ MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(int quick);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
-MODULE_SCOPE double	TclFloor(const mp_int *a);
+MODULE_SCOPE double	TclFloor(const void *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
@@ -3121,7 +3134,7 @@ MODULE_SCOPE size_t	TclScanElement(const char *string, size_t length,
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
-			    mp_int *bignumValue);
+			    void *bignumValue);
 MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -4099,7 +4112,7 @@ MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
-
+MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
 /*
  * TIP #508: [array default]
  */
@@ -4262,7 +4275,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	    (objPtr) = TclThreadAllocObj();				\
 	} else {							\
 	    (objPtr) = cachePtr->firstObjPtr;				\
-	    cachePtr->firstObjPtr = (objPtr)->internalRep.twoPtrValue.ptr1; \
+	    cachePtr->firstObjPtr = (Tcl_Obj *)(objPtr)->internalRep.twoPtrValue.ptr1; \
 	    --cachePtr->numObjects;					\
 	}								\
     } while (0)
@@ -4362,7 +4375,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = Tcl_Alloc((len) + 1); \
+	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4452,6 +4465,21 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     }
 
 /*
+ * These form part of the native filesystem support. They are needed here
+ * because we have a few native filesystem functions (which are the same for
+ * win/unix) in this file.
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+MODULE_SCOPE const char *const		tclpFileAttrStrings[];
+MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
+#ifdef __cplusplus
+}
+#endif
+
+/*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to test whether an object has a
  * string representation (or is a 'pure' internal value).
@@ -4481,7 +4509,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
 	} else {							\
-	    (bignum).dp = bignumObj->internalRep.twoPtrValue.ptr1;	\
+	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
 	    (bignum).sign = bignumPayload >> 30;			\
 	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
 	    (bignum).used = bignumPayload & 0x7fff;			\
@@ -4918,8 +4946,8 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
-	TclAllocObjStorageEx((interp), _objPtr);			\
-	memPtr = (void *)_objPtr;					\
+	TclAllocObjStorageEx((interp), (_objPtr));			\
+	*(void **)&memPtr = (void *) (_objPtr);					\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
@@ -4934,7 +4962,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	memPtr = (void *)_objPtr;					\
+	*(void **)memPtr = (void *) _objPtr;					\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \

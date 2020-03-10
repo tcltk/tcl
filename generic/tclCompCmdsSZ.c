@@ -23,14 +23,10 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static ClientData	DupJumptableInfo(ClientData clientData);
-static void		FreeJumptableInfo(ClientData clientData);
-static void		PrintJumptableInfo(ClientData clientData,
-			    Tcl_Obj *appendObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
-static void		DisassembleJumptableInfo(ClientData clientData,
-			    Tcl_Obj *dictObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
+static AuxDataDupProc	DupJumptableInfo;
+static AuxDataFreeProc	FreeJumptableInfo;
+static AuxDataPrintProc	PrintJumptableInfo;
+static AuxDataPrintProc	DisassembleJumptableInfo;
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -45,13 +41,12 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
-			    int valueIndex, int numWords,
-			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyNext);
-static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int valueIndex,
 			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyContLines);
+				int *bodyLines, int **bodyNext);
+static void		IssueSwitchJumpTable(Tcl_Interp *interp,
+			    CompileEnv *envPtr, int numWords,
+				Tcl_Token **bodyToken, int *bodyLines,
+				int **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -131,8 +126,7 @@ TclCompileSetCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
@@ -225,8 +219,7 @@ TclCompileStringCatCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     int i, numWords = parsePtr->numWords, numArgs;
@@ -297,8 +290,7 @@ TclCompileStringCmpCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -329,8 +321,7 @@ TclCompileStringEqualCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -361,8 +352,7 @@ TclCompileStringFirstCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -393,8 +383,7 @@ TclCompileStringLastCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -425,8 +414,7 @@ TclCompileStringIndexCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -453,8 +441,7 @@ TclCompileStringInsertCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
@@ -880,8 +867,7 @@ TclCompileStringLenCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -984,8 +970,7 @@ TclCompileStringRangeCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -1060,8 +1045,7 @@ TclCompileStringReplaceCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for context. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *tokenPtr, *valueTokenPtr;
@@ -1259,8 +1243,7 @@ TclCompileStringTrimLCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -1287,8 +1270,7 @@ TclCompileStringTrimRCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -1315,8 +1297,7 @@ TclCompileStringTrimCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -1464,8 +1445,7 @@ TclCompileSubstCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     int numArgs = parsePtr->numWords - 1;
@@ -1480,7 +1460,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    objv = TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
 	objv[objc] = Tcl_NewObj();
@@ -1799,8 +1779,7 @@ TclCompileSwitchCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command. */
@@ -1975,10 +1954,10 @@ TclCompileSwitchCmd(
 	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	bodyTokenArray = Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
-	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = Tcl_Alloc(sizeof(int) * maxLen);
-	bodyContLines = Tcl_Alloc(sizeof(int*) * maxLen);
+	bodyTokenArray = (Tcl_Token *)Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = (int *)Tcl_Alloc(sizeof(int) * maxLen);
+	bodyContLines = (int **)Tcl_Alloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -2037,9 +2016,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	bodyToken = Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = Tcl_Alloc(sizeof(int) * numWords);
-	bodyContLines = Tcl_Alloc(sizeof(int*) * numWords);
+	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = (int *)Tcl_Alloc(sizeof(int) * numWords);
+	bodyContLines = (int **)Tcl_Alloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -2085,10 +2064,10 @@ TclCompileSwitchCmd(
     CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
 
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
+	IssueSwitchJumpTable(interp, envPtr, numWords, bodyToken,
 		bodyLines, bodyContLines);
     } else {
-	IssueSwitchChainedTests(interp, envPtr, mode, noCase, valueIndex,
+	IssueSwitchChainedTests(interp, envPtr, mode, noCase,
 		numWords, bodyToken, bodyLines, bodyContLines);
     }
     result = TCL_OK;
@@ -2129,7 +2108,6 @@ IssueSwitchChainedTests(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
-    int valueIndex,		/* The value to match against. */
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -2159,8 +2137,8 @@ IssueSwitchChainedTests(
 
     contFixIndex = -1;
     contFixCount = 0;
-    fixupArray = TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
-    fixupTargetArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
+    fixupArray = (JumpFixup *)TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
+    fixupTargetArray = (unsigned int *)TclStackAlloc(interp, sizeof(int) * numBodyTokens);
     memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
     fixupCount = 0;
     foundDefault = 0;
@@ -2378,7 +2356,6 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int valueIndex,		/* The value to match against. */
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -2403,10 +2380,10 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = Tcl_Alloc(sizeof(JumptableInfo));
+    jtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
-    finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
+    finalFixups = (int *)TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
     foundDefault = 0;
     mustGenerate = 1;
 
@@ -2574,8 +2551,8 @@ static ClientData
 DupJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = clientData;
-    JumptableInfo *newJtPtr = Tcl_Alloc(sizeof(JumptableInfo));
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
+    JumptableInfo *newJtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
@@ -2594,7 +2571,7 @@ static void
 FreeJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
     Tcl_Free(jtPtr);
@@ -2604,10 +2581,10 @@ static void
 PrintJumptableInfo(
     ClientData clientData,
     Tcl_Obj *appendObj,
-    ByteCode *codePtr,
+    TCL_UNUSED(ByteCode *),
     unsigned int pcOffset)
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
@@ -2615,7 +2592,7 @@ PrintJumptableInfo(
 
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
@@ -2633,10 +2610,10 @@ static void
 DisassembleJumptableInfo(
     ClientData clientData,
     Tcl_Obj *dictObj,
-    ByteCode *codePtr,
-    unsigned int pcOffset)
+    TCL_UNUSED(ByteCode *),
+    TCL_UNUSED(unsigned int))
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_Obj *mapping = Tcl_NewObj();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -2645,7 +2622,7 @@ DisassembleJumptableInfo(
 
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
 		Tcl_NewIntObj(offset));
@@ -2676,8 +2653,7 @@ TclCompileTailcallCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -2723,8 +2699,7 @@ TclCompileThrowCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -2827,8 +2802,7 @@ TclCompileTryCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     int numWords = parsePtr->numWords, numHandlers, result = TCL_ERROR;
@@ -2864,12 +2838,12 @@ TclCompileTryCmd(
     numHandlers = numWords >> 2;
     numWords -= numHandlers * 4;
     if (numHandlers > 0) {
-	handlerTokens = TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
-	matchClauses = TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
+	handlerTokens = (Tcl_Token**)TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
+	matchClauses = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
 	memset(matchClauses, 0, sizeof(Tcl_Obj *) * numHandlers);
-	matchCodes = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	resultVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	optionVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
+	matchCodes = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
+	resultVarIndices = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
+	optionVarIndices = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
@@ -3131,9 +3105,9 @@ IssueTryClausesInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    noError = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    addrsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    noError = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
@@ -3343,8 +3317,8 @@ IssueTryClausesFinallyInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    addrsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
 	int noTrapError, trapError;
@@ -3639,8 +3613,7 @@ TclCompileUnsetCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
@@ -3777,8 +3750,7 @@ TclCompileWhileCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
@@ -3955,8 +3927,7 @@ TclCompileYieldCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     if (parsePtr->numWords < 1 || parsePtr->numWords > 2) {
@@ -3998,8 +3969,7 @@ TclCompileYieldToCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -4248,8 +4218,7 @@ int
 TclCompileInvertOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileUnaryOpCmd(interp, parsePtr, INST_BITNOT, envPtr);
@@ -4259,8 +4228,7 @@ int
 TclCompileNotOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileUnaryOpCmd(interp, parsePtr, INST_LNOT, envPtr);
@@ -4270,8 +4238,7 @@ int
 TclCompileAddOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileAssociativeBinaryOpCmd(interp, parsePtr, "0", INST_ADD,
@@ -4282,8 +4249,7 @@ int
 TclCompileMulOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileAssociativeBinaryOpCmd(interp, parsePtr, "1", INST_MULT,
@@ -4294,8 +4260,7 @@ int
 TclCompileAndOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileAssociativeBinaryOpCmd(interp, parsePtr, "-1", INST_BITAND,
@@ -4306,8 +4271,7 @@ int
 TclCompileOrOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileAssociativeBinaryOpCmd(interp, parsePtr, "0", INST_BITOR,
@@ -4318,8 +4282,7 @@ int
 TclCompileXorOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileAssociativeBinaryOpCmd(interp, parsePtr, "0", INST_BITXOR,
@@ -4330,8 +4293,7 @@ int
 TclCompilePowOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     /*
@@ -4361,8 +4323,7 @@ int
 TclCompileLshiftOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_LSHIFT, envPtr);
@@ -4372,8 +4333,7 @@ int
 TclCompileRshiftOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_RSHIFT, envPtr);
@@ -4383,8 +4343,7 @@ int
 TclCompileModOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_MOD, envPtr);
@@ -4394,8 +4353,7 @@ int
 TclCompileNeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_NEQ, envPtr);
@@ -4405,8 +4363,7 @@ int
 TclCompileStrneqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_STR_NEQ, envPtr);
@@ -4416,8 +4373,7 @@ int
 TclCompileInOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_LIST_IN, envPtr);
@@ -4427,8 +4383,7 @@ int
 TclCompileNiOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileStrictlyBinaryOpCmd(interp, parsePtr, INST_LIST_NOT_IN,
@@ -4439,8 +4394,7 @@ int
 TclCompileLessOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_LT, envPtr);
@@ -4450,8 +4404,7 @@ int
 TclCompileLeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_LE, envPtr);
@@ -4461,8 +4414,7 @@ int
 TclCompileGreaterOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_GT, envPtr);
@@ -4472,8 +4424,7 @@ int
 TclCompileGeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_GE, envPtr);
@@ -4483,8 +4434,7 @@ int
 TclCompileEqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_EQ, envPtr);
@@ -4494,8 +4444,7 @@ int
 TclCompileStreqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_EQ, envPtr);
@@ -4505,8 +4454,7 @@ int
 TclCompileStrLtOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_LT, envPtr);
@@ -4516,8 +4464,7 @@ int
 TclCompileStrLeOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_LE, envPtr);
@@ -4527,8 +4474,7 @@ int
 TclCompileStrGtOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_GT, envPtr);
@@ -4538,8 +4484,7 @@ int
 TclCompileStrGeOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_GE, envPtr);
@@ -4549,8 +4494,7 @@ int
 TclCompileMinusOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
@@ -4595,8 +4539,7 @@ int
 TclCompileDivOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;

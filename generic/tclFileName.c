@@ -587,7 +587,7 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = Tcl_Alloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = (const char **)Tcl_Alloc((((*argcPtr) + 1) * sizeof(char *)) + size);
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -821,7 +821,7 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(2, pair, 0);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
@@ -1222,7 +1222,7 @@ DoTildeSubst(
 	/* ARGSUSED */
 int
 Tcl_GlobObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1451,7 +1451,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = (Tcl_GlobTypeData *)TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -2525,7 +2525,7 @@ DoGlob(
 Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
-    return Tcl_Alloc(sizeof(Tcl_StatBuf));
+    return (Tcl_StatBuf *)Tcl_Alloc(sizeof(Tcl_StatBuf));
 }
 
 /*
@@ -2636,20 +2636,25 @@ Tcl_GetBlocksFromStat(
 #endif
 }
 
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return statPtr->st_blksize;
+}
 #else
+unsigned
+Tcl_GetBlockSizeFromStat(
+    TCL_UNUSED(const Tcl_StatBuf *))
+{
     /*
      * Not a great guess, but will do...
      */
 
     return GUESSED_BLOCK_SIZE;
-#endif
 }
+#endif
 
 /*
  * Local Variables:

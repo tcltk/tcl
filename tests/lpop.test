@@ -29,15 +29,15 @@ test lpop-1.3 {error conditions} -returnCodes error -body {
 test lpop-1.4 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no -1
-} -result {list index out of range}
+} -result {index "-1" out of range}
 test lpop-1.5 {error conditions} -returnCodes error -body {
     set no "x y z"
     lpop no 3
-} -result {list index out of range} ;#-errorCode {TCL OPERATION LPOP BADINDEX}
+} -result {index "3" out of range} ;#-errorCode {TCL OPERATION LPOP BADINDEX}
 test lpop-1.6 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no end+1
-} -result {list index out of range}
+} -result {index "end+1" out of range}
 test lpop-1.7 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no {}
@@ -45,7 +45,7 @@ test lpop-1.7 {error conditions} -returnCodes error -body {
 test lpop-1.8 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no 0 0 0 0 1
-} -result {list index out of range}
+} -result {index "1" out of range}
 test lpop-1.9 {error conditions} -returnCodes error -body {
     set no "x y"
     lpop no {1 0}

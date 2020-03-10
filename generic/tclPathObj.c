@@ -1272,7 +1272,7 @@ TclNewFSPathObj(
     }
 
     pathPtr = Tcl_NewObj();
-    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     /*
      * Set up the path.
@@ -1384,7 +1384,7 @@ AppendPath(
 
 Tcl_Obj *
 TclFSMakePathRelative(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* The path we have. */
     Tcl_Obj *cwdPtr)		/* Make it relative to this. */
 {
@@ -1455,7 +1455,7 @@ TclFSMakePathRelative(
 
 static int
 MakePathFromNormalized(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     FsPath *fsPathPtr;
@@ -1464,7 +1464,7 @@ MakePathFromNormalized(
 	return TCL_OK;
     }
 
-    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     /*
      * It's a pure normalized absolute path.
@@ -1532,7 +1532,7 @@ Tcl_FSNewNativePath(
      */
 
     Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
-    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = NULL;
 
@@ -1658,7 +1658,7 @@ Tcl_FSGetTranslatedStringPath(
     if (transPtr != NULL) {
 	size_t len;
 	const char *orig = TclGetStringFromObj(transPtr, &len);
-	char *result = Tcl_Alloc(len+1);
+	char *result = (char *)Tcl_Alloc(len+1);
 
 	memcpy(result, orig, len+1);
 	TclDecrRefCount(transPtr);
@@ -2014,7 +2014,7 @@ Tcl_FSGetInternalRep(
 	    return NULL;
 	}
 
-	nativePathPtr = proc(pathPtr);
+	nativePathPtr = (char *)proc(pathPtr);
 	srcFsPathPtr = PATHOBJ(pathPtr);
 	srcFsPathPtr->nativePathPtr = nativePathPtr;
 	srcFsPathPtr->filesystemEpoch = TclFSEpoch();
@@ -2348,7 +2348,7 @@ SetFsPathFromAny(
      * slashes on Windows, and will not contain any ~user sequences.
      */
 
-    fsPathPtr = Tcl_Alloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     if (transPtr == pathPtr) {
         transPtr = Tcl_DuplicateObj(pathPtr);
@@ -2408,7 +2408,7 @@ DupFsPathInternalRep(
     Tcl_Obj *copyPtr)		/* Path obj with internal rep to set. */
 {
     FsPath *srcFsPathPtr = PATHOBJ(srcPtr);
-    FsPath *copyFsPathPtr = Tcl_Alloc(sizeof(FsPath));
+    FsPath *copyFsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     SETPATHOBJ(copyPtr, copyFsPathPtr);
 
@@ -2512,7 +2512,7 @@ UpdateStringOfFsPath(
 int
 TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    TCL_UNUSED(ClientData *))
 {
     /*
      * A special case is required to handle the empty path "". This is a valid

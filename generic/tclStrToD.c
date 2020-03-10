@@ -328,7 +328,7 @@ static void		CastOutPowersOf2(int *, int *, int *);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 			    int, int, int, int, int, int, int, int, int,
 			    int, int, int *, char **);
-static char *		StrictInt64Conversion(Double *, Tcl_WideUInt,
+static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
 			    int, int, int *, char **);
 static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
@@ -340,7 +340,7 @@ static char *		ShorteningBignumConversionPowD(Double *dPtr,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversionPowD(Double *dPtr,
+static char *		StrictBignumConversionPowD(
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -354,7 +354,7 @@ static char *		ShorteningBignumConversion(Double *dPtr,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversion(Double *dPtr,
+static char *		StrictBignumConversion(
 			    Tcl_WideUInt bw, int b2,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -2273,13 +2273,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = Tcl_Alloc(9);
+	retval = (char *)Tcl_Alloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = Tcl_Alloc(4);
+	retval = (char *)Tcl_Alloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2310,7 +2310,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = Tcl_Alloc(2);
+    char *retval = (char *)Tcl_Alloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -2856,7 +2856,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = Tcl_Alloc(len + 1);
+    retval = (char *)Tcl_Alloc(len + 1);
     if (ilim == 0) {
 	d -= 5.;
 	if (d > eps.d) {
@@ -2967,7 +2967,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3117,7 +3117,6 @@ ShorteningInt64Conversion(
 
 static inline char *
 StrictInt64Conversion(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3131,7 +3130,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3331,7 +3330,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3525,7 +3524,6 @@ ShorteningBignumConversionPowD(
 
 static inline char *
 StrictBignumConversionPowD(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3539,7 +3537,7 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = Tcl_Alloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3739,7 +3737,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = Tcl_Alloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -3963,7 +3961,6 @@ ShorteningBignumConversion(
 
 static inline char *
 StrictBignumConversion(
-    Double *dPtr,		/* Original number being converted. */
     Tcl_WideUInt bw,		/* Integer significand and exponent. */
     int b2,			/* Scale factor for the significand. */
     int s2, int s5,		/* Scale factors for denominator. */
@@ -3974,7 +3971,7 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = Tcl_Alloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4402,7 +4399,7 @@ TclDoubleDigits(
 	     * operations.
 	     */
 
-	    return StrictInt64Conversion(&d, bw, b2, b5, s2, s5, k,
+	    return StrictInt64Conversion(bw, b2, b5, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	} else if (s5 == 0) {
 	    /*
@@ -4419,7 +4416,7 @@ TclDoubleDigits(
 		b2 += delta;
 		s2 += delta;
 	    }
-	    return StrictBignumConversionPowD(&d, bw, b2, b5,
+	    return StrictBignumConversionPowD(bw, b2, b5,
 		    s2/MP_DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
 	} else {
 	    /*
@@ -4429,7 +4426,7 @@ TclDoubleDigits(
 	     * fewer mp_int divisions.
 	     */
 
-	    return StrictBignumConversion(&d, bw, b2, s2, s5, k,
+	    return StrictBignumConversion(bw, b2, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	}
     }
@@ -4624,11 +4621,12 @@ int
 Tcl_InitBignumFromDouble(
     Tcl_Interp *interp,		/* For error message. */
     double d,			/* Number to convert. */
-    mp_int *b)			/* Place to store the result. */
+    void *big)			/* Place to store the result. */
 {
     double fract;
     int expt;
     mp_err err;
+    mp_int *b = (mp_int *)big;
 
     /*
      * Infinite values can't convert to bignum.
@@ -4684,12 +4682,13 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i, lsb;
     double r;
     mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
 
     /*
@@ -4805,11 +4804,12 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
     mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
     err = mp_init(&b);
     if ((err == MP_OKAY) && mp_isneg(a)) {
@@ -4870,11 +4870,12 @@ TclCeil(
 
 double
 TclFloor(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
     mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
     err = mp_init(&b);
     if ((err == MP_OKAY) && mp_isneg(a)) {

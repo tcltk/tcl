@@ -87,17 +87,18 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    char *dummy[])		/* Not used. */
+    TCL_UNUSED(char **))
 {
     TCHAR **argv;
+    TCHAR *p;
 #else
 int
 _tmain(
     int argc,			/* Number of command-line arguments. */
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
-#endif
     TCHAR *p;
+#endif
 
     /*
      * Set up the default locale to be standard "C" locale so parsing is
@@ -270,7 +271,7 @@ setargv(
     /* Make sure we don't call Tcl_Alloc through the (not yet initialized) stub table */
 #   undef Tcl_Alloc
 
-    argSpace = Tcl_Alloc(size * sizeof(char *)
+    argSpace = (TCHAR *)Tcl_Alloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));

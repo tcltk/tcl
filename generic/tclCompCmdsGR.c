@@ -86,8 +86,7 @@ TclCompileGlobalCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
@@ -168,8 +167,7 @@ TclCompileIfCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixupArray jumpFalseFixupArray;
@@ -472,8 +470,7 @@ TclCompileIncrCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
@@ -641,11 +638,10 @@ TclCompileInfoCommandsCmd(
 
 int
 TclCompileInfoCoroutineCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
@@ -669,8 +665,7 @@ TclCompileInfoExistsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
@@ -718,8 +713,7 @@ TclCompileInfoLevelCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
@@ -753,8 +747,7 @@ TclCompileInfoObjectClassCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
@@ -773,8 +766,7 @@ TclCompileInfoObjectIsACmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
@@ -809,8 +801,7 @@ TclCompileInfoObjectNamespaceCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
@@ -847,8 +838,7 @@ TclCompileLappendCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
@@ -963,8 +953,7 @@ TclCompileLassignCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
@@ -1067,8 +1056,7 @@ TclCompileLindexCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *idxTokenPtr, *valTokenPtr;
@@ -1158,8 +1146,7 @@ TclCompileListCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -1272,8 +1259,7 @@ TclCompileLlengthCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
@@ -1305,8 +1291,7 @@ TclCompileLrangeCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for context. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
@@ -1366,8 +1351,7 @@ TclCompileLinsertCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for context. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
@@ -1469,8 +1453,7 @@ TclCompileLreplaceCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for context. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
@@ -1633,8 +1616,7 @@ TclCompileLsetCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     int tempDepth;		/* Depth used for emitting one part of the
@@ -1777,11 +1759,10 @@ TclCompileLsetCmd(
 
 int
 TclCompileNamespaceCurrentCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
@@ -1805,8 +1786,7 @@ TclCompileNamespaceCodeCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
@@ -1855,8 +1835,7 @@ TclCompileNamespaceOriginCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
@@ -1877,8 +1856,7 @@ TclCompileNamespaceQualifiersCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1913,8 +1891,7 @@ TclCompileNamespaceTailCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1950,8 +1927,7 @@ TclCompileNamespaceUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
@@ -2011,8 +1987,7 @@ TclCompileNamespaceWhichCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -2075,8 +2050,7 @@ TclCompileRegexpCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
@@ -2241,8 +2215,7 @@ TclCompileRegsubCmd(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     /*
@@ -2417,8 +2390,7 @@ TclCompileReturnCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
@@ -2458,7 +2430,7 @@ TclCompileReturnCmd(
      * Allocate some working space.
      */
 
-    objv = TclStackAlloc(interp, numOptionWords * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp, numOptionWords * sizeof(Tcl_Obj *));
 
     /*
      * Scan through the return options. If any are unknown at compile time,
@@ -2669,8 +2641,7 @@ TclCompileUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
@@ -2776,8 +2747,7 @@ TclCompileVariableCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
@@ -2858,7 +2828,7 @@ TclCompileVariableCmd(
 
 static int
 IndexTailVarIfKnown(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Token *varTokenPtr,	/* Token representing the variable name */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2951,8 +2921,7 @@ TclCompileObjectNextCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -2976,8 +2945,7 @@ TclCompileObjectNextToCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
@@ -2998,11 +2966,10 @@ TclCompileObjectNextToCmd(
 
 int
 TclCompileObjectSelfCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*

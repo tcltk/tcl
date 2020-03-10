@@ -9,8 +9,8 @@
 #ifndef _WIN32
 #   include <dlfcn.h>
 #else
-#   define dlopen(a,b) (void *)LoadLibrary(TEXT(a))
-#   define dlsym(a,b) (void *)GetProcAddress((HANDLE)(a),b)
+#   define dlopen(a,b) (void *)LoadLibraryW(JOIN(L,a))
+#   define dlsym(a,b) (void *)GetProcAddress((HMODULE)(a),b)
 #   define dlerror() ""
 #endif
 
@@ -41,7 +41,7 @@ MODULE_SCOPE void
 TclStubMainEx(int index, int argc, const void *argv,
 	Tcl_AppInitProc *appInitProc, Tcl_Interp *interp)
 {
-    static void(*stubFn[])(int, const void *, Tcl_AppInitProc *, Tcl_Interp *) = {NULL,NULL};
+    static void *stubFn[] = {NULL,NULL};
 
     if (!stubFn[index]) {
 	if (tclStubsHandle == (void *)-1) {
@@ -59,7 +59,7 @@ TclStubMainEx(int index, int argc, const void *argv,
 		stubFn[index] = dlsym(tclStubsHandle, PROCNAME[index]);
 	}
 	if (stubFn[index]) {
-	    stubFn[index](argc, argv, appInitProc, interp);
+	    ((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *))stubFn[index])(argc, argv, appInitProc, interp);
 	}
     }
 }

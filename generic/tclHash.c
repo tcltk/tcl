@@ -321,7 +321,7 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = Tcl_Alloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	Tcl_SetHashValue(hPtr, NULL);
     }
@@ -621,7 +621,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = Tcl_Alloc((NUM_COUNTERS * 60) + 300);
+    result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
     sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
@@ -670,7 +670,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = Tcl_Alloc(size);
+    hPtr = (Tcl_HashEntry *)Tcl_Alloc(size);
 
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -703,7 +703,7 @@ CompareArrayKeys(
     void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    const int *iPtr1 = keyPtr;
+    const int *iPtr1 = (const int *)keyPtr;
     const int *iPtr2 = hPtr->key.words;
     Tcl_HashTable *tablePtr = hPtr->tablePtr;
     int count;
@@ -771,7 +771,7 @@ HashArrayKey(
 
 static Tcl_HashEntry *
 AllocStringEntry(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)			/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
@@ -782,7 +782,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
+    hPtr = (Tcl_HashEntry *)Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memset(hPtr, 0, sizeof(Tcl_HashEntry) + allocsize - sizeof(hPtr->key));
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
@@ -811,7 +811,7 @@ CompareStringKeys(
     void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    return !strcmp(keyPtr, hPtr->key.string);
+    return !strcmp((char *)keyPtr, hPtr->key.string);
 }
 
 /*
@@ -833,10 +833,10 @@ CompareStringKeys(
 
 static TCL_HASH_TYPE
 HashStringKey(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)			/* Key from which to compute hash value. */
 {
-    const char *string = keyPtr;
+    const char *string = (const char *)keyPtr;
     TCL_HASH_TYPE result;
     char c;
 
@@ -900,8 +900,8 @@ HashStringKey(
 	/* ARGSUSED */
 static Tcl_HashEntry *
 BogusFind(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const char *key)		/* Key to use to find matching entry. */
+    TCL_UNUSED(Tcl_HashTable *),
+    TCL_UNUSED(const char *))
 {
     Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
     return NULL;
@@ -927,11 +927,9 @@ BogusFind(
 	/* ARGSUSED */
 static Tcl_HashEntry *
 BogusCreate(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const char *key,		/* Key to use to find or create matching
-				 * entry. */
-    int *newPtr)		/* Store info here telling whether a new entry
-				 * was created. */
+    TCL_UNUSED(Tcl_HashTable *),
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(int *))
 {
     Tcl_Panic("called %s on deleted table", "Tcl_CreateHashEntry");
     return NULL;
@@ -989,11 +987,11 @@ RebuildTable(
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	tablePtr->buckets = TclpSysAlloc(
+	tablePtr->buckets = (Tcl_HashEntry **)TclpSysAlloc(
 		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     } else {
 	tablePtr->buckets =
-		Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+		(Tcl_HashEntry **)Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {

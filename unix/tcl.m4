@@ -93,7 +93,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/pkg/lib 2>/dev/null` \
-			`ls -d /usr/lib/tcl8.7 2>/dev/null` \
+			`ls -d /usr/lib/tcl9.0 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl9.0 2>/dev/null` \
@@ -229,8 +229,8 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 			`ls -d /usr/lib/tk8.7 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
-			`ls -d /usr/local/lib/tk9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tk9.0 2>/dev/null` \
+			`ls -d /usr/local/lib/tk8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tk8.7 2>/dev/null` \
 			; do
 		    if test -f "$i/tkConfig.sh" ; then
 			ac_cv_c_tkconfig="`(cd $i; pwd)`"
@@ -293,10 +293,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
         AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
 
-    # eval is required to do the TCL_DBGX substitution
-    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
-    eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
-
     # If the TCL_BIN_DIR is the build directory (not the install directory),
     # then set the common variable name to the value of the build variables.
     # For example, the variable TCL_LIB_SPEC will be set to the value
@@ -329,12 +325,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 		;;
 	esac
     fi
-
-    # eval is required to do the TCL_DBGX substitution
-    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
-    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
-    eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
-    eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
 
     AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_PATCH_LEVEL)
@@ -376,10 +366,6 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
         AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
 
-    # eval is required to do the TK_DBGX substitution
-    eval "TK_LIB_FILE=\"${TK_LIB_FILE}\""
-    eval "TK_STUB_LIB_FILE=\"${TK_STUB_LIB_FILE}\""
-
     # If the TK_BIN_DIR is the build directory (not the install directory),
     # then set the common variable name to the value of the build variables.
     # For example, the variable TK_LIB_SPEC will be set to the value
@@ -412,12 +398,6 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 		;;
 	esac
     fi
-
-    # eval is required to do the TK_DBGX substitution
-    eval "TK_LIB_FLAG=\"${TK_LIB_FLAG}\""
-    eval "TK_LIB_SPEC=\"${TK_LIB_SPEC}\""
-    eval "TK_STUB_LIB_FLAG=\"${TK_STUB_LIB_FLAG}\""
-    eval "TK_STUB_LIB_SPEC=\"${TK_STUB_LIB_SPEC}\""
 
     AC_SUBST(TK_VERSION)
     AC_SUBST(TK_BIN_DIR)
@@ -624,8 +604,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #				Sets to $(CFLAGS_OPTIMIZE) if false
 #		LDFLAGS_DEFAULT	Sets to $(LDFLAGS_DEBUG) if true
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
-#		DBGX		Formerly used as debug library extension;
-#				always blank now.
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
@@ -635,7 +613,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 	    [build with debugging symbols (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
@@ -989,7 +966,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	case "${CC}" in
+	    *++)
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
+		;;
+	esac
+
     ], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""
@@ -1109,7 +1094,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}.dll.a'
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$[@].a"
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,

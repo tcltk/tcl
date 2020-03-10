@@ -9,8 +9,8 @@
 #ifndef _WIN32
 #   include <dlfcn.h>
 #else
-#   define dlopen(a,b) (void *)LoadLibrary(TEXT(a))
-#   define dlsym(a,b) (void *)GetProcAddress((HANDLE)(a),b)
+#   define dlopen(a,b) (void *)LoadLibraryW(JOIN(L,a))
+#   define dlsym(a,b) (void *)GetProcAddress((HMODULE)(a),b)
 #   define dlerror() ""
 #endif
 
@@ -40,7 +40,7 @@ TclStubStaticPackage(Tcl_Interp *interp,
 	Tcl_PackageInitProc *initProc,
 	Tcl_PackageInitProc *safeInitProc)
 {
-    static const char *(*stubFn)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *) = NULL;
+    static void *stubFn = NULL;
     static const char *version = NULL;
 
     if (tclStubsHandle == (void *)-1) {
@@ -59,7 +59,7 @@ TclStubStaticPackage(Tcl_Interp *interp,
 		stubFn = dlsym(tclStubsHandle, PROCNAME);
 	}
 	if (stubFn) {
-	    version = stubFn(interp, pkgName, initProc, safeInitProc);
+	    version = ((const char *(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *))stubFn)(interp, pkgName, initProc, safeInitProc);
 	}
     }
     return version;

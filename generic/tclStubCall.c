@@ -9,8 +9,8 @@
 #ifndef _WIN32
 #   include <dlfcn.h>
 #else
-#   define dlopen(a,b) (void *)LoadLibrary(TEXT(a))
-#   define dlsym(a,b) (void *)GetProcAddress((HANDLE)(a),b)
+#   define dlopen(a,b) (void *)LoadLibraryW(JOIN(L,a))
+#   define dlsym(a,b) (void *)GetProcAddress((HMODULE)(a),b)
 #   define dlerror() ""
 #endif
 
@@ -42,7 +42,7 @@ static const char PROCNAME[][24] = {
 MODULE_SCOPE const char *
 TclStubCall(int index, void *arg1, void *arg2)
 {
-    static const char *(*stubFn[])(void *,void *) = {NULL,NULL,NULL,NULL};
+    static void *stubFn[] = {NULL,NULL,NULL,NULL};
     static const char *version = NULL;
 
     if (tclStubsHandle == (void *)-1) {
@@ -70,7 +70,7 @@ TclStubCall(int index, void *arg1, void *arg2)
 		stubFn[index] = dlsym(tclStubsHandle, PROCNAME[index]);
 	}
 	if (stubFn[index]) {
-	    version = stubFn[index](arg1, arg2);
+	    version = ((const char *(*)(void *,void *))stubFn[index])(arg1, arg2);
 	}
     }
     return version;

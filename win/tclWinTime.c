@@ -73,7 +73,7 @@ static TimeInfo timeInfo = {
     (HANDLE) NULL,
     (HANDLE) NULL,
     (HANDLE) NULL,
-#ifdef HAVE_CAST_TO_UNION
+#if defined(HAVE_CAST_TO_UNION) && !defined(__cplusplus)
     (LARGE_INTEGER) (Tcl_WideInt) 0,
     (ULARGE_INTEGER) (DWORDLONG) 0,
     (LARGE_INTEGER) (Tcl_WideInt) 0,
@@ -385,8 +385,8 @@ Tcl_GetTime(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -621,7 +621,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     Tcl_WideInt usecSincePosixEpoch;
 
@@ -666,7 +666,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    ClientData unused)		/* Client data is unused */
+    TCL_UNUSED(ClientData))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -708,7 +708,7 @@ StopCalibration(
 
 static DWORD WINAPI
 CalibrationThread(
-    LPVOID arg)
+    TCL_UNUSED(LPVOID))
 {
     FILETIME curFileTime;
     DWORD waitResult;

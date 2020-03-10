@@ -188,8 +188,7 @@ static void		ArrayPopulateSearch(Tcl_Interp *interp,
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
 static Tcl_NRPostProc   ArrayForLoopCallback;
-static int		ArrayForNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
@@ -268,7 +267,7 @@ static const Tcl_ObjType localVarNameType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &localVarNameType);		\
-	(name) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
 	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : -1;	\
     } while (0)
 
@@ -294,8 +293,8 @@ static const Tcl_ObjType parsedVarNameType = {
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &parsedVarNameType);		\
 	(parsed) = (irPtr != NULL);					\
-	(array) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
-	(elem) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
+	(array) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(elem) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
     } while (0)
 
 Var *
@@ -997,7 +996,7 @@ TclLookupSimpleVar(
 	tablePtr = varFramePtr->varTablePtr;
 	if (create) {
 	    if (tablePtr == NULL) {
-		tablePtr = Tcl_Alloc(sizeof(TclVarHashTable));
+		tablePtr = (TclVarHashTable *)Tcl_Alloc(sizeof(TclVarHashTable));
 		TclInitVarHashTable(tablePtr, NULL);
 		varFramePtr->varTablePtr = tablePtr;
 	    }
@@ -1480,7 +1479,7 @@ TclPtrGetVarIdx(
 	/* ARGSUSED */
 int
 Tcl_SetObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2561,7 +2560,7 @@ UnsetVarStruct(
 	    int isNew;
 
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
-	    tracePtr = Tcl_GetHashValue(tPtr);
+	    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
 	    if (dummyVar.flags & VAR_TRACED_UNSET) {
@@ -2588,7 +2587,7 @@ UnsetVarStruct(
 	    if (TclIsVarTraced(&dummyVar)) {
 		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, &dummyVar);
 		if (tPtr) {
-		    tracePtr = Tcl_GetHashValue(tPtr);
+		    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 		    Tcl_DeleteHashEntry(tPtr);
 		}
 	    }
@@ -2677,7 +2676,7 @@ UnsetVarStruct(
 	/* ARGSUSED */
 int
 Tcl_UnsetObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2745,7 +2744,7 @@ Tcl_UnsetObjCmd(
 	/* ARGSUSED */
 int
 Tcl_AppendObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2811,7 +2810,7 @@ Tcl_AppendObjCmd(
 	/* ARGSUSED */
 int
 Tcl_LappendObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3017,17 +3016,17 @@ ArrayObjNext(
 
 static int
 ArrayForObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, clientData, objc, objv);
 }
 
 static int
 ArrayForNRCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3075,7 +3074,7 @@ ArrayForNRCmd(
      * Make a new array search, put it on the stack.
      */
 
-    searchPtr = Tcl_Alloc(sizeof(ArraySearch));
+    searchPtr = (ArraySearch *)Tcl_Alloc(sizeof(ArraySearch));
     ArrayPopulateSearch(interp, arrayNameObj, varPtr, searchPtr);
 
     /*
@@ -3103,10 +3102,10 @@ ArrayForLoopCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    ArraySearch *searchPtr = data[0];
-    Tcl_Obj *varListObj = data[1];
-    Tcl_Obj *arrayNameObj = data[2];
-    Tcl_Obj *scriptObj = data[3];
+    ArraySearch *searchPtr = (ArraySearch *)data[0];
+    Tcl_Obj *varListObj = (Tcl_Obj *)data[1];
+    Tcl_Obj *arrayNameObj = (Tcl_Obj *)data[2];
+    Tcl_Obj *scriptObj = (Tcl_Obj *)data[3];
     Tcl_Obj **varv;
     Tcl_Obj *keyObj, *valueObj;
     Var *varPtr;
@@ -3226,7 +3225,7 @@ ArrayPopulateSearch(
 	searchPtr->nextPtr = NULL;
     } else {
 	searchPtr->id = ((ArraySearch *) Tcl_GetHashValue(hPtr))->id + 1;
-	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
+	searchPtr->nextPtr = (ArraySearch *)Tcl_GetHashValue(hPtr);
     }
     searchPtr->varPtr = varPtr;
     searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
@@ -3258,7 +3257,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3284,7 +3283,7 @@ ArrayStartSearchCmd(
      * Make a new array search with a free name.
      */
 
-    searchPtr = Tcl_Alloc(sizeof(ArraySearch));
+    searchPtr = (ArraySearch *)Tcl_Alloc(sizeof(ArraySearch));
     ArrayPopulateSearch(interp, objv[1], varPtr, searchPtr);
     Tcl_SetObjResult(interp, searchPtr->name);
     return TCL_OK;
@@ -3325,7 +3324,7 @@ ArrayDoneSearch(
 	    Tcl_DeleteHashEntry(hPtr);
 	}
     } else {
-	for (prevPtr=Tcl_GetHashValue(hPtr) ;; prevPtr=prevPtr->nextPtr) {
+	for (prevPtr = (ArraySearch *)Tcl_GetHashValue(hPtr); ; prevPtr=prevPtr->nextPtr) {
 	    if (prevPtr->nextPtr == searchPtr) {
 		prevPtr->nextPtr = searchPtr->nextPtr;
 		break;
@@ -3354,7 +3353,7 @@ ArrayDoneSearch(
 	/* ARGSUSED */
 static int
 ArrayAnyMoreCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3433,7 +3432,7 @@ ArrayAnyMoreCmd(
 	/* ARGSUSED */
 static int
 ArrayNextElementCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3514,7 +3513,7 @@ ArrayNextElementCmd(
 	/* ARGSUSED */
 static int
 ArrayDoneSearchCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3575,7 +3574,7 @@ ArrayDoneSearchCmd(
 	/* ARGSUSED */
 static int
 ArrayExistsCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3616,7 +3615,7 @@ ArrayExistsCmd(
 	/* ARGSUSED */
 static int
 ArrayGetCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3776,7 +3775,7 @@ ArrayGetCmd(
 	/* ARGSUSED */
 static int
 ArrayNamesCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3944,7 +3943,7 @@ TclFindArrayPtrElements(
 	/* ARGSUSED */
 static int
 ArraySetCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4120,7 +4119,7 @@ ArraySetCmd(
 	/* ARGSUSED */
 static int
 ArraySizeCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4180,7 +4179,7 @@ ArraySizeCmd(
 	/* ARGSUSED */
 static int
 ArrayStatsCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4235,7 +4234,7 @@ ArrayStatsCmd(
 	/* ARGSUSED */
 static int
 ArrayUnsetCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4804,7 +4803,7 @@ Tcl_GetVariableFullName(
 
 int
 Tcl_GlobalObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4908,7 +4907,7 @@ Tcl_GlobalObjCmd(
 
 int
 Tcl_VariableObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5042,7 +5041,7 @@ Tcl_VariableObjCmd(
 	/* ARGSUSED */
 int
 Tcl_UpvarObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5156,14 +5155,14 @@ ParseSearchId(
 		Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
 
 	/* First look for same (Tcl_Obj *) */
-	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
+	for (searchPtr = (ArraySearch *)Tcl_GetHashValue(hPtr); searchPtr != NULL;
 		searchPtr = searchPtr->nextPtr) {
 	    if (searchPtr->name == handleObj) {
 		return searchPtr;
 	    }
 	}
 	/* Fallback: do string compares. */
-	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
+	for (searchPtr = (ArraySearch *)Tcl_GetHashValue(hPtr); searchPtr != NULL;
 		searchPtr = searchPtr->nextPtr) {
 	    if (strcmp(TclGetString(searchPtr->name), handle) == 0) {
 		return searchPtr;
@@ -5215,7 +5214,7 @@ DeleteSearches(
 
     if (arrayVarPtr->flags & VAR_SEARCH_ACTIVE) {
 	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, arrayVarPtr);
-	for (searchPtr = Tcl_GetHashValue(sPtr); searchPtr != NULL;
+	for (searchPtr = (ArraySearch *)Tcl_GetHashValue(sPtr); searchPtr != NULL;
 		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
 	    Tcl_DecrRefCount(searchPtr->name);
@@ -5285,7 +5284,7 @@ TclDeleteNamespaceVars(
 
 	if (TclIsVarTraced(varPtr)) {
 	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
-	    VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+	    VarTrace *tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 	    ActiveVarTrace *activePtr;
 
 	    while (tracePtr) {
@@ -5482,7 +5481,7 @@ DeleteArray(
 			elNamePtr, flags,/* leaveErrMsg */ 0, index);
 	    }
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, elPtr);
-	    tracePtr = Tcl_GetHashValue(tPtr);
+	    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 	    while (tracePtr) {
 		VarTrace *prevPtr = tracePtr;
 
@@ -5857,7 +5856,7 @@ ObjFindNamespaceVar(
 
 int
 TclInfoVarsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6048,7 +6047,7 @@ TclInfoVarsCmd(
 
 int
 TclInfoGlobalsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6141,7 +6140,7 @@ TclInfoGlobalsCmd(
 
 int
 TclInfoLocalsCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6292,7 +6291,7 @@ AppendLocals(
 
     if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	Method *mPtr = (Method *)
-		Tcl_ObjectContextMethod(iPtr->varFramePtr->clientData);
+		Tcl_ObjectContextMethod((Tcl_ObjectContext)iPtr->varFramePtr->clientData);
 	PrivateVariableMapping *privatePtr;
 
 	if (mPtr->declaringObjectPtr) {
@@ -6356,14 +6355,14 @@ TclInitVarHashTable(
 
 static Tcl_HashEntry *
 AllocVarEntry(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
-    varPtr = Tcl_Alloc(sizeof(VarInHash));
+    varPtr = (Var *)Tcl_Alloc(sizeof(VarInHash));
     varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;
@@ -6447,7 +6446,7 @@ CompareVarKeys(
 	/* ARGSUSED */
 static int
 ArrayDefaultCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6593,7 +6592,7 @@ void
 TclInitArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = Tcl_Alloc(sizeof(ArrayVarHashTable));
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)Tcl_Alloc(sizeof(ArrayVarHashTable));
 
     /*
      * Mark the variable as an array.

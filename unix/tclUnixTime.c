@@ -30,7 +30,7 @@ static void		NativeGetTime(Tcl_Time *timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -370,8 +370,8 @@ Tcl_QueryTimeProc(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -396,7 +396,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     struct timeval tv;
 
