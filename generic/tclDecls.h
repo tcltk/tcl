@@ -1206,7 +1206,8 @@ EXTERN Tcl_ChannelTypeVersion Tcl_ChannelVersion(
 EXTERN Tcl_DriverBlockModeProc * Tcl_ChannelBlockModeProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 401 */
-EXTERN Tcl_DriverCloseProc * Tcl_ChannelCloseProc(
+TCL_DEPRECATED("Use Tcl_ChannelClose2Proc")
+Tcl_DriverCloseProc *	Tcl_ChannelCloseProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 402 */
 EXTERN Tcl_DriverClose2Proc * Tcl_ChannelClose2Proc(
@@ -1218,7 +1219,8 @@ EXTERN Tcl_DriverInputProc * Tcl_ChannelInputProc(
 EXTERN Tcl_DriverOutputProc * Tcl_ChannelOutputProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 405 */
-EXTERN Tcl_DriverSeekProc * Tcl_ChannelSeekProc(
+TCL_DEPRECATED("Use Tcl_ChannelWideSeekProc")
+Tcl_DriverSeekProc *	Tcl_ChannelSeekProc(
 				const Tcl_ChannelType *chanTypePtr);
 /* 406 */
 EXTERN Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc(
@@ -2355,11 +2357,11 @@ typedef struct TclStubs {
     const char * (*tcl_ChannelName) (const Tcl_ChannelType *chanTypePtr); /* 398 */
     Tcl_ChannelTypeVersion (*tcl_ChannelVersion) (const Tcl_ChannelType *chanTypePtr); /* 399 */
     Tcl_DriverBlockModeProc * (*tcl_ChannelBlockModeProc) (const Tcl_ChannelType *chanTypePtr); /* 400 */
-    Tcl_DriverCloseProc * (*tcl_ChannelCloseProc) (const Tcl_ChannelType *chanTypePtr); /* 401 */
+    TCL_DEPRECATED_API("Use Tcl_ChannelClose2Proc") Tcl_DriverCloseProc * (*tcl_ChannelCloseProc) (const Tcl_ChannelType *chanTypePtr); /* 401 */
     Tcl_DriverClose2Proc * (*tcl_ChannelClose2Proc) (const Tcl_ChannelType *chanTypePtr); /* 402 */
     Tcl_DriverInputProc * (*tcl_ChannelInputProc) (const Tcl_ChannelType *chanTypePtr); /* 403 */
     Tcl_DriverOutputProc * (*tcl_ChannelOutputProc) (const Tcl_ChannelType *chanTypePtr); /* 404 */
-    Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 405 */
+    TCL_DEPRECATED_API("Use Tcl_ChannelWideSeekProc") Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 405 */
     Tcl_DriverSetOptionProc * (*tcl_ChannelSetOptionProc) (const Tcl_ChannelType *chanTypePtr); /* 406 */
     Tcl_DriverGetOptionProc * (*tcl_ChannelGetOptionProc) (const Tcl_ChannelType *chanTypePtr); /* 407 */
     Tcl_DriverWatchProc * (*tcl_ChannelWatchProc) (const Tcl_ChannelType *chanTypePtr); /* 408 */
@@ -4058,14 +4060,14 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
-	    char *__result = result; \
+	    const char *__result = result; \
 	    Tcl_FreeProc *__freeProc = freeProc; \
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
-		    ckfree(__result); \
+		    ckfree((char *)__result); \
 		} else { \
-		    (*__freeProc)(__result); \
+		    (*__freeProc)((char *)__result); \
 		} \
 	    } \
 	} while(0)
@@ -4170,5 +4172,10 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
+
+#if defined(TCL_NO_DEPRECATED) && defined(USE_TCL_STUBS)
+#undef Tcl_Close
+#define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
+#endif
 
 #endif /* _TCLDECLS */
