@@ -249,7 +249,7 @@ TclFinalizeAllocSubsystem(void)
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
     unsigned int numBytes)	/* Number of bytes to allocate. */
 {
@@ -446,7 +446,7 @@ MoreCore(
 
 void
 TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+    void *oldPtr)		/* Pointer to memory to free. */
 {
     size_t size;
     union overhead *overPtr;
@@ -509,9 +509,9 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
+    void *oldPtr,		/* Pointer to alloced block. */
     unsigned int numBytes)	/* New size of memory. */
 {
     int i;
@@ -581,7 +581,7 @@ TclpRealloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (char *)(overPtr+1);
+	return (void *)(overPtr+1);
     }
     maxSize = 1 << (i+3);
     expensive = 0;
@@ -592,7 +592,7 @@ TclpRealloc(
     }
 
     if (expensive) {
-	char *newPtr;
+	void *newPtr;
 
 	Tcl_MutexUnlock(allocMutexPtr);
 
@@ -692,11 +692,11 @@ mstats(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
     unsigned int numBytes)	/* Number of bytes to allocate. */
 {
-    return (char *) malloc(numBytes);
+    return malloc(numBytes);
 }
 
 /*
@@ -717,7 +717,7 @@ TclpAlloc(
 
 void
 TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+    void *oldPtr)		/* Pointer to memory to free. */
 {
     free(oldPtr);
     return;
@@ -739,12 +739,12 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
+    void *oldPtr,		/* Pointer to alloced block. */
     unsigned int numBytes)	/* New size of memory. */
 {
-    return (char *) realloc(oldPtr, numBytes);
+    return realloc(oldPtr, numBytes);
 }
 
 #endif /* !USE_TCLALLOC */

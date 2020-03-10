@@ -2744,7 +2744,7 @@ TclDatelex(
 
 int
 TclClockOldscanObjCmd(
-    void *clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
     Tcl_Obj *const *objv)	/* Parameters */
@@ -2858,7 +2858,7 @@ TclClockOldscanObjCmd(
 
     if (yyHaveTime) {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj((int)
-		ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian)));
+		ToSeconds(yyHour, yyMinutes, yySeconds, (MERIDIAN)yyMeridian)));
     } else {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
     }

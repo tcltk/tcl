@@ -118,7 +118,7 @@ static void		Prompt(Tcl_Interp *interp, InteractiveState *isPtr);
 static void		StdinProc(ClientData clientData, int mask);
 static void		FreeMainInterp(ClientData clientData);
 
-#if !defined(_WIN32) || defined(UNICODE)
+#if !defined(_WIN32) || defined(UNICODE) && !defined(TCL_ASCII_MAIN)
 static Tcl_ThreadDataKey dataKey;
 
 /*
@@ -735,10 +735,10 @@ TclFullFinalizationRequested(void)
 static void
 StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
-    int mask)			/* Not used. */
+    TCL_UNUSED(int) /*mask*/)
 {
     int code, length;
-    InteractiveState *isPtr = clientData;
+    InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
@@ -910,7 +910,7 @@ static void
 FreeMainInterp(
     ClientData clientData)
 {
-    Tcl_Interp *interp = clientData;
+    Tcl_Interp *interp = (Tcl_Interp *)clientData;
 
     /*if (TclInExit()) return;*/
 

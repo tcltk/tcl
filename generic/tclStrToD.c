@@ -328,7 +328,7 @@ static void		CastOutPowersOf2(int *, int *, int *);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 			    int, int, int, int, int, int, int, int, int,
 			    int, int, int *, char **);
-static char *		StrictInt64Conversion(Double *, Tcl_WideUInt,
+static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
 			    int, int, int *, char **);
 static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
@@ -340,7 +340,7 @@ static char *		ShorteningBignumConversionPowD(Double *dPtr,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversionPowD(Double *dPtr,
+static char *		StrictBignumConversionPowD(
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -354,7 +354,7 @@ static char *		ShorteningBignumConversion(Double *dPtr,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversion(Double *dPtr,
+static char *		StrictBignumConversion(
 			    Tcl_WideUInt bw, int b2,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -2336,13 +2336,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = ckalloc(9);
+	retval = (char *)ckalloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = ckalloc(4);
+	retval = (char *)ckalloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2373,7 +2373,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = ckalloc(2);
+    char *retval = (char *)ckalloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -2919,7 +2919,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = ckalloc(len + 1);
+    retval = (char *)ckalloc(len + 1);
     if (ilim == 0) {
 	d -= 5.;
 	if (d > eps.d) {
@@ -3030,7 +3030,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3180,7 +3180,6 @@ ShorteningInt64Conversion(
 
 static inline char *
 StrictInt64Conversion(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3194,7 +3193,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3394,7 +3393,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3588,7 +3587,6 @@ ShorteningBignumConversionPowD(
 
 static inline char *
 StrictBignumConversionPowD(
-    Double *dPtr,		/* Original number to convert. */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3602,7 +3600,7 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3802,7 +3800,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = (char *)ckalloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4026,7 +4024,6 @@ ShorteningBignumConversion(
 
 static inline char *
 StrictBignumConversion(
-    Double *dPtr,		/* Original number being converted. */
     Tcl_WideUInt bw,		/* Integer significand and exponent. */
     int b2,			/* Scale factor for the significand. */
     int s2, int s5,		/* Scale factors for denominator. */
@@ -4037,7 +4034,7 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = (char *)ckalloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4466,7 +4463,7 @@ TclDoubleDigits(
 	     * operations.
 	     */
 
-	    return StrictInt64Conversion(&d, bw, b2, b5, s2, s5, k,
+	    return StrictInt64Conversion(bw, b2, b5, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	} else if (s5 == 0) {
 	    /*
@@ -4483,7 +4480,7 @@ TclDoubleDigits(
 		b2 += delta;
 		s2 += delta;
 	    }
-	    return StrictBignumConversionPowD(&d, bw, b2, b5,
+	    return StrictBignumConversionPowD(bw, b2, b5,
 		    s2/MP_DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
 	} else {
 	    /*
@@ -4493,7 +4490,7 @@ TclDoubleDigits(
 	     * fewer mp_int divisions.
 	     */
 
-	    return StrictBignumConversion(&d, bw, b2, s2, s5, k,
+	    return StrictBignumConversion(bw, b2, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	}
     }

@@ -85,14 +85,14 @@ TSDTableCreate(void)
     TSDTable *tsdTablePtr;
     sig_atomic_t i;
 
-    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable), 0);
+    tsdTablePtr = (TSDTable *)TclpSysAlloc(sizeof(TSDTable), 0);
     if (tsdTablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
     tsdTablePtr->allocated = 8;
     tsdTablePtr->tablePtr =
-	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
+	    (void **)TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
     if (tsdTablePtr->tablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
@@ -148,15 +148,15 @@ TSDTableGrow(
     sig_atomic_t atLeast)
 {
     sig_atomic_t newAllocated = tsdTablePtr->allocated * 2;
-    ClientData *newTablePtr;
+    void **newTablePtr;
     sig_atomic_t i;
 
     if (newAllocated <= atLeast) {
 	newAllocated = atLeast + 10;
     }
 
-    newTablePtr = TclpSysRealloc(tsdTablePtr->tablePtr,
-	    sizeof(ClientData) * newAllocated);
+    newTablePtr = (void **)TclpSysRealloc(tsdTablePtr->tablePtr,
+	    sizeof(void *) * newAllocated);
     if (newTablePtr == NULL) {
 	Tcl_Panic("unable to reallocate TSDTable");
     }
@@ -189,7 +189,7 @@ void *
 TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetMasterTSD(tsdMaster.key);
     ClientData resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
@@ -223,7 +223,7 @@ TclThreadStorageKeySet(
     Tcl_ThreadDataKey *dataKeyPtr,
     void *value)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetMasterTSD(tsdMaster.key);
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
 
     if (tsdTablePtr == NULL) {
@@ -288,7 +288,7 @@ TclThreadStorageKeySet(
 void
 TclFinalizeThreadDataThread(void)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetMasterTSD(tsdMaster.key);
 
     if (tsdTablePtr != NULL) {
 	TSDTableDelete(tsdTablePtr);

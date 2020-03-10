@@ -202,7 +202,7 @@ typedef struct TEBCdata {
 #define POP_TAUX_OBJ() \
     do {							\
 	tmpPtr = auxObjList;					\
-	auxObjList = tmpPtr->internalRep.twoPtrValue.ptr1;	\
+	auxObjList = (Tcl_Obj *)tmpPtr->internalRep.twoPtrValue.ptr1;	\
 	Tcl_DecrRefCount(tmpPtr);				\
     } while (0)
 
@@ -769,11 +769,11 @@ ReleaseDictIterator(
      * that we were holding.
      */
 
-    searchPtr = irPtr->twoPtrValue.ptr1;
+    searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
     Tcl_DictObjDone(searchPtr);
     ckfree(searchPtr);
 
-    dictPtr = irPtr->twoPtrValue.ptr2;
+    dictPtr = (Tcl_Obj *)irPtr->twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
 }
 
@@ -798,6 +798,7 @@ ReleaseDictIterator(
  *----------------------------------------------------------------------
  */
 
+#if defined(TCL_COMPILE_STATS) || defined(TCL_COMPILE_DEBUG)
 static void
 InitByteCodeExecution(
     Tcl_Interp *interp)		/* Interpreter for which the Tcl variable
@@ -810,12 +811,19 @@ InitByteCodeExecution(
 	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
 #endif
-#ifndef TCL_COMPILE_STATS
-    (void)interp;
-#else
+#ifdef TCL_COMPILE_STATS
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
+
+#else
+
+static void
+InitByteCodeExecution(
+    TCL_UNUSED(Tcl_Interp *))
+{
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -846,8 +854,8 @@ TclCreateExecEnv(
     int size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
+    ExecEnv *eePtr = (ExecEnv *)ckalloc(sizeof(ExecEnv));
+    ExecStack *esPtr = (ExecStack *)ckalloc(sizeof(ExecStack)
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -1116,7 +1124,7 @@ GrowEvaluationStack(
     newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = ckalloc(newBytes);
+    esPtr = (ExecStack *)ckalloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -1358,12 +1366,11 @@ Tcl_ExprObj(
 static int
 CopyCallback(
     ClientData data[],
-    Tcl_Interp *dummy,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    Tcl_Obj **resultPtrPtr = data[0];
-    Tcl_Obj *resultPtr = data[1];
-    (void)dummy;
+    Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1420,8 +1427,8 @@ ExprObjCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_InterpState state = data[0];
-    Tcl_Obj *resultPtr = data[1];
+    Tcl_InterpState state = (Tcl_InterpState)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
@@ -1554,11 +1561,9 @@ CompileExprObj(
 
 static void
 DupExprCodeInternalRep(
-    Tcl_Obj *srcPtr,
-    Tcl_Obj *copyPtr)
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj *))
 {
-    (void)srcPtr;
-    (void)copyPtr;
     return;
 }
 
@@ -1709,9 +1714,9 @@ TclCompileObj(
 		return codePtr;
 	    }
 
-	    eclPtr = Tcl_GetHashValue(hePtr);
+	    eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 	    redo = 0;
-	    ctxCopyPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    ctxCopyPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
 	    *ctxCopyPtr = *invoker;
 
 	    if (invoker->type == TCL_LOCATION_BC) {
@@ -2066,7 +2071,7 @@ TEBCresume(
      * used too frequently
      */
 
-    TEBCdata *TD = data[0];
+    TEBCdata *TD = (TEBCdata *)data[0];
 #define auxObjList	(TD->auxObjList)
 #define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
@@ -2078,7 +2083,7 @@ TEBCresume(
 
     Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
 				 * stack. */
-    const unsigned char *pc = data[1];
+    const unsigned char *pc = (const unsigned char *)data[1];
                                 /* The current program counter. */
     unsigned char inst;         /* The currently running instruction */
 
@@ -4546,7 +4551,7 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	contextPtr = framePtr->clientData;
+	contextPtr = (CallContext *)framePtr->clientData;
 
 	/*
 	 * Call out to get the name; it's expensive to compute but cached.
@@ -4574,7 +4579,7 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	contextPtr = framePtr->clientData;
+	contextPtr = (CallContext *)framePtr->clientData;
 
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, valuePtr);
 	if (oPtr == NULL) {
@@ -4673,7 +4678,7 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	contextPtr = framePtr->clientData;
+	contextPtr = (CallContext *)framePtr->clientData;
 
 	newDepth = contextPtr->index + 1;
 	if (newDepth >= contextPtr->callPtr->numChain) {
@@ -6426,7 +6431,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	infoPtr = (ForeachInfo *)codePtr->auxDataArrayPtr[opnd].clientData;
 	iterTmpIndex = infoPtr->loopCtTemp;
 	iterVarPtr = LOCAL(iterTmpIndex);
 	oldValuePtr = iterVarPtr->value.objPtr;
@@ -6460,7 +6465,7 @@ TEBCresume(
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	infoPtr = (ForeachInfo *)codePtr->auxDataArrayPtr[opnd].clientData;
 	numLists = infoPtr->numLists;
 
 	/*
@@ -6590,7 +6595,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	infoPtr = (ForeachInfo *)codePtr->auxDataArrayPtr[opnd].clientData;
 	numLists = infoPtr->numLists;
 	TRACE(("%u => ", opnd));
 
@@ -6658,7 +6663,7 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE(("=> "));
 
@@ -6742,7 +6747,7 @@ TEBCresume(
     case INST_FOREACH_END:
 	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE(("=> loop terminated\n"));
 	NEXT_INST_V(1, numLists+2, 0);
@@ -6759,7 +6764,7 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE_APPEND(("=> appending to list at depth %d\n", 3 + numLists));
 
@@ -7206,7 +7211,7 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = POP_OBJECT();
-	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
+	searchPtr = (Tcl_DictSearch *)ckalloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
 
@@ -7248,7 +7253,7 @@ TEBCresume(
 
 	    if (statePtr &&
 		    (irPtr = TclFetchIntRep(statePtr, &dictIteratorType))) {
-		searchPtr = irPtr->twoPtrValue.ptr1;
+		searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
 		Tcl_Panic("mis-issued dictNext!");
@@ -7280,7 +7285,7 @@ TEBCresume(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	TRACE(("%u => ", opnd));
 	varPtr = LOCAL(opnd);
-	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
+	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[opnd2].clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -7340,7 +7345,7 @@ TEBCresume(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	TRACE(("%u => ", opnd));
 	varPtr = LOCAL(opnd);
-	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
+	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[opnd2].clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -7881,13 +7886,13 @@ FinalizeOONext(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    CallContext *contextPtr = data[1];
+    CallContext *contextPtr = (CallContext *)data[1];
 
     /*
      * Reset the variable lookup frame.
      */
 
-    iPtr->varFramePtr = data[0];
+    iPtr->varFramePtr = (CallFrame *)data[0];
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -7907,13 +7912,13 @@ FinalizeOONextFilter(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    CallContext *contextPtr = data[1];
+    CallContext *contextPtr = (CallContext *)data[1];
 
     /*
      * Reset the variable lookup frame.
      */
 
-    iPtr->varFramePtr = data[0];
+    iPtr->varFramePtr = (CallFrame *)data[0];
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -9284,7 +9289,7 @@ TclGetSrcInfoForPc(
 	}
 
 	srcOffset = cfPtr->cmd - codePtr->source;
-	eclPtr = Tcl_GetHashValue(hePtr);
+	eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 
 	for (i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {
