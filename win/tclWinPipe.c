@@ -363,7 +363,7 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    TCL_UNUNSED(ClientData),
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
