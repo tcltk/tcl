@@ -2918,6 +2918,18 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     set str {}
 } -result {}
 
+
+testConstraint testsetbytearraylength \
+		[expr {"testsetbytearraylength" in [info commands]}]
+
+test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B C] 1
+} A
+test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat \u0141 B C] 1
+} A
+
+
 # ----------------------------------------------------------------------
 # cleanup
 
