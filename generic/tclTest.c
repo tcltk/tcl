@@ -226,6 +226,9 @@ static int		TestbumpinterpepochObjCmd(ClientData clientData,
 static int		TestpurebytesobjObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestsetbytearraylengthObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestbytestringObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -577,6 +580,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
@@ -5031,6 +5035,50 @@ TestpurebytesobjObjCmd(
 	objPtr->bytes[objPtr->length] = 0;
     }
     Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetbytearraylengthObjCmd --
+ *
+ *	Testing command 'testsetbytearraylength` used to test the public
+ *	interface routine Tcl_SetByteArrayLength().
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetbytearraylengthObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int n;
+    Tcl_Obj *obj = NULL;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value length");
+	return TCL_ERROR;
+    }
+    if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
+	return TCL_ERROR;
+    }
+    if (Tcl_IsShared(objv[1])) {
+	obj = Tcl_DuplicateObj(objv[1]);
+    } else {
+	obj = objv[1];
+    }
+    Tcl_SetByteArrayLength(obj, n);
+    Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
 
