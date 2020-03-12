@@ -53,7 +53,18 @@
 #   endif
 #endif
 
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
 
+#if defined(__cplusplus)
+#   define TCL_UNUSED(T) T
+#elif defined(__GNUC__) && (__GNUC__ > 2)
+#   define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
+#else
+#   define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
+#endif
 
 /*
  * Common include files needed by most of the Tcl source files are included
@@ -2515,7 +2526,19 @@ typedef struct List {
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(endValue + 1)) \
 	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
 	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
-	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr), 0))
+#define TclGetIntForIndexML(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(endValue + 1)) \
+	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
+	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr), 1))
+#define TclGetIntForIndexMR(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(endValue + 1)) \
+	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
+	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr), 1))
 
 /*
  * Macro used to save a function call for common uses of

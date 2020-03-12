@@ -289,7 +289,7 @@ declare 64 {
 #    int TclpAccess(const char *path, int mode)
 #}
 declare 69 {
-    char *TclpAlloc(unsigned int size)
+    void *TclpAlloc(unsigned int size)
 }
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)
@@ -305,7 +305,7 @@ declare 69 {
 #    int TclpDeleteFile(const char *path)
 #}
 declare 74 {
-    void TclpFree(char *ptr)
+    void TclpFree(void *ptr)
 }
 declare 75 {
     unsigned long TclpGetClicks(void)
@@ -330,7 +330,7 @@ declare 77 {deprecated {}} {
 #	    char *modeString, int permissions)
 #}
 declare 81 {
-    char *TclpRealloc(char *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, unsigned int size)
 }
 #declare 82 {
 #    int TclpRemoveDirectory(const char *path, int recursive,

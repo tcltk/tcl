@@ -2386,7 +2386,7 @@ declare 644 {
 
 declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, int *indexPtr)
+	    int endValue, int *indexPtr, int flags)
 }
 
 # TIP #548

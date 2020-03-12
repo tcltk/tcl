@@ -206,7 +206,7 @@ TclThread_Init(
 	/* ARGSUSED */
 static int
 ThreadObjCmd(
-    void *dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -223,7 +223,6 @@ ThreadObjCmd(
 	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
 	THREAD_WAIT, THREAD_ERRORPROC
     };
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1011,7 +1010,7 @@ ThreadCancel(
 static int
 ThreadEventProc(
     Tcl_Event *evPtr,		/* Really ThreadEvent */
-    int mask)
+    TCL_UNUSED(int) /*mask*/)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadEvent *threadEventPtr = (ThreadEvent *) evPtr;
@@ -1019,7 +1018,6 @@ ThreadEventProc(
     Tcl_Interp *interp = tsdPtr->interp;
     int code;
     const char *result, *errorCode, *errorInfo;
-    (void)mask;
 
     if (interp == NULL) {
 	code = TCL_ERROR;
@@ -1111,10 +1109,8 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    void *dummy)	/* dummy */
+    TCL_UNUSED(ClientData))
 {
-    (void)dummy;
-
     if (eventPtr->proc == ThreadEventProc) {
 	ckfree(((ThreadEvent *) eventPtr)->script);
 	return 1;

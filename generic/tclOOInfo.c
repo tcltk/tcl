@@ -171,13 +171,12 @@ GetClassFromObj(
 
 static int
 InfoObjectClassCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?className?");
@@ -229,7 +228,7 @@ InfoObjectClassCmd(
 
 static int
 InfoObjectDefnCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -239,7 +238,6 @@ InfoObjectDefnCmd(
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
@@ -304,7 +302,7 @@ InfoObjectDefnCmd(
 
 static int
 InfoObjectFiltersCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -312,7 +310,6 @@ InfoObjectFiltersCmd(
     int i;
     Tcl_Obj *filterObj, *resultObj;
     Object *oPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -344,7 +341,7 @@ InfoObjectFiltersCmd(
 
 static int
 InfoObjectForwardCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -352,7 +349,6 @@ InfoObjectForwardCmd(
     Object *oPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *prefixObj;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
@@ -402,7 +398,7 @@ InfoObjectForwardCmd(
 
 static int
 InfoObjectIsACmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -415,7 +411,6 @@ InfoObjectIsACmd(
     };
     Object *oPtr, *o2Ptr;
     int idx, i, result = 0;
-    (void)dummy;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -522,7 +517,7 @@ InfoObjectIsACmd(
 
 static int
 InfoObjectMethodsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -545,7 +540,6 @@ InfoObjectMethodsCmd(
 	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
 	SCOPE_LOCALPRIVATE
     };
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
@@ -643,7 +637,7 @@ InfoObjectMethodsCmd(
 
 static int
 InfoObjectMethodTypeCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -651,7 +645,6 @@ InfoObjectMethodTypeCmd(
     Object *oPtr;
     Tcl_HashEntry *hPtr;
     Method *mPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
@@ -701,7 +694,7 @@ InfoObjectMethodTypeCmd(
 
 static int
 InfoObjectMixinsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -710,7 +703,6 @@ InfoObjectMixinsCmd(
     Object *oPtr;
     Tcl_Obj *resultObj;
     int i;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -745,13 +737,12 @@ InfoObjectMixinsCmd(
 
 static int
 InfoObjectIdCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -778,13 +769,12 @@ InfoObjectIdCmd(
 
 static int
 InfoObjectNsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -812,7 +802,7 @@ InfoObjectNsCmd(
 
 static int
 InfoObjectVariablesCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -820,7 +810,6 @@ InfoObjectVariablesCmd(
     Object *oPtr;
     Tcl_Obj *resultObj;
     int i, isPrivate = 0;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -867,7 +856,7 @@ InfoObjectVariablesCmd(
 
 static int
 InfoObjectVarsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -877,7 +866,6 @@ InfoObjectVarsCmd(
     FOREACH_HASH_DECLS;
     VarInHash *vihPtr;
     Tcl_Obj *nameObj, *resultObj;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?pattern?");
@@ -929,7 +917,7 @@ InfoObjectVarsCmd(
 
 static int
 InfoClassConstrCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -938,7 +926,6 @@ InfoClassConstrCmd(
     CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -991,7 +978,7 @@ InfoClassConstrCmd(
 
 static int
 InfoClassDefnCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1001,7 +988,6 @@ InfoClassDefnCmd(
     CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
@@ -1060,7 +1046,7 @@ InfoClassDefnCmd(
 
 static int
 InfoClassDefnNsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1073,7 +1059,6 @@ InfoClassDefnNsCmd(
     int kind = 0;
     Tcl_Obj *nsNamePtr;
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?kind?");
@@ -1111,14 +1096,13 @@ InfoClassDefnNsCmd(
 
 static int
 InfoClassDestrCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1156,7 +1140,7 @@ InfoClassDestrCmd(
 
 static int
 InfoClassFiltersCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1164,7 +1148,6 @@ InfoClassFiltersCmd(
     int i;
     Tcl_Obj *filterObj, *resultObj;
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1195,7 +1178,7 @@ InfoClassFiltersCmd(
 
 static int
 InfoClassForwardCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1203,7 +1186,6 @@ InfoClassForwardCmd(
     Tcl_HashEntry *hPtr;
     Tcl_Obj *prefixObj;
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
@@ -1247,7 +1229,7 @@ InfoClassForwardCmd(
 
 static int
 InfoClassInstancesCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1257,7 +1239,6 @@ InfoClassInstancesCmd(
     int i;
     const char *pattern = NULL;
     Tcl_Obj *resultObj;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?pattern?");
@@ -1296,7 +1277,7 @@ InfoClassInstancesCmd(
 
 static int
 InfoClassMethodsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1317,7 +1298,6 @@ InfoClassMethodsCmd(
     enum Scopes {
 	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED
     };
-    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-option value ...?");
@@ -1413,7 +1393,7 @@ InfoClassMethodsCmd(
 
 static int
 InfoClassMethodTypeCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1421,7 +1401,6 @@ InfoClassMethodTypeCmd(
     Tcl_HashEntry *hPtr;
     Method *mPtr;
     Class *clsPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
@@ -1466,7 +1445,7 @@ InfoClassMethodTypeCmd(
 
 static int
 InfoClassMixinsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1474,7 +1453,6 @@ InfoClassMixinsCmd(
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
     int i;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1509,7 +1487,7 @@ InfoClassMixinsCmd(
 
 static int
 InfoClassSubsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1518,7 +1496,6 @@ InfoClassSubsCmd(
     Tcl_Obj *resultObj;
     int i;
     const char *pattern = NULL;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?pattern?");
@@ -1565,7 +1542,7 @@ InfoClassSubsCmd(
 
 static int
 InfoClassSupersCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1573,7 +1550,6 @@ InfoClassSupersCmd(
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
     int i;
-    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1605,7 +1581,7 @@ InfoClassSupersCmd(
 
 static int
 InfoClassVariablesCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1613,7 +1589,6 @@ InfoClassVariablesCmd(
     Class *clsPtr;
     Tcl_Obj *resultObj;
     int i, isPrivate = 0;
-    (void)dummy;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
@@ -1660,14 +1635,13 @@ InfoClassVariablesCmd(
 
 static int
 InfoObjectCallCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
     CallContext *contextPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
@@ -1707,14 +1681,13 @@ InfoObjectCallCmd(
 
 static int
 InfoClassCallCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
     CallChain *callPtr;
-    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");

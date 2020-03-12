@@ -798,13 +798,12 @@ HashArrayKey(
 
 static Tcl_HashEntry *
 AllocStringEntry(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
     size_t size, allocsize;
-    (void)tablePtr;
 
     allocsize = size = strlen(string) + 1;
     if (size < sizeof(hPtr->key)) {
@@ -864,13 +863,12 @@ CompareStringKeys(
 
 static TCL_HASH_TYPE
 HashStringKey(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     const char *string = (const char *)keyPtr;
     TCL_HASH_TYPE result;
     char c;
-    (void)tablePtr;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -932,11 +930,9 @@ HashStringKey(
 	/* ARGSUSED */
 static Tcl_HashEntry *
 BogusFind(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const char *key)		/* Key to use to find matching entry. */
+    TCL_UNUSED(Tcl_HashTable *),
+    TCL_UNUSED(const char *))
 {
-    (void)tablePtr;
-    (void)key;
     Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
     return NULL;
 }
@@ -961,15 +957,10 @@ BogusFind(
 	/* ARGSUSED */
 static Tcl_HashEntry *
 BogusCreate(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const char *key,		/* Key to use to find or create matching
-				 * entry. */
-    int *newPtr)		/* Store info here telling whether a new entry
-				 * was created. */
+    TCL_UNUSED(Tcl_HashTable *),
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(int *))
 {
-    (void)tablePtr;
-    (void)key;
-    (void)newPtr;
     Tcl_Panic("called %s on deleted table", "Tcl_CreateHashEntry");
     return NULL;
 }

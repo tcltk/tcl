@@ -76,7 +76,7 @@ FinalizeConstruction(
 
 int
 TclOO_Class_Constructor(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -84,7 +84,6 @@ TclOO_Class_Constructor(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Obj **invoke, *nameObj;
-    (void)dummy;
 
     if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -175,7 +174,7 @@ DecrRefsPostClassConstructor(
 
 int
 TclOO_Class_Create(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -185,7 +184,6 @@ TclOO_Class_Create(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName;
     int len;
-    (void)dummy;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -241,7 +239,7 @@ TclOO_Class_Create(
 
 int
 TclOO_Class_CreateNs(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -251,7 +249,6 @@ TclOO_Class_CreateNs(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName, *nsName;
     int len;
-    (void)dummy;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -315,7 +312,7 @@ TclOO_Class_CreateNs(
 
 int
 TclOO_Class_New(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -323,7 +320,6 @@ TclOO_Class_New(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    (void)dummy;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -360,7 +356,7 @@ TclOO_Class_New(
 
 int
 TclOO_Object_Destroy(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -369,7 +365,6 @@ TclOO_Object_Destroy(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
-    (void)dummy;
 
     if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -422,7 +417,7 @@ AfterNRDestructor(
 
 int
 TclOO_Object_Eval(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -435,7 +430,6 @@ TclOO_Object_Eval(
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
-    (void)dummy;
 
     if (objc-1 < skip) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
@@ -524,7 +518,7 @@ FinalizeEval(
 
 int
 TclOO_Object_Unknown(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -539,7 +533,6 @@ TclOO_Object_Unknown(
     int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Tcl_Obj *errorMsg;
-    (void)dummy;
 
     /*
      * If no method name, generate an error asking for a method name. (Only by
@@ -631,7 +624,7 @@ TclOO_Object_Unknown(
 
 int
 TclOO_Object_LinkVar(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -642,7 +635,6 @@ TclOO_Object_LinkVar(
     Tcl_Object object = Tcl_ObjectContextObject(context);
     Namespace *savedNsPtr;
     int i;
-    (void)dummy;
 
     if (objc-Tcl_ObjectContextSkippedArgs(context) < 0) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -734,7 +726,7 @@ TclOO_Object_LinkVar(
 
 int
 TclOO_Object_VarName(
-    ClientData dummy,	/* Ignored. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -745,7 +737,6 @@ TclOO_Object_VarName(
     Tcl_Obj *varNamePtr, *argPtr;
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     const char *arg;
-    (void)dummy;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -873,7 +864,7 @@ TclOO_Object_VarName(
 
 int
 TclOONextObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -881,7 +872,6 @@ TclOONextObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     Tcl_ObjectContext context;
-    (void)dummy;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -910,7 +900,7 @@ TclOONextObjCmd(
 
 int
 TclOONextToObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -922,7 +912,6 @@ TclOONextToObjCmd(
     int i;
     Tcl_Object object;
     const char *methodType;
-    (void)dummy;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -1044,7 +1033,7 @@ NextRestoreFrame(
 
 int
 TclOOSelfObjCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1062,7 +1051,6 @@ TclOOSelfObjCmd(
     CallContext *contextPtr;
     Tcl_Obj *result[3];
     int index;
-    (void)dummy;
 
 #define CurrentlyInvoked(contextPtr) \
     ((contextPtr)->callPtr->chain[(contextPtr)->index])
@@ -1282,13 +1270,12 @@ TclOOSelfObjCmd(
 
 int
 TclOOCopyObjectCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Object oPtr, o2Ptr;
-    (void)dummy;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,

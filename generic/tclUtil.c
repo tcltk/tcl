@@ -112,7 +112,7 @@ static int		GetEndOffsetFromObj(Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    size_t endValue, Tcl_WideInt *widePtr);
+			    size_t endValue, Tcl_WideInt *widePtr, int flags);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -2475,11 +2475,10 @@ TclByteArrayMatch(
 				/* Pattern, which may contain special
 				 * characters. */
     int ptnLen,			/* Length of Pattern */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
-    (void)flags;
 
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
@@ -3264,7 +3263,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *dummy,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3275,7 +3274,6 @@ Tcl_PrintDouble(
     char *digits;
     char *end;
     int *precisionPtr = (int *)Tcl_GetThreadData(&precisionKey, sizeof(int));
-    (void)dummy;
 
     /*
      * Handle NaN.
@@ -3441,7 +3439,7 @@ Tcl_PrintDouble(
 	/* ARGSUSED */
 char *
 TclPrecTraceProc(
-    ClientData clientData,	/* Not used. */
+    ClientData clientData,
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable. */
     const char *name2,		/* Second part of variable name. */
@@ -3683,8 +3681,9 @@ GetWideForIndex(
     size_t endValue,            /* The value to be stored at *widePtr if
                                  * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
-    Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
+    Tcl_WideInt *widePtr,       /* Location filled in with a wide integer
                                  * representing an index. */
+	int flags)
 {
     ClientData cd;
     const char *opPtr;
@@ -3695,7 +3694,7 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 #if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
-	    if ( *(Tcl_WideInt *)cd > (Tcl_WideInt)(endValue + 1)) {
+	    if (!flags && *(Tcl_WideInt *)cd > (Tcl_WideInt)(endValue + 1)) {
 		goto parseError2;
 	    }
 #endif
@@ -3711,10 +3710,11 @@ GetWideForIndex(
 	/* Truncate to the signed wide range. */
 #if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
 	if (!mp_isneg((mp_int *)cd)) {
-	    goto parseError2;
+		goto parseError2;
 	}
 	*widePtr = WIDE_MIN;
 #else
+	(void)flags;
 	*widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
 #endif
 	return TCL_OK;
@@ -3723,7 +3723,7 @@ GetWideForIndex(
     /* objPtr does not hold a number, check the end+/- format... */
     if (GetEndOffsetFromObj(objPtr, endValue, widePtr) == TCL_OK) {
 #if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
-	if ( *widePtr > (Tcl_WideInt)(endValue + 1)) {
+	if ( (*widePtr > (Tcl_WideInt)(endValue + 1))) {
 		goto parseError2;
 	}
 #endif
@@ -3915,12 +3915,13 @@ Tcl_GetIntForIndex(
 				 * or an integer. */
     int endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
-    int *indexPtr)		/* Location filled in with an integer
+    int *indexPtr,		/* Location filled in with an integer
 				 * representing an index. */
+    int flags)
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+    if (GetWideForIndex(interp, objPtr, endValue, &wide, flags) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (wide < 0) {
@@ -4136,7 +4137,7 @@ TclIndexEncode(
         }
 
     /* TODO: Consider flag to suppress repeated end-offset parse. */
-    } else if (TCL_OK == GetWideForIndex(interp, objPtr, 0, &wide)) {
+    } else if (TCL_OK == GetWideForIndex(interp, objPtr, 0, &wide, 1)) {
         /*
          * Only reach this case when the index value is a
          * constant index arithmetic expression, and wide
