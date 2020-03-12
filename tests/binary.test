@@ -2893,10 +2893,10 @@ test binary-76.2 {binary string appending growth algorithm} win {
 testConstraint testsetbytearraylength \
 		[expr {"testsetbytearraylength" in [info commands]}]
 
-test binary-77.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
+test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat A B C] 1
 } A
-test binary-77.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
+test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat \u0141 B C] 1
 } A
 
