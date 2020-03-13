@@ -4865,10 +4865,10 @@ TclZipfs_AppHook(
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
     int *argcPtr,		/* Pointer to argc */
 #else
-    TCL_UNUSED(int *) /*argcPtr*/,
+    TCL_UNUSED(int *), /*argcPtr*/
 #endif
 #ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)argvPtr,
+    TCL_UNUSED(WCHAR ***)) /* argvPtr */
 #else /* !_WIN32 */
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */
