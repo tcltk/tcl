@@ -526,6 +526,7 @@ Tcl_SetByteArrayLength(
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
     TclInvalidateStringRep(objPtr);
+    objPtr->typePtr = &properByteArrayType;
     byteArrayPtr->used = length;
     return byteArrayPtr->bytes;
 }
@@ -836,6 +837,7 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr->used += len;
     TclInvalidateStringRep(objPtr);
+    objPtr->typePtr = &properByteArrayType;
 }
 
 /*
