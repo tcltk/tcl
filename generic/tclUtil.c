@@ -4127,6 +4127,11 @@ TclIndexEncode(
              * All end+postive or end-negative expressions
              * always indicate "after the end".
              */
+#ifdef TCL_NO_DEPRECATED
+            if (wide != 1) {
+                return TCL_ERROR;
+            }
+#endif
             idx = after;
         } else if (wide < INT_MIN - TCL_INDEX_END) {
             /* These indices always indicate "before the beginning */
