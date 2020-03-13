@@ -3919,7 +3919,7 @@ GetEndOffsetFromObj(
                                  * representing an index. */
 {
     Tcl_ObjIntRep *irPtr;
-    Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
 
     while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
@@ -3973,6 +3973,13 @@ GetEndOffsetFromObj(
 		if (bytes[3] == '-') {
 		    offset = (offset == WIDE_MIN) ? WIDE_MAX : -offset;
 		}
+		if (offset == 1) {
+		    offset = WIDE_MAX; /* "end+1" */
+		} else if (offset > 1) {
+		    offset = WIDE_MAX - 1; /* "end+n", out of range */
+		} else if (offset != WIDE_MIN) {
+		    offset--;
+		}
 	    }
 	}
 
@@ -3983,15 +3990,17 @@ GetEndOffsetFromObj(
 
     offset = irPtr->wideValue;
 
-    if (endValue == (size_t)-1) {
-        *widePtr = offset - 1;
-    } else if (offset < 0) {
-        /* Different signs, sum cannot overflow */
-        *widePtr = endValue + offset;
-    } else if (endValue < (Tcl_WideUInt)WIDE_MAX - offset) {
-        *widePtr = endValue + offset;
+    if (offset == WIDE_MAX) {
+	*widePtr = endValue + 1;
+    } else if (endValue == (size_t)-1) {
+	*widePtr = offset;
+    } else if (offset < -1) {
+	/* Different signs, sum cannot overflow */
+	*widePtr = endValue + offset + 1;
+    } else if (endValue + 1 < (Tcl_WideUInt)WIDE_MAX - offset) {
+	*widePtr = endValue + offset + 1;
     } else {
-        *widePtr = WIDE_MAX;
+	*widePtr = WIDE_MAX;
     }
     return TCL_OK;
 }
