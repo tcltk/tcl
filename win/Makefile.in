@@ -528,14 +528,11 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 
 # Special case object targets
 
-tclEnv.${OBJEXT}: tclEnv.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
-
 tclTestMain.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinInit.${OBJEXT}: tclWinInit.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
