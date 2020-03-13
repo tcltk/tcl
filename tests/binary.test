@@ -2925,9 +2925,9 @@ testConstraint testsetbytearraylength \
 test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat A B C] 1
 } A
-test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
+test binary-79.2 {Tcl_SetByteArrayLength} -body {
     testsetbytearraylength [string cat \u0141 B C] 1
-} A
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
 
 # ----------------------------------------------------------------------

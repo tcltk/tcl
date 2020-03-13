@@ -5047,7 +5047,10 @@ TestsetbytearraylengthObjCmd(
     } else {
 	obj = objv[1];
     }
-    Tcl_SetByteArrayLength(obj, n);
+    if (NULL == Tcl_SetByteArrayLength(obj, n)) {
+	Tcl_SetResult(interp, "expected bytes", TCL_STATIC);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
