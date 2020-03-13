@@ -34,13 +34,13 @@ static struct {
 #endif
 } env;
 
-#if defined(_WIN32) && (defined(_UNICODE) || defined(UNICODE))
+#if defined(_WIN32)
 #  define tenviron _wenviron
 #  define tenviron2utfdstr(tenvstr, len, dstr) \
 		Tcl_WinTCharToUtf((TCHAR *)tenvstr, len, dstr)
 #  define utf2tenvirondstr(str, len, dstr) \
-		(const char *)Tcl_WinUtfToTChar(str, len, dstr)
-#  define techar TCHAR
+		(const WCHAR *)Tcl_WinUtfToTChar(str, len, dstr)
+#  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
@@ -240,7 +240,7 @@ TclSetEnv(
     unsigned nameLength, valueLength;
     int index, length;
     char *p, *oldValue;
-    const char *p2;
+    const techar *p2;
 
     /*
      * Figure out where the entry is going to go. If the name doesn't already
@@ -315,7 +315,7 @@ TclSetEnv(
      */
 
     p = ckrealloc(p, Tcl_DStringLength(&envString) + tNTL);
-    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + tNTL);
+    memcpy(p, p2, Tcl_DStringLength(&envString) + tNTL);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -399,7 +399,7 @@ Tcl_PutEnv(
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = tenviron2utfdstr(assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
     value = strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
@@ -476,12 +476,12 @@ TclUnsetEnv(
 
 #if defined(_WIN32)
     string = ckalloc(length + 2);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
     string = ckalloc(length + 1);
-    memcpy(string, name, (size_t) length);
+    memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 

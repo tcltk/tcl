@@ -683,7 +683,7 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-#if defined(_WIN32) && (defined(_UNICODE) || defined(UNICODE))
+#if defined(_WIN32)
 #  define tenviron _wenviron
 #  define tenviron2utfdstr(tenvstr, len, dstr) \
 		Tcl_WinTCharToUtf((TCHAR *)tenvstr, len, dstr)
