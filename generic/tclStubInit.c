@@ -657,7 +657,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
-#   define TclGetIntForIndex Tcl_GetIntForIndex
 #   define TclCreateNamespace Tcl_CreateNamespace
 #   define TclDeleteNamespace Tcl_DeleteNamespace
 #   define TclAppendExportList Tcl_AppendExportList
@@ -672,6 +671,22 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+
+
+#define TclGetIntForIndex GetIntForIndex
+static int
+TclGetIntForIndex(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    Tcl_Obj *objPtr,		/* Points to an object containing either "end"
+				 * or an integer. */
+    int endValue,		/* The value to be stored at "indexPtr" if
+				 * "objPtr" holds "end". */
+    int *indexPtr)		/* Location filled in with an integer */
+{
+    return Tcl_GetIntForIndex(interp, objPtr, endValue, indexPtr, 0);
+}
 
 static int
 seekOld(
