@@ -511,7 +511,7 @@ TclUnsetEnv(
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 #else /* !USE_PUTENV_FOR_UNSET */
-    for (envPtr = (char *)(tenviron+index+1); ; envPtr++) {
+    for (envPtr = (char **)(tenviron+index+1); ; envPtr++) {
 	envPtr[-1] = *envPtr;
 	if (*envPtr == NULL) {
 	    break;
