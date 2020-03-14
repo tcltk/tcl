@@ -431,6 +431,53 @@ Tcl_SetByteArrayObj(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetBytesFromObj --
+ *
+ *	Attempt to extract the value from objPtr in the representation
+ *	of a byte sequence. On success return the extracted byte sequence.
+ *	On failures, return NULL and record error message and code in
+ *	interp (if not NULL).
+ *
+ * Results:
+ *	Pointer to array of bytes, or NULL. representing the ByteArray object.
+ *	Writes number of bytes in array to *lengthPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned char *
+TclGetBytesFromObj(
+    Tcl_Interp *interp,		/* For error reporting */
+    Tcl_Obj *objPtr,		/* Value to extract from */
+    int *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+
+    if (irPtr == NULL) {
+	SetByteArrayFromAny(NULL, objPtr);
+	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+	if (irPtr == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected bytes but got non-byte character"));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
+	    }
+	    return NULL;
+	}
+    }
+    baPtr = GET_BYTEARRAY(irPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = baPtr->used;
+    }
+    return baPtr->bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetByteArrayFromObj --
  *
  *	Attempt to get the array of bytes from the Tcl object. If the object
@@ -453,18 +500,16 @@ Tcl_GetByteArrayFromObj(
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
-    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+    const Tcl_ObjIntRep *irPtr;
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, lengthPtr);
 
-    if (irPtr == NULL) {
-	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
-	if (irPtr == NULL) {
-	    SetByteArrayFromAny(NULL, objPtr);
-	    irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
-	    if (irPtr == NULL) {
-		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
-	    }
-	}
+    if (result) {
+	return result;
     }
+
+    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+    assert(irPtr != NULL);
+
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (lengthPtr != NULL) {
