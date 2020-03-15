@@ -17,23 +17,6 @@
 
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
-static struct {
-    size_t cacheSize;		/* Number of env strings in cache. */
-    char **cache;		/* Array containing all of the environment
-				 * strings that Tcl has allocated. */
-#ifndef USE_PUTENV
-    char **ourEnviron;		/* Cache of the array that we allocate. We
-				 * need to track this in case another
-				 * subsystem swaps around the environ array
-				 * like we do. */
-    size_t ourEnvironSize;	/* Non-zero means that the environ array was
-				 * malloced and has this many total entries
-				 * allocated to it (not all may be in use at
-				 * once). Zero means that the environment
-				 * array is in its original static state. */
-#endif
-} env;
-
 #if defined(_WIN32)
 #  define tenviron _wenviron
 #  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
@@ -52,6 +35,23 @@ static struct {
 		Tcl_UtfToExternalDString(NULL, str, len, dstr)
 #  define techar char
 #endif
+
+static struct {
+    size_t cacheSize;		/* Number of env strings in cache. */
+    char **cache;		/* Array containing all of the environment
+				 * strings that Tcl has allocated. */
+#ifndef USE_PUTENV
+    techar **ourEnviron;		/* Cache of the array that we allocate. We
+				 * need to track this in case another
+				 * subsystem swaps around the environ array
+				 * like we do. */
+    int ourEnvironSize;		/* Non-zero means that the environ array was
+				 * malloced and has this many total entries
+				 * allocated to it (not all may be in use at
+				 * once). Zero means that the environment
+				 * array is in its original static state. */
+#endif
+} env;
 
 #define tNTL sizeof(techar)
 
@@ -259,14 +259,14 @@ TclSetEnv(
 	 * environment is the one we allocated. [Bug 979640]
 	 */
 
-	if ((env.ourEnviron != (char *)tenviron) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = (char **)Tcl_Alloc((length + 5) * sizeof(char *));
+	if ((env.ourEnviron != tenviron) || (length+2 > env.ourEnvironSize)) {
+	    techar **newEnviron = (techar **)Tcl_Alloc((length + 5) * sizeof(techar *));
 
-	    memcpy(newEnviron, tenviron, length * sizeof(char *));
+	    memcpy(newEnviron, tenviron, length * sizeof(techar *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
 		Tcl_Free(env.ourEnviron);
 	    }
-	    tenviron = (techar **)(env.ourEnviron = newEnviron);
+	    tenviron = (env.ourEnviron = newEnviron);
 	    env.ourEnvironSize = length + 5;
 	}
 	index = length;
@@ -451,7 +451,7 @@ TclUnsetEnv(
      * needless work and to avoid recursion on the unset.
      */
 
-    if (index == TCL_AUTO_LENGTH) {
+    if (index == TCL_INDEX_NONE) {
 	Tcl_MutexUnlock(&envMutex);
 	return;
     }
@@ -556,7 +556,7 @@ TclGetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
     result = NULL;
-    if (index != TCL_AUTO_LENGTH) {
+    if (index != TCL_INDEX_NONE) {
 	Tcl_DString envStr;
 
 	result = tenviron2utfdstr(tenviron[index], -1, &envStr);
