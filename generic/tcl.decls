@@ -2323,11 +2323,11 @@ declare 630 {
 	    Tcl_Obj *compressionDictionaryObj)
 }
 
-declare 648 {
+# ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+declare 649 {
     void TclUnusedStubEntry(void)
 }
-
-# ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 ##############################################################################
 
