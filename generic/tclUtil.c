@@ -3761,8 +3761,19 @@ Tcl_GetIntForIndex(
  *
  * GetEndOffsetFromObj --
  *
- *	Look for a string of the form "end[+-]offset" and convert it to an
- *	internal representation holding the offset.
+ *	Look for a string of the form "end[+-]offset" or "offset[+-]offset" and
+ *	convert it to an internal representation.
+ *
+ *	The internal representation (wideValue) uses the following encoding:
+ *
+ *	WIDE_MIN:   Index value TCL_INDEX_NONE (or -1)
+ *	WIDE_MIN+1: Index value -2 (out of range < 0), for most usages equal to -1.
+ *	-$n:        Index "end-[expr {$n-1}]"
+ *	-2:         Index "end-1"
+ *	-1:         Index "end"
+ *	0:          Index "0"
+ *	WIDE_MAX-1: Index "end+2"
+ *	WIDE_MAX:   Index "end+1"
  *
  * Results:
  *	Tcl return code.
@@ -3826,7 +3837,7 @@ GetEndOffsetFromObj(
 
 		/* value starts with valid integer... */
 
-	        if ((*opPtr == '-') || (*opPtr == '+')) {
+		if ((*opPtr == '-') || (*opPtr == '+')) {
 		    /* ... value continues with [-+] ... */
 
 		    /* Save first integer as wide if possible */
@@ -3845,7 +3856,7 @@ GetEndOffsetFromObj(
 			    w2 = (*(Tcl_WideInt *)cd);
 			}
 		    }
-	        }
+		}
 		/* Clear invalid intreps left by TclParseNumber */
 		TclFreeIntRep(objPtr);
 
@@ -3862,27 +3873,28 @@ GetEndOffsetFromObj(
 
 			if ((w1 ^ w2) < 0) {
 			    /* Different signs, sum cannot overflow */
-			    *widePtr = w1 + w2;
+			    offset = w1 + w2;
 			} else if (w1 >= 0) {
 			    if (w1 < WIDE_MAX - w2) {
-				*widePtr = w1 + w2;
+				offset = w1 + w2;
 			    } else {
-				*widePtr = WIDE_MAX;
+				offset = WIDE_MAX;
 			    }
 			} else {
 			    if (w1 > WIDE_MIN - w2) {
-				*widePtr = w1 + w2;
+				offset = w1 + w2;
 			    } else {
-				*widePtr = WIDE_MIN;
+				offset = WIDE_MIN;
 			    }
 			}
+			*widePtr = offset;
 		    } else if (interp == NULL) {
 			/*
 			 * We use an interp to do bignum index calculations.
 			 * If we don't get one, call all indices with bignums errors,
 			 * and rely on callers to handle it.
 			 */
-			return TCL_ERROR;
+			goto parseError;
 		    } else {
 			/*
 			 * At least one is big, do bignum math. Little reason to
@@ -3898,17 +3910,18 @@ GetEndOffsetFromObj(
 
 			if (numType == TCL_NUMBER_INT) {
 			    /* sum holds an integer in the signed wide range */
-				*widePtr = *(Tcl_WideInt *)cd;
+			    offset = *(Tcl_WideInt *)cd;
 			} else {
 			    /* sum holds an integer outside the signed wide range */
 			    /* Truncate to the signed wide range. */
 			    if (mp_isneg((mp_int *)cd)) {
-				*widePtr = WIDE_MIN;
+				offset = WIDE_MIN;
 			    } else {
-				*widePtr = WIDE_MAX;
+				offset = WIDE_MAX;
 			    }
 			}
 			Tcl_DecrRefCount(sum);
+			*widePtr = offset;
 		    }
 		    return TCL_OK;
 		}
@@ -3976,6 +3989,8 @@ GetEndOffsetFromObj(
 
     if (offset == WIDE_MAX) {
 	*widePtr = endValue + 1;
+    } else if (offset == WIDE_MIN) {
+	*widePtr = -1;
     } else if (endValue == (size_t)-1) {
 	*widePtr = offset;
     } else if (offset < -1) {
@@ -4073,6 +4088,10 @@ TclIndexEncode(
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
 	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
+	if (irPtr && irPtr->wideValue >= 0) {
+	    /* "int[+-]int" syntax, works the same here as "int" */
+	    irPtr = NULL;
+	}
 	/*
 	 * We parsed an end+offset index value.
 	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
