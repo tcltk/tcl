@@ -3767,12 +3767,12 @@ Tcl_GetIntForIndex(
  *	The internal representation (wideValue) uses the following encoding:
  *
  *	WIDE_MIN:   Index value TCL_INDEX_NONE (or -1)
- *	WIDE_MIN+1: Index value -2 (out of range < 0), for most usages equal to -1.
+ *	WIDE_MIN+1: Index value n, for any n < -1  (usually same effect as -1)
  *	-$n:        Index "end-[expr {$n-1}]"
  *	-2:         Index "end-1"
  *	-1:         Index "end"
  *	0:          Index "0"
- *	WIDE_MAX-1: Index "end+2"
+ *	WIDE_MAX-1: Index "end+n", for any n > 1
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3887,7 +3887,6 @@ GetEndOffsetFromObj(
 				offset = WIDE_MIN;
 			    }
 			}
-			*widePtr = offset;
 		    } else if (interp == NULL) {
 			/*
 			 * We use an interp to do bignum index calculations.
@@ -3921,9 +3920,11 @@ GetEndOffsetFromObj(
 			    }
 			}
 			Tcl_DecrRefCount(sum);
-			*widePtr = offset;
 		    }
-		    return TCL_OK;
+		    if (offset < 0) {
+			offset = (offset == -1) ? WIDE_MIN : WIDE_MIN+1;
+		    }
+		    goto parseOK;
 		}
 	    }
 	    goto parseError;
@@ -3980,6 +3981,7 @@ GetEndOffsetFromObj(
 	    }
 	}
 
+    parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
 	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
@@ -3993,11 +3995,11 @@ GetEndOffsetFromObj(
 	*widePtr = -1;
     } else if (endValue == (size_t)-1) {
 	*widePtr = offset;
-    } else if (offset < -1) {
+    } else if (offset < 0) {
 	/* Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
-    } else if (endValue + 1 < (Tcl_WideUInt)WIDE_MAX - offset) {
-	*widePtr = endValue + offset + 1;
+    } else if (offset < WIDE_MAX) {
+	*widePtr = offset;
     } else {
 	*widePtr = WIDE_MAX;
     }
