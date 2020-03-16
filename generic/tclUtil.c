@@ -3913,22 +3913,7 @@ GetEndOffsetFromObj(
 		    return TCL_OK;
 		}
 	    }
-
-	    /* Report a parse error. */
-	  parseError:
-	    if (interp != NULL) {
-	        char * bytes = TclGetString(objPtr);
-	        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	                "bad index \"%s\": must be integer?[+-]integer? or"
-	                " end?[+-]integer?", bytes));
-	        if (!strncmp(bytes, "end-", 4)) {
-	            bytes += 4;
-	        }
-	        TclCheckBadOctal(interp, bytes);
-	        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	    }
-
-	    return TCL_ERROR;
+	    goto parseError;
 	}
 
 	if ((length < 3) || (length == 4) || (strncmp(bytes, "end", 3) != 0)) {
@@ -4002,6 +3987,22 @@ GetEndOffsetFromObj(
 	*widePtr = WIDE_MAX;
     }
     return TCL_OK;
+
+    /* Report a parse error. */
+  parseError:
+    if (interp != NULL) {
+        char * bytes = TclGetString(objPtr);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "bad index \"%s\": must be integer?[+-]integer? or"
+                " end?[+-]integer?", bytes));
+        if (!strncmp(bytes, "end-", 4)) {
+            bytes += 4;
+        }
+        TclCheckBadOctal(interp, bytes);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
+    }
+
+    return TCL_ERROR;
 }
 
 /*
@@ -4067,41 +4068,28 @@ TclIndexEncode(
     int after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
-    ClientData cd;
     Tcl_WideInt wide;
-    int idx, numType, code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
+    int idx;
 
-    if ((code == TCL_OK) && (numType == TCL_NUMBER_INT)) {
-	/* We parsed a value in the range WIDE_MIN...WIDE_MAX */
-	wide = (*(Tcl_WideInt *)cd);
-	if (wide < TCL_INDEX_START) {
-	    /* All negative absolute indices are "before the beginning" */
-	    idx = before;
-	} else if (wide >= INT_MAX) {
-	    /* This index value is always "after the end" */
+    if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
+	/*
+	 * We parsed an end+offset index value.
+	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
+	 */
+	if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
+	    /*
+	     * All end+postive or end-negative expressions
+	     * always indicate "after the end".
+	     */
 	    idx = after;
+	} else if (wide <= (irPtr ? INT_MAX : TCL_INDEX_NONE)) {
+	    /* These indices always indicate "before the beginning */
+	    idx = before;
 	} else {
-	    idx = (int) wide;
+	    /* Encoded end-positive (or end+negative) are offset */
+	    idx = (int)wide;
 	}
-	/* usual case, the absolute index value encodes itself */
-    } else if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-        /*
-         * We parsed an end+offset index value.
-         * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
-         */
-        if (wide > (unsigned)TCL_INDEX_END) {
-            /*
-             * All end+postive or end-negative expressions
-             * always indicate "after the end".
-             */
-            idx = after;
-        } else if (wide < TCL_INDEX_START) {
-            /* These indices always indicate "before the beginning */
-            idx = before;
-        } else { /* TODO: more checks if everything really right! */
-            /* Encoded end-positive (or end+negative) are offset */
-            idx = (int)wide;
-        }
     } else {
 	return TCL_ERROR;
     }
