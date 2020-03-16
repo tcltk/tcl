@@ -38,6 +38,14 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+# C++ build.
+    - name: "Linux/G++/Shared"
+      os: linux
+      dist: bionic
+      compiler: g++
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -322,6 +330,15 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
+    - name: "Windows/G++/Shared"
+      os: windows
+      compiler: g++
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CC=g++ --enable-64bit"
+      before_install: *makepreinst
+      script:
+        - make all tcltest
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -357,6 +374,15 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
+    - name: "Windows/G++-x86/Shared"
+      os: windows
+      compiler: g++
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="CC=g++"
+      before_install: *makepreinst
+      script:
+        - make all tcltest
     - name: "Windows/GCC-x86/Static"
       os: windows
       compiler: gcc
