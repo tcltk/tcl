@@ -101,7 +101,7 @@ TclpDlopen(
     }
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
-    newHandle = ckalloc(sizeof(Tcl_LoadHandle));
+    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
     newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;

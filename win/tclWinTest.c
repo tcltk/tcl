@@ -33,21 +33,14 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static int		TesteventloopCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestvolumetypeCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestSizeCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TesteventloopCmd;
+static Tcl_ObjCmdProc	TestvolumetypeCmd;
+static Tcl_ObjCmdProc	TestwinclockCmd;
+static Tcl_ObjCmdProc	TestwinsleepCmd;
+static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -105,7 +98,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -181,7 +174,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -247,7 +240,7 @@ TestvolumetypeCmd(
 
 static int
 TestwinclockCmd(
-    ClientData dummy,		/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -296,7 +289,7 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -316,11 +309,12 @@ TestwinsleepCmd(
 
 static int
 TestSizeCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
+
     if (objc != 2) {
 	goto syntax;
     }
@@ -364,7 +358,7 @@ syntax:
 
 static int
 TestExceptionCmd(
-    ClientData dummy,			/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp* interp,			/* Tcl interpreter */
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
@@ -494,7 +488,7 @@ TestplatformChmod(
 	    goto done;
 	}
 
-	secDesc = ckalloc(secDescLen);
+	secDesc = (BYTE *)ckalloc(secDescLen);
 	if (!GetFileSecurityA(nativePath, infoBits,
 		(PSECURITY_DESCRIPTOR) secDesc, secDescLen, &secDescLen2)
 		|| (secDescLen < secDescLen2)) {
@@ -506,7 +500,7 @@ TestplatformChmod(
      * Get the World SID.
      */
 
-    userSid = ckalloc(GetSidLengthRequired((UCHAR) 1));
+    userSid = (SID *)ckalloc(GetSidLengthRequired((UCHAR) 1));
     InitializeSid(userSid, &userSidAuthority, (BYTE) 1);
     *(GetSidSubAuthority(userSid, 0)) = SECURITY_WORLD_RID;
 
@@ -532,7 +526,7 @@ TestplatformChmod(
 
     newAclSize = ACLSize.AclBytesInUse + sizeof(ACCESS_DENIED_ACE)
 	    + GetLengthSid(userSid) - sizeof(DWORD);
-    newAcl = ckalloc(newAclSize);
+    newAcl = (PACL) ckalloc(newAclSize);
 
     /*
      * Initialize the new ACL.
@@ -653,7 +647,7 @@ TestplatformChmod(
 
 static int
 TestchmodCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */

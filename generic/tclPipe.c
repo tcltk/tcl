@@ -188,7 +188,7 @@ Tcl_DetachPids(
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
-	detPtr = ckalloc(sizeof(Detached));
+	detPtr = (Detached *)ckalloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -824,7 +824,7 @@ TclCreatePipeline(
      */
 
     Tcl_ReapDetachedProcs();
-    pidPtr = ckalloc(cmdCount * sizeof(Tcl_Pid));
+    pidPtr = (Tcl_Pid *)ckalloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;
 

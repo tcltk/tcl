@@ -109,7 +109,7 @@ typedef struct TclDateFields {
 				 * Greenwich */
     Tcl_Obj *tzName;		/* Time zone name */
     int julianDay;		/* Julian Day Number in local time zone */
-    enum {BCE=1, CE=0} era;	/* Era */
+    int isBce;			/* 1 if BCE */
     int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
@@ -275,9 +275,9 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = ckalloc(sizeof(ClockClientData));
+    data = (ClockClientData *)ckalloc(sizeof(ClockClientData));
     data->refCount = 0;
-    data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
+    data->literals = (Tcl_Obj **)ckalloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
 	data->literals[i] = Tcl_NewStringObj(literals[i], -1);
 	Tcl_IncrRefCount(data->literals[i]);
@@ -336,7 +336,7 @@ ClockConvertlocaltoutcObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     Tcl_Obj *secondsObj;
     Tcl_Obj *dict;
@@ -430,7 +430,7 @@ ClockGetdatefieldsObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
 
@@ -494,7 +494,7 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut(NULL, dict, lit[LIT_GREGORIAN],
 	    Tcl_NewWideIntObj(fields.gregorian));
     Tcl_DictObjPut(NULL, dict, lit[LIT_ERA],
-	    lit[fields.era ? LIT_BCE : LIT_CE]);
+	    lit[fields.isBce ? LIT_BCE : LIT_CE]);
     Tcl_DictObjPut(NULL, dict, lit[LIT_YEAR],
 	    Tcl_NewWideIntObj(fields.year));
     Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFYEAR],
@@ -584,12 +584,12 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
-    int era = 0;
+    int isBce = 0;
 
     /*
      * Check params.
@@ -600,7 +600,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (FetchEraField(interp, dict, lit[LIT_ERA], &era) != TCL_OK
+    if (FetchEraField(interp, dict, lit[LIT_ERA], &isBce) != TCL_OK
 	    || FetchIntField(interp, dict, lit[LIT_YEAR], &fields.year)
 		!= TCL_OK
 	    || FetchIntField(interp, dict, lit[LIT_MONTH], &fields.month)
@@ -610,7 +610,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.era = era;
+    fields.isBce = isBce;
 
     /*
      * Get Julian day.
@@ -668,12 +668,12 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
-    int era = 0;
+    int isBce = 0;
 
     /*
      * Check params.
@@ -684,7 +684,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (FetchEraField(interp, dict, lit[LIT_ERA], &era) != TCL_OK
+    if (FetchEraField(interp, dict, lit[LIT_ERA], &isBce) != TCL_OK
 	    || FetchIntField(interp, dict, lit[LIT_ISO8601YEAR],
 		&fields.iso8601Year) != TCL_OK
 	    || FetchIntField(interp, dict, lit[LIT_ISO8601WEEK],
@@ -694,7 +694,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.era = era;
+    fields.isBce = isBce;
 
     /*
      * Get Julian day.
@@ -1079,7 +1079,7 @@ ConvertUTCToLocalUsingC(
      * Fill in the date in 'fields' and use it to derive Julian Day.
      */
 
-    fields->era = CE;
+    fields->isBce = 0;
     fields->year = timeVal->tm_year + 1900;
     fields->month = timeVal->tm_mon + 1;
     fields->dayOfMonth = timeVal->tm_mday;
@@ -1217,7 +1217,7 @@ GetYearWeekDay(
 
     temp.julianDay = fields->julianDay - 3;
     GetGregorianEraYearDay(&temp, changeover);
-    if (temp.era == BCE) {
+    if (temp.isBce) {
 	temp.iso8601Year = temp.year - 1;
     } else {
 	temp.iso8601Year = temp.year + 1;
@@ -1233,7 +1233,7 @@ GetYearWeekDay(
      */
 
     if (fields->julianDay < temp.julianDay) {
-	if (temp.era == BCE) {
+	if (temp.isBce) {
 	    temp.iso8601Year += 1;
 	} else {
 	    temp.iso8601Year -= 1;
@@ -1359,10 +1359,10 @@ GetGregorianEraYearDay(
      */
 
     if (year <= 0) {
-	fields->era = BCE;
+	fields->isBce = 1;
 	fields->year = 1 - year;
     } else {
-	fields->era = CE;
+	fields->isBce = 0;
 	fields->year = year;
     }
     fields->dayOfYear = day + 1;
@@ -1430,7 +1430,7 @@ GetJulianDayFromEraYearWeekDay(
      * Find January 4 in the ISO8601 year, which will always be in week 1.
      */
 
-    firstWeek.era = fields->era;
+    firstWeek.isBce = fields->isBce;
     firstWeek.year = fields->iso8601Year;
     firstWeek.month = 1;
     firstWeek.dayOfMonth = 4;
@@ -1474,7 +1474,7 @@ GetJulianDayFromEraYearMonthDay(
 {
     int year, ym1, month, mm1, q, r, ym1o4, ym1o100, ym1o400;
 
-    if (fields->era == BCE) {
+    if (fields->isBce) {
 	year = 1 - fields->year;
     } else {
 	year = fields->year;
@@ -1502,10 +1502,10 @@ GetJulianDayFromEraYearMonthDay(
 
     fields->gregorian = 1;
     if (year < 1) {
-	fields->era = BCE;
+	fields->isBce = 1;
 	fields->year = 1-year;
     } else {
-	fields->era = CE;
+	fields->isBce = 0;
 	fields->year = year;
     }
 
@@ -1580,7 +1580,7 @@ IsGregorianLeapYear(
 {
     int year = fields->year;
 
-    if (fields->era == BCE) {
+    if (fields->isBce) {
 	year = 1 - year;
     }
     if (year%4 != 0) {
@@ -1645,14 +1645,13 @@ WeekdayOnOrBefore(
 
 int
 ClockGetenvObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     const char *varName;
     const char *varValue;
-    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1693,7 +1692,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, sizeof(struct tm));
+    struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
@@ -1731,7 +1730,7 @@ ThreadSafeLocalTime(
 
 int
 ClockClicksObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
@@ -1745,7 +1744,6 @@ ClockClicksObjCmd(
     int index = CLICKS_NATIVE;
     Tcl_Time now;
     Tcl_WideInt clicks = 0;
-    (void)clientData;
 
     switch (objc) {
     case 1:
@@ -1802,13 +1800,12 @@ ClockClicksObjCmd(
 
 int
 ClockMillisecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -1840,12 +1837,11 @@ ClockMillisecondsObjCmd(
 
 int
 ClockMicrosecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    (void)clientData;
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
@@ -1879,7 +1875,7 @@ ClockParseformatargsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     Tcl_Obj **litPtr = dataPtr->literals;
     Tcl_Obj *results[3];	/* Format, locale and timezone */
 #define formatObj results[0]
@@ -1992,13 +1988,12 @@ ClockParseformatargsObjCmd(
 
 int
 ClockSecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -2029,7 +2024,7 @@ ClockSecondsObjCmd(
 static void
 TzsetIfNecessary(void)
 {
-    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
+    static char* tzWas = (char *)INT2PTR(-1);	/* Previous value of TZ, protected by
 				 * clockMutex. */
     const char *tzIsNow;	/* Current value of TZ */
 
@@ -2041,7 +2036,7 @@ TzsetIfNecessary(void)
 	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = ckalloc(strlen(tzIsNow) + 1);
+	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
 	strcpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
@@ -2069,7 +2064,7 @@ static void
 ClockDeleteCmdProc(
     ClientData clientData)	/* Opaque pointer to the client data */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     int i;
 
     if (data->refCount-- <= 1) {

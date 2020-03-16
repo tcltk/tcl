@@ -157,7 +157,7 @@ TclpInitPlatform(void)
      */
     handle = GetModuleHandleW(L"KERNEL32");
     tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
+	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
 	    "CancelSynchronousIo");
 }
 
@@ -226,7 +226,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
-    *valuePtr = ckalloc(length);
+    *valuePtr = (char *)ckalloc(length);
     memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -363,7 +363,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -411,7 +411,7 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     sprintf(end + 1, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -525,7 +525,7 @@ TclpSetVariables(
     if (!osInfoInitialized) {
 	HMODULE handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
+		(int(__stdcall *)(void *))(void *)GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
@@ -624,6 +624,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
+#if defined(_WIN32)
+#  define tenviron _wenviron
+#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
+		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+#else 
+#  define tenviron environ
+#  define tenviron2utfdstr(tenvstr, len, dstr) \
+		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
+#endif
+
 int
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
@@ -643,19 +653,21 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = ckalloc(length + 1);
+    nameUpper = (char *)ckalloc(length + 1);
     memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+    for (i = 0, env = (const char *)tenviron[i];
+	env != NULL;
+	i++, env = (const char *)tenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
 	 * after the equal sign.
 	 */
 
-	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	envUpper = tenviron2utfdstr(env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

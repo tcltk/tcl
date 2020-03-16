@@ -208,13 +208,13 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
 /* 69 */
-EXTERN char *		TclpAlloc(unsigned int size);
+EXTERN void *		TclpAlloc(unsigned int size);
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* 74 */
-EXTERN void		TclpFree(char *ptr);
+EXTERN void		TclpFree(void *ptr);
 /* 75 */
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
@@ -226,7 +226,7 @@ void			TclpGetTime(Tcl_Time *time);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN char *		TclpRealloc(char *ptr, unsigned int size);
+EXTERN void *		TclpRealloc(void *ptr, unsigned int size);
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -734,19 +734,19 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    char * (*tclpAlloc) (unsigned int size); /* 69 */
+    void * (*tclpAlloc) (unsigned int size); /* 69 */
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);
     void (*reserved73)(void);
-    void (*tclpFree) (char *ptr); /* 74 */
+    void (*tclpFree) (void *ptr); /* 74 */
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     TCL_DEPRECATED_API("") void (*tclpGetTime) (Tcl_Time *time); /* 77 */
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
+    void * (*tclpRealloc) (void *ptr, unsigned int size); /* 81 */
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
