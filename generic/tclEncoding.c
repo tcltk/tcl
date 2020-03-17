@@ -3150,8 +3150,8 @@ EscapeToUtfProc(
 	charLimit = *dstCharsPtr;
     }
     result = TCL_OK;
-    tablePrefixBytes = NULL;	/* lint. */
-    tableToUnicode = NULL;	/* lint. */
+    tablePrefixBytes = NULL;
+    tableToUnicode = NULL;
     prefixBytes = dataPtr->prefixBytes;
     encodingPtr = NULL;
 

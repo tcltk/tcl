@@ -574,7 +574,7 @@ FindElement(
     const char *limit;		/* Points just after list/dict's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;		/* lint. */
+    int size = 0;
     size_t numChars;
     int literal = 1;
     const char *p2;

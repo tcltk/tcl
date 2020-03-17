@@ -776,7 +776,6 @@ TclServiceIdle(void)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(
     TCL_UNUSED(ClientData),
@@ -1248,7 +1247,6 @@ FreeAfterPtr(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 AfterCleanupProc(
     ClientData clientData,	/* Points to AfterAssocData for the

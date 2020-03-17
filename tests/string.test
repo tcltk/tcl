@@ -398,44 +398,44 @@ test string-4.10.$noComp {string first, unicode} {
 test string-4.11.$noComp {string first, start index} {
     run {string first \u7266 abc\u7266x 3}
 } 3
-test string-4.12.$noComp {string first, start index} {
+test string-4.12.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x 4}
-} -1
-test string-4.13.$noComp {string first, start index} {
+} -result -1
+test string-4.13.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x end-2}
-} 3
-test string-4.14.$noComp {string first, negative start index} {
+} -result 3
+test string-4.14.$noComp {string first, negative start index} -body {
     run {string first b abc -1}
-} 1
-test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} {
+} -result 1
+test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} -body {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
     # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
     set uchar \u057E    ;# character with two-byte encoding in utf-8
     run {string first % %#$uchar$uchar#$uchar$uchar#% 3}
-} 8
-test string-4.16.$noComp {string first, normal string vs pure unicode string} {
+} -result 8
+test string-4.16.$noComp {string first, normal string vs pure unicode string} -body {
     set s hello
     regexp ll $s m
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} {{string 1} {string 0} 2}
-test string-4.17.$noComp {string first, corner case} {
+} -result {{string 1} {string 0} 2}
+test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
-} {-1}
-test string-4.18.$noComp {string first, corner case} {
+} -result {-1}
+test string-4.18.$noComp {string first, corner case} -body {
     run {string first a aaa -1}
-} {0}
-test string-4.19.$noComp {string first, corner case} {
+} -result {0}
+test string-4.19.$noComp {string first, corner case} -body {
     run {string first a aaa end-5}
-} {0}
-test string-4.20.$noComp {string last, corner case} {
+} -result {0}
+test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
-} {2}
-test string-4.21.$noComp {string last, corner case} {
+} -result {2}
+test string-4.21.$noComp {string last, corner case} -body {
     run {string last a aaa -1}
-} {-1}
+} -result {-1}
 test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
 } {-1}
@@ -473,9 +473,9 @@ test string-5.10.$noComp {string index, unicode} {
 test string-5.11.$noComp {string index, unicode} {
     run {string index abc\u7266d 3}
 } \u7266
-test string-5.12.$noComp {string index, unicode over char length, under byte length} {
+test string-5.12.$noComp {string index, unicode over char length, under byte length} -body {
     run {string index \334\374\334\374 6}
-} {}
+} -result {}
 test string-5.13.$noComp {string index, bytearray object} {
     run {string index [binary format a5 fuz] 0}
 } f
@@ -499,15 +499,15 @@ test string-5.17.$noComp {string index, bad integer} -body {
 test string-5.18.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" end-0o0289}} msg] $msg
 } -match glob -result {1 {*}}
-test string-5.19.$noComp {string index, bytearray object out of bounds} {
+test string-5.19.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] -1}
-} {}
-test string-5.20.$noComp {string index, bytearray object out of bounds} {
+} -result {}
+test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
-} {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} fullutf {
+} -result {}
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints fullutf -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
-} [list \U100000 b {}]
+} -result [list \U100000 b {}]
 
 
 proc largest_int {} {
@@ -1564,9 +1564,9 @@ test string-14.4.$noComp {string replace} {
 test string-14.5.$noComp {string replace} {
     run {string replace abcdefghijklmnop 2 14}
 } {abp}
-test string-14.6.$noComp {string replace} {
+test string-14.6.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 7 1000}
-} {abcdefg}
+} -result {abcdefg}
 test string-14.7.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 end}
 } {abcdefghij}
@@ -1579,9 +1579,9 @@ test string-14.9.$noComp {string replace} {
 test string-14.10.$noComp {string replace} {
     run {string replace abcdefghijklmnop -3 -2}
 } {abcdefghijklmnop}
-test string-14.11.$noComp {string replace} {
+test string-14.11.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 1000 1010}
-} {abcdefghijklmnop}
+} -result {abcdefghijklmnop}
 test string-14.12.$noComp {string replace} {
     run {string replace abcdefghijklmnop -100 end}
 } {}
@@ -1814,88 +1814,88 @@ test string-20.6.$noComp {string trimright, unicode default} {
     run {string trimright ABC\u1361\x85\x00\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
 
-test string-21.1.$noComp {string wordend} {
+test string-21.1.$noComp {string wordend} -body {
     list [catch {run {string wordend a}} msg] $msg
-} {1 {wrong # args: should be "string wordend string index"}}
-test string-21.2.$noComp {string wordend} {
+} -result {1 {wrong # args: should be "string wordend string index"}}
+test string-21.2.$noComp {string wordend} -body {
     list [catch {run {string wordend a b c}} msg] $msg
-} {1 {wrong # args: should be "string wordend string index"}}
-test string-21.3.$noComp {string wordend} {
+} -result {1 {wrong # args: should be "string wordend string index"}}
+test string-21.3.$noComp {string wordend} -body {
     list [catch {run {string wordend a gorp}} msg] $msg
-} {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-21.4.$noComp {string wordend} {
+} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-21.4.$noComp {string wordend} -body {
     run {string wordend abc. -1}
-} 3
-test string-21.5.$noComp {string wordend} {
+} -result 3
+test string-21.5.$noComp {string wordend} -body {
     run {string wordend abc. 100}
-} 4
-test string-21.6.$noComp {string wordend} {
+} -result 4
+test string-21.6.$noComp {string wordend} -body {
     run {string wordend "word_one two three" 2}
-} 8
-test string-21.7.$noComp {string wordend} {
+} -result 8
+test string-21.7.$noComp {string wordend} -body {
     run {string wordend "one .&# three" 5}
-} 6
-test string-21.8.$noComp {string wordend} {
+} -result 6
+test string-21.8.$noComp {string wordend} -body {
     run {string worde "x.y" 0}
-} 1
-test string-21.9.$noComp {string wordend} {
+} -result 1
+test string-21.9.$noComp {string wordend} -body {
     run {string worde "x.y" end-1}
-} 2
-test string-21.10.$noComp {string wordend, unicode} {
+} -result 2
+test string-21.10.$noComp {string wordend, unicode} -body {
     run {string wordend "xyz\xC7de fg" 0}
-} 6
-test string-21.11.$noComp {string wordend, unicode} {
+} -result 6
+test string-21.11.$noComp {string wordend, unicode} -body {
     run {string wordend "xyz\uC700de fg" 0}
-} 6
-test string-21.12.$noComp {string wordend, unicode} {
+} -result 6
+test string-21.12.$noComp {string wordend, unicode} -body {
     run {string wordend "xyz\u203Fde fg" 0}
-} 6
-test string-21.13.$noComp {string wordend, unicode} {
+} -result 6
+test string-21.13.$noComp {string wordend, unicode} -body {
     run {string wordend "xyz\u2045de fg" 0}
-} 3
-test string-21.14.$noComp {string wordend, unicode} {
+} -result 3
+test string-21.14.$noComp {string wordend, unicode} -body {
     run {string wordend "\uC700\uC700 abc" 8}
-} 6
+} -result 6
 
-test string-22.1.$noComp {string wordstart} {
+test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-22.2.$noComp {string wordstart} {
+} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
-} {1 {wrong # args: should be "string wordstart string index"}}
-test string-22.3.$noComp {string wordstart} {
+} -result {1 {wrong # args: should be "string wordstart string index"}}
+test string-22.3.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a b c}} msg] $msg
-} {1 {wrong # args: should be "string wordstart string index"}}
-test string-22.4.$noComp {string wordstart} {
+} -result {1 {wrong # args: should be "string wordstart string index"}}
+test string-22.4.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a gorp}} msg] $msg
-} {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-22.5.$noComp {string wordstart} {
+} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-22.5.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" 400}
-} 8
-test string-22.6.$noComp {string wordstart} {
+} -result 8
+test string-22.6.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" 2}
-} 0
-test string-22.7.$noComp {string wordstart} {
+} -result 0
+test string-22.7.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" -2}
-} 0
-test string-22.8.$noComp {string wordstart} {
+} -result 0
+test string-22.8.$noComp {string wordstart} -body {
     run {string wordstart "one .*&^ three" 6}
-} 6
-test string-22.9.$noComp {string wordstart} {
+} -result 6
+test string-22.9.$noComp {string wordstart} -body {
     run {string wordstart "one two three" 4}
-} 4
-test string-22.10.$noComp {string wordstart} {
+} -result 4
+test string-22.10.$noComp {string wordstart} -body {
     run {string wordstart "one two three" end-5}
-} 7
-test string-22.11.$noComp {string wordstart, unicode} {
+} -result 7
+test string-22.11.$noComp {string wordstart, unicode} -body {
     run {string wordstart "one tw\xC7o three" 7}
-} 4
-test string-22.12.$noComp {string wordstart, unicode} {
+} -result 4
+test string-22.12.$noComp {string wordstart, unicode} -body {
     run {string wordstart "ab\uC700\uC700 cdef ghi" 12}
-} 10
-test string-22.13.$noComp {string wordstart, unicode} {
+} -result 10
+test string-22.13.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\uC700\uC700 abc" 8}
-} 3
+} -result 3
 
 test string-23.0.$noComp {string is boolean, Bug 1187123} testindexobj {
     set x 5

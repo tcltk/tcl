@@ -2589,6 +2589,14 @@ Tcl_LpopObjCmd(
      */
 
     if (objc == 2) {
+	if (!listLen) {
+	    /* empty list, throw the same error as with index "end" */
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"index \"end\" out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+		"OUTOFRANGE", NULL);
+	    return TCL_ERROR;
+	}
 	elemPtr = elemPtrs[listLen - 1];
 	Tcl_IncrRefCount(elemPtr);
     } else {

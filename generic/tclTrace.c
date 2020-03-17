@@ -181,7 +181,6 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_TraceObjCmd(
     TCL_UNUSED(ClientData),
@@ -1278,7 +1277,6 @@ Tcl_UntraceCommand(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 TraceCommandProc(
     ClientData clientData,	/* Information about the command trace. */
@@ -1962,7 +1960,6 @@ TraceExecutionProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static char *
 TraceVarProc(
     ClientData clientData,	/* Information about the variable trace. */
