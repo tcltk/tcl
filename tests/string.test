@@ -32,6 +32,7 @@ testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint nodep [info exists tcl_precision]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -370,7 +371,7 @@ test string-4.1.$noComp {string first, too few args} {
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.2.$noComp {string first, bad args} {
     list [catch {run {string first a b c}} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "c": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-4.3.$noComp {string first, too many args} {
     list [catch {run {string first a b 5 d}} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
@@ -460,7 +461,7 @@ test string-5.6.$noComp {string index} {
 } {0 {}}
 test string-5.7.$noComp {string index} {
     list [catch {run {string index a xyz}} msg] $msg
-} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "xyz": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-5.8.$noComp {string index} {
     run {string index abc end}
 } c
@@ -533,10 +534,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, none, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, none, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -969,6 +970,22 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
+test string-6.132.$noComp {string is index, true} {
+    run {string is index +1234567890}
+} 1
+test string-6.133.$noComp {string is index, true} knownBug {
+    run {string is index end-5}
+} 1
+test string-6.134.$noComp {string is index, true} knownBug {
+    run {string is index none}
+} 1
+test string-6.135.$noComp {string is none, true} {
+    run {string is none -1}
+} 1
+test string-6.136.$noComp {string is none, true} nodep {
+    run {string is none -2}
+} 1
+
 
 catch {rename largest_int {}}
 
@@ -977,7 +994,7 @@ test string-7.1.$noComp {string last, too few args} {
 } {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2.$noComp {string last, bad args} {
     list [catch {run {string last a b c}} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "c": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-7.3.$noComp {string last, too many args} {
     list [catch {run {string last a b c d}} msg] $msg
 } {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
@@ -1453,10 +1470,10 @@ test string-12.11.$noComp {string range} {
 } {abcdefghijklmnop}
 test string-12.12.$noComp {string range} {
     list [catch {run {string range abc abc 1}} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "abc": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-12.13.$noComp {string range} {
     list [catch {run {string range abc 1 eof}} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "eof": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-12.14.$noComp {string range} {
     run {string range abcdefghijklmnop end-1 end}
 } {op}
@@ -1587,10 +1604,10 @@ test string-14.12.$noComp {string replace} {
 } {}
 test string-14.13.$noComp {string replace} {
     list [catch {run {string replace abc abc 1}} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "abc": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-14.14.$noComp {string replace} {
     list [catch {run {string replace abc 1 eof}} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "eof": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-14.15.$noComp {string replace} {
     run {string replace abcdefghijklmnop end-10 end-2 NEW}
 } {abcdeNEWop}
@@ -1656,7 +1673,7 @@ test string-15.1.$noComp {string tolower too few args} {
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
 test string-15.2.$noComp {string tolower bad args} {
     list [catch {run {string tolower a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-15.3.$noComp {string tolower too many args} {
     list [catch {run {string tolower ABC 1 end oops}} msg] $msg
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
@@ -1690,7 +1707,7 @@ test string-16.1.$noComp {string toupper} {
 } {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
 test string-16.2.$noComp {string toupper} {
     list [catch {run {string toupper a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-16.3.$noComp {string toupper} {
     list [catch {run {string toupper a 1 end oops}} msg] $msg
 } {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
@@ -1724,7 +1741,7 @@ test string-17.1.$noComp {string totitle} {
 } {1 {wrong # args: should be "string totitle string ?first? ?last?"}}
 test string-17.2.$noComp {string totitle} {
     list [catch {run {string totitle a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-17.3.$noComp {string totitle} {
     run {string totitle abCDEf}
 } {Abcdef}
@@ -1822,7 +1839,7 @@ test string-21.2.$noComp {string wordend} -body {
 } -result {1 {wrong # args: should be "string wordend string index"}}
 test string-21.3.$noComp {string wordend} -body {
     list [catch {run {string wordend a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+} -result {1 {bad index "gorp": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-21.4.$noComp {string wordend} -body {
     run {string wordend abc. -1}
 } -result 3
@@ -1868,7 +1885,7 @@ test string-22.3.$noComp {string wordstart} -body {
 } -result {1 {wrong # args: should be "string wordstart string index"}}
 test string-22.4.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+} -result {1 {bad index "gorp": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-22.5.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" 400}
 } -result 8

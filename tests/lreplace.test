@@ -119,13 +119,13 @@ test lreplace-2.2 {lreplace errors} -body {
 } -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
 test lreplace-2.3 {lreplace errors} -body {
     list [catch {lreplace x a 10} msg] $msg
-} -result {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
+} -result {1 {bad index "a": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test lreplace-2.4 {lreplace errors} -body {
     list [catch {lreplace x 10 x} msg] $msg
-} -result {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
+} -result {1 {bad index "x": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test lreplace-2.5 {lreplace errors} -body {
     list [catch {lreplace x 10 1x} msg] $msg
-} -result {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
+} -result {1 {bad index "1x": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test lreplace-2.6 {lreplace errors} -body {
     list [catch {lreplace x 3 2} msg] $msg
 } -result {0 x}

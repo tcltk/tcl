@@ -3805,9 +3805,14 @@ GetEndOffsetFromObj(
 	if (*bytes != 'e') {
 	    int numType;
 	    const char *opPtr;
-	    int length, t1 = 0, t2 = 0;
+	    int t1 = 0, t2 = 0;
 
 	    /* Value doesn't start with "e" */
+
+	    if ((length == 4) && (strncmp(bytes, "none", 4) == 0)) {
+		offset = WIDE_MIN;
+		goto parseOK;
+	    }
 
 	    /* If we reach here, the string rep of objPtr exists. */
 
@@ -4019,8 +4024,8 @@ GetEndOffsetFromObj(
     if (interp != NULL) {
         char * bytes = TclGetString(objPtr);
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "bad index \"%s\": must be integer?[+-]integer? or"
-                " end?[+-]integer?", bytes));
+                "bad index \"%s\": must be integer?[+-]integer?,"
+                " end?[+-]integer? or none", bytes));
         if (!strncmp(bytes, "end-", 4)) {
             bytes += 4;
         }
@@ -4035,7 +4040,7 @@ GetEndOffsetFromObj(
       if (interp != NULL) {
           char * bytes = TclGetString(objPtr);
           Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                  "index \"%s\": out of range", bytes));
+                  "index \"%s\" out of range", bytes));
           if (!strncmp(bytes, "end-", 4)) {
               bytes += 4;
           }

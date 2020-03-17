@@ -358,7 +358,7 @@ test regexpComp-6.9 {regexp errors, -start bad int check} {
     evalInProc {
 	list [catch {regexp -start bogus {^$} {}} msg] $msg
     }
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer?, end?[+-]integer? or none}}
 
 test regexpComp-7.1 {basic regsub operation} {
     evalInProc {
@@ -604,7 +604,7 @@ test regexpComp-11.8 {regsub errors, -start bad int check} {
     evalInProc {
 	list [catch {regsub -start bogus pattern string rep var} msg] $msg
     }
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer?, end?[+-]integer? or none}}
 
 # This test crashes on the Mac unless you increase the Stack Space to about 1
 # Meg.  This is probably bigger than most users want...

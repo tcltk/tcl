@@ -300,7 +300,7 @@ test lsearch-10.3 {offset searching} {
 } 3
 test lsearch-10.4 {offset searching} -returnCodes error -body {
     lsearch -start foobar {a b c a b c} a
-} -result {bad index "foobar": must be integer?[+-]integer? or end?[+-]integer?}
+} -result {bad index "foobar": must be integer?[+-]integer?, end?[+-]integer? or none}
 test lsearch-10.5 {offset searching} -returnCodes error -body {
     lsearch -start 1 2
 } -result {missing starting index}
@@ -493,7 +493,7 @@ test lsearch-20.1 {lsearch -index option, index larger than sublists} -body {
 } -returnCodes error -result {element 2 missing from sublist "a c"}
 test lsearch-20.2 {lsearch -index option, malformed index} -body {
     lsearch -index foo {{a c} {a b} {a a}} a
-} -returnCodes error -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+} -returnCodes error -result {bad index "foo": must be integer?[+-]integer?, end?[+-]integer? or none}
 test lsearch-20.3 {lsearch -index option, malformed index} -body {
     lsearch -index \{ {{a c} {a b} {a a}} a
 } -returnCodes error -result {unmatched open brace in list}
