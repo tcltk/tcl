@@ -3133,7 +3133,7 @@ IssueTryClausesInstructions(
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
-	    notECJumpSource = -1; /* LINT */
+	    notECJumpSource = -1;
 	}
 	OP(				POP);
 
@@ -3344,7 +3344,7 @@ IssueTryClausesFinallyInstructions(
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
-	    notECJumpSource = -1; /* LINT */
+	    notECJumpSource = -1;
 	}
 	OP(				POP);
 

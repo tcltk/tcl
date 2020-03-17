@@ -117,7 +117,6 @@ static Tcl_ObjCmdProc PathTypeCmd;
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_BreakObjCmd(
     TCL_UNUSED(ClientData),
@@ -150,7 +149,6 @@ Tcl_BreakObjCmd(
  *----------------------------------------------------------------------
  */
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-	/* ARGSUSED */
 int
 Tcl_CaseObjCmd(
     TCL_UNUSED(ClientData),
@@ -286,7 +284,6 @@ Tcl_CaseObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_CatchObjCmd(
     ClientData clientData,
@@ -392,7 +389,6 @@ CatchObjCmdCallback(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_CdObjCmd(
     TCL_UNUSED(ClientData),
@@ -448,7 +444,6 @@ Tcl_CdObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ConcatObjCmd(
     TCL_UNUSED(ClientData),
@@ -483,7 +478,6 @@ Tcl_ConcatObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ContinueObjCmd(
     TCL_UNUSED(ClientData),
@@ -782,7 +776,6 @@ EncodingSystemObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ErrorObjCmd(
     TCL_UNUSED(ClientData),
@@ -832,7 +825,6 @@ Tcl_ErrorObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 EvalCmdErrMsg(
     TCL_UNUSED(ClientData *),
@@ -915,7 +907,6 @@ TclNREvalObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ExitObjCmd(
     TCL_UNUSED(ClientData),
@@ -936,7 +927,6 @@ Tcl_ExitObjCmd(
 	return TCL_ERROR;
     }
     Tcl_Exit((int)value);
-    /*NOTREACHED*/
     return TCL_OK;		/* Better not ever reach this! */
 }
 
@@ -964,7 +954,6 @@ Tcl_ExitObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ExprObjCmd(
     ClientData clientData,
@@ -2073,7 +2062,7 @@ FilesystemSeparatorCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	const char *separator = NULL; /* lint */
+	const char *separator = NULL;
 
 	switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
@@ -2376,7 +2365,6 @@ GetTypeFromMode(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ForObjCmd(
     ClientData clientData,
@@ -2571,7 +2559,6 @@ ForPostNextCallback(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ForeachObjCmd(
     ClientData clientData,
@@ -2889,7 +2876,6 @@ ForeachCleanup(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FormatObjCmd(
     TCL_UNUSED(ClientData),

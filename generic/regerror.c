@@ -54,7 +54,6 @@ static const struct rerr {
 /*
  - regerror - the interface to error numbers
  */
-/* ARGSUSED */
 size_t				/* Actual space needed (including NUL) */
 regerror(
     int code,			/* Error code, or REG_ATOI or REG_ITOA */
