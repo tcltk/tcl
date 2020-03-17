@@ -142,7 +142,7 @@ end and dereference non-existent or random memory; if the source buffer
 is known to be null-terminated, this will not happen.  If the input is
 not in proper UTF-8 format, \fBTcl_UtfToUniChar\fR will store the first
 byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0000 and
-0x00ff and return 1.
+0x00FF and return 1.
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
 to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
