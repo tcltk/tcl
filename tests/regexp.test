@@ -282,7 +282,7 @@ test regexp-6.8 {regexp errors} -setup {
 } -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-6.9 {regexp errors, -start bad int check} {
     list [catch {regexp -start bogus {^$} {}} msg] $msg
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test regexp-6.10 {regexp errors} {
     list [catch {regexp {a[} b} msg] $msg
 } {1 {couldn't compile regular expression pattern: brackets [] not balanced}}
@@ -479,7 +479,7 @@ test regexp-11.7 {regsub errors} -setup {
 } -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-11.8 {regsub errors, -start bad int check} {
     list [catch {regsub -start bogus pattern string rep var} msg] $msg
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test regexp-11.9 {regsub without final variable name returns value} {
     regsub b abaca X
 } {aXaca}
