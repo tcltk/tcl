@@ -2107,7 +2107,10 @@ declare 578 {
 declare 579 {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
-declare 648 {
+
+# ----- BASELINE -- FOR -- 8.5.0 ----- #
+
+declare 649 {
     void TclUnusedStubEntry(void)
 }
 
