@@ -383,7 +383,6 @@ TestExceptionCmd(
     /* SMASH! */
     RaiseException(exceptions[cmd], EXCEPTION_NONCONTINUABLE, 0, NULL);
 
-    /* NOTREACHED */
     return TCL_OK;
 }
 

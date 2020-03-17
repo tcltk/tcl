@@ -4001,7 +4001,6 @@ SwitchPostProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ThrowObjCmd(
     TCL_UNUSED(ClientData),
