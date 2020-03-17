@@ -27,7 +27,7 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
-#else 
+#else
 #  define tenviron environ
 #  define tenviron2utfdstr(tenvstr, len, dstr) \
 		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
