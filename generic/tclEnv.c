@@ -596,7 +596,6 @@ TclGetEnv(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static char *
 EnvTraceProc(
     TCL_UNUSED(ClientData),
