@@ -579,7 +579,6 @@ TclInitIOSubsystem(void)
  *-------------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizeIOSubsystem(void)
 {
@@ -3378,7 +3377,6 @@ Tcl_SpliceChannel(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_Close(
     Tcl_Interp *interp,		/* Interpreter for errors. */
@@ -3582,7 +3580,6 @@ Tcl_Close(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_CloseEx(
     Tcl_Interp *interp,		/* Interpreter for errors. */
@@ -8988,7 +8985,6 @@ TclChannelEventScriptInvoker(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FileEventObjCmd(
     TCL_UNUSED(ClientData),

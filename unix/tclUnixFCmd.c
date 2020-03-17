@@ -134,7 +134,7 @@ enum {
     MACOSX_CREATOR_ATTRIBUTE, MACOSX_TYPE_ATTRIBUTE, MACOSX_HIDDEN_ATTRIBUTE,
     MACOSX_RSRCLENGTH_ATTRIBUTE,
 #endif
-    UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
+    UNIX_INVALID_ATTRIBUTE
 };
 
 const char *const tclpFileAttrStrings[] = {
@@ -964,7 +964,7 @@ TraverseUnixTree(
 
     errfile = NULL;
     result = TCL_OK;
-    targetLen = 0;		/* lint. */
+    targetLen = 0;
 
     source = Tcl_DStringValue(sourcePtr);
     if (TclOSlstat(source, &statBuf) != 0) {		/* INTL: Native. */

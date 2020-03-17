@@ -653,7 +653,6 @@ Tcl_CreateInterp(void)
      */
 
     if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
-	/*NOTREACHED*/
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
@@ -666,7 +665,6 @@ Tcl_CreateInterp(void)
      */
     if ((offsetof(Tcl_StatBuf,st_atime) != 32)
 	    || (offsetof(Tcl_StatBuf,st_ctime) != 40)) {
-	/*NOTREACHED*/
 	Tcl_Panic("<sys/stat.h> is not compatible with MSVC");
     }
 #endif
@@ -7339,7 +7337,6 @@ Tcl_VarEvalVA(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 int
 Tcl_VarEval(
     Tcl_Interp *interp,
