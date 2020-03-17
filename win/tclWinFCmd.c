@@ -1195,7 +1195,7 @@ TraverseWinTree(
 
     nativeErrfile = NULL;
     result = TCL_OK;
-    oldTargetLen = 0;		/* lint. */
+    oldTargetLen = 0;
 
     nativeSource = (WCHAR *) Tcl_DStringValue(sourcePtr);
     nativeTarget = (WCHAR *)

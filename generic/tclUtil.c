@@ -581,7 +581,7 @@ FindElement(
     const char *limit;		/* Points just after list/dict's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;		/* lint. */
+    int size = 0;
     int numChars;
     int literal = 1;
     const char *p2;
@@ -3436,7 +3436,6 @@ Tcl_PrintDouble(
  */
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-	/* ARGSUSED */
 char *
 TclPrecTraceProc(
     ClientData clientData,
