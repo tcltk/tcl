@@ -382,7 +382,6 @@ TclpFinalizeSockets(void)
  * ----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpBlockModeProc(
     void *instanceData,	/* Socket state. */
@@ -528,7 +527,6 @@ WaitForConnect(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpInputProc(
     void *instanceData,	/* Socket state. */
@@ -621,7 +619,6 @@ TcpOutputProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpCloseProc(
     void *instanceData,	/* The socket to close. */
@@ -1102,7 +1099,6 @@ TcpWatchProc(
  * ----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpGetHandleProc(
     void *instanceData,	/* The socket state. */
@@ -1758,7 +1754,6 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 TcpAccept(
     void *data,		/* Callback token. */

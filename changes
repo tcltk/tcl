@@ -2307,7 +2307,7 @@ to the standard channel, do not increment the refcount. The channel can
 be NULL if there is for example no standard input. (JL)
 
 9/6/96 (portability improvement) Changed parsing of backslash sequences
-like \n to translate directly to absolute values like 0xa instead of
+like \n to translate directly to absolute values like 0xA instead of
 letting the compiler do the translation.  This guarantees that the
 translation is done the same everywhere. (JO)
 

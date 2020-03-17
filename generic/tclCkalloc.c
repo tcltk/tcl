@@ -808,7 +808,6 @@ Tcl_AttemptRealloc(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 static int
 MemoryCmd(
     ClientData clientData,
@@ -1219,7 +1218,6 @@ Tcl_DbCkfree(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 void
 Tcl_InitMemory(
     TCL_UNUSED(Tcl_Interp *) /*interp*/)

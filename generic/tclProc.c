@@ -148,7 +148,6 @@ static const Tcl_ObjType lambdaType = {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ProcObjCmd(
     TCL_UNUSED(ClientData),
@@ -884,7 +883,6 @@ Uplevel_Callback(
     return result;
 }
 
-	/* ARGSUSED */
 int
 Tcl_UplevelObjCmd(
     ClientData clientData,

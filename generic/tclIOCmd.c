@@ -95,7 +95,6 @@ FinalizeIOCmdTSD(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PutsObjCmd(
     TCL_UNUSED(ClientData),
@@ -222,7 +221,6 @@ Tcl_PutsObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FlushObjCmd(
     TCL_UNUSED(ClientData),
@@ -287,7 +285,6 @@ Tcl_FlushObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_GetsObjCmd(
     TCL_UNUSED(ClientData),
@@ -372,7 +369,6 @@ Tcl_GetsObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ReadObjCmd(
     TCL_UNUSED(ClientData),
@@ -516,7 +512,6 @@ Tcl_ReadObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_SeekObjCmd(
     TCL_UNUSED(ClientData),
@@ -592,7 +587,6 @@ Tcl_SeekObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_TellObjCmd(
     TCL_UNUSED(ClientData),
@@ -655,7 +649,6 @@ Tcl_TellObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_CloseObjCmd(
     TCL_UNUSED(ClientData),
@@ -764,7 +757,6 @@ Tcl_CloseObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FconfigureObjCmd(
     TCL_UNUSED(ClientData),
@@ -840,7 +832,6 @@ Tcl_FconfigureObjCmd(
  *---------------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_EofObjCmd(
     TCL_UNUSED(ClientData),
@@ -880,7 +871,6 @@ Tcl_EofObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ExecObjCmd(
     TCL_UNUSED(ClientData),
@@ -1048,7 +1038,6 @@ Tcl_ExecObjCmd(
  *---------------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FblockedObjCmd(
     TCL_UNUSED(ClientData),
@@ -1095,7 +1084,6 @@ Tcl_FblockedObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_OpenObjCmd(
     TCL_UNUSED(ClientData),
@@ -1219,7 +1207,6 @@ Tcl_OpenObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 TcpAcceptCallbacksDeleteProc(
     ClientData clientData,	/* Data which was passed when the assocdata
@@ -1809,7 +1796,6 @@ Tcl_FcopyObjCmd(
  *---------------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ChanPendingObjCmd(
     TCL_UNUSED(ClientData),
