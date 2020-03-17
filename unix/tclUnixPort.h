@@ -255,29 +255,29 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
  */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xFF) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 #ifndef WIFSIGNALED
 #   define WIFSIGNALED(stat) \
 	(((*((int *) &(stat)))) && ((*((int *) &(stat))) \
-		== ((*((int *) &(stat))) & 0x00ff)))
+		== ((*((int *) &(stat))) & 0x00FF)))
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xFF) == 0177)
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*

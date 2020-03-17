@@ -1015,7 +1015,7 @@ GetBlocks(
 
 	blockPtr = NULL;
 	n = NBUCKETS;
-	size = 0; /* lint */
+	size = 0;
 	while (--n > bucket) {
 	    if (cachePtr->buckets[n].numFree > 0) {
 		size = bucketInfo[n].blockSize;
