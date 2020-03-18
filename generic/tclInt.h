@@ -4517,7 +4517,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
    static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
       if (response) {
-          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
+          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1);
       }
       return response;
    }
@@ -4532,8 +4532,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    Tcl_GetUnicodeFromObj((objPtr), NULL))
 #define TclGetByteArrayFromObj(objPtr, lenPtr) \
     (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
-	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : NULL)
+	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1), \
+	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 3)) : NULL)
 #endif
 
 /*
