@@ -267,6 +267,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
+    unsigned int bad;		/* Index of the character that is a nonbyte.
+				 * If all characters are bytes, bad = used,
+				 * though then we should never read it. */
     unsigned int used;		/* The number of bytes used in the byte
 				 * array. */
     unsigned int allocated;	/* The amount of space actually allocated
@@ -422,6 +425,7 @@ Tcl_SetByteArrayObj(
 	length = 0;
     }
     byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr->bad = length;
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
@@ -465,8 +469,17 @@ TclGetBytesFromObj(
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
 	if (irPtr == NULL) {
 	    if (interp) {
+		const char *nonbyte;
+		Tcl_UniChar ch;
+
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+		baPtr = GET_BYTEARRAY(irPtr);
+		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		Tcl_UtfToUniChar(nonbyte, &ch);
+
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected bytes but got non-byte character"));
+			"expected byte sequence but character %d "
+			"was '%1s' (U+%04X)", baPtr->bad, nonbyte, ch));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
 	    }
 	    return NULL;
@@ -581,6 +594,7 @@ Tcl_SetByteArrayLength(
     }
     TclInvalidateStringRep(objPtr);
     objPtr->typePtr = &properByteArrayType;
+    byteArrayPtr->bad = newLength;
     byteArrayPtr->used = newLength;
     return byteArrayPtr->bytes;
 }
@@ -606,8 +620,7 @@ SetByteArrayFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    size_t length;
-    int improper = 0;
+    size_t length, bad;
     const char *src, *srcEnd;
     unsigned char *dst;
     Tcl_UniChar ch = 0;
@@ -622,22 +635,30 @@ SetByteArrayFromAny(
     }
 
     src = TclGetString(objPtr);
-    length = objPtr->length;
+    length = bad = objPtr->length;
     srcEnd = src + length;
 
     byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += TclUtfToUniChar(src, &ch);
-	improper = improper || (ch > 255);
+	if ((bad == length) && (ch > 255)) {
+	    bad = dst - byteArrayPtr->bytes;
+	}
 	*dst++ = UCHAR(ch);
     }
 
-    byteArrayPtr->used = dst - byteArrayPtr->bytes;
-    byteArrayPtr->allocated = length;
-
     SET_BYTEARRAY(&ir, byteArrayPtr);
-    Tcl_StoreIntRep(objPtr,
-	    improper ? &tclByteArrayType : &properByteArrayType, &ir);
+    byteArrayPtr->allocated = length;
+    byteArrayPtr->used = dst - byteArrayPtr->bytes;
+
+    if (bad == length) {
+	byteArrayPtr->bad = byteArrayPtr->used;
+	Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
+    } else {
+	byteArrayPtr->bad = bad;
+	Tcl_StoreIntRep(objPtr, &tclByteArrayType, &ir);
+    }
+
     return TCL_OK;
 }
 
@@ -702,6 +723,7 @@ DupByteArrayInternalRep(
     length = srcArrayPtr->used;
 
     copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = srcArrayPtr->bad;
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -723,6 +745,7 @@ DupProperByteArrayInternalRep(
     length = srcArrayPtr->used;
 
     copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = length;
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
