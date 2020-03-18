@@ -2740,7 +2740,6 @@ TclWinAddProcess(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
     TCL_UNUSED(ClientData),

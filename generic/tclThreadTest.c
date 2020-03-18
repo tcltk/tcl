@@ -203,7 +203,6 @@ TclThread_Init(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ThreadObjCmd(
     TCL_UNUSED(ClientData),
@@ -491,7 +490,6 @@ ThreadObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ThreadCreate(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -1078,7 +1076,6 @@ ThreadEventProc(
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static void
 ThreadFreeProc(
     void *clientData)
@@ -1105,7 +1102,6 @@ ThreadFreeProc(
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
@@ -1141,7 +1137,6 @@ ThreadDeleteEvent(
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static void
 ThreadExitProc(
     void *clientData)

@@ -244,7 +244,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "low guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
@@ -265,7 +265,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "hi guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
@@ -753,7 +753,6 @@ Tcl_AttemptDbCkrealloc(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 static int
 MemoryCmd(
     ClientData clientData,
@@ -1169,7 +1168,6 @@ Tcl_DbCkfree(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 void
 Tcl_InitMemory(
     TCL_UNUSED(Tcl_Interp *) /*interp*/)

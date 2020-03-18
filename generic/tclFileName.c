@@ -1228,7 +1228,6 @@ DoTildeSubst(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_GlobObjCmd(
     TCL_UNUSED(ClientData),
@@ -1358,7 +1357,7 @@ Tcl_GlobObjCmd(
 	return TCL_ERROR;
     }
 
-    separators = NULL;		/* lint. */
+    separators = NULL;
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
 	separators = "/";
@@ -1684,7 +1683,6 @@ Tcl_GlobObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TclGlob(
     Tcl_Interp *interp,		/* Interpreter for returning error message or
@@ -1703,7 +1701,7 @@ TclGlob(
     int result;
     Tcl_Obj *filenamesObj, *savedResultObj;
 
-    separators = NULL;		/* lint. */
+    separators = NULL;
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
 	separators = "/";

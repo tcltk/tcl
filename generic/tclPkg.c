@@ -1019,7 +1019,6 @@ Tcl_PackageObjCmd(
     return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
-	/* ARGSUSED */
 int
 TclNRPackageObjCmd(
     TCL_UNUSED(ClientData),

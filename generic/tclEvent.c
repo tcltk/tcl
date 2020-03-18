@@ -1385,7 +1385,6 @@ TclInThreadExit(void)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_VwaitObjCmd(
     TCL_UNUSED(ClientData),
@@ -1449,7 +1448,6 @@ Tcl_VwaitObjCmd(
     return TCL_OK;
 }
 
-	/* ARGSUSED */
 static char *
 VwaitVarProc(
     void *clientData,		/* Pointer to integer to set to 1. */
@@ -1483,7 +1481,6 @@ VwaitVarProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_UpdateObjCmd(
     TCL_UNUSED(ClientData),
