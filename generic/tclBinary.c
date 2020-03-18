@@ -440,7 +440,7 @@ Tcl_SetByteArrayObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetBytesFromObj --
+ * Tcl_GetBytesFromObj --
  *
  *	Attempt to extract the value from objPtr in the representation
  *	of a byte sequence. On success return the extracted byte sequence.
@@ -455,7 +455,7 @@ Tcl_SetByteArrayObj(
  */
 
 unsigned char *
-TclGetBytesFromObj(
+Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
     int *lengthPtr)		/* If non-NULL, filled with length of the
@@ -519,7 +519,7 @@ Tcl_GetByteArrayFromObj(
 {
     ByteArray *baPtr;
     const Tcl_ObjIntRep *irPtr;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, lengthPtr);
+    unsigned char *result = Tcl_GetBytesFromObj(NULL, objPtr, lengthPtr);
 
     if (result) {
 	return result;

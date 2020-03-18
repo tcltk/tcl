@@ -1921,6 +1921,9 @@ EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
 /* 648 */
 EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
 				Tcl_DString *dsPtr);
+/* 649 */
+EXTERN unsigned char *	Tcl_GetBytesFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int *lengthPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2605,6 +2608,7 @@ typedef struct TclStubs {
     int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 648 */
+    unsigned char * (*tcl_GetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *lengthPtr); /* 649 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3933,6 +3937,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharToUtfDString) /* 647 */
 #define Tcl_UtfToUniCharDString \
 	(tclStubsPtr->tcl_UtfToUniCharDString) /* 648 */
+#define Tcl_GetBytesFromObj \
+	(tclStubsPtr->tcl_GetBytesFromObj) /* 649 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
