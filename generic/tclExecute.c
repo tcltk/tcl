@@ -586,7 +586,7 @@ VarHashCreateVar(
  * Auxiliary tables used to compute powers of small integers.
  */
 
-#if (LONG_MAX == 0x7fffffff)
+#if (LONG_MAX == 0x7FFFFFFF)
 
 /*
  * Maximum base that, when raised to powers 2, 3, ... 8, fits in a 32-bit
@@ -616,9 +616,9 @@ static const long Exp32Value[] = {
     1000000000
 };
 static const size_t Exp32ValueSize = sizeof(Exp32Value)/sizeof(long);
-#endif /* LONG_MAX == 0x7fffffff -- 32 bit machine */
+#endif /* LONG_MAX == 0x7FFFFFFF -- 32 bit machine */
 
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+#if (LONG_MAX > 0x7FFFFFFF) || !defined(TCL_WIDE_INT_IS_LONG)
 
 /*
  * Maximum base that, when raised to powers 2, 3, ..., 16, fits in a
@@ -723,7 +723,7 @@ static const Tcl_WideInt Exp64Value[] = {
     (Tcl_WideInt)371293*371293*371293*13*13
 };
 static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
-#endif /* (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG) */
+#endif /* (LONG_MAX > 0x7FFFFFFF) || !defined(TCL_WIDE_INT_IS_LONG) */
 
 /*
  * Markers for ExecuteExtendedBinaryMathOp.
@@ -8298,7 +8298,7 @@ FinalizeOONextFilter(
  *
  * Helpers to calculate small powers of integers whose result is long or wide.
  */
-#if (LONG_MAX == 0x7fffffff)
+#if (LONG_MAX == 0x7FFFFFFF)
 static inline long
 LongPwrSmallExpon(long l1, long exponent) {
 
@@ -8910,7 +8910,7 @@ ExecuteExtendedBinaryMathOp(
 
 	/*
 	 * We refuse to accept exponent arguments that exceed one mp_digit
-	 * which means the max exponent value is 2**28-1 = 0x0fffffff =
+	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
 	 * range of the long int type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_LONG type must hold a value larger than we
@@ -8958,7 +8958,7 @@ ExecuteExtendedBinaryMathOp(
 #endif
 		goto overflowExpon;
 	    }
-#if (LONG_MAX == 0x7fffffff)
+#if (LONG_MAX == 0x7FFFFFFF)
 	    if (l2 - 2 < (long)MaxBase32Size
 		    && l1 <= MaxBase32[l2 - 2]
 		    && l1 >= -MaxBase32[l2 - 2]) {
@@ -8999,13 +8999,13 @@ ExecuteExtendedBinaryMathOp(
 		}
 	    }
 #endif
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+#if (LONG_MAX > 0x7FFFFFFF) || !defined(TCL_WIDE_INT_IS_LONG)
 	    /* Code below (up to overflowExpon) works with wide-int base */
 	    w1 = l1;
 #endif
 	}
 
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+#if (LONG_MAX > 0x7FFFFFFF) || !defined(TCL_WIDE_INT_IS_LONG)
 
 	/* From here (up to overflowExpon) base is wide-int (w1). */
 

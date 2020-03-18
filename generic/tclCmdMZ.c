@@ -1088,7 +1088,7 @@ Tcl_SplitObjCmd(
 #if TCL_UTF_MAX == 4
 	    if ((ch >= 0xD800) && (len < 3)) {
 		len += TclUtfToUniChar(stringPtr + len, &ch);
-		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+		fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	    }
 #endif
 
@@ -1803,7 +1803,7 @@ StringIsCmd(
 #if TCL_UTF_MAX == 4
 	    if ((ch >= 0xD800) && (length2 < 3)) {
 	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
-	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	    }
 #endif
 	    if (!chcomp(fullchar)) {

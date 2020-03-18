@@ -373,7 +373,7 @@ Tcl_UtfToUniChar(
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10ffff */
+		/* out of range, < 0x10000 or > 0x10FFFF */
 	    } else {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
@@ -587,7 +587,7 @@ Tcl_UtfFindFirst(
 #if TCL_UTF_MAX <= 4
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
 	}
 #endif
 	if (fullchar == ch) {
@@ -635,7 +635,7 @@ Tcl_UtfFindLast(
 #if TCL_UTF_MAX <= 4
 	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
 	}
 #endif
 	if (fullchar == ch) {
@@ -1519,7 +1519,7 @@ Tcl_UniCharIsControl(
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	ch &= 0x1FFFFF;
-	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007f))) {
+	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
 	}
 	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
@@ -1581,8 +1581,7 @@ Tcl_UniCharIsGraph(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1FFFFF;
-	return (ch >= 0xE0100) && (ch <= 0xE01EF);
+	return ((unsigned)((ch & 0x1FFFFF) - 0xE0100) <= 0xEF);
     }
 #endif
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
@@ -1638,8 +1637,7 @@ Tcl_UniCharIsPrint(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1FFFFF;
-	return (ch >= 0xE0100) && (ch <= 0xE01EF);
+	return ((unsigned)((ch & 0x1FFFFF) - 0xE0100) <= 0xEF);
     }
 #endif
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);

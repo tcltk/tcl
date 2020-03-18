@@ -7779,8 +7779,8 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7fffffff;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	iPtr->randSeed &= (unsigned long) 0x7FFFFFFF;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	    iPtr->randSeed ^= 123459876;
 	}
     }
@@ -7957,8 +7957,8 @@ ExprSrandFunc(
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
     iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
-    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+    iPtr->randSeed &= (unsigned long) 0x7FFFFFFF;
+    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	iPtr->randSeed ^= 123459876;
     }
 

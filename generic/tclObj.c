@@ -177,13 +177,13 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7fff) {                                       \
+    if ((bignum).used > 0x7FFF) {                                       \
 	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
 	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
     } else {                                                            \
-	if ((bignum).alloc > 0x7fff) {                                  \
+	if ((bignum).alloc > 0x7FFF) {                                  \
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
@@ -198,8 +198,8 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;          \
 	(bignum).sign = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 30; \
 	(bignum).alloc =                                                \
-		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7fff; \
-	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7fff; \
+		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7FFF; \
+	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7FFF; \
     }
 
 /*
