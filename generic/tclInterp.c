@@ -598,7 +598,7 @@ InterpInfoDeleteProc(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
+
 int
 Tcl_InterpObjCmd(
     ClientData clientData,
@@ -1474,8 +1474,6 @@ TclPreventAliasLoop(
 	}
 	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData;
     }
-
-    /* NOTREACHED */
 }
 
 /*

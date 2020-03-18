@@ -114,8 +114,8 @@ proc uni::buildTables {data} {
 	set items [split $line \;]
 
 	scan [lindex $items 0] %x index
-	if {$index > 0x2FFFF} then {
-	    # Ignore non-BMP characters, as long as Tcl doesn't support them
+	if {$index > 0x3FFFF} then {
+	    # Ignore characters > plane 3
 	    continue
 	}
 	set index [format %d $index]
