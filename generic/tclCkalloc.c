@@ -246,7 +246,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
@@ -267,7 +267,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "hi guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}

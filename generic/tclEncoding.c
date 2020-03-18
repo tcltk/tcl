@@ -1775,7 +1775,7 @@ LoadTableEncoding(
 	dataPtr->toUnicode[hi] = pageMemPtr;
 	p += 2;
 	for (lo = 0; lo < 256; lo++) {
-	    if ((lo & 0x0f) == 0) {
+	    if ((lo & 0x0F) == 0) {
 		p++;
 	    }
 	    ch = (staticHex[UCHAR(p[0])] << 12) + (staticHex[UCHAR(p[1])] << 8)
@@ -1836,7 +1836,7 @@ LoadTableEncoding(
 		    pageMemPtr += 256;
 		    dataPtr->fromUnicode[ch >> 8] = page;
 		}
-		page[ch & 0xff] = (unsigned short) ((hi << 8) + lo);
+		page[ch & 0xFF] = (unsigned short) ((hi << 8) + lo);
 	    }
 	}
     }
@@ -1942,7 +1942,7 @@ LoadTableEncoding(
 	    if (from == 0) {
 		continue;
 	    }
-	    dataPtr->fromUnicode[from >> 8][from & 0xff] = to;
+	    dataPtr->fromUnicode[from >> 8][from & 0xFF] = to;
 	}
     }
   doneParse:
@@ -2157,7 +2157,7 @@ BinaryProc(
  * UtfIntToUtfExtProc --
  *
  *	Convert from UTF-8 to UTF-8. While converting null-bytes from the
- *	Tcl's internal representation (0xc0, 0x80) to the official
+ *	Tcl's internal representation (0xC0, 0x80) to the official
  *	representation (0x00). See UtfToUtfProc for details.
  *
  * Results:
@@ -2206,7 +2206,7 @@ UtfIntToUtfExtProc(
  * UtfExtToUtfIntProc --
  *
  *	Convert from UTF-8 to UTF-8 while converting null-bytes from the
- *	official representation (0x00) to Tcl's internal representation (0xc0,
+ *	official representation (0x00) to Tcl's internal representation (0xC0,
  *	0x80). See UtfToUtfProc for details.
  *
  * Results:
@@ -2337,14 +2337,14 @@ UtfToUtfProc(
 	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
-	     * mode, so that they get converted to 0xc080.
+	     * mode, so that they get converted to 0xC080.
 	     */
 
 	    *dst++ = *src++;
-	} else if (pureNullMode == 1 && UCHAR(*src) == 0xc0 &&
+	} else if (pureNullMode == 1 && UCHAR(*src) == 0xC0 &&
 		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
 	    /*
-	     * Convert 0xc080 to real nulls when we are in output mode.
+	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
 
 	    *dst++ = 0;
@@ -2893,7 +2893,7 @@ TableFromUtfProc(
 	 * full support of int Tcl_UniChar. [Bug 1004065]
 	 */
 
-	if (ch & 0xffff0000) {
+	if (ch & 0xFFFF0000) {
 	    word = 0;
 	} else
 #else
@@ -2901,7 +2901,7 @@ TableFromUtfProc(
 	    word = 0;
 	} else
 #endif
-	    word = fromUnicode[(ch >> 8)][ch & 0xff];
+	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
@@ -3087,7 +3087,7 @@ Iso88591FromUtfProc(
 	 * Check for illegal characters.
 	 */
 
-	if (ch > 0xff
+	if (ch > 0xFF
 #if TCL_UTF_MAX <= 3
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
@@ -3474,7 +3474,7 @@ EscapeFromUtfProc(
 	    break;
 	}
 	len = TclUtfToUniChar(src, &ch);
-	word = tableFromUnicode[(ch >> 8)][ch & 0xff];
+	word = tableFromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
 	    int oldState;
@@ -3484,7 +3484,7 @@ EscapeFromUtfProc(
 	    for (state = 0; state < dataPtr->numSubTables; state++) {
 		encodingPtr = GetTableEncoding(dataPtr, state);
 		tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
-		word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xff];
+		word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xFF];
 		if (word != 0) {
 		    break;
 		}
