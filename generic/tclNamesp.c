@@ -315,7 +315,6 @@ Tcl_PushCallFrame(
 
 	if (nsPtr->flags & NS_DEAD) {
 	    Tcl_Panic("Trying to push call frame for dead namespace");
-	    /*NOTREACHED*/
 	}
     }
 

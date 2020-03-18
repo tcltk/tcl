@@ -76,7 +76,6 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizePreserve(void)
 {

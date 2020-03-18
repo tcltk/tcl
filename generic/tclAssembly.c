@@ -674,7 +674,7 @@ BBEmitOpcode(
 				/* Compilation environment */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
-    int op = TalInstructionTable[tblIdx].tclInstCode & 0xff;
+    int op = TalInstructionTable[tblIdx].tclInstCode & 0xFF;
 
     /*
      * If this is the first instruction in a basic block, record its line
@@ -736,13 +736,13 @@ BBEmitInst1or4(
 				/* Current basic block */
     int op = TalInstructionTable[tblIdx].tclInstCode;
 
-    if (param <= 0xff) {
+    if (param <= 0xFF) {
 	op >>= 8;
     } else {
-	op &= 0xff;
+	op &= 0xFF;
     }
     TclEmitInt1(op, envPtr);
-    if (param <= 0xff) {
+    if (param <= 0xFF) {
 	TclEmitInt1(param, envPtr);
     } else {
 	TclEmitInt4(param, envPtr);
@@ -2232,7 +2232,7 @@ GetIntegerOperand(
  *	TCL_ERROR (with an appropriate error message) if the parse fails.
  *
  * Side effects:
- *	Stores the list index at '*index'. Values between -1 and 0x7fffffff
+ *	Stores the list index at '*index'. Values between -1 and 0x7FFFFFFF
  *	have their natural meaning; values between -2 and -0x80000000
  *	represent 'end-2-N'.
  *
@@ -2395,7 +2395,7 @@ CheckOneByte(
 {
     Tcl_Obj* result;		/* Error message */
 
-    if (value < 0 || value > 0xff) {
+    if (value < 0 || value > 0xFF) {
 	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
@@ -2430,7 +2430,7 @@ CheckSignedOneByte(
 {
     Tcl_Obj* result;		/* Error message */
 
-    if (value > 0x7f || value < -0x80) {
+    if (value > 0x7F || value < -0x80) {
 	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
@@ -2844,7 +2844,7 @@ CalculateJumpRelocations(
 		if (bbPtr->flags & BB_JUMP1) {
 		    offset = jumpTarget->startOffset
 			    - (bbPtr->jumpOffset + motion);
-		    if (offset < -0x80 || offset > 0x7f) {
+		    if (offset < -0x80 || offset > 0x7F) {
 			opcode = TclGetUInt1AtPtr(envPtr->codeStart
 				+ bbPtr->jumpOffset);
 			++opcode;

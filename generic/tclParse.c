@@ -1214,7 +1214,7 @@ TclParseHex(
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit) || (result > 0x10fff)) {
+	if (!isxdigit(digit) || (result > 0x10FFF)) {
 	    break;
 	}
 

@@ -3044,6 +3044,8 @@ MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE int *	TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
+MODULE_SCOPE unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
+				    Tcl_Obj *objPtr, int *lengthPtr);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
@@ -4616,8 +4618,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	} else {							\
 	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
 	    (bignum).sign = bignumPayload >> 30;			\
-	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
-	    (bignum).used = bignumPayload & 0x7fff;			\
+	    (bignum).alloc = (bignumPayload >> 15) & 0x7FFF;		\
+	    (bignum).used = bignumPayload & 0x7FFF;			\
 	}								\
     } while (0)
 

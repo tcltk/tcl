@@ -4680,7 +4680,7 @@ static Tcl_Obj *
 NativeFilesystemSeparator(
     TCL_UNUSED(Tcl_Obj *) /*pathPtr*/)
 {
-    const char *separator = NULL; /* lint */
+    const char *separator = NULL;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:

@@ -562,7 +562,6 @@ ValidateFormat(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ScanObjCmd(
     TCL_UNUSED(ClientData),
