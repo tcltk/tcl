@@ -4553,8 +4553,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	} else {							\
 	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
 	    (bignum).sign = bignumPayload >> 30;			\
-	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
-	    (bignum).used = bignumPayload & 0x7fff;			\
+	    (bignum).alloc = (bignumPayload >> 15) & 0x7FFF;		\
+	    (bignum).used = bignumPayload & 0x7FFF;			\
 	}								\
     } while (0)
 
