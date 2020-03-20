@@ -111,8 +111,6 @@ static void		FreeThreadHash(ClientData clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    size_t endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -129,7 +127,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static const Tcl_ObjType endOffsetType = {
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -3648,7 +3646,7 @@ TclFormatInt(
 /*
  *----------------------------------------------------------------------
  *
- * GetWideForIndex --
+ * TclGetWideForIndex --
  *
  *	This function produces a wide integer value corresponding to the
  *	index value held in *objPtr. The parsing supports all values
@@ -3671,8 +3669,8 @@ TclFormatInt(
  *----------------------------------------------------------------------
  */
 
-static int
-GetWideForIndex(
+int
+TclGetWideForIndex(
     Tcl_Interp *interp,         /* Interpreter to use for error reporting. If
                                  * NULL, then no error message is left after
                                  * errors. */
@@ -3743,7 +3741,7 @@ Tcl_GetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+    if (TclGetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (wide < 0) {
@@ -3796,7 +3794,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     ClientData cd;
 
-    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
@@ -3997,7 +3995,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
+	Tcl_StoreIntRep(objPtr, &tclEndOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -4084,11 +4082,11 @@ GetEndOffsetFromObj(
  *      collection, and can be encoded as after.  The end-relative
  *      expressions that indicate an index less than or equal to end
  *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7ffffffe"
+ *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
  *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7ffffffe, the interpretation of
- *      "end-0x7ffffffe" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
+ *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
+ *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
  *      they can be encoded with the before value.
  *
  *      These details will require re-examination whenever string and
@@ -4116,8 +4114,8 @@ TclIndexEncode(
     Tcl_WideInt wide;
     int idx;
 
-    if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
+    if (TCL_OK == TclGetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */
 	    irPtr = NULL;

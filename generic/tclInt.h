@@ -2527,6 +2527,10 @@ typedef struct List {
 	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
+MODULE_SCOPE int TclGetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    size_t endValue, Tcl_WideInt *widePtr);
+
+
 /*
  * Macro used to save a function call for common uses of
  * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
@@ -2769,6 +2773,7 @@ MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
+MODULE_SCOPE const Tcl_ObjType tclEndOffsetType;
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -4552,8 +4557,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	} else {							\
 	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
 	    (bignum).sign = bignumPayload >> 30;			\
-	    (bignum).alloc = (bignumPayload >> 15) & 0x7fff;		\
-	    (bignum).used = bignumPayload & 0x7fff;			\
+	    (bignum).alloc = (bignumPayload >> 15) & 0x7FFF;		\
+	    (bignum).used = bignumPayload & 0x7FFF;			\
 	}								\
     } while (0)
 

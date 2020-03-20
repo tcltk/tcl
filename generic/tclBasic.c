@@ -8182,8 +8182,8 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= 0x7fffffff;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	iPtr->randSeed &= 0x7FFFFFFF;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	    iPtr->randSeed ^= 123459876;
 	}
     }
@@ -8351,8 +8351,8 @@ ExprSrandFunc(
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = (long) w & 0x7fffffff;
-    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+    iPtr->randSeed = (long) w & 0x7FFFFFFF;
+    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	iPtr->randSeed ^= 123459876;
     }
 
@@ -8445,9 +8445,9 @@ ClassifyDouble(
      * Shifts and masks to use with the doubleMeaning variable above.
      */
 
-#define EXPONENT_MASK   0x7ff   /* 11 bits (after shifting) */
+#define EXPONENT_MASK   0x7FF   /* 11 bits (after shifting) */
 #define EXPONENT_SHIFT  20      /* Moves exponent to bottom of word */
-#define MANTISSA_MASK   0xfffff /* 20 bits (plus 32 from other word) */
+#define MANTISSA_MASK   0xFFFFF /* 20 bits (plus 32 from other word) */
 
     /*
      * Extract the exponent (11 bits) and mantissa (52 bits).  Note that we

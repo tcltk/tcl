@@ -848,6 +848,9 @@ typedef struct ByteCode {
 #define INST_STR_LE			193
 #define INST_STR_GE			194
 
+/* TIP ??? */
+#define INST_TRY_CVT_TO_INDEX	195
+
 /* The last opcode */
 #define LAST_INST_OPCODE		194
 
