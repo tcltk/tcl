@@ -50,7 +50,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
 #define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
 #define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-#   define FPU_IEEE_ROUNDING	0x027f
+#   define FPU_IEEE_ROUNDING	0x027F
 #   define ADJUST_FPU_CONTROL_WORD
 #define TCL_IEEE_DOUBLE_ROUNDING \
     fpu_control_t roundTo53Bits = FPU_IEEE_ROUNDING;	\
@@ -99,10 +99,10 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  */
 
 #ifdef __hppa
-#   define NAN_START	0x7ff4
+#   define NAN_START	0x7FF4
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 50)
 #else
-#   define NAN_START	0x7ff8
+#   define NAN_START	0x7FF8
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 51)
 #endif
 
@@ -124,23 +124,23 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define SIGN_BIT 	0x80000000
 				/* Mask for the sign bit in the first word of
 				 * a double. */
-#define EXP_MASK	0x7ff00000
+#define EXP_MASK	0x7FF00000
 				/* Mask for the exponent field in the first
 				 * word of a double. */
 #define EXP_SHIFT	20	/* Shift count to make the exponent an
 				 * integer. */
 #define HIDDEN_BIT	(((Tcl_WideUInt) 0x00100000) << 32)
 				/* Hidden 1 bit for the significand. */
-#define HI_ORDER_SIG_MASK 0x000fffff
+#define HI_ORDER_SIG_MASK 0x000FFFFF
 				/* Mask for the high-order part of the
 				 * significand in the first word of a
 				 * double. */
 #define SIG_MASK	(((Tcl_WideUInt) HI_ORDER_SIG_MASK << 32) \
-			| 0xffffffff)
+			| 0xFFFFFFFF)
 				/* Mask for the 52-bit significand. */
 #define FP_PRECISION	53	/* Number of bits of significand plus the
 				 * hidden bit. */
-#define EXPONENT_BIAS	0x3ff	/* Bias of the exponent 0. */
+#define EXPONENT_BIAS	0x3FF	/* Bias of the exponent 0. */
 
 /*
  * Derived quantities.
@@ -2163,16 +2163,16 @@ NormalizeRightward(
     int rv = 0;
     Tcl_WideUInt w = *wPtr;
 
-    if (!(w & (Tcl_WideUInt) 0xffffffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
 	w >>= 32; rv += 32;
     }
-    if (!(w & (Tcl_WideUInt) 0xffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFF)) {
 	w >>= 16; rv += 16;
     }
-    if (!(w & (Tcl_WideUInt) 0xff)) {
+    if (!(w & (Tcl_WideUInt) 0xFF)) {
 	w >>= 8; rv += 8;
     }
-    if (!(w & (Tcl_WideUInt) 0xf)) {
+    if (!(w & (Tcl_WideUInt) 0xF)) {
 	w >>= 4; rv += 4;
     }
     if (!(w & 0x3)) {
@@ -2206,21 +2206,21 @@ RequiredPrecision(
     int rv;
     unsigned long wi;
 
-    if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
+    if (w & ((Tcl_WideUInt) 0xFFFFFFFF << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
 	wi = (unsigned long) w; rv = 0;
     }
-    if (wi & 0xffff0000) {
+    if (wi & 0xFFFF0000) {
 	wi >>= 16; rv += 16;
     }
-    if (wi & 0xff00) {
+    if (wi & 0xFF00) {
 	wi >>= 8; rv += 8;
     }
-    if (wi & 0xf0) {
+    if (wi & 0xF0) {
 	wi >>= 4; rv += 4;
     }
-    if (wi & 0xc) {
+    if (wi & 0xC) {
 	wi >>= 2; rv += 2;
     }
     if (wi & 0x2) {
@@ -2658,7 +2658,7 @@ AdjustRange(
 	 * The number must be reduced to bring it into range.
 	 */
 
-	ds = tens[k & 0xf];
+	ds = tens[k & 0xF];
 	j = k >> 4;
 	if (j & BLETCH) {
 	    j &= (BLETCH-1);
@@ -2679,7 +2679,7 @@ AdjustRange(
 	 * The number must be increased to bring it into range.
 	 */
 
-	d *= tens[j1 & 0xf];
+	d *= tens[j1 & 0xF];
 	i = 0;
 	for (j = j1>>4; j; j>>=1) {
 	    if (j & 1) {
@@ -4623,9 +4623,9 @@ TclInitDoubleConversion(void)
 #ifdef IEEE_FLOATING_POINT
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
-    if ((bitwhack.iv >> 32) == 0x3ff00000) {
+    if ((bitwhack.iv >> 32) == 0x3FF00000) {
 	n770_fp = 0;
-    } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
+    } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
 	n770_fp = 1;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
@@ -5079,7 +5079,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
-	retval = frexp(retval * pow10vals[exponent & 0xf], &j);
+	retval = frexp(retval * pow10vals[exponent & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {
@@ -5092,7 +5092,7 @@ Pow10TimesFrExp(
 	 * Divide by 10**-exponent.
 	 */
 
-	retval = frexp(retval / pow10vals[(-exponent) & 0xf], &j);
+	retval = frexp(retval / pow10vals[(-exponent) & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if ((-exponent) & (1<<i)) {
@@ -5208,7 +5208,7 @@ static Tcl_WideUInt
 Nokia770Twiddle(
     Tcl_WideUInt w)		/* Number to transpose. */
 {
-    return (((w >> 32) & 0xffffffff) | (w << 32));
+    return (((w >> 32) & 0xFFFFFFFF) | (w << 32));
 }
 #endif
 

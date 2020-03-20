@@ -267,6 +267,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
+    unsigned int bad;		/* Index of the character that is a nonbyte.
+				 * If all characters are bytes, bad = used,
+				 * though then we should never read it. */
     unsigned int used;		/* The number of bytes used in the byte
 				 * array. */
     unsigned int allocated;	/* The amount of space actually allocated
@@ -422,6 +425,7 @@ Tcl_SetByteArrayObj(
 	length = 0;
     }
     byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr->bad = length;
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
@@ -465,8 +469,17 @@ TclGetBytesFromObj(
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
 	if (irPtr == NULL) {
 	    if (interp) {
+		const char *nonbyte;
+		Tcl_UniChar ch;
+
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+		baPtr = GET_BYTEARRAY(irPtr);
+		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		Tcl_UtfToUniChar(nonbyte, &ch);
+
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected bytes but got non-byte character"));
+			"expected byte sequence but character %d "
+			"was '%1s' (U+%04X)", baPtr->bad, nonbyte, ch));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
 	    }
 	    return NULL;
@@ -581,6 +594,7 @@ Tcl_SetByteArrayLength(
     }
     TclInvalidateStringRep(objPtr);
     objPtr->typePtr = &properByteArrayType;
+    byteArrayPtr->bad = newLength;
     byteArrayPtr->used = newLength;
     return byteArrayPtr->bytes;
 }
@@ -606,8 +620,7 @@ SetByteArrayFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    size_t length;
-    int improper = 0;
+    size_t length, bad;
     const char *src, *srcEnd;
     unsigned char *dst;
     Tcl_UniChar ch = 0;
@@ -622,22 +635,30 @@ SetByteArrayFromAny(
     }
 
     src = TclGetString(objPtr);
-    length = objPtr->length;
+    length = bad = objPtr->length;
     srcEnd = src + length;
 
     byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += TclUtfToUniChar(src, &ch);
-	improper = improper || (ch > 255);
+	if ((bad == length) && (ch > 255)) {
+	    bad = dst - byteArrayPtr->bytes;
+	}
 	*dst++ = UCHAR(ch);
     }
 
-    byteArrayPtr->used = dst - byteArrayPtr->bytes;
-    byteArrayPtr->allocated = length;
-
     SET_BYTEARRAY(&ir, byteArrayPtr);
-    Tcl_StoreIntRep(objPtr,
-	    improper ? &tclByteArrayType : &properByteArrayType, &ir);
+    byteArrayPtr->allocated = length;
+    byteArrayPtr->used = dst - byteArrayPtr->bytes;
+
+    if (bad == length) {
+	byteArrayPtr->bad = byteArrayPtr->used;
+	Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
+    } else {
+	byteArrayPtr->bad = bad;
+	Tcl_StoreIntRep(objPtr, &tclByteArrayType, &ir);
+    }
+
     return TCL_OK;
 }
 
@@ -702,6 +723,7 @@ DupByteArrayInternalRep(
     length = srcArrayPtr->used;
 
     copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = srcArrayPtr->bad;
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -723,6 +745,7 @@ DupProperByteArrayInternalRep(
     length = srcArrayPtr->used;
 
     copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = length;
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -1281,7 +1304,7 @@ BinaryFormatCmd(
 		    if (c > 16) {
 			c += ('A' - 'a');
 		    }
-		    value |= (c & 0xf);
+		    value |= (c & 0xF);
 		    if (offset % 2) {
 			*cursor++ = (char) value;
 			value = 0;
@@ -1303,9 +1326,9 @@ BinaryFormatCmd(
 		    if (c > 16) {
 			c += ('A' - 'a');
 		    }
-		    value |= ((c << 4) & 0xf0);
+		    value |= ((c << 4) & 0xF0);
 		    if (offset % 2) {
-			*cursor++ = UCHAR(value & 0xff);
+			*cursor++ = UCHAR(value & 0xFF);
 			value = 0;
 		    }
 		}
@@ -1638,7 +1661,7 @@ BinaryScanCmd(
 		    } else {
 			value = *src++;
 		    }
-		    *dest++ = hexdigit[value & 0xf];
+		    *dest++ = hexdigit[value & 0xF];
 		}
 	    } else {
 		for (i = 0; i < count; i++) {
@@ -1647,7 +1670,7 @@ BinaryScanCmd(
 		    } else {
 			value = *src++;
 		    }
-		    *dest++ = hexdigit[(value >> 4) & 0xf];
+		    *dest++ = hexdigit[(value >> 4) & 0xF];
 		}
 	    }
 
@@ -2538,8 +2561,8 @@ BinaryEncodeHex(
     data = Tcl_GetByteArrayFromObj(objv[1], &count);
     cursor = Tcl_SetByteArrayLength(resultObj, count * 2);
     for (offset = 0; offset < count; ++offset) {
-	*cursor++ = HexDigits[(data[offset] >> 4) & 0x0f];
-	*cursor++ = HexDigits[data[offset] & 0x0f];
+	*cursor++ = HexDigits[(data[offset] >> 4) & 0x0F];
+	*cursor++ = HexDigits[data[offset] & 0x0F];
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2622,7 +2645,7 @@ BinaryDecodeHex(
 	    if (c > 16) {
 		c += ('A' - 'a');
 	    }
-	    value |= c & 0xf;
+	    value |= c & 0xF;
 	}
 	if (i < 2) {
 	    cut++;
@@ -2751,12 +2774,12 @@ BinaryEncode64(
 	    OUTPUT(B64Digits[d[0] >> 2]);
 	    OUTPUT(B64Digits[((d[0] & 0x03) << 4) | (d[1] >> 4)]);
 	    if (offset + 1 < count) {
-		OUTPUT(B64Digits[((d[1] & 0x0f) << 2) | (d[2] >> 6)]);
+		OUTPUT(B64Digits[((d[1] & 0x0F) << 2) | (d[2] >> 6)]);
 	    } else {
 		OUTPUT(B64Digits[64]);
 	    }
 	    if (offset+2 < count) {
-		OUTPUT(B64Digits[d[2] & 0x3f]);
+		OUTPUT(B64Digits[d[2] & 0x3F]);
 	    } else {
 		OUTPUT(B64Digits[64]);
 	    }
@@ -2865,12 +2888,12 @@ BinaryEncodeUu(
 	    n <<= 8;
 	    n |= data[offset++];
 	    for (bits += 8; bits > 6 ; bits -= 6) {
-		*cursor++ = UueDigits[(n >> (bits - 6)) & 0x3f];
+		*cursor++ = UueDigits[(n >> (bits - 6)) & 0x3F];
 	    }
 	}
 	if (bits > 0) {
 	    n <<= 8;
-	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3f];
+	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3F];
 	    bits = 0;
 	}
 	for (j = 0 ; j < wrapcharlen ; ++j) {
@@ -2961,7 +2984,7 @@ BinaryDecodeUu(
 		i--;
 		continue;
 	    }
-	    lineLen = (c - 32) & 0x3f;
+	    lineLen = (c - 32) & 0x3F;
 	}
 
 	/*
@@ -2990,14 +3013,14 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
-		    | (((d[1] - 0x20) & 0x3f) >> 4);
+	    *cursor++ = (((d[0] - 0x20) & 0x3F) << 2)
+		    | (((d[1] - 0x20) & 0x3F) >> 4);
 	    if (--lineLen > 0) {
-		*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
-			| (((d[2] - 0x20) & 0x3f) >> 2);
+		*cursor++ = (((d[1] - 0x20) & 0x3F) << 4)
+			| (((d[2] - 0x20) & 0x3F) >> 2);
 		if (--lineLen > 0) {
-		    *cursor++ = (((d[2] - 0x20) & 0x3f) << 6)
-			    | (((d[3] - 0x20) & 0x3f));
+		    *cursor++ = (((d[2] - 0x20) & 0x3F) << 6)
+			    | (((d[3] - 0x20) & 0x3F));
 		    lineLen--;
 		}
 	    }
@@ -3156,15 +3179,15 @@ BinaryDecode64(
 		    goto bad64;
 		}
 	    } else if (c >= 'A' && c <= 'Z') {
-		value = (value << 6) | ((c - 'A') & 0x3f);
+		value = (value << 6) | ((c - 'A') & 0x3F);
 	    } else if (c >= 'a' && c <= 'z') {
-		value = (value << 6) | ((c - 'a' + 26) & 0x3f);
+		value = (value << 6) | ((c - 'a' + 26) & 0x3F);
 	    } else if (c >= '0' && c <= '9') {
-		value = (value << 6) | ((c - '0' + 52) & 0x3f);
+		value = (value << 6) | ((c - '0' + 52) & 0x3F);
 	    } else if (c == '+') {
-		value = (value << 6) | 0x3e;
+		value = (value << 6) | 0x3E;
 	    } else if (c == '/') {
-		value = (value << 6) | 0x3f;
+		value = (value << 6) | 0x3F;
 	    } else if (c == '=' && (!strict || i > 1)) {
 		/*
 		 * "=" and "a=" is rather bad64 error case in strict mode.
@@ -3180,9 +3203,9 @@ BinaryDecode64(
 		i--;
 	    }
 	}
-	*cursor++ = UCHAR((value >> 16) & 0xff);
-	*cursor++ = UCHAR((value >> 8) & 0xff);
-	*cursor++ = UCHAR(value & 0xff);
+	*cursor++ = UCHAR((value >> 16) & 0xFF);
+	*cursor++ = UCHAR((value >> 8) & 0xFF);
+	*cursor++ = UCHAR(value & 0xFF);
 
 	/*
 	 * Since = is only valid within the final block, if it was encountered
