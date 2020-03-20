@@ -431,9 +431,8 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) TclGetByteArrayFromObj(data, &length);
+    bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
     if (bytesPtr == NULL) {
-	Tcl_AppendResult(interp, "encoding conversion expects bytes", NULL);
 	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
     }

@@ -2957,7 +2957,7 @@ MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE int *	TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
-				    Tcl_Obj *objPtr, int *lengthPtr);
+				    Tcl_Obj *objPtr, size_t *lengthPtr);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
