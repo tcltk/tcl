@@ -33,6 +33,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint tip389 [expr {[string length \U010000] == 2}]
 testConstraint nodep [info exists tcl_precision]
+testConstraint deprecated [expr {![info exists tcl_precision]}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -973,17 +974,56 @@ test string-6.131.$noComp {string is entier, false on bad hex} {
 test string-6.132.$noComp {string is index, true} {
     run {string is index +1234567890}
 } 1
-test string-6.133.$noComp {string is index, true} knownBug {
-    run {string is index end-5}
+test string-6.133.$noComp {string is index, true} {
+    run {string is index 1}
 } 1
-test string-6.134.$noComp {string is index, true} knownBug {
+test string-6.134.$noComp {string is index, true} {
+    run {string is index 0}
+} 1
+test string-6.135.$noComp {string is index, true} {
+    run {string is index -1}
+} 1
+test string-6.136.$noComp {string is index, false} {
+    run {string is index -2}
+} 0
+test string-6.137.$noComp {string is index, false} {
+    run {string is index end+2}
+} 0
+test string-6.138.$noComp {string is index, true} {
+    run {string is index end+1}
+} 1
+test string-6.139.$noComp {string is index, true} {
+    run {string is index end-9999999}
+} 1
+test string-6.140.$noComp {string is index, true} {
     run {string is index none}
 } 1
-test string-6.135.$noComp {string is none, true} {
+test string-6.141.$noComp {string is none, false} {
+    run {string is none +1234567890}
+} 0
+test string-6.142.$noComp {string is none, false} {
+    run {string is none 1}
+} 0
+test string-6.143.$noComp {string is none, false} {
+    run {string is none 0}
+} 0
+test string-6.144.$noComp {string is none, true} {
+    run {string is none 1-2}
+} 1
+test string-6.145.$noComp {string is none, true} {
     run {string is none -1}
 } 1
-test string-6.136.$noComp {string is none, true} nodep {
+test string-6.146.$noComp {string is none, false} {
     run {string is none -2}
+} 0
+test string-6.147.$noComp {string is none, false} {
+    run {string is none end+2}
+} 0
+test string-6.148.$noComp {string is none, false} {
+    run {string is none end+1}
+} 0
+test string-6.149.$noComp {string is none, true} {
+    run {string is none none}
 } 1
 
 

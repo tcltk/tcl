@@ -2736,7 +2736,7 @@ TestlinkCmd(
     static unsigned char ucharVar = 130;
     static short shortVar = 3000;
     static unsigned short ushortVar = 60000;
-    static unsigned int uintVar = 0xbeeffeed;
+    static unsigned int uintVar = 0xBEEFFEED;
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;

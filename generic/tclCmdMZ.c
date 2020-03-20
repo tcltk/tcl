@@ -1224,7 +1224,7 @@ Tcl_SplitObjCmd(
 #if TCL_UTF_MAX <= 3
 	    if ((ch >= 0xD800) && (len < 3)) {
 		len += TclUtfToUniChar(stringPtr + len, &ch);
-		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+		fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	    }
 #endif
 
@@ -1773,10 +1773,12 @@ StringIsCmd(
 	break;
     case STR_IS_INDEX:
     case STR_IS_NONE:
-	if (TCL_OK == TclGetIntForIndexM(NULL, objPtr, INT_MAX - 1, &i)) {
-		if ((STR_IS_NONE == (enum isClasses) index) && (i > -1)) {
+	if (TCL_OK == TclGetWideForIndex(NULL, objPtr, (unsigned)-2, &w)) {
+		if ((w < -1) || (w > (unsigned)-1) || ((STR_IS_NONE == (enum isClasses) index) && (w != -1))) {
 		    result = 0;
 		}
+	} else {
+	    result = 0;
 	}
 	break;
     case STR_IS_WIDE:
@@ -1922,7 +1924,7 @@ StringIsCmd(
 #if TCL_UTF_MAX <= 3
 	    if ((ch >= 0xD800) && (length2 < 3)) {
 	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
-	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	    }
 #endif
 	    if (!chcomp(fullchar)) {

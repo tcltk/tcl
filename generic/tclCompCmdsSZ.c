@@ -713,6 +713,9 @@ TclCompileStringIsCmd(
 
     case STR_IS_INDEX:
     case STR_IS_NONE:
+	/* Not implemented yet */
+	return TCL_ERROR;
+	break;
     case STR_IS_INT:
     case STR_IS_WIDE:
     case STR_IS_ENTIER:
@@ -738,8 +741,6 @@ TclCompileStringIsCmd(
 	}
 
 	switch (t) {
-	case STR_IS_INDEX:
-	case STR_IS_NONE:
 	case STR_IS_WIDE:
 	    PUSH(	"2");
 	    OP(		LE);

@@ -6392,6 +6392,25 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
 
+    case INST_TRY_CVT_TO_INDEX:
+	valuePtr = OBJ_AT_TOS;
+	if (TclHasIntRep(valuePtr,  &tclIntType)) {
+	    objResultPtr = TCONST(valuePtr->internalRep.wideValue >= -1);
+	} else {
+	    int idx;
+	    if (Tcl_GetIntForIndex(NULL, valuePtr, INT_MAX-1, &idx) != TCL_OK) {
+		objResultPtr = TCONST(0);
+	    } else {
+		TclInvalidateStringRep(valuePtr);
+		valuePtr->typePtr = &tclIntType;
+		valuePtr->internalRep.wideValue = idx;
+		objResultPtr = TCONST(1);
+	    }
+	}
+	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    break;
+
     case INST_BREAK:
 	/*
 	DECACHE_STACK_INFO();
@@ -8476,7 +8495,7 @@ ExecuteExtendedBinaryMathOp(
 
 	/*
 	 * We refuse to accept exponent arguments that exceed one mp_digit
-	 * which means the max exponent value is 2**28-1 = 0x0fffffff =
+	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
 	 * range of the long int type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_INT type must hold a value larger than we

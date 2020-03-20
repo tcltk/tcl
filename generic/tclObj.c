@@ -177,12 +177,12 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7fff) {                                       \
+    if ((bignum).used > 0x7FFF) {                                       \
 	mp_int *temp = (mp_int *) ckalloc(sizeof(mp_int));     \
 	*temp = bignum;                                                 \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
-    } else if (((bignum).alloc <= 0x7fff) || (mp_shrink(&(bignum))) == MP_OKAY) { \
+    } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));            \
