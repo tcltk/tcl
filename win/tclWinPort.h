@@ -315,7 +315,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -323,7 +323,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
