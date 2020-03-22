@@ -204,7 +204,7 @@ DoRenameFile(
 	"leal	    1f,		    %%eax"	    "\n\t"
 	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
 	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xc(%%edx)"	    "\n\t" /* esp */
+	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
@@ -245,7 +245,7 @@ DoRenameFile(
 	 */
 
 	"2:"					    "\t"
-	"movl	    0xc(%%edx),	    %%esp"	    "\n\t"
+	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
 	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
 	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
 	"movl	    %%eax,	    %%fs:0"	    "\n\t"
@@ -283,7 +283,7 @@ DoRenameFile(
 
     srcAttr = GetFileAttributesW(nativeSrc);
     dstAttr = GetFileAttributesW(nativeDst);
-    if (srcAttr == 0xffffffff) {
+    if (srcAttr == 0xFFFFFFFF) {
 	if (GetFullPathNameW(nativeSrc, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
@@ -291,7 +291,7 @@ DoRenameFile(
 	}
 	srcAttr = 0;
     }
-    if (dstAttr == 0xffffffff) {
+    if (dstAttr == 0xFFFFFFFF) {
 	if (GetFullPathNameW(nativeDst, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
@@ -593,7 +593,7 @@ DoCopyFile(
 	"leal	    1f,		    %%eax"	    "\n\t"
 	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
 	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xc(%%edx)"	    "\n\t" /* esp */
+	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
@@ -635,7 +635,7 @@ DoCopyFile(
 	 */
 
 	"2:"					    "\t"
-	"movl	    0xc(%%edx),	    %%esp"	    "\n\t"
+	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
 	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
 	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
 	"movl	    %%eax,	    %%fs:0"	    "\n\t"
@@ -679,8 +679,8 @@ DoCopyFile(
 
 	srcAttr = GetFileAttributesW(nativeSrc);
 	dstAttr = GetFileAttributesW(nativeDst);
-	if (srcAttr != 0xffffffff) {
-	    if (dstAttr == 0xffffffff) {
+	if (srcAttr != 0xFFFFFFFF) {
+	    if (dstAttr == 0xFFFFFFFF) {
 		dstAttr = 0;
 	    }
 	    if ((srcAttr & FILE_ATTRIBUTE_DIRECTORY) ||
@@ -770,7 +770,7 @@ TclpDeleteFile(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		    /*
@@ -805,7 +805,7 @@ TclpDeleteFile(
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		/*
 		 * Windows 95 reports removing a directory as ENOENT instead
@@ -1058,7 +1058,7 @@ DoRemoveJustDirectory(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(nativePath);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/*
 		 * Windows 95 reports calling RemoveDirectory on a file as an
@@ -1203,7 +1203,7 @@ TraverseWinTree(
 
     oldSourceLen = Tcl_DStringLength(sourcePtr);
     sourceAttr = GetFileAttributesW(nativeSource);
-    if (sourceAttr == 0xffffffff) {
+    if (sourceAttr == 0xFFFFFFFF) {
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1520,7 +1520,7 @@ GetWinFileAttributes(
     nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     result = GetFileAttributesW(nativeName);
 
-    if (result == 0xffffffff) {
+    if (result == 0xFFFFFFFF) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -1846,7 +1846,7 @@ SetWinFileAttributes(
     nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     fileAttributes = old = GetFileAttributesW(nativeName);
 
-    if (fileAttributes == 0xffffffff) {
+    if (fileAttributes == 0xFFFFFFFF) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
