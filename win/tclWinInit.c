@@ -687,7 +687,7 @@ TclpSetVariables(
 #  define tenviron _wenviron
 #  define tenviron2utfdstr(tenvstr, len, dstr) \
 		Tcl_WinTCharToUtf((TCHAR *)tenvstr, len, dstr)
-#else 
+#else
 #  define tenviron environ
 #  define tenviron2utfdstr(tenvstr, len, dstr) \
 		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)

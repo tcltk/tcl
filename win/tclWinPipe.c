@@ -609,7 +609,7 @@ TclpOpenFile(
 	DWORD err;
 
 	err = GetLastError();
-	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
+	if ((err & 0xFFFFL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
 	}
 	TclWinConvertError(err);
@@ -1322,7 +1322,7 @@ ApplicationType(
 	 */
 
 	attr = GetFileAttributesW(nativeFullPath);
-	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
 	strcpy(fullName, Tcl_WinTCharToUtf((TCHAR *)nativeFullPath, -1, &ds));
