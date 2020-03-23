@@ -81,6 +81,13 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	    lappend dirs [::${basename}::pkgconfig get scriptdir,runtime]
 	}
 
+	# 2a. As a sibling of Tcl's script directory
+	if {[catch {
+	    ::tcl::pkgconfig get scriptdir,runtime
+	} value] == 0} {
+	    lappend dirs [file join [file dirname $value] $basename$version]
+	}
+
 	# 3. Relative to auto_path directories.  This checks relative to the
 	# Tcl library as well as allowing loading of libraries added to the
 	# auto_path that is not relative to the core library or binary paths.
