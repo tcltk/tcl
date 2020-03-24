@@ -162,6 +162,7 @@ OpenResourceMap(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_MacOSXOpenBundleResources
 int
 Tcl_MacOSXOpenBundleResources(
     Tcl_Interp *interp,
