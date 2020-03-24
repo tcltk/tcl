@@ -116,7 +116,7 @@
 #
 #	CFG_ENCODING=encoding
 #		name of encoding for configuration information. Defaults
-#		to cp1252
+#		to utf-8
 #
 # Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release

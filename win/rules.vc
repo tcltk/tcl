@@ -504,7 +504,7 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 !endif
 
 !ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
+CFG_ENCODING	= \"utf-8\"
 !endif
 
 ################################################################
