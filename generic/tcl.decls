@@ -2493,11 +2493,12 @@ interface tclPlat
 ################################
 # Mac OS X specific functions
 
-declare 0 macosx {
-    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-	    const char *bundleName, int hasResourceFile,
-	    size_t maxPathLen, char *libraryPath)
-}
+# Removed in 9.0
+#declare 0 macosx {
+#    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+#	    const char *bundleName, int hasResourceFile,
+#	    size_t maxPathLen, char *libraryPath)
+#}
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
