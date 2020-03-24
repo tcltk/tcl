@@ -144,6 +144,15 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 }
 #endif
 
+#define TclpCreateTempFile_ TclpCreateTempFile
+#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
+#define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
+#define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
+#define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))TclpOpenFile
+#endif
+
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -765,14 +774,14 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
-    0, /* 15 */
-    0, /* 16 */
-    0, /* 17 */
-    0, /* 18 */
-    0, /* 19 */
+    TclMacOSXGetFileAttribute, /* 15 */
+    TclMacOSXSetFileAttribute, /* 16 */
+    TclMacOSXCopyFileAttributes, /* 17 */
+    TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
@@ -838,7 +847,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
