@@ -47,10 +47,15 @@ if {![info exists auto_path]} {
 }
 namespace eval tcl {
     variable Dir
-    foreach Dir [list $::tcl_library] {
+    foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
 	if {$Dir ni $::auto_path} {
 	    lappend ::auto_path $Dir
 	}
+    }
+    set Dir [file join [file dirname [file dirname \
+	    [info nameofexecutable]]] lib]
+    if {$Dir ni $::auto_path} {
+	lappend ::auto_path $Dir
     }
     catch {
 	foreach Dir $::tcl_pkgPath {
