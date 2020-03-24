@@ -1253,25 +1253,28 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 macosx {
+declare 16 {unix macosx} {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 macosx {
+declare 17 {unix macosx} {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 22 {unix macosx} {
+    TclFile TclpCreateTempFile_(const char *contents)
 }
 
 declare 29 {win unix} {
@@ -1282,8 +1285,6 @@ declare 30 {win unix} {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
-
-
 
 # Local Variables:
 # mode: tcl
