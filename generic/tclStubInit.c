@@ -144,6 +144,7 @@ static void uniCodePanic() {
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
 
 #define TclpCreateTempFile_ TclpCreateTempFile
+#define TclUnixWaitForFile_ TclUnixWaitForFile
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
 #define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
@@ -159,7 +160,7 @@ static void uniCodePanic() {
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty TclPlatIsAtty
+#   define TclpIsAtty isatty
 static void
 doNothing(void)
 {
@@ -167,20 +168,6 @@ doNothing(void)
 }
 #   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-
-static int
-TclpIsAtty(int fd)
-{
-    return isatty(fd);
-}
-
-void *TclWinGetTclInstance()
-{
-    void *hInstance = NULL;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclpIsAtty, &hInstance);
-    return hInstance;
-}
 
 #define TclWinNoBackslash winNoBackslash
 static char *
@@ -194,6 +181,14 @@ TclWinNoBackslash(char *path)
 	}
     }
     return path;
+}
+
+void *TclWinGetTclInstance()
+{
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+    return hInstance;
 }
 
 size_t
@@ -547,7 +542,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -613,7 +608,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
