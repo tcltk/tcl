@@ -3225,6 +3225,10 @@ Tcl_CutChannel(
 
     statePtr->nextCSPtr = NULL;
 
+    /* Channel is not managed by any thread */
+    statePtr->managingThread = NULL;
+    UpdateInterest(chanPtr);
+
     /*
      * TIP #218, Channel Thread Actions
      * For all transformations and the base channel.
@@ -3314,6 +3318,7 @@ Tcl_SpliceChannel(
      */
 
     statePtr->managingThread = Tcl_GetCurrentThread();
+    UpdateInterest(chanPtr);
 
     /*
      * TIP #218, Channel Thread Actions

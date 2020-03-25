@@ -118,6 +118,7 @@ struct TcpState {
  * Static routines for this file:
  */
 
+static void		TcpAsyncCallback(ClientData clientData, int mask);
 static int		TcpConnect(Tcl_Interp *interp, TcpState *state);
 static void		TcpAccept(ClientData data, int mask);
 static int		TcpBlockModeProc(ClientData data, int mode);
@@ -1027,6 +1028,32 @@ TcpWatchProc(
          */
 
         statePtr->filehandlers = mask;
+
+	/*
+	 * Remove the FileHandler if the socket is not managed by any thread
+	 * Otherwise the handler is likely to run in the wrong thread,
+	 * possibly leading to all kinds of ugly issues.
+	 */
+
+	if (!Tcl_GetChannelThread(statePtr->channel)) {
+	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
+	    Tcl_DeleteFileHandler(statePtr->fds.fd);
+	}
+    } else if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
+
+	/*
+	 * An async socket without an async event pending must just have been
+	 * transferred from another thread. Reestablish the FileHandler here
+	 * so the callback will run in the correct thread.
+	 */
+
+	Tcl_CreateFileHandler(statePtr->fds.fd,
+			      TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback,
+			      statePtr);
+	SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
+
+	/* Cache the current request until the connection has succeeded */
+	statePtr->filehandlers = mask;
     } else if (mask) {
 
 	/*
