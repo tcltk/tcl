@@ -473,7 +473,7 @@ TclGetBytesFromObj(
 		Tcl_UtfToUniChar(nonbyte, &ch);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected byte sequence but character %zu "
+			"expected byte sequence but character %" TCL_Z_MODIFIER "u "
 			"was '%1s' (U+%04X)", baPtr->bad, nonbyte, ch));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
 	    }
