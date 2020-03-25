@@ -57,7 +57,8 @@ EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
-/* Slot 5 is reserved */
+/* 5 */
+EXTERN int		TclUnixWaitForFile_(int fd, int mask, int timeout);
 /* 6 */
 EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 7 */
@@ -207,7 +208,8 @@ EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
-/* Slot 5 is reserved */
+/* 5 */
+EXTERN int		TclUnixWaitForFile_(int fd, int mask, int timeout);
 /* 6 */
 EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 7 */
@@ -276,7 +278,7 @@ typedef struct TclIntPlatStubs {
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
-    void (*reserved5)(void);
+    int (*tclUnixWaitForFile_) (int fd, int mask, int timeout); /* 5 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
@@ -342,7 +344,7 @@ typedef struct TclIntPlatStubs {
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
-    void (*reserved5)(void);
+    int (*tclUnixWaitForFile_) (int fd, int mask, int timeout); /* 5 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
@@ -394,7 +396,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpCreatePipe) /* 3 */
 #define TclpCreateProcess \
 	(tclIntPlatStubsPtr->tclpCreateProcess) /* 4 */
-/* Slot 5 is reserved */
+#define TclUnixWaitForFile_ \
+	(tclIntPlatStubsPtr->tclUnixWaitForFile_) /* 5 */
 #define TclpMakeFile \
 	(tclIntPlatStubsPtr->tclpMakeFile) /* 6 */
 #define TclpOpenFile \
@@ -511,7 +514,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpCreatePipe) /* 3 */
 #define TclpCreateProcess \
 	(tclIntPlatStubsPtr->tclpCreateProcess) /* 4 */
-/* Slot 5 is reserved */
+#define TclUnixWaitForFile_ \
+	(tclIntPlatStubsPtr->tclUnixWaitForFile_) /* 5 */
 #define TclpMakeFile \
 	(tclIntPlatStubsPtr->tclpMakeFile) /* 6 */
 #define TclpOpenFile \
@@ -570,7 +574,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpInetNtoa inet_ntoa
 
 #undef TclpCreateTempFile_
-#ifndef MAC_OSX_TCL /* Not accessable on UNIX */
+#undef TclUnixWaitForFile_
+#ifndef MAC_OSX_TCL /* not accessable on Win32/UNIX */
 #undef TclMacOSXGetFileAttribute /* 15 */
 #undef TclMacOSXSetFileAttribute /* 16 */
 #undef TclMacOSXCopyFileAttributes /* 17 */
