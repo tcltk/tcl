@@ -145,6 +145,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #endif
 
 #define TclpCreateTempFile_ TclpCreateTempFile
+#define TclUnixWaitForFile_ TclUnixWaitForFile
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
 #define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
@@ -160,17 +161,11 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclpIsAtty isatty
+#   define TclWinSetInterfaces (void (*) (int))(void *)doNothing
+#   define TclWinAddProcess (void (*) (void *, unsigned int))(void *)doNothing
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
-
-static int
-TclpIsAtty(int fd)
-{
-    return isatty(fd);
-}
 
 #define TclWinGetPlatformId winGetPlatformId
 static int
@@ -179,14 +174,6 @@ TclWinGetPlatformId()
     /* Don't bother to determine the real platform on cygwin,
      * because VER_PLATFORM_WIN32_NT is the only supported platform */
     return 2; /* VER_PLATFORM_WIN32_NT */;
-}
-
-void *TclWinGetTclInstance()
-{
-    void *hInstance = NULL;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&TclpIsAtty, &hInstance);
-    return hInstance;
 }
 
 #define TclWinSetSockOpt winSetSockOpt
@@ -224,6 +211,14 @@ TclWinNoBackslash(char *path)
 	}
     }
     return path;
+}
+
+void *TclWinGetTclInstance()
+{
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const char *)&TclWinNoBackslash, &hInstance);
+    return hInstance;
 }
 
 int
@@ -764,7 +759,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -830,7 +825,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
