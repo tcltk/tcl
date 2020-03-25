@@ -158,6 +158,9 @@ static void uniCodePanic() {
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
+#   define Tcl_CreateFileHandler 0
+#   define Tcl_DeleteFileHandler 0
+#   define Tcl_GetOpenFile 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
 static void
@@ -690,24 +693,8 @@ const TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 9 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_CreateFileHandler, /* 9 */
-#endif /* MACOSX */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 10 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_DeleteFileHandler, /* 10 */
-#endif /* MACOSX */
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
@@ -864,15 +851,7 @@ const TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 167 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_GetOpenFile, /* 167 */
-#endif /* MACOSX */
     Tcl_GetPathType, /* 168 */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
