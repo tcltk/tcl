@@ -1203,10 +1203,9 @@ declare 4 unix {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
+declare 5 unix {
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+}
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
