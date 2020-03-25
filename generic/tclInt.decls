@@ -1078,252 +1078,91 @@ declare 259 {
 
 interface tclIntPlat
 
-################################
-# Windows specific functions
-
-declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+declare 0 {
+    void TclWinConvertError(int errCode)
 }
-# Removed in 9.0:
-#declare 1 win {
-#    void TclWinConvertWSAError(DWORD errCode)
-#}
-# Removed in 9.0:
-#declare 2 win {
-#    struct servent *TclWinGetServByName(const char *nm,
-#	    const char *proto)
-#}
-# Removed in 9.0:
-#declare 3 win {
-#    int TclWinGetSockOpt(SOCKET s, int level, int optname,
-#	    char *optval, int *optlen)
-#}
-declare 4 win {
-    HINSTANCE TclWinGetTclInstance(void)
+declare 4 {
+    void *TclWinGetTclInstance(void)
 }
-# new for 8.4.20+/8.5.12+ Cygwin only
-declare 5 win {
+declare 5 {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
 }
-# Removed in 8.1:
-#  declare 5 win {
-#      HINSTANCE TclWinLoadLibrary(char *name)
-#  }
-# Removed in 9.0:
-#declare 6 win {
-#    unsigned short TclWinNToHS(unsigned short ns)
-#}
-# Removed in 9.0:
-#declare 7 win {
-#    int TclWinSetSockOpt(SOCKET s, int level, int optname,
-#	    const char *optval, int optlen)
-#}
-declare 8 win {
+declare 8 {
     size_t TclpGetPid(Tcl_Pid pid)
 }
-# Removed in 9.0:
-#declare 9 win {
-#    int TclWinGetPlatformId(void)
-#}
-# Removed in 9.0:
-#declare 10 win {
-#    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
-#}
-# Removed in 8.3.1 (for Win32s only):
-#declare 10 win {
-#    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
-#}
-
-# Pipe channel functions
-
-declare 11 win {
+declare 11 {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 12 win {
+declare 12 {
     int TclpCloseFile(TclFile file)
 }
-declare 13 win {
+declare 13 {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
 	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
-declare 14 win {
+declare 14 {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
-declare 15 win {
+declare 15 {
     int TclpCreateProcess(Tcl_Interp *interp, int argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# new for 8.4.20+/8.5.12+ Cygwin only
-declare 16 win {
+declare 16 {
     int TclpIsAtty(int fd)
 }
-# Signature changed in 8.1:
-#  declare 16 win {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
-#  declare 17 win {
-#      char *TclpGetTZName(void)
-#  }
-# new for 8.5.12+ Cygwin only
-declare 17 win {
+declare 17 {
     int TclUnixCopyFile(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
-declare 18 win {
+declare 18 {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
-declare 19 win {
+declare 19 {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
-declare 20 win {
+declare 20 {
     void TclWinAddProcess(HANDLE hProcess, size_t id)
 }
-# Removed in 9.0:
-#declare 21 win {
-#    char *TclpInetNtoa(struct in_addr addr)
-#}
-# removed permanently for 8.4
-#declare 21 win {
-#    void TclpAsyncMark(Tcl_AsyncHandler async)
-#}
-
-# Added in 8.1:
-declare 22 win {
+declare 22 {
     TclFile TclpCreateTempFile(const char *contents)
 }
-# Removed in 8.6:
-#declare 23 win {
-#    char *TclpGetTZName(int isdst)
-#}
-declare 24 win {
+declare 24 {
     char *TclWinNoBackslash(char *path)
 }
-# replaced by generic TclGetPlatform
-#declare 25 win {
-#    TclPlatformType *TclWinGetPlatform(void)
-#}
-# Removed in 9.0:
-#declare 26 win {
-#    void TclWinSetInterfaces(int wide)
-#}
-
-# Added in Tcl 8.3.3 / 8.4
-
-declare 27 win {
+declare 27 {
     void TclWinFlushDirtyChannels(void)
 }
-
-# Added in 8.4.2
-
-# Removed in 9.0:
-#declare 28 win {
-#    void TclWinResetInterfaces(void)
-#}
-
-################################
-# Unix specific functions
-
-# Pipe channel functions
-
-declare 0 unix {
-    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+declare 29 {
+    int TclWinCPUID(int index, int *regs)
 }
-declare 1 unix {
-    int TclpCloseFile(TclFile file)
-}
-declare 2 unix {
-    Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
-	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
-}
-declare 3 unix {
-    int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
-}
-declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc,
-	    const char **argv, TclFile inputFile, TclFile outputFile,
-	    TclFile errorFile, Tcl_Pid *pidPtr)
-}
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
-declare 6 unix {
-    TclFile TclpMakeFile(Tcl_Channel channel, int direction)
-}
-declare 7 unix {
-    TclFile TclpOpenFile(const char *fname, int mode)
-}
-declare 8 unix {
-    int TclUnixWaitForFile(int fd, int mask, int timeout)
-}
-
-# Added in 8.1:
-
-declare 9 unix {
-    TclFile TclpCreateTempFile(const char *contents)
-}
-
-# Added in 8.4:
-
-# Removed in 9.0:
-#declare 10 unix {
-#    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
-#}
-# Removed in 9.0:
-#declare 11 unix {
-#    struct tm *TclpLocaltime_unix(const time_t *clock)
-#}
-# Removed in 9.0:
-#declare 12 unix {
-#    struct tm *TclpGmtime_unix(const time_t *clock)
-#}
-# Removed in 9.0:
-#declare 13 unix {
-#    char *TclpInetNtoa(struct in_addr addr)
-#}
-
-# Added in 8.5:
-
-declare 14 unix {
-    int TclUnixCopyFile(const char *src, const char *dst,
-	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+declare 30 {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
 
 ################################
 # Mac OS X specific functions
 
-declare 15 {unix macosx} {
+declare 31 {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 {unix macosx} {
+declare 32 {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 {unix macosx} {
+declare 33 {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 {unix macosx} {
+declare 34 {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 {unix macosx} {
+declare 35 {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
-}
-declare 22 {unix macosx} {
-    TclFile TclpCreateTempFile_(const char *contents)
-}
-
-declare 29 {win unix} {
-    int TclWinCPUID(int index, int *regs)
-}
-# Added in 8.6; core of TclpOpenTemporaryFile
-declare 30 {win unix} {
-    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
-	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
 
 # Local Variables:

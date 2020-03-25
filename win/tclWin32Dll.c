@@ -152,7 +152,7 @@ DllMain(
  *----------------------------------------------------------------------
  */
 
-HINSTANCE
+void *
 TclWinGetTclInstance(void)
 {
     return hInstance;

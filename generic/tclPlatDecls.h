@@ -50,7 +50,6 @@ extern "C" {
  * Exported function declarations:
  */
 
-#ifdef MAC_OSX_TCL /* MACOSX */
 /* Slot 0 is reserved */
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
@@ -58,16 +57,13 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				const char *bundleVersion,
 				int hasResourceFile, size_t maxPathLen,
 				char *libraryPath);
-#endif /* MACOSX */
 
 typedef struct TclPlatStubs {
     int magic;
     void *hooks;
 
-#ifdef MAC_OSX_TCL /* MACOSX */
     void (*reserved0)(void);
     int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 1 */
-#endif /* MACOSX */
 } TclPlatStubs;
 
 extern const TclPlatStubs *tclPlatStubsPtr;
@@ -82,11 +78,9 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#ifdef MAC_OSX_TCL /* MACOSX */
 /* Slot 0 is reserved */
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
-#endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) */
 

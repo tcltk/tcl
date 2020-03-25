@@ -2483,10 +2483,10 @@ interface tclPlat
 
 # Added in Tcl 8.1, Removed in Tcl 9.0 (converted to macro)
 
-#declare 0 win {
+#declare 0 {
 #    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
 #}
-#declare 1 win {
+#declare 1 {
 #    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
 #}
 
@@ -2494,12 +2494,12 @@ interface tclPlat
 # Mac OS X specific functions
 
 # Removed in 9.0
-#declare 0 macosx {
+#declare 0 {
 #    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 #	    const char *bundleName, int hasResourceFile,
 #	    size_t maxPathLen, char *libraryPath)
 #}
-declare 1 macosx {
+declare 1 {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, size_t maxPathLen, char *libraryPath)

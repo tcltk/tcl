@@ -143,13 +143,13 @@ static void uniCodePanic() {
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
 
-#define TclpCreateTempFile_ TclpCreateTempFile
-#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
-#define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
-#define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
-#define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
-#define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))TclpOpenFile
+#ifndef MAC_OSX_TCL
+#   define Tcl_MacOSXOpenVersionedBundleResources 0
+#   define TclMacOSXGetFileAttribute 0
+#   define TclMacOSXSetFileAttribute 0
+#   define TclMacOSXCopyFileAttributes 0
+#   define TclMacOSXMatchType 0
+#   define TclMacOSXNotifierAddRunLoopMode 0
 #endif
 
 #ifdef _WIN32
@@ -541,40 +541,6 @@ static const TclIntStubs tclIntStubs = {
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    TclGetAndDetachPids, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclpCreateProcess, /* 4 */
-    0, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-    TclpCreateTempFile, /* 9 */
-    0, /* 10 */
-    0, /* 11 */
-    0, /* 12 */
-    0, /* 13 */
-    TclUnixCopyFile, /* 14 */
-    TclMacOSXGetFileAttribute, /* 15 */
-    TclMacOSXSetFileAttribute, /* 16 */
-    TclMacOSXCopyFileAttributes, /* 17 */
-    TclMacOSXMatchType, /* 18 */
-    TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    0, /* 20 */
-    0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
-    0, /* 23 */
-    0, /* 24 */
-    0, /* 25 */
-    0, /* 26 */
-    0, /* 27 */
-    0, /* 28 */
-    TclWinCPUID, /* 29 */
-    TclUnixOpenTemporaryFile, /* 30 */
-#endif /* UNIX */
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
     0, /* 1 */
     0, /* 2 */
@@ -606,49 +572,18 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    TclGetAndDetachPids, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclpCreateProcess, /* 4 */
-    0, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-    TclpCreateTempFile, /* 9 */
-    0, /* 10 */
-    0, /* 11 */
-    0, /* 12 */
-    0, /* 13 */
-    TclUnixCopyFile, /* 14 */
-    TclMacOSXGetFileAttribute, /* 15 */
-    TclMacOSXSetFileAttribute, /* 16 */
-    TclMacOSXCopyFileAttributes, /* 17 */
-    TclMacOSXMatchType, /* 18 */
-    TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    0, /* 20 */
-    0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
-    0, /* 23 */
-    0, /* 24 */
-    0, /* 25 */
-    0, /* 26 */
-    0, /* 27 */
-    0, /* 28 */
-    TclWinCPUID, /* 29 */
-    TclUnixOpenTemporaryFile, /* 30 */
-#endif /* MACOSX */
+    TclMacOSXGetFileAttribute, /* 31 */
+    TclMacOSXSetFileAttribute, /* 32 */
+    TclMacOSXCopyFileAttributes, /* 33 */
+    TclMacOSXMatchType, /* 34 */
+    TclMacOSXNotifierAddRunLoopMode, /* 35 */
 };
 
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#ifdef MAC_OSX_TCL /* MACOSX */
     0, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* MACOSX */
 };
 
 const TclTomMathStubs tclTomMathStubs = {
