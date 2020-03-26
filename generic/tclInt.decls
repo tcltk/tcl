@@ -1122,7 +1122,7 @@ declare 19 {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 {
-    void TclWinAddProcess(HANDLE hProcess, size_t id)
+    void TclWinAddProcess(void *hProcess, size_t id)
 }
 declare 22 {
     TclFile TclpCreateTempFile(const char *contents)

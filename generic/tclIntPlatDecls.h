@@ -82,7 +82,7 @@ EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 19 */
 EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 20 */
-EXTERN void		TclWinAddProcess(HANDLE hProcess, size_t id);
+EXTERN void		TclWinAddProcess(void *hProcess, size_t id);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
@@ -145,7 +145,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (HANDLE hProcess, size_t id); /* 20 */
+    void (*tclWinAddProcess) (void *hProcess, size_t id); /* 20 */
     void (*reserved21)(void);
     TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
     void (*reserved23)(void);
@@ -244,12 +244,20 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TCL_STORAGE_CLASS DLLIMPORT
 #define TclWinConvertWSAError TclWinConvertError
 
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#   undef TclWinConvertError /* 0 */
+#   undef TclWinGetTclInstance /* 4 */
+#   undef TclWinAddProcess /* 20 */
+#   undef TclWinNoBackslash /* 24 */
+#   undef TclWinFlushDirtyChannels /* 27 */
+#endif
+
 #ifndef MAC_OSX_TCL /* Not accessable on UNIX */
-#undef TclMacOSXGetFileAttribute /* 15 */
-#undef TclMacOSXSetFileAttribute /* 16 */
-#undef TclMacOSXCopyFileAttributes /* 17 */
-#undef TclMacOSXMatchType /* 18 */
-#undef TclMacOSXNotifierAddRunLoopMode /* 19 */
+#   undef TclMacOSXGetFileAttribute /* 15 */
+#   undef TclMacOSXSetFileAttribute /* 16 */
+#   undef TclMacOSXCopyFileAttributes /* 17 */
+#   undef TclMacOSXMatchType /* 18 */
+#   undef TclMacOSXNotifierAddRunLoopMode /* 19 */
 #endif
 
 #if !defined(_WIN32)

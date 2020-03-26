@@ -248,6 +248,12 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
+#else
+#   define TclWinConvertError 0
+#   define TclWinGetTclInstance 0
+#   define TclWinAddProcess 0
+#   define TclWinNoBackslash 0
+#   define TclWinFlushDirtyChannels 0
 #endif /* __CYGWIN__ */
 
 /*
