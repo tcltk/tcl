@@ -595,7 +595,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# generic interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
@@ -2386,7 +2386,7 @@ declare 644 {
 
 declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, int *indexPtr)
+	    int endValue, int flags, int *indexPtr)
 }
 
 # TIP #548

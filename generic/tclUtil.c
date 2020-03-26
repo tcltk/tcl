@@ -3736,6 +3736,7 @@ Tcl_GetIntForIndex(
 				 * or an integer. */
     int endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
+	TCL_UNUSED(int),
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
