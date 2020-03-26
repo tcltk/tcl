@@ -162,7 +162,7 @@ static void uniCodePanic() {
 #   define Tcl_DeleteFileHandler 0
 #   define Tcl_GetOpenFile 0
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty TclPlatIsAtty
+#   define TclpIsAtty isatty
 static void
 doNothing(void)
 {
@@ -170,20 +170,6 @@ doNothing(void)
 }
 #   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-
-static int
-TclpIsAtty(int fd)
-{
-    return isatty(fd);
-}
-
-void *TclWinGetTclInstance()
-{
-    void *hInstance = NULL;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclpIsAtty, &hInstance);
-    return hInstance;
-}
 
 #define TclWinNoBackslash winNoBackslash
 static char *
@@ -197,6 +183,14 @@ TclWinNoBackslash(char *path)
 	}
     }
     return path;
+}
+
+void *TclWinGetTclInstance()
+{
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+    return hInstance;
 }
 
 size_t

@@ -244,7 +244,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TCL_STORAGE_CLASS DLLIMPORT
 #define TclWinConvertWSAError TclWinConvertError
 
-#undef TclpCreateTempFile_
 #ifndef MAC_OSX_TCL /* Not accessable on UNIX */
 #undef TclMacOSXGetFileAttribute /* 15 */
 #undef TclMacOSXSetFileAttribute /* 16 */
