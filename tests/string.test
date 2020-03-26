@@ -1009,7 +1009,7 @@ test string-6.143.$noComp {string is none, false} {
 } 0
 test string-6.144.$noComp {string is none, true} {
     run {string is none 1-2}
-} 1
+} 0
 test string-6.145.$noComp {string is none, true} {
     run {string is none -1}
 } 1

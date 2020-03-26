@@ -2416,7 +2416,7 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, 0, &index);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, TCL_INDEX_NOMIN|TCL_INDEX_NOMAX|TCL_INDEX_ERROR, &index);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2676,13 +2676,13 @@ Tcl_LrangeObjCmd(
     }
 
     result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    0, &first);
+	    TCL_INDEX_ERROR, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-	    0, &last);
+	    TCL_INDEX_ERROR, &last);
     if (result != TCL_OK) {
 	return result;
     }

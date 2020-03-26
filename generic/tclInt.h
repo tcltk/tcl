@@ -2521,14 +2521,22 @@ typedef struct List {
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
+#ifdef TCL_NO_DEPRECATED
 #define TclGetIntForIndexM(interp, objPtr, endValue, flags, idxPtr) \
     (((objPtr)->typePtr == &tclIntType && (objPtr)->internalRep.wideValue >= 0 \
 	    && (Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1)) \
 	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (flags), (idxPtr)))
+#else
+#define TclGetIntForIndexM(interp, objPtr, endValue, flags, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType && (objPtr)->internalRep.wideValue >= 0 \
+	    && (Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1)) \
+	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), ((void)flags,0), (idxPtr)))
+#endif
 
 MODULE_SCOPE int TclGetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    size_t endValue, Tcl_WideInt *widePtr);
+			    size_t endValue, int flags, Tcl_WideInt *widePtr);
 
 
 /*

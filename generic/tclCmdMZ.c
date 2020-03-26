@@ -1773,7 +1773,7 @@ StringIsCmd(
 	break;
     case STR_IS_INDEX:
     case STR_IS_NONE:
-	if (TCL_OK == TclGetWideForIndex(NULL, objPtr, (unsigned)-2, &w)) {
+	if (TCL_OK == TclGetWideForIndex(NULL, objPtr, (unsigned)-2, 0, &w)) {
 		if ((w < -1) || (w > (unsigned)-1) || ((STR_IS_NONE == (enum isClasses) index) && (w != -1))) {
 		    result = 0;
 		}
@@ -2959,7 +2959,7 @@ StringLowerCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, 0, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, TCL_INDEX_NOMIN|TCL_INDEX_ERROR, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3044,7 +3044,7 @@ StringUpperCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, 0, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, TCL_INDEX_NOMIN|TCL_INDEX_ERROR, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3129,7 +3129,7 @@ StringTitleCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, 0, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp,objv[2],length1, TCL_INDEX_NOMIN|TCL_INDEX_ERROR, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
