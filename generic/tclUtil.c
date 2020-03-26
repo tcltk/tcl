@@ -3678,6 +3678,7 @@ TclGetWideForIndex(
     size_t endValue,            /* The value to be stored at *widePtr if
                                  * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
+	int flags,
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
                                  * representing an index. */
 {
@@ -3689,18 +3690,52 @@ TclGetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+	    if ((*widePtr > (Tcl_WideInt)endValue) && (flags & TCL_INDEX_NOMAX)) {
+		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
+		*widePtr = (Tcl_WideInt)endValue;
+	    }
+	    if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
+		*widePtr = 0;
+	    }
+	    if ((*widePtr < -1) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
 	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+	    if ((*widePtr > (Tcl_WideInt)endValue) && (flags & TCL_INDEX_NOMAX)) {
+		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
+		*widePtr = (Tcl_WideInt)endValue;
+	    }
+	    if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
+		*widePtr = 0;
+	    }
 	    return TCL_OK;
 	}
     }
 
     /* objPtr does not hold a number, check the end+/- format... */
-    return GetEndOffsetFromObj(interp, objPtr, endValue, widePtr);
+    code = GetEndOffsetFromObj(interp, objPtr, endValue, widePtr);
+    if (code == TCL_OK) {
+	if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+	    if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
+	    *widePtr = 0;
+	}
+    }
+    return code;
+
+  invalidWideIndex:
+    if (interp != NULL) {
+        char * bytes = TclGetString(objPtr);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "index \"%s\" out of range", bytes));
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", NULL);
+    }
+
+    return TCL_ERROR;
 }
 
 /*
@@ -3736,13 +3771,13 @@ Tcl_GetIntForIndex(
 				 * or an integer. */
     int endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
-	TCL_UNUSED(int),
+    int flags,
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
     Tcl_WideInt wide;
 
-    if (TclGetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+    if (TclGetWideForIndex(interp, objPtr, endValue, flags, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (wide < 0) {
@@ -3926,11 +3961,10 @@ GetEndOffsetFromObj(
 		    }
 		    if (offset < 0) {
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
-			if (offset < -1) {
-			    goto parseError2;
-			}
-#endif
+			goto parseError2;
+#else
 			offset = (offset == -1) ? WIDE_MIN : WIDE_MIN+1;
+#endif
 		    }
 		    goto parseOK;
 		}
@@ -4115,7 +4149,7 @@ TclIndexEncode(
     Tcl_WideInt wide;
     int idx;
 
-    if (TCL_OK == TclGetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
+    if (TCL_OK == TclGetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , 0, &wide)) {
 	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */
