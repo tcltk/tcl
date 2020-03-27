@@ -71,6 +71,7 @@
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#undef Tcl_MacOSXOpenBundleResources
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -259,6 +260,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_ChannelSeekProc 0
 #   define Tcl_ChannelCloseProc 0
 #   define Tcl_Close 0
+#   define Tcl_MacOSXOpenBundleResources 0
 #else
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
@@ -370,6 +372,16 @@ TclWinGetPlatformId(void)
 #endif
 #endif /* TCL_NO_DEPRECATED */
 
+#define TclpCreateTempFile_ TclpCreateTempFile
+#define TclUnixWaitForFile_ TclUnixWaitForFile
+#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
+#define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
+#define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
+#define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))TclpOpenFile
+#endif
+
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -377,7 +389,7 @@ TclWinGetPlatformId(void)
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty TclPlatIsAtty
+#   define TclpIsAtty isatty
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 static void
 doNothing(void)
@@ -387,20 +399,6 @@ doNothing(void)
 #endif
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-
-static int
-TclpIsAtty(int fd)
-{
-    return isatty(fd);
-}
-
-void *TclWinGetTclInstance()
-{
-    void *hInstance = NULL;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclpIsAtty, &hInstance);
-    return hInstance;
-}
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinSetSockOpt winSetSockOpt
@@ -439,6 +437,14 @@ TclWinNoBackslash(char *path)
 	}
     }
     return path;
+}
+
+void *TclWinGetTclInstance()
+{
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+    return hInstance;
 }
 
 int
@@ -989,7 +995,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -999,14 +1005,14 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
-    0, /* 15 */
-    0, /* 16 */
-    0, /* 17 */
-    0, /* 18 */
-    0, /* 19 */
+    TclMacOSXGetFileAttribute, /* 15 */
+    TclMacOSXSetFileAttribute, /* 16 */
+    TclMacOSXCopyFileAttributes, /* 17 */
+    TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
@@ -1055,7 +1061,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -1072,7 +1078,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
