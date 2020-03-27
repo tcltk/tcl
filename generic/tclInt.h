@@ -2532,7 +2532,7 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType && (objPtr)->internalRep.wideValue >= 0 \
 	    && (Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1)) \
 	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
-	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), ((void)flags,0), (idxPtr)))
+	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (flags) & ~(TCL_INDEX_ERROR|TCL_INDEX_NOMIN|TCL_INDEX_NOMAX), (idxPtr)))
 #endif
 
 MODULE_SCOPE int TclGetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
