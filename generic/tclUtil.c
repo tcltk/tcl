@@ -581,7 +581,7 @@ FindElement(
     const char *limit;		/* Points just after list/dict's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;		/* lint. */
+    int size = 0;
     int numChars;
     int literal = 1;
     const char *p2;
@@ -3436,7 +3436,6 @@ Tcl_PrintDouble(
  */
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-	/* ARGSUSED */
 char *
 TclPrecTraceProc(
     ClientData clientData,
@@ -4030,11 +4029,11 @@ GetEndOffsetFromObj(
  *      collection, and can be encoded as after.  The end-relative
  *      expressions that indicate an index less than or equal to end
  *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7ffffffe"
+ *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
  *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7ffffffe, the interpretation of
- *      "end-0x7ffffffe" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
+ *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
+ *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
  *      they can be encoded with the before value.
  *
  *      These details will require re-examination whenever string and

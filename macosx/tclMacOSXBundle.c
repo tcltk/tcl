@@ -163,6 +163,8 @@ OpenResourceMap(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
+#undef Tcl_MacOSXOpenBundleResources
 int
 Tcl_MacOSXOpenBundleResources(
     Tcl_Interp *interp,
@@ -174,6 +176,7 @@ Tcl_MacOSXOpenBundleResources(
     return Tcl_MacOSXOpenVersionedBundleResources(interp, bundleName, NULL,
 	    hasResourceFile, maxPathLen, libraryPath);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

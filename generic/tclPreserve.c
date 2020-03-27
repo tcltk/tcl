@@ -83,7 +83,6 @@ typedef struct HandleStruct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizePreserve(void)
 {
