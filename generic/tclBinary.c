@@ -3007,11 +3007,21 @@ BinaryDecode64(
     return TCL_OK;
 
   bad64:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
-    TclDecrRefCount(resultObj);
-    return TCL_ERROR;
+    {
+	/* The decoder is byte-oriented. If we saw a byte that's not a
+	 * valid member of the base64 alphabet, it could be the lead byte
+	 * of a multi-byte character. */
+	Tcl_UniChar ch;
+
+	/* Safe because we know data is NUL-terminated */
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"invalid base64 character \"%c\" at position %d", ch,
+		(int) (data - datastart - 1)));
+	TclDecrRefCount(resultObj);
+	return TCL_ERROR;
+    }
 }
 
 /*
