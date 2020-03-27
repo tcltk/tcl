@@ -3009,7 +3009,7 @@ BinaryDecode64(
   bad64:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid base64 character \"%c\" at position %d",
-	    (char) c, (int) (data - datastart - 1)));
+	    c, (int) (data - datastart - 1)));
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
