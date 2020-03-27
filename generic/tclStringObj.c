@@ -149,9 +149,9 @@ GrowStringBuffer(
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
-	attempt = 2 * needed;
-	if (attempt >= 0) {
-	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	if (needed <= INT_MAX / 2) {
+	    attempt = 2 * needed;
+	    ptr = (char *)attemptckrealloc(objPtr->bytes, attempt + 1);
 	}
 	if (ptr == NULL) {
 	    /*
@@ -164,7 +164,7 @@ GrowStringBuffer(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	    ptr = (char *)attemptckrealloc(objPtr->bytes, attempt + 1);
 	}
     }
     if (ptr == NULL) {
@@ -173,7 +173,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
-	ptr = ckrealloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)ckrealloc(objPtr->bytes, attempt + 1);
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
@@ -199,8 +199,8 @@ GrowUnicodeBuffer(
 	 * Subsequent appends - apply the growth algorithm.
 	 */
 
-	attempt = 2 * needed;
-	if (attempt >= 0 && attempt <= STRING_MAXCHARS) {
+	if (needed <= STRING_MAXCHARS / 2) {
+	    attempt = 2 * needed;
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
 	if (ptr == NULL) {
@@ -418,6 +418,15 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
      * Optimize the case where we're really dealing with a bytearray object;
      * we don't need to convert to a string to perform the get-length operation.
      *
@@ -433,7 +442,6 @@ Tcl_GetCharLength(
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	return length;
     }
-
 
     /*
      * OK, need to work with the object as a string.
@@ -465,8 +473,6 @@ Tcl_GetCharLength(
     }
     return numChars;
 }
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -486,8 +492,8 @@ Tcl_GetCharLength(
  */
 int
 TclCheckEmptyString (
-    Tcl_Obj *objPtr
-) {
+    Tcl_Obj *objPtr)
+{
     int length = -1;
 
     if (objPtr->bytes == tclEmptyStringRep) {
@@ -515,8 +521,8 @@ TclCheckEmptyString (
  *
  * Tcl_GetUniChar --
  *
- *	Get the index'th Unicode character from the String object. The index
- *	is assumed to be in the appropriate range.
+ *	Get the index'th Unicode character from the String object. If index
+ *	is out of range, the result = 0xFFFD;
  *
  * Results:
  *	Returns the index'th Unicode character in the Object.
@@ -534,15 +540,22 @@ Tcl_GetUniChar(
     int index)			/* Get the index'th Unicode character. */
 {
     String *stringPtr;
+    int length;
+
+    if (index < 0) {
+	return 0xFFFD;
+    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the indexing operation.
+     * we don't need to convert to a string to perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >= length) {
+		return 0xFFFD;
+	}
 
 	return (Tcl_UniChar) bytes[index];
     }
@@ -567,6 +580,10 @@ Tcl_GetUniChar(
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
+    }
+
+    if (index >= stringPtr->numChars) {
+	return 0xFFFD;
     }
     return stringPtr->unicode[index];
 }
@@ -668,17 +685,27 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
+    int length;
+
+    if (first < 0) {
+	first = 0;
+    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the substring operation.
+     * we don't need to convert to a string to perform the substring operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
 
-	return Tcl_NewByteArrayObj(bytes+first, last-first+1);
+	if (last >= length) {
+	    last = length - 1;
+	}
+	if (last < first) {
+	    return Tcl_NewObj();
+	}
+	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
 
     /*
@@ -697,6 +724,12 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
+	    if (last >= stringPtr->numChars) {
+		last = stringPtr->numChars - 1;
+	    }
+	    if (last < first) {
+		return Tcl_NewObj();
+	    }
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
 
 	    /*
@@ -711,19 +744,25 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-
+    if (last > stringPtr->numChars) {
+	last = stringPtr->numChars;
+    }
+    if (last < first) {
+	return Tcl_NewObj();
+    }
 #if TCL_UTF_MAX == 4
-	/* See: bug [11ae2be95dac9417] */
-	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
-		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
-	    ++first;
-	}
-	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
-		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
-	    ++last;
-	}
+    /* See: bug [11ae2be95dac9417] */
+    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
+	++first;
+    }
+    if ((last + 1 < stringPtr->numChars)
+		&& ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
+	++last;
+    }
 #endif
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
+    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
 }
 
 /*
@@ -840,9 +879,9 @@ Tcl_SetObjLength(
 	     * Need to enlarge the buffer.
 	     */
 	    if (objPtr->bytes == tclEmptyStringRep) {
-		objPtr->bytes = ckalloc(length + 1);
+		objPtr->bytes = (char *)ckalloc(length + 1);
 	    } else {
-		objPtr->bytes = ckrealloc(objPtr->bytes, length + 1);
+		objPtr->bytes = (char *)ckrealloc(objPtr->bytes, length + 1);
 	    }
 	    stringPtr->allocated = length;
 	}
@@ -946,9 +985,9 @@ Tcl_AttemptSetObjLength(
 	    char *newBytes;
 
 	    if (objPtr->bytes == tclEmptyStringRep) {
-		newBytes = attemptckalloc(length + 1);
+		newBytes = (char *)attemptckalloc(length + 1);
 	    } else {
-		newBytes = attemptckrealloc(objPtr->bytes, length + 1);
+		newBytes = (char *)attemptckrealloc(objPtr->bytes, length + 1);
 	    }
 	    if (newBytes == NULL) {
 		return 0;
@@ -1291,39 +1330,45 @@ Tcl_AppendObjToObj(
 
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
 	    && TclIsPureByteArray(appendObjPtr)) {
-
 	/*
 	 * You might expect the code here to be
 	 *
 	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
 	 *
-	 * and essentially all of the time that would be fine.  However,
-	 * it would run into trouble in the case where objPtr and
-	 * appendObjPtr point to the same thing.  That may never be a
-	 * good idea.  It seems to violate Copy On Write, and we don't
-	 * have any tests for the situation, since making any Tcl commands
-	 * that call Tcl_AppendObjToObj() do that appears impossible
-	 * (They honor Copy On Write!).  For the sake of extensions that
-	 * go off into that realm, though, here's a more complex approach
-	 * that can handle all the cases.
+	 * and essentially all of the time that would be fine. However, it
+	 * would run into trouble in the case where objPtr and appendObjPtr
+	 * point to the same thing. That may never be a good idea. It seems to
+	 * violate Copy On Write, and we don't have any tests for the
+	 * situation, since making any Tcl commands that call
+	 * Tcl_AppendObjToObj() do that appears impossible (They honor Copy On
+	 * Write!). For the sake of extensions that go off into that realm,
+	 * though, here's a more complex approach that can handle all the
+	 * cases.
+	 *
+	 * First, get the lengths.
 	 */
 
-	/* Get lengths */
 	int lengthSrc;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	(void) Tcl_GetByteArrayFromObj(appendObjPtr, &lengthSrc);
 
-	/* Grow buffer enough for the append */
+	/*
+	 * Grow buffer enough for the append.
+	 */
+
 	TclAppendBytesToByteArray(objPtr, NULL, lengthSrc);
 
-	/* Reset objPtr back to the original value */
+	/*
+	 * Reset objPtr back to the original value.
+	 */
+
 	Tcl_SetByteArrayLength(objPtr, length);
 
 	/*
-	 * Now do the append knowing that buffer growth cannot cause
-	 * any trouble.
+	 * Now do the append knowing that buffer growth cannot cause any
+	 * trouble.
 	 */
 
 	TclAppendBytesToByteArray(objPtr,
@@ -1375,6 +1420,7 @@ Tcl_AppendObjToObj(
     numChars = stringPtr->numChars;
     if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
+
 	appendNumChars = appendStringPtr->numChars;
     }
 
@@ -2458,7 +2504,7 @@ Tcl_AppendFormatToObj(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_Format--
+ * Tcl_Format --
  *
  * Results:
  *	A refcount zero Tcl_Obj.
@@ -2723,7 +2769,7 @@ TclGetStringStorage(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringObjReverse --
+ * TclStringReverse --
  *
  *	Implements the [string reverse] operation.
  *
@@ -2742,18 +2788,20 @@ static void
 ReverseBytes(
     unsigned char *to,		/* Copy bytes into here... */
     unsigned char *from,	/* ...from here... */
-    int count)		/* Until this many are copied, */
+    int count)			/* Until this many are copied, */
 				/* reversing as you go. */
 {
     unsigned char *src = from + count;
+
     if (to == from) {
 	/* Reversing in place */
 	while (--src > to) {
 	    unsigned char c = *src;
+
 	    *src = *to;
 	    *to++ = c;
 	}
-    }  else {
+    } else {
 	while (--src >= from) {
 	    *to++ = *src;
 	}
@@ -2761,7 +2809,7 @@ ReverseBytes(
 }
 
 Tcl_Obj *
-TclStringObjReverse(
+TclStringReverse(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
@@ -2800,7 +2848,10 @@ TclStringObjReverse(
 		*to++ = *src;
 	    }
 	} else {
-	    /* Reversing in place */
+	    /*
+	     * Reversing in place.
+	     */
+
 	    while (--src > from) {
 		ch = *src;
 		*src = *from;
@@ -2824,20 +2875,22 @@ TclStringObjReverse(
 	    /*
 	     * Either numChars == -1 and we don't know how many chars are
 	     * represented by objPtr->bytes and we need Pass 1 just in case,
-	     * or numChars >= 0 and we know we have fewer chars than bytes,
-	     * so we know there's a multibyte character needing Pass 1.
+	     * or numChars >= 0 and we know we have fewer chars than bytes, so
+	     * we know there's a multibyte character needing Pass 1.
 	     *
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
+
 	    int charCount = 0;
 	    int bytesLeft = numBytes;
 
 	    while (bytesLeft) {
 		/*
-		 * NOTE: We know that the from buffer is NUL-terminated.
-		 * It's part of the contract for objPtr->bytes values.
-		 * Thus, we can skip calling Tcl_UtfCharComplete() here.
+		 * NOTE: We know that the from buffer is NUL-terminated. It's
+		 * part of the contract for objPtr->bytes values. Thus, we can
+		 * skip calling Tcl_UtfCharComplete() here.
 		 */
+
 		int bytesInChar = TclUtfToUniChar(from, &ch);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
