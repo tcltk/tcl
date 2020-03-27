@@ -118,11 +118,11 @@ typedef off_t		Tcl_SeekOffset;
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
+#   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
+#   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
+#   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
+#   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
 
 /*
