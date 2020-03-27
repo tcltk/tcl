@@ -1180,7 +1180,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetUWide(objv[i], &valueUWide)
-			|| !InRange(0, valueUWide, ULONG_MAX)) {
+			|| (valueUWide > ULONG_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1190,7 +1190,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetUWide(valueObj, &valueUWide)
-		    || !InRange(0, valueUWide, ULONG_MAX)) {
+		    || (valueUWide > ULONG_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned long value";
