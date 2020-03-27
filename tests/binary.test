@@ -2646,19 +2646,19 @@ test binary-73.3 {binary decode base64} -body {
 test binary-73.4 {binary decode base64} -body {
     binary decode base64 [string repeat YWJj 20]
 } -result [string repeat abc 20]
-test binary-73.5 {binary encode base64} -body {
+test binary-73.5 {binary decode base64} -body {
     binary decode base64 AAECAwQAAQID
 } -result "\0\1\2\3\4\0\1\2\3"
-test binary-73.6 {binary encode base64} -body {
+test binary-73.6 {binary decode base64} -body {
     binary decode base64 AA==
 } -result "\0"
-test binary-73.7 {binary encode base64} -body {
+test binary-73.7 {binary decode base64} -body {
     binary decode base64 AAA=
 } -result "\0\0"
-test binary-73.8 {binary encode base64} -body {
+test binary-73.8 {binary decode base64} -body {
     binary decode base64 AAAA
 } -result "\0\0\0"
-test binary-73.9 {binary encode base64} -body {
+test binary-73.9 {binary decode base64} -body {
     binary decode base64 AAAAAA==
 } -result "\0\0\0\0"
 test binary-73.10 {binary decode base64} -body {

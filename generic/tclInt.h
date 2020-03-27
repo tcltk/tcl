@@ -2538,7 +2538,6 @@ typedef struct List {
 MODULE_SCOPE int TclGetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, int flags, Tcl_WideInt *widePtr);
 
-
 /*
  * Macro used to save a function call for common uses of
  * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:

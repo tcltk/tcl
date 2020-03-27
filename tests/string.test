@@ -1007,9 +1007,9 @@ test string-6.142.$noComp {string is none, false} {
 test string-6.143.$noComp {string is none, false} {
     run {string is none 0}
 } 0
-test string-6.144.$noComp {string is none, true} {
+test string-6.144.$noComp {string is none, true} -constraints nodep -body {
     run {string is none 1-2}
-} 0
+} -result 1
 test string-6.145.$noComp {string is none, true} {
     run {string is none -1}
 } 1
