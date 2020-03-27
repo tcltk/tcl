@@ -86,7 +86,6 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
     /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
 #   define CP_UTF8 65001
@@ -107,13 +106,7 @@ typedef off_t		Tcl_SeekOffset;
     __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#ifndef __x86_64__
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
-#endif
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
