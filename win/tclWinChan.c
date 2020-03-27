@@ -893,7 +893,7 @@ TclpOpenFileChannel(
     if (handle == INVALID_HANDLE_VALUE) {
 	DWORD err = GetLastError();
 
-	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
+	if ((err & 0xFFFFL) == ERROR_OPEN_FAILED) {
 	    err = TEST_FLAG(mode, O_CREAT) ? ERROR_FILE_EXISTS
 		    : ERROR_FILE_NOT_FOUND;
 	}
@@ -1085,7 +1085,7 @@ Tcl_MakeFileChannel(
 	    "leal       1f,             %%eax"          "\n\t"
 	    "movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
 	    "movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
-	    "movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+	    "movl       %%esp,          0xC(%%edx)"     "\n\t" /* esp */
 	    "movl       $0,             0x10(%%edx)"    "\n\t" /* status */
 
 	    /*
@@ -1125,7 +1125,7 @@ Tcl_MakeFileChannel(
 	     */
 
 	    "2:"                                        "\t"
-	    "movl       0xc(%%edx),     %%esp"          "\n\t"
+	    "movl       0xC(%%edx),     %%esp"          "\n\t"
 	    "movl       0x8(%%edx),     %%ebp"          "\n\t"
 	    "movl       0x0(%%edx),     %%eax"          "\n\t"
 	    "movl       %%eax,          %%fs:0"         "\n\t"

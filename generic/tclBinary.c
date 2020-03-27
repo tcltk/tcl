@@ -605,9 +605,9 @@ MakeByteArray(
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "expected byte sequence but character %zu "
-			    "was '%1s' (U+%06X)", dst - byteArrayPtr->bytes,
-			    src, ch));
+			    "expected byte sequence but character %"
+			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
+			    dst - byteArrayPtr->bytes, src, ch));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
 		}
 		Tcl_Free(byteArrayPtr);

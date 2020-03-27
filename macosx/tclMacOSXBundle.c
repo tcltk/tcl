@@ -146,38 +146,6 @@ OpenResourceMap(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MacOSXOpenBundleResources --
- *
- *	Given the bundle name for a shared library, this routine sets
- *	libraryPath to the Resources/Scripts directory in the framework
- *	package. If hasResourceFile is true, it will also open the main
- *	resource file for the bundle.
- *
- * Results:
- *	TCL_OK if the bundle could be opened, and the Scripts folder found.
- *	TCL_ERROR otherwise.
- *
- * Side effects:
- *	libraryVariableName may be set, and the resource file opened.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_MacOSXOpenBundleResources(
-    Tcl_Interp *interp,
-    const char *bundleName,
-    int hasResourceFile,
-    size_t maxPathLen,
-    char *libraryPath)
-{
-    return Tcl_MacOSXOpenVersionedBundleResources(interp, bundleName, NULL,
-	    hasResourceFile, maxPathLen, libraryPath);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_MacOSXOpenVersionedBundleResources --
  *
  *	Given the bundle and version name for a shared library (version name
