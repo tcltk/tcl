@@ -247,6 +247,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 #   undef TclWinConvertError /* 0 */
 #   undef TclWinGetTclInstance /* 4 */
+#   undef TclpIsAtty /* 16 */
 #   undef TclWinAddProcess /* 20 */
 #   undef TclWinNoBackslash /* 24 */
 #   undef TclWinFlushDirtyChannels /* 27 */
