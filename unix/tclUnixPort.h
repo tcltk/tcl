@@ -86,7 +86,6 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -114,15 +113,9 @@ extern "C" {
     __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
 #ifdef __clang__
 #pragma clang diagnostic pop
-#endif
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#ifndef __x86_64__
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
 #endif
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
