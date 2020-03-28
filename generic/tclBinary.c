@@ -2951,7 +2951,7 @@ BinaryDecode64(
 		if (c == '=' && i > 1) {
 		    value <<= 6;
 		    cut++;
-		} else if (!strict && TclIsSpaceProc(c)) {
+		} else if (!strict) {
 		    i--;
 		} else {
 		    goto bad64;
@@ -2975,7 +2975,7 @@ BinaryDecode64(
 		if (i) {
 		    cut++;
 		}
-	    } else if (strict || !TclIsSpaceProc(c)) {
+	    } else if (strict) {
 		goto bad64;
 	    } else {
 		i--;
@@ -2994,11 +2994,6 @@ BinaryDecode64(
 	if (cut && data < dataend) {
 	    if (strict) {
 		goto bad64;
-	    }
-	    for (; data < dataend; data++) {
-		if (!TclIsSpaceProc(*data)) {
-		    goto bad64;
-		}
 	    }
 	}
     }
