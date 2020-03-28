@@ -2517,11 +2517,11 @@ BinaryEncode64(
 	    break;
 	case OPT_WRAPCHAR:
 	    wrapchar = Tcl_GetStringFromObj(objv[i + 1], &wrapcharlen);
-	    if (wrapcharlen == 0) {
-		maxlen = 0;
-	    }
 	    break;
 	}
+    }
+    if (wrapcharlen == 0) {
+	maxlen = 0;
     }
 
     resultObj = Tcl_NewObj();
