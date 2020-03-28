@@ -2718,7 +2718,7 @@ test binary-73.30 {binary decode base64} -body {
     list [string length [set r [binary decode base64 -strict WFla\n]]] $r
 } -returnCodes error -match glob -result {invalid base64 character *}
 test binary-73.31 {binary decode base64} -body {
-    list [string length [set r [binary decode base64 WA==WFla]]] $r
+    list [string length [set r [binary decode base64 -strict WA==WFla]]] $r
 } -returnCodes error -match glob -result {invalid base64 character *}
 test binary-73.32 {binary decode base64, bug [00d04c4f12]} -body {
     list \
@@ -2760,6 +2760,9 @@ test binary-73.36 {binary decode base64: check encoded & decoded equals original
     }
     join $r \n
 } -result {}
+test binary-73.37 {binary decode base64: Bug ffeb2097af} {
+    binary decode base64 [binary encode base64 -maxlen 3 -wrapchar : abc]
+} abc
 
 test binary-74.1 {binary encode uuencode} -body {
     binary encode uuencode
