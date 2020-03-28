@@ -2633,6 +2633,9 @@ test binary-72.27 {binary encode base64} -body {
 test binary-72.28 {binary encode base64} -body {
     binary encode base64 -maxlen 6 -wrapchar 0123456789 abcabcabc
 } -result {YWJjYW0123456789JjYWJj}
+test binary-72.29 {binary encode base64} {
+    string length [binary encode base64 -maxlen 3 -wrapchar \xca abc]
+} 5
 
 test binary-73.1 {binary decode base64} -body {
     binary decode base64
