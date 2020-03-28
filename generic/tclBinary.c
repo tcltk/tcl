@@ -2484,11 +2484,11 @@ BinaryEncode64(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
-    unsigned char *data, *cursor, *limit;
+    unsigned char *data, *limit;
     int maxlen = 0;
     const char *wrapchar = "\n";
     int wrapcharlen = 1;
-    int offset, i, index, size, outindex = 0, count = 0;
+    int offset, i, index, size, outindex = 0, count = 0, purewrap = 1;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2516,7 +2516,13 @@ BinaryEncode64(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = Tcl_GetStringFromObj(objv[i + 1], &wrapcharlen);
+	    purewrap = TclIsPureByteArray(objv[i + 1]);
+	    if (purewrap) {
+		wrapchar = (const char *) Tcl_GetByteArrayFromObj(
+			objv[i + 1], &wrapcharlen);
+	    } else {
+		wrapchar = Tcl_GetStringFromObj(objv[i + 1], &wrapcharlen);
+	    }
 	    break;
 	}
     }
@@ -2527,6 +2533,8 @@ BinaryEncode64(
     resultObj = Tcl_NewObj();
     data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (count > 0) {
+	unsigned char *cursor = NULL;
+
 	size = (((count * 4) / 3) + 3) & ~3;	/* ensure 4 byte chunks */
 	if (maxlen > 0 && size > maxlen) {
 	    int adjusted = size + (wrapcharlen * (size / maxlen));
@@ -2535,8 +2543,17 @@ BinaryEncode64(
 		adjusted -= wrapcharlen;
 	    }
 	    size = adjusted;
+
+	    if (purewrap == 0) {
+		/* Wrapchar is (possibly) non-byte, so build result as
+		 * general string, not bytearray */
+		Tcl_SetObjLength(resultObj, size);
+		cursor = (unsigned char *) TclGetString(resultObj);
+	    }
 	}
-	cursor = Tcl_SetByteArrayLength(resultObj, size);
+	if (cursor == NULL) {
+	    cursor = Tcl_SetByteArrayLength(resultObj, size);
+	}
 	limit = cursor + size;
 	for (offset = 0; offset < count; offset += 3) {
 	    unsigned char d[3] = {0, 0, 0};
