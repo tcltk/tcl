@@ -2452,16 +2452,10 @@ BinaryDecodeHex(
  *
  * BinaryEncode64 --
  *
- *	This implements a generic 6 bit binary encoding. Input is broken into
- *	6 bit chunks and a lookup table passed in via clientData is used to
- *	turn these values into output characters. This is used to implement
- *	base64 binary encodings.
+ *	This procedure implements the "binary encode base64" Tcl command.
  *
  * Results:
- *	Interp result set to an encoded byte array object
- *
- * Side effects:
- *	None
+ *	The base64 encoded value prescribed by the input arguments.
  *
  *----------------------------------------------------------------------
  */
