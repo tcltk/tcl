@@ -2878,8 +2878,9 @@ BinaryDecode64(
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
-    int strict = 0;
+    int pure, strict = 0;
     int i, index, size, cut = 0, count = 0;
+    Tcl_UniChar ch;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2900,8 +2901,9 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    pure = TclIsPureByteArray(objv[objc - 1]);
+    datastart = data = pure ? Tcl_GetByteArrayFromObj(objv[objc - 1], &count)
+	    : (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -3002,21 +3004,22 @@ BinaryDecode64(
     return TCL_OK;
 
   bad64:
-    {
+    if (pure) {
+	ch = c;
+    } else {
 	/* The decoder is byte-oriented. If we saw a byte that's not a
 	 * valid member of the base64 alphabet, it could be the lead byte
 	 * of a multi-byte character. */
-	Tcl_UniChar ch;
 
 	/* Safe because we know data is NUL-terminated */
 	TclUtfToUniChar((const char *)(data - 1), &ch);
-
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid base64 character \"%c\" at position %d", ch,
-		(int) (data - datastart - 1)));
-	TclDecrRefCount(resultObj);
-	return TCL_ERROR;
     }
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "invalid base64 character \"%c\" at position %d", ch,
+	    (int) (data - datastart - 1)));
+    TclDecrRefCount(resultObj);
+    return TCL_ERROR;
 }
 
 /*
