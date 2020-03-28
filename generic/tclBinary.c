@@ -2654,6 +2654,7 @@ BinaryDecodeHex(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" at position %" TCL_Z_MODIFIER "u",
 	    c, data - datastart - 1));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     return TCL_ERROR;
 }
 
@@ -2662,16 +2663,10 @@ BinaryDecodeHex(
  *
  * BinaryEncode64 --
  *
- *	This implements a generic 6 bit binary encoding. Input is broken into
- *	6 bit chunks and a lookup table passed in via clientData is used to
- *	turn these values into output characters. This is used to implement
- *	base64 binary encodings.
+ *	This procedure implements the "binary encode base64" Tcl command.
  *
  * Results:
- *	Interp result set to an encoded byte array object
- *
- * Side effects:
- *	None
+ *	The base64 encoded value prescribed by the input arguments.
  *
  *----------------------------------------------------------------------
  */
@@ -2700,11 +2695,11 @@ BinaryEncode64(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
-    unsigned char *data, *cursor, *limit;
+    unsigned char *data, *limit;
     int maxlen = 0;
     const char *wrapchar = "\n";
-    size_t wrapcharlen = 1;
-    int i, index, size, outindex = 0;
+    int wrapcharlen = 1;
+    int i, index, size, outindex = 0, purewrap = 1;
     size_t offset, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
@@ -2733,17 +2728,24 @@ BinaryEncode64(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
-	    if (wrapcharlen == 0) {
-		maxlen = 0;
+	    wrapchar = (const char *)TclGetBytesFromObj(NULL,
+		    objv[i + 1], &wrapcharlen);
+	    if (wrapchar == NULL) {
+		purewrap = 0;
+		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
 	}
+    }
+    if (wrapcharlen == 0) {
+	maxlen = 0;
     }
 
     resultObj = Tcl_NewObj();
     data = TclGetByteArrayFromObj(objv[objc - 1], &count);
     if (count > 0) {
+	unsigned char *cursor = NULL;
+
 	size = (((count * 4) / 3) + 3) & ~3;	/* ensure 4 byte chunks */
 	if (maxlen > 0 && size > maxlen) {
 	    int adjusted = size + (wrapcharlen * (size / maxlen));
@@ -2752,8 +2754,17 @@ BinaryEncode64(
 		adjusted -= wrapcharlen;
 	    }
 	    size = adjusted;
+
+	    if (purewrap == 0) {
+		/* Wrapchar is (possibly) non-byte, so build result as
+		 * general string, not bytearray */
+		Tcl_SetObjLength(resultObj, size);
+		cursor = (unsigned char *) TclGetString(resultObj);
+	    }
 	}
-	cursor = Tcl_SetByteArrayLength(resultObj, size);
+	if (cursor == NULL) {
+	    cursor = Tcl_SetByteArrayLength(resultObj, size);
+	}
 	limit = cursor + size;
 	for (offset = 0; offset < count; offset += 3) {
 	    unsigned char d[3] = {0, 0, 0};
@@ -3091,9 +3102,10 @@ BinaryDecode64(
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
-    int strict = 0;
+    int pure = 1, strict = 0;
     int i, index, size, cut = 0;
-    size_t count = 0;
+    int count = 0;
+    Tcl_UniChar ch;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -3114,8 +3126,12 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -3165,7 +3181,7 @@ BinaryDecode64(
 		if (c == '=' && i > 1) {
 		    value <<= 6;
 		    cut++;
-		} else if (!strict && TclIsSpaceProc(c)) {
+		} else if (!strict) {
 		    i--;
 		} else {
 		    goto bad64;
@@ -3189,7 +3205,7 @@ BinaryDecode64(
 		if (i) {
 		    cut++;
 		}
-	    } else if (strict || !TclIsSpaceProc(c)) {
+	    } else if (strict) {
 		goto bad64;
 	    } else {
 		i--;
@@ -3209,11 +3225,6 @@ BinaryDecode64(
 	    if (strict) {
 		goto bad64;
 	    }
-	    for (; data < dataend; data++) {
-		if (!TclIsSpaceProc(*data)) {
-		    goto bad64;
-		}
-	    }
 	}
     }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
@@ -3221,9 +3232,21 @@ BinaryDecode64(
     return TCL_OK;
 
   bad64:
+    if (pure) {
+	ch = c;
+    } else {
+	/* The decoder is byte-oriented. If we saw a byte that's not a
+	 * valid member of the base64 alphabet, it could be the lead byte
+	 * of a multi-byte character. */
+
+	/* Safe because we know data is NUL-terminated */
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+    }
+
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %" TCL_Z_MODIFIER "u",
-	    (char) c, data - datastart - 1));
+	    "invalid base64 character \"%c\" at position %"
+	    TCL_Z_MODIFIER "u", ch, data - datastart - 1));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
