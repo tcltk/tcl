@@ -458,7 +458,7 @@ test string-5.5.$noComp {string index} {
     run {string index abcde 5}
 } {}
 test string-5.6.$noComp {string index} {
-    list [catch {run {string index abcde -10}} msg] $msg
+    list [catch {run {string index abcde none}} msg] $msg
 } {0 {}}
 test string-5.7.$noComp {string index} {
     list [catch {run {string index a xyz}} msg] $msg
@@ -1497,16 +1497,16 @@ test string-12.7.$noComp {string range, last < first} {
     run {string range abcdefghijklmnop 10 9}
 } {}
 test string-12.8.$noComp {string range, first < 0} {
-    run {string range abcdefghijklmnop -3 2}
+    run {string range abcdefghijklmnop none 2}
 } {abc}
 test string-12.9.$noComp {string range} {
-    run {string range abcdefghijklmnop -3 -2}
+    run {string range abcdefghijklmnop none none}
 } {}
 test string-12.10.$noComp {string range} {
     run {string range abcdefghijklmnop 1000 1010}
 } {}
 test string-12.11.$noComp {string range} {
-    run {string range abcdefghijklmnop -100 end}
+    run {string range abcdefghijklmnop none end}
 } {abcdefghijklmnop}
 test string-12.12.$noComp {string range} {
     list [catch {run {string range abc abc 1}} msg] $msg
@@ -1631,16 +1631,16 @@ test string-14.8.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 9}
 } {abcdefghijklmnop}
 test string-14.9.$noComp {string replace} {
-    run {string replace abcdefghijklmnop -3 2}
+    run {string replace abcdefghijklmnop none 2}
 } {defghijklmnop}
 test string-14.10.$noComp {string replace} {
-    run {string replace abcdefghijklmnop -3 -2}
+    run {string replace abcdefghijklmnop none none}
 } {abcdefghijklmnop}
 test string-14.11.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 1000 1010}
 } -result {abcdefghijklmnop}
 test string-14.12.$noComp {string replace} {
-    run {string replace abcdefghijklmnop -100 end}
+    run {string replace abcdefghijklmnop none end}
 } {}
 test string-14.13.$noComp {string replace} {
     list [catch {run {string replace abc abc 1}} msg] $msg
@@ -1933,7 +1933,7 @@ test string-22.6.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" 2}
 } -result 0
 test string-22.7.$noComp {string wordstart} -body {
-    run {string wordstart "one two three_words" -2}
+    run {string wordstart "one two three_words" none}
 } -result 0
 test string-22.8.$noComp {string wordstart} -body {
     run {string wordstart "one .*&^ three" 6}

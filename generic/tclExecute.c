@@ -4843,7 +4843,7 @@ TEBCresume(
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& !TclHasIntRep(value2Ptr, &tclListType)
 		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
-			0, &index) == TCL_OK)) {
+			TCL_INDEX_ERROR, &index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
 	    tosPtr--;
 	    pcAdjustment = 1;
@@ -5323,7 +5323,7 @@ TEBCresume(
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
-		    0, &fromIdx) != TCL_OK
+		    TCL_INDEX_ERROR, &fromIdx) != TCL_OK
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
 		    0, &toIdx) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -5412,9 +5412,9 @@ TEBCresume(
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, endIdx,
-		    0, &fromIdx) != TCL_OK
+		    TCL_INDEX_ERROR, &fromIdx) != TCL_OK
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, endIdx,
-		    0, &toIdx) != TCL_OK) {
+		    TCL_INDEX_ERROR, &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -6398,7 +6398,7 @@ TEBCresume(
 	    objResultPtr = TCONST(valuePtr->internalRep.wideValue >= -1);
 	} else {
 	    int idx;
-	    if (TclGetIntForIndexM(NULL, valuePtr, INT_MAX-1, 0, &idx) != TCL_OK) {
+	    if (TclGetIntForIndexM(NULL, valuePtr, INT_MAX-1, TCL_INDEX_ERROR, &idx) != TCL_OK) {
 		objResultPtr = TCONST(0);
 	    } else {
 		TclInvalidateStringRep(valuePtr);
