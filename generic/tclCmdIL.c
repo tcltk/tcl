@@ -2756,7 +2756,7 @@ Tcl_LremoveObjCmd(
     idxv = (int *)ckalloc((objc - 2) * sizeof(int));
     for (i = 2; i < objc; i++) {
 	if (TclGetIntForIndexM(interp, objv[i], /*endValue*/ listLen - 1,
-		0, &idxv[i - 2]) != TCL_OK) {
+		TCL_INDEX_ERROR, &idxv[i - 2]) != TCL_OK) {
 	    ckfree(idxv);
 	    return TCL_ERROR;
 	}
@@ -2978,12 +2978,12 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, 0, &first);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, TCL_INDEX_ERROR, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, 0, &last);
+    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, TCL_INDEX_ERROR, &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3496,7 +3496,7 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM(interp, startPtr, listc-1, 0, &start);
+	result = TclGetIntForIndexM(interp, startPtr, listc-1, TCL_INDEX_ERROR, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}

@@ -1263,7 +1263,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, 0, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, INT_MAX-2, TCL_INDEX_ERROR, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1365,7 +1365,7 @@ TclLindexFlat(
 	TclListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-		0, &index) == TCL_OK) {
+		TCL_INDEX_ERROR, &index) == TCL_OK) {
 	    if (index<0 || index>=listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
@@ -1373,7 +1373,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, 0, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], -1, TCL_INDEX_ERROR, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1444,7 +1444,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, INT_MAX-2, TCL_INDEX_ERROR, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1591,7 +1591,7 @@ TclLsetFlat(
 	 * post-increments, avoid '*indexArray++' here.
 	 */
 
-	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, 0, &index)
+	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, TCL_INDEX_ERROR, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
 	    result = TCL_ERROR;
