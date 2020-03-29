@@ -512,27 +512,27 @@ Tcl_GetByteArrayFromObj(
     int *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
-    size_t size;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, &size);
+    size_t numBytes;
+    unsigned char *bytes = TclGetBytesFromObj(NULL, objPtr, &numBytes);
 
-    if (result == NULL) {
+    if (bytes == NULL) {
 	ByteArray *baPtr;
 	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 
 	assert(irPtr != NULL);
 
 	baPtr = GET_BYTEARRAY(irPtr);
-	result = baPtr->bytes;
-	size = baPtr->used;
+	bytes = baPtr->bytes;
+	numBytes = baPtr->used;
     } 
 
     if (lengthPtr != NULL) {
-	if (size > INT_MAX) {
+	if (numBytes > INT_MAX) {
 	    Tcl_Panic("more bytes than Tcl_GetByteArrayFromObj can return");
 	}
-	*lengthPtr = (int) size;
+	*lengthPtr = (int) numBytes;
     }
-    return result;
+    return bytes;
 }
 
 /*
