@@ -297,7 +297,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(_WIN32)"
+	    append text "#if (TCL_MAJOR_VERSION > 8) || defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -308,7 +308,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(_WIN32)"
+	    append text "#if (TCL_MAJOR_VERSION < 9) && !defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " && !defined(__CYGWIN__)"
 	    }
@@ -320,21 +320,21 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* UNIX */\n"
 	}
 	macosx {
-	    append text "#ifdef MAC_OSX_TCL /* MACOSX */\n${iftxt}"
+	    append text "#if (TCL_MAJOR_VERSION < 9) && defined(MAC_OSX_TCL) /* MACOSX */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* MACOSX */\n${eltxt}"
 	    }
 	    append text "#endif /* MACOSX */\n"
 	}
 	aqua {
-	    append text "#ifdef MAC_OSX_TK /* AQUA */\n${iftxt}"
+	    append text "#if (TCL_MAJOR_VERSION < 9) && defined(MAC_OSX_TK) /* AQUA */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* AQUA */\n${eltxt}"
 	    }
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(_WIN32)"
+	    append text "#if !((TCL_MAJOR_VERSION > 8) || defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
