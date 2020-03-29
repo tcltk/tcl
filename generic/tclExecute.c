@@ -5282,7 +5282,7 @@ TEBCresume(
 	 */
 
 	length = Tcl_GetCharLength(valuePtr);
-	if (TclGetIntForIndexM(interp, value2Ptr, length-1, 0, &index)!=TCL_OK) {
+	if (TclGetIntForIndexM(interp, value2Ptr, length-1, TCL_INDEX_ERROR, &index)!=TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -5325,7 +5325,7 @@ TEBCresume(
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
 		    TCL_INDEX_ERROR, &fromIdx) != TCL_OK
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
-		    0, &toIdx) != TCL_OK) {
+		    TCL_INDEX_ERROR, &toIdx) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
