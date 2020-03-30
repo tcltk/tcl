@@ -2633,6 +2633,7 @@ BinaryEncodeUu(
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+#if 0
 	switch (index) {
 	case OPT_MAXLEN:
 	    if (Tcl_GetIntFromObj(interp, objv[i + 1],
@@ -2651,6 +2652,7 @@ BinaryEncodeUu(
 	    wrapchar = Tcl_GetByteArrayFromObj(objv[i + 1], &wrapcharlen);
 	    break;
 	}
+#endif
     }
 
     /*
