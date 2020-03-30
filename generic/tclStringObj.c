@@ -3431,7 +3431,7 @@ TclStringCmp(
  * Results:
  *	If needle is found as a substring of haystack, the index of the
  *	first instance of such a find is returned.  If needle is not present
- *	as a substring of haystack, TCL_IO_FAILURE is returned.
+ *	as a substring of haystack, -1 is returned.
  *
  * Side effects:
  *	needle and haystack may have their Tcl_ObjType changed.
@@ -3439,13 +3439,16 @@ TclStringCmp(
  *---------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Obj *
 TclStringFirst(
     Tcl_Obj *needle,
     Tcl_Obj *haystack,
     size_t start)
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
+    Tcl_Obj *result;
+    size_t value = TCL_IO_FAILURE;
+	Tcl_UniChar *check, *end, *uh, *un;
 
     if (start == TCL_AUTO_LENGTH) {
 	start = 0;
@@ -3454,7 +3457,7 @@ TclStringFirst(
 	/* We don't find empty substrings.  Bizarre!
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
-	return TCL_IO_FAILURE;
+	goto firstEnd;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -3465,7 +3468,7 @@ TclStringFirst(
 	bh = TclGetByteArrayFromObj(haystack, &lh);
 	if ((lh < ln) || (start > lh - ln)) {
 	    /* Don't start the loop if there cannot be a valid answer */
-	    return TCL_IO_FAILURE;
+	    goto firstEnd;
 	}
 	end = bh + lh;
 
@@ -3479,17 +3482,18 @@ TclStringFirst(
 	    check = (unsigned char *)memchr(check, bn[0], (end + 1 - ln) - check);
 	    if (check == NULL) {
 		/* Leading byte not found -> needle cannot be found. */
-		return TCL_IO_FAILURE;
+		goto firstEnd;
 	    }
 	    /* Leading byte found, check rest of needle. */
 	    if (0 == memcmp(check+1, bn+1, ln-1)) {
 		/* Checks! Return the successful index. */
-		return (check - bh);
+		value = (check - bh);
+		goto firstEnd;
 	    }
 	    /* Rest of needle match failed; Iterate to continue search. */
 	    check++;
 	}
-	return TCL_IO_FAILURE;
+	goto firstEnd;
     }
 
     /*
@@ -3504,25 +3508,24 @@ TclStringFirst(
      * do only the well-defined Tcl_UniChar array search.
      */
 
-    {
-	Tcl_UniChar *check, *end, *uh;
-	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
-
-	uh = TclGetUnicodeFromObj(haystack, &lh);
-	if ((lh < ln) || (start > lh - ln)) {
-	    /* Don't start the loop if there cannot be a valid answer */
-	    return TCL_IO_FAILURE;
-	}
-	end = uh + lh;
-
-	for (check = uh + start; check + ln <= end; check++) {
-	    if ((*check == *un) && (0 ==
-		    memcmp(check + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-		return (check - uh);
-	    }
-	}
-	return TCL_IO_FAILURE;
+    un = TclGetUnicodeFromObj(needle, &ln);
+    uh = TclGetUnicodeFromObj(haystack, &lh);
+    if ((lh < ln) || (start > lh - ln)) {
+	/* Don't start the loop if there cannot be a valid answer */
+	goto firstEnd;
     }
+    end = uh + lh;
+
+    for (check = uh + start; check + ln <= end; check++) {
+	if ((*check == *un) && (0 ==
+		memcmp(check + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
+	    value =  (check - uh);
+	    goto firstEnd;
+	}
+    }
+  firstEnd:
+    TclNewIntObj(result, TclWideIntFromSize(value));
+    return result;
 }
 
 /*
@@ -3535,7 +3538,7 @@ TclStringFirst(
  * Results:
  *	If needle is found as a substring of haystack, the index of the
  *	last instance of such a find is returned.  If needle is not present
- *	as a substring of haystack, TCL_IO_FAILURE is returned.
+ *	as a substring of haystack, -1 is returned.
  *
  * Side effects:
  *	needle and haystack may have their Tcl_ObjType changed.
@@ -3543,13 +3546,16 @@ TclStringFirst(
  *---------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Obj *
 TclStringLast(
     Tcl_Obj *needle,
     Tcl_Obj *haystack,
     size_t last)
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
+    Tcl_Obj *result;
+    size_t value = TCL_IO_FAILURE;
+	Tcl_UniChar *check, *uh, *un;
 
     if (ln == 0) {
 	/*
@@ -3558,7 +3564,7 @@ TclStringLast(
 	 * 	TODO: When we one day make this a true substring
 	 * 	finder, change this to "return last", after limitation.
 	 */
-	return TCL_IO_FAILURE;
+	goto lastEnd;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -3570,41 +3576,43 @@ TclStringLast(
 	}
 	if (last + 1 < ln) {
 	    /* Don't start the loop if there cannot be a valid answer */
-	    return TCL_IO_FAILURE;
+	    goto lastEnd;
 	}
 	check = bh + last + 1 - ln;
 
 	while (check >= bh) {
 	    if ((*check == bn[0])
 		    && (0 == memcmp(check+1, bn+1, ln-1))) {
-		return (check - bh);
+		value = (check - bh);
+		goto lastEnd;
 	    }
 	    check--;
 	}
-	return TCL_IO_FAILURE;
+	goto lastEnd;
     }
 
-    {
-	Tcl_UniChar *check, *uh = TclGetUnicodeFromObj(haystack, &lh);
-	Tcl_UniChar *un = TclGetUnicodeFromObj(needle, &ln);
+    uh = TclGetUnicodeFromObj(haystack, &lh);
+    un = TclGetUnicodeFromObj(needle, &ln);
 
-	if (last + 1 >= lh + 1) {
-	    last = lh - 1;
-	}
-	if (last + 1 < ln) {
-	    /* Don't start the loop if there cannot be a valid answer */
-	    return TCL_IO_FAILURE;
-	}
-	check = uh + last + 1 - ln;
-	while (check >= uh) {
-	    if ((*check == un[0])
-		    && (0 == memcmp(check+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
-		return (check - uh);
-	    }
-	    check--;
-	}
-	return TCL_IO_FAILURE;
+    if (last + 1 >= lh + 1) {
+	last = lh - 1;
     }
+    if (last + 1 < ln) {
+	/* Don't start the loop if there cannot be a valid answer */
+	goto lastEnd;
+    }
+    check = uh + last + 1 - ln;
+    while (check >= uh) {
+	if ((*check == un[0])
+		&& (0 == memcmp(check+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	    value = (check - uh);
+	    goto lastEnd;
+	}
+	check--;
+    }
+  lastEnd:
+    TclNewIntObj(result, TclWideIntFromSize(value));
+    return result;
 }
 
 /*
