@@ -2726,8 +2726,9 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, size, count = 0, strict = 0, lineLen;
+    int i, index, size, pure, count = 0, strict = 0, lineLen;
     unsigned char c;
+    Tcl_UniChar ch;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2748,8 +2749,9 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    pure = TclIsPureByteArray(objv[objc - 1]);
+    datastart = data = pure ? Tcl_GetByteArrayFromObj(objv[objc - 1], &count)
+	    : (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2855,9 +2857,14 @@ BinaryDecodeUu(
     return TCL_ERROR;
 
   badUu:
+    if (pure) {
+	ch = c;
+    } else {
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    ch, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
