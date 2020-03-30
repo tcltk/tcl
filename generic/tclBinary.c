@@ -512,7 +512,7 @@ Tcl_GetByteArrayFromObj(
     int *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
-    size_t numBytes;
+    size_t numBytes = 0;
     unsigned char *bytes = TclGetBytesFromObj(NULL, objPtr, &numBytes);
 
     if (bytes == NULL) {
@@ -526,11 +526,19 @@ Tcl_GetByteArrayFromObj(
 	numBytes = baPtr->used;
     } 
 
-    if (lengthPtr != NULL) {
+    /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
+     * a trick to get around changing size. */
+    if (lengthPtr) {
 	if (numBytes > INT_MAX) {
-	    Tcl_Panic("more bytes than Tcl_GetByteArrayFromObj can return");
+	    /* Caller asked for an int length, but true length is outside
+	     * the int range. This case will be developed out of existence
+	     * in Tcl 9. As interim measure, fail. */
+
+	    *lengthPtr = 0;
+	    return NULL;
+	} else {
+	    *lengthPtr = (int) numBytes;
 	}
-	*lengthPtr = (int) numBytes;
     }
     return bytes;
 }
