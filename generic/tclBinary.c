@@ -488,7 +488,7 @@ Tcl_GetByteArrayFromObj(
 	    /* Caller asked for an int length, but true length is outside
 	     * the int range. This case will be developed out of existence
 	     * in Tcl 9. As interim measure, fail. */
-		
+
 	    *lengthPtr = 0;
 	    return NULL;
 	} else {
@@ -3113,8 +3113,8 @@ BinaryDecode64(
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
-    int i, index, size, cut = 0;
-    size_t count = 0;
+    int i, index, cut = 0;
+    size_t size, count = 0;
     Tcl_UniChar ch;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
