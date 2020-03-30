@@ -1338,8 +1338,7 @@ StringFirstCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringFirst(objv[1],
-	    objv[2], start)));
+    Tcl_SetObjResult(interp, TclStringFirst(objv[1], objv[2], start));
     return TCL_OK;
 }
 
@@ -1383,8 +1382,7 @@ StringLastCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringLast(objv[1],
-	    objv[2], last)));
+    Tcl_SetObjResult(interp, TclStringLast(objv[1], objv[2], last));
     return TCL_OK;
 }
 
