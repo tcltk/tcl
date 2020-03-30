@@ -217,7 +217,7 @@ test lreplace-5.2 {compiled lreplace: Bug 47ac84309b} {
 apply {{} {
     set lss     {{} {a} {a b c} {a b c d}}
     set ins     {{} A {A B}}
-    set idxs    {-1 0 1 2 3 end-3 end-2 end-1 end end+1}
+    set idxs    {none 0 1 2 3 end-3 end-2 end-1 end end+1}
     set lreplace lreplace
 
     foreach ls $lss {
