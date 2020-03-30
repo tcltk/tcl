@@ -562,9 +562,9 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
  * Flags values passed to Tcl_GetIntForIndex().
  */
 
-#define	TCL_INDEX_ERROR	1	/* Generate "out of range" errors when index < -1 */
-#define	TCL_INDEX_NOMIN	2	/* Convert values < 0 to 0 (or generate error for this) */
-#define	TCL_INDEX_NOMAX	4	/* Convert values > end to end (or generate error for this) */
+#define	TCL_INDEX_ERROR	0x100	/* Generate "out of range" errors when index < 0 */
+#define	TCL_INDEX_NOMIN	0x200	/* Convert values < 0 to 0 (or generate error for this) */
+#define	TCL_INDEX_NOMAX	0x400	/* Convert values > end to end (or generate error for this) */
 
 /*
  * Structures filled in by Tcl_RegExpInfo. Note that all offset values are

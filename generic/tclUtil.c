@@ -3698,7 +3698,7 @@ TclGetWideForIndex(
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = 0;
 	    }
-	    if ((*widePtr < -1) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
+	    if ((*widePtr < 0) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
@@ -3713,6 +3713,7 @@ TclGetWideForIndex(
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = 0;
 	    }
+	    if ((*widePtr < 0) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
 	    return TCL_OK;
 	}
     }

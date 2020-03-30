@@ -742,9 +742,9 @@ test util-9.46 {Tcl_GetIntForIndex} -constraints nodep -body {
 test util-9.47 {Tcl_GetIntForIndex} -body {
     string index abcd 0x10000000000000000
 } -result {}
-test util-9.48 {Tcl_GetIntForIndex} {
+test util-9.48 {Tcl_GetIntForIndex} -constraints nodep -body {
     string index abcd -0x10000000000000000
-} {}
+} -result {}
 test util-9.49 {Tcl_GetIntForIndex} -body {
     string index abcd end*1
 } -returnCodes error -match glob -result *
