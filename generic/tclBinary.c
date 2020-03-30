@@ -2372,7 +2372,8 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, size, count = 0, cut = 0, strict = 0;
+    int i, index, value, size, pure, count = 0, cut = 0, strict = 0;
+    Tcl_UniChar ch = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2393,8 +2394,9 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    pure = TclIsPureByteArray(objv[objc - 1]);
+    datastart = data = pure ? Tcl_GetByteArrayFromObj(objv[objc - 1], &count)
+	    : (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     dataend = data + count;
     size = (count + 1) / 2;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2439,10 +2441,15 @@ BinaryDecodeHex(
     return TCL_OK;
 
   badChar:
+    if (pure) {
+	ch = c;
+    } else {
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+    }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    ch, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     return TCL_ERROR;
 }
@@ -2728,7 +2735,7 @@ BinaryDecodeUu(
     unsigned char *begin, *cursor;
     int i, index, size, pure, count = 0, strict = 0, lineLen;
     unsigned char c;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2899,7 +2906,7 @@ BinaryDecode64(
     unsigned char *cursor = NULL;
     int pure, strict = 0;
     int i, index, size, cut = 0, count = 0;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
