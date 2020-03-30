@@ -5312,19 +5312,17 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-	slength = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+	objResultPtr = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
-	objResultPtr = TclNewWideIntObjFromSize(slength);
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
-	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, TCL_INDEX_END);
+	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
 
-	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
-	objResultPtr = TclNewWideIntObjFromSize(slength);
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_CLASS:
