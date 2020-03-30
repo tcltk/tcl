@@ -4169,8 +4169,13 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-    result = WriteBytes(chanPtr, src, len);
+    src = (char *) TclGetBytesFromObj(NULL, objPtr, &len);
+    if (src) {
+	result = WriteBytes(chanPtr, src, len);
+    } else {
+	Tcl_SetErrno(EINVAL);
+	result = -1;
+    }
     TclDecrRefCount(objPtr);
     return result;
 }
@@ -4221,12 +4226,24 @@ Tcl_WriteObj(
 	return -1;
     }
     if (statePtr->encoding == NULL) {
-	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
-	return WriteBytes(chanPtr, src, srcLen);
-    } else {
-	src = TclGetStringFromObj(objPtr, &srcLen);
-	return WriteChars(chanPtr, src, srcLen);
+	/* We have a binary channel... */
+
+	src = (const char *) TclGetBytesFromObj(NULL, objPtr, &srcLen);
+	if (src) {
+	    /* ... and value to write that is properly expressed as bytes. */
+
+	    return WriteBytes(chanPtr, src, srcLen);
+	}
+
+	/* We have some non-byte content to write, throw an error */
+
+	Tcl_SetErrno(EINVAL);
+	return -1;
     }
+
+    /* If either one is false, need to process encodings for correctness */
+    src = TclGetStringFromObj(objPtr, &srcLen);
+    return WriteChars(chanPtr, src, srcLen);
 }
 
 static void
