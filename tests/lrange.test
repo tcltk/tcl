@@ -212,7 +212,7 @@ test lrange-4.4 {lrange pure promise} -body {
 # not whether any of them is correct.
 apply {{} {
     set lss     {{} {a} {a b c} {a b c d}}
-    set idxs    {-1 0 1 2 3 end-3 end-2 end-1 end end+1}
+    set idxs    {none 0 1 2 3 end-3 end-2 end-1 end end+1}
     set lrange  lrange
 
     foreach ls $lss {

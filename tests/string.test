@@ -407,7 +407,7 @@ test string-4.13.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x end-2}
 } -result 3
 test string-4.14.$noComp {string first, negative start index} -body {
-    run {string first b abc -1}
+    run {string first b abc none}
 } -result 1
 test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} -body {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
@@ -427,7 +427,7 @@ test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
 } -result {-1}
 test string-4.18.$noComp {string first, corner case} -body {
-    run {string first a aaa -1}
+    run {string first a aaa none}
 } -result {0}
 test string-4.19.$noComp {string first, corner case} -body {
     run {string first a aaa end-5}
@@ -436,7 +436,7 @@ test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
 } -result {2}
 test string-4.21.$noComp {string last, corner case} -body {
-    run {string last a aaa -1}
+    run {string last a aaa none}
 } -result {-1}
 test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
@@ -502,7 +502,7 @@ test string-5.18.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" end-0o0289}} msg] $msg
 } -match glob -result {1 {*invalid octal number*}}
 test string-5.19.$noComp {string index, bytearray object out of bounds} {
-    run {string index [binary format I* {0x50515253 0x52}] -1}
+    run {string index [binary format I* {0x50515253 0x52}] none}
 } {}
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
@@ -1661,7 +1661,7 @@ test string-14.18.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 9 XXX}
 } {abcdefghijklmnop}
 test string-14.19.$noComp {string replace} {
-    run {string replace {} -1 0 A}
+    run {string replace {} none 0 A}
 } A
 test string-14.20.$noComp {string replace} {
     run {string replace [makeByteArray abcdefghijklmnop] end-10 end-2\
@@ -1881,7 +1881,7 @@ test string-21.3.$noComp {string wordend} -body {
     list [catch {run {string wordend a gorp}} msg] $msg
 } -result {1 {bad index "gorp": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-21.4.$noComp {string wordend} -body {
-    run {string wordend abc. -1}
+    run {string wordend abc. none}
 } -result 3
 test string-21.5.$noComp {string wordend} -body {
     run {string wordend abc. 100}
@@ -2420,7 +2420,7 @@ test string-31.9.$noComp {string insert, empty strings} {
     run {tcl::string::insert {} 0 {}}
 } {}
 test string-31.10.$noComp {string insert, negative index} {
-    run {tcl::string::insert 0123 -1 _}
+    run {tcl::string::insert 0123 none _}
 } _0123
 test string-31.11.$noComp {string insert, index beyond end} {
     run {tcl::string::insert 0123 5 _}
