@@ -2949,7 +2949,7 @@ BinaryDecodeUu(
     unsigned char *begin, *cursor;
     int i, index, size, pure = 1, count = 0, strict = 0, lineLen;
     unsigned char c;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -3123,7 +3123,7 @@ BinaryDecode64(
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
     int i, index, size, cut = 0, count = 0;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
