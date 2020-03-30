@@ -2934,6 +2934,18 @@ test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
 test binary-79.2 {Tcl_SetByteArrayLength} -body {
     testsetbytearraylength [string cat \u0141 B C] 1
 } -constraints testsetbytearraylength -returnCodes error -match glob -result *
+test binary-79.3 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 0
+} {}
+test binary-79.4 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 1
+} A
+test binary-79.5 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 2
+} AB
+test binary-79.6 {Tcl_SetByteArrayLength} -body {
+    testsetbytearraylength [string cat A B \u0141] 3
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
 
 # ----------------------------------------------------------------------

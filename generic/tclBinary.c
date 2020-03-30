@@ -64,7 +64,7 @@ static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    size_t *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
-static int		SetByteArrayFromAny(Tcl_Interp *interp,
+static int		SetByteArrayFromAny(Tcl_Interp *interp, size_t limit,
 			    Tcl_Obj *objPtr);
 static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
@@ -441,7 +441,7 @@ TclGetBytesFromObj(
     const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
 
     if (irPtr == NULL) {
-	if (TCL_ERROR == SetByteArrayFromAny(interp, objPtr)) {
+	if (TCL_ERROR == SetByteArrayFromAny(interp, TCL_INDEX_NONE, objPtr)) {
 	    return NULL;
 	}
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
@@ -534,11 +534,7 @@ Tcl_SetByteArrayLength(
 
     irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
     if (irPtr == NULL) {
-	if (length == 0) {
-	    Tcl_SetByteArrayObj(objPtr, NULL, 0);
-	} else if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
-
-	    /* TODO: Consider a length limit on conversion attempt. */
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, length, objPtr)) {
 	    return NULL;
 	}
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
@@ -664,12 +660,13 @@ TclNarrowToBytes(
 static int
 SetByteArrayFromAny(
     Tcl_Interp *interp,		/* For error reporting. */
+    size_t limit,		/* Create no more than this many bytes */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep ir;
 
-    if (0 == MakeByteArray(interp, objPtr, TCL_INDEX_NONE, 1, &byteArrayPtr)) {
+    if (0 == MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
 	return TCL_ERROR;
     }
 
@@ -839,7 +836,7 @@ TclAppendBytesToByteArray(
 
     irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
     if (irPtr == NULL) {
-	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, TCL_INDEX_NONE, objPtr)) {
 	    Tcl_Panic("attempt to append bytes to non-bytearray");
 	}
 	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
