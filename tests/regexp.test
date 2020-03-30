@@ -655,7 +655,7 @@ test regexp-16.18 {regsub -start} -body {
 } -result {1 xy}
 test regexp-16.19 {regsub -start} -body {
     set foo {}
-    list [regsub -start -1 a+ "" & foo] $foo
+    list [regsub -start none a+ "" & foo] $foo
 } -result {0 {}}
 test regexp-16.20 {regsub -start, loss of ^$ behavior} -body {
     set foo NA
