@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.2
+    variable Version 2.5.3
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -3107,11 +3107,12 @@ proc tcltest::removeFile {name {directory ""}} {
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
     set idx [lsearch -exact $filesMade $fullName]
-    set filesMade [lreplace $filesMade $idx $idx]
     if {$idx == -1} {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
 	}
+    } else {
+	set filesMade [lreplace $filesMade $idx $idx]
     }
     if {![file isfile $fullName]} {
 	DebugDo 1 {
