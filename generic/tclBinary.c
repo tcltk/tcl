@@ -453,7 +453,7 @@ unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
+    size_t *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
@@ -512,23 +512,35 @@ Tcl_GetByteArrayFromObj(
     int *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
-    ByteArray *baPtr;
-    const Tcl_ObjIntRep *irPtr;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, lengthPtr);
+    size_t numBytes = 0;
+    unsigned char *bytes = TclGetBytesFromObj(NULL, objPtr, &numBytes);
 
-    if (result) {
-	return result;
+    if (bytes == NULL) {
+	ByteArray *baPtr;
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+
+	assert(irPtr != NULL);
+
+	baPtr = GET_BYTEARRAY(irPtr);
+	bytes = baPtr->bytes;
+	numBytes = baPtr->used;
+    } 
+
+    /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
+     * a trick to get around changing size. */
+    if (lengthPtr) {
+	if (numBytes > INT_MAX) {
+	    /* Caller asked for an int length, but true length is outside
+	     * the int range. This case will be developed out of existence
+	     * in Tcl 9. As interim measure, fail. */
+
+	    *lengthPtr = 0;
+	    return NULL;
+	} else {
+	    *lengthPtr = (int) numBytes;
+	}
     }
-
-    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
-    assert(irPtr != NULL);
-
-    baPtr = GET_BYTEARRAY(irPtr);
-
-    if (lengthPtr != NULL) {
-	*lengthPtr = baPtr->used;
-    }
-    return baPtr->bytes;
+    return bytes;
 }
 
 /*
@@ -556,7 +568,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t length)			/* New length for internal byte array. */
+    size_t length)		/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjIntRep *irPtr;
@@ -2698,7 +2710,7 @@ BinaryEncode64(
     unsigned char *data, *limit;
     int maxlen = 0;
     const char *wrapchar = "\n";
-    int wrapcharlen = 1;
+    size_t wrapcharlen = 1;
     int i, index, size, outindex = 0, purewrap = 1;
     size_t offset, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
@@ -3103,8 +3115,8 @@ BinaryDecode64(
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
-    int i, index, size, cut = 0;
-    int count = 0;
+    int i, index, cut = 0;
+    size_t size, count = 0;
     Tcl_UniChar ch;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
