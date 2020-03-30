@@ -4075,9 +4075,9 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int flags);
-MODULE_SCOPE int	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
+MODULE_SCOPE Tcl_Obj *	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int start);
-MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
+MODULE_SCOPE Tcl_Obj *	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int last);
 MODULE_SCOPE Tcl_Obj *	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int count, int flags);
@@ -4817,13 +4817,13 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #ifndef TCL_MEM_DEBUG
-#define TclNewIntObj(objPtr, i) \
+#define TclNewIntObj(objPtr, w) \
     do {						\
 	TclIncrObjsAllocated();				\
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
 	(objPtr)->typePtr = &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
