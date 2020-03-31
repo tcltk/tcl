@@ -90,11 +90,8 @@ typedef off_t		Tcl_SeekOffset;
 extern "C" {
 #endif
     /* Make some symbols available without including <windows.h> */
-#   define DWORD unsigned int
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-#   define HANDLE void *
-#   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;

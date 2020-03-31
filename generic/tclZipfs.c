@@ -3205,7 +3205,7 @@ TclZipfs_TclLibrary(void)
      */
 
 #if defined(_WIN32)
-    hModule = TclWinGetTclInstance();
+    hModule = (HMODULE)TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
 

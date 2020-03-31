@@ -2485,7 +2485,7 @@ InitSockets(void)
 	windowClass.style = 0;
 	windowClass.cbClsExtra = 0;
 	windowClass.cbWndExtra = 0;
-	windowClass.hInstance = TclWinGetTclInstance();
+	windowClass.hInstance = (HINSTANCE)TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
 	windowClass.lpszClassName = className;
@@ -2616,7 +2616,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClassW(className, TclWinGetTclInstance());
+    UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }

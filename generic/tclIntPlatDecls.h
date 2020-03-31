@@ -114,12 +114,12 @@ EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
-EXTERN void		TclWinConvertError(DWORD errCode);
+EXTERN void		TclWinConvertError(int errCode);
 /* Slot 1 is reserved */
 /* Slot 2 is reserved */
 /* Slot 3 is reserved */
 /* 4 */
-EXTERN HINSTANCE	TclWinGetTclInstance(void);
+EXTERN void *		TclWinGetTclInstance(void);
 /* 5 */
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 6 is reserved */
@@ -155,7 +155,7 @@ EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 19 */
 EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 20 */
-EXTERN void		TclWinAddProcess(HANDLE hProcess, size_t id);
+EXTERN void		TclWinAddProcess(void *hProcess, size_t id);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
@@ -285,11 +285,11 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    void (*tclWinConvertError) (DWORD errCode); /* 0 */
+    void (*tclWinConvertError) (int errCode); /* 0 */
     void (*reserved1)(void);
     void (*reserved2)(void);
     void (*reserved3)(void);
-    HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
+    void * (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
     void (*reserved6)(void);
     void (*reserved7)(void);
@@ -305,7 +305,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (HANDLE hProcess, size_t id); /* 20 */
+    void (*tclWinAddProcess) (void *hProcess, size_t id); /* 20 */
     void (*reserved21)(void);
     TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
     void (*reserved23)(void);
