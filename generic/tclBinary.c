@@ -2879,7 +2879,7 @@ BinaryEncodeUu(
 		    objv[i + 1], &wrapcharlen);
 	    {
 		const unsigned char *p = wrapchar;
-		int numBytes = wrapcharlen;
+		size_t numBytes = wrapcharlen;
 
 		while (numBytes) {
 		    switch (*p) {
