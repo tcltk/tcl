@@ -1172,7 +1172,7 @@ TclFinalizeThreadAllocThread(void)
 
 void
 Tcl_GetMemoryInfo(
-    Tcl_DString *dsPtr)
+    TCL_UNUSED(Tcl_DString *))
 {
     Tcl_Panic("Tcl_GetMemoryInfo called when threaded memory allocator not in use");
 }
