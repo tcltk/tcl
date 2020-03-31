@@ -2797,11 +2797,11 @@ test binary-74.11 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -maxlen 4 abcabcabc
 } -result {line length out of range}
 test binary-74.12 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 5 -wrapchar | abcabcabc
-} -result {#86)C|#86)C|#86)C|}
+    binary encode uuencode -maxlen 5 -wrapchar \t abcabcabc
+} -result #86)C\t#86)C\t#86)C\t
 test binary-74.13 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 85 -wrapchar | abcabcabc
-} -result {)86)C86)C86)C|}
+    binary encode uuencode -maxlen 85 -wrapchar \t abcabcabc
+} -result )86)C86)C86)C\t
 test binary-74.14 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -maxlen 86 abcabcabc
 } -result {line length out of range}
