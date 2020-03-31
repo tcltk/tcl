@@ -54,29 +54,29 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
   union {
-    DWORD  dwOemId;
+    unsigned int  dwOemId;
     struct {
       int wProcessorArchitecture;
       int wReserved;
     };
   };
-  DWORD     dwPageSize;
+  unsigned int     dwPageSize;
   void *lpMinimumApplicationAddress;
   void *lpMaximumApplicationAddress;
   void *dwActiveProcessorMask;
-  DWORD     dwNumberOfProcessors;
-  DWORD     dwProcessorType;
-  DWORD     dwAllocationGranularity;
+  unsigned int     dwNumberOfProcessors;
+  unsigned int     dwProcessorType;
+  unsigned int     dwAllocationGranularity;
   int      wProcessorLevel;
   int      wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
-  DWORD dwOSVersionInfoSize;
-  DWORD dwMajorVersion;
-  DWORD dwMinorVersion;
-  DWORD dwBuildNumber;
-  DWORD dwPlatformId;
+  unsigned int dwOSVersionInfoSize;
+  unsigned int dwMajorVersion;
+  unsigned int dwMinorVersion;
+  unsigned int dwBuildNumber;
+  unsigned int dwPlatformId;
   wchar_t szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
@@ -873,7 +873,7 @@ TclpSetVariables(
 #ifdef __CYGWIN__
 	unameOK = 1;
     if (!osInfoInitialized) {
-	HANDLE handle = GetModuleHandleW(L"NTDLL");
+	void *handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
