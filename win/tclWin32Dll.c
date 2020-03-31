@@ -262,27 +262,6 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpSetInterfaces --
- *
- *	A helper proc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-void
-TclpSetInterfaces(void)
-{
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * TclWinEncodingsCleanup --
  *
  *	Called during finalization to free up any encodings we use.
@@ -463,8 +442,8 @@ TclWinDriveLetterForVolMountPoint(
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = ckalloc(sizeof(MountPointMap));
-		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
+		dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+		dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
@@ -489,8 +468,8 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
+    dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
