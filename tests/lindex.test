@@ -20,7 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-set minus -
+set non non
 testConstraint testevalex [llength [info commands testevalex]]
 testConstraint nodep [info exists tcl_precision]
 
@@ -53,7 +53,7 @@ test lindex-2.4 {malformed index list} testevalex {
 # Indices that are integers or convertible to integers
 
 test lindex-3.1 {integer -1} -constraints testevalex -body {
-    set x ${minus}1
+    set x ${non}e
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } -result {{} {}}
 test lindex-3.2 {integer 0} -constraints testevalex -body {
@@ -245,7 +245,7 @@ test lindex-10.4 {malformed index list} {
 # Indices that are integers or convertible to integers
 
 test lindex-11.1 {integer -1} {
-    set x ${minus}1
+    set x ${non}e
     catch {
 	list [lindex {a b c} $x] [lindex {a b c} $x]
     } result
@@ -450,7 +450,7 @@ test lindex-17.1 {Bug 1718580} -body {
     lindex a end foo
 } -match glob -result {bad index "foo"*} -returnCodes 1
 
-catch { unset minus }
+catch { unset non }
 
 # cleanup
 ::tcltest::cleanupTests

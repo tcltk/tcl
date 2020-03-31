@@ -362,7 +362,9 @@ proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
     set loclist [list $locale]
     while {-1 !=[set pos [string last "_" $locale]]} {
-	set locale [string range $locale 0 $pos-1]
+	if {$pos != -1 && $pos != "none"} {
+	    set locale [string range $locale 0 $pos-1]
+	}
 	if { "_" ne [string index $locale end] } {
 	    lappend loclist $locale
 	}
