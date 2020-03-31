@@ -737,7 +737,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {![string is none [string first $nsrc $ndest]]} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
