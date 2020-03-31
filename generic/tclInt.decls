@@ -1085,11 +1085,11 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+    void TclWinConvertError(int errCode)
 }
 # Removed in 9.0:
 #declare 1 win {
-#    void TclWinConvertWSAError(DWORD errCode)
+#    void TclWinConvertWSAError(int errCode)
 #}
 # Removed in 9.0:
 #declare 2 win {
@@ -1102,7 +1102,7 @@ declare 0 win {
 #	    char *optval, int *optlen)
 #}
 declare 4 win {
-    HINSTANCE TclWinGetTclInstance(void)
+    void *TclWinGetTclInstance(void)
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 5 win {
@@ -1180,7 +1180,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, size_t id)
+    void TclWinAddProcess(void *hProcess, size_t id)
 }
 # Removed in 9.0:
 #declare 21 win {

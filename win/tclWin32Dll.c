@@ -152,7 +152,7 @@ DllMain(
  *----------------------------------------------------------------------
  */
 
-HINSTANCE
+void *
 TclWinGetTclInstance(void)
 {
     return hInstance;
@@ -412,7 +412,7 @@ TclWinDriveLetterForVolMountPoint(
      */
 
     dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((ClientData) mountPoint);
+    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
