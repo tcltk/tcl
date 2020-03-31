@@ -412,7 +412,7 @@ TclWinDriveLetterForVolMountPoint(
      */
 
     dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((ClientData) mountPoint);
+    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
