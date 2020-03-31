@@ -344,7 +344,7 @@ InitializeDefaultLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = TclWinGetTclInstance();
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
@@ -392,7 +392,7 @@ InitializeSourceLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = TclWinGetTclInstance();
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;

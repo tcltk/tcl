@@ -2803,11 +2803,17 @@ test binary-74.10 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -foo 30 abcabcabc
 } -result {bad option "-foo": must be -maxlen or -wrapchar}
 test binary-74.11 {binary encode uuencode} -returnCodes error -body {
-    binary encode uuencode -maxlen 1 abcabcabc
+    binary encode uuencode -maxlen 4 abcabcabc
 } -result {line length out of range}
 test binary-74.12 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 3 -wrapchar | abcabcabc
-} -result {!80|!8@|!8P|!80|!8@|!8P|!80|!8@|!8P|}
+    binary encode uuencode -maxlen 5 -wrapchar \t abcabcabc
+} -result #86)C\t#86)C\t#86)C\t
+test binary-74.13 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 85 -wrapchar \t abcabcabc
+} -result )86)C86)C86)C\t
+test binary-74.14 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 86 abcabcabc
+} -result {line length out of range}
 
 test binary-75.1 {binary decode uuencode} -body {
     binary decode uuencode
