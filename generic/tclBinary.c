@@ -2639,13 +2639,14 @@ BinaryEncodeUu(
 		    &lineLength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (lineLength < 3 || lineLength > 85) {
+	    if (lineLength < 5 || lineLength > 85) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
 	    }
+	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
 	    wrapchar = Tcl_GetByteArrayFromObj(objv[i + 1], &wrapcharlen);
