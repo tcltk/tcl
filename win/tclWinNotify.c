@@ -103,7 +103,7 @@ Tcl_InitNotifier(void)
 	    clazz.style = 0;
 	    clazz.cbClsExtra = 0;
 	    clazz.cbWndExtra = 0;
-	    clazz.hInstance = TclWinGetTclInstance();
+	    clazz.hInstance = (HINSTANCE)TclWinGetTclInstance();
 	    clazz.hbrBackground = NULL;
 	    clazz.lpszMenuName = NULL;
 	    clazz.lpszClassName = className;
@@ -195,7 +195,7 @@ Tcl_FinalizeNotifier(
 	if (notifierCount) {
 	    notifierCount--;
 	    if (notifierCount == 0) {
-		UnregisterClassW(className, TclWinGetTclInstance());
+		UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
 	    }
 	}
 	LeaveCriticalSection(&notifierMutex);
@@ -360,7 +360,7 @@ Tcl_ServiceModeHook(
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
 	    tsdPtr->hwnd = CreateWindowW(className, className,
-		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
+		    WS_TILED, 0, 0, 0, 0, NULL, NULL, (HINSTANCE)TclWinGetTclInstance(),
 		    NULL);
 
 	    /*

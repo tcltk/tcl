@@ -2594,8 +2594,9 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, size, cut = 0, strict = 0;
-    size_t count = 0;
+    int i, index, value, pure = 1, strict = 0;
+    size_t size, cut = 0, count = 0;
+    Tcl_UniChar ch = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2616,8 +2617,12 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = (count + 1) / 2;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2662,10 +2667,15 @@ BinaryDecodeHex(
     return TCL_OK;
 
   badChar:
+    if (pure) {
+	ch = c;
+    } else {
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+    }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" at position %" TCL_Z_MODIFIER "u",
-	    c, data - datastart - 1));
+	    ch, data - datastart - 1));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     return TCL_ERROR;
 }
@@ -2855,16 +2865,47 @@ BinaryEncodeUu(
 		    &lineLength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (lineLength < 3 || lineLength > 85) {
+	    if (lineLength < 5 || lineLength > 85) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
 	    }
+	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = TclGetByteArrayFromObj(objv[i + 1], &wrapcharlen);
+	    wrapchar = (const unsigned char *) TclGetStringFromObj(
+		    objv[i + 1], &wrapcharlen);
+	    {
+		const unsigned char *p = wrapchar;
+		int numBytes = wrapcharlen;
+
+		while (numBytes) {
+		    switch (*p) {
+			case '\t':
+			case '\v':
+			case '\f':
+			case '\r':
+			    p++; numBytes--;
+			    continue;
+			case '\n':
+			    numBytes--;
+			    break;
+			default:
+			badwrap:
+			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				    "invalid wrapchar; will defeat decoding",
+				    -1));
+			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
+				    "ENCODE", "WRAPCHAR", NULL);
+			    return TCL_ERROR;
+		    }
+		}
+		if (numBytes) {
+		    goto badwrap;
+		}
+	    }
 	    break;
 	}
     }
@@ -2949,9 +2990,10 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, size, strict = 0, lineLen;
-    size_t count = 0;
+    int i, index, pure = 1, strict = 0, lineLen;
+    size_t size, count = 0;
     unsigned char c;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2972,8 +3014,12 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc - 1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -3079,9 +3125,14 @@ BinaryDecodeUu(
     return TCL_ERROR;
 
   badUu:
+    if (pure) {
+	ch = c;
+    } else {
+	TclUtfToUniChar((const char *)(data - 1), &ch);
+    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" at position %" TCL_Z_MODIFIER "u",
-	    c, data - datastart - 1));
+	    ch, data - datastart - 1));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3117,7 +3168,7 @@ BinaryDecode64(
     int pure = 1, strict = 0;
     int i, index, cut = 0;
     size_t size, count = 0;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
