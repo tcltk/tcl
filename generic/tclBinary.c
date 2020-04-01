@@ -2616,7 +2616,7 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
@@ -3011,7 +3011,7 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
