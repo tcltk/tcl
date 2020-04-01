@@ -5831,7 +5831,11 @@ DoReadChars(
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
 
-    if (appendFlag == 0) {
+    if (appendFlag) {
+	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	    binaryMode = 0;
+	}
+    } else {
 	if (binaryMode) {
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
