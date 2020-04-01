@@ -453,6 +453,35 @@ TclGetBytesFromObj(
     }
     return baPtr->bytes;
 }
+
+unsigned char *
+Tcl_GetBytesFromObj(
+    Tcl_Interp *interp,		/* For error reporting */
+    Tcl_Obj *objPtr,		/* Value to extract from */
+    int *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    size_t numBytes = 0;
+    unsigned char *bytes = TclGetBytesFromObj(interp, objPtr, &numBytes);
+
+    if (lengthPtr) {
+	if (numBytes > INT_MAX) {
+	    /* Caller asked for an int length, but true length is outside
+	     * the int range. This case will be developed out of existence
+	     * in Tcl 9. As interim measure, fail. */
+
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"byte sequence length exceeds INT_MAX", -1));
+	    }
+	    *lengthPtr = 0;
+	    return NULL;
+	} else {
+	    *lengthPtr = (int) numBytes;
+	}
+    }
+    return bytes;
+}
 
 /*
  *----------------------------------------------------------------------

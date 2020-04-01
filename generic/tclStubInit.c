@@ -1415,6 +1415,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
+    Tcl_GetBytesFromObj, /* 649 */
 };
 
 /* !END!: Do not edit above this line. */

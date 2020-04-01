@@ -2465,6 +2465,12 @@ declare 648 {
 	    size_t length, Tcl_DString *dsPtr)
 }
 
+# TIP #568
+declare 649 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *lengthPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
