@@ -1070,6 +1070,12 @@ declare 259 {
     void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
 	    const Tcl_UniChar *unicode, size_t length)
 }
+
+declare 260 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
+}
+
 
 ##############################################################################
 
