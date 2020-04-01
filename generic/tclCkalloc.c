@@ -810,7 +810,7 @@ Tcl_AttemptRealloc(
  */
 static int
 MemoryCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */

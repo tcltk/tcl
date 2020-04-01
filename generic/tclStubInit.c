@@ -379,7 +379,7 @@ TclWinGetPlatformId(void)
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
 #define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
 #define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))TclpOpenFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))(void *)TclpOpenFile
 #endif
 
 #ifdef _WIN32
@@ -983,7 +983,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    TclGetBytesFromObj, /* 259 */
+    TclUnusedStubEntry, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
