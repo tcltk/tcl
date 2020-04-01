@@ -2956,8 +2956,6 @@ MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE int *	TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
-MODULE_SCOPE unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
-				    Tcl_Obj *objPtr, size_t *lengthPtr);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
@@ -4964,7 +4962,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	*(void **)memPtr = (void *) _objPtr;					\
+	*(void **)&memPtr = (void *) _objPtr;					\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \

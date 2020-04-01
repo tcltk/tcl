@@ -1,6 +1,15 @@
 sudo: false
 language: c
-
+addons:
+  apt:
+    packages:
+      - binutils-mingw-w64-i686
+      - binutils-mingw-w64-x86-64
+      - gcc-mingw-w64
+      - gcc-mingw-w64-base
+      - gcc-mingw-w64-i686
+      - gcc-mingw-w64-x86-64
+      - gcc-multilib
 matrix:
   include:
 # Testing on Linux with various compilers
@@ -38,6 +47,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+    - name: "Linux/GCC/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="--enable-symbols=mem"
 # C++ build.
     - name: "Linux/G++/Shared"
       os: linux
@@ -104,6 +120,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+    - name: "Linux/Clang/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: clang
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
     - name: "macOS/Xcode 11.3/Shared/Unix-like"
       os: osx
@@ -170,13 +193,6 @@ matrix:
       os: linux
       dist: bionic
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
@@ -191,14 +207,6 @@ matrix:
       os: linux
       dist: bionic
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
@@ -244,6 +252,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
+    - name: "Windows/MSVC/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg' '-f' makefile.vc test
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -281,6 +298,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
+    - name: "Windows/MSVC-x86/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg' '-f' makefile.vc test
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -328,6 +354,13 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-symbols"
       before_install: *makepreinst
+    - name: "Windows/GCC/Mem-Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-symbols=mem"
+      before_install: *makepreinst
 # Test on Windows with GCC native (32-bit)
     - name: "Windows/GCC-x86/Shared"
       os: windows
@@ -372,7 +405,21 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-symbols"
       before_install: *makepreinst
+    - name: "Windows/GCC-x86/Mem-Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-symbols=mem"
+      before_install: *makepreinst
 before_install:
+  - |-
+      case $TRAVIS_OS_NAME in
+        osx)
+          brew update
+          brew install libtommath
+          ;;
+      esac
   - cd ${BUILD_DIR}
 install:
   - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)

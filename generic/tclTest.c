@@ -5061,16 +5061,16 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n = 0;
+    size_t n = 0;
     const char *p;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytearray");
 	return TCL_ERROR;
     }
-    p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
+
+    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
     if (p == NULL) {
-	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));

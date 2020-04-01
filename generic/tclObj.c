@@ -413,7 +413,7 @@ TclFinalizeThreadObjects(void)
     if (tablePtr != NULL) {
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch);
 		hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
+	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
 		Tcl_Free(objData);
@@ -974,7 +974,7 @@ TclDbDumpActiveObjects(
 	fprintf(outFile, "total objects: %" TCL_Z_MODIFIER "u\n", tablePtr->numEntries);
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
+	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
 		fprintf(outFile,
@@ -1283,7 +1283,7 @@ TclFreeObj(
 	     * As the Tcl_Obj is going to be deleted we remove the entry.
 	     */
 
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
+	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
 		Tcl_Free(objData);
