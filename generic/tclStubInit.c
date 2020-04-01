@@ -531,7 +531,8 @@ static const TclIntStubs tclIntStubs = {
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclAppendUnicodeToObj, /* 259 */
-    TclMSB, /* 260 */
+    TclGetBytesFromObj, /* 260 */
+    TclMSB, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

@@ -1071,6 +1071,10 @@ declare 259 {
 	    const Tcl_UniChar *unicode, size_t length)
 }
 declare 260 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
+}
+declare 261 {
     int	TclMSB(size_t n)
 }
 
