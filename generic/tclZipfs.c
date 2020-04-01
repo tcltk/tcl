@@ -1953,7 +1953,10 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = Tcl_GetByteArrayFromObj(objv[2], &length);
+    data = Tcl_GetBytesFromObj(interp, objv[2], &length);
+    if (data == NULL) {
+	return TCL_ERROR;
+    }
     return TclZipfs_MountBuffer(interp, mountPoint, data, length, 1);
 }
 
