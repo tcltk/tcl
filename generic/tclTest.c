@@ -5068,9 +5068,9 @@ TestbytestringObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "bytearray");
 	return TCL_ERROR;
     }
-    p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
-    if ((p == NULL) || !Tcl_FetchIntRep(objv[1], properByteArrayType)) {
-	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+
+    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
+    if (p == NULL) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
