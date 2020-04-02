@@ -2510,9 +2510,9 @@ test binary-71.6 {binary decode hex} -body {
 test binary-71.7 {binary decode hex} -body {
     binary decode hex "61\n\n\n61"
 } -result {aa}
-test binary-71.8 {binary decode hex} -body {
+test binary-71.8 {binary decode hex} -match glob -body {
     binary decode hex -strict "61 61"
-} -returnCodes error -result {invalid hexadecimal digit " " at position 2}
+} -returnCodes error -result {invalid hexadecimal digit " " * at position 2}
 test binary-71.9 {binary decode hex} -body {
     set r [binary decode hex "6"]
     list [string length $r] $r
@@ -2674,11 +2674,11 @@ test binary-73.11 {binary decode base64} -body {
 } -result [string repeat abc 20]
 test binary-73.12 {binary decode base64} -body {
     binary decode base64 -strict ":YWJj"
-} -returnCodes error -match glob -result {invalid base64 character ":" at position 0}
+} -returnCodes error -match glob -result {invalid base64 character ":" * at position 0}
 test binary-73.13 {binary decode base64} -body {
     set s "[string repeat YWJj 10]:[string repeat YWJj 10]"
     binary decode base64 -strict $s
-} -returnCodes error -match glob -result {invalid base64 character ":" at position 40}
+} -returnCodes error -match glob -result {invalid base64 character ":" * at position 40}
 test binary-73.14 {binary decode base64} -body {
     set s "[string repeat YWJj 10]\n    [string repeat YWJj 10]"
     binary decode base64 -strict $s
@@ -2855,11 +2855,11 @@ test binary-75.11 {binary decode uuencode} -body {
 } -result [string repeat abc 20]
 test binary-75.12 {binary decode uuencode} -body {
     binary decode uuencode -strict "|86)C"
-} -returnCodes error -match glob -result {invalid uuencode character "|" at position 0}
+} -returnCodes error -match glob -result {invalid uuencode character "|" * at position 0}
 test binary-75.13 {binary decode uuencode} -body {
     set s ">[string repeat 86)C 10]|[string repeat 86)C 10]"
     binary decode uuencode -strict $s
-} -returnCodes error -match glob -result {invalid uuencode character "|" at position 41}
+} -returnCodes error -match glob -result {invalid uuencode character "|" * at position 41}
 test binary-75.14 {binary decode uuencode} -body {
     set s ">[string repeat 86)C 10]\na[string repeat 86)C 10]"
     binary decode uuencode -strict $s
@@ -2887,7 +2887,7 @@ test binary-75.24 {binary decode uuencode} -body {
 test binary-75.25 {binary decode uuencode} -body {
     set s "#04)\#z"
     binary decode uuencode $s
-} -returnCodes error -match glob -result {invalid uuencode character "z" at position 5}
+} -returnCodes error -match glob -result {invalid uuencode character "z" * at position 5}
 test binary-75.26 {binary decode uuencode} -body {
     string length [binary decode uuencode " "]
 } -result 0
