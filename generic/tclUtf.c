@@ -781,19 +781,10 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -827,21 +818,12 @@ Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-    const char *last;
+    const char *last = NULL;
 
-    last = NULL;
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -2433,6 +2415,71 @@ TclUniCharMatch(
 	string++;
 	pattern++;
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUtfToUCS4 --
+ *
+ *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Modified UTF-8 string "src".  This is a utility routine to
+ *	contain the surrogate gymnastics in one place.
+ *
+ *	The caller must ensure that the source buffer is long enough that this
+ *	routine does not run off the end and dereference non-existent memory
+ *	looking for trail bytes. If the source buffer is known to be '\0'
+ *	terminated, this cannot happen. Otherwise, the caller should call
+ *	Tcl_UtfCharComplete() before calling this routine to ensure that
+ *	enough bytes remain in the string.
+ *
+ * Results:
+ *	*usc4Ptr is filled with the UCS4 code point, and the return value is
+ *	the number of bytes from the UTF-8 string that were consumed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclUtfToUCS4(
+    const char *src,	/* The UTF-8 string. */
+    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
+			 * by the UTF-8 string. */
+{
+    int len, fullchar;
+    Tcl_UniChar ch = 0;
+
+    len = TclUtfToUniChar(src, &ch);
+    fullchar = ch;
+
+#if TCL_UTF_MAX <= 3
+    /* Limited interfaces -- must use and decode surrogates */
+
+    if ((ch >= 0xD800) && len < 3) {
+/******
+ ******	Note the #undef TCL_UtfToUniChar gets in our way here.
+ ******
+	len += Tcl_UtfToUniChar(src + len, &ch);
+ ******
+ ******  We have to do the subtitution ourselves.
+ ******/
+
+	len += Tcl_UtfToChar16(src + len, &ch);
+
+/******
+ ******	We might also solve this by moving this routine higher in the file.
+ ****** Or there might be a more sensible foundation in this branch.
+ ******/
+
+	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
+    }
+#endif
+
+    *ucs4Ptr = fullchar;
+    return len;
 }
 
 /*
