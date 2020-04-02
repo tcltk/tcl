@@ -470,16 +470,16 @@ Tcl_GetBytesFromObj(
 	if (irPtr == NULL) {
 	    if (interp) {
 		const char *nonbyte;
-		Tcl_UniChar ch;
+		int ucs4;
 
 		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
 		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
-		Tcl_UtfToUniChar(nonbyte, &ch);
+		TclUtfToUCS4(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected byte sequence but character %d "
-			"was '%1s' (U+%04X)", baPtr->bad, nonbyte, ch));
+			"was '%1s' (U+%06X)", baPtr->bad, nonbyte, ucs4));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
 	    }
 	    return NULL;
@@ -2595,7 +2595,7 @@ BinaryDecodeHex(
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
     int i, index, value, size, pure = 1, count = 0, cut = 0, strict = 0;
-    Tcl_UniChar ch = 0;
+    int ucs4;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2667,14 +2667,14 @@ BinaryDecodeHex(
 
   badChar:
     if (pure) {
-	ch = c;
+	ucs4 = c;
     } else {
-	TclUtfToUniChar((const char *)(data - 1), &ch);
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid hexadecimal digit \"%c\" at position %d",
-	    ch, (int) (data - datastart - 1)));
+	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     return TCL_ERROR;
 }
@@ -2990,7 +2990,7 @@ BinaryDecodeUu(
     unsigned char *begin, *cursor;
     int i, index, size, pure = 1, count = 0, strict = 0, lineLen;
     unsigned char c;
-    Tcl_UniChar ch = 0;
+    int ucs4;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -3123,13 +3123,13 @@ BinaryDecodeUu(
 
   badUu:
     if (pure) {
-	ch = c;
+	ucs4 = c;
     } else {
-	TclUtfToUniChar((const char *)(data - 1), &ch);
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid uuencode character \"%c\" at position %d",
-	    ch, (int) (data - datastart - 1)));
+	    "invalid uuencode character \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3164,7 +3164,7 @@ BinaryDecode64(
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
     int i, index, size, cut = 0, count = 0;
-    Tcl_UniChar ch = 0;
+    int ucs4;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -3292,19 +3292,19 @@ BinaryDecode64(
 
   bad64:
     if (pure) {
-	ch = c;
+	ucs4 = c;
     } else {
 	/* The decoder is byte-oriented. If we saw a byte that's not a
 	 * valid member of the base64 alphabet, it could be the lead byte
 	 * of a multi-byte character. */
 
 	/* Safe because we know data is NUL-terminated */
-	TclUtfToUniChar((const char *)(data - 1), &ch);
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %d", ch,
-	    (int) (data - datastart - 1)));
+	    "invalid base64 character \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;

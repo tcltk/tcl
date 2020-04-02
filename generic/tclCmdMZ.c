@@ -1217,23 +1217,10 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    int fullchar;
-	    len = TclUtfToUniChar(stringPtr, &ch);
-	    fullchar = ch;
+	    int ucs4;
 
-#if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (len < 3)) {
-		len += TclUtfToUniChar(stringPtr + len, &ch);
-		fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	    }
-#endif
-
-	    /*
-	     * Assume Tcl_UniChar is an integral type...
-	     */
-
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(fullchar),
-		    &isNew);
+	    len = TclUtfToUCS4(stringPtr, &ucs4);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ucs4), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1538,7 +1525,6 @@ StringIsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *end, *stop;
-    Tcl_UniChar ch = 0;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
@@ -1906,16 +1892,10 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
-	    int fullchar;
-	    length2 = TclUtfToUniChar(string1, &ch);
-	    fullchar = ch;
-#if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (length2 < 3)) {
-	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
-	    	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	    }
-#endif
-	    if (!chcomp(fullchar)) {
+	    int ucs4;
+
+	    length2 = TclUtfToUCS4(string1, &ucs4);
+	    if (!chcomp(ucs4)) {
 		result = 0;
 		break;
 	    }
