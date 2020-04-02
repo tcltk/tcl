@@ -578,7 +578,6 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-fprintf(stdout, "COVER\n"); fflush(stdout);
     while (1) {
 	int ucs4, len = TclUtfToUCS4(src, &ucs4);
 
