@@ -578,19 +578,11 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-
+fprintf(stdout, "COVER\n"); fflush(stdout);
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 4
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -624,21 +616,12 @@ Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-    const char *last;
+    const char *last = NULL;
 
-    last = NULL;
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 4
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
