@@ -2179,7 +2179,7 @@ TclUtfToUCS4(
 #if TCL_UTF_MAX == 4
     /* 4-byte UTF-8 is supported; decode surrogates */
 
-    if ((ch >= 0xD800) && len < 3)
+    if ((ch >= 0xD800) && len < 3) {
 	len += Tcl_UtfToUniChar(src + len, &ch);
 	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
     }
