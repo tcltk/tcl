@@ -278,8 +278,8 @@ Tcl_UniCharToUtfDString(
  *	If TCL_UTF_MAX <= 4, special handling of Surrogate pairs is done:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
- *	and generate a return value of 0. Calling Tcl_UtfToUniChar again
- *	will produce the low surrogate and a return value of 4. Because *chPtr
+ *	and generate a return value of 1. Calling Tcl_UtfToUniChar again
+ *	will produce the low surrogate and a return value of 3. Because *chPtr
  *	is used to remember whether the high surrogate is already produced, it
  *	is recommended to initialize the variable it points to as 0 before
  *	the first call to Tcl_UtfToUniChar is done.
@@ -2153,6 +2153,57 @@ TclUniCharMatch(
 	string++;
 	pattern++;
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUtfToUCS4 --
+ *
+ *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Modified UTF-8 string "src".  This is a utility routine to
+ *	contain the surrogate gymnastics in one place.
+ *
+ *	The caller must ensure that the source buffer is long enough that this
+ *	routine does not run off the end and dereference non-existent memory
+ *	looking for trail bytes. If the source buffer is known to be '\0'
+ *	terminated, this cannot happen. Otherwise, the caller should call
+ *	Tcl_UtfCharComplete() before calling this routine to ensure that
+ *	enough bytes remain in the string.
+ *
+ * Results:
+ *	*usc4Ptr is filled with the UCS4 code point, and the return value is
+ *	the number of bytes from the UTF-8 string that were consumed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclUtfToUCS4(
+    const char *src,	/* The UTF-8 string. */
+    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
+			 * by the UTF-8 string. */
+{
+    int len, fullchar;
+    Tcl_UniChar ch = 0;
+
+    len = TclUtfToUniChar(src, &ch);
+    fullchar = ch;
+
+#if TCL_UTF_MAX == 4
+    /* 4-byte UTF-8 is supported; decode surrogates */
+
+    if ((ch >= 0xD800) && len < 3)
+	len += Tcl_UtfToUniChar(src + len, &ch);
+	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
+    }
+#endif
+
+    *ucs4Ptr = fullchar;
+    return len;
 }
 
 /*
