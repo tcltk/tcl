@@ -23,7 +23,6 @@
  */
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
-static int platformId;		/* Running under NT, or 95/98? */
 
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
@@ -186,18 +185,14 @@ TclWinInit(
     hInstance = hInst;
     os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
     GetVersionExW(&os);
-    platformId = os.dwPlatformId;
 
     /*
-     * We no longer support Win32s or Win9x, so just in case someone manages
-     * to get a runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x or Windows CE, so just in case
+     * someone manages to get a runtime there, make sure they know that.
      */
 
-    if (platformId == VER_PLATFORM_WIN32s) {
-	Tcl_Panic("Win32s is not a supported platform");
-    }
-    if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
-	Tcl_Panic("Windows 9x is not a supported platform");
+    if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
+	Tcl_Panic("Windows NT is the only supported platform");
     }
 }
 
@@ -210,11 +205,8 @@ TclWinInit(
  *	conditional code.
  *
  * Results:
- *	The return value is one of:
- *	VER_PLATFORM_WIN32s	   Win32s on Windows 3.1 (not supported)
- *	VER_PLATFORM_WIN32_WINDOWS Win32 on Windows 95, 98, ME (not supported)
+ *	The return value is always:
  *	VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
- *	VER_PLATFORM_WIN32_CE	Win32 on Windows CE
  *
  * Side effects:
  *	None.
@@ -225,7 +217,7 @@ TclWinInit(
 int
 TclWinGetPlatformId(void)
 {
-    return platformId;
+    return VER_PLATFORM_WIN32_NT;
 }
 
 /*
@@ -264,11 +256,8 @@ TclWinNoBackslash(
  *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use.
- *
- *	We also clean up any memory allocated in our mount point map which is
- *	used to follow certain kinds of symlinks. That code should never be
- *	used once encodings are taken down.
+ *	Called during finalization to clean up any memory allocated in our
+ *	mount point map which is used to follow certain kinds of symlinks.
  *
  * Results:
  *	None.
@@ -425,7 +414,7 @@ TclWinDriveLetterForVolMountPoint(
      * We couldn't find it, so we must iterate over the letters.
      */
 
-    for (drive[0] = L'A'; drive[0] <= L'Z'; drive[0]++) {
+    for (drive[0] = 'A'; drive[0] <= 'Z'; drive[0]++) {
 	/*
 	 * Try to read the volume mount point and see where it points.
 	 */
