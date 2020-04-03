@@ -2451,7 +2451,7 @@ TclUtfToUCS4(
 			 * by the UTF-8 string. */
 {
     /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
-    return Tcl_UtfToUniChar(src, &ch);
+    return Tcl_UtfToUniChar(src, ucs4Ptr);
 }
 #endif
 
