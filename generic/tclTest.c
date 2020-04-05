@@ -6809,9 +6809,11 @@ TestNumUtfCharsCmd(
 	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
 	if (objc > 2) {
-	    (void) Tcl_GetIntFromObj(interp, objv[2], &limit);
-	    if (limit > numBytes) {
-		limit = numBytes;
+	    if (TclGetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (limit > numBytes + 1) {
+		limit = numBytes + 1;
 	    }
 	}
 	len = Tcl_NumUtfChars(bytes, limit);
