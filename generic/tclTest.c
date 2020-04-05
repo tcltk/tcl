@@ -6823,7 +6823,7 @@ TestNumUtfCharsCmd(
 	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
 	if (objc > 2) {
-	    if (TclGetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
+	    if (Tcl_GetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (limit > numBytes + 1) {
