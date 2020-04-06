@@ -366,13 +366,6 @@ Tcl_Init(
      *				  External users of Tcl should not make use of
      *				  the variable to customize [tclInit].
      *
-     *	$tcl_libPath		- OBSOLETE: This variable is no longer set by
-     *				  Tcl itself, but [tclInit] examines it in
-     *				  case some program that embeds Tcl is
-     *				  customizing [tclInit] by setting this
-     *				  variable to a list of directories in which
-     *				  to search.
-     *
      *	[tcl::pkgconfig get scriptdir,runtime]
      *				- the directory determined by configure to be
      *				  the place where Tcl's script library is to
@@ -388,7 +381,7 @@ Tcl_Init(
     result = Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
-"    global tcl_libPath tcl_library env tclDefaultLibrary\n"
+"    global tcl_library env tclDefaultLibrary\n"
 "    rename tclInit {}\n"
 "    if {[info exists tcl_library]} {\n"
 "	set scripts {{set tcl_library}}\n"
@@ -410,20 +403,14 @@ Tcl_Init(
 "	lappend scripts {\n"
 "set parentDir [file dirname [file dirname [info nameofexecutable]]]\n"
 "set grandParentDir [file dirname $parentDir]\n"
-"file join $parentDir lib tcl[info tclversion]} \\\n"
-"	{file join $grandParentDir lib tcl[info tclversion]} \\\n"
+"file join $parentDir share tcl9 tcl[info tclversion]} \\\n"
+"	{file join $grandParentDir share tcl9 tcl[info tclversion]} \\\n"
 "	{file join $parentDir library} \\\n"
 "	{file join $grandParentDir library} \\\n"
 "	{file join $grandParentDir tcl[info tclversion] library} \\\n"
 "	{file join $grandParentDir tcl[info patchlevel] library} \\\n"
 "	{\n"
 "file join [file dirname $grandParentDir] tcl[info patchlevel] library}\n"
-"	if {[info exists tcl_libPath]\n"
-"		&& [catch {llength $tcl_libPath} len] == 0} {\n"
-"	    for {set i 0} {$i < $len} {incr i} {\n"
-"		lappend scripts [list lindex \\$tcl_libPath $i]\n"
-"	    }\n"
-"	}\n"
 "    }\n"
 "    set dirs {}\n"
 "    set errors {}\n"

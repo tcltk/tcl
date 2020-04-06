@@ -1016,7 +1016,7 @@ install-libraries: libraries
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@for i in opt0.4 cookiejar0.2 encoding ../tcl9 ../tcl9/9.0  ../tcl9/9.0/platform; do \
+	@for i in opt0.4 cookiejar0.2 encoding ../../tcl9 ../9.0  ../9.0/platform; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
@@ -1036,23 +1036,23 @@ install-libraries: libraries
 	done
 	@echo "Installing package http 2.9.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/http-2.9.1.tm
+		"$(MODULE_INSTALL_DIR)"/9.0/http-2.9.1.tm
 	@echo "Installing package opt 0.4.7"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	done
 	@echo "Installing package msgcat 1.7.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/msgcat-1.7.0.tm
+		"$(MODULE_INSTALL_DIR)"/9.0/msgcat-1.7.0.tm
 	@echo "Installing package tcltest 2.5.3 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/tcltest-2.5.3.tm
+		"$(MODULE_INSTALL_DIR)"/9.0/tcltest-2.5.3.tm
 	@echo "Installing package platform 1.0.14 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/platform-1.0.14.tm
+		"$(MODULE_INSTALL_DIR)"/9.0/platform-1.0.14.tm
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/platform/shell-1.1.4.tm
+		"$(MODULE_INSTALL_DIR)"/9.0/platform/shell-1.1.4.tm
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
 	@for i in $(TOP_DIR)/library/encoding/*.enc; do \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \

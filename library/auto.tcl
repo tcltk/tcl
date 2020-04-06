@@ -145,8 +145,10 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	}
 
 	# 3. Various locations relative to the executable
-	# ../lib/foo1.0		(From bin directory in install hierarchy)
-	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../share/tcl9/foo1.0		(From bin directory in install hierarchy)
+	# ../../share/tcl9/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../lib/tcl9/foo1.0		(From bin directory in install hierarchy)
+	# ../../lib/tcl9/foo1.0	(From bin/arch directory in install hierarchy)
 	# ../library		(From unix directory in build hierarchy)
 	#
 	# Remaining locations are out of date (when relevant, they ought to be
@@ -160,8 +162,10 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
         set parentDir [file dirname [file dirname [info nameofexecutable]]]
         set grandParentDir [file dirname $parentDir]
-        lappend dirs [file join $parentDir lib $basename$version]
-        lappend dirs [file join $grandParentDir lib $basename$version]
+        lappend dirs [file join $parentDir share tcl9 $basename$version]
+        lappend dirs [file join $grandParentDir share tcl9 $basename$version]
+	lappend dirs [file join $parentDir lib tcl9 $basename$version]
+	lappend dirs [file join $grandParentDir lib tcl9 $basename$version]
         lappend dirs [file join $parentDir library]
 	if {0} {
 	    lappend dirs [file join $grandParentDir library]

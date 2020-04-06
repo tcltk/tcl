@@ -318,6 +318,7 @@ proc ::tcl::tm::Defaults {} {
     # something other than [::list] in this namespace.
     roots [::list \
 	    [file dirname [info library]] \
+	    [file join [file dirname [file dirname $exe]] share] \
 	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 

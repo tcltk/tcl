@@ -56,7 +56,7 @@ namespace eval tcl {
 	}
     }
     set Dir [file join [file dirname [file dirname \
-	    [info nameofexecutable]]] lib]
+	    [info nameofexecutable]]] lib tcl9]
     if {$Dir ni $::auto_path} {
 	lappend ::auto_path $Dir
     }
