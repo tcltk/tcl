@@ -792,6 +792,11 @@ UCS-2, also called the Basic Multilingual Plane.
 The publication of RFC 2044 describing a UTF-8
 encoding for UCS-2 in October 1996 was also a key event.
 
+Note the end of overlong byte sequence interpretation (other than NUL)
+as bug fix 
+https://core.tcl-lang.org/tcl/info/67aa9a2070
+This didn't happen at a clean minor version bump.
+
 
 
 
