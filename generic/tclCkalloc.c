@@ -20,7 +20,9 @@
 #define FALSE	0
 #define TRUE	1
 
+#undef Tcl_Alloc
 #undef Tcl_Free
+#undef Tcl_Realloc
 #undef Tcl_AttemptAlloc
 #undef Tcl_AttemptRealloc
 
@@ -690,7 +692,7 @@ Tcl_DbCkrealloc(
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = Tcl_DbCkalloc(size, file, line);
+    newPtr = (char *)Tcl_DbCkalloc(size, file, line);
     memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
@@ -721,7 +723,7 @@ Tcl_AttemptDbCkrealloc(
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = Tcl_AttemptDbCkalloc(size, file, line);
+    newPtr = (char *)Tcl_AttemptDbCkalloc(size, file, line);
     if (newPtr == NULL) {
 	return NULL;
     }
@@ -730,6 +732,59 @@ Tcl_AttemptDbCkrealloc(
     return newPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Alloc, et al. --
+ *
+ *	These functions are defined in terms of the debugging versions when
+ *	TCL_MEM_DEBUG is set.
+ *
+ * Results:
+ *	Same as the debug versions.
+ *
+ * Side effects:
+ *	Same as the debug versions.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Tcl_Alloc(
+    size_t size)
+{
+    return Tcl_DbCkalloc(size, "unknown", 0);
+}
+
+void *
+Tcl_AttemptAlloc(
+    size_t size)
+{
+    return Tcl_AttemptDbCkalloc(size, "unknown", 0);
+}
+
+void
+Tcl_Free(
+    void *ptr)
+{
+    Tcl_DbCkfree(ptr, "unknown", 0);
+}
+
+void *
+Tcl_Realloc(
+    void *ptr,
+    size_t size)
+{
+    return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
+}
+void *
+Tcl_AttemptRealloc(
+    void *ptr,
+    size_t size)
+{
+    return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -992,7 +1047,6 @@ Tcl_InitMemory(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_Alloc
 void *
 Tcl_Alloc(
     size_t size)
@@ -1069,7 +1123,6 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_Realloc
 void *
 Tcl_Realloc(
     void *ptr,
@@ -1141,7 +1194,6 @@ Tcl_AttemptDbCkrealloc(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_Free
 void
 Tcl_Free(
     void *ptr)
