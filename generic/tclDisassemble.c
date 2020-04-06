@@ -862,7 +862,6 @@ PrintSourceToObj(
 {
     const char *p;
     int i = 0, len;
-    Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
 	Tcl_AppendToObj(appendObj, "\"\"", -1);
@@ -872,9 +871,10 @@ PrintSourceToObj(
     Tcl_AppendToObj(appendObj, "\"", -1);
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
+	int ucs4;
 
-	len = TclUtfToUniChar(p, &ch);
-	switch (ch) {
+	len = TclUtfToUCS4(p, &ucs4);
+	switch (ucs4) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);
 	    i += 2;
@@ -900,28 +900,14 @@ PrintSourceToObj(
 	    i += 2;
 	    continue;
 	default:
-#if TCL_UTF_MAX > 3
-	    if (ch > 0xFFFF) {
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
+	    if (ucs4 > 0xFFFF) {
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ucs4);
 		i += 10;
-	    } else
-#else
-	    /* If len == 0, this means we have a char > 0xFFFF, resulting in
-	     * TclUtfToUniChar producing a surrogate pair. We want to output
-	     * this pair as a single Unicode character.
-	     */
-	    if (len == 0) {
-		int upper = ((ch & 0x3FF) + 1) << 10;
-		len = TclUtfToUniChar(p, &ch);
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", upper + (ch & 0x3FF));
-		i += 10;
-	    } else
-#endif
-	    if (ch < 0x20 || ch >= 0x7F) {
-		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ch);
+	    } else if (ucs4 < 0x20 || ucs4 >= 0x7F) {
+		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ucs4);
 		i += 6;
 	    } else {
-		Tcl_AppendPrintfToObj(appendObj, "%c", ch);
+		Tcl_AppendPrintfToObj(appendObj, "%c", ucs4);
 		i++;
 	    }
 	    continue;
