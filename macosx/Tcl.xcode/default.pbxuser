@@ -76,7 +76,7 @@
 			{
 				active = YES;
 				name = TCLLIBPATH;
-				value = /Library/Tcl;
+				value = /Library/Tcl9;
 			},
 			{
 				active = NO;

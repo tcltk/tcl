@@ -890,7 +890,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     AC_DEFINE(TCL_FRAMEWORK, 1, [Is Tcl built as a framework?])
     # Construct a fake local framework structure to make linking with
     # '-framework Tcl' and running of tcltest work
-    AC_CONFIG_COMMANDS([Tcl.framework], [n=Tcl &&
+    AC_CONFIG_COMMANDS([Tcl9.framework], [n=Tcl &&
         f=$n.framework && v=Versions/$VERSION &&
         rm -rf $f && mkdir -p $f/$v/Resources &&
         ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
@@ -900,7 +900,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     # default install directory for bundled packages
     if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
-        PACKAGE_DIR="/Library/Tcl"
+        PACKAGE_DIR="/Library/Tcl9"
     else
         PACKAGE_DIR="$libdir"
     fi
@@ -912,7 +912,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_LIB_FLAG="-framework Tcl"
     TCL_BUILD_LIB_SPEC="-F`pwd | sed -e 's/ /\\\\ /g'` -framework Tcl"
     TCL_LIB_SPEC="-F${libdir} -framework Tcl"
-    libdir="${libdir}/Tcl.framework/Versions/\${VERSION}"
+    libdir="${libdir}/Tcl9.framework/Versions/\${VERSION}"
     TCL_LIBRARY="${libdir}/Resources/Scripts"
     includedir="${libdir}/Headers"
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
@@ -921,7 +921,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
-    EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
+    EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl9.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
     # Don't use AC_DEFINE for the following as the framework version define
     # needs to go into the Makefile even when using autoheader, so that we
     # can pick up a potential make override of VERSION. Also, don't put this
@@ -954,9 +954,9 @@ VERSION=${TCL_VERSION}
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl ~/Library/Frameworks /Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl9 /Library/Tcl9 ~/Library/Frameworks /Library/Frameworks"
     test -z "$TCL_MODULE_PATH"  && \
-	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
+	TCL_MODULE_PATH="~/Library/Tcl9 /Library/Tcl9"
 elif test "$prefix/lib" != "$libdir"; then
     test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}/tcl9 ${prefix}/share/tcl9 ${prefix}/lib/tcl9 ${TCL_PACKAGE_PATH}"
 else

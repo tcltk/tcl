@@ -78,8 +78,8 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d /Library/Frameworks 2>/dev/null` \
 			`ls -d /Network/Library/Frameworks 2>/dev/null` \
 			; do
-		    if test -f "$i/Tcl.framework/tclConfig.sh" ; then
-			ac_cv_c_tclconfig="`(cd $i/Tcl.framework; pwd)`"
+		    if test -f "$i/Tcl9.framework/tclConfig.sh" ; then
+			ac_cv_c_tclconfig="`(cd $i/Tcl9.framework; pwd)`"
 			break
 		    fi
 		done
@@ -306,7 +306,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     elif test "`uname -s`" = "Darwin"; then
 	# If Tcl was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
-	# against Tcl.framework installed in an arbitrary location.
+	# against Tcl9.framework installed in an arbitrary location.
 	case ${TCL_DEFS} in
 	    *TCL_FRAMEWORK*)
 		if test -f "${TCL_BIN_DIR}/${TCL_LIB_FILE}"; then

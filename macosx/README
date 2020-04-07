@@ -36,8 +36,8 @@ Weak-linking is available on OS X 10.2 or later, it additionally allows Tcl
 built on 10.x to run on any 10.y with x > y >= z (for a chosen z >= 2).
 
 - Tcl extensions can be installed in any of:
-	$HOME/Library/Tcl /Library/Tcl
-	$HOME/Library/Frameworks /Library/Frameworks
+	$HOME/Library/Tcl9 /Library/Tcl9
+	$HOME/Library/Frameworks/Tcl9 /Library/Frameworks/Tcl9
 	(searched in that order).
 Given a potential package directory $pkg, Tcl on OSX checks for the file
 $pkg/Resources/Scripts/pkgIndex.tcl as well as the usual $pkg/pkgIndex.tcl.
@@ -51,8 +51,8 @@ native filesystem required), and prior to Mac OS X 10.5, only bundles can be
 [unload]ed.
 
 - The 'deploy' target of macosx/GNUmakefile installs the html manpages into the
-standard documentation location in the Tcl framework:
-	Tcl.framework/Resources/Documentation/Reference/Tcl
+standard documentation location in the Tcl9 framework:
+	Tcl9.framework/Resources/Documentation/Reference/Tcl
 No nroff manpages are installed by default by the GNUmakefile.
 
 - The Tcl framework can be installed in any of the system's standard
@@ -154,8 +154,8 @@ instead by passing an INSTALL_ROOT argument to make:
 	make -C tcl${ver}/macosx install INSTALL_ROOT="${HOME}/"
 
 - The default GNUmakefile targets will build _both_ debug and optimized versions
-of the Tcl framework with the standard convention of naming the debug library
-Tcl.framework/Tcl_debug.
+of the Tcl9 framework with the standard convention of naming the debug library
+Tcl9.framework/Tcl_debug.
 This allows switching to the debug libraries at runtime by setting
 	export DYLD_IMAGE_SUFFIX=_debug
 (c.f. man dyld for more details)

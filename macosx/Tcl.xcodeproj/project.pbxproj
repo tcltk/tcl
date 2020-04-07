@@ -877,7 +877,7 @@
 		F9903CB0094FAADA004613E9 /* tclTomMathDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclTomMathDecls.h; sourceTree = "<group>"; };
 		F99D61180EF5573A00BBFE01 /* TclZlib.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = TclZlib.3; sourceTree = "<group>"; };
 		F9A3084B08F2D4CE00BAE1AB /* tclsh */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tclsh; sourceTree = BUILT_PRODUCTS_DIR; };
-		F9A3084E08F2D4F400BAE1AB /* Tcl.framework */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.framework; path = Tcl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9A3084E08F2D4F400BAE1AB /* Tcl9.framework */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.framework; path = Tcl9.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A493240CEBF38300B78AE2 /* chanio.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = chanio.test; sourceTree = "<group>"; };
 		F9ECB1120B26521500A28025 /* pkgIndex.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = pkgIndex.tcl; sourceTree = "<group>"; };
 		F9ECB1130B26521500A28025 /* platform.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = platform.tcl; sourceTree = "<group>"; };
@@ -920,7 +920,7 @@
 			children = (
 				F9A3084B08F2D4CE00BAE1AB /* tclsh */,
 				8DD76FB20486AB0100D96B5E /* tcltest */,
-				F9A3084E08F2D4F400BAE1AB /* Tcl.framework */,
+				F9A3084E08F2D4F400BAE1AB /* Tcl9.framework */,
 			);
 			includeInIndex = 0;
 			name = Products;
