@@ -676,28 +676,48 @@ Tcl_UtfPrev(
     CONST char *start)		/* Pointer to the beginning of the string, to
 				 * avoid going backwards too far. */
 {
-    CONST char *look;
-    int i, byte;
+    static unsigned char maxLead = (TCL_UTF_MAX == 3) ? 0xEF : 0xF7;
+    static unsigned char leads[6] = {0xC0, 0xC0, 0xE0, 0xF0, 0xF8, 0xF8};
+    int limit,n = 0;
+    CONST char *look = src - 1;
 
-    src--;
-    look = src;
-    for (i = 0; i < TCL_UTF_MAX; i++) {
-	if (look < start) {
-	    if (src < start) {
-		src = start;
-	    }
-	    break;
-	}
-	byte = *((unsigned char *) look);
+    if (look <= start) {
+	return start;
+    }
+
+    limit = ((src - start) < TCL_UTF_MAX) ? (src - start) : TCL_UTF_MAX;
+
+    do {
+	unsigned char byte = *((unsigned char *) look);
+
 	if (byte < 0x80) {
-	    break;
+	    /* An 7-bit ASCII byte followed by n trail bytes indicates the
+	     * last trail byte was the answer. */
+	    return src - 1;
 	}
-	if (byte >= 0xC0) {
+	if (byte > maxLead) {
+	    /* A byte value too large to be a valid lead byte indicates the
+	     * last trail byte was the answer */
+	   return src - 1;
+	}
+	if (byte >= leads[n++]) {
+	    /* A lead byte that can accept up to n trail bytes becomes
+	     * the answer. */
 	    return look;
 	}
+	if (byte >= 0xC0) {
+	    /* A lead byte that cannot accept n trail bytes indicates
+	     * the last trail byte the answer. */
+	    return src - 1;
+	}
+
+	/* We saw a trail byte; keep scanning. */
 	look--;
-    }
-    return src;
+    } while (n < limit);
+
+    /* We saw nothing but trail bytes until the limit was reached.
+     * Indicates the last trail byte is the answer. */
+    return src - 1;
 }
 
 /*
