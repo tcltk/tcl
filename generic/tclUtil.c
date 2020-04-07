@@ -1573,8 +1573,7 @@ TrimRight(
     const char *trim,	/* String of trim characters... */
     int numTrim)	/* ...and its length in bytes */
 {
-    const char *p = bytes + numBytes;
-    int pInc;
+    const char *pp, *p = bytes + numBytes;
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1582,15 +1581,18 @@ TrimRight(
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
-	p = Tcl_UtfPrev(p, bytes);
- 	pInc = TclUtfToUniChar(p, &ch1);
+	pp = Tcl_UtfPrev(p, bytes);
+	(void)TclUtfToUniChar(pp, &ch1);
 
 	/* Inner loop: scan trim string for match to current character */
 	do {
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    if (ch1 == ch2) {
+	    /* compare chars and real length of char, e.g. if TclUtfToUniChar
+	     * mistakenly considers NTS 0-byte as a continuation of invalid utf-8
+	     * sequence, bug [c61818e4c9] */
+	    if (ch1 == ch2 && p - pp == qInc) {
 		break;
 	    }
 
@@ -1600,9 +1602,9 @@ TrimRight(
 
 	if (bytesLeft == 0) {
 	    /* No match; trim task done; *p is last non-trimmed char */
-	    p += pInc;
 	    break;
 	}
+	p = pp;
     } while (p > bytes);
 
     return numBytes - (p - bytes);
@@ -1672,12 +1674,17 @@ TrimLeft(
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
+	/* take care about real length of char, e.g. if TclUtfToUniChar would
+	 * mistakenly consider NTS 0-byte as a continuation of invalid utf-8
+	 * sequence, bug [c61818e4c9] */
+	if (pInc > numBytes) {pInc = numBytes;}
+
 	/* Inner loop: scan trim string for match to current character */
 	do {
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    if (ch1 == ch2) {
+	    if (ch1 == ch2 && pInc == qInc) {
 		break;
 	    }
 
