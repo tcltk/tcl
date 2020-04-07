@@ -164,6 +164,29 @@ test utf-7.23 {Tcl_UtfPrev} {
     string trimright [bytestring A\xA0\xA0\xA0\xA0] X
 } [bytestring A\xA0\xA0\xA0\xA0]
 
+test utf-7.24 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xF8\xA0] [bytestring \xF8]
+} [bytestring A\xF8\xA0]
+test utf-7.25 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xF4\xA0] [bytestring \xF4]
+} [bytestring A\xF4\xA0]
+test utf-7.26 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xE8\xA0] [bytestring \xE8]
+} [bytestring A\xE8\xA0]
+test utf-7.27 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xF8\xA0\xA0] [bytestring \xF8]
+} [bytestring A\xF8\xA0\xA0]
+test utf-7.28 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xF4\xA0\xA0] [bytestring \xF4]
+} [bytestring A\xF4\xA0\xA0]
+test utf-7.29 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xD0\xA0\xA0] [bytestring \xD0]
+} [bytestring A\xD0\xA0\xA0]
+
+test utf-7.30 {Tcl_UtfPrev} {
+    string trimright [bytestring A\xC0\x80\xA0] \u0000
+} [bytestring A\xC0\x80\xA0]
+
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
 } {a}
