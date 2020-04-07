@@ -77,10 +77,9 @@ typedef struct {
 #endif
 
 /*
- * The following arrays contain the human readable strings for the Windows
+ * The following arrays contain the human readable strings for the
  * processor values.
  */
-
 
 #define NUMPROCESSORS 11
 static const char *const processors[NUMPROCESSORS] = {
@@ -525,7 +524,8 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os",
+	    "Windows NT", TCL_GLOBAL_ONLY);
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
