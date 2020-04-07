@@ -1582,14 +1582,17 @@ TrimRight(
 	int bytesLeft = numTrim;
 
 	pp = Tcl_UtfPrev(p, bytes);
- 	(void)TclUtfToUniChar(pp, &ch1);
+	(void)TclUtfToUniChar(pp, &ch1);
 
 	/* Inner loop: scan trim string for match to current character */
 	do {
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    if (ch1 == ch2) {
+	    /* compare chars and real length of char, e.g. if TclUtfToUniChar
+	     * mistakenly considers NTS 0-byte as a continuation of invalid utf-8
+	     * sequence, bug [c61818e4c9] */
+	    if (ch1 == ch2 && p - pp == qInc) {
 		break;
 	    }
 
@@ -1671,12 +1674,17 @@ TrimLeft(
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
+	/* take care about real length of char, e.g. if TclUtfToUniChar would
+	 * mistakenly consider NTS 0-byte as a continuation of invalid utf-8
+	 * sequence, bug [c61818e4c9] */
+	if (pInc > numBytes) {pInc = numBytes;}
+
 	/* Inner loop: scan trim string for match to current character */
 	do {
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    if (ch1 == ch2) {
+	    if (ch1 == ch2 && pInc == qInc) {
 		break;
 	    }
 
