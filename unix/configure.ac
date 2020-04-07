@@ -889,8 +889,8 @@ fi
 if test "$FRAMEWORK_BUILD" = "1" ; then
     AC_DEFINE(TCL_FRAMEWORK, 1, [Is Tcl built as a framework?])
     # Construct a fake local framework structure to make linking with
-    # '-framework Tcl' and running of tcltest work
-    AC_CONFIG_COMMANDS([Tcl9.framework], [n=Tcl &&
+    # '-framework Tcl9' and running of tcltest work
+    AC_CONFIG_COMMANDS([Tcl9.framework], [n=Tcl9 &&
         f=$n.framework && v=Versions/$VERSION &&
         rm -rf $f && mkdir -p $f/$v/Resources &&
         ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
@@ -908,10 +908,10 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
         # override libdir default
         libdir="/Library/Frameworks"
     fi
-    TCL_LIB_FILE="Tcl"
-    TCL_LIB_FLAG="-framework Tcl"
-    TCL_BUILD_LIB_SPEC="-F`pwd | sed -e 's/ /\\\\ /g'` -framework Tcl"
-    TCL_LIB_SPEC="-F${libdir} -framework Tcl"
+    TCL_LIB_FILE="Tcl9"
+    TCL_LIB_FLAG="-framework Tcl9"
+    TCL_BUILD_LIB_SPEC="-F`pwd | sed -e 's/ /\\\\ /g'` -framework Tcl9"
+    TCL_LIB_SPEC="-F${libdir} -framework Tcl9"
     libdir="${libdir}/Tcl9.framework/Versions/\${VERSION}"
     TCL_LIBRARY="${libdir}/Resources/Scripts"
     includedir="${libdir}/Headers"

@@ -89,7 +89,7 @@ ${targets}:
 # project specific settings
 
 PROJECT			:= tcl
-PRODUCT_NAME		:= Tcl
+PRODUCT_NAME		:= Tcl9
 
 UNIX_DIR		:= ${CURDIR}/../unix
 VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.ac)
