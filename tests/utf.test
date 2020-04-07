@@ -94,98 +94,122 @@ test utf-5.1 {Tcl_UtfFindFirsts} {
 test utf-6.1 {Tcl_UtfNext} {
 } {}
 
-test utf-7.1 {Tcl_UtfPrev} {
-    string trimright {} X
-} {}
-test utf-7.2 {Tcl_UtfPrev} {
-    string trimright A X
-} A
-test utf-7.3 {Tcl_UtfPrev} {
-    string trimright AA X
-} AA
-test utf-7.4 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8] X
-} [bytestring A\xF8]
-test utf-7.5 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4] X
-} [bytestring A\xF4]
-test utf-7.6 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xE8] X
-} [bytestring A\xE8]
-test utf-7.7 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xD0] X
-} [bytestring A\xD0]
-test utf-7.8 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xA0] X
-} [bytestring A\xA0]
-test utf-7.9 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8\xA0] X
-} [bytestring A\xF8\xA0]
-test utf-7.10 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4\xA0] X
-} [bytestring A\xF4\xA0]
-test utf-7.11 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xE8\xA0] X
-} [bytestring A\xE8\xA0]
-test utf-7.12 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xD0\xA0] X
-} [bytestring A\xD0\xA0]
-test utf-7.13 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xA0\xA0] X
-} [bytestring A\xA0\xA0]
-test utf-7.14 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8\xA0\xA0] X
-} [bytestring A\xF8\xA0\xA0]
-test utf-7.15 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4\xA0\xA0] X
-} [bytestring A\xF4\xA0\xA0]
-test utf-7.16 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xE8\xA0\xA0] X
-} [bytestring A\xE8\xA0\xA0]
-test utf-7.17 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xD0\xA0\xA0] X
-} [bytestring A\xD0\xA0\xA0]
-test utf-7.18 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xA0\xA0\xA0] X
-} [bytestring A\xA0\xA0\xA0]
-test utf-7.19 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8\xA0\xA0\xA0] X
-} [bytestring A\xF8\xA0\xA0\xA0]
-test utf-7.20 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4\xA0\xA0\xA0] X
-} [bytestring A\xF4\xA0\xA0\xA0]
-test utf-7.21 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xE8\xA0\xA0\xA0] X
-} [bytestring A\xE8\xA0\xA0\xA0]
-test utf-7.22 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xD0\xA0\xA0\xA0] X
-} [bytestring A\xD0\xA0\xA0\xA0]
-test utf-7.23 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xA0\xA0\xA0\xA0] X
-} [bytestring A\xA0\xA0\xA0\xA0]
+testConstraint testutfprev [llength [info commands testutfprev]]
 
-test utf-7.24 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8\xA0] [bytestring \xF8]
-} [bytestring A\xF8\xA0]
-test utf-7.25 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4\xA0] [bytestring \xF4]
-} [bytestring A\xF4\xA0]
-test utf-7.26 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xE8\xA0] [bytestring \xE8]
-} [bytestring A\xE8\xA0]
-test utf-7.27 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF8\xA0\xA0] [bytestring \xF8]
-} [bytestring A\xF8\xA0\xA0]
-test utf-7.28 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xF4\xA0\xA0] [bytestring \xF4]
-} [bytestring A\xF4\xA0\xA0]
-test utf-7.29 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xD0\xA0\xA0] [bytestring \xD0]
-} [bytestring A\xD0\xA0\xA0]
-
-test utf-7.30 {Tcl_UtfPrev} {
-    string trimright [bytestring A\xC0\x80\xA0] \u0000
-} [bytestring A\xC0\x80\xA0]
+test utf-7.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev {}
+} 0
+test utf-7.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A
+} 0
+test utf-7.3 {Tcl_UtfPrev} testutfprev {
+    testutfprev AA
+} 1
+test utf-7.4 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8
+} 1
+test utf-7.4.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0\xA0 2
+} 1
+test utf-7.5 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4
+} 1
+test utf-7.5.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xA0 2
+} 1
+test utf-7.6 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8
+} 1
+test utf-7.6.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0\xA0 2
+} 1
+test utf-7.7 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0
+} 1
+test utf-7.7.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0\xA0 2
+} 1
+test utf-7.8 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0
+} 1
+test utf-7.8.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0\xA0 2
+} 1
+test utf-7.9 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0
+} 2
+test utf-7.9.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0\xA0 3
+} 2
+test utf-7.10 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0
+} 2
+test utf-7.10.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xA0 3
+} 2
+test utf-7.11 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0
+} 2
+test utf-7.11.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0\xA0 3
+} 1
+test utf-7.12 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0
+} 1
+test utf-7.12.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0\xA0 3
+} 1
+test utf-7.13 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0
+} 2
+test utf-7.13.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0\xA0 3
+} 2
+test utf-7.14 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0
+} 3
+test utf-7.14.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0\xA0 4
+} 3
+test utf-7.15 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0
+} 3
+test utf-7.15.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xA0 4
+} 3
+test utf-7.16 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0
+} 1
+test utf-7.16.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0\xA0 4
+} 1
+test utf-7.17 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0
+} 3
+test utf-7.17.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0\xA0 4
+} 3
+test utf-7.18 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0
+} 3
+test utf-7.18.1 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0\xA0 4
+} 3
+test utf-7.19 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0\xA0
+} 4
+test utf-7.20 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xA0
+} 4
+test utf-7.21 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0\xA0
+} 4
+test utf-7.22 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0\xA0
+} 4
+test utf-7.23 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0\xA0
+} 4
 
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0

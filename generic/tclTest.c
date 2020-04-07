@@ -7114,20 +7114,24 @@ TestUtfPrevCmd(
     const char *result;
     Tcl_Obj *copy;
     
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "bytes offset");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
     bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
     
-    if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &offset)) {
-	return TCL_ERROR;
-    }
-    if (offset < 0) {
-	offset = 0;
-    }
-    if (offset > numBytes) {
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset < 0) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    } else {
 	offset = numBytes;
     }
     copy = Tcl_DuplicateObj(objv[1]);
