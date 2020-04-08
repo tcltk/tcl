@@ -1589,10 +1589,7 @@ TrimRight(
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    /* compare chars and real length of char, e.g. if TclUtfToUniChar
-	     * mistakenly considers NTS 0-byte as a continuation of invalid utf-8
-	     * sequence, bug [c61818e4c9] */
-	    if (ch1 == ch2 && p - pp == qInc) {
+	    if (ch1 == ch2) {
 		break;
 	    }
 
@@ -1604,8 +1601,7 @@ TrimRight(
 	    /* No match; trim task done; *p is last non-trimmed char */
 	    break;
 	}
-	p = pp;
-    } while (p > bytes);
+    } while ((p = pp) > bytes);
 
     return numBytes - (p - bytes);
 }
@@ -1684,7 +1680,7 @@ TrimLeft(
 	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
-	    if (ch1 == ch2 && pInc == qInc) {
+	    if (ch1 == ch2) {
 		break;
 	    }
 
