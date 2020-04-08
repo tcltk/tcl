@@ -383,6 +383,12 @@ Tcl_UtfToUniChar(
     *chPtr = (Tcl_UniChar) byte;
     return 1;
 }
+/* UTF_TO_UNI_MAX -- maximal value Tcl_UtfToUniChar could return */
+#if TCL_UTF_MAX <= 3
+#  define UTF_TO_UNI_MAX 3
+#else
+#  define UTF_TO_UNI_MAX 4
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -688,7 +694,7 @@ Tcl_UtfPrev(
 	return look;
     }
     /* navigate up to max return value of Tcl_UtfToUniChar */
-    for (i = 1; i <= 4; i++) {
+    for (i = 1; i <= UTF_TO_UNI_MAX; i++) {
 	if (look < start) {
 	    look = start;
 	    break;
