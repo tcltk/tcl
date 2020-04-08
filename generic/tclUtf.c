@@ -2450,44 +2450,17 @@ TclUniCharMatch(
  *---------------------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX <= 3
 int
 TclUtfToUCS4(
     const char *src,	/* The UTF-8 string. */
     int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
 			 * by the UTF-8 string. */
 {
-    int len, fullchar;
-    Tcl_UniChar ch = 0;
-
-    len = TclUtfToUniChar(src, &ch);
-    fullchar = ch;
-
-#if TCL_UTF_MAX <= 3
-    /* Limited interfaces -- must use and decode surrogates */
-
-    if ((ch >= 0xD800) && len < 3) {
-/******
- ******	Note the #undef TCL_UtfToUniChar gets in our way here.
- ******
-	len += Tcl_UtfToUniChar(src + len, &ch);
- ******
- ******  We have to do the subtitution ourselves.
- ******/
-
-	len += Tcl_UtfToChar16(src + len, &ch);
-
-/******
- ******	We might also solve this by moving this routine higher in the file.
- ****** Or there might be a more sensible foundation in this branch.
- ******/
-
-	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-    }
-#endif
-
-    *ucs4Ptr = fullchar;
-    return len;
+    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+    return Tcl_UtfToUniChar(src, ucs4Ptr);
 }
+#endif
 
 /*
  * Local Variables:

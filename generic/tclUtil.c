@@ -1673,7 +1673,7 @@ TrimRight(
 {
     const char *p = bytes + numBytes;
     size_t pInc;
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    int ch1, ch2;
 
     /*
      * Outer loop: iterate over string to be trimmed.
@@ -1684,14 +1684,14 @@ TrimRight(
 	size_t bytesLeft = numTrim;
 
 	p = Tcl_UtfPrev(p, bytes);
- 	pInc = TclUtfToUniChar(p, &ch1);
+ 	pInc = TclUtfToUCS4(p, &ch1);
 
 	/*
 	 * Inner loop: scan trim string for match to current character.
 	 */
 
 	do {
-	    size_t qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1771,14 +1771,14 @@ TrimLeft(
     size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes;
-	Tcl_UniChar ch1 = 0, ch2 = 0;
+	int ch1, ch2;
 
     /*
      * Outer loop: iterate over string to be trimmed.
      */
 
     do {
-	size_t pInc = TclUtfToUniChar(p, &ch1);
+	size_t pInc = TclUtfToUCS4(p, &ch1);
 	const char *q = trim;
 	size_t bytesLeft = numTrim;
 
@@ -1787,7 +1787,7 @@ TrimLeft(
 	 */
 
 	do {
-	    size_t qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
