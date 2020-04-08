@@ -111,11 +111,17 @@ test utf-7.4 {Tcl_UtfPrev} testutfprev {
 test utf-7.4.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0\xA0 2
 } 1
+test utf-7.4.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xF8\xA0\xA0 2
+} 1
 test utf-7.5 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4
 } 1
 test utf-7.5.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0 2
+} 1
+test utf-7.5.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xF8\xA0\xA0 2
 } 1
 test utf-7.6 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8
@@ -123,11 +129,17 @@ test utf-7.6 {Tcl_UtfPrev} testutfprev {
 test utf-7.6.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xA0 2
 } 1
+test utf-7.6.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xF8\xA0\xA0 2
+} 1
 test utf-7.7 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0
 } 1
 test utf-7.7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0\xA0 2
+} 1
+test utf-7.7.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xF8\xA0\xA0 2
 } 1
 test utf-7.8 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0
@@ -135,11 +147,17 @@ test utf-7.8 {Tcl_UtfPrev} testutfprev {
 test utf-7.8.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0\xA0 2
 } 1
+test utf-7.8.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xF8\xA0\xA0 2
+} 1
 test utf-7.9 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0
 } 2
 test utf-7.9.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0\xA0 3
+} 2
+test utf-7.9.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xF8\xA0 3
 } 2
 test utf-7.10 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0
@@ -147,17 +165,26 @@ test utf-7.10 {Tcl_UtfPrev} testutfprev {
 test utf-7.10.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0 3
 } 2
+test utf-7.10.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xF8\xA0 3
+} 2
 test utf-7.11 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0
 } 2
 test utf-7.11.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xA0 3
 } 1
+test utf-7.11.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xF8\xA0 3
+} 2
 test utf-7.12 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0
 } 1
 test utf-7.12.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0\xA0 3
+} 1
+test utf-7.12.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xF8\xA0 3
 } 1
 test utf-7.13 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0
@@ -165,11 +192,17 @@ test utf-7.13 {Tcl_UtfPrev} testutfprev {
 test utf-7.13.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0\xA0 3
 } 2
+test utf-7.13.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xF8\xA0 3
+} 2
 test utf-7.14 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0
 } 3
 test utf-7.14.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0\xA0 4
+} 3
+test utf-7.14.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF8\xA0\xA0\xF8 4
 } 3
 test utf-7.15 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0
@@ -177,11 +210,17 @@ test utf-7.15 {Tcl_UtfPrev} testutfprev {
 test utf-7.15.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0 4
 } 3
+test utf-7.15.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xF8 4
+} 3
 test utf-7.16 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0
 } 1
 test utf-7.16.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xA0 4
+} 1
+test utf-7.16.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xA0\xF8 4
 } 1
 test utf-7.17 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0
@@ -189,11 +228,17 @@ test utf-7.17 {Tcl_UtfPrev} testutfprev {
 test utf-7.17.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0\xA0 4
 } 3
+test utf-7.17.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xD0\xA0\xA0\xF8 4
+} 3
 test utf-7.18 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0
 } 3
 test utf-7.18.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0\xA0 4
+} 3
+test utf-7.18.2 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xA0\xA0\xA0\xF8 4
 } 3
 test utf-7.19 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0\xA0
