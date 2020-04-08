@@ -1859,7 +1859,7 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -body {
+test string-21.16.$noComp {string wordend, unicode} -constraints tip389 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 8
 
@@ -1905,7 +1905,7 @@ test string-22.13.$noComp {string wordstart, unicode} -body {
 test string-22.14.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.15.$noComp {string wordstart, unicode} -body {
+test string-22.15.$noComp {string wordstart, unicode} -constraints tip389 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
 
