@@ -693,7 +693,7 @@ Tcl_UtfPrev(
 	    break;
 	}
 	if (byte >= 0xC0) {
-	    if (totalBytes[byte] != i + 1) {
+	    if (totalBytes[byte] <= i) {
 		break;
 	    }
 	    return look;
