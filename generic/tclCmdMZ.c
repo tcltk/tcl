@@ -1174,7 +1174,7 @@ Tcl_SplitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch = 0;
     int len;
     const char *splitChars;
     const char *stringPtr;
@@ -1217,10 +1217,8 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    int ucs4;
-
-	    len = TclUtfToUCS4(stringPtr, &ucs4);
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ucs4), &isNew);
+	    len = TclUtfToUCS4(stringPtr, &ch);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1255,7 +1253,7 @@ Tcl_SplitObjCmd(
     } else {
 	const char *element, *p, *splitEnd;
 	int splitLen;
-	Tcl_UniChar splitChar = 0;
+	int splitChar;
 
 	/*
 	 * Normal case: split on any of a given set of characters. Discard
@@ -1265,9 +1263,9 @@ Tcl_SplitObjCmd(
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUniChar(stringPtr, &ch);
+	    len = TclUtfToUCS4(stringPtr, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = TclUtfToUniChar(p, &splitChar);
+		splitLen = TclUtfToUCS4(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -2482,9 +2480,7 @@ StringRevCmd(
  * StringStartCmd --
  *
  *	This procedure is invoked to process the "string wordstart" Tcl
- *	command. See the user documentation for details on what it does. Note
- *	that this command only functions correctly on properly formed Tcl UTF
- *	strings.
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -2502,7 +2498,7 @@ StringStartCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch;
     const char *p, *string;
     int cur, index, length, numChars;
 
@@ -2524,7 +2520,7 @@ StringStartCmd(
     if (index > 0) {
 	p = Tcl_UtfAtIndex(string, index);
 	for (cur = index; cur >= 0; cur--) {
-	    TclUtfToUniChar(p, &ch);
+	    TclUtfToUCS4(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -2544,8 +2540,7 @@ StringStartCmd(
  * StringEndCmd --
  *
  *	This procedure is invoked to process the "string wordend" Tcl command.
- *	See the user documentation for details on what it does. Note that this
- *	command only functions correctly on properly formed Tcl UTF strings.
+ *	See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -2563,7 +2558,7 @@ StringEndCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch;
     const char *p, *end, *string;
     int cur, index, length, numChars;
 
@@ -2585,7 +2580,7 @@ StringEndCmd(
 	p = Tcl_UtfAtIndex(string, index);
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUtfToUniChar(p, &ch);
+	    p += TclUtfToUCS4(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
