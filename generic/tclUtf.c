@@ -701,7 +701,7 @@ Tcl_UtfPrev(
 	    break;
 	}
 	o = Tcl_UtfToUniChar(look, &ch);
-	/* if we are reached start of some char, mark as known and try further */
+	/* if we reach start of some char, mark as known and try further */
 	if (o >= i) {
 	    known = i;
 	}
