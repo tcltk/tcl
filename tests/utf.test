@@ -123,20 +123,26 @@ test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
     testnumutfchars "" 0
 } {0}
 test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC2\xA2"] 2
+    testnumutfchars [testbytestring "\xC2\xA2"] end
 } {1}
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\uA2\x4E"] 10
+    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\uA2\x4E"] end
 } {7}
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC0\x80"] 2
+    testnumutfchars [testbytestring "\xC0\x80"] end
 } {1}
 # Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
 test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xE2\x82\xAC"] 2
+    testnumutfchars [testbytestring "\xE2\x82\xAC"] end-1
 } {2}
 test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\x00"] 2
+    testnumutfchars [testbytestring "\x00"] end+1
+} {2}
+test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring \xf0\x9f\x92\xa9] end-1
+} {3}
+test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
+    testnumutfchars [testbytestring \xf0\x9f\x92\xa9] end
 } {2}
 
 test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
