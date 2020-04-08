@@ -676,48 +676,42 @@ Tcl_UtfPrev(
     CONST char *start)		/* Pointer to the beginning of the string, to
 				 * avoid going backwards too far. */
 {
-    static unsigned char maxLead = (TCL_UTF_MAX == 3) ? 0xEF : 0xF7;
-    static unsigned char leads[6] = {0xC0, 0xC0, 0xE0, 0xF0, 0xF8, 0xF8};
-    int limit,n = 0;
     CONST char *look = src - 1;
+    int i, o, known = 0;
+    Tcl_UniChar ch;
 
-    if (look <= start) {
+    if (src <= start) {
 	return start;
     }
-
-    limit = ((src - start) < TCL_UTF_MAX) ? (src - start) : TCL_UTF_MAX;
-
-    do {
-	unsigned char byte = *((unsigned char *) look);
-
-	if (byte < 0x80) {
-	    /* An 7-bit ASCII byte followed by n trail bytes indicates the
-	     * last trail byte was the answer. */
-	    return src - 1;
+    /* simplest case - ascii char */
+    if (*((unsigned char *) look) < 0x80) {
+	return look;
+    }
+    /* navigate up to max return value of Tcl_UtfToUniChar */
+    for (i = 1; i <= 4; i++) {
+	if (look < start) {
+	    look = start;
+	    break;
 	}
-	if (byte > maxLead) {
-	    /* A byte value too large to be a valid lead byte indicates the
-	     * last trail byte was the answer */
-	   return src - 1;
+	if (*((unsigned char *) look) < 0x80) {
+	    /* traversing back reaches ascii - either known mark points to char,
+	     * or unexpected case with invalid utf-8 or unsupported surrogate 
+	     * starting from next char, so goto next char and stop search: */
+	    look++;
+	    break;
 	}
-	if (byte >= leads[n++]) {
-	    /* A lead byte that can accept up to n trail bytes becomes
-	     * the answer. */
-	    return look;
+	o = Tcl_UtfToUniChar(look, &ch);
+	/* if we are reached start of some char, mark as known and try further */
+	if (o >= i) {
+	    known = i;
 	}
-	if (byte >= 0xC0) {
-	    /* A lead byte that cannot accept n trail bytes indicates
-	     * the last trail byte the answer. */
-	    return src - 1;
-	}
-
-	/* We saw a trail byte; keep scanning. */
 	look--;
-    } while (n < limit);
-
-    /* We saw nothing but trail bytes until the limit was reached.
-     * Indicates the last trail byte is the answer. */
-    return src - 1;
+    }
+    /* use best (marked as known) char position, or current found if unknown: */
+    if (known) {
+	look = src - known;
+    }
+    return look;
 }
 
 /*
