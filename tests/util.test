@@ -522,6 +522,51 @@ test util-8.6 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring append \} -1
     list [llength [testdstring get]] [string length [testdstring get]]
 } {2 9}
+test util-8.7 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 3]
+} {2 \{}
+test util-8.8 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\ {}}
+    list [llength [testdstring get]] [string index [testdstring get] 3]
+} {2 \{}
+test util-8.9 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 5]
+} {2 \{}
+test util-8.10 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\\\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\\\\\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 9]
+} {2 \{}
+test util-8.11 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\\\\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\\\\\\ {}}
+    list [llength [testdstring get]] [string index [testdstring get] 9]
+} {2 \{}
 
 test util-9.0.0 {TclGetIntForIndex} {
     string index abcd 0
