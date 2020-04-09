@@ -1610,7 +1610,7 @@ Tcl_UniCharIsSpace(
      */
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
-	return TclIsSpaceProc((char) ch);
+	return TclIsSpaceProcM((char) ch);
     } else if ((Tcl_UniChar) ch == 0x180E || (Tcl_UniChar) ch == 0x202F) {
 	return 1;
     } else {

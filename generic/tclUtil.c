@@ -396,20 +396,20 @@ TclMaxListLength(
     }
 
     /* No list element before leading white space */
-    count += 1 - TclIsSpaceProc(*bytes);
+    count += 1 - TclIsSpaceProcM(*bytes);
 
     /* Count white space runs as potential element separators */
     while (numBytes) {
 	if ((numBytes == -1) && (*bytes == '\0')) {
 	    break;
 	}
-	if (TclIsSpaceProc(*bytes)) {
+	if (TclIsSpaceProcM(*bytes)) {
 	    /* Space run started; bump count */
 	    count++;
 	    do {
 		bytes++;
 		numBytes -= (numBytes != -1);
-	    } while (numBytes && TclIsSpaceProc(*bytes));
+	    } while (numBytes && TclIsSpaceProcM(*bytes));
 	    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
 		break;
 	    }
@@ -420,7 +420,7 @@ TclMaxListLength(
     }
 
     /* No list element following trailing white space */
-    count -= TclIsSpaceProc(bytes[-1]);
+    count -= TclIsSpaceProcM(bytes[-1]);
 
     done:
     if (endPtr) {
@@ -508,7 +508,7 @@ TclFindElement(
      */
 
     limit = (list + listLength);
-    while ((p < limit) && (TclIsSpaceProc(*p))) {
+    while ((p < limit) && (TclIsSpaceProcM(*p))) {
 	p++;
     }
     if (p == limit) {		/* no element found */
@@ -553,7 +553,7 @@ TclFindElement(
 	    } else if (openBraces == 1) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit) || TclIsSpaceProc(*p)) {
+		if ((p >= limit) || TclIsSpaceProcM(*p)) {
 		    goto done;
 		}
 
@@ -563,7 +563,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
+		    while ((p2 < limit) && (!TclIsSpaceProcM(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -595,23 +595,6 @@ TclFindElement(
 	    break;
 
 	    /*
-	     * Space: ignore if element is in braces or quotes; otherwise
-	     * terminate element.
-	     */
-
-	case ' ':
-	case '\f':
-	case '\n':
-	case '\r':
-	case '\t':
-	case '\v':
-	    if ((openBraces == 0) && !inQuotes) {
-		size = (p - elemStart);
-		goto done;
-	    }
-	    break;
-
-	    /*
 	     * Double-quote: if element is in quotes then terminate it.
 	     */
 
@@ -619,7 +602,7 @@ TclFindElement(
 	    if (inQuotes) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit) || TclIsSpaceProc(*p)) {
+		if ((p >= limit) || TclIsSpaceProcM(*p)) {
 		    goto done;
 		}
 
@@ -629,7 +612,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
+		    while ((p2 < limit) && (!TclIsSpaceProcM(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -640,6 +623,20 @@ TclFindElement(
 		return TCL_ERROR;
 	    }
 	    break;
+
+	default:
+	    if (TclIsSpaceProcM(*p)) {
+		/*
+		 * Space: ignore if element is in braces or quotes;
+		 * otherwise terminate element.
+		 */
+		if ((openBraces == 0) && !inQuotes) {
+		    size = (p - elemStart);
+		    goto done;
+		}
+	    }
+	    break;
+
 	}
 	p++;
     }
@@ -666,7 +663,7 @@ TclFindElement(
     }
 
   done:
-    while ((p < limit) && (TclIsSpaceProc(*p))) {
+    while ((p < limit) && (TclIsSpaceProcM(*p))) {
 	p++;
     }
     *elementPtr = elemStart;
@@ -1013,12 +1010,6 @@ TclScanElement(
 	case '[':
 	case '$':
 	case ';':
-	case ' ':
-	case '\f':
-	case '\n':
-	case '\r':
-	case '\t':
-	case '\v':
 	    forbidNone = 1;
 	    extra++;		/* Escape sequences all one byte longer. */
 #if COMPAT
@@ -1055,6 +1046,15 @@ TclScanElement(
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
+	    break;
+	default:
+	    if (TclIsSpaceProcM(*p)) {
+		forbidNone = 1;
+		extra++;	/* Escape sequences all one byte longer. */
+#if COMPAT
+		preferBrace = 1;
+#endif
+	    }
 	    break;
 	}
 	length -= (length > 0);
@@ -1806,6 +1806,7 @@ TclTrim(
  */
 
 /* The whitespace characters trimmed during [concat] operations */
+/* TODO: Find a reasonable way to guarantee in sync with TclIsSpaceProc() */
 #define CONCAT_WS " \f\v\r\t\n"
 #define CONCAT_WS_SIZE (int) (sizeof(CONCAT_WS "") - 1)
 
@@ -3272,43 +3273,22 @@ TclNeedSpace(
 
     /*
      * (c) the trailing character of the string is already a list-element
-     *	   separator (according to TclFindElement); that is, one of these
-     *	   characters:
-     *		\u0009	\t	TAB
-     *		\u000A	\n	NEWLINE
-     *		\u000B	\v	VERTICAL TAB
-     *		\u000C	\f	FORM FEED
-     *		\u000D	\r	CARRIAGE RETURN
-     *		\u0020		SPACE
-     *	   with the condition that the penultimate character is not a
-     *	   backslash.
+     *	   separator, Use the same testing routine as TclFindElement to
+     *	   enforce consistency.
      */
 
-    if (*end > 0x20) {
+    if (TclIsSpaceProcM(*end)) {
+	int result = 0;
+
 	/*
-	 * Performance tweak. All ASCII spaces are <= 0x20. So get a quick
-	 * answer for most characters before comparing against all spaces in
-	 * the switch below.
-	 *
-	 * NOTE: Remove this if other Unicode spaces ever get accepted as
-	 * list-element separators.
+	 * Trailing whitespace might be part of a backslash escape
+	 * sequence. Handle that possibility.
 	 */
-	return 1;
-    }
-    switch (*end) {
-    case ' ':
-    case '\t':
-    case '\n':
-    case '\r':
-    case '\v':
-    case '\f':
-	{
-	    int result = 0;
-	    while ((--end >= start) && (*end == '\\')) {
-		result = !result;
-	    }
-	    return result;
+
+	while ((--end >= start) && (*end == '\\')) {
+	    result = !result;
 	}
+	return result;
     }
     return 1;
 }
@@ -3448,7 +3428,7 @@ TclGetIntForIndex(
      * Leading whitespace is acceptable in an index.
      */
 
-    while (length && TclIsSpaceProc(*bytes)) {
+    while (length && TclIsSpaceProcM(*bytes)) {
 	bytes++;
 	length--;
     }
@@ -3461,7 +3441,7 @@ TclGetIntForIndex(
 	if ((savedOp != '+') && (savedOp != '-')) {
 	    goto parseError;
 	}
-	if (TclIsSpaceProc(opPtr[1])) {
+	if (TclIsSpaceProcM(opPtr[1])) {
 	    goto parseError;
 	}
 	*opPtr = '\0';
@@ -3607,7 +3587,7 @@ SetEndOffsetFromAny(
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
 
-	if (TclIsSpaceProc(bytes[4])) {
+	if (TclIsSpaceProcM(bytes[4])) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
@@ -3672,7 +3652,7 @@ TclCheckBadOctal(
      * zero. Try to generate a meaningful error message.
      */
 
-    while (TclIsSpaceProc(*p)) {
+    while (TclIsSpaceProcM(*p)) {
 	p++;
     }
     if (*p == '+' || *p == '-') {
@@ -3685,7 +3665,7 @@ TclCheckBadOctal(
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;
 	}
-	while (TclIsSpaceProc(*p)) {
+	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}
 	if (*p == '\0') {

@@ -533,7 +533,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -1053,7 +1053,7 @@ TclParseNumber(
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1107,7 +1107,7 @@ TclParseNumber(
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && TclIsSpaceProc(*p)) {
+	    while (len != 0 && TclIsSpaceProcM(*p)) {
 		p++;
 		len--;
 	    }
