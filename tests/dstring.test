@@ -137,6 +137,20 @@ test dstring-2.13 {appending list elements} testdstring {
     testdstring element #
     testdstring get
 } {x #}
+test dstring-2.14 {appending list elements} testdstring {
+    testdstring free
+    testdstring append "  " -1
+    testdstring element #
+    testdstring get
+} {  {#}}
+test dstring-2.15 {appending list elements} testdstring {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append "x  " -1
+    testdstring element #
+    testdstring get
+} {x  #}
 
 test dstring-3.1 {nested sublists} testdstring {
     testdstring free
@@ -237,6 +251,26 @@ test dstring-3.10 {appending list elements} testdstring {
     testdstring end
     testdstring get
 } {x {x #}}
+test dstring-3.11 {appending list elements} testdstring {
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append "  " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x {  {#}}}
+test dstring-3.12 {appending list elements} testdstring {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append "x  " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x {x  #}}
 
 test dstring-4.1 {truncation} testdstring {
     testdstring free
