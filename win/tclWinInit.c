@@ -197,7 +197,7 @@ TclpInitLibraryPath(
      * installed DLL.
      */
 
-    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+    sprintf(installLib, "share/tcl9/tcl%s", TCL_VERSION);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
@@ -360,7 +360,7 @@ InitializeDefaultLibraryDir(
     *end = '\\';
 
     TclWinNoBackslash(name);
-    sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
+    sprintf(end + 1, "share/tcl9/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
