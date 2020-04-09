@@ -1809,7 +1809,7 @@ Tcl_ParseBraces(
 		openBrace = 0;
 		break;
 	    case '#' :
-		if (openBrace && TclIsSpaceProc(src[-1])) {
+		if (openBrace && TclIsSpaceProcM(src[-1])) {
 		    Tcl_AppendResult(parsePtr->interp,
 			    ": possible unbalanced brace in comment", NULL);
 		    goto error;

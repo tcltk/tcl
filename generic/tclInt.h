@@ -2608,7 +2608,6 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclIsBareword(char byte);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
@@ -2798,6 +2797,16 @@ MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE int TclUtfCasecmp(CONST char *cs, CONST char *ct);
+
+/*
+ * Many parsing tasks need a common definition of whitespace.
+ * Use this routine and macro to achieve that and place
+ * optimization (fragile on changes) in one place.
+ */
+
+MODULE_SCOPE int	TclIsSpaceProc(char byte);
+#	define TclIsSpaceProcM(byte) \
+		(((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
 /*
  *----------------------------------------------------------------
