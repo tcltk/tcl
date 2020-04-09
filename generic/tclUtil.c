@@ -2630,9 +2630,36 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
-    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
-    int newSize = dsPtr->length + needSpace
-	    + TclScanElement(element, -1, &flags);
+    int flags = 0, quoteHash = 1, newSize;
+
+    if (needSpace) {
+	/*
+	 * If we need a space to separate the new element from something
+	 * already ending the string, we're not appending the first element
+	 * of any list, so we need not quote any leading hash character.
+	 */
+	quoteHash = 0;
+    } else {
+	/*
+	 * We don't need a space, maybe because there's some already there.
+	 * Checking whether we might be appending a first element is a bit
+	 * more involved.
+	 *
+	 * Backtrack over all whitespace.
+	 */
+	while ((--dst >= dsPtr->string) && TclIsSpaceProcM(*dst)) {
+	}
+
+	/* Call again without whitespace to confound things. */
+	quoteHash = !TclNeedSpace(dsPtr->string, dst+1);
+    }
+    if (!quoteHash) {
+	flags |= TCL_DONT_QUOTE_HASH;
+    }
+    newSize = dsPtr->length + needSpace + TclScanElement(element, -1, &flags);
+    if (!quoteHash) {
+	flags |= TCL_DONT_QUOTE_HASH;
+    }
 
     /*
      * Allocate a larger buffer for the string if the current one isn't large
@@ -2665,8 +2692,8 @@ Tcl_DStringAppendElement(
 		element = dsPtr->string + offset;
 	    }
 	}
-	dst = dsPtr->string + dsPtr->length;
     }
+    dst = dsPtr->string + dsPtr->length;
 
     /*
      * Convert the new string to a list element and copy it into the buffer at
@@ -2677,15 +2704,8 @@ Tcl_DStringAppendElement(
 	*dst = ' ';
 	dst++;
 	dsPtr->length++;
-
-	/*
-	 * If we need a space to separate this element from preceding stuff,
-	 * then this element will not lead a list, and need not have it's
-	 * leading '#' quoted.
-	 */
-
-	flags |= TCL_DONT_QUOTE_HASH;
     }
+
     dsPtr->length += TclConvertElement(element, -1, dst, flags);
     dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
