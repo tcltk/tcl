@@ -64,8 +64,10 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+/* End of "continuation byte section" */
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
@@ -352,7 +354,7 @@ Tcl_Char16ToUtfDString(
  */
 
 static const unsigned short cp1252[32] = {
-  0x20ac,   0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+  0x20AC,   0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
   0x02C6, 0x2030, 0x0160, 0x2039, 0x0152,   0x8D, 0x017D,   0x8F,
     0x90, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
    0x2DC, 0x2122, 0x0161, 0x203A, 0x0153,   0x9D, 0x017E, 0x0178
@@ -470,10 +472,10 @@ Tcl_UtfToChar16(
 	 * bytes, then we must produce a follow-up low surrogate. We only
 	 * do that if the high surrogate matches the bits we encounter.
 	 */
-	if ((byte >= 0x80)
+	if (((byte & 0xC0) == 0x80)
+		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
-		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))
-		&& ((src[2] & 0xC0) == 0x80)) {
+		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
 	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
 	    return 3;
 	}
@@ -525,7 +527,7 @@ Tcl_UtfToChar16(
 	    unsigned short high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10ffff */
+		/* out of range, < 0x10000 or > 0x10FFFF */
 	    } else {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
@@ -781,19 +783,10 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -827,21 +820,12 @@ Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-    const char *last;
+    const char *last = NULL;
 
-    last = NULL;
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -976,7 +960,7 @@ Tcl_UniCharAtIndex(
     if ((ch >= 0xD800) && (len < 3)) {
 	/* If last Tcl_UniChar was a high surrogate, combine with low surrogate */
 	(void)TclUtfToUniChar(src, &ch);
-	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
     }
 #endif
     return fullchar;
@@ -1114,7 +1098,7 @@ Tcl_UtfToUpper(
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
-	    upChar = (((upChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    upChar = (((upChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	}
 #endif
 	upChar = Tcl_UniCharToUpper(upChar);
@@ -1176,7 +1160,7 @@ Tcl_UtfToLower(
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
-	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    lowChar = (((lowChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	}
 #endif
 	lowChar = Tcl_UniCharToLower(lowChar);
@@ -1241,7 +1225,7 @@ Tcl_UtfToTitle(
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
-	    titleChar = (((titleChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    titleChar = (((titleChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	}
 #endif
 	titleChar = Tcl_UniCharToTitle(titleChar);
@@ -1261,7 +1245,7 @@ Tcl_UtfToTitle(
 	if ((ch >= 0xD800) && (len < 3)) {
 	    len += TclUtfToUniChar(src + len, &ch);
 	    /* Combine surrogates */
-	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    lowChar = (((lowChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
 	}
 #endif
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
@@ -1821,7 +1805,7 @@ Tcl_UniCharIsControl(
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	ch &= 0x1FFFFF;
-	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007f))) {
+	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
 	}
 	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
@@ -1879,8 +1863,7 @@ Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1FFFFF;
-	return (ch >= 0xE0100) && (ch <= 0xE01EF);
+	return ((unsigned)((ch & 0x1FFFFF) - 0xE0100) <= 0xEF);
     }
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
@@ -1932,8 +1915,7 @@ Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1FFFFF;
-	return (ch >= 0xE0100) && (ch <= 0xE01EF);
+	return ((unsigned)((ch & 0x1FFFFF) - 0xE0100) <= 0xEF);
     }
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }
@@ -2436,6 +2418,44 @@ TclUniCharMatch(
 	pattern++;
     }
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUtfToUCS4 --
+ *
+ *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Modified UTF-8 string "src".  This is a utility routine to
+ *	contain the surrogate gymnastics in one place.
+ *
+ *	The caller must ensure that the source buffer is long enough that this
+ *	routine does not run off the end and dereference non-existent memory
+ *	looking for trail bytes. If the source buffer is known to be '\0'
+ *	terminated, this cannot happen. Otherwise, the caller should call
+ *	Tcl_UtfCharComplete() before calling this routine to ensure that
+ *	enough bytes remain in the string.
+ *
+ * Results:
+ *	*usc4Ptr is filled with the UCS4 code point, and the return value is
+ *	the number of bytes from the UTF-8 string that were consumed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#if TCL_UTF_MAX <= 3
+int
+TclUtfToUCS4(
+    const char *src,	/* The UTF-8 string. */
+    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
+			 * by the UTF-8 string. */
+{
+    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+    return Tcl_UtfToUniChar(src, ucs4Ptr);
+}
+#endif
 
 /*
  * Local Variables:

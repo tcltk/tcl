@@ -808,7 +808,7 @@ parseqatom(
     atom = NULL;
     assert(lp->nouts == 0);	/* must string new code */
     assert(rp->nins == 0);	/* between lp and rp */
-    subno = 0;			/* just to shut lint up */
+    subno = 0;
 
     /*
      * An atom or constraint...
