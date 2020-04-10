@@ -1542,6 +1542,11 @@ test string-22.12 {string wordstart, unicode} {
 test string-22.13 {string wordstart, unicode} {
     string wordstart "\uc700\uc700 abc" 8
 } 3
+test string-22.14 {string wordstart, invalid UTF-8} knownBug {
+    # See Bug c61818e4c9
+    set demo [bytestring "abc def\xE0\xA9ghi"]
+    string index $demo [string wordstart $demo 10]
+} g
 
 test string-23.0 {string is boolean, Bug 1187123} testindexobj {
     set x 5
