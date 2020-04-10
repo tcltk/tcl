@@ -83,10 +83,9 @@ typedef struct {
 TclWinProcs tclWinProcs;
 
 /*
- * The following arrays contain the human readable strings for the Windows
+ * The following arrays contain the human readable strings for the
  * processor values.
  */
-
 
 #define NUMPROCESSORS 11
 static const char *const processors[NUMPROCESSORS] = {
@@ -540,7 +539,8 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os",
+	    "Windows NT", TCL_GLOBAL_ONLY);
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
@@ -624,6 +624,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
+#if defined(_WIN32)
+#  define tenviron _wenviron
+#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
+		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+#else
+#  define tenviron environ
+#  define tenviron2utfdstr(tenvstr, len, dstr) \
+		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
+#endif
+
 int
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
@@ -648,14 +658,16 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+    for (i = 0, env = (const char *)tenviron[i];
+	env != NULL;
+	i++, env = (const char *)tenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
 	 * after the equal sign.
 	 */
 
-	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	envUpper = tenviron2utfdstr(env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

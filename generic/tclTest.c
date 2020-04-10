@@ -47,7 +47,6 @@ DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 static Tcl_DString delString;
 static Tcl_Interp *delInterp;
-static const Tcl_ObjType *properByteArrayType;
 
 /*
  * One of the following structures exists for each asynchronous handler
@@ -210,6 +209,7 @@ static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
 static Tcl_ObjCmdProc	TestbytestringObjCmd;
+static Tcl_ObjCmdProc	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc	TeststringbytesObjCmd;
 static Tcl_CmdProc	TestcmdinfoCmd;
@@ -456,11 +456,6 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
 
-    objPtr = Tcl_NewStringObj("abc", 3);
-    (void)Tcl_GetByteArrayFromObj(objPtr, &index);
-    properByteArrayType = objPtr->typePtr;
-    Tcl_DecrRefCount(objPtr);
-
     /*
      * Create additional commands and math functions for testing Tcl.
      */
@@ -469,6 +464,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
@@ -715,7 +711,6 @@ Tcltest_SafeInit(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestasyncCmd(
     TCL_UNUSED(ClientData),
@@ -961,7 +956,6 @@ TestbumpinterpepochObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdinfoCmd(
     TCL_UNUSED(ClientData),
@@ -1032,7 +1026,6 @@ TestcmdinfoCmd(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc1(
     void *clientData,	/* String to return. */
@@ -1044,7 +1037,6 @@ CmdProc1(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc2(
     void *clientData,	/* String to return. */
@@ -1091,7 +1083,6 @@ CmdDelProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdtokenCmd(
     TCL_UNUSED(ClientData),
@@ -1155,7 +1146,6 @@ TestcmdtokenCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdtraceCmd(
     TCL_UNUSED(ClientData),
@@ -1438,7 +1428,6 @@ CreatedCommandProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdcallCmd(
     TCL_UNUSED(ClientData),
@@ -1503,7 +1492,6 @@ DelCallbackProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdelCmd(
     TCL_UNUSED(ClientData),
@@ -1703,7 +1691,6 @@ TestdoubledigitsObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdstringCmd(
     TCL_UNUSED(ClientData),
@@ -1830,7 +1817,6 @@ static void SpecialFree(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestencodingObjCmd(
     TCL_UNUSED(ClientData),
@@ -2688,7 +2674,6 @@ TestgetplatformCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestinterpdeleteCmd(
     TCL_UNUSED(ClientData),
@@ -2729,7 +2714,6 @@ TestinterpdeleteCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestlinkCmd(
     TCL_UNUSED(ClientData),
@@ -2746,7 +2730,7 @@ TestlinkCmd(
     static unsigned char ucharVar = 130;
     static short shortVar = 3000;
     static unsigned short ushortVar = 60000;
-    static unsigned int uintVar = 0xbeeffeed;
+    static unsigned int uintVar = 0xBEEFFEED;
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
@@ -3376,7 +3360,7 @@ TestlocaleCmd(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
+
 static void
 CleanupTestSetassocdataTests(
     void *clientData,	/* Data to be released. */
@@ -3780,7 +3764,6 @@ TestprintObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestregexpObjCmd(
     TCL_UNUSED(ClientData),
@@ -4104,7 +4087,6 @@ TestregexpXflags(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestreturnObjCmd(
     TCL_UNUSED(ClientData),
@@ -4325,7 +4307,6 @@ TesttranslatefilenameCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestupvarCmd(
     TCL_UNUSED(ClientData),
@@ -4378,7 +4359,6 @@ TestupvarCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestseterrorcodeCmd(
     TCL_UNUSED(ClientData),
@@ -4431,7 +4411,6 @@ TestseterrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestsetobjerrorcodeCmd(
     TCL_UNUSED(ClientData),
@@ -4460,7 +4439,6 @@ TestsetobjerrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestfeventCmd(
     TCL_UNUSED(ClientData),
@@ -5012,6 +4990,50 @@ TestpurebytesobjObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestsetbytearraylengthObjCmd --
+ *
+ *	Testing command 'testsetbytearraylength` used to test the public
+ *	interface routine Tcl_SetByteArrayLength().
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetbytearraylengthObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int n;
+    Tcl_Obj *obj = NULL;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value length");
+	return TCL_ERROR;
+    }
+    if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
+	return TCL_ERROR;
+    }
+    if (Tcl_IsShared(objv[1])) {
+	obj = Tcl_DuplicateObj(objv[1]);
+    } else {
+	obj = objv[1];
+    }
+    Tcl_SetByteArrayLength(obj, n);
+    Tcl_SetObjResult(interp, obj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestbytestringObjCmd --
  *
  *	This object-based procedure constructs a string which can
@@ -5040,9 +5062,9 @@ TestbytestringObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "bytearray");
 	return TCL_ERROR;
     }
-    p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
-    if ((p == NULL) || !Tcl_FetchIntRep(objv[1], properByteArrayType)) {
-	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+
+    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
+    if (p == NULL) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
@@ -5066,7 +5088,6 @@ TestbytestringObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestsetCmd(
     void *data,		/* Additional flags for Get/SetVar2. */
@@ -5149,7 +5170,6 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestsaveresultCmd(
     TCL_UNUSED(ClientData),
@@ -5399,7 +5419,6 @@ TestexitmainloopCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestChannelCmd(
     TCL_UNUSED(ClientData),
@@ -5461,7 +5480,6 @@ TestChannelCmd(
 	chanPtr		= statePtr->topChanPtr;
 	chan		= (Tcl_Channel) chanPtr;
     } else {
-	/* lint */
 	statePtr	= NULL;
 	chan		= NULL;
     }
@@ -5868,7 +5886,6 @@ TestChannelCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestChannelEventCmd(
     TCL_UNUSED(ClientData),
@@ -6081,7 +6098,6 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestSocketCmd(
     TCL_UNUSED(ClientData),
@@ -6803,12 +6819,18 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
-	int len = -1;
+	int numBytes, len, limit = -1;
+	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
 	if (objc > 2) {
-	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	    if (Tcl_GetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (limit > numBytes + 1) {
+		limit = numBytes + 1;
+	    }
 	}
-	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
+	len = Tcl_NumUtfChars(bytes, limit);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
     }
     return TCL_OK;

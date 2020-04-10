@@ -1524,7 +1524,6 @@ TclPtrGetVarIdx(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_SetObjCmd(
     TCL_UNUSED(ClientData),
@@ -2819,7 +2818,6 @@ UnsetVarStruct(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_UnsetObjCmd(
     TCL_UNUSED(ClientData),
@@ -2887,7 +2885,6 @@ Tcl_UnsetObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_AppendObjCmd(
     TCL_UNUSED(ClientData),
@@ -2953,7 +2950,6 @@ Tcl_AppendObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_LappendObjCmd(
     TCL_UNUSED(ClientData),
@@ -3399,8 +3395,6 @@ ArrayPopulateSearch(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
-
 static int
 ArrayStartSearchCmd(
     TCL_UNUSED(ClientData),
@@ -3496,7 +3490,6 @@ ArrayDoneSearch(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayAnyMoreCmd(
     TCL_UNUSED(ClientData),
@@ -3575,7 +3568,6 @@ ArrayAnyMoreCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayNextElementCmd(
     TCL_UNUSED(ClientData),
@@ -3656,7 +3648,6 @@ ArrayNextElementCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayDoneSearchCmd(
     TCL_UNUSED(ClientData),
@@ -3717,7 +3708,6 @@ ArrayDoneSearchCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayExistsCmd(
     TCL_UNUSED(ClientData),
@@ -3758,7 +3748,6 @@ ArrayExistsCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayGetCmd(
     TCL_UNUSED(ClientData),
@@ -3918,7 +3907,6 @@ ArrayGetCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayNamesCmd(
     TCL_UNUSED(ClientData),
@@ -4086,7 +4074,6 @@ TclFindArrayPtrElements(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArraySetCmd(
     TCL_UNUSED(ClientData),
@@ -4262,7 +4249,6 @@ ArraySetCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArraySizeCmd(
     TCL_UNUSED(ClientData),
@@ -4322,7 +4308,6 @@ ArraySizeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayStatsCmd(
     TCL_UNUSED(ClientData),
@@ -4377,7 +4362,6 @@ ArrayStatsCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayUnsetCmd(
     TCL_UNUSED(ClientData),
@@ -4514,7 +4498,6 @@ ArrayUnsetCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 Tcl_Command
 TclInitArrayCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
@@ -5241,7 +5224,6 @@ Tcl_VariableObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_UpvarObjCmd(
     TCL_UNUSED(ClientData),
@@ -6642,7 +6624,6 @@ CompareVarKeys(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ArrayDefaultCmd(
     TCL_UNUSED(ClientData),

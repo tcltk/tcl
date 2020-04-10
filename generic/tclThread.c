@@ -350,6 +350,8 @@ TclFinalizeThreadData(int quick)
 	 */
 	TclFinalizeThreadAllocThread();
     }
+#else
+    (void)quick;
 #endif
 }
 
