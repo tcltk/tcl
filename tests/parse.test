@@ -916,7 +916,7 @@ test parse-15.58 {CommandComplete procedure, memory leaks} {
 } 1
 test parse-15.59 {CommandComplete procedure} {
     # Test for Tcl Bug 684744
-    info complete [encoding convertfrom identity "\x00;if 1 \{"]
+    info complete [bytestring "\x00;if 1 \{"]
 } 0
 test parse-15.60 {CommandComplete procedure} {
     # Test for Tcl Bug 1968882
