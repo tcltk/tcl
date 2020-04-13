@@ -6390,25 +6390,6 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
 
-    case INST_TRY_CVT_TO_INDEX:
-	valuePtr = OBJ_AT_TOS;
-	if (TclHasIntRep(valuePtr,  &tclIntType)) {
-	    objResultPtr = TCONST(valuePtr->internalRep.wideValue >= -1);
-	} else {
-	    int idx;
-	    if (TclGetIntForIndexM(NULL, valuePtr, INT_MAX-1, TCL_INDEX_ERROR, &idx) != TCL_OK) {
-		objResultPtr = TCONST(0);
-	    } else {
-		TclInvalidateStringRep(valuePtr);
-		valuePtr->typePtr = &tclIntType;
-		valuePtr->internalRep.wideValue = idx;
-		objResultPtr = TCONST(1);
-	    }
-	}
-	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
-	NEXT_INST_F(1, 0, 1);
-    break;
-
     case INST_BREAK:
 	/*
 	DECACHE_STACK_INFO();
