@@ -1573,8 +1573,7 @@ TrimRight(
     const char *trim,	/* String of trim characters... */
     int numTrim)	/* ...and its length in bytes */
 {
-    const char *p = bytes + numBytes;
-    int pInc;
+    const char *pp, *p = bytes + numBytes;
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1582,8 +1581,8 @@ TrimRight(
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
-	p = Tcl_UtfPrev(p, bytes);
- 	pInc = TclUtfToUniChar(p, &ch1);
+	pp = Tcl_UtfPrev(p, bytes);
+ 	(void)TclUtfToUniChar(pp, &ch1);
 
 	/* Inner loop: scan trim string for match to current character */
 	do {
@@ -1600,9 +1599,9 @@ TrimRight(
 
 	if (bytesLeft == 0) {
 	    /* No match; trim task done; *p is last non-trimmed char */
-	    p += pInc;
 	    break;
 	}
+	p = pp;
     } while (p > bytes);
 
     return numBytes - (p - bytes);
