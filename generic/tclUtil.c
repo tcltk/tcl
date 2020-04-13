@@ -1566,8 +1566,8 @@ UtfWellFormedEnd(
  *----------------------------------------------------------------------
  */
 
-static inline int
-TrimRight(
+int
+TclTrimRight(
     const char *bytes,	/* String to be trimmed... */
     int numBytes,	/* ...and its length in bytes */
 			/* Calls to TclUtfToUniChar() in this routine
@@ -1578,6 +1578,11 @@ TrimRight(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1613,37 +1618,6 @@ TrimRight(
 
     return numBytes - (p - bytes);
 }
-
-int
-TclTrimRight(
-    const char *bytes,	/* String to be trimmed... */
-    int numBytes,	/* ...and its length in bytes */
-    const char *trim,	/* String of trim characters... */
-    int numTrim)	/* ...and its length in bytes */
-{
-    int res;
-    Tcl_DString bytesBuf, trimBuf;
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
-
-    Tcl_DStringInit(&bytesBuf);
-    Tcl_DStringInit(&trimBuf);
-    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
-
-    res = TrimRight(bytes, numBytes, trim, numTrim);
-    if (res > numBytes) {
-	res = numBytes;
-    }
-
-    Tcl_DStringFree(&bytesBuf);
-    Tcl_DStringFree(&trimBuf);
-
-    return res;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1662,14 +1636,23 @@ TclTrimRight(
  *----------------------------------------------------------------------
  */
 
-static inline int
-TrimLeft(
+int
+TclTrimLeft(
     const char *bytes,	/* String to be trimmed... */
     int numBytes,	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (bytes[numBytes] == '\0'). */
     const char *trim,	/* String of trim characters... */
     int numTrim)	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1702,37 +1685,6 @@ TrimLeft(
 
     return p - bytes;
 }
-
-int
-TclTrimLeft(
-    const char *bytes,	/* String to be trimmed... */
-    int numBytes,	/* ...and its length in bytes */
-    const char *trim,	/* String of trim characters... */
-    int numTrim)	/* ...and its length in bytes */
-{
-    int res;
-    Tcl_DString bytesBuf, trimBuf;
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
-
-    Tcl_DStringInit(&bytesBuf);
-    Tcl_DStringInit(&trimBuf);
-    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
-
-    res = TrimLeft(bytes, numBytes, trim, numTrim);
-    if (res > numBytes) {
-	res = numBytes;
-    }
-
-    Tcl_DStringFree(&bytesBuf);
-    Tcl_DStringFree(&trimBuf);
-
-    return res;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1754,9 +1706,13 @@ int
 TclTrim(
     const char *bytes,	/* String to be trimmed... */
     int numBytes,	/* ...and its length in bytes */
+			/* Calls in this routine
+			 * rely on (bytes[numBytes] == '\0'). */
     const char *trim,	/* String of trim characters... */
     int numTrim,	/* ...and its length in bytes */
-    int *trimRight)		/* Offset from the end of the string. */
+			/* Calls in this routine
+			 * rely on (trim[numTrim] == '\0'). */
+    int *trimRight)	/* Offset from the end of the string. */
 {
     int trimLeft;
     Tcl_DString bytesBuf, trimBuf;
@@ -1772,7 +1728,7 @@ TclTrim(
     bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
     trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
 
-    trimLeft = TrimLeft(bytes, numBytes, trim, numTrim);
+    trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
     if (trimLeft > numBytes) {
 	trimLeft = numBytes;
     }
@@ -1780,7 +1736,7 @@ TclTrim(
     /* have to trim yet (first char was already verified within TrimLeft) */
     if (numBytes > 1) {
 	bytes += trimLeft;
-	*trimRight = TrimRight(bytes, numBytes, trim, numTrim);
+	*trimRight = TclTrimRight(bytes, numBytes, trim, numTrim);
 	if (*trimRight > numBytes) {
 	    *trimRight = numBytes;
 	}
