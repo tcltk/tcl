@@ -918,7 +918,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
-    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
+    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)/TclTOC.html"'
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl9.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
@@ -958,9 +958,9 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl9 /Library/Tcl9"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}/tcl9 ${prefix}/share/tcl9 ${prefix}/lib/tcl9 ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${libdir}/tcl9} {${prefix}/share/tcl9} {${prefix}/lib/tcl9} ${TCL_PACKAGE_PATH}"
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/share/tcl9 ${prefix}/lib/tcl9 ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${prefix}/share/tcl9} {${prefix}/lib/tcl9} ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------
@@ -973,7 +973,7 @@ fi
 #
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
-eval "TCL_STUB_LIB_DIR=${libdir}"
+eval "TCL_STUB_LIB_DIR=\"${libdir}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"

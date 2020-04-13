@@ -395,11 +395,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}/tcl9 ${prefix}/share/tcl9 ${prefix}/lib/tcl9 ${TCL_PACKAGE_PATH}"
-
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/share/tcl9 ${prefix}/lib/tcl9"
+    TCL_PACKAGE_PATH="{${libdir}/tcl9} {${prefix}/share/tcl9} {${prefix}/lib/tcl9}"
 else
-    TCL_PACKAGE_PATH="${prefix}/share/tcl9 ${prefix}/lib/tcl9"
+    TCL_PACKAGE_PATH="{${prefix}/share/tcl9} {${prefix}/lib/tcl9}"
 fi
 
 # The tclsh.exe.manifest requires these
