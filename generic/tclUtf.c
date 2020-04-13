@@ -64,8 +64,10 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+/* End of "continuation byte section" */
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
@@ -470,10 +472,10 @@ Tcl_UtfToChar16(
 	 * bytes, then we must produce a follow-up low surrogate. We only
 	 * do that if the high surrogate matches the bits we encounter.
 	 */
-	if ((byte >= 0x80)
+	if (((byte & 0xC0) == 0x80)
+		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
-		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))
-		&& ((src[2] & 0xC0) == 0x80)) {
+		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
 	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
 	    return 3;
 	}
@@ -781,19 +783,10 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -827,21 +820,12 @@ Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len, fullchar;
-    Tcl_UniChar find = 0;
-    const char *last;
+    const char *last = NULL;
 
-    last = NULL;
     while (1) {
-	len = TclUtfToUniChar(src, &find);
-	fullchar = find;
-#if TCL_UTF_MAX <= 3
-	if ((fullchar != ch) && (find >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &find);
-	    fullchar = (((fullchar & 0x3FF) << 10) | (find & 0x3FF)) + 0x10000;
-	}
-#endif
-	if (fullchar == ch) {
+	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+
+	if (ucs4 == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -2434,6 +2418,44 @@ TclUniCharMatch(
 	pattern++;
     }
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUtfToUCS4 --
+ *
+ *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Modified UTF-8 string "src".  This is a utility routine to
+ *	contain the surrogate gymnastics in one place.
+ *
+ *	The caller must ensure that the source buffer is long enough that this
+ *	routine does not run off the end and dereference non-existent memory
+ *	looking for trail bytes. If the source buffer is known to be '\0'
+ *	terminated, this cannot happen. Otherwise, the caller should call
+ *	Tcl_UtfCharComplete() before calling this routine to ensure that
+ *	enough bytes remain in the string.
+ *
+ * Results:
+ *	*usc4Ptr is filled with the UCS4 code point, and the return value is
+ *	the number of bytes from the UTF-8 string that were consumed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#if TCL_UTF_MAX <= 3
+int
+TclUtfToUCS4(
+    const char *src,	/* The UTF-8 string. */
+    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
+			 * by the UTF-8 string. */
+{
+    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+    return Tcl_UtfToUniChar(src, ucs4Ptr);
+}
+#endif
 
 /*
  * Local Variables:

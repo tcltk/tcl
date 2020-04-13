@@ -3219,6 +3219,9 @@ CutChannel(
      */
 
     ChanThreadAction((Channel *) chan, TCL_CHANNEL_THREAD_REMOVE);
+
+    /* Channel is not managed by any thread */
+    statePtr->managingThread = NULL;
 }
 
 void
@@ -3263,6 +3266,9 @@ Tcl_CutChannel(
     for (; chanPtr != NULL ; chanPtr = chanPtr->upChanPtr) {
 	ChanThreadAction(chanPtr, TCL_CHANNEL_THREAD_REMOVE);
     }
+
+    /* Channel is not managed by any thread */
+    statePtr->managingThread = NULL;
 }
 
 /*
@@ -5856,7 +5862,11 @@ DoReadChars(
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
 
-    if (appendFlag == 0) {
+    if (appendFlag) {
+	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	    binaryMode = 0;
+	}
+    } else {
 	if (binaryMode) {
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
@@ -8390,6 +8400,13 @@ Tcl_NotifyChannel(
     Tcl_Preserve(statePtr);
 
     /*
+     * Avoid processing if the channel owner has been changed.
+     */
+    if (statePtr->managingThread != Tcl_GetCurrentThread()) {
+	goto done;
+    }
+
+    /*
      * If we are flushing in the background, be sure to call FlushChannel for
      * writable events. Note that we have to discard the writable event so we
      * don't call any write handlers before the flush is complete.
@@ -8423,6 +8440,13 @@ Tcl_NotifyChannel(
 	} else {
 	    chPtr = chPtr->nextPtr;
 	}
+
+	/*
+	 * Stop if the channel owner has been changed in-between.
+	 */
+	if (chanPtr->state->managingThread != Tcl_GetCurrentThread()) {
+	    goto done;
+	}
     }
 
     /*
@@ -8440,6 +8464,7 @@ Tcl_NotifyChannel(
 	UpdateInterest(chanPtr);
     }
 
+done:
     Tcl_Release(statePtr);
     TclChannelRelease(channel);
 
@@ -8937,6 +8962,11 @@ TclChannelEventScriptInvoker(
 				/* Interpreter in which to eval the script. */
     int mask = esPtr->mask;
     int result;			/* Result of call to eval script. */
+
+    /*
+     * Be sure event executed in managed channel (covering bugs similar [f583715154]).
+     */
+    assert(chanPtr->state->managingThread == Tcl_GetCurrentThread());
 
     /*
      * We must preserve the interpreter so we can report errors on it later.

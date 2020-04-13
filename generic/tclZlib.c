@@ -1152,6 +1152,11 @@ Tcl_ZlibStreamSetCompressionDictionary(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
+    if (compressionDictionaryObj && (NULL == TclGetBytesFromObj(NULL,
+	    compressionDictionaryObj, NULL))) {
+	/* Missing or invalid compression dictionary */
+	compressionDictionaryObj = NULL;
+    }
     if (compressionDictionaryObj != NULL) {
 	if (Tcl_IsShared(compressionDictionaryObj)) {
 	    compressionDictionaryObj =
@@ -1191,6 +1196,7 @@ Tcl_ZlibStreamPut(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     char *dataTmp = NULL;
     int e, size, outSize, toStore;
+    unsigned char *bytes;
 
     if (zshPtr->streamEnd) {
 	if (zshPtr->interp) {
@@ -1201,8 +1207,13 @@ Tcl_ZlibStreamPut(
 	return TCL_ERROR;
     }
 
+    bytes = TclGetBytesFromObj(zshPtr->interp, data, &size);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+
     if (zshPtr->mode == TCL_ZLIB_STREAM_DEFLATE) {
-	zshPtr->stream.next_in = Tcl_GetByteArrayFromObj(data, &size);
+	zshPtr->stream.next_in = bytes;
 	zshPtr->stream.avail_in = size;
 
 	/*
@@ -1326,7 +1337,9 @@ Tcl_ZlibStreamGet(
 	return TCL_OK;
     }
 
-    (void) Tcl_GetByteArrayFromObj(data, &existing);
+    if (NULL == TclGetBytesFromObj(zshPtr->interp, data, &existing)) {
+	return TCL_ERROR;
+    }
 
     if (zshPtr->mode == TCL_ZLIB_STREAM_INFLATE) {
 	if (count == -1) {
@@ -1574,6 +1587,16 @@ Tcl_ZlibDeflate(
     }
 
     /*
+     * Obtain the pointer to the byte array, we'll pass this pointer straight
+     * to the deflate command.
+     */
+
+    inData = TclGetBytesFromObj(interp, data, &inLen);
+    if (inData == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
      * Compressed format is specified by the wbits parameter. See zlib.h for
      * details.
      */
@@ -1617,12 +1640,6 @@ Tcl_ZlibDeflate(
 
     TclNewObj(obj);
 
-    /*
-     * Obtain the pointer to the byte array, we'll pass this pointer straight
-     * to the deflate command.
-     */
-
-    inData = Tcl_GetByteArrayFromObj(data, &inLen);
     memset(&stream, 0, sizeof(z_stream));
     stream.avail_in = (uInt) inLen;
     stream.next_in = inData;
@@ -1723,6 +1740,11 @@ Tcl_ZlibInflate(
 	return TCL_ERROR;
     }
 
+    inData = TclGetBytesFromObj(interp, data, &inLen);
+    if (inData == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Compressed format is specified by the wbits parameter. See zlib.h for
      * details.
@@ -1760,7 +1782,6 @@ Tcl_ZlibInflate(
 	header.comm_max = MAX_COMMENT_LEN - 1;
     }
 
-    inData = Tcl_GetByteArrayFromObj(data, &inLen);
     if (bufferSize < 1) {
 	/*
 	 * Start with a buffer (up to) 3 times the size of the input data.
@@ -1956,6 +1977,10 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
+	data = TclGetBytesFromObj(interp, objv[2], &dlen);
+	if (data == NULL) {
+	    return TCL_ERROR;
+	}
 	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
 		(int *) &start) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1963,7 +1988,6 @@ ZlibCmd(
 	if (objc < 4) {
 	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
-	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
 		(uLong) Tcl_ZlibAdler32(start, data, dlen)));
 	return TCL_OK;
@@ -1973,6 +1997,10 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
+	data = TclGetBytesFromObj(interp, objv[2], &dlen);
+	if (data == NULL) {
+	    return TCL_ERROR;
+	}
 	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
 		(int *) &start) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1980,7 +2008,6 @@ ZlibCmd(
 	if (objc < 4) {
 	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
-	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
 		(uLong) Tcl_ZlibCRC32(start, data, dlen)));
 	return TCL_OK;
@@ -2313,6 +2340,12 @@ ZlibStreamSubcmd(
 	return TCL_ERROR;
     }
 
+    if (compDictObj) {
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
+	    return TCL_ERROR;
+	}
+    }
+
     /*
      * Construct the stream now we know its configuration.
      */
@@ -2488,6 +2521,10 @@ ZlibPushSubcmd(
 	    compDictObj = objv[i];
 	    break;
 	}
+    }
+
+    if (compDictObj && (NULL == TclGetBytesFromObj(interp, compDictObj, NULL))) {
+	return TCL_ERROR;
     }
 
     if (ZlibStackChannelTransform(interp, mode, format, level, limit, chan,
@@ -2735,7 +2772,10 @@ ZlibStreamAddCmd(
     if (compDictObj != NULL) {
 	int len;
 
-	(void) Tcl_GetByteArrayFromObj(compDictObj, &len);
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
+	    return TCL_ERROR;
+	}
+
 	if (len == 0) {
 	    compDictObj = NULL;
 	}
@@ -2839,7 +2879,9 @@ ZlibStreamPutCmd(
     if (compDictObj != NULL) {
 	int len;
 
-	(void) Tcl_GetByteArrayFromObj(compDictObj, &len);
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
+	    return TCL_ERROR;
+	}
 	if (len == 0) {
 	    compDictObj = NULL;
 	}
@@ -3246,7 +3288,10 @@ ZlibTransformSetOption(			/* not used */
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
-	(void) Tcl_GetByteArrayFromObj(compDictObj, NULL);
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
+	    Tcl_DecrRefCount(compDictObj);
+	    return TCL_ERROR;
+	}
 	if (cd->compDictObj) {
 	    TclDecrRefCount(cd->compDictObj);
 	}
