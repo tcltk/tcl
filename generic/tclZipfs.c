@@ -41,7 +41,7 @@
 #define ZIPFS_VOLUME	  "//zipfs:/"
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  "//zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
+#define ZIPFS_ZIP_MOUNT	  "//zipfs:/share/tcl"
 
 #else /* !CFG_RUNTIME_DLLFILE */
 
@@ -55,7 +55,7 @@
 #define ZIPFS_VOLUME	  "zipfs:/"
 #define ZIPFS_VOLUME_LEN  7
 #define ZIPFS_APP_MOUNT	  "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "zipfs:/lib/tcl"
+#define ZIPFS_ZIP_MOUNT	  "zipfs:/share/tcl"
 
 #endif /* CFG_RUNTIME_DLLFILE */
 

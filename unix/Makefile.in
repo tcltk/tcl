@@ -1018,7 +1018,7 @@ install-libraries: libraries
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@for i in opt0.4 cookiejar0.2 encoding ../../tcl9 ../9.0  ../9.0/platform; do \
+	@for i in opt0.4 cookiejar0.2 encoding; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \

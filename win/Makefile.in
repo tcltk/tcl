@@ -842,10 +842,8 @@ install-libraries-zipfs-shared: libraries
 install-libraries-zipfs-static: install-libraries-zipfs-shared
 	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
-MODULE_INSTALL_DIR=$(SCRIPT_INSTALL_DIR)/..
-
 install-libraries: libraries install-tzdata install-msgs
-	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
+	@for i in "$(prefix)/lib" "$(prefix)/share" "$(INCLUDE_INSTALL_DIR)" \
 		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
 	    if [ ! -d "$$i" ] ; then \
