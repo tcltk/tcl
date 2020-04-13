@@ -433,6 +433,7 @@ static int		SimpleMatchInDirectory(
 			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    Tcl_Obj *dirPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
+static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -690,6 +691,8 @@ Tcltest_Init(
 	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
 	    TestsetobjerrorcodeCmd, (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testutfprev",
+	    TestUtfPrevCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
@@ -7091,6 +7094,55 @@ SimpleListVolumes(void)
     retVal = Tcl_NewStringObj("simplefs:/", -1);
     Tcl_IncrRefCount(retVal);
     return retVal;
+}
+
+/*
+ * Used to check operations of Tcl_UtfPrev.
+ *
+ * Usage: testutfprev $bytes $offset
+ */
+
+static int
+TestUtfPrevCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int numBytes, offset;
+    char *bytes;
+    const char *result;
+    Tcl_Obj *copy;
+    
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+	return TCL_ERROR;
+    }
+
+    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset < 0) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    } else {
+	offset = numBytes;
+    }
+    copy = Tcl_DuplicateObj(objv[1]);
+    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
+    bytes[numBytes] = '\0';
+
+    result = Tcl_UtfPrev(bytes + offset, bytes);
+
+    Tcl_DecrRefCount(copy);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
+    return TCL_OK;
 }
 
 /*
