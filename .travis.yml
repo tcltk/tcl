@@ -364,8 +364,8 @@ matrix:
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - mkdir $HOME/install
-  - ./configure ${CFGOPT} --prefix=$HOME/install || (cat config.log && exit 1)
+  - mkdir "$HOME/install dir"
+  - ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
