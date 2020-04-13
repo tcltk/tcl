@@ -1459,7 +1459,10 @@ test string-20.4 {string trimright} {
 test string-20.5 {string trimright} {
     string trimright ""
 } {}
-test string-20.6 {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {
+test string-20.6 {string trimright, unicode default} {
+    # Reserve test number for Tcl 8.6 (TIP 413)
+} {}
+test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {
     set result {}
     set a [bytestring \xc0\x80\x88]
     set b foo$a
@@ -1472,7 +1475,7 @@ test string-20.6 {string trim on not valid utf-8 sequence (consider NTS as conti
     lappend result [string map $m [string trim $b fox]]
     lappend result [string map $m [string trim $b fo\u0000]]
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
-test string-20.7 {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {
+test string-20.8 {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {
     set result {}
     set a [bytestring \xE8\x80]
     set b foo$a
