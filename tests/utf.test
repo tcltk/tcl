@@ -170,13 +170,13 @@ test utf-7.10.2 {Tcl_UtfPrev} testutfprev {
 } 2
 test utf-7.11 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0
-} 2
+} 1
 test utf-7.11.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xA0 3
 } 1
 test utf-7.11.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xF8\xA0 3
-} 2
+} 1
 test utf-7.12 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0
 } 1
