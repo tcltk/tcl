@@ -1738,7 +1738,7 @@ StringIsCmd(
 		     * if it is the first "element" that has the failure.
 		     */
 
-		    while (TclIsSpaceProc(*p)) {
+		    while (TclIsSpaceProcM(*p)) {
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);
@@ -2477,12 +2477,22 @@ StringStartCmd(
     cur = 0;
     if (index > 0) {
 	p = Tcl_UtfAtIndex(string, index);
+
+	TclUtfToUniChar(p, &ch);
 	for (cur = index; cur >= 0; cur--) {
-	    TclUtfToUniChar(p, &ch);
+	    int delta = 0;
+	    const char *next;
+
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
-	    p = Tcl_UtfPrev(p, string);
+
+	    next = Tcl_UtfPrev(p, string);
+	    do {
+		next += delta;
+		delta = TclUtfToUniChar(next, &ch);
+	    } while (next + delta < p);
+	    p = next;
 	}
 	if (cur != index) {
 	    cur += 1;
