@@ -1980,7 +1980,6 @@ Tcl_StringCaseMatch(
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     int p, charLen;
-    CONST char *pstart = pattern;
     Tcl_UniChar ch1, ch2;
 
     while (1) {
@@ -2145,10 +2144,13 @@ Tcl_StringCaseMatch(
 		    break;
 		}
 	    }
+	    /* If we reach here, we matched. Need to move past closing ] */
 	    while (*pattern != ']') {
 		if (*pattern == '\0') {
-		    pattern = Tcl_UtfPrev(pattern, pstart);
-		    break;
+		    /* We ran out of pattern after matching something in
+		     * (unclosed!) brackets. So long as we ran out of string
+		     * at the same time, we have a match. Otherwise, not. */
+		    return (*str == '\0');
 		}
 		pattern++;
 	    }
