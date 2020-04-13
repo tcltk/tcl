@@ -378,6 +378,10 @@ test util-5.50 {Tcl_StringMatch} {
 test util-5.51 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch "" ""
 } 1
+test util-5.52 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch \[a\u0000 a\x80
+} 0
+
 
 test util-6.1 {Tcl_PrintDouble - using tcl_precision} -setup {
     set old_precision $::tcl_precision
