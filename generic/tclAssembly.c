@@ -505,7 +505,6 @@ static const TalInstDesc TalInstructionTable[] = {
     {"variable",	ASSEM_LVT4,	INST_VARIABLE,		1,	0},
     {"verifyDict",	ASSEM_1BYTE,	INST_DICT_VERIFY,	1,	0},
     {"yield",		ASSEM_1BYTE,	INST_YIELD,		1,	1},
-    {"tryCvtToIndex",	ASSEM_1BYTE,	INST_TRY_CVT_TO_INDEX,1,	2},
     {NULL,		ASSEM_1BYTE,		0,			0,	0}
 };
 
