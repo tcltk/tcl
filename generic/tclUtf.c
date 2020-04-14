@@ -644,9 +644,19 @@ CONST char *
 Tcl_UtfNext(
     CONST char *src)		/* The current location in the string. */
 {
-    Tcl_UniChar ch;
+    int byte = *((unsigned char *) src);
+    int left = totalBytes[byte];
 
-    return src + TclUtfToUniChar(src, &ch);
+    src++;
+    while (--left) {
+	byte = *((unsigned char *) src);
+	if ((byte & 0xC0) != 0x80) {
+	    /* src points to non-trail byte; return it */
+	    return src;
+	}
+	src++;
+    }
+    return src;
 }
 
 /*
