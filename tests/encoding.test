@@ -33,7 +33,6 @@ proc runtests {} {
     variable x
 
 # Some tests require the testencoding command
-testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
@@ -317,15 +316,11 @@ test encoding-15.2 {UtfToUtfProc null character output} testbytestring {
     binary scan [testbytestring [encoding convertto utf-8 \u0000]] H* z
     set z
 } 00
-test encoding-15.3.a {UtfToUtfProc null character input} testbytestring {
-    binary scan [testbytestring \xc0\x80] H* z
-    set z
-} 00
-test encoding-15.3.b {UtfToUtfProc null character input} testbytestring {
+test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
-    binary scan [testbytestring $y] H* z
+    binary scan [teststringbytes $y] H* z
     set z
-} 00
+} c080
 test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
