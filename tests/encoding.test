@@ -33,8 +33,9 @@ proc runtests {} {
     variable x
 
 # Some tests require the testencoding command
-testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
@@ -320,18 +321,9 @@ test encoding-15.2 {UtfToUtfProc null character output} testbytestring {
     binary scan [testbytestring [encoding convertto utf-8 \u0000]] H* z
     set z
 } 00
-test encoding-15.3.a {UtfToUtfProc null character input} testbytestring {
-    binary scan [testbytestring \xc0\x80] H* z
-    set z
-} 00
-test encoding-15.3.b {UtfToUtfProc null character input} testbytestring {
+test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
-    binary scan [testbytestring $y] H* z
-    set z
-} 00
-test encoding-15.3.c {UtfToUtfProc null character input} {
-    set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
-    binary scan [encoding convertto identity $y] H* z
+    binary scan [teststringbytes $y] H* z
     set z
 } c080
 test encoding-15.4 {UtfToUtfProc emoji character input} -body {
@@ -722,7 +714,7 @@ test encoding-28.0 {all encodings load} -body {
 		encoding convertto $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
-		# Unfortunately, without this, encoding 2-1 fails.  
+		# Unfortunately, without this, encoding 2-1 fails.
 		llength $name
 	}
 	return $count
