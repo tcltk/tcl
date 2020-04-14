@@ -651,7 +651,7 @@ Tcl_UtfNext(
 	if ((byte & 0xC0) != 0x80) {
 	    /*
 	     * src points to non-trail byte; We ran out of trail bytes
-	     * before the needs of the lead bytes were satisfied.
+	     * before the needs of the lead byte were satisfied.
 	     * Let the (malformed) lead byte alone be a character
 	     */
 	    return src + 1;
