@@ -1464,9 +1464,9 @@ test string-20.6 {string trimright, unicode default} {
 } {}
 test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {
     set result {}
-    set a [bytestring \xc0\x80\x88]
+    set a [bytestring \xc0\x80\xA0]
     set b foo$a
-    set m [list \u0000 U \x88 V [bytestring \x88] W]
+    set m [list \u0000 U \xA0 V [bytestring \xA0] W]
     lappend result [string map $m $b]
     lappend result [string map $m [string trimright $b x]]
     lappend result [string map $m [string trimright $b \u0000]]
@@ -1477,17 +1477,17 @@ test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as conti
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
 test string-20.8 {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {
     set result {}
-    set a [bytestring \xE8\x80]
+    set a [bytestring \xE8\xA0]
     set b foo$a
-    set m [list \xE8 U \x80 V [bytestring \xE8] W [bytestring \x80] X]]
+    set m [list \xE8 U \xA0 V [bytestring \xE8] W [bytestring \xA0] X]]
     lappend result [string map $m $b]
     lappend result [string map $m [string trimright $b x]]
     lappend result [string map $m [string trimright $b \xE8]]
     lappend result [string map $m [string trimright $b [bytestring \xE8]]]
-    lappend result [string map $m [string trimright $b \x80]]
-    lappend result [string map $m [string trimright $b [bytestring \x80]]]
-    lappend result [string map $m [string trimright $b \xE8\x80]]
-    lappend result [string map $m [string trimright $b [bytestring \xE8\x80]]]
+    lappend result [string map $m [string trimright $b \xA0]]
+    lappend result [string map $m [string trimright $b [bytestring \xA0]]]
+    lappend result [string map $m [string trimright $b \xE8\xA0]]
+    lappend result [string map $m [string trimright $b [bytestring \xE8\xA0]]]
     lappend result [string map $m [string trimright $b \u0000]]
 } [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
