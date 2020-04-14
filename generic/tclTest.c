@@ -437,6 +437,12 @@ static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestFindFirstCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestFindLastCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -690,11 +696,15 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testseterrorcode", TestseterrorcodeCmd,
 	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
-	    TestsetobjerrorcodeCmd, (ClientData) 0, NULL);
+	    TestsetobjerrorcodeCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testutfprev",
 	    TestUtfPrevCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
-	    TestNumUtfCharsCmd, (ClientData) 0, NULL);
+	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindfirst",
+	    TestFindFirstCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindlast",
+	    TestFindLastCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
@@ -7157,13 +7167,63 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
+	int numBytes, len, limit = -1;
+	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+
+	if (objc > 2) {
+	    if (TclGetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (limit > numBytes + 1) {
+		limit = numBytes + 1;
+	    }
+	}
+	len = Tcl_NumUtfChars(bytes, limit);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindFirst
+ */
+
+static int
+TestFindFirstCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
 	int len = -1;
 
 	if (objc > 2) {
-	    (void) Tcl_GetStringFromObj(objv[1], &len);
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
-	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindFirst(Tcl_GetString(objv[1]), len), -1));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindLast
+ */
+
+static int
+TestFindLastCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
+	int len = -1;
+
+	if (objc > 2) {
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindLast(Tcl_GetString(objv[1]), len), -1));
     }
     return TCL_OK;
 }

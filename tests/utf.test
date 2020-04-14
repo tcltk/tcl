@@ -63,6 +63,9 @@ test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
 
 testConstraint testnumutfchars [llength [info commands testnumutfchars]]
+testConstraint testfindfirst [llength [info commands testfindfirst]]
+testConstraint testfindlast [llength [info commands testfindlast]]
+
 test utf-4.1 {Tcl_NumUtfChars: zero length} testnumutfchars {
     testnumutfchars ""
 } {0}
@@ -76,20 +79,37 @@ test utf-4.4 {Tcl_NumUtfChars: #u0000} testnumutfchars {
     testnumutfchars [bytestring "\xC0\x80"]
 } {1}
 test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
-    testnumutfchars "" 1
+    testnumutfchars "" 0
 } {0}
 test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} testnumutfchars {
     testnumutfchars [bytestring "\xC2\xA2"] 1
 } {1}
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} testnumutfchars {
-    testnumutfchars [bytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 1
+    testnumutfchars [bytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 10
 } {7}
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} testnumutfchars {
     testnumutfchars [bytestring "\xC0\x80"] 1
 } {1}
+# Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
+test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} testnumutfchars {
+    testnumutfchars [bytestring "\xE2\x82\xAC"] 2
+} {2}
+test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} testnumutfchars {
+    testnumutfchars [bytestring "\x00"] 2
+} {2}
+test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} testnumutfchars {
+    testnumutfchars [bytestring \xf0\x9f\x92\xa9] 3
+} {3}
+test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} testnumutfchars {
+    testnumutfchars [bytestring \xf0\x9f\x92\xa9] 4
+} {4}
 
-test utf-5.1 {Tcl_UtfFindFirsts} {
-} {}
+test utf-5.1 {Tcl_UtfFindFirst} testfindfirst {
+    testfindfirst [bytestring "abcbc"] 98
+} {bcbc}
+test utf-5.2 {Tcl_UtfFindLast} testfindlast {
+    testfindlast [bytestring "abcbc"] 98
+} {bc}
 
 test utf-6.1 {Tcl_UtfNext} {
 } {}
@@ -260,21 +280,21 @@ test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
 } {a}
 test utf-8.2 {Tcl_UniCharAtIndex: index = 0} {
-    string index \u4e4e\u25a 0
-} "\u4e4e"
+    string index \u4E4E\u25A 0
+} "\u4E4E"
 test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
     string index abcd 2
 } {c}
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
-    string index \u4e4e\u25a\xff\u543 2
-} "\uff"
+    string index \u4E4E\u25A\xFF\u543 2
+} "\uFF"
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
 } {abc}
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
-    string range \u4e4e\u25a\xff\u543klmnop 1 5
-} "\u25a\xff\u543kl"
+    string range \u4E4E\u25A\xFF\u543klmnop 1 5
+} "\u25A\xFF\u543kl"
 
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
