@@ -223,13 +223,13 @@ test utf-7.9.2 {Tcl_UtfPrev} testutfprev {
 } 2
 test utf-7.10 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0
-} 2
+} 1
 test utf-7.10.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0 3
-} 2
+} 1
 test utf-7.10.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xF8\xA0 3
-} 2
+} 1
 test utf-7.11 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0
 } 1
@@ -268,13 +268,13 @@ test utf-7.14.2 {Tcl_UtfPrev} testutfprev {
 } 3
 test utf-7.15 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0
-} 3
+} 1
 test utf-7.15.1 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0 4
-} 3
+} 1
 test utf-7.15.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xF8 4
-} 3
+} 1
 test utf-7.16 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0
 } 1
@@ -307,7 +307,7 @@ test utf-7.19 {Tcl_UtfPrev} testutfprev {
 } 4
 test utf-7.20 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF4\xA0\xA0\xA0
-} 4
+} 1
 test utf-7.21 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xA0
 } 4
