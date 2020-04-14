@@ -10,6 +10,10 @@ addons:
       - gcc-mingw-w64-i686
       - gcc-mingw-w64-x86-64
       - gcc-multilib
+  homebrew:
+    packages:
+      - libtommath
+    update: true
 matrix:
   include:
 # Testing on Linux with various compilers
@@ -128,11 +132,6 @@ matrix:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.3/Shared/Unix-like"
-      os: osx
-      osx_image: xcode11.3
-      env:
-        - BUILD_DIR=unix
     - name: "macOS/Xcode 11.3/Shared"
       os: osx
       osx_image: xcode11.3
@@ -143,10 +142,12 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-      addons:
-        homebrew:
-          packages:
-            - libtommath
+    - name: "macOS/Xcode 11.3/Shared/Unix-like"
+      os: osx
+      osx_image: xcode11.3
+      env:
+        - BUILD_DIR=unix
+# Older MacOS versions
     - name: "macOS/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
@@ -167,7 +168,7 @@ matrix:
             - libtommath
     - name: "macOS/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9
+      osx_image: xcode9.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -178,7 +179,7 @@ matrix:
             - libtommath
     - name: "macOS/Xcode 8/Shared"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode8.3
       env:
         - BUILD_DIR=macosx
       install: []
@@ -413,18 +414,13 @@ matrix:
         - CFGOPT="--enable-symbols=mem"
       before_install: *makepreinst
 before_install:
-  - |-
-      case $TRAVIS_OS_NAME in
-        osx)
-          brew update
-          brew install libtommath
-          ;;
-      esac
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
+  - mkdir $HOME/install
+  - ./configure ${CFGOPT} --prefix=$HOME/install || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
   - make all tcltest
   - make test
+  - make install

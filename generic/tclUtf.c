@@ -69,6 +69,17 @@ static const unsigned char totalBytes[256] = {
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
+
+static const unsigned char complete[256] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
+};
 
 /*
  *---------------------------------------------------------------------------
@@ -471,10 +482,10 @@ Tcl_UtfToChar16(
 	 * bytes, then we must produce a follow-up low surrogate. We only
 	 * do that if the high surrogate matches the bits we encounter.
 	 */
-	if ((byte >= 0x80)
+	if (((byte & 0xC0) == 0x80)
+		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
-		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))
-		&& ((src[2] & 0xC0) == 0x80)) {
+		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
 	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
 	    return 3;
 	}
@@ -696,7 +707,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     size_t length)			/* Length of above string in bytes. */
 {
-   return length >= totalBytes[(unsigned char)*src];
+    return length >= complete[(unsigned char)*src];
 }
 
 /*
@@ -873,15 +884,43 @@ Tcl_UtfNext(
  *
  * Tcl_UtfPrev --
  *
- *	Given a pointer to some current location in a UTF-8 string, move
- *	backwards one character. This works correctly when the pointer is in
- *	the middle of a UTF-8 character.
+ *	The aim of this routine is to provide a way to move backward
+ *	through a UTF-8 string. The caller is expected to pass non-NULL
+ *	pointer arguments start and src. start points to the beginning
+ *	of a string, and src >= start points to a location within (or just
+ *	past the end) of the string. This routine always returns a
+ *	pointer within the string (>= start).  When (src == start), it
+ *	returns start. When (src > start), it returns a pointer (< src)
+ *	and (>= src - TCL_UTF_MAX).  Subject to these constraints, the
+ *	routine returns a pointer to the earliest byte in the string that
+ *	starts a character when characters are read starting at start and
+ *	that character might include the byte src[-1]. The routine will
+ *	examine only those bytes in the range that might be returned.
+ *	It will not examine the byte *src, and because of that cannot 
+ *	determine for certain in all circumstances whether the character
+ *	that begins with the returned pointer will or will not include
+ *	the byte src[-1]. In the scenario, where src points to the end of
+ *	a buffer being filled, the returned pointer point to either the
+ *	final complete character in the string or to the earliest byte
+ *	that might start an incomplete character waiting for more bytes to
+ *	complete.
+ *
+ *	Because this routine always returns a value < src until the point
+ *	it is forced to return start, it is useful as a backward iterator
+ *	through a string that will always make progress and always be
+ *	prevented from running past the beginning of the string.
+ *
+ *	In a string where all characters are complete and properly formed,
+ *	and the value of src points to the first byte of a character, 
+ *	repeated Tcl_UtfPrev calls will step to the starting bytes of
+ *	characters, one character at a time. Within those limitations,
+ *	Tcl_UtfPrev and Tcl_UtfNext are inverses. If either condition cannot
+ *	be met, Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and
+ *	the caller will have to take greater care.
  *
  * Results:
- *	The return value is a pointer to the previous character in the UTF-8
- *	string. If the current location was already at the beginning of the
- *	string, the return value will also be a pointer to the beginning of
- *	the string.
+ *	A pointer to the start of a character in the string as described
+ *	above.
  *
  * Side effects:
  *	None.
@@ -891,9 +930,8 @@ Tcl_UtfNext(
 
 const char *
 Tcl_UtfPrev(
-    const char *src,		/* The current location in the string. */
-    const char *start)		/* Pointer to the beginning of the string, to
-				 * avoid going backwards too far. */
+    const char *src,		/* A location in a UTF-8 string. */
+    const char *start)		/* Pointer to the beginning of the string */
 {
     const char *look;
     int i, byte;
@@ -911,6 +949,9 @@ Tcl_UtfPrev(
 	    break;
 	}
 	if (byte >= 0xC0) {
+	    if (totalBytes[byte] <= i) {
+		break;
+	    }
 	    return look;
 	}
 	look--;
@@ -1980,7 +2021,7 @@ Tcl_UniCharIsSpace(
      */
 
     if (ch < 0x80) {
-	return TclIsSpaceProc((char) ch);
+	return TclIsSpaceProcM((char) ch);
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
@@ -2450,44 +2491,17 @@ TclUniCharMatch(
  *---------------------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX <= 3
 int
 TclUtfToUCS4(
     const char *src,	/* The UTF-8 string. */
     int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
 			 * by the UTF-8 string. */
 {
-    int len, fullchar;
-    Tcl_UniChar ch = 0;
-
-    len = TclUtfToUniChar(src, &ch);
-    fullchar = ch;
-
-#if TCL_UTF_MAX <= 3
-    /* Limited interfaces -- must use and decode surrogates */
-
-    if ((ch >= 0xD800) && len < 3) {
-/******
- ******	Note the #undef TCL_UtfToUniChar gets in our way here.
- ******
-	len += Tcl_UtfToUniChar(src + len, &ch);
- ******
- ******  We have to do the subtitution ourselves.
- ******/
-
-	len += Tcl_UtfToChar16(src + len, &ch);
-
-/******
- ******	We might also solve this by moving this routine higher in the file.
- ****** Or there might be a more sensible foundation in this branch.
- ******/
-
-	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-    }
-#endif
-
-    *ucs4Ptr = fullchar;
-    return len;
+    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+    return Tcl_UtfToUniChar(src, ucs4Ptr);
 }
+#endif
 
 /*
  * Local Variables:
