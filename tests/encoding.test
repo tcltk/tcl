@@ -326,11 +326,6 @@ test encoding-15.3.b {UtfToUtfProc null character input} testbytestring {
     binary scan [testbytestring $y] H* z
     set z
 } 00
-test encoding-15.3.c {UtfToUtfProc null character input} {
-    set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
-    binary scan [encoding convertto identity $y] H* z
-    set z
-} c080
 test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
