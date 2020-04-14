@@ -1930,10 +1930,15 @@ test string-22.12.$noComp {string wordstart, unicode} -body {
 test string-22.13.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\uC700\uC700 abc" 8}
 } -result 3
-test string-22.14.$noComp {string wordstart, unicode} -body {
+test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbytestring -body {
+    # See Bug c61818e4c9
+    set demo [testbytestring "abc def\xE0\xA9ghi"]
+    run {string index $demo [string wordstart $demo 10]}
+} -result g
+test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.15.$noComp {string wordstart, unicode} -constraints tip389 -body {
+test string-22.16.$noComp {string wordstart, unicode} -constraints tip389 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
 
