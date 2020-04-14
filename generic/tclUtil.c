@@ -1692,12 +1692,12 @@ TclTrimRight(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
 	return 0;
     }
-    int ch1, ch2;
 
     /*
      * Outer loop: iterate over string to be trimmed.
