@@ -1082,15 +1082,15 @@ Tcl_AppendLimitedToObj(
 {
     String *stringPtr;
     size_t toCopy = 0;
-
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
-    }
+    size_t eLen = 0;
 
     if (length == TCL_AUTO_LENGTH) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     if (length == 0) {
+	return;
+    }
+    if (limit <= 0) {
 	return;
     }
 
@@ -1100,8 +1100,12 @@ Tcl_AppendLimitedToObj(
 	if (ellipsis == NULL) {
 	    ellipsis = "...";
 	}
-	toCopy = (bytes == NULL) ? limit
-		: (size_t)(Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes);
+	eLen = strlen(ellipsis);
+	while (eLen > limit) {
+	    eLen = Tcl_UtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
+	}
+
+	toCopy = Tcl_UtfPrev(bytes+limit+1-eLen, bytes) - bytes;
     }
 
     /*
@@ -1109,6 +1113,10 @@ Tcl_AppendLimitedToObj(
      * of "bytes" to the objPtr's Unicode rep, otherwise append "bytes" to
      * objPtr's string rep.
      */
+
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
+    }
 
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
@@ -1125,9 +1133,9 @@ Tcl_AppendLimitedToObj(
 
     stringPtr = GET_STRING(objPtr);
     if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
-	AppendUtfToUnicodeRep(objPtr, ellipsis, strlen(ellipsis));
+	AppendUtfToUnicodeRep(objPtr, ellipsis, eLen);
     } else {
-	AppendUtfToUtfRep(objPtr, ellipsis, strlen(ellipsis));
+	AppendUtfToUtfRep(objPtr, ellipsis, eLen);
     }
 }
 

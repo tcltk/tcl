@@ -377,9 +377,11 @@ matrix:
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
+  - mkdir $HOME/install
+  - ./configure ${CFGOPT} --prefix=$HOME/install || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
   - make all tcltest
   - make test
+  - make install
