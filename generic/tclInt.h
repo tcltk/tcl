@@ -3691,6 +3691,9 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
+#define TclUtfNext(src)	\
+	((((unsigned char) *(src)) < 0xC0) ? src + 1 : Tcl_UtfNext(src))
+
 /*
  *----------------------------------------------------------------
  * Macro that encapsulates the logic that determines when it is safe to
