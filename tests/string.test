@@ -1561,11 +1561,11 @@ test string-20.5 {string trimright} {
 test string-20.6 {string trimright, unicode default} {
     string trimright ABC\u1361\u0085\x00\u00A0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000
 } ABC\u1361
-test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {
+test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} testbytestring {
     set result {}
-    set a [bytestring \xc0\x80\x88]
+    set a [testbytestring \xc0\x80\x88]
     set b foo$a
-    set m [list \u0000 U \x88 V [bytestring \x88] W]
+    set m [list \u0000 U \x88 V [testbytestring \x88] W]
     lappend result [string map $m $b]
     lappend result [string map $m [string trimright $b x]]
     lappend result [string map $m [string trimright $b \u0000]]
@@ -1574,11 +1574,11 @@ test string-20.7 {string trim on not valid utf-8 sequence (consider NTS as conti
     lappend result [string map $m [string trim $b fox]]
     lappend result [string map $m [string trim $b fo\u0000]]
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
-test string-20.8 {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {
+test string-20.8 {[c61818e4c9] [string trimright] fails when UtfPrev is ok} testbytestring {
     set result {}
-    set a [bytestring \xE8\x80]
+    set a [testbytestring \xE8\x80]
     set b foo$a
-    set m [list \xE8 U \x80 V [bytestring \xE8] W [bytestring \x80] X]]
+    set m [list \xE8 U \x80 V [testbytestring \xE8] W [bytestring \x80] X]]
     lappend result [string map $m $b]
     lappend result [string map $m [string trimright $b x]]
     lappend result [string map $m [string trimright $b \xE8]]
@@ -1672,9 +1672,9 @@ test string-22.12 {string wordstart, unicode} {
 test string-22.13 {string wordstart, unicode} {
     string wordstart "\uC700\uC700 abc" 8
 } 3
-test string-22.14 {string wordstart, invalid UTF-8} {
+test string-22.14 {string wordstart, invalid UTF-8} testbytestring {
     # See Bug c61818e4c9
-    set demo [bytestring "abc def\xE0\xA9ghi"]
+    set demo [testbytestring "abc def\xE0\xA9ghi"]
     string index $demo [string wordstart $demo 10]
 } g
 
