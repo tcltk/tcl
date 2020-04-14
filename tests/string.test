@@ -25,6 +25,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint testbytestring   [llength [info commands testbytestring]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
