@@ -1829,17 +1829,17 @@ test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS 
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
 test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {testbytestring} {
     set result {}
-    set a [testbytestring \xE8\x80]
+    set a [testbytestring \xE8\xA0]
     set b foo$a
-    set m [list \xE8 U \x80 V [testbytestring \xE8] W [testbytestring \x80] X]]
+    set m [list \xE8 U \xA0 V [testbytestring \xE8] W [testbytestring \xA0] X]]
     lappend result [string map $m $b]
     lappend result [string map $m [run {string trimright $b x}]]
     lappend result [string map $m [run {string trimright $b \xE8}]]
     lappend result [string map $m [run {string trimright $b [testbytestring \xE8]}]]
-    lappend result [string map $m [run {string trimright $b \x80}]]
-    lappend result [string map $m [run {string trimright $b [testbytestring \x80]}]]
-    lappend result [string map $m [run {string trimright $b \xE8\x80}]]
-    lappend result [string map $m [run {string trimright $b [testbytestring \xE8\x80]}]]
+    lappend result [string map $m [run {string trimright $b \xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xA0]}]]
+    lappend result [string map $m [run {string trimright $b \xE8\xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xE8\xA0]}]]
     lappend result [string map $m [run {string trimright $b \u0000}]]
 } [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
