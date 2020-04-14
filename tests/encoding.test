@@ -33,6 +33,7 @@ proc runtests {} {
     variable x
 
 # Some tests require the testencoding command
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 testConstraint exec [llength [info commands exec]]
