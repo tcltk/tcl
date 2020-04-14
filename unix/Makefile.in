@@ -53,6 +53,9 @@ DLL_INSTALL_DIR		= @DLL_INSTALL_DIR@
 # Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
+# Path name to use when installing Tcl modules.
+MODULE_INSTALL_DIR	= $(SCRIPT_INSTALL_DIR)/../tcl9
+
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
 
@@ -989,8 +992,8 @@ install-binaries: binaries
 	fi
 	@EXTRA_INSTALL_BINARIES@
 	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
-	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
-	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
+	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
+	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
 install-libraries-zipfs-shared: libraries
 	@for i in "$(SCRIPT_INSTALL_DIR)"; do \
@@ -1007,19 +1010,26 @@ install-libraries-zipfs-shared: libraries
 install-libraries-zipfs-static: install-libraries-zipfs-shared
 	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
-MODULE_INSTALL_DIR=$(SCRIPT_INSTALL_DIR)/..
-
 install-libraries: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)"; do \
+	@for i in "$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
+	    do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@for i in opt0.4 cookiejar0.2 encoding ../tcl9 ../tcl9/9.0  ../tcl9/9.0/platform; do \
-	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+	@for i in opt0.4 cookiejar0.2 encoding; do \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@for i in 9.0 9.0/platform; \
+	    do \
+	    if [ ! -d "$(MODULE_INSTALL_DIR)/$$i" ] ; then \
+		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
+		$(INSTALL_DATA_DIR) "$(MODULE_INSTALL_DIR)/$$i"; \
 	    fi; \
 	done
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
@@ -1029,82 +1039,82 @@ install-libraries: libraries
 	done
 	@echo "Installing package cookiejar 0.2 files to $(SCRIPT_INSTALL_DIR)/cookiejar0.2/"
 	@for i in $(TOP_DIR)/library/cookiejar/*.tcl; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/cookiejar0.2; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	done
 	@for i in $(TOP_DIR)/library/cookiejar/*.gz; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/cookiejar0.2; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	done
 	@echo "Installing package http 2.9.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/http-2.9.1.tm
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.9.1.tm"
 	@echo "Installing package opt 0.4.7"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	done
 	@echo "Installing package msgcat 1.7.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/msgcat-1.7.0.tm
+		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.0.tm"
 	@echo "Installing package tcltest 2.5.3 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/tcltest-2.5.3.tm
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.3.tm"
 	@echo "Installing package platform 1.0.14 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/platform-1.0.14.tm
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.0.14.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
-		"$(MODULE_INSTALL_DIR)"/tcl9/9.0/platform/shell-1.1.4.tm
+		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
 	@for i in $(TOP_DIR)/library/encoding/*.enc; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
+		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
-	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
+	        "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
 install-tzdata:
 	@for i in tzdata; do \
-	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
 	    fi; \
 	done
 	@echo "Installing time zone files to $(SCRIPT_INSTALL_DIR)/tzdata/"
 	@for i in $(TOP_DIR)/library/tzdata/*; do \
 	    if [ -d $$i ] ; then \
 		ii=`basename $$i`; \
-		if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii ] ; then \
-		    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+		if [ ! -d "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii" ] ; then \
+		    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii"; \
 		fi; \
 		for j in $$i/*; do \
 		    if [ -d $$j ] ; then \
 			jj=`basename $$j`; \
-			if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj ] ; then \
-			    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			if [ ! -d "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj" ] ; then \
+			    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj"; \
 			fi; \
 			for k in $$j/*; do \
-			    $(INSTALL_DATA) $$k "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			    $(INSTALL_DATA) $$k "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj"; \
 			done; \
 		    else \
-			$(INSTALL_DATA) $$j "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+			$(INSTALL_DATA) $$j "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii"; \
 		    fi; \
 		done; \
 	    else \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/tzdata; \
+		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/tzdata"; \
 	    fi; \
 	done
 
 install-msgs:
 	@for i in msgs; do \
-	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
 	    fi; \
 	done
 	@echo "Installing message catalog files to $(SCRIPT_INSTALL_DIR)/msgs/"
 	@for i in $(TOP_DIR)/library/msgs/*.msg; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/msgs"; \
 	done
 
 install-doc: doc
