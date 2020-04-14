@@ -644,17 +644,21 @@ Tcl_UtfNext(
 {
     int byte = *((unsigned char *) src);
     int left = totalBytes[byte];
+    const char *next = src + 1;
 
-    src++;
     while (--left) {
-	byte = *((unsigned char *) src);
+	byte = *((unsigned char *) next);
 	if ((byte & 0xC0) != 0x80) {
-	    /* src points to non-trail byte; return it */
-	    return src;
+	    /*
+	     * src points to non-trail byte; We ran out of trail bytes
+	     * before the needs of the lead bytes were satisfied.
+	     * Let the (malformed) lead byte alone be a character
+	     */
+	    return src + 1;
 	}
-	src++;
+	next++;
     }
-    return src;
+    return next;
 }
 
 /*
