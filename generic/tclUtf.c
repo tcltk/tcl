@@ -81,6 +81,7 @@ static CONST unsigned char totalBytes[256] = {
  */
 
 static int		UtfCount(int ch);
+static int		Overlong(unsigned char *src);
 
 /*
  *---------------------------------------------------------------------------
@@ -115,7 +116,59 @@ UtfCount(
 #endif
     return 3;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Overlong --
+ *
+ *	Utility routine to report whether /src/ points to the start of an
+ *	overlong byte sequence that should be rejected.
+ *
+ * Results:
+ *	A boolean.
+ *---------------------------------------------------------------------------
+ */
 
+INLINE static int
+Overlong(
+    unsigned char *src)		/* Points to lead byte of a UTF-8 byte
+				 * sequence. Caller guarantees it is safe
+				 * to read src[0] and src[1]. */
+{
+    switch (*src) {
+    case 0xC0:
+	if (src[1] == 0x80) {
+	    /* Valid sequence: \xC0\x80 for \u0000 */
+	    return 0;
+	}
+	/* Reject overlong: \xC0\x81 - \xC0\xBF */
+	return 1;
+    case 0xC1:
+	/* Reject overlong: \xC1\x80 - \xC1\xBF */
+	return 1;
+    case 0xE0:
+	if (src[1] < 0xA0) {
+	    /* Reject overlong: \xE0\x80\x80 - \xE0\x9F\xBF */
+	    return 1;
+	}
+	/* Valid sequence: \xE0\xA0\x80 for \u0800 , etc. */
+	return 0;
+#if TCL_UTF_MAX > 3
+    case 0xF0:
+	if (src[1] < 0x90) {
+	    /* Reject overlong: \xF0\x80\x80\x80 - \xF0\x8F\xBF\xBF */
+	    return 1;
+	}
+	/* Valid sequence: \xF0\x90\x80\x80 for \U10000 , etc. */
+	return 0
+#endif
+    default:
+	/* All other lead bytes lead only valid sequences */
+	return 0;
+    }
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -756,37 +809,11 @@ Tcl_UtfPrev(
 	     * Use that capability to screen out overlong sequences.
 	     */
 
-	    switch (byte) {
-	    case 0xC0:
-		if (look[1] == 0x80) {
-		    /* Valid sequence: \xC0\x80 for \u0000 */
-		    return (CONST char *)look;
-		}
-		/* Reject overlong: \xC0\x81 - \xC0\xBF */
+	    if (Overlong(look)) {
+		/* Reject */
 		return fallback;
-	    case 0xC1:
-		/* Reject overlong: \xC1\x80 - \xC1\xBF */
-		return fallback;
-	    case 0xE0:
-		if (look[1] < 0xA0) {
-		    /* Reject overlong: \xE0\x80\x80 - \xE0\x9F\xBF */
-		    return fallback;
-		}
-		/* Valid sequence: \xE0\xA0\x80 for \u0800 , etc. */
-		return (CONST char *)look;
-#if TCL_UTF_MAX > 3
-	    case 0xF0:
-		if (look[1] < 0x90) {
-		    /* Reject overlong: \xF0\x80\x80\x80 - \xF0\x8F\xBF\xBF */
-		    return fallback;
-		}
-		/* Valid sequence: \xF0\x90\x80\x80 for \U10000 , etc. */
-		return (CONST char *)look;
-#endif
-	    default:
-		/* All other lead bytes lead only valid sequences */
-		return (CONST char *)look;
 	    }
+	    return (CONST char *)look;
 	}
 
 	/* We saw a trail byte. */
