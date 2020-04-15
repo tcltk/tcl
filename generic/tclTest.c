@@ -316,6 +316,7 @@ static Tcl_FSListVolumesProc SimpleListVolumes;
 static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
+static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
@@ -578,8 +579,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
 	    TestsetobjerrorcodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfnext",
+	    TestUtfNextCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testutfprev",
-	    TestUtfPrevCmd, (ClientData) 0, NULL);
+	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
@@ -6811,6 +6814,52 @@ SimpleListVolumes(void)
 }
 
 /*
+ * Used to check operations of Tcl_UtfNext.
+ *
+ * Usage: testutfnext $bytes $offset
+ */
+
+static int
+TestUtfNextCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int numBytes, offset = 0;
+    char *bytes;
+    const char *result;
+    Tcl_Obj *copy;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+	return TCL_ERROR;
+    }
+
+    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset < 0) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    }
+    copy = Tcl_DuplicateObj(objv[1]);
+    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
+    bytes[numBytes] = '\0';
+
+    result = Tcl_UtfNext(bytes + offset);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
+
+    Tcl_DecrRefCount(copy);
+    return TCL_OK;
+}
+/*
  * Used to check operations of Tcl_UtfPrev.
  *
  * Usage: testutfprev $bytes $offset
@@ -6827,16 +6876,16 @@ TestUtfPrevCmd(
     char *bytes;
     const char *result;
     Tcl_Obj *copy;
-    
+
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
     bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
-    
+
     if (objc == 3) {
-	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &offset)) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
 	    return TCL_ERROR;
 	}
 	if (offset < 0) {
@@ -6853,9 +6902,9 @@ TestUtfPrevCmd(
     bytes[numBytes] = '\0';
 
     result = Tcl_UtfPrev(bytes + offset, bytes);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
 
     Tcl_DecrRefCount(copy);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
     return TCL_OK;
 }
 
