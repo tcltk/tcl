@@ -6825,8 +6825,7 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int numBytes;
-    size_t offset = 0;
+    size_t numBytes, offset = 0;
     char *bytes;
     const char *result;
     Tcl_Obj *copy;
@@ -6836,7 +6835,10 @@ TestUtfNextCmd(
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6845,7 +6847,7 @@ TestUtfNextCmd(
 	if (offset == TCL_INDEX_NONE) {
 	    offset = 0;
 	}
-	if (offset > (size_t)numBytes) {
+	if (offset > numBytes) {
 	    offset = numBytes;
 	}
     }
@@ -6854,7 +6856,7 @@ TestUtfNextCmd(
     bytes[numBytes] = '\0';
 
     result = Tcl_UtfNext(bytes + offset);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
 
     Tcl_DecrRefCount(copy);
     return TCL_OK;
@@ -6872,8 +6874,7 @@ TestUtfPrevCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int numBytes;
-    size_t offset;
+    size_t numBytes, offset;
     char *bytes;
     const char *result;
     Tcl_Obj *copy;
@@ -6883,7 +6884,10 @@ TestUtfPrevCmd(
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6892,7 +6896,7 @@ TestUtfPrevCmd(
 	if (offset == TCL_INDEX_NONE) {
 	    offset = 0;
 	}
-	if (offset > (size_t)numBytes) {
+	if (offset > numBytes) {
 	    offset = numBytes;
 	}
     } else {
@@ -6903,7 +6907,7 @@ TestUtfPrevCmd(
     bytes[numBytes] = '\0';
 
     result = Tcl_UtfPrev(bytes + offset, bytes);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
 
     Tcl_DecrRefCount(copy);
     return TCL_OK;
@@ -6921,20 +6925,20 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
-	int numBytes, len;
-	size_t limit = TCL_INDEX_NONE;
-	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+	size_t len, limit = TCL_INDEX_NONE;
+	const char *bytes = Tcl_GetString(objv[1]);
+	size_t numBytes = objv[1]->length;
 
 	if (objc > 2) {
 	    if (Tcl_GetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (limit > (size_t)(numBytes + 1)) {
+	    if (limit > numBytes + 1) {
 		limit = numBytes + 1;
 	    }
 	}
 	len = Tcl_NumUtfChars(bytes, limit);
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(len));
     }
     return TCL_OK;
 }
