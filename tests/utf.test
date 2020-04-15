@@ -352,9 +352,9 @@ test utf-6.78 {Tcl_UtfNext} testutfnext {
 test utf-6.79 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0G\xF8
 } 1
-
-
-
+test utf-6.80 {Tcl_UtfNext - overlong sequences} {
+    testutfnext \xC0\x81
+} 1
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
