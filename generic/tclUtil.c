@@ -1686,12 +1686,12 @@ TclTrimRight(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
+    Tcl_UniChar ch1 = 0;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
 	return 0;
     }
-    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
      * Outer loop: iterate over string to be trimmed.
@@ -1700,6 +1700,7 @@ TclTrimRight(
     do {
 	const char *q = trim;
 	int pInc = 0, bytesLeft = numTrim;
+	Tcl_UniChar ch2 = 0;
 
 	pp = Tcl_UtfPrev(p, bytes);
 	do {
@@ -1765,6 +1766,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
+    Tcl_UniChar ch1 = 0;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
@@ -1776,7 +1778,7 @@ TclTrimLeft(
      */
 
     do {
-	Tcl_UniChar ch1 = 0;
+	Tcl_UniChar ch2 = 0;
 	int pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
 	int bytesLeft = numTrim;
@@ -1786,7 +1788,6 @@ TclTrimLeft(
 	 */
 
 	do {
-	    Tcl_UniChar ch2 = 0;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
