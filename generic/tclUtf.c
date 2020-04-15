@@ -746,14 +746,7 @@ Tcl_UtfPrev(
 		 * this lead byte. No matter about well-formedness or
 		 * validity, the sequence starting with this lead byte
 		 * will never include the fallback location, so we must
-		 * return the fallback location.
-		 *
-		 * EXAMPLE:	bytes = "ab\C0\x80\x81def";
-		 *		Tcl_UtfPrev(bytes+5, bytes);
-	    	 *
-		 * When we get here, look == bytes+2, trailBytesSeen == 2,
-		 * needed = 2, and we need to return bytes+4 that points to
-		 * the malformed \x81.
+		 * return the fallback location. See test utf-7.17
 		 */
 		return fallback;
 	    }
