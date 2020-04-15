@@ -6836,7 +6836,10 @@ TestUtfNextCmd(
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6882,7 +6885,10 @@ TestUtfPrevCmd(
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
