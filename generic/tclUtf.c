@@ -703,31 +703,125 @@ Tcl_UtfPrev(
     CONST char *src,		/* A location in a UTF-8 string. */
     CONST char *start)		/* Pointer to the beginning of the string */
 {
-    CONST char *look;
-    int i, byte;
+    int trailBytesSeen = 0;	/* How many trail bytes have been verified? */
+    CONST char *fallback = src - 1;
+				/* If we cannot find a lead byte that might
+				 * start a prefix of a valid UTF byte sequence,
+				 * we will fallback to a one-byte back step */
+    unsigned char *look = (unsigned char *)fallback;
+				/* Start search at the fallback position */
 
-    src--;
-    look = src;
-    for (i = 0; i < TCL_UTF_MAX; i++) {
-	if (look < start) {
-	    if (src < start) {
-		src = start;
-	    }
-	    break;
-	}
-	byte = *((unsigned char *) look);
+    /* Quick boundary case exit. */
+    if (fallback <= start) {
+	return start;
+    }
+
+    do {
+	unsigned char byte = look[0];
+
 	if (byte < 0x80) {
-	    break;
+	    /*
+	     * Single byte character. Either this is a correct previous
+	     * character, or it is followed by at least one trail byte
+	     * which indicates a malformed sequence. In either case the
+	     * correct result is to return the fallback.
+	     */
+	    return fallback;
 	}
 	if (byte >= 0xC0) {
-	    if (totalBytes[byte] <= i) {
-		break;
+	    /* Non-trail byte; May be multibyte lead. */
+
+	    if ((trailBytesSeen == 0)
+		/*
+		 * We've seen no trailing context to use to check
+		 * anything. From what we know, this non-trail byte
+		 * is a prefix of a previous character, and accepting
+		 * it (the fallback) is correct.
+		 */
+
+		    || (trailBytesSeen >= totalBytes[byte])) {
+		/*
+		 * That is, (1 + trailBytesSeen > needed).
+		 * We've examined more bytes than needed to complete
+		 * this lead byte. No matter about well-formedness or
+		 * validity, the sequence starting with this lead byte
+		 * will never include the fallback location, so we must
+		 * return the fallback location.
+		 *
+		 * EXAMPLE:	bytes = "ab\C0\x80\x81def";
+		 *		Tcl_UtfPrev(bytes+5, bytes);
+	    	 *
+		 * When we get here, look == bytes+2, trailBytesSeen == 2,
+		 * needed = 2, and we need to return bytes+4 that points to
+		 * the malformed \x81.
+		 */
+		return fallback;
 	    }
-	    return look;
+
+	    /*
+	     * trailBytesSeen > 0, so we can examine look[1] safely.
+	     * Use that capability to screen out overlong sequences.
+	     */
+
+	    switch (byte) {
+	    case 0xC0:
+		if (look[1] == 0x80) {
+		    /* Valid sequence: \xC0\x80 for \u0000 */
+		    return (CONST char *)look;
+		}
+		/* Reject overlong: \xC0\x81 - \xC0\xBF */
+		return fallback;
+	    case 0xC1:
+		/* Reject overlong: \xC1\x80 - \xC1\xBF */
+		return fallback;
+	    case 0xE0:
+		if (look[1] < 0xA0) {
+		    /* Reject overlong: \xE0\x80\x80 - \xE0\x9F\xBF */
+		    return fallback;
+		}
+		/* Valid sequence: \xE0\xA0\x80 for \u0800 , etc. */
+		return (CONST char *)look;
+#if TCL_UTF_MAX > 3
+	    case 0xF0:
+		if (look[1] < 0x90) {
+		    /* Reject overlong: \xF0\x80\x80\x80 - \xF0\x8F\xBF\xBF */
+		    return fallback;
+		}
+		/* Valid sequence: \xF0\x90\x80\x80 for \U10000 , etc. */
+		return (CONST char *)look;
+#endif
+	    default:
+		/* All other lead bytes lead only valid sequences */
+		return (CONST char *)look;
+	    }
 	}
+
+	/* We saw a trail byte. */
+	trailBytesSeen++;
+
+	if ((CONST char *)look == start) {
+	    /*
+	     * Do not read before the start of the string
+	     *
+	     * If we get here, we've examined bytes at every location
+	     * >= start and < src and all of them are trail bytes,
+	     * including (*start).  We need to return our fallback
+	     * and exit this loop before we run past the start of the string.
+	     */
+	    return fallback;
+	}
+
+	/* Continue the search backwards... */
 	look--;
-    }
-    return src;
+    } while (trailBytesSeen < TCL_UTF_MAX);
+
+    /*
+     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * properly formed byte sequence to find, and we can stop looking,
+     * accepting the fallback.
+     */
+
+    return fallback;
 }
 
 /*
