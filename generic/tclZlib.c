@@ -3049,29 +3049,19 @@ ZlibTransformInput(
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
 	}
-	if (readBytes == 0) {
-	    /*
-	     * Eof in parent.
-	     *
-	     * Now this is a bit different. The partial data waiting is
-	     * converted and returned.
-	     */
 
-	    if (ResultGenerate(cd, 0, Z_SYNC_FLUSH, errorCodePtr) != TCL_OK) {
-		return -1;
-	    }
+	/*
+	 * Transform the read chunk, if not empty. Anything we get
+	 * back is a transformation result to be put into our buffers, and
+	 * the next iteration will put it into the result.
+	 * For the case readBytes is 0 which signaling Eof in parent, the
+	 * partial data waiting is converted and returned.
+	 */
 
-	} else /* readBytes > 0 */ {
-	    /*
-	     * Transform the read chunk, which was not empty. Anything we get
-	     * back is a transformation result to be put into our buffers, and
-	     * the next iteration will put it into the result.
-	     */
-
-	    if (ResultGenerate(cd, readBytes, Z_NO_FLUSH,
+	if (ResultGenerate(cd, readBytes,
+		    (readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH,
 		    errorCodePtr) != TCL_OK) {
-		return -1;
-	    }
+	    return -1;
 	}
 
 copyDecompressed:
