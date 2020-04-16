@@ -938,8 +938,6 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    CONST char *string, int maxChars);
-MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
-			    char *bytes, int length, int flags);
 
 static inline void
 TclPreserveByteCode(
