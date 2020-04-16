@@ -153,8 +153,13 @@ test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
     testfindlast [testbytestring "abcbc"] 98
 } {bc}
 
+testConstraint testutfnext [llength [info commands testutfnext]]
+
 test utf-6.1 {Tcl_UtfNext} {
 } {}
+test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext knownBug} {
+    testutfnext \xE8\xA0\xA0 1
+} 3
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
