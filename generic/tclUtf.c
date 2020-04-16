@@ -712,7 +712,7 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if (Overlong(src)) {
+    if (Overlong((unsigned char *)src)) {
 	return src + 1;
     }
     return next;
