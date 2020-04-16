@@ -125,9 +125,9 @@ matrix:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.3/Shared"
+    - name: "macOS/Xcode 11.4/Shared"
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       env:
         - BUILD_DIR=macosx
       install: []
@@ -135,9 +135,9 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 11.3/Shared/Unix-like"
+    - name: "macOS/Xcode 11.4/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       env:
         - BUILD_DIR=unix
 # Older MacOS versions
@@ -377,8 +377,8 @@ matrix:
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - mkdir $HOME/install
-  - ./configure ${CFGOPT} --prefix=$HOME/install || (cat config.log && exit 1)
+  - mkdir "$HOME/install dir"
+  - ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:

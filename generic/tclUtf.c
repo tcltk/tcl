@@ -896,7 +896,7 @@ Tcl_UtfNext(
  *	starts a character when characters are read starting at start and
  *	that character might include the byte src[-1]. The routine will
  *	examine only those bytes in the range that might be returned.
- *	It will not examine the byte *src, and because of that cannot 
+ *	It will not examine the byte *src, and because of that cannot
  *	determine for certain in all circumstances whether the character
  *	that begins with the returned pointer will or will not include
  *	the byte src[-1]. In the scenario, where src points to the end of
@@ -911,7 +911,7 @@ Tcl_UtfNext(
  *	prevented from running past the beginning of the string.
  *
  *	In a string where all characters are complete and properly formed,
- *	and the value of src points to the first byte of a character, 
+ *	and the value of src points to the first byte of a character,
  *	repeated Tcl_UtfPrev calls will step to the starting bytes of
  *	characters, one character at a time. Within those limitations,
  *	Tcl_UtfPrev and Tcl_UtfNext are inverses. If either condition cannot
