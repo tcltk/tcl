@@ -2406,7 +2406,7 @@ StringStartCmd(
 		break;
 	    }
 
-	    next = Tcl_UtfPrev(p, string);
+	    next = TclUtfPrev(p, string);
 	    do {
 		next += delta;
 		delta = TclUtfToUniChar(next, &ch);
