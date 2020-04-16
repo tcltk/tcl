@@ -712,7 +712,6 @@ Tcltest_SafeInit(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestasyncCmd(
     ClientData dummy,			/* Not used. */
@@ -959,7 +958,6 @@ TestbumpinterpepochObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdinfoCmd(
     ClientData dummy,		/* Not used. */
@@ -1031,7 +1029,6 @@ TestcmdinfoCmd(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc1(
     ClientData clientData,	/* String to return. */
@@ -1043,7 +1040,6 @@ CmdProc1(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc2(
     ClientData clientData,	/* String to return. */
@@ -1090,7 +1086,6 @@ CmdDelProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdtokenCmd(
     ClientData dummy,		/* Not used. */
@@ -1154,7 +1149,6 @@ TestcmdtokenCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestcmdtraceCmd(
     ClientData dummy,		/* Not used. */
@@ -1440,7 +1434,6 @@ CreatedCommandProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdcallCmd(
     ClientData dummy,		/* Not used. */
@@ -1505,7 +1498,6 @@ DelCallbackProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdelCmd(
     ClientData dummy,		/* Not used. */
@@ -1526,9 +1518,9 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = ckalloc(sizeof(DelCmd));
+    dPtr = (DelCmd *)ckalloc(sizeof(DelCmd));
     dPtr->interp = interp;
-    dPtr->deleteCmd = ckalloc(strlen(argv[3]) + 1);
+    dPtr->deleteCmd = (char *)ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
 
     Tcl_CreateCommand(slave, argv[2], DelCmdProc, (ClientData) dPtr,
@@ -1555,7 +1547,7 @@ static void
 DelDeleteProc(
     ClientData clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = clientData;
+    DelCmd *dPtr = (DelCmd *)clientData;
 
     Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
     Tcl_ResetResult(dPtr->interp);
@@ -1710,7 +1702,6 @@ TestdoubledigitsObjCmd(ClientData unused,
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestdstringCmd(
     ClientData dummy,		/* Not used. */
@@ -1837,7 +1828,6 @@ static void SpecialFree(blockPtr)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestencodingObjCmd(
     ClientData dummy,		/* Not used. */
@@ -1868,15 +1858,15 @@ TestencodingObjCmd(
 	if (objc != 5) {
 	    return TCL_ERROR;
 	}
-	encodingPtr = ckalloc(sizeof(TclEncoding));
+	encodingPtr = (TclEncoding *)ckalloc(sizeof(TclEncoding));
 	encodingPtr->interp = interp;
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
-	encodingPtr->toUtfCmd = ckalloc(length + 1);
+	encodingPtr->toUtfCmd = (char *)ckalloc(length + 1);
 	memcpy(encodingPtr->toUtfCmd, string, (unsigned) length + 1);
 
 	string = Tcl_GetStringFromObj(objv[4], &length);
-	encodingPtr->fromUtfCmd = ckalloc(length + 1);
+	encodingPtr->fromUtfCmd = (char *)ckalloc(length + 1);
 	memcpy(encodingPtr->fromUtfCmd, string, (unsigned) (length + 1));
 
 	string = Tcl_GetStringFromObj(objv[2], &length);
@@ -1971,7 +1961,7 @@ static void
 EncodingFreeProc(
     ClientData clientData)	/* ClientData associated with type. */
 {
-    TclEncoding *encodingPtr = clientData;
+    TclEncoding *encodingPtr = (TclEncoding *)clientData;
 
     ckfree(encodingPtr->toUtfCmd);
     ckfree(encodingPtr->fromUtfCmd);
@@ -2130,7 +2120,7 @@ TesteventObjCmd(
 		"position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	ev = ckalloc(sizeof(TestEvent));
+	ev = (TestEvent *)ckalloc(sizeof(TestEvent));
 	ev->header.proc = TesteventProc;
 	ev->header.nextPtr = NULL;
 	ev->interp = interp;
@@ -2692,7 +2682,6 @@ TestgetplatformCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestinterpdeleteCmd(
     ClientData dummy,		/* Not used. */
@@ -2733,7 +2722,6 @@ TestinterpdeleteCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestlinkCmd(
     ClientData dummy,		/* Not used. */
@@ -2988,7 +2976,7 @@ TestlinkCmd(
 	    if (strcmp(argv[5], "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = ckalloc(strlen(argv[5]) + 1);
+		stringVar = (char *)ckalloc(strlen(argv[5]) + 1);
 		strcpy(stringVar, argv[5]);
 	    }
 	}
@@ -3095,7 +3083,7 @@ TestlinkCmd(
 	    if (strcmp(argv[5], "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = ckalloc(strlen(argv[5]) + 1);
+		stringVar = (char *)ckalloc(strlen(argv[5]) + 1);
 		strcpy(stringVar, argv[5]);
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
@@ -3264,7 +3252,6 @@ TestlocaleCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestMathFunc(
     ClientData clientData,	/* Integer value to return. */
@@ -3294,7 +3281,6 @@ TestMathFunc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestMathFunc2(
     ClientData clientData,	/* Integer value to return. */
@@ -3401,7 +3387,6 @@ TestMathFunc2(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 static void
 CleanupTestSetassocdataTests(
     ClientData clientData,	/* Data to be released. */
@@ -3735,7 +3720,6 @@ TestparsevarnameObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestregexpObjCmd(
     ClientData dummy,		/* Not used. */
@@ -4059,7 +4043,6 @@ TestregexpXflags(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestreturnObjCmd(
     ClientData dummy,		/* Not used. */
@@ -4281,7 +4264,6 @@ TesttranslatefilenameCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestupvarCmd(
     ClientData dummy,		/* Not used. */
@@ -4334,7 +4316,6 @@ TestupvarCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestseterrorcodeCmd(
     ClientData dummy,		/* Not used. */
@@ -4387,7 +4368,6 @@ TestseterrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestsetobjerrorcodeCmd(
     ClientData dummy,		/* Not used. */
@@ -4416,7 +4396,6 @@ TestsetobjerrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestfeventCmd(
     ClientData clientData,	/* Not used. */
@@ -4670,8 +4649,8 @@ static int
 GetTimesObjCmd(
     ClientData unused,		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    int notused1,			/* Number of arguments. */
-    Tcl_Obj *const notused2[])	/* The argument objects. */
+    int objc,			/* Number of arguments. (not used)*/
+    Tcl_Obj *const dummy[])	/* The argument objects (not used). */
 {
     Interp *iPtr = (Interp *) interp;
     int i, n;
@@ -4680,12 +4659,14 @@ GetTimesObjCmd(
     Tcl_Obj *objPtr, **objv;
     const char *s;
     char newString[TCL_INTEGER_SPACE];
+    (void)objc;
+    (void)dummy;
 
     /* alloc & free 100000 times */
     fprintf(stderr, "alloc & free 100000 6 word items\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	objPtr = ckalloc(sizeof(Tcl_Obj));
+	objPtr = (Tcl_Obj *)ckalloc(sizeof(Tcl_Obj));
 	ckfree(objPtr);
     }
     Tcl_GetTime(&stop);
@@ -4694,10 +4675,10 @@ GetTimesObjCmd(
 
     /* alloc 5000 times */
     fprintf(stderr, "alloc 5000 6 word items\n");
-    objv = ckalloc(5000 * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **) ckalloc(5000 * sizeof(Tcl_Obj *));
     Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
-	objv[i] = ckalloc(sizeof(Tcl_Obj));
+	objv[i] = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj));
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
@@ -5151,7 +5132,6 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestsaveresultCmd(
     ClientData dummy,		/* Not used. */
@@ -5403,7 +5383,6 @@ TestexitmainloopCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestChannelCmd(
     ClientData clientData,	/* Not used. */
@@ -5520,7 +5499,7 @@ TestChannelCmd(
 
 	/* Remember the channel in the pool of detached channels */
 
-	det = ckalloc(sizeof(TestChannel));
+	det = (TestChannel *) ckalloc(sizeof(TestChannel));
 	det->chan     = chan;
 	det->nextPtr  = firstDetached;
 	firstDetached = det;
@@ -5872,7 +5851,6 @@ TestChannelCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestChannelEventCmd(
     ClientData dummy,		/* Not used. */
@@ -5918,7 +5896,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 
-	esPtr = ckalloc(sizeof(EventScriptRecord));
+	esPtr = (EventScriptRecord *) ckalloc((unsigned)
+		sizeof(EventScriptRecord));
 	esPtr->nextPtr = statePtr->scriptRecordPtr;
 	statePtr->scriptRecordPtr = esPtr;
 
@@ -6296,11 +6275,6 @@ TestReport(
     if (interp == NULL) {
 	/* This is bad, but not much we can do about it */
     } else {
-	/*
-	 * No idea why I decided to program this up using the old string-based
-	 * API, but there you go. We should convert it to objects.
-	 */
-
 	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 

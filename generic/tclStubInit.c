@@ -57,6 +57,7 @@
 #define TclBN_mp_tc_and TclBN_mp_and
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
+#define TclStaticPackage Tcl_StaticPackage
 #define TclUnusedStubEntry NULL
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -745,9 +746,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    0, /* 257 */
+    TclStaticPackage, /* 257 */
     0, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    0, /* 259 */
+    TclUnusedStubEntry, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
