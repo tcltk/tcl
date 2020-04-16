@@ -897,10 +897,10 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < TCL_UTF_MAX);
+    } while (trailBytesSeen < /* was TCL_UTF_MAX */ 4);
 
     /*
-     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * We've seen 4 (was TCL_UTF_MAX) trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
      * accepting the fallback.
      */
