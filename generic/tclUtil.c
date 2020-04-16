@@ -1554,7 +1554,7 @@ TclTrimRight(
 	const char *q = trim;
 	int pInc = 0, bytesLeft = numTrim;
 
-	pp = Tcl_UtfPrev(p, bytes);
+	pp = TclUtfPrev(p, bytes);
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUniChar(pp, &ch1);
