@@ -945,7 +945,18 @@ declare 249 {
 			  int *decpt, int *signum, char **endPtr)
 }
 
-declare 259 {
+# Allow extensions for optimization
+declare 251 {
+    int TclRegisterLiteral(void *envPtr,
+	    char *bytes, int length, int flags)
+}
+
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+
+declare 260 {
     void TclUnusedStubEntry(void)
 }
 
