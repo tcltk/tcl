@@ -124,14 +124,9 @@ typedef struct {
     GzipHeader outHeader;	/* Header to write to an output stream, when
 				 * compressing a gzip stream. */
     Tcl_TimerToken timer;	/* Timer used for keeping events fresh. */
-    Tcl_DString decompressed;	/* Buffer for decompression results. */
     Tcl_Obj *compDictObj;	/* Byte-array object containing compression
 				 * dictionary (not dictObj!) to use if
 				 * necessary. */
-    int over;			/* Number of bytes we read to far in the
-				 * underlying stream */
-    int skip;			/* Bytes processed in the last read before
-				 * the overshot */
 } ZlibChannelData;
 
 /*
@@ -141,13 +136,14 @@ typedef struct {
  *			the input compressor.
  *	OUT_HEADER -	Whether the outputHeader field has been registered
  *			with the output decompressor.
- *	STREAM_DONE -	Flag to signal stream end up to transform
- *			input.
+ *	STREAM_DECOMPRESS - Signal decompress pending data.
+ *	STREAM_DONE -	Flag to signal stream end up to transform input.
  */
 
 #define ASYNC			0x01
 #define IN_HEADER		0x02
 #define OUT_HEADER		0x04
+#define STREAM_DECOMPRESS	0x08
 #define STREAM_DONE		0x10
 
 /*
@@ -191,10 +187,8 @@ static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
 static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static inline int	ResultCopy(ZlibChannelData *cd, char *buf,
-			    int toRead);
-static int		ResultGenerate(ZlibChannelData *cd, int n, int flush,
-			    int *errorCodePtr);
+static int		ResultDecompress(ZlibChannelData *cd, char *buf,
+			    int toRead, int flush, int *errorCodePtr);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    int mode, int format, int level, int limit,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
@@ -2953,11 +2947,15 @@ ZlibTransformClose(
 	} while (e != Z_STREAM_END);
 	(void) deflateEnd(&cd->outStream);
     } else {
-	(void) inflateEnd(&cd->inStream);
-    }
+	/*
+	 * If we have rest of read input (overshot by Z_STREAM_END or on possible error),
+	 * unget this part of buffer back to the parent channel.
+	 */
+	if (cd->inStream.avail_in) {
+	    Tcl_Ungets (cd->parent, (char *)cd->inStream.next_in, cd->inStream.avail_in, 0);
+	}
 
-    if (cd->over) {
-	Tcl_Ungets (cd->parent, cd->inBuffer + cd->skip, cd->over, 0);
+	(void) inflateEnd(&cd->inStream);
     }
 
     /*
@@ -2968,7 +2966,6 @@ ZlibTransformClose(
 	Tcl_DecrRefCount(cd->compDictObj);
 	cd->compDictObj = NULL;
     }
-    Tcl_DStringFree(&cd->decompressed);
 
     if (cd->inBuffer) {
 	ckfree(cd->inBuffer);
@@ -3002,7 +2999,7 @@ ZlibTransformInput(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(cd->parent));
-    int readBytes, gotBytes, copied;
+    int readBytes, gotBytes;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	return inProc(Tcl_GetChannelInstanceData(cd->parent), buf, toRead,
@@ -3010,12 +3007,20 @@ ZlibTransformInput(
     }
 
     gotBytes = 0;
-    while (toRead > 0) {
+    readBytes = cd->inStream.avail_in; /* how many bytes in buffer now */
+    while (!(cd->flags & STREAM_DONE) && toRead > 0) {
+    	int n, decBytes;
+
+	/* if starting from scratch or continuation after full decompression */
+	if (!cd->inStream.avail_in) {
+	    /* buffer to start, we can read to whole available buffer */
+	    cd->inStream.next_in = (Bytef *) cd->inBuffer;
+	}
 	/* 
-	 * If done - no read (and no genearate) needed anymore, check we have
-	 * to copy decompressed data, otherwise return with size (or 0 for Eof)
+	 * If done - no read needed anymore, check we have to copy rest of
+	 * decompressed data, otherwise return with size (or 0 for Eof)
 	 */
-	if (cd->flags & STREAM_DONE) {
+	if (cd->flags & STREAM_DECOMPRESS) {
 	    goto copyDecompressed;
 	}
 	/*
@@ -3023,11 +3028,21 @@ ZlibTransformInput(
 	 * have to go to the underlying channel, get more bytes and then
 	 * transform them for delivery. We may not get what we want (full EOF
 	 * or temporarily out of data).
-	 *
-	 * Length (cd->decompressed) == 0, toRead > 0 here.
 	 */
 
-	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->readAheadLimit);
+	/* Check free buffer size and adjust size of next chunk to read. */
+	n = cd->inAllocated - ((char *)cd->inStream.next_in - cd->inBuffer);
+	if (n <= 0) {
+	    /* Normally unreachable: not enough input buffer to uncompress.
+	     * Todo: firstly try to realloc inBuffer upto MAX_BUFFER_SIZE.
+	     */
+	    *errorCodePtr = ENOBUFS;
+	    return -1;
+	}
+	if (n > cd->readAheadLimit) {
+	    n = cd->readAheadLimit;
+	}
+	readBytes = Tcl_ReadRaw(cd->parent, (char *)cd->inStream.next_in, n);
 
 	/*
 	 * Three cases here:
@@ -3050,6 +3065,11 @@ ZlibTransformInput(
 	    return -1;
 	}
 
+	/* more bytes (or Eof if readBytes == 0) */
+	cd->inStream.avail_in += readBytes;
+
+copyDecompressed:
+
 	/*
 	 * Transform the read chunk, if not empty. Anything we get
 	 * back is a transformation result to be put into our buffers, and
@@ -3058,31 +3078,39 @@ ZlibTransformInput(
 	 * partial data waiting is converted and returned.
 	 */
 
-	if (ResultGenerate(cd, readBytes,
+	decBytes = ResultDecompress(cd, buf, toRead,
 		    (readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH,
-		    errorCodePtr) != TCL_OK) {
+		    errorCodePtr);
+	if (decBytes == -1) {
 	    return -1;
 	}
+	gotBytes += decBytes;
+	buf += decBytes;
+	toRead -= decBytes;
 
-copyDecompressed:
-
-	if (Tcl_DStringLength(&cd->decompressed) == 0) {
+	if (((decBytes == 0) || (cd->flags & STREAM_DECOMPRESS))) {
 	    /*
-	     * The drain delivered nothing. Time to deliver what we've
-	     * got.
+	     * The drain delivered nothing (or buffer too small to decompress).
+	     * Time to deliver what we've got.
 	     */
+	    if (!gotBytes && !(cd->flags & STREAM_DONE)) {
+		/* if no-data, but not ready - avoid signaling Eof,
+		 * continue in blocking mode, otherwise EAGAIN */
+		if (Tcl_InputBlocked(cd->parent)) {
+		    continue;
+		}
+		*errorCodePtr = EAGAIN;
+		return -1;		
+	    }
 	    break;
 	}
+
 	/*
 	 * Loop until the request is satisfied (or no data available from
 	 * above, possibly EOF).
 	 */
-
-	copied = ResultCopy(cd, buf, toRead);
-	toRead -= copied;
-	buf += copied;
-	gotBytes += copied;
     }
+
     return gotBytes;
 }
 
@@ -3465,7 +3493,7 @@ ZlibTransformWatch(
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
 
-    if (!(mask & TCL_READABLE) || Tcl_DStringLength(&cd->decompressed) == 0) {
+    if (!(mask & TCL_READABLE) || !(cd->flags & STREAM_DECOMPRESS)) {
 	ZlibTransformEventTimerKill(cd);
     } else if (cd->timer == NULL) {
 	cd->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
@@ -3684,8 +3712,6 @@ ZlibStackChannelTransform(
 	}
     }
 
-    Tcl_DStringInit(&cd->decompressed);
-
     chan = Tcl_StackChannel(interp, &zlibChannelType, cd,
 	    Tcl_GetChannelMode(channel), channel);
     if (chan == NULL) {
@@ -3715,96 +3741,37 @@ ZlibStackChannelTransform(
 /*
  *----------------------------------------------------------------------
  *
- * ResultCopy --
- *
- *	Copies the requested number of bytes from the buffer into the
- *	specified array and removes them from the buffer afterward. Copies
- *	less if there is not enough data in the buffer.
- *
- * Side effects:
- *	See above.
- *
- * Result:
- *	The number of actually copied bytes, possibly less than 'toRead'.
- *
- *----------------------------------------------------------------------
- */
-
-static inline int
-ResultCopy(
-    ZlibChannelData *cd,	/* The location of the buffer to read from. */
-    char *buf,			/* The buffer to copy into */
-    int toRead)			/* Number of requested bytes */
-{
-    int have = Tcl_DStringLength(&cd->decompressed);
-
-    if (have == 0) {
-	/*
-	 * Nothing to copy in the case of an empty buffer.
-	 */
-
-	return 0;
-    } else if (have > toRead) {
-	/*
-	 * The internal buffer contains more than requested. Copy the
-	 * requested subset to the caller, shift the remaining bytes down, and
-	 * truncate.
-	 */
-
-	char *src = Tcl_DStringValue(&cd->decompressed);
-
-	memcpy(buf, src, toRead);
-	memmove(src, src + toRead, have - toRead);
-
-	Tcl_DStringSetLength(&cd->decompressed, have - toRead);
-	return toRead;
-    } else /* have <= toRead */ {
-	/*
-	 * There is just or not enough in the buffer to fully satisfy the
-	 * caller, so take everything as best effort.
-	 */
-
-	memcpy(buf, Tcl_DStringValue(&cd->decompressed), have);
-	TclDStringClear(&cd->decompressed);
-	return have;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ResultGenerate --
+ * ResultDecompress --
  *
  *	Extract uncompressed bytes from the compression engine and store them
- *	in our working buffer.
+ *	in our buffer (buf) up to toRead bytes.
  *
  * Result:
- *	TCL_OK/TCL_ERROR (with *errorCodePtr updated with reason).
+ *	Number of bytes decompressed or -1 if error (with *errorCodePtr updated with reason).
  *
  * Side effects:
- *	See above.
+ *	After execution it updates cd->inStream (next_in, avail_in) to reflect
+ *	the data that has been decompressed.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-ResultGenerate(
+ResultDecompress(
     ZlibChannelData *cd,
-    int n,
+    char *buf,
+    int toRead,
     int flush,
     int *errorCodePtr)
 {
-#define MAXBUF	1024
-    unsigned char buf[MAXBUF];
-    int e, written;
+    int e, written, resBytes = 0;
     Tcl_Obj *errObj;
 
-    cd->inStream.next_in = (Bytef *) cd->inBuffer;
-    cd->inStream.avail_in = n;
 
-    while (1) {
-	cd->inStream.next_out = (Bytef *) buf;
-	cd->inStream.avail_out = MAXBUF;
+    cd->flags &= ~STREAM_DECOMPRESS;
+    cd->inStream.next_out = (Bytef *) buf;
+    cd->inStream.avail_out = toRead;
+    while (cd->inStream.avail_out > 0) {
 
 	e = inflate(&cd->inStream, flush);
 	if (e == Z_NEED_DICT && cd->compDictObj) {
@@ -3813,22 +3780,16 @@ ResultGenerate(
 		/*
 		 * A repetition of Z_NEED_DICT is just an error.
 		 */
-
-		cd->inStream.next_out = (Bytef *) buf;
-		cd->inStream.avail_out = MAXBUF;
 		e = inflate(&cd->inStream, flush);
 	    }
 	}
 
 	/*
 	 * avail_out is now the left over space in the output.  Therefore
-	 * "MAXBUF - avail_out" is the amount of bytes generated.
+	 * "toRead - avail_out" is the amount of bytes generated.
 	 */
 
-	written = MAXBUF - cd->inStream.avail_out;
-	if (written) {
-	    Tcl_DStringAppend(&cd->decompressed, (char *) buf, written);
-	}
+	written = toRead - cd->inStream.avail_out;
 
 	/*
 	 * The cases where we're definitely done.
@@ -3836,13 +3797,18 @@ ResultGenerate(
 
 	if (e == Z_STREAM_END) {
 	    cd->flags |= STREAM_DONE;
-	    cd->over = cd->inStream.avail_in;
-	    cd->skip = n - cd->over;
-	    return TCL_OK;
+	    resBytes += written;
+	    break;
 	}
-	if (((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR))
-		|| (e == Z_OK && written == 0)) {
-	    return TCL_OK;
+	if (e == Z_OK) {
+	    if (written == 0) {
+		break;
+	    }
+	    resBytes += written;
+	}
+
+	if ((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR)) {
+	    break;
 	}
 
 	/*
@@ -3863,9 +3829,19 @@ ResultGenerate(
 	 */
 
 	if (cd->inStream.avail_in <= 0 && flush != Z_SYNC_FLUSH) {
-	    return TCL_OK;
+	    break;
 	}
     }
+
+    if (!(cd->flags & STREAM_DONE)) {
+	/* if we have pending input data, but no available output buffer */
+	if (cd->inStream.avail_in && !cd->inStream.avail_out) {
+	    /* next time try to decompress it got readable (new output buffer) */
+	    cd->flags |= STREAM_DECOMPRESS;
+	}
+    }
+
+    return resBytes;
 
   handleError:
     errObj = Tcl_NewListObj(0, NULL);
@@ -3876,7 +3852,7 @@ ResultGenerate(
 	    Tcl_NewStringObj(cd->inStream.msg, -1));
     Tcl_SetChannelError(cd->parent, errObj);
     *errorCodePtr = EINVAL;
-    return TCL_ERROR;
+    return -1;
 }
 
 /*
