@@ -124,46 +124,50 @@ UtfCount(
  *
  *	Utility routine to report whether /src/ points to the start of an
  *	overlong byte sequence that should be rejected. Caller guarantees
- *	/src/ points to a byte that can lead a multi-byte sequence, and
- *	that src[0] and src[1] are readable.
+ *	that src[0] and src[1] are readable, and
+ *
+ *	(src[0] >= 0xC0) && (src[0] != 0xC1)
+ * 	(src[1] >= 0x80) && (src[1] < 0xC0)
+ *	(src[0] < ((TCL_UTF_MAX > 3) ? 0xF8 : 0xF0))
  *
  * Results:
  *	A boolean.
  *---------------------------------------------------------------------------
  */
 
+static CONST unsigned char overlong[3] = {
+    0x80,	/* \xD0 -- all sequences valid */
+    0xA0,	/* \xE0\x80 through \xE0\x9F are invalid prefixes */
+#if TCL_UTF_MAX > 3
+    0x90	/* \xF0\x80 through \xF0\x8F are invalid prefixes */
+#else
+    0xC0	/* Not used, but reject all again for safety. */
+#endif
+};
+
 INLINE static int
 Overlong(
     unsigned char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
-    switch (*src) {
-    case 0xC0:
+    unsigned char byte = *src;
+
+    if (byte % 0x10) {
+	/* Only lead bytes 0xC0, 0xE0, 0xF0 need examination */
+	return 0;
+    }
+    if (byte == 0xC0) {
 	if (src[1] == 0x80) {
 	    /* Valid sequence: \xC0\x80 for \u0000 */
 	    return 0;
 	}
 	/* Reject overlong: \xC0\x81 - \xC0\xBF */
 	return 1;
-    case 0xE0:
-	if (src[1] < 0xA0) {
-	    /* Reject overlong: \xE0\x80\x80 - \xE0\x9F\xBF */
-	    return 1;
-	}
-	/* Valid sequence: \xE0\xA0\x80 for \u0800 , etc. */
-	return 0;
-#if TCL_UTF_MAX > 3
-    case 0xF0:
-	if (src[1] < 0x90) {
-	    /* Reject overlong: \xF0\x80\x80\x80 - \xF0\x8F\xBF\xBF */
-	    return 1;
-	}
-	/* Valid sequence: \xF0\x90\x80\x80 for \U10000 , etc. */
-	return 0
-#endif
-    default:
-	/* All other lead bytes lead only valid sequences */
-	return 0;
     }
+    if (src[1] < overlong[(byte >> 4) - 0x0D]) {
+	/* Reject overlong */
+	return 1;
+    }
+    return 0;
 }
 
 /*
