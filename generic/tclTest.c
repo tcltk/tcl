@@ -1518,7 +1518,7 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = (DelCmd*)ckalloc(sizeof(DelCmd));
+    dPtr = (DelCmd *)ckalloc(sizeof(DelCmd));
     dPtr->interp = interp;
     dPtr->deleteCmd = (char *)ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
@@ -1547,7 +1547,7 @@ static void
 DelDeleteProc(
     void *clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = (DelCmd *) clientData;
+    DelCmd *dPtr = (DelCmd *)clientData;
 
     Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
@@ -6383,11 +6383,6 @@ TestReport(
     if (interp == NULL) {
 	/* This is bad, but not much we can do about it */
     } else {
-	/*
-	 * No idea why I decided to program this up using the old string-based
-	 * API, but there you go. We should convert it to objects.
-	 */
-
 	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 
