@@ -558,7 +558,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    register int i;
+    register int i = 0;
 
     /*
      * The separate implementations are faster.
@@ -567,7 +567,6 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    i = 0;
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
 	    src = TclUtfNext(src);
