@@ -3011,20 +3011,13 @@ ZlibTransformInput(
 
     gotBytes = 0;
     while (toRead > 0) {
-	/*
-	 * Loop until the request is satisfied (or no data available from
-	 * below, possibly EOF).
+	/* 
+	 * If done - no read (and no genearate) needed anymore, check we have
+	 * to copy decompressed data, otherwise return with size (or 0 for Eof)
 	 */
-
-	copied = ResultCopy(cd, buf, toRead);
-	toRead -= copied;
-	buf += copied;
-	gotBytes += copied;
-
-	if (toRead == 0 || (cd->flags & STREAM_DONE)) {
-	    return gotBytes;
+	if (cd->flags & STREAM_DONE) {
+	    goto copyDecompressed;
 	}
-
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -3032,10 +3025,6 @@ ZlibTransformInput(
 	 * or temporarily out of data).
 	 *
 	 * Length (cd->decompressed) == 0, toRead > 0 here.
-	 *
-	 * The zlib transform allows us to read at most one character from the
-	 * underlying channel to properly identify Z_STREAM_END without
-	 * reading over the border.
 	 */
 
 	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->readAheadLimit);
@@ -3054,7 +3043,7 @@ ZlibTransformInput(
 
 	    /* See ReflectInput() in tclIORTrans.c */
 	    if (Tcl_InputBlocked(cd->parent) && (gotBytes > 0)) {
-		return gotBytes;
+		break;
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno();
@@ -3072,14 +3061,6 @@ ZlibTransformInput(
 		return -1;
 	    }
 
-	    if (Tcl_DStringLength(&cd->decompressed) == 0) {
-		/*
-		 * The drain delivered nothing. Time to deliver what we've
-		 * got.
-		 */
-
-		return gotBytes;
-	    }
 	} else /* readBytes > 0 */ {
 	    /*
 	     * Transform the read chunk, which was not empty. Anything we get
@@ -3092,6 +3073,25 @@ ZlibTransformInput(
 		return -1;
 	    }
 	}
+
+copyDecompressed:
+
+	if (Tcl_DStringLength(&cd->decompressed) == 0) {
+	    /*
+	     * The drain delivered nothing. Time to deliver what we've
+	     * got.
+	     */
+	    break;
+	}
+	/*
+	 * Loop until the request is satisfied (or no data available from
+	 * above, possibly EOF).
+	 */
+
+	copied = ResultCopy(cd, buf, toRead);
+	toRead -= copied;
+	buf += copied;
+	gotBytes += copied;
     }
     return gotBytes;
 }
