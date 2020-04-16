@@ -712,6 +712,9 @@ Tcl_UtfNext(
 	}
 	next++;
     }
+    if (Overlong(src)) {
+	return src + 1;
+    }
     return next;
 }
 
