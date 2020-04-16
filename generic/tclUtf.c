@@ -66,7 +66,7 @@ static CONST unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
@@ -123,7 +123,9 @@ UtfCount(
  * Overlong --
  *
  *	Utility routine to report whether /src/ points to the start of an
- *	overlong byte sequence that should be rejected.
+ *	overlong byte sequence that should be rejected. Caller guarantees
+ *	/src/ points to a byte that can lead a multi-byte sequence, and
+ *	that src[0] and src[1] are readable.
  *
  * Results:
  *	A boolean.
@@ -132,9 +134,7 @@ UtfCount(
 
 INLINE static int
 Overlong(
-    unsigned char *src)		/* Points to lead byte of a UTF-8 byte
-				 * sequence. Caller guarantees it is safe
-				 * to read src[0] and src[1]. */
+    unsigned char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
     switch (*src) {
     case 0xC0:
@@ -143,9 +143,6 @@ Overlong(
 	    return 0;
 	}
 	/* Reject overlong: \xC0\x81 - \xC0\xBF */
-	return 1;
-    case 0xC1:
-	/* Reject overlong: \xC1\x80 - \xC1\xBF */
 	return 1;
     case 0xE0:
 	if (src[1] < 0xA0) {
