@@ -82,7 +82,7 @@ static const unsigned char complete[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #endif
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 4
     4,4,4,4,4,
@@ -589,8 +589,9 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    register int i = 0;
-
+    Tcl_UniChar ch = 0;
+    int i = 0;
+ 
     /*
      * The separate implementations are faster.
      *
@@ -600,19 +601,20 @@ Tcl_NumUtfChars(
 
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
-	    src = TclUtfNext(src);
+	    src += Tcl_UtfToUniChar(src, &ch);
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	register const char *endPtr = src + length - TCL_UTF_MAX;
+	const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    src = TclUtfNext(src);
+	    src += Tcl_UtfToUniChar(src, &ch);
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src = TclUtfNext(src);
+	    src += Tcl_UtfToUniChar(src, &ch);
 	    i++;
 	}
 	if (src < endPtr) {
@@ -958,7 +960,7 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
-#if 0
+#if 1
 /* The Tcl 8.6 implementation */
     Tcl_UniChar ch = 0;
     int len = 0;
