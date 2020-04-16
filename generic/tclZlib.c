@@ -2371,7 +2371,7 @@ ZlibPushSubcmd(
     const char *const *pushOptions = pushDecompressOptions;
     enum pushOptions {poDictionary, poHeader, poLevel, poLimit};
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
-    int limit = 1, dummy;
+    int limit = DEFAULT_BUFFER_SIZE, dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
@@ -3661,6 +3661,9 @@ ZlibStackChannelTransform(
 	    goto error;
 	}
 	cd->inAllocated = DEFAULT_BUFFER_SIZE;
+	if (cd->inAllocated < cd->readAheadLimit) {
+	    cd->inAllocated = cd->readAheadLimit;
+	}
 	cd->inBuffer = ckalloc(cd->inAllocated);
 	if (cd->flags & IN_HEADER) {
 	    if (inflateGetHeader(&cd->inStream, &cd->inHeader.header) != Z_OK) {
