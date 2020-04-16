@@ -128,6 +128,10 @@ typedef struct {
     Tcl_Obj *compDictObj;	/* Byte-array object containing compression
 				 * dictionary (not dictObj!) to use if
 				 * necessary. */
+    int over;			/* Number of bytes we read to far in the
+				 * underlying stream */
+    int skip;			/* Bytes processed in the last read before
+				 * the overshot */
 } ZlibChannelData;
 
 /*
@@ -137,11 +141,14 @@ typedef struct {
  *			the input compressor.
  *	OUT_HEADER -	Whether the outputHeader field has been registered
  *			with the output decompressor.
+ *	STREAM_DONE -	Flag to signal stream end up to transform
+ *			input.
  */
 
-#define ASYNC			0x1
-#define IN_HEADER		0x2
-#define OUT_HEADER		0x4
+#define ASYNC			0x01
+#define IN_HEADER		0x02
+#define OUT_HEADER		0x04
+#define STREAM_DONE		0x10
 
 /*
  * Size of buffers allocated by default, and the range it can be set to.  The
@@ -2949,6 +2956,10 @@ ZlibTransformClose(
 	(void) inflateEnd(&cd->inStream);
     }
 
+    if (cd->over) {
+	Tcl_Ungets (cd->parent, cd->inBuffer + cd->skip, cd->over, 0);
+    }
+
     /*
      * Release all memory.
      */
@@ -3010,7 +3021,7 @@ ZlibTransformInput(
 	buf += copied;
 	gotBytes += copied;
 
-	if (toRead == 0) {
+	if (toRead == 0 || (cd->flags & STREAM_DONE)) {
 	    return gotBytes;
 	}
 
@@ -3830,8 +3841,13 @@ ResultGenerate(
 	 * The cases where we're definitely done.
 	 */
 
+	if (e == Z_STREAM_END) {
+	    cd->flags |= STREAM_DONE;
+	    cd->over = cd->inStream.avail_in;
+	    cd->skip = n - cd->over;
+	    return TCL_OK;
+	}
 	if (((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR))
-		|| (e == Z_STREAM_END)
 		|| (e == Z_OK && written == 0)) {
 	    return TCL_OK;
 	}
