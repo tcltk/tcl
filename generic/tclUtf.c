@@ -972,7 +972,7 @@ Tcl_UtfAtIndex(
 #if TCL_UTF_MAX == 4
     if ((ch >= 0xD800) && (len < 3)) {
 	/* Index points at character following high Surrogate */
-	src = TclUtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
 #endif
     return src;
