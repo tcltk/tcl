@@ -363,7 +363,7 @@ test utf-6.68 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.69 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0
-} 1
+} 4
 test utf-6.70 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xD0
 } 1
@@ -378,22 +378,22 @@ test utf-6.73 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.74 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0G
-} 1
+} 4
 test utf-6.75 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0\xA0
-} 1
+} 4
 test utf-6.76 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0\xD0
-} 1
+} 4
 test utf-6.77 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0\xE8
-} 1
+} 4
 test utf-6.78 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0\xF4
-} 1
+} 4
 test utf-6.79 {Tcl_UtfNext} testutfnext {
     testutfnext \xF4\xA0\xA0\xA0G\xF8
-} 1
+} 4
 test utf-6.80 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC0\x80
 } 2
