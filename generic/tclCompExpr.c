@@ -1885,7 +1885,6 @@ ParseLexeme(
 {
     const char *end;
     int scanned;
-    Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
 
@@ -2064,13 +2063,13 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = TclUtfToUniChar(start, &ch);
+	    scanned = TclUtfNext(start) - start;
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, start, (size_t) numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = TclUtfToUniChar(utfBytes, &ch);
+	    scanned = TclUtfNext(utfBytes) - utfBytes;
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
