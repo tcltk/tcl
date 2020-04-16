@@ -558,7 +558,6 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    Tcl_UniChar ch;
     register int i;
 
     /*
@@ -570,21 +569,20 @@ Tcl_NumUtfChars(
 
     i = 0;
     if (length < 0) {
-	while (*src != '\0') {
-	    src += TclUtfToUniChar(src, &ch);
+	while ((*src != '\0') && (i < INT_MAX)) {
+	    src = TclUtfNext(src);
 	    i++;
 	}
-	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    src += TclUtfToUniChar(src, &ch);
+	    src = TclUtfNext(src);
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src += TclUtfToUniChar(src, &ch);
+	    src = TclUtfNext(src);
 	    i++;
 	}
 	if (src < endPtr) {
@@ -680,13 +678,35 @@ Tcl_UtfFindLast(
  *
  * Tcl_UtfNext --
  *
- *	Given a pointer to some current location in a UTF-8 string, move
- *	forward one character. The caller must ensure that they are not asking
- *	for the next character after the last character in the string.
+ *	The aim of this routine is to provide a way to iterate forward
+ *	through a UTF-8 string. The caller is expected to pass a non-NULL
+ *	pointer argument /src/ which points to a location within a string.
+ *	(*src) will be read, so /src/ must not point to an unreadable
+ *	location past the end of the string. If /src/ points to the
+ *	beginning of a complete, well-formed and valid UTF_8 byte sequence
+ *	of no more than TCL_UTF_MAX bytes, Tcl_UtfNext returns the pointer
+ *	just past the end of that sequence. In any other circumstance,
+ *	Tcl_UtfNext returns /src/+1.
+ *
+ *	Because this routine always returns a value > /src/, it is useful
+ *	as a forward iterator that will always make progress. If the string
+ *	is NUL-terminated, Tcl_UtfNext will not read beyond the terminating
+ *	NUL character. If it is not NUL-terminated, the caller must make
+ *	use of the companion routine Tcl_UtfCharComplete to test whether
+ *	there is risk that Tcl_UtfNext will read beyond the end of the string.
+ *	Tcl_UtfNext will never read more than TCL_UTF_MAX bytes.
+ *
+ *	In a string where all characters are complete and properly formed,
+ *	and /src/ points to the first byte of a character, repeated
+ *	Tcl_UtfNext calls will step to the starting bytes of characters, one
+ *	character at a time. Within those limitations, Tcl_UtfPrev and
+ *	Tcl_UtfNext are inverses. If either condition cannot be met,
+ *	Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and the
+ *	caller will have to take greater care.
  *
  * Results:
- *	The return value is the pointer to the next character in the UTF-8
- *	string.
+ *	A pointer to the start of the next character in the string (or to
+ *	the end of the string) as described above.
  *
  * Side effects:
  *	None.
@@ -698,9 +718,26 @@ CONST char *
 Tcl_UtfNext(
     CONST char *src)		/* The current location in the string. */
 {
-    Tcl_UniChar ch;
+    int byte = *((unsigned char *) src);
+    int left = totalBytes[byte];
+    const char *next = src + 1;
 
-    return src + TclUtfToUniChar(src, &ch);
+    while (--left) {
+	byte = *((unsigned char *) next);
+	if ((byte & 0xC0) != 0x80) {
+	    /*
+	     * src points to non-trail byte; We ran out of trail bytes
+	     * before the needs of the lead byte were satisfied.
+	     * Let the (malformed) lead byte alone be a character
+	     */
+	    return src + 1;
+	}
+	next++;
+    }
+    if (Overlong((unsigned char *)src)) {
+	return src + 1;
+    }
+    return next;
 }
 
 /*
@@ -710,37 +747,37 @@ Tcl_UtfNext(
  *
  *	The aim of this routine is to provide a way to move backward
  *	through a UTF-8 string. The caller is expected to pass non-NULL
- *	pointer arguments start and src. start points to the beginning
- *	of a string, and src >= start points to a location within (or just
- *	past the end) of the string. This routine always returns a
- *	pointer within the string (>= start).  When (src == start), it
- *	returns start. When (src > start), it returns a pointer (< src)
- *	and (>= src - TCL_UTF_MAX).  Subject to these constraints, the
- *	routine returns a pointer to the earliest byte in the string that
- *	starts a character when characters are read starting at start and
+ *	pointer arguments /start/ and /src/. /start/ points to the beginning
+ *	of a string, and /src/ (>= /start/) points to a location within (or
+ *	just past the end) of the string. This routine always returns a
+ *	pointer within the string (>= /start/).  When (/src/ == /start/),
+ *	it returns /start/. When (/src/ > /start/), it returns a pointer
+ *	(< /src/) and (>= /src/ - TCL_UTF_MAX).  Subject to these constraints,
+ *	the routine returns a pointer to the earliest byte in the string that
+ *	starts a character when characters are read starting at /start/ and
  *	that character might include the byte src[-1]. The routine will
  *	examine only those bytes in the range that might be returned.
- *	It will not examine the byte *src, and because of that cannot
+ *	It will not examine the byte (*src), and because of that cannot
  *	determine for certain in all circumstances whether the character
  *	that begins with the returned pointer will or will not include
- *	the byte src[-1]. In the scenario, where src points to the end of
- *	a buffer being filled, the returned pointer point to either the
+ *	the byte src[-1]. In the scenario where /src/ points to the end of
+ *	a buffer being filled, the returned pointer points to either the
  *	final complete character in the string or to the earliest byte
  *	that might start an incomplete character waiting for more bytes to
  *	complete.
  *
- *	Because this routine always returns a value < src until the point
- *	it is forced to return start, it is useful as a backward iterator
+ *	Because this routine always returns a value < /src/ until the point
+ *	it is forced to return /start/, it is useful as a backward iterator
  *	through a string that will always make progress and always be
  *	prevented from running past the beginning of the string.
  *
  *	In a string where all characters are complete and properly formed,
- *	and the value of src points to the first byte of a character,
- *	repeated Tcl_UtfPrev calls will step to the starting bytes of
- *	characters, one character at a time. Within those limitations,
- *	Tcl_UtfPrev and Tcl_UtfNext are inverses. If either condition cannot
- *	be met, Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and
- *	the caller will have to take greater care.
+ *	and /src/ points to the first byte of a character, repeated
+ *	Tcl_UtfPrev calls will step to the starting bytes of characters, one
+ *	character at a time. Within those limitations, Tcl_UtfPrev and
+ *	Tcl_UtfNext are inverses. If either condition cannot be met,
+ *	Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and the
+ *	caller will have to take greater care.
  *
  * Results:
  *	A pointer to the start of a character in the string as described
@@ -869,10 +906,7 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch;
 
-    while (index >= 0) {
-	index--;
-	src += TclUtfToUniChar(src, &ch);
-    }
+    TclUtfToUniChar(Tcl_UtfAtIndex(src, index), &ch);
     return ch;
 }
 
@@ -898,11 +932,9 @@ Tcl_UtfAtIndex(
     register CONST char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch;
-
     while (index > 0) {
 	index--;
-	src += TclUtfToUniChar(src, &ch);
+	src = TclUtfNext(src);
     }
     return src;
 }

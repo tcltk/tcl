@@ -1691,7 +1691,7 @@ TclTrim(
 	 * that we will not trim. Skip over it. */
 	if (numBytes > 0) {
 	    const char *first = bytes + trimLeft;
-	    bytes = Tcl_UtfNext(first);
+	    bytes = TclUtfNext(first);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
