@@ -36,6 +36,7 @@
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
+#define TclStaticPackage Tcl_StaticPackage
 #define TclUnusedStubEntry NULL
 
 /*
@@ -551,15 +552,16 @@ TclIntStubs tclIntStubs = {
     NULL, /* 248 */
     TclDoubleDigits, /* 249 */
     NULL, /* 250 */
-    NULL, /* 251 */
+    TclRegisterLiteral, /* 251 */
     NULL, /* 252 */
     NULL, /* 253 */
     NULL, /* 254 */
     NULL, /* 255 */
     NULL, /* 256 */
-    NULL, /* 257 */
+    TclStaticPackage, /* 257 */
     NULL, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    NULL, /* 259 */
+    TclUnusedStubEntry, /* 260 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
