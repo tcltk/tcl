@@ -403,6 +403,12 @@ test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {te
 test utf-6.89.1 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
     testutfnext \xF0\x80\x80 1
 } 2
+test utf-6.90 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
+    testutfnext \xF4\x8F\xBF\xBF
+} 1
+test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
+    testutfnext \xF4\x90\x80\x80
+} 1
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
