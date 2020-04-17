@@ -316,6 +316,8 @@ static Tcl_FSListVolumesProc SimpleListVolumes;
 static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
+static Tcl_ObjCmdProc	TestUtfNextCmd;
+static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
@@ -577,6 +579,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
 	    TestsetobjerrorcodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfnext",
+	    TestUtfNextCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfprev",
+	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
@@ -1513,7 +1519,7 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = (DelCmd*)Tcl_Alloc(sizeof(DelCmd));
+    dPtr = (DelCmd *)Tcl_Alloc(sizeof(DelCmd));
     dPtr->interp = interp;
     dPtr->deleteCmd = (char *)Tcl_Alloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
@@ -1542,7 +1548,7 @@ static void
 DelDeleteProc(
     void *clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = (DelCmd *) clientData;
+    DelCmd *dPtr = (DelCmd *)clientData;
 
     Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
@@ -6376,11 +6382,6 @@ TestReport(
     if (interp == NULL) {
 	/* This is bad, but not much we can do about it */
     } else {
-	/*
-	 * No idea why I decided to program this up using the old string-based
-	 * API, but there you go. We should convert it to objects.
-	 */
-
 	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 
@@ -6807,6 +6808,107 @@ SimpleListVolumes(void)
 }
 
 /*
+ * Used to check operations of Tcl_UtfNext.
+ *
+ * Usage: testutfnext $bytes $offset
+ */
+
+static int
+TestUtfNextCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    size_t numBytes, offset = 0;
+    char *bytes;
+    const char *result;
+    Tcl_Obj *copy;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+	return TCL_ERROR;
+    }
+
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset == TCL_INDEX_NONE) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    }
+    copy = Tcl_DuplicateObj(objv[1]);
+    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
+    bytes[numBytes] = '\0';
+
+    result = Tcl_UtfNext(bytes + offset);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
+
+    Tcl_DecrRefCount(copy);
+    return TCL_OK;
+}
+/*
+ * Used to check operations of Tcl_UtfPrev.
+ *
+ * Usage: testutfprev $bytes $offset
+ */
+
+static int
+TestUtfPrevCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    size_t numBytes, offset;
+    char *bytes;
+    const char *result;
+    Tcl_Obj *copy;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+	return TCL_ERROR;
+    }
+
+    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset == TCL_INDEX_NONE) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    } else {
+	offset = numBytes;
+    }
+    copy = Tcl_DuplicateObj(objv[1]);
+    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
+    bytes[numBytes] = '\0';
+
+    result = Tcl_UtfPrev(bytes + offset, bytes);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
+
+    Tcl_DecrRefCount(copy);
+    return TCL_OK;
+}
+
+/*
  * Used to check correct string-length determining in Tcl_NumUtfChars
  */
 
@@ -6818,20 +6920,20 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
-	int numBytes, len;
-	size_t limit = TCL_INDEX_NONE;
-	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+	size_t len, limit = TCL_INDEX_NONE;
+	const char *bytes = Tcl_GetString(objv[1]);
+	size_t numBytes = objv[1]->length;
 
 	if (objc > 2) {
 	    if (Tcl_GetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (limit > (size_t)(numBytes + 1)) {
+	    if (limit > numBytes + 1) {
 		limit = numBytes + 1;
 	    }
 	}
 	len = Tcl_NumUtfChars(bytes, limit);
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(len));
     }
     return TCL_OK;
 }

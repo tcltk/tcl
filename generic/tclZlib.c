@@ -3896,7 +3896,7 @@ ResultGenerate(
 
 	if (((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR))
 		|| (e == Z_STREAM_END)
-		|| (e == Z_OK && cd->inStream.avail_out == 0)) {
+		|| (e == Z_OK && written == 0)) {
 	    return TCL_OK;
 	}
 
