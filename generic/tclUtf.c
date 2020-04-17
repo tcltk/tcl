@@ -589,6 +589,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
+    const char *next;
     register int i = 0;
 
     /*
@@ -600,20 +601,23 @@ Tcl_NumUtfChars(
 
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
-	    src = TclUtfNext(src);
-	    i++;
+	    next = TclUtfNext(src);
+	    i += 1 + ((next - src) > 3);
+	    src = next;
 	}
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    src = TclUtfNext(src);
-	    i++;
+	    next = TclUtfNext(src);
+	    i += 1 + ((next - src) > 3);
+	    src = next;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src = TclUtfNext(src);
-	    i++;
+	    next = TclUtfNext(src);
+	    i += 1 + ((next - src) > 3);
+	    src = next;
 	}
 	if (src < endPtr) {
 	    i += endPtr - src;
@@ -958,33 +962,19 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
-#if 0
-/* The Tcl 8.6 implementation */
-    Tcl_UniChar ch = 0;
-    int len = 0;
-
     while (index-- > 0) {
-	len = TclUtfToUniChar(src, &ch);
-	src += len;
-    }
-#if TCL_UTF_MAX == 4
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src = TclUtfToUniChar(src, &ch);
-    }
-#endif
-    return src;
-#else
-/* The Tcl 8.5 implementation */
-    while (index > 0) {
-        index--;
-        src = TclUtfNext(src);	/* NOTE: counts each valid byte sequence
-				 * as one character, maybe including those
-				 * that will get stored as two UCS-2 units
-				 * in the UTF-16 encoding. */
+        const char *next = TclUtfNext(src);
+
+	/*
+	 * 4-byte sequences generate two UCS-2 code units in the
+	 * UTF-16 representation, so in the current indexing scheme
+	 * we need to account for an extra index (total of two).
+	 */
+	index -= ((next - src) > 3);
+
+	src = next;
     }
     return src;
-#endif
 }
 
 /*
