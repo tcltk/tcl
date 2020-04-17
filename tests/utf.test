@@ -57,15 +57,22 @@ test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} {
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} {
     string length [bytestring "\xE4\xb9\x8e"]
 } {1}
-test utf-2.8 {Tcl_UtfToUniChar: longer UTF sequences not supported} {
-    string length [bytestring "\xF4\xA2\xA2\xA2"]
+test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {testbytestring} -body {
+    string length [testbytestring "\xF0\x90\x80\x80"]
+} -result {4}
+test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {testbytestring} -body {
+    string length [testbytestring "\xF4\x8F\xBF\xBF"]
+} -result {4}
+test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
+    string length [testbytestring "\xF0\x8F\xBF\xBF"]
 } {4}
-
-test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, invalid} testbytestring {
+test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
     # Would decode to U+110000 but that is outside the Unicode range.
     string length [testbytestring "\xF4\x90\x80\x80"]
 } {4}
-
+test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
+    string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
+} {5}
 
 test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
