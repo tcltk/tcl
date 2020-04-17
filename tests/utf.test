@@ -630,13 +630,13 @@ test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 } 1
 test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} { # Doesn't work with TCL_UTF_MAX>3
     testutfprev A\xF0\x90\x80\x80
-} 4
+} 1
 test utf-7.40 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} { # Doesn't work with TCL_UTF_MAX>3
     testutfprev A\xF0\x90\x80\x80 4
-} 3
+} 1
 test utf-7.41 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} { # Doesn't work with TCL_UTF_MAX>3
     testutfprev A\xF0\x90\x80\x80 3
-} 2
+} 1
 test utf-7.42 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xF0\x90\x80\x80 2
 } 1
