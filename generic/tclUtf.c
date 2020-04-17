@@ -598,7 +598,11 @@ Tcl_NumUtfChars(
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
 	    next = TclUtfNext(src);
+#if TCL_UTF_MAX > 4
+	    i++;
+#else
 	    i += 1 + ((next - src) > 3);
+#endif
 	    src = next;
 	}
     } else {
@@ -606,13 +610,21 @@ Tcl_NumUtfChars(
 
 	while (src < endPtr) {
 	    next = TclUtfNext(src);
+#if TCL_UTF_MAX > 4
+	    i++;
+#else
 	    i += 1 + ((next - src) > 3);
+#endif
 	    src = next;
 	}
 	endPtr += /*TCL_UTF_MAX*/ 4;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    next = TclUtfNext(src);
+#if TCL_UTF_MAX > 4
+	    i++;
+#else
 	    i += 1 + ((next - src) > 3);
+#endif
 	    src = next;
 	}
 	if (src < endPtr) {
