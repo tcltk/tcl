@@ -13,6 +13,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint testbytestring [llength [info commands testbytestring]]
+
 catch {unset x}
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} {
@@ -58,6 +60,12 @@ test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} {
 test utf-2.8 {Tcl_UtfToUniChar: longer UTF sequences not supported} {
     string length [bytestring "\xF4\xA2\xA2\xA2"]
 } {4}
+
+test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, invalid} testbytestring {
+    # Would decode to U+110000 but that is outside the Unicode range.
+    string length [testbytestring "\xF4\x90\x80\x80"]
+} {4}
+
 
 test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
