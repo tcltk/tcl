@@ -84,11 +84,7 @@ static const unsigned char complete[256] = {
 #endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 4
     4,4,4,4,4,
-#else
-    3,3,3,3,3, /* Tcl_UtfCharComplete() only checks TCL_UTF_MAX bytes */
-#endif
     1,1,1,1,1,1,1,1,1,1,1
 };
 
@@ -606,14 +602,14 @@ Tcl_NumUtfChars(
 	    src = next;
 	}
     } else {
-	register const char *endPtr = src + length - TCL_UTF_MAX;
+	register const char *endPtr = src + length - /*TCL_UTF_MAX*/ 4;
 
 	while (src < endPtr) {
 	    next = TclUtfNext(src);
 	    i += 1 + ((next - src) > 3);
 	    src = next;
 	}
-	endPtr += TCL_UTF_MAX;
+	endPtr += /*TCL_UTF_MAX*/ 4;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    next = TclUtfNext(src);
 	    i += 1 + ((next - src) > 3);
