@@ -971,14 +971,16 @@ Tcl_UtfAtIndex(
     register int index)		/* The position of the desired character. */
 {
     while (index-- > 0) {
-        const char *next = TclUtfNext(src);
+	const char *next = TclUtfNext(src);
 
+#if TCL_UTF_MAX <= 4
 	/*
 	 * 4-byte sequences generate two UCS-2 code units in the
 	 * UTF-16 representation, so in the current indexing scheme
 	 * we need to account for an extra index (total of two).
 	 */
 	index -= ((next - src) > 3);
+#endif
 
 	src = next;
     }
