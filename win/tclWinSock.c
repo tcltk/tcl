@@ -522,7 +522,6 @@ TclpFinalizeSockets(void)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpBlockModeProc(
     ClientData instanceData,	/* Socket state. */
@@ -722,7 +721,6 @@ WaitForConnect(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpInputProc(
     ClientData instanceData,	/* Socket state. */
@@ -973,7 +971,6 @@ TcpOutputProc(
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static int
 TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
@@ -1574,7 +1571,6 @@ TcpWatchProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TcpGetHandleProc(
     ClientData instanceData,	/* The socket state. */
@@ -2225,7 +2221,6 @@ error:
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 TcpAccept(
     TcpFdList *fds,	/* Server socket that accepted newSocket. */
@@ -2415,7 +2410,6 @@ InitSockets(void)
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static int
 SocketsEnabled(void)
 {
@@ -2445,7 +2439,6 @@ SocketsEnabled(void)
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static void
 SocketExitHandler(
     ClientData clientData)		/* Not used. */

@@ -199,7 +199,6 @@ static const Tcl_ChannelType ttyChannelType = {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 FileBlockModeProc(
     ClientData instanceData,	/* File state. */
