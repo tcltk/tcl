@@ -376,6 +376,18 @@ test utf-6.86 {Tcl_UtfNext - overlong sequences} testutfnext {
 test utf-6.87 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xF0\x90\x80\x80
 } 1
+test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
+    testutfnext \xA0\xA0
+} 1
+test utf-6.88.1 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
+    testutfnext \xE8\xA0\xA0 1
+} 2
+test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
+    testutfnext \x80\x80
+} 1
+test utf-6.89.1 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
+    testutfnext \xF0\x80\x80 1
+} 2
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
@@ -459,6 +471,9 @@ test utf-7.11.1 {Tcl_UtfPrev} testutfprev {
 } 1
 test utf-7.11.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xF8\xA0 3
+} 1
+test utf-7.11.3 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xE8\xA0\xF8 3
 } 1
 test utf-7.12 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0
@@ -548,9 +563,15 @@ test utf-7.26 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\x80\x80
 } 3
 test utf-7.27 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\x80
+} 2
+test utf-7.27.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\x80\x80 3
 } 2
 test utf-7.28 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0
+} 1
+test utf-7.28.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\x80\x80 2
 } 1
 test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -607,6 +628,15 @@ test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
 test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
     testutfprev \xA0\xA0\xA0\xA0
 } 3
+test utf-7.47 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} {testutfprev} {
+    testutfprev \xE8\xA0
+} 0
+test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} {testutfprev} {
+    testutfprev \xE8\xA0\xA0 2
+} 0
+test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {testutfprev} {
+    testutfprev \xE8\xA0\x00 2
+} 0
 
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
