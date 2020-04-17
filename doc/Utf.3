@@ -253,11 +253,20 @@ returns a pointer to the last occurrence of the Unicode character \fIch\fR
 in the null-terminated UTF-8 string \fIsrc\fR.  The null terminator is
 considered part of the UTF-8 string.
 .PP
-Given \fIsrc\fR, a pointer to some location in a UTF-8 string,
-\fBTcl_UtfNext\fR returns a pointer to the next UTF-8 character in the
-string.  The caller must not ask for the next character after the last
-character in the string if the string is not terminated by a null
-character.
+\fBTcl_UtfNext\fR is used to step forward through a UTF-8 string.
+If the UTF-8 string is made up entirely of complete, well-formed, and
+valid character byte sequences, and \fIsrc\fR points to the lead byte
+of one of those sequences, then repeated calls of \fBTcl_UtfNext\fR will
+return pointers to the lead bytes of each character in the string, one
+character at a time. In any other circumstance, \fBTcl_UtfNext\fR
+returns \fIsrc\fR+1.  \fBTcl_UtfNext\fR will always read \fIsrc[0]\fR
+and may read as many following bytes (up to a total of \fBTCL_UTF_MAX\fR)
+as needed to find the end of the byte sequence. If the string is
+\fBNUL\fR-terminated, \fBTcl_UtfNext\fR will not read beyond the terminating
+\fBNUL\fR byte. If not, the caller must use the companion routine
+\fBTcl_UtfCharComplete\fR to determine whether there is any risk
+\fBTcl_UtfNext\fR might read beyond the readable memory occupied
+by the string.
 .PP
 \fBTcl_UtfPrev\fR is used to step backward through but not beyond the
 UTF-8 string that begins at \fIstart\fR.  If the UTF-8 string is made

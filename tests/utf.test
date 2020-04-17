@@ -95,7 +95,7 @@ test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} t
 } {4}
 test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
     string length [testbytestring "\xF4\x90\x80\x80"]
-} {4}
+} {2}
 test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
     string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
 } {5}
@@ -152,8 +152,274 @@ test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
     testfindlast [testbytestring "abcbc"] 98
 } {bc}
 
-test utf-6.1 {Tcl_UtfNext} {
-} {}
+testConstraint testutfnext [llength [info commands testutfnext]]
+
+test utf-6.1 {Tcl_UtfNext} testutfnext {
+    # This takes the pointer one past the terminating NUL.
+    # This is really an invalid call.
+    testutfnext {}
+} 1
+test utf-6.2 {Tcl_UtfNext} testutfnext {
+    testutfnext A
+} 1
+test utf-6.3 {Tcl_UtfNext} testutfnext {
+    testutfnext AA
+} 1
+test utf-6.4 {Tcl_UtfNext} testutfnext {
+    testutfnext A\xA0
+} 1
+test utf-6.5 {Tcl_UtfNext} testutfnext {
+    testutfnext A\xD0
+} 1
+test utf-6.6 {Tcl_UtfNext} testutfnext {
+    testutfnext A\xE8
+} 1
+test utf-6.7 {Tcl_UtfNext} testutfnext {
+    testutfnext A\xF4
+} 1
+test utf-6.8 {Tcl_UtfNext} testutfnext {
+    testutfnext A\xF8
+} 1
+test utf-6.9 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0
+} 1
+test utf-6.10 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0G
+} 1
+test utf-6.11 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0\xA0
+} 1
+test utf-6.12 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0\xD0
+} 1
+test utf-6.13 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0\xE8
+} 1
+test utf-6.14 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0\xF4
+} 1
+test utf-6.15 {Tcl_UtfNext} testutfnext {
+    testutfnext \xA0\xF8
+} 1
+test utf-6.16 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0
+} 1
+test utf-6.17 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0A
+} 1
+test utf-6.18 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0
+} 2
+test utf-6.19 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xD0
+} 1
+test utf-6.20 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xE8
+} 1
+test utf-6.21 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xF4
+} 1
+test utf-6.22 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xF8
+} 1
+test utf-6.23 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8
+} 1
+test utf-6.24 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8A
+} 1
+test utf-6.25 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0
+} 1
+test utf-6.26 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xD0
+} 1
+test utf-6.27 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xE8
+} 1
+test utf-6.28 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xF4
+} 1
+test utf-6.29 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xF8
+} 1
+test utf-6.30 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4
+} 1
+test utf-6.31 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4A
+} 1
+test utf-6.32 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0
+} 1
+test utf-6.33 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xD0
+} 1
+test utf-6.34 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xE8
+} 1
+test utf-6.35 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xF4
+} 1
+test utf-6.36 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xF8
+} 1
+test utf-6.37 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8
+} 1
+test utf-6.38 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8A
+} 1
+test utf-6.39 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8\xA0
+} 1
+test utf-6.40 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8\xD0
+} 1
+test utf-6.41 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8\xE8
+} 1
+test utf-6.42 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8\xF4
+} 1
+test utf-6.43 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF8\xF8
+} 1
+test utf-6.44 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0G
+} 2
+test utf-6.45 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0\xA0
+} 2
+test utf-6.46 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0\xD0
+} 2
+test utf-6.47 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0\xE8
+} 2
+test utf-6.48 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0\xF4
+} 2
+test utf-6.49 {Tcl_UtfNext} testutfnext {
+    testutfnext \xD0\xA0\xF8
+} 2
+test utf-6.50 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0G
+} 1
+test utf-6.51 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0
+} 3
+test utf-6.52 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xD0
+} 1
+test utf-6.53 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xE8
+} 1
+test utf-6.54 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xF4
+} 1
+test utf-6.55 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xF8
+} 1
+test utf-6.56 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0G
+} 1
+test utf-6.57 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0
+} 1
+test utf-6.58 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xD0
+} 1
+test utf-6.59 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xE8
+} 1
+test utf-6.60 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xF4
+} 1
+test utf-6.61 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xF8
+} 1
+test utf-6.62 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0G
+} 3
+test utf-6.63 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0\xA0
+} 3
+test utf-6.64 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0\xD0
+} 3
+test utf-6.65 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0\xE8
+} 3
+test utf-6.66 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0\xF4
+} 3
+test utf-6.67 {Tcl_UtfNext} testutfnext {
+    testutfnext \xE8\xA0\xA0\xF8
+} 3
+test utf-6.68 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0G
+} 1
+test utf-6.69 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0
+} 4
+test utf-6.70 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xD0
+} 1
+test utf-6.71 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xE8
+} 1
+test utf-6.71 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xF4
+} 1
+test utf-6.73 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xF8
+} 1
+test utf-6.74 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0G
+} 4
+test utf-6.75 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0\xA0
+} 4
+test utf-6.76 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0\xD0
+} 4
+test utf-6.77 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0\xE8
+} 4
+test utf-6.78 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0\xF4
+} 4
+test utf-6.79 {Tcl_UtfNext} testutfnext {
+    testutfnext \xF4\xA0\xA0\xA0G\xF8
+} 4
+test utf-6.80 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xC0\x80
+} 2
+test utf-6.81 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xC0\x81
+} 1
+test utf-6.82 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xC1\x80
+} 1
+test utf-6.83 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xC2\x80
+} 2
+test utf-6.84 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xE0\x80\x80
+} 1
+test utf-6.85 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xE0\xA0\x80
+} 3
+test utf-6.86 {Tcl_UtfNext - overlong sequences} testutfnext {
+    testutfnext \xF0\x80\x80\x80
+} 1
+test utf-6.87 {Tcl_UtfNext - overlong sequences} {testutfnext} {
+    testutfnext \xF0\x90\x80\x80
+} 4
+test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
+    testutfnext \xE8\xA0\xA0 1
+} 2
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
@@ -316,6 +582,75 @@ test utf-7.22 {Tcl_UtfPrev} testutfprev {
 test utf-7.23 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0\xA0
 } 4
+test utf-7.24 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xC0\x81
+} 2
+test utf-7.25 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xC0\x81 2
+} 1
+test utf-7.26 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\x80\x80
+} 3
+test utf-7.27 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\x80\x80 3
+} 2
+test utf-7.28 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\x80\x80 2
+} 1
+test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xF0\x80\x80\x80
+} 4
+test utf-7.30 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xF0\x80\x80\x80 4
+} 3
+test utf-7.31 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xF0\x80\x80\x80 3
+} 2
+test utf-7.32 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xF0\x80\x80\x80 2
+} 1
+test utf-7.33 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xC0\x80
+} 1
+test utf-7.34 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xC1\x80
+} 2
+test utf-7.35 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xC2\x80
+} 1
+test utf-7.36 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\xA0\x80
+} 1
+test utf-7.37 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\xA0\x80 3
+} 1
+test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xE0\xA0\x80 2
+} 1
+test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} {
+    testutfprev A\xF0\x90\x80\x80
+} 1
+test utf-7.40 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} {
+    testutfprev A\xF0\x90\x80\x80 4
+} 1
+test utf-7.41 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} {
+    testutfprev A\xF0\x90\x80\x80 3
+} 1
+test utf-7.42 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+    testutfprev A\xF0\x90\x80\x80 2
+} 1
+test utf-7.43 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+    testutfprev \xA0
+} 0
+test utf-7.44 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+    testutfprev \xA0\xA0
+} 1
+test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+    testutfprev \xA0\xA0\xA0
+} 2
+test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+    testutfprev \xA0\xA0\xA0\xA0
+} 3
 
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0

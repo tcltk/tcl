@@ -3076,7 +3076,9 @@ ZlibTransformInput(
 	 * reading over the border.
 	 */
 
-	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->readAheadLimit);
+	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, 
+		cd->readAheadLimit <= cd->inAllocated ?
+		cd->readAheadLimit  : cd->inAllocated);
 
 	/*
 	 * Three cases here:
