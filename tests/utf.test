@@ -96,7 +96,7 @@ test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} t
 } {4}
 test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
     string length [testbytestring "\xF4\x90\x80\x80"]
-} {4}
+} {2}
 test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
     string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
 } {5}
@@ -420,7 +420,7 @@ test utf-6.87 {Tcl_UtfNext - overlong sequences} testutfnext {
 } 1
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
     testutfnext \xE8\xA0\xA0 1
-} 3
+} 2
 
 testConstraint testutfprev [llength [info commands testutfprev]]
 
