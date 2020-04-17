@@ -410,7 +410,6 @@ TclpCloseFile(
  *---------------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 int
 TclpCreateProcess(
     Tcl_Interp *interp,		/* Interpreter in which to leave errors that
@@ -889,7 +888,6 @@ TclGetAndDetachPids(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 PipeBlockModeProc(
     ClientData instanceData,	/* Pipe state. */
@@ -933,7 +931,6 @@ PipeBlockModeProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 PipeCloseProc(
     ClientData instanceData,	/* The pipe to close. */
@@ -1231,7 +1228,6 @@ Tcl_WaitPid(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
     ClientData dummy,		/* Not used. */
