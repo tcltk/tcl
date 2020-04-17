@@ -457,12 +457,6 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
-	return TCL_ERROR;
-    }
-    if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
-	return TCL_ERROR;
-    }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
     if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
@@ -683,7 +677,6 @@ Tcltest_Init(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 TestasyncCmd(
     ClientData dummy,			/* Not used. */
@@ -913,7 +906,7 @@ AsyncThreadProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestcmdinfoCmd(
     ClientData dummy,		/* Not used. */
@@ -985,7 +978,6 @@ TestcmdinfoCmd(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc1(
     ClientData clientData,	/* String to return. */
@@ -997,7 +989,6 @@ CmdProc1(
     return TCL_OK;
 }
 
-	/*ARGSUSED*/
 static int
 CmdProc2(
     ClientData clientData,	/* String to return. */
@@ -1044,7 +1035,7 @@ CmdDelProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestcmdtokenCmd(
     ClientData dummy,		/* Not used. */
@@ -1108,7 +1099,7 @@ TestcmdtokenCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestcmdtraceCmd(
     ClientData dummy,		/* Not used. */
@@ -1398,7 +1389,7 @@ CreatedCommandProc2(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestdcallCmd(
     ClientData dummy,		/* Not used. */
@@ -1463,7 +1454,7 @@ DelCallbackProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestdelCmd(
     ClientData dummy,		/* Not used. */
@@ -1668,7 +1659,7 @@ TestdoubledigitsObjCmd(ClientData unused,
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestdstringCmd(
     ClientData dummy,		/* Not used. */
@@ -1795,7 +1786,7 @@ static void SpecialFree(blockPtr)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestencodingObjCmd(
     ClientData dummy,		/* Not used. */
@@ -2650,7 +2641,7 @@ TestgetplatformCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestinterpdeleteCmd(
     ClientData dummy,		/* Not used. */
@@ -2691,7 +2682,7 @@ TestinterpdeleteCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestlinkCmd(
     ClientData dummy,		/* Not used. */
@@ -3222,7 +3213,7 @@ TestlocaleCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestMathFunc(
     ClientData clientData,	/* Integer value to return. */
@@ -3252,7 +3243,7 @@ TestMathFunc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestMathFunc2(
     ClientData clientData,	/* Integer value to return. */
@@ -3359,7 +3350,7 @@ TestMathFunc2(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
+
 static void
 CleanupTestSetassocdataTests(
     ClientData clientData,	/* Data to be released. */
@@ -3693,7 +3684,7 @@ TestparsevarnameObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestregexpObjCmd(
     ClientData dummy,		/* Not used. */
@@ -4019,7 +4010,7 @@ TestregexpXflags(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestreturnObjCmd(
     ClientData dummy,		/* Not used. */
@@ -4241,7 +4232,7 @@ TesttranslatefilenameCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestupvarCmd(
     ClientData dummy,		/* Not used. */
@@ -4294,7 +4285,7 @@ TestupvarCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestseterrorcodeCmd(
     ClientData dummy,		/* Not used. */
@@ -4347,7 +4338,7 @@ TestseterrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestsetobjerrorcodeCmd(
     ClientData dummy,		/* Not used. */
@@ -4376,7 +4367,7 @@ TestsetobjerrorcodeCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestfeventCmd(
     ClientData clientData,	/* Not used. */
@@ -5768,7 +5759,7 @@ TestOpenFileChannelProc3(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestChannelCmd(
     ClientData clientData,	/* Not used. */
@@ -6237,7 +6228,7 @@ TestChannelCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+
 static int
 TestChannelEventCmd(
     ClientData dummy,		/* Not used. */

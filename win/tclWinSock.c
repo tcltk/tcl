@@ -358,7 +358,6 @@ InitSockets(void)
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static int
 SocketsEnabled(void)
 {
@@ -387,7 +386,6 @@ SocketsEnabled(void)
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static void
 SocketExitHandler(
     ClientData clientData)		/* Not used. */
@@ -786,7 +784,6 @@ TcpBlockProc(
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static int
 TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
