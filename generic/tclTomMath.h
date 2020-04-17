@@ -80,10 +80,10 @@ extern "C" {
    #define DIGIT_BIT          60
 #else
    /* this is the default case, 28-bit digits */
-   
+
    /* this is to make porting into LibTomCrypt easier :-) */
 #ifndef CRYPT
-   #if defined(_MSC_VER) || defined(__BORLANDC__) 
+   #if defined(_MSC_VER) || defined(__BORLANDC__)
       typedef unsigned __int64   ulong64;
       typedef signed __int64     long64;
    #else
@@ -98,21 +98,21 @@ extern "C" {
 #endif
    typedef ulong64            mp_word;
 
-#ifdef MP_31BIT   
+#ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
    #define DIGIT_BIT          31
 #else
    /* default case is 28-bit digits, defines MP_28BIT as a handy macro to test */
    #define DIGIT_BIT          28
    #define MP_28BIT
-#endif   
+#endif
 #endif
 
 /* define heap macros */
 #if 0 /* these are macros in tclTomMathDecls.h */
 #ifndef CRYPT
    /* default to libc stuff */
-   #ifndef XMALLOC 
+   #ifndef XMALLOC
        #define XMALLOC  malloc
        #define XFREE    free
        #define XREALLOC realloc
