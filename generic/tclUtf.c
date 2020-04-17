@@ -154,7 +154,7 @@ UtfCount(
 static CONST unsigned char overlong[3] = {
     0x80,	/* \xD0 -- all sequences valid */
     0xA0,	/* \xE0\x80 through \xE0\x9F are invalid prefixes */
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX >= 3
     0x90	/* \xF0\x80 through \xF0\x8F are invalid prefixes */
 #else
     0xC0	/* Not used, but reject all again for safety. */
