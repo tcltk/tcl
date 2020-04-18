@@ -15,6 +15,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
+testConstraint compat85 [expr {[format %c 0x010000] == "\uFFFD"}]
 
 # Big test for correct ordering of data in [expr]
 
