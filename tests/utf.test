@@ -371,16 +371,16 @@ test utf-6.79 {Tcl_UtfNext} {testutfnext compat85} {
 test utf-6.80 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC0\x80
 } 2
-test utf-6.81 {Tcl_UtfNext - overlong sequences} testutfnext {
+test utf-6.81 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
     testutfnext \xC0\x81
 } 1
-test utf-6.82 {Tcl_UtfNext - overlong sequences} testutfnext {
+test utf-6.82 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
     testutfnext \xC1\x80
 } 1
 test utf-6.83 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC2\x80
 } 2
-test utf-6.84 {Tcl_UtfNext - overlong sequences} testutfnext {
+test utf-6.84 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
     testutfnext \xE0\x80\x80
 } 1
 test utf-6.85 {Tcl_UtfNext - overlong sequences} testutfnext {
@@ -573,19 +573,19 @@ test utf-7.22 {Tcl_UtfPrev} testutfprev {
 test utf-7.23 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xA0\xA0
 } 4
-test utf-7.24 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.24 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xC0\x81
 } 2
 test utf-7.25 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xC0\x81 2
 } 1
-test utf-7.26 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.26 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xE0\x80\x80
 } 3
-test utf-7.27 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.27 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xE0\x80
 } 2
-test utf-7.27.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.27.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xE0\x80\x80 3
 } 2
 test utf-7.28 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -609,7 +609,7 @@ test utf-7.32 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.33 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xC0\x80
 } 1
-test utf-7.34 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.34 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xC1\x80
 } 2
 test utf-7.35 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
