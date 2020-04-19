@@ -228,7 +228,7 @@ TclpWideClicksToNanoseconds(
 #ifdef MAC_OSX_TCL
 	static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
-	
+
 	if (!tb.denom) {
 	    mach_timebase_info(&tb);
 	    maxClicksForUInt64 = UINT64_MAX / tb.numer;
@@ -251,7 +251,7 @@ TclpWideClicksToNanoseconds(
  *
  * TclpWideClickInMicrosec --
  *
- *	This procedure return scale to convert click values from the 
+ *	This procedure return scale to convert click values from the
  *	TclpGetWideClicks native resolution to microsecond resolution
  *	and back.
  *

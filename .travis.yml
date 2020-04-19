@@ -1,6 +1,5 @@
 sudo: false
 language: c
-
 matrix:
   include:
 # Testing on Linux with various compilers
@@ -24,6 +23,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+    - name: "Linux/GCC/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="--enable-symbols=mem"
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
@@ -82,15 +88,17 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
-# Testing on Mac, various styles
-    - name: "macOS/Xcode 11.3/Shared/Unix-like"
-      os: osx
-      osx_image: xcode11.3
+    - name: "Linux/Clang/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: clang
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 11.3/Shared"
+        - CFGOPT="--enable-symbols=mem"
+# Testing on Mac, various styles
+    - name: "macOS/Xcode 11.4/Shared"
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       env:
         - BUILD_DIR=macosx
       install: []
@@ -98,6 +106,12 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
+    - name: "macOS/Xcode 11.4/Shared/Unix-like"
+      os: osx
+      osx_image: xcode11.4
+      env:
+        - BUILD_DIR=unix
+# Older MacOS versions
     - name: "macOS/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
@@ -114,14 +128,14 @@ matrix:
       script: *mactest
     - name: "macOS/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9
+      osx_image: xcode9.2
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
     - name: "macOS/Xcode 8/Shared"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode8.3
       env:
         - BUILD_DIR=macosx
       install: []
@@ -197,6 +211,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols,threads' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols,threads' '-f' makefile.vc test
+    - name: "Windows/MSVC/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg OPTS=threads' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg OPTS=threads' '-f' makefile.vc test
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -225,6 +248,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols,threads' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols,threads' '-f' makefile.vc test
+    - name: "Windows/MSVC-x86/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg OPTS=threads' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg OPTS=threads' '-f' makefile.vc test
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -233,7 +265,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-threads"
       before_install: &makepreinst
-        - choco install make
+        - choco install -y make
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Static"
       os: windows
@@ -270,6 +302,13 @@ matrix:
       env:
         - BUILD_DIR=win
         - CFGOPT="--enable-threads --enable-symbols"
+      before_install: *makepreinst
+    - name: "Windows/GCC-x86/Mem-Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-threads --enable-symbols=mem"
       before_install: *makepreinst
 before_install:
   - cd ${BUILD_DIR}

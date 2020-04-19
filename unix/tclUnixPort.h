@@ -590,8 +590,8 @@ extern char **environ;
 
 /*
  *---------------------------------------------------------------------------
- * The following macros and declarations represent the interface between 
- * generic and unix-specific parts of Tcl.  Some of the macros may override 
+ * The following macros and declarations represent the interface between
+ * generic and unix-specific parts of Tcl.  Some of the macros may override
  * functions declared in tclInt.h.
  *---------------------------------------------------------------------------
  */
@@ -608,7 +608,7 @@ typedef int socklen_t;
 #endif
 
 /*
- * The following macros have trivial definitions, allowing generic code to 
+ * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
  */
 

@@ -646,6 +646,12 @@ Tcl_UtfNext(
 {
     Tcl_UniChar ch;
 
+    if (((*src) & 0xC0) == 0x80) {
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
     return src + TclUtfToUniChar(src, &ch);
 }
 

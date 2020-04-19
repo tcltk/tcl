@@ -1257,7 +1257,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  * If the second macro is defined, logging to file starts immediately,
  * otherwise only after the first call to [tcl::dtrace]. Note that the debug
  * probe data is always computed, even when it is not logged to file.
- * 
+ *
  * Defining the third macro enables debug logging of inst probes (disabled
  * by default due to the significant performance impact).
  */
