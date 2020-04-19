@@ -809,7 +809,7 @@ test utf-12.3 {Tcl_UtfToLower} {
 test utf-12.4 {Tcl_UtfToLower} {
     string tolower \u01E2GH
 } \u01E3gh
-test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
+test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} knownBug {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
 test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
