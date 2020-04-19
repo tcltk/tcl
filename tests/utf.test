@@ -42,6 +42,7 @@ test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
     expr {[format %c -1] eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
+
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
 } {3}
@@ -90,7 +91,7 @@ test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC2\xA2"]
 } {1}
 test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\uA2\x4E"]
+    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"]
 } {7}
 test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"]
@@ -693,6 +694,18 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
 } "\uFF"
+test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
+    string index \uD842 0
+} "\uD842"
+test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
+    string index \uDC42 0
+} "\uDC42"
+test utf-8.7 {Tcl_UniCharAtIndex: Emoji} compat85 {
+    string index \uD83D\uDE00 0
+} "\uD83D"
+test utf-8.8 {Tcl_UniCharAtIndex: Emoji} compat85 {
+    string index \uD83D\uDE00 1
+} "\uDE00"
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
@@ -700,6 +713,12 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4E4E\u25A\xFF\u543klmnop 1 5
 } "\u25A\xFF\u543kl"
+test utf-9.3 {Tcl_UtfAtIndex: index = 0, Emoji} compat85 {
+    string range \uD83D\uDE00G 0 0
+} "\uD83D"
+test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} compat85 {
+    string range \uD83D\uDE00G 1 1
+} "\uDE00"
 
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
@@ -716,7 +735,7 @@ test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
     expr {"\u4E2k" eq "[testbytestring \xD3\xA2]k"}
 } 1
 test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
-    expr {"\u4E216" eq [testbytestring "\xE4\xB8\xA1"]6}
+    expr {"\u4E216" eq "[testbytestring \xE4\xB8\xA1]6"}
 } 1
 proc bsCheck {char num} {
     global errNum
@@ -775,8 +794,8 @@ test utf-11.3 {Tcl_UtfToUpper} {
     string toupper \xE3gh
 } \xC3GH
 test utf-11.4 {Tcl_UtfToUpper} {
-    string toupper \u01E3ab
-} \u01E2AB
+    string toupper \u01E3gh
+} \u01E2GH
 
 test utf-12.1 {Tcl_UtfToLower} {
     string tolower {}
@@ -788,8 +807,14 @@ test utf-12.3 {Tcl_UtfToLower} {
     string tolower \xC3GH
 } \xE3gh
 test utf-12.4 {Tcl_UtfToLower} {
-    string tolower \u01E2AB
-} \u01E3ab
+    string tolower \u01E2GH
+} \u01E3gh
+test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
+    string tolower \u10D0\u1C90
+} \u10D0\u10D0
+test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
+    string tolower \uDC24\uD824
+} \uDC24\uD824
 
 test utf-13.1 {Tcl_UtfToTitle} {
     string totitle {}
@@ -803,6 +828,15 @@ test utf-13.3 {Tcl_UtfToTitle} {
 test utf-13.4 {Tcl_UtfToTitle} {
     string totitle \u01F3AB
 } \u01F2ab
+test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
+    string totitle \u10D0\u1C90
+} \u10D0\u1C90
+test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
+    string totitle \u1C90\u10D0
+} \u1C90\u10D0
+test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
+    string totitle \uDC24\uD824
+} \uDC24\uD824
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
@@ -854,9 +888,11 @@ test utf-18.5 {Tcl_UniCharToTitle, no delta} {
     string totitle !
 } !
 
-test utf-19.1 {TclUniCharLen} {
+test utf-19.1 {TclUniCharLen} -body {
     list [regexp \\d abc456def foo] $foo
-} {1 4}
+} -cleanup {
+    unset -nocomplain foo
+} -result {1 4}
 
 test utf-20.1 {TclUniCharNcmp} {
 } {}
