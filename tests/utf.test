@@ -115,7 +115,7 @@ test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC2\xA2"]
 } {1}
 test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\uA2\x4E"]
+    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"]
 } {7}
 test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"]
@@ -724,6 +724,12 @@ test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
     string index \uDC42 0
 } "\uDC42"
+test utf-8.7 {Tcl_UniCharAtIndex: Emoji} {
+    string index \U1F600 0
+} "\U1F600"
+test utf-8.8 {Tcl_UniCharAtIndex: Emoji} {
+    string index \U1F600 1
+} {}
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
@@ -731,6 +737,12 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4E4E\u25A\xFF\u543klmnop 1 5
 } "\u25A\xFF\u543kl"
+test utf-9.3 {Tcl_UtfAtIndex: index = 0, Emoji} {
+    string range \U1F600G 0 0
+} "\U1F600"
+test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
+    string range \U1F600G 1 1
+} {}
 
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
