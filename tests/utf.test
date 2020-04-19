@@ -724,6 +724,12 @@ test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
     string index \uDC42 0
 } "\uDC42"
+test utf-8.7 {Tcl_UniCharAtIndex: Emoji} {
+    string index \U1F600 0
+} "\U1F600"
+test utf-8.8 {Tcl_UniCharAtIndex: Emoji} {
+    string index \U1F600 1
+} {}
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
@@ -731,6 +737,12 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4E4E\u25A\xFF\u543klmnop 1 5
 } "\u25A\xFF\u543kl"
+test utf-9.3 {Tcl_UtfAtIndex: index = 0, Emoji} {
+    string range \U1F600G 0 0
+} "\U1F600"
+test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} fullutf {
+    string range \U1F600G 1 1
+} {G}
 
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
