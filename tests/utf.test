@@ -465,22 +465,22 @@ test utf-7.8.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.8.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xF8\xA0\xA0 2
 } 1
-test utf-7.9 {Tcl_UtfPrev} testutfprev {
+test utf-7.9 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0
 } 2
-test utf-7.9.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.9.1 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0\xA0\xA0 3
 } 2
-test utf-7.9.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.9.2 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0\xF8\xA0 3
 } 2
-test utf-7.10 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.10 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0
 } 2
-test utf-7.10.1 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.10.1 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0\xA0\xA0 3
 } 2
-test utf-7.10.2 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.10.2 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0\xF8\xA0 3
 } 2
 test utf-7.11 {Tcl_UtfPrev} testutfprev {
@@ -513,22 +513,22 @@ test utf-7.13.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.13.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xA0\xA0\xF8\xA0 3
 } 2
-test utf-7.14 {Tcl_UtfPrev} testutfprev {
+test utf-7.14 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0\xA0
 } 3
-test utf-7.14.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.14.1 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0\xA0\xA0 4
 } 3
-test utf-7.14.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.14.2 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xF8\xA0\xA0\xF8 4
 } 3
-test utf-7.15 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.15 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0\xA0
 } 3
-test utf-7.15.1 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.15.1 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0\xA0\xA0 4
 } 3
-test utf-7.15.2 {Tcl_UtfPrev} {testutfprev compat85} {
+test utf-7.15.2 {Tcl_UtfPrev} {testutfprev compat85 knownBug} {
     testutfprev A\xF2\xA0\xA0\xF8 4
 } 3
 test utf-7.16 {Tcl_UtfPrev} testutfprev {
@@ -540,13 +540,13 @@ test utf-7.16.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.16.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xE8\xA0\xA0\xF8 4
 } 1
-test utf-7.17 {Tcl_UtfPrev} testutfprev {
+test utf-7.17 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xD0\xA0\xA0
 } 3
-test utf-7.17.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.17.1 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xD0\xA0\xA0\xA0 4
 } 3
-test utf-7.17.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.17.2 {Tcl_UtfPrev} {testutfprev knownBug} {
     testutfprev A\xD0\xA0\xA0\xF8 4
 } 3
 test utf-7.18 {Tcl_UtfPrev} testutfprev {
@@ -597,10 +597,10 @@ test utf-7.28.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xF0\x80\x80\x80
 } 4
-test utf-7.30 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.30 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xF0\x80\x80\x80 4
 } 3
-test utf-7.31 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.31 {Tcl_UtfPrev -- overlong sequence}  {testutfprev knownBug} {
     testutfprev A\xF0\x80\x80\x80 3
 } 2
 test utf-7.32 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -627,10 +627,10 @@ test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
 test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
     testutfprev A\xF0\x90\x80\x80
 } 4
-test utf-7.40 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
+test utf-7.40 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85 knownBug} {
     testutfprev A\xF0\x90\x80\x80 4
 } 3
-test utf-7.41 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
+test utf-7.41 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85 knownBug} {
     testutfprev A\xF0\x90\x80\x80 3
 } 2
 test utf-7.42 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -660,22 +660,22 @@ test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {
 test utf-7.48 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85} {
     testutfprev A\xF4\x8F\xBF\xBF
 } 4
-test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85} {
+test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85 knownBug} {
     testutfprev A\xF4\x8F\xBF\xBF 4
 } 3
-test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85} {
+test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85 knownBug} {
     testutfprev A\xF4\x8F\xBF\xBF 3
 } 2
 test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x8F\xBF\xBF 2
 } 1
-test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev knownBug} {
     testutfprev A\xF4\x90\x80\x80
 } 4
-test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev knownBug} {
     testutfprev A\xF4\x90\x80\x80 4
 } 3
-test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev knownBug} {
     testutfprev A\xF4\x90\x80\x80 3
 } 2
 test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
