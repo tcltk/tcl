@@ -621,7 +621,7 @@ test utf-7.36 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.37 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\xA0\x80 3
 } 1
-test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
+test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\xA0\x80 2
 } 1
 test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  {testutfprev compat85} {
