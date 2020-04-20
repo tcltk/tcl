@@ -2381,7 +2381,7 @@ UpdateStringOfDouble(
 {
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
-    TclOOM(dst, TCL_DOUBLE_SPACE + 1);
+    TclOOM(dst, (size_t)TCL_DOUBLE_SPACE + 1);
 
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
     (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
@@ -2494,7 +2494,7 @@ UpdateStringOfInt(
 {
     char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
 
-    TclOOM(dst, TCL_INTEGER_SPACE + 1);
+    TclOOM(dst, (size_t)TCL_INTEGER_SPACE + 1);
     (void) Tcl_InitStringRep(objPtr, NULL,
 	    TclFormatInt(dst, objPtr->internalRep.wideValue));
 }
