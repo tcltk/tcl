@@ -344,7 +344,7 @@ Tcl_Char16ToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
- *	If TCL_UTF_MAX <= 4, special handling of Surrogate pairs is done:
+ *	If TCL_UTF_MAX <= 3, special handling of Surrogate pairs is done:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
  *	and generate a return value of 1. Calling Tcl_UtfToUniChar again
@@ -1031,13 +1031,13 @@ Tcl_UtfAtIndex(
     size_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
     size_t len = 0;
 #endif
 
     if (index != TCL_INDEX_NONE) {
 	while (index--) {
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX <= 3
 	    src += (len = TclUtfToUniChar(src, &ch));
 #else
 	    src += TclUtfToUniChar(src, &ch);
