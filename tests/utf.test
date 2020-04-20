@@ -371,16 +371,16 @@ test utf-6.79 {Tcl_UtfNext} {testutfnext compat85} {
 test utf-6.80 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC0\x80
 } 2
-test utf-6.81 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
+test utf-6.81 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC0\x81
 } 1
-test utf-6.82 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
+test utf-6.82 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC1\x80
 } 1
 test utf-6.83 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xC2\x80
 } 2
-test utf-6.84 {Tcl_UtfNext - overlong sequences} {testutfnext knownBug} {
+test utf-6.84 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext \xE0\x80\x80
 } 1
 test utf-6.85 {Tcl_UtfNext - overlong sequences} testutfnext {
@@ -669,7 +669,7 @@ test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev compat85
 test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x8F\xBF\xBF 2
 } 1
-test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev knownBug} {
+test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80
 } 4
 test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev knownBug} {
