@@ -189,7 +189,7 @@ test utf-6.10 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.11 {Tcl_UtfNext} testutfnext {
     testutfnext \xA0\xA0
-} 1
+} 2
 test utf-6.12 {Tcl_UtfNext} testutfnext {
     testutfnext \xA0\xD0
 } 1
@@ -420,18 +420,30 @@ test utf-6.87 {Tcl_UtfNext - overlong sequences} {testutfnext} {
 } 4
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
     testutfnext \xA0\xA0
-} 1
+} 2
 test utf-6.88.1 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
     testutfnext \xE8\xA0\xA0 1
-} 2
+} 3
 test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
     testutfnext \x80\x80
-} 1
+} 2
 test utf-6.89.1 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
     testutfnext \xF0\x80\x80 1
-} 2
+} 3
 
 testConstraint testutfprev [llength [info commands testutfprev]]
+test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
+    testutfnext \xA0\xA0\xA0
+} 3
+test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
+    testutfnext \xF2\xA0\xA0\xA0 1
+} 4
+test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+    testutfnext \x80\x80\x80
+} 3
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+    testutfnext \xF0\x80\x80\x80 1
+} 4
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}

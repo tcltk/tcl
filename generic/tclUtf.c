@@ -716,31 +716,11 @@ Tcl_UtfFindLast(
  *
  * Tcl_UtfNext --
  *
- *	The aim of this routine is to provide a way to iterate forward
- *	through a UTF-8 string. The caller is expected to pass a non-NULL
- *	pointer argument /src/ which points to a location within a string.
- *	(*src) will be read, so /src/ must not point to an unreadable
- *	location past the end of the string. If /src/ points to the
- *	beginning of a complete, well-formed and valid UTF_8 byte sequence
- *	of no more than TCL_UTF_MAX bytes, Tcl_UtfNext returns the pointer
- *	just past the end of that sequence. In any other circumstance,
- *	Tcl_UtfNext returns /src/+1.
- *
- *	Because this routine always returns a value > /src/, it is useful
- *	as a forward iterator that will always make progress. If the string
- *	is NUL-terminated, Tcl_UtfNext will not read beyond the terminating
- *	NUL character. If it is not NUL-terminated, the caller must make
- *	use of the companion routine Tcl_UtfCharComplete to test whether
- *	there is risk that Tcl_UtfNext will read beyond the end of the string.
- *	Tcl_UtfNext will never read more than TCL_UTF_MAX bytes.
- *
- *	In a string where all characters are complete and properly formed,
- *	and /src/ points to the first byte of a character, repeated
- *	Tcl_UtfNext calls will step to the starting bytes of characters, one
- *	character at a time. Within those limitations, Tcl_UtfPrev and
- *	Tcl_UtfNext are inverses. If either condition cannot be met,
- *	Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and the
- *	caller will have to take greater care.
+ *  Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
+ *  returns a pointer to the next UTF-8 character in the string.
+ *  The caller must not ask for the next character after the last
+ *	character in the string if the string is not terminated by a null
+ *  character.
  *
  * Results:
  *	A pointer to the start of the next character in the string (or to
@@ -760,13 +740,19 @@ Tcl_UtfNext(
     int left = totalBytes[byte];
     const char *next = src + 1;
 
+    if (((*src) & 0xC0) == 0x80) {
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
+
     while (--left) {
 	byte = *((unsigned char *) next);
 	if ((byte & 0xC0) != 0x80) {
 	    /*
 	     * src points to non-trail byte; We ran out of trail bytes
 	     * before the needs of the lead byte were satisfied.
-	     * Let the (malformed) lead byte alone be a character
 	     */
 	    return src + 1;
 	}
