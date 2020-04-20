@@ -693,7 +693,7 @@ UpdateStringOfOSType(
     Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    const int size = TCL_UTF_MAX * 4;
+    const size_t size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.wideValue;
     int written = 0;
