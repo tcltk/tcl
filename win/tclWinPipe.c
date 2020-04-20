@@ -2752,7 +2752,6 @@ TclWinAddProcess(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
     ClientData dummy,		/* Not used. */
