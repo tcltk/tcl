@@ -863,7 +863,7 @@ Tcl_UtfFindLast(
  *  Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
  *  returns a pointer to the next UTF-8 character in the string.
  *  The caller must not ask for the next character after the last
- *	character in the string if the string is not terminated by a null
+ *  character in the string if the string is not terminated by a null
  *  character.
  *
  * Results:
