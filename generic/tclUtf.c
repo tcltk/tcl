@@ -563,7 +563,7 @@ Tcl_UtfToChar16(
     *chPtr = byte;
     return 1;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -910,7 +910,7 @@ Tcl_UtfNext(
  *	determine for certain in all circumstances whether the character
  *	that begins with the returned pointer will or will not include
  *	the byte src[-1]. In the scenario, where src points to the end of
- *	a buffer being filled, the returned pointer point to either the
+ *	a buffer being filled, the returned pointer points to either the
  *	final complete character in the string or to the earliest byte
  *	that might start an incomplete character waiting for more bytes to
  *	complete.
