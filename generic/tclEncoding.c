@@ -2477,7 +2477,7 @@ UtfToUnicodeProc(
 	 * by casting dst to a Tcl_UniChar. [Bug 1122671]
 	 */
 #ifdef WORDS_BIGENDIAN
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
 	*dst++ = (ch >> 24);
 	*dst++ = ((ch >> 16) & 0xFF);
 	*dst++ = ((ch >> 8) & 0xFF);
@@ -2487,7 +2487,7 @@ UtfToUnicodeProc(
 	*dst++ = (ch & 0xFF);
 #endif
 #else
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
 	*dst++ = (ch & 0xFF);
 	*dst++ = ((ch >> 8) & 0xFF);
 	*dst++ = ((ch >> 16) & 0xFF);
