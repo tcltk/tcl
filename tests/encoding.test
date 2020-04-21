@@ -32,6 +32,10 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
 
+testConstraint ucs2 [expr { [llength [info commands testsize]] &&
+                                ([testsize unichar] == 2) }]
+
+
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
 
@@ -316,7 +320,7 @@ test encoding-15.3 {UtfToUtfProc null character input} {
     list [string bytelength $x] [string bytelength $y] $z
 } {1 2 c080}
 
-test encoding-16.1 {UnicodeToUtfProc} {
+test encoding-16.1 {UnicodeToUtfProc} ucs2 {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
 } "\u4e4e 4e4e"
