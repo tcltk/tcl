@@ -16,6 +16,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Big test for correct ordering of data in [expr]
 proc testIEEE {} {
@@ -2941,7 +2942,19 @@ test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat \u0141 B C] 1
 } A
 
-
+test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring "\u4E4E"
+} -result "expected byte sequence but character 0 was '\u4E4E' (U+004E4E)"
+test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
+} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
+test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
+} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
+test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
+} -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
+
 # ----------------------------------------------------------------------
 # cleanup
 
