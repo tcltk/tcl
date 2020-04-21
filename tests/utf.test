@@ -140,10 +140,10 @@ test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars
     testnumutfchars [testbytestring "\x00"] end+1
 } {2}
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring \xf0\x9f\x92\xa9] end-1
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end-1
 } {3}
 test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
-    testnumutfchars [testbytestring \xf0\x9f\x92\xa9] end
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } {2}
 
 test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
@@ -246,7 +246,7 @@ test utf-6.30 {Tcl_UtfNext} testutfnext {
     testutfnext \xF2
 } 1
 test utf-6.31 {Tcl_UtfNext} testutfnext {
-    testutfnext \xF2A
+    testutfnext \xF2G
 } 1
 test utf-6.32 {Tcl_UtfNext} testutfnext {
     testutfnext \xF2\xA0
@@ -369,7 +369,7 @@ test utf-6.71 {Tcl_UtfNext} testutfnext {
     testutfnext \xF2\xA0\xA0\xE8
 } 1
 test utf-6.71 {Tcl_UtfNext} testutfnext {
-    testutfnext \xF2\xA0\xA0\xF4
+    testutfnext \xF2\xA0\xA0\xF2
 } 1
 test utf-6.73 {Tcl_UtfNext} testutfnext {
     testutfnext \xF2\xA0\xA0\xF8
@@ -434,6 +434,18 @@ test utf-6.90 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
 test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
     testutfnext \xF4\x90\x80\x80
 } 1
+test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
+    testutfnext \xA0\xA0\xA0
+} 1
+test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
+    testutfnext \xF2\xA0\xA0\xA0 1
+} 2
+test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+    testutfnext \x80\x80\x80
+} 1
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+    testutfnext \xF0\x80\x80\x80 1
+} 2
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
@@ -861,8 +873,8 @@ test utf-12.3 {Tcl_UtfToLower} {
     string tolower \xC3GH
 } \xE3gh
 test utf-12.4 {Tcl_UtfToLower} {
-    string tolower \u01E2AB
-} \u01E3ab
+    string tolower \u01E2GH
+} \u01E3gh
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
