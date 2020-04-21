@@ -1,5 +1,15 @@
 sudo: false
 language: c
+addons:
+  apt:
+    packages:
+      - binutils-mingw-w64-i686
+      - binutils-mingw-w64-x86-64
+      - gcc-mingw-w64
+      - gcc-mingw-w64-base
+      - gcc-mingw-w64-i686
+      - gcc-mingw-w64-x86-64
+      - gcc-multilib
 matrix:
   include:
 # Testing on Linux with various compilers
@@ -9,6 +19,16 @@ matrix:
       compiler: gcc
       env:
         - BUILD_DIR=unix
+    - name: "Linux/GCC/Shared: UTF_MAX=6"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
+      script:
+        - make all tcltest
+        - make test TESTFLAGS="-file utf.test"
     - name: "Linux/GCC/Static"
       os: linux
       dist: bionic
@@ -146,13 +166,6 @@ matrix:
       os: linux
       dist: bionic
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit --enable-threads"
@@ -167,14 +180,6 @@ matrix:
       os: linux
       dist: bionic
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=i686-w64-mingw32 --enable-threads"
