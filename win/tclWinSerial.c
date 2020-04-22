@@ -1907,10 +1907,12 @@ SerialSetOptionProc(
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
-	dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
-	dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
-	if (!SetCommState(infoPtr->handle, &dcb)) {
-	    goto setStateFailed;
+	if (dcb.fInX || dcb.fRtsControl || dcb.fDtrControl) {
+	    dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
+	    dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
+	    if (!SetCommState(infoPtr->handle, &dcb)) {
+		goto setStateFailed;
+	    }
 	}
 	return TCL_OK;
     }
