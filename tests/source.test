@@ -234,7 +234,7 @@ test source-7.1 {source -encoding test} -setup {
 } -cleanup {
     removeFile source.file
 } -result correct
-test source-7.2 {source -encoding test} -constraints ucs2 -setup {
+test source-7.2 {source -encoding test} -setup {
     # This tests for bad interactions between [source -encoding]
     # and use of the Control-Z character (\u001A) as a cross-platform
     # EOF character by [source].  Here we write out and the [source] a
