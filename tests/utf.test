@@ -448,6 +448,12 @@ test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} tes
 test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80\x80
 } 1
+test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+    testutfnext -bytestring \xA0\xA0\xA0\xA0
+} 1
+test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+    testutfnext -bytestring \x80\x80\x80\x80
+} 1
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
