@@ -648,6 +648,13 @@ Tcl_UtfNext(
     int left = totalBytes[byte];
     const char *next = src + 1;
 
+    if (((*src) & 0xC0) == 0x80) {
+        if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+            ++src;
+        }
+        return src;
+    }
+
     while (--left) {
 	byte = *((unsigned char *) next);
 	if ((byte & 0xC0) != 0x80) {
