@@ -649,7 +649,11 @@ Tcl_UtfNext(
     const char *next = src + 1;
 
     if (((*src) & 0xC0) == 0x80) {
-        if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+        if (
+#if TCL_UTF_MAX > 3
+		(((*++src) & 0xC0) == 0x80) && 
+#endif
+		(((*++src) & 0xC0) == 0x80)) {
             ++src;
         }
         return src;

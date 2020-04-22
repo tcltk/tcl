@@ -428,6 +428,7 @@ test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfnext fullutf} {
     testutfnext -bytestring \xF0\x90\x80\x80
 } 4
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
+    # Duplicate of utf-6.11
     testutfnext -bytestring \xA0\xA0
 } 1
 test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
@@ -442,16 +443,28 @@ test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf}
 test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
     testutfnext -bytestring \xF4\x90\x80\x80
 } 1
-test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+test utf-6.92.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
     testutfnext -bytestring \xA0\xA0\xA0
 } 1
-test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
+    testutfnext -bytestring \xA0\xA0\xA0
+} 1
+test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
     testutfnext -bytestring \x80\x80\x80
 } 1
-test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
+    testutfnext -bytestring \x80\x80\x80
+} 1
+test utf-6.94.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
     testutfnext -bytestring \xA0\xA0\xA0\xA0
 } 1
-test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+test utf-6.94.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
+    testutfnext -bytestring \xA0\xA0\xA0\xA0
+} 1
+test utf-6.95.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
+    testutfnext -bytestring \x80\x80\x80\x80
+} 1
+test utf-6.95.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
     testutfnext -bytestring \x80\x80\x80\x80
 } 1
 
