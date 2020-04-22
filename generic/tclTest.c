@@ -7138,7 +7138,7 @@ TestUtfNextCmd(
 
     bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
 
-    offset = numBytes + TCL_UTF_MAX;	/* If no constraint is given, allow
+    offset = numBytes +TCL_UTF_MAX -1;	/* If no constraint is given, allow
 					 * the terminating NUL to limit
 					 * operations. */
 
@@ -7149,12 +7149,12 @@ TestUtfNextCmd(
 	if (offset < 0) {
 	    offset = 0;
 	}
-	if (offset > numBytes + TCL_UTF_MAX) {
-	    offset = numBytes + TCL_UTF_MAX;
+	if (offset > numBytes +TCL_UTF_MAX -1) {
+	    offset = numBytes +TCL_UTF_MAX -1;
 	}
     }
 
-    if (numBytes > sizeof(buffer)-2) {
+    if (numBytes > sizeof(buffer) - 2) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %d bytes",
 		sizeof(buffer) - 2));
