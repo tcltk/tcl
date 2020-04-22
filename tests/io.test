@@ -29,8 +29,7 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
-testConstraint ucs2 [expr { [llength [info commands testsize]] &&
-                            ([testsize unichar] == 2) }]
+testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint exec             [llength [info commands exec]]

@@ -20,8 +20,7 @@ if {[catch {package require tcltest 2.1}]} {
 namespace eval ::tcl::test::source {
     namespace import ::tcltest::*
 
-testConstraint ucs2 [expr { [llength [info commands testsize]] &&
-                                ([testsize unichar] == 2) }]
+testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 
 test source-1.1 {source command} -setup {
     set x "old x value"
