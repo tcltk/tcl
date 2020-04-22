@@ -444,13 +444,13 @@ test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
     testutfnext \xF4\x90\x80\x80
 } 1
 test utf-6.92.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
-    testutfnext -bytestring \xA0\xA0\xA0
+    testutfnext \xA0\xA0\xA0
 } 1
 test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
     testutfnext \xA0\xA0\xA0
 } 1
 test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
-    testutfnext -bytestring \x80\x80\x80
+    testutfnext \x80\x80\x80
 } 1
 test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
     testutfnext \x80\x80\x80
@@ -572,17 +572,17 @@ test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
 test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0\xA0 4
 } 1
-test utf-6.94.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
-    testutfnext -bytestring \xA0\xA0\xA0\xA0
+test utf-6.125.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
+    testutfnext \xA0\xA0\xA0\xA0
 } 1
-test utf-6.94.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
-    testutfnext -bytestring \xA0\xA0\xA0\xA0
+test utf-6.125.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
+    testutfnext \xA0\xA0\xA0\xA0
 } 1
-test utf-6.95.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
-    testutfnext -bytestring \x80\x80\x80\x80
+test utf-6.126.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
+    testutfnext \x80\x80\x80\x80
 } 1
-test utf-6.95.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
-    testutfnext -bytestring \x80\x80\x80\x80
+test utf-6.126.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf} {
+    testutfnext \x80\x80\x80\x80
 } 1
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
