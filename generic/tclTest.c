@@ -7130,15 +7130,11 @@ TestUtfNextCmd(
     static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
     const char *p = tobetested;
 
-    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
-	    return TCL_ERROR;
-	}
-	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
-    } else {
-	bytes = (char *) Tcl_GetByteArrayFromObj(objv[2], &numBytes);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes");
+	return TCL_ERROR;
     }
+    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
 
     if (numBytes > sizeof(buffer)-2) {
 	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
