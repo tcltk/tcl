@@ -6708,42 +6708,49 @@ SimpleListVolumes(void)
 
 static int
 TestUtfNextCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    int numBytes, offset = 0;
+    int numBytes;
     char *bytes;
-    const char *result;
-    Tcl_Obj *copy;
+    const char *result, *first;
+    char buffer[32];
+    static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
+    const char *p = tobetested;
+    (void)dummy;
 
-    if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+    } else {
+	bytes = (char *) Tcl_GetByteArrayFromObj(objv[2], &numBytes);
+    }
+
+    if (numBytes > (int)sizeof(buffer)-2) {
+	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    memcpy(buffer + 1, bytes, numBytes);
+    buffer[0] = buffer[numBytes + 1] = '\x00';
 
-    if (objc == 3) {
-	if (TCL_OK != TclGetIntForIndex(interp, objv[2], numBytes, &offset)) {
+    first = Tcl_UtfNext(buffer + 1);
+    while ((buffer[0] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
+	result = Tcl_UtfNext(buffer + 1);
+	if (first != result) {
+	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", NULL);
 	    return TCL_ERROR;
 	}
-	if (offset < 0) {
-	    offset = 0;
-	}
-	if (offset > numBytes) {
-	    offset = numBytes;
-	}
     }
-    copy = Tcl_DuplicateObj(objv[1]);
-    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
-    bytes[numBytes] = '\0';
 
-    result = Tcl_UtfNext(bytes + offset);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - buffer - 1));
 
-    Tcl_DecrRefCount(copy);
     return TCL_OK;
 }
 /*
