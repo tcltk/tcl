@@ -860,9 +860,11 @@ Tcl_UtfFindLast(
  *
  * Tcl_UtfNext --
  *
- *	Given a pointer to some current location in a UTF-8 string, move
- *	forward one character. The caller must ensure that they are not asking
- *	for the next character after the last character in the string.
+ * 	Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
+ *	returns a pointer to the next UTF-8 character in the string.
+ *	The caller must not ask for the next character after the last
+ *	character in the string if the string is not terminated by a null
+ *	character.
  *
  * Results:
  *	The return value is the pointer to the next character in the UTF-8
@@ -879,7 +881,15 @@ Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
     Tcl_UniChar ch = 0;
-    size_t len = TclUtfToUniChar(src, &ch);
+    size_t len;
+
+    if (((*src) & 0xC0) == 0x80) {
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
+    len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX <= 3
     if ((ch >= 0xD800) && (len < 3)) {
