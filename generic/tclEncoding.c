@@ -2479,7 +2479,7 @@ UtfToUnicodeProc(
 #if TCL_UTF_MAX > 3
 	if (ch & ~0xFFFF) {
 	    ch = 0xFFFD;
-	} else
+	}
 #endif
 #ifdef WORDS_BIGENDIAN
 	*dst++ = (ch >> 8);
