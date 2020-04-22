@@ -102,10 +102,6 @@ typedef int ptrdiff_t;
 #define NO_WIDE_TYPE
 #endif
 
-#if (TCL_UTF_MAX != 3) && (TCL_UTF_MAX != 4)
-#   error "Tcl 8.5 can only be built with TCL_UTF_MAX=3 or TCL_UTF_MAX=4"
-#endif
-
 /*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
