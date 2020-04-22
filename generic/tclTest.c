@@ -7123,30 +7123,53 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int numBytes;
+    int numBytes;	/* Number of bytes supplied in the test string */
+    int offset;		/* Number of bytes we are permitted to read */
     char *bytes;
     const char *result, *first;
     char buffer[32];
     static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
     const char *p = tobetested;
 
-    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
-	    return TCL_ERROR;
-	}
-	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
-    } else {
-	bytes = (char *) Tcl_GetByteArrayFromObj(objv[2], &numBytes);
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?numBytes?");
+	return TCL_ERROR;
     }
 
-    if (numBytes > sizeof(buffer)-2) {
-	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
+    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+
+    offset = numBytes +TCL_UTF_MAX -1;	/* If no constraint is given, allow
+					 * the terminating NUL to limit
+					 * operations. */
+
+    if (objc == 3) {
+	if (TCL_OK != TclGetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset < 0) {
+	    offset = 0;
+	}
+	if (offset > numBytes +TCL_UTF_MAX -1) {
+	    offset = numBytes +TCL_UTF_MAX -1;
+	}
+    }
+
+    if (numBytes > sizeof(buffer) - 2) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"testutfnext\" can only handle %d bytes",
+		sizeof(buffer) - 2));
 	return TCL_ERROR;
     }
 
     memcpy(buffer + 1, bytes, numBytes);
     buffer[0] = buffer[numBytes + 1] = '\x00';
+
+    if (!Tcl_UtfCharComplete(buffer + 1, offset)) {
+	/* Cannot scan a complete sequence from the data */
+
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	return TCL_OK;
+    }
 
     first = Tcl_UtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
