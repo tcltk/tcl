@@ -29,9 +29,6 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
-testConstraint twobyteunit [expr {[llength [info commands testsize]] &&
-				([testsize unichar] == 2)}]
-
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint exec             [llength [info commands exec]]
 testConstraint openpipe         1
@@ -913,7 +910,7 @@ test io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio testchannel 
     close $f
     set x
 } [list "bbbbbbbbbbbbbbb" 15 "123456789abcdef" 1 4 "abcd" 0 3 "efg"]
-test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio testchannel openpipe fileevent twobyteunit} {
+test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio testchannel openpipe fileevent} {
     # Tcl_ExternalToUtf()
 
     set f [open "|[list [interpreter] $path(cat)]" w+]

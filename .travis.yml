@@ -26,9 +26,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
-      script:
-        - make all tcltest
-        - make test TESTFLAGS="-file utf.test"
+    - name: "Linux/GCC/Shared: UTF_MAX=5"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=5
     - name: "Linux/GCC/Shared: UTF_MAX=6"
       os: linux
       dist: bionic
@@ -36,9 +40,6 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
-      script:
-        - make all tcltest
-        - make test TESTFLAGS="-file utf.test"
     - name: "Linux/GCC/Static"
       os: linux
       dist: bionic
