@@ -16,9 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-testConstraint ucs2 [expr {[format %c 0x010000] == "\uFFFD"}]
-testConstraint fullutf [expr {[format %c 0x010000] != "\uFFFD"}]
-testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
+testConstraint tip389 [expr {[string length \U010000] eq 2}]
 
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testfindfirst [llength [info commands testfindfirst]]
@@ -377,7 +377,7 @@ test utf-6.70 {Tcl_UtfNext} testutfnext {
 test utf-6.71 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xF2\xA0\xA0\xE8
 } 1
-test utf-6.71 {Tcl_UtfNext} testutfnext {
+test utf-6.72 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xF2\xA0\xA0\xF2
 } 1
 test utf-6.73 {Tcl_UtfNext} testutfnext {
@@ -1064,7 +1064,7 @@ test utf-20.1 {TclUniCharNcmp} {
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
     string is alnum \u1040\u021F\u0220
-} {1}
+} 1
 test utf-21.2 {unicode alnum char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:alnum:]]+$} \u1040\u021F\u0220] [regexp {^\w+$} \u1040\u021F\u0220_\u203F\u2040\u2054\uFE33\uFE34\uFE4D\uFE4E\uFE4F\uFF3F]
