@@ -579,7 +579,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    const char *next;
+    Tcl_UniChar ch = 0;
     register int i = 0;
 
     /*
@@ -590,36 +590,22 @@ Tcl_NumUtfChars(
      */
 
     if (length < 0) {
-	while ((*src != '\0') && (i < INT_MAX)) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	while (*src != '\0') {
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
 	if (src < endPtr) {
 	    i += endPtr - src;
@@ -762,43 +748,15 @@ Tcl_UtfNext(
  *
  * Tcl_UtfPrev --
  *
- *	The aim of this routine is to provide a way to move backward
- *	through a UTF-8 string. The caller is expected to pass non-NULL
- *	pointer arguments start and src. start points to the beginning
- *	of a string, and src >= start points to a location within (or just
- *	past the end) of the string. This routine always returns a
- *	pointer within the string (>= start).  When (src == start), it
- *	returns start. When (src > start), it returns a pointer (< src)
- *	and (>= src - TCL_UTF_MAX).  Subject to these constraints, the
- *	routine returns a pointer to the earliest byte in the string that
- *	starts a character when characters are read starting at start and
- *	that character might include the byte src[-1]. The routine will
- *	examine only those bytes in the range that might be returned.
- *	It will not examine the byte *src, and because of that cannot
- *	determine for certain in all circumstances whether the character
- *	that begins with the returned pointer will or will not include
- *	the byte src[-1]. In the scenario, where src points to the end of
- *	a buffer being filled, the returned pointer points to either the
- *	final complete character in the string or to the earliest byte
- *	that might start an incomplete character waiting for more bytes to
- *	complete.
- *
- *	Because this routine always returns a value < src until the point
- *	it is forced to return start, it is useful as a backward iterator
- *	through a string that will always make progress and always be
- *	prevented from running past the beginning of the string.
- *
- *	In a string where all characters are complete and properly formed,
- *	and the value of src points to the first byte of a character,
- *	repeated Tcl_UtfPrev calls will step to the starting bytes of
- *	characters, one character at a time. Within those limitations,
- *	Tcl_UtfPrev and Tcl_UtfNext are inverses. If either condition cannot
- *	be met, Tcl_UtfPrev and Tcl_UtfNext may not function as inverses and
- *	the caller will have to take greater care.
+ *	Given a pointer to some current location in a UTF-8 string, move
+ *	backwards one character. This works correctly when the pointer is in
+ *	the middle of a UTF-8 character.
  *
  * Results:
- *	A pointer to the start of a character in the string as described
- *	above.
+ *	The return value is a pointer to the previous character in the UTF-8
+ *	string. If the current location was already at the beginning of the
+ *	string, the return value will also be a pointer to the beginning of
+ *	the string.
  *
  * Side effects:
  *	None.
@@ -927,7 +885,9 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch = 0;
 
-    TclUtfToUniChar(Tcl_UtfAtIndex(src, index), &ch);
+    while (index-- >= 0) {
+	src += TclUtfToUniChar(src, &ch);
+    }
     return ch;
 }
 
@@ -953,20 +913,19 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
+    Tcl_UniChar ch = 0;
+    int len = 0;
+
     while (index-- > 0) {
-	const char *next = TclUtfNext(src);
-
-#if TCL_UTF_MAX <= 4
-	/*
-	 * 4-byte sequences generate two UCS-2 code units in the
-	 * UTF-16 representation, so in the current indexing scheme
-	 * we need to account for an extra index (total of two).
-	 */
-	index -= ((next - src) > 3);
-#endif
-
-	src = next;
+	len = TclUtfToUniChar(src, &ch);
+	src += len;
     }
+#if TCL_UTF_MAX == 4
+    if ((ch >= 0xD800) && (len < 3)) {
+	/* Index points at character following high Surrogate */
+	src += TclUtfToUniChar(src, &ch);
+    }
+#endif
     return src;
 }
 
