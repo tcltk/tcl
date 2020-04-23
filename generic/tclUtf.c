@@ -480,7 +480,22 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[(unsigned char)*src];
+    int i=0, valid = totalBytes[(unsigned char)*src];
+
+    if (valid) {
+	return (length >= valid);
+    }
+
+    /* Deal with leading trail byte */
+    if (length >= TCL_UTF_MAX - 1) {
+	return 1;
+    }
+    while (++i < length) {
+	if (totalBytes[(unsigned char)src[i]]) {
+	    return 1;
+	}
+    }
+    return 0;
 }
 
 /*
