@@ -680,10 +680,10 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if (trail || !Invalid((unsigned char *)src)) {
+    if (trail || (next == src + 1)) {
 	return next;
     }
-    return src+1;
+    return Invalid((unsigned char *)src) ? src + 1 : next;
 }
 
 /*
