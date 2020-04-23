@@ -138,7 +138,9 @@ create a new object or modify an existing object to hold
 the \fIobjc\fR elements of the array referenced by \fIobjv\fR
 where each element is a pointer to a Tcl object.
 If \fIobjc\fR is less than or equal to zero,
-they return an empty object.
+they return an empty object. If \fIobjv\fR is NULL, the resulting list
+contains 0 elements, with reserved space in an internal representation
+for \fIobjc\fR more elements (to avoid its reallocation later).
 The new object's string representation is left invalid.
 The two procedures increment the reference counts
 of the elements in \fIobjc\fR since the list object now refers to them.
