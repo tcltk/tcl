@@ -20,9 +20,6 @@ if {[catch {package require tcltest 2.1}]} {
 namespace eval ::tcl::test::source {
     namespace import ::tcltest::*
 
-testConstraint twobyteunit [expr {[llength [info commands testsize]] &&
-				([testsize unichar] == 2)}]
-
 test source-1.1 {source command} -setup {
     set x "old x value"
     set y "old y value"
@@ -235,7 +232,7 @@ test source-7.1 {source -encoding test} -setup {
 } -cleanup {
     removeFile source.file
 } -result correct
-test source-7.2 {source -encoding test} -constraints twobyteunit -setup {
+test source-7.2 {source -encoding test} -setup {
     # This tests for bad interactions between [source -encoding]
     # and use of the Control-Z character (\u001A) as a cross-platform
     # EOF character by [source].  Here we write out and the [source] a

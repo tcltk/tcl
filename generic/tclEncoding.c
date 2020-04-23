@@ -2359,13 +2359,12 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     char *dstEnd, *dstStart;
     int result, numChars;
-    Tcl_UniChar ch;
+    unsigned short ch;
 
     result = TCL_OK;
-    if ((srcLen % sizeof(Tcl_UniChar)) != 0) {
+    if ((srcLen & 1) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen /= sizeof(Tcl_UniChar);
-	srcLen *= sizeof(Tcl_UniChar);
+	srcLen--;
     }
 
     srcStart = src;
@@ -2383,13 +2382,13 @@ UnicodeToUtfProc(
 	 * Special case for 1-byte utf chars for speed.  Make sure we
 	 * work with Tcl_UniChar-size data.
 	 */
-	ch = *(Tcl_UniChar *)src;
+	ch = *(unsigned short *)src;
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
-	src += sizeof(Tcl_UniChar);
+	src += sizeof(unsigned short);
     }
 
     *srcReadPtr = src - srcStart;
@@ -2477,6 +2476,11 @@ UtfToUnicodeProc(
 	 * by casting dst to a Tcl_UniChar. [Bug 1122671]
 	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
 	 */
+#if TCL_UTF_MAX > 3
+	if (ch & ~0xFFFF) {
+	    ch = 0xFFFD;
+	}
+#endif
 #ifdef WORDS_BIGENDIAN
 	*dst++ = (ch >> 8);
 	*dst++ = (ch & 0xFF);
