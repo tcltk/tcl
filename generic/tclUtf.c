@@ -645,36 +645,30 @@ Tcl_UtfNext(
     CONST char *src)		/* The current location in the string. */
 {
     int byte = *((unsigned char *) src);
-    int left = totalBytes[byte];
+    int valid = totalBytes[byte];
     const char *next = src + 1;
+    int trail = (valid == 0);
+    int scanLimit = trail ? TCL_UTF_MAX - 1 : valid;
 
-    if (((*src) & 0xC0) == 0x80) {
-        if (
-#if TCL_UTF_MAX > 3
-		(((*++src) & 0xC0) == 0x80) && 
-#endif
-		(((*++src) & 0xC0) == 0x80)) {
-            ++src;
-        }
-        return src;
-    }
-
-    while (--left) {
+    while (--scanLimit) {
 	byte = *((unsigned char *) next);
 	if ((byte & 0xC0) != 0x80) {
 	    /*
-	     * src points to non-trail byte; We ran out of trail bytes
+	     * src points to non-trail byte;
+	     * If we started with a trail byte, we've reached the end
+	     * of the trail byte sequence we wish to skip.
+	     * If we started with a lead byte, we ran out of trail bytes
 	     * before the needs of the lead byte were satisfied.
 	     * Let the (malformed) lead byte alone be a character
 	     */
-	    return src + 1;
+	    return trail ? next : src + 1;
 	}
 	next++;
     }
-    if (Invalid((unsigned char *)src)) {
-	return src + 1;
+    if (trail || !Invalid((unsigned char *)src)) {
+	return next;
     }
-    return next;
+    return src+1;
 }
 
 /*
