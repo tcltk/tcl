@@ -554,22 +554,40 @@ test utf-6.117 {Tcl_UtfNext, read limits} testutfnext {
 test utf-6.118 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0 1
 } 1
-test utf-6.119 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.119.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0G 2
 } 1
-test utf-6.120 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.119.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xA0\xA0G 2
+} 1
+test utf-6.120.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0 2
 } 1
-test utf-6.121 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.120.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xA0\xA0\xA0 2
+} 1
+test utf-6.121.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0G 3
 } 1
-test utf-6.122 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.121.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xA0\xA0\xA0G 3
+} 1
+test utf-6.122.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0\xA0 3
 } 1
-test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.122.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xA0\xA0\xA0\xA0 3
+} 1
+test utf-6.123.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0\xA0G 4
 } 1
-test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.123.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xA0\xA0\xA0\xA0G 4
+} 1
+test utf-6.124.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+    testutfnext \xA0\xA0\xA0\xA0\xA0 4
+} 1
+test utf-6.124.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
     testutfnext \xA0\xA0\xA0\xA0\xA0 4
 } 1
 test utf-6.125.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
