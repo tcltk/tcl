@@ -64,17 +64,6 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
-};
-
-static const unsigned char complete[256] = {
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 #if TCL_UTF_MAX > 4
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -84,7 +73,11 @@ static const unsigned char complete[256] = {
 #endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 3
     4,4,4,4,4,
+#else
+    1,1,1,1,1,
+#endif
     1,1,1,1,1,1,1,1,1,1,1
 };
 
@@ -559,7 +552,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= complete[(unsigned char)*src];
+    return length >= totalBytes[(unsigned char)*src];
 }
 
 /*
@@ -607,7 +600,7 @@ Tcl_NumUtfChars(
 	    src = next;
 	}
     } else {
-	register const char *endPtr = src + length - /*TCL_UTF_MAX*/ 4;
+	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
 	    next = TclUtfNext(src);
@@ -618,7 +611,7 @@ Tcl_NumUtfChars(
 #endif
 	    src = next;
 	}
-	endPtr += /*TCL_UTF_MAX*/ 4;
+	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    next = TclUtfNext(src);
 #if TCL_UTF_MAX > 4
@@ -717,9 +710,11 @@ Tcl_UtfFindLast(
  *
  * Tcl_UtfNext --
  *
- *	Given a pointer to some current location in a UTF-8 string, move
- *	forward one character. The caller must ensure that they are not asking
- *	for the next character after the last character in the string.
+ *	Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
+ *	returns a pointer to the next UTF-8 character in the string.
+ *	The caller must not ask for the next character after the last
+ *	character in the string if the string is not terminated by a null
+ *	character.
  *
  * Results:
  *	The return value is the pointer to the next character in the UTF-8
@@ -735,13 +730,18 @@ const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
-    int byte = *((unsigned char *) src);
-    int left = totalBytes[byte];
+    int left = totalBytes[UCHAR(*src)];
     const char *next = src + 1;
 
+    if (((*src) & 0xC0) == 0x80) {
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
+
     while (--left) {
-	byte = *((unsigned char *) next);
-	if ((byte & 0xC0) != 0x80) {
+	if ((*next & 0xC0) != 0x80) {
 	    /*
 	     * src points to non-trail byte; We ran out of trail bytes
 	     * before the needs of the lead byte were satisfied.
@@ -778,7 +778,7 @@ Tcl_UtfNext(
  *	determine for certain in all circumstances whether the character
  *	that begins with the returned pointer will or will not include
  *	the byte src[-1]. In the scenario, where src points to the end of
- *	a buffer being filled, the returned pointer point to either the
+ *	a buffer being filled, the returned pointer points to either the
  *	final complete character in the string or to the earliest byte
  *	that might start an incomplete character waiting for more bytes to
  *	complete.
@@ -888,15 +888,19 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < /* was TCL_UTF_MAX */ 4);
+    } while (trailBytesSeen < TCL_UTF_MAX);
 
     /*
-     * We've seen 4 (was TCL_UTF_MAX) trail bytes, so we know there will not be a
+     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
-     * accepting the fallback.
+     * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
+     * far as we can.
      */
-
+#if TCL_UTF_MAX > 3
     return fallback;
+#else
+    return src - TCL_UTF_MAX;
+#endif
 }
 
 /*

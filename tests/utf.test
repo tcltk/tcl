@@ -16,9 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
-testConstraint tip389 [expr {[string length \U010000] eq 2}]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
+testConstraint ucs2 [expr {[format %c 0x010000] == "\uFFFD"}]
+testConstraint fullutf [expr {[format %c 0x010000] != "\uFFFD"}]
+testConstraint tip389 [expr {[string length \U010000] == 2}]
 
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testfindfirst [llength [info commands testfindfirst]]
@@ -48,9 +48,9 @@ test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
     expr {[format %c -1] eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
-test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints {fullutf testbytestring} -body {
+test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} {fullutf testbytestring} {
     expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
-} -result 1
+} 1
 test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
     expr {"\uD842" eq [testbytestring "\xED\xA1\x82"]}
 } 1
@@ -72,88 +72,92 @@ test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} testbytestring {
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
-} {3}
+} 3
 test utf-2.2 {Tcl_UtfToUniChar: naked trail bytes} testbytestring {
     string length [testbytestring "\x82\x83\x84"]
-} {3}
+} 3
 test utf-2.3 {Tcl_UtfToUniChar: lead (2-byte) followed by non-trail} testbytestring {
     string length [testbytestring "\xC2"]
-} {1}
+} 1
 test utf-2.4 {Tcl_UtfToUniChar: lead (2-byte) followed by trail} testbytestring {
     string length [testbytestring "\xC2\xA2"]
-} {1}
+} 1
 test utf-2.5 {Tcl_UtfToUniChar: lead (3-byte) followed by non-trail} testbytestring {
     string length [testbytestring "\xE2"]
-} {1}
+} 1
 test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestring {
     string length [testbytestring "\xE2\xA2"]
-} {2}
+} 2
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
     string length [testbytestring "\xE4\xB9\x8E"]
-} {1}
-test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {tip389 testbytestring} -body {
+} 1
+test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {tip389 testbytestring} {
     string length [testbytestring "\xF0\x90\x80\x80"]
-} -result {2}
-test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {tip389 testbytestring} -body {
+} 2
+test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {tip389 testbytestring} {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
-} -result {2}
+} 2
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
     string length [testbytestring "\xF0\x8F\xBF\xBF"]
-} {4}
-test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} {testbytestring} {
+} 4
+test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
+    # Would decode to U+110000 but that is outside the Unicode range.
     string length [testbytestring "\xF4\x90\x80\x80"]
-} {4}
+} 4
 test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
     string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
-} {5}
+} 5
 
 test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
 
 test utf-4.1 {Tcl_NumUtfChars: zero length} testnumutfchars {
     testnumutfchars ""
-} {0}
+} 0
 test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC2\xA2"]
-} {1}
+} 1
 test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"]
-} {7}
+} 7
 test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"]
-} {1}
+} 1
 test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
     testnumutfchars "" 0
-} {0}
+} 0
 test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC2\xA2"] 1
-} {1}
+} 1
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"] 10
-} {7}
+} 7
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"] 1
-} {1}
+} 1
 # Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
 test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xE2\x82\xAC"] 2
-} {2}
+} 2
 test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\x00"] 2
-} {2}
+} 2
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] 3
-} {3}
-test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
+} 3
+test utf-4.12.0 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs2} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] 4
-} {2}
+} 4
+test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] 4
+} 2
 
 test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
     testfindfirst [testbytestring "abcbc"] 98
-} {bcbc}
+} bcbc
 test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
     testfindlast [testbytestring "abcbc"] 98
-} {bc}
+} bc
 
 test utf-6.1 {Tcl_UtfNext} testutfnext {
     # This takes the pointer one past the terminating NUL.
@@ -161,10 +165,10 @@ test utf-6.1 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring {}
 } 1
 test utf-6.2 {Tcl_UtfNext} testutfnext {
-    testutfnext A
+    testutfnext -bytestring A
 } 1
 test utf-6.3 {Tcl_UtfNext} testutfnext {
-    testutfnext AA
+    testutfnext -bytestring AA
 } 1
 test utf-6.4 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring A\xA0
@@ -189,7 +193,7 @@ test utf-6.10 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.11 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xA0\xA0
-} 1
+} 2
 test utf-6.12 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xA0\xD0
 } 1
@@ -363,7 +367,7 @@ test utf-6.68 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.69.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0
-} 4
+} 1
 test utf-6.69.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0
 } 4
@@ -381,37 +385,37 @@ test utf-6.73 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.74.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G
-} 4
+} 1
 test utf-6.74.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G
 } 4
 test utf-6.75.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xA0
-} 4
+} 1
 test utf-6.75.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xA0
 } 4
 test utf-6.76.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xD0
-} 4
+} 1
 test utf-6.76.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xD0
 } 4
 test utf-6.77.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xE8
-} 4
+} 1
 test utf-6.77.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xE8
 } 4
 test utf-6.78.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xF2
-} 4
+} 1
 test utf-6.78.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xF2
 } 4
 test utf-6.79.0 {Tcl_UtfNext} {testutfnext ucs2} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G\xF8
-} 4
+} 1
 test utf-6.79.1 {Tcl_UtfNext} {testutfnext fullutf} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G\xF8
 } 4
@@ -442,27 +446,30 @@ test utf-6.87.0 {Tcl_UtfNext - overlong sequences} {testutfnext ucs2} {
 test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfnext fullutf} {
     testutfnext -bytestring \xF0\x90\x80\x80
 } 4
-test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} {testutfnext} {
+test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testutfnext {
     testutfnext -bytestring \xA0\xA0
-} 1
-test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} {testutfnext} {
+} 2
+test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80
-} 1
+} 2
 test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 1
 test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 4
-test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
+test utf-6.91.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
     testutfnext -bytestring \xF4\x90\x80\x80
 } 1
-test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
-    testutfnext -bytestring \xA0\xA0\xA0
+test utf-6.91.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf} {
+    testutfnext -bytestring \xF4\x90\x80\x80
 } 1
+test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
+    testutfnext -bytestring \xA0\xA0\xA0
+} 3
 test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80\x80
-} 1
+} 3
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
@@ -529,19 +536,19 @@ test utf-7.9.2 {Tcl_UtfPrev} testutfprev {
 } 2
 test utf-7.10.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0
-} 1
+} 2
 test utf-7.10.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0
 } 1
 test utf-7.10.1.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0\xA0\xA0 3
-} 1
+} 2
 test utf-7.10.1.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0\xA0\xA0 3
 } 1
 test utf-7.10.2.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0\xF8\xA0 3
-} 1
+} 2
 test utf-7.10.2.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0\xF8\xA0 3
 } 1
@@ -586,19 +593,19 @@ test utf-7.14.2 {Tcl_UtfPrev} testutfprev {
 } 3
 test utf-7.15.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0\xA0
-} 1
+} 3
 test utf-7.15.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0\xA0
 } 1
 test utf-7.15.1.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0\xA0\xA0 4
-} 1
+} 3
 test utf-7.15.1.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0\xA0\xA0 4
 } 1
 test utf-7.15.2.0 {Tcl_UtfPrev} {testutfprev ucs2} {
     testutfprev A\xF2\xA0\xA0\xF8 4
-} 1
+} 3
 test utf-7.15.2.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF2\xA0\xA0\xF8 4
 } 1
@@ -620,31 +627,52 @@ test utf-7.17.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.17.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0\xF8 4
 } 3
-test utf-7.18 {Tcl_UtfPrev} testutfprev {
+test utf-7.18 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xA0\xA0\xA0
+} 1
+test utf-7.18.1 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xA0\xA0\xA0\xA0 4
+} 1
+test utf-7.18.2 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xA0\xA0\xA0\xF8 4
+} 1
+test utf-7.18.3 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xA0\xA0\xA0
 } 3
-test utf-7.18.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.18.4 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xA0\xA0\xA0\xA0 4
 } 3
-test utf-7.18.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.18.5 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xA0\xA0\xA0\xF8 4
 } 3
-test utf-7.19 {Tcl_UtfPrev} testutfprev {
+test utf-7.19 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xF8\xA0\xA0\xA0
+} 2
+test utf-7.19.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xF8\xA0\xA0\xA0
 } 4
-test utf-7.20.0 {Tcl_UtfPrev} {testutfprev ucs2} {
-    testutfprev A\xF2\xA0\xA0\xA0
-} 1
+test utf-7.20 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xF4\xA0\xA0\xA0
+} 2
 test utf-7.20.1 {Tcl_UtfPrev} {testutfprev fullutf} {
-    testutfprev A\xF2\xA0\xA0\xA0
-} 1
-test utf-7.21 {Tcl_UtfPrev} testutfprev {
+    testutfprev A\xF4\xA0\xA0\xA0
+} 4
+test utf-7.21 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xE8\xA0\xA0\xA0
+} 2
+test utf-7.21.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xE8\xA0\xA0\xA0
 } 4
-test utf-7.22 {Tcl_UtfPrev} testutfprev {
+test utf-7.22 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xD0\xA0\xA0\xA0
+} 2
+test utf-7.22.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xD0\xA0\xA0\xA0
 } 4
-test utf-7.23 {Tcl_UtfPrev} testutfprev {
+test utf-7.23 {Tcl_UtfPrev} {testutfprev ucs2} {
+    testutfprev A\xA0\xA0\xA0\xA0
+} 2
+test utf-7.23.1 {Tcl_UtfPrev} {testutfprev fullutf} {
     testutfprev A\xA0\xA0\xA0\xA0
 } 4
 test utf-7.24 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -668,7 +696,10 @@ test utf-7.28 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.28.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\x80\x80 2
 } 1
-test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs2} {
+    testutfprev A\xF0\x80\x80\x80
+} 2
+test utf-7.29.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev fullutf} {
     testutfprev A\xF0\x80\x80\x80
 } 4
 test utf-7.30 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -700,7 +731,7 @@ test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 } 1
 test utf-7.39.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs2} {
     testutfprev A\xF0\x90\x80\x80
-} 4
+} 2
 test utf-7.39.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev fullutf} {
     testutfprev A\xF0\x90\x80\x80
 } 1
@@ -728,21 +759,24 @@ test utf-7.44 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
 test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
     testutfprev \xA0\xA0\xA0
 } 2
-test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev ucs2} {
+    testutfprev \xA0\xA0\xA0\xA0
+} 1
+test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev fullutf} {
     testutfprev \xA0\xA0\xA0\xA0
 } 3
-test utf-7.47 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} {testutfprev} {
+test utf-7.47 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} testutfprev {
     testutfprev \xE8\xA0
 } 0
-test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} {testutfprev} {
+test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} testutfprev {
     testutfprev \xE8\xA0\xA0 2
 } 0
-test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {testutfprev} {
+test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} testutfprev {
     testutfprev \xE8\xA0\x00 2
 } 0
 test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
     testutfprev A\xF4\x8F\xBF\xBF
-} 4
+} 2
 test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
     testutfprev A\xF4\x8F\xBF\xBF
 } 1
@@ -761,28 +795,37 @@ test utf-7.48.2.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullut
 test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x8F\xBF\xBF 2
 } 1
-test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
+    testutfprev A\xF4\x90\x80\x80
+} 2
+test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
     testutfprev A\xF4\x90\x80\x80
 } 4
-test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
     testutfprev A\xF4\x90\x80\x80 4
 } 3
-test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
+    testutfprev A\xF4\x90\x80\x80 4
+} 3
+test utf-7.49.4 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
     testutfprev A\xF4\x90\x80\x80 3
 } 2
-test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
+    testutfprev A\xF4\x90\x80\x80 3
+} 2
+test utf-7.49.6 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 2
 } 1
 
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
-} {a}
+} a
 test utf-8.2 {Tcl_UniCharAtIndex: index = 0} {
     string index \u4E4E\u25A 0
 } "\u4E4E"
 test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
     string index abcd 2
-} {c}
+} c
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
 } "\uFF"
@@ -801,7 +844,7 @@ test utf-8.8 {Tcl_UniCharAtIndex: Emoji} ucs2 {
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
-} {abc}
+} abc
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4E4E\u25A\xFF\u543klmnop 1 5
 } "\u25A\xFF\u543kl"
@@ -909,11 +952,11 @@ test utf-11.2 {Tcl_UtfToUpper} {
     string toupper abc
 } ABC
 test utf-11.3 {Tcl_UtfToUpper} {
-    string toupper \u00E3AB
-} \u00C3AB
+    string toupper \xE3gh
+} \xC3GH
 test utf-11.4 {Tcl_UtfToUpper} {
-    string toupper \u01E3AB
-} \u01E2AB
+    string toupper \u01E3gh
+} \u01E2GH
 test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
     string toupper \u10D0\u1C90
 } \u1C90\u1C90
@@ -925,14 +968,17 @@ test utf-12.2 {Tcl_UtfToLower} {
     string tolower ABC
 } abc
 test utf-12.3 {Tcl_UtfToLower} {
-    string tolower \u00C3AB
-} \u00E3ab
+    string tolower \xC3GH
+} \xE3gh
 test utf-12.4 {Tcl_UtfToLower} {
-    string tolower \u01E2AB
-} \u01E3ab
+    string tolower \u01E2GH
+} \u01E3gh
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
+test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} ucs2 {
+    string tolower \uDC24\uD824
+} \uDC24\uD824
 
 test utf-13.1 {Tcl_UtfToTitle} {
     string totitle {}
@@ -941,8 +987,8 @@ test utf-13.2 {Tcl_UtfToTitle} {
     string totitle abc
 } Abc
 test utf-13.3 {Tcl_UtfToTitle} {
-    string totitle \u00E3AB
-} \u00C3ab
+    string totitle \xE3GH
+} \xC3gh
 test utf-13.4 {Tcl_UtfToTitle} {
     string totitle \u01F3AB
 } \u01F2ab
@@ -952,6 +998,9 @@ test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
     string totitle \u1C90\u10D0
 } \u1C90\u10D0
+test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} ucs2 {
+    string totitle \uDC24\uD824
+} \uDC24\uD824
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
@@ -970,7 +1019,7 @@ test utf-15.1 {Tcl_UniCharToUpper, negative delta} {
     string toupper aA
 } AA
 test utf-15.2 {Tcl_UniCharToUpper, positive delta} {
-    string toupper \u0178\u00FF
+    string toupper \u0178\xFF
 } \u0178\u0178
 test utf-15.3 {Tcl_UniCharToUpper, no delta} {
     string toupper !
@@ -980,8 +1029,8 @@ test utf-16.1 {Tcl_UniCharToLower, negative delta} {
     string tolower aA
 } aa
 test utf-16.2 {Tcl_UniCharToLower, positive delta} {
-    string tolower \u0178\u00FF\uA78D\u01C5
-} \u00FF\u00FF\u0265\u01C6
+    string tolower \u0178\xFF\uA78D\u01C5
+} \xFF\xFF\u0265\u01C6
 
 test utf-17.1 {Tcl_UniCharToLower, no delta} {
     string tolower !
@@ -995,9 +1044,9 @@ test utf-18.2 {Tcl_UniCharToTitle, subtract one for title} {
 } \u01C5
 test utf-18.3 {Tcl_UniCharToTitle, subtract delta for title (positive)} {
     string totitle \u017F
-} \u0053
+} \x53
 test utf-18.4 {Tcl_UniCharToTitle, subtract delta for title (negative)} {
-    string totitle \u00FF
+    string totitle \xFF
 } \u0178
 test utf-18.5 {Tcl_UniCharToTitle, no delta} {
     string totitle !
@@ -1027,39 +1076,39 @@ test utf-21.3 {unicode print char in regc_locale.c} {
 test utf-21.4 {TclUniCharIsGraph} {
     # [Bug 3464428]
     string is graph \u0120
-} {1}
+} 1
 test utf-21.5 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
     regexp {^[[:graph:]]+$} \u0120
-} {1}
+} 1
 test utf-21.6 {TclUniCharIsGraph} {
     # [Bug 3464428]
-    string is graph \u00A0
-} {0}
+    string is graph \xA0
+} 0
 test utf-21.7 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:graph:]]} \u0020\u00A0\u2028\u2029
-} {0}
+    regexp {[[:graph:]]} \x20\xA0\u2028\u2029
+} 0
 test utf-21.8 {TclUniCharIsPrint} {
     # [Bug 3464428]
-    string is print \u0009
-} {0}
+    string is print \x09
+} 0
 test utf-21.9 {unicode print char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:print:]]} \u0009
-} {0}
+    regexp {[[:print:]]} \x09
+} 0
 test utf-21.10 {unicode print char in regc_locale.c} {
     # [Bug 3464428]
-    regexp {[[:print:]]} \u0009
-} {0}
+    regexp {[[:print:]]} \x09
+} 0
 test utf-21.11 {TclUniCharIsControl} {
     # [Bug 3464428]
-    string is control \u0000\u001F\u00AD\u0605\u061C\u180E\u2066\uFEFF
-} {1}
+    string is control \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
+} 1
 test utf-21.12 {unicode control char in regc_locale.c} {
     # [Bug 3464428], [Bug a876646efe]
-    regexp {^[[:cntrl:]]*$} \u0000\u001F\u00AD\u0605\u061C\u180E\u2066\uFEFF
-} {1}
+    regexp {^[[:cntrl:]]*$} \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
+} 1
 
 test utf-22.1 {TclUniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
@@ -1071,16 +1120,16 @@ test utf-22.2 {TclUniCharIsWordChar} {
 test utf-23.1 {TclUniCharIsAlpha} {
     # this returns 1 with Unicode 7 compliance
     string is alpha \u021F\u0220\u037F\u052F
-} {1}
+} 1
 test utf-23.2 {unicode alpha char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     regexp {^[[:alpha:]]+$} \u021F\u0220\u037F\u052F
-} {1}
+} 1
 
 test utf-24.1 {TclUniCharIsDigit} {
     # this returns 1 with Unicode 7 compliance
     string is digit \u1040\uABF0
-} {1}
+} 1
 test utf-24.2 {unicode digit char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:digit:]]+$} \u1040\uABF0] [regexp {^\d+$} \u1040\uABF0]
@@ -1088,11 +1137,11 @@ test utf-24.2 {unicode digit char in regc_locale.c} {
 
 test utf-24.3 {TclUniCharIsSpace} {
     # this returns 1 with Unicode 7/TIP 413 compliance
-    string is space \u0085\u1680\u180E\u200B\u202F\u2060
-} {1}
+    string is space \x85\u1680\u180E\u200B\u202F\u2060
+} 1
 test utf-24.4 {unicode space char in regc_locale.c} {
     # this returns 1 with Unicode 7/TIP 413 compliance
-    list [regexp {^[[:space:]]+$} \u0085\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \u0085\u1680\u180E\u200B\u202F\u2060]
+    list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
 
 test utf-25.1 {Tcl_UniCharNcasecmp} -constraints teststringobj \
