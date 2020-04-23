@@ -660,7 +660,7 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if (Invalid((unsigned char *)src)) {
+    if ((next == src + 1) || Invalid((unsigned char *)src)) {
 	return src + 1;
     }
     return next;
