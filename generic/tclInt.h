@@ -3697,7 +3697,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
 	Tcl_UtfPrev(src, start))
 
 #define TclUtfNext(src)	\
-	((((unsigned char) *(src)) < 0xC0) ? src + 1 : Tcl_UtfNext(src))
+	((((unsigned char) *(src)) < 0x80) ? src + 1 : Tcl_UtfNext(src))
 
 /*
  *----------------------------------------------------------------
