@@ -90,6 +90,12 @@ static const unsigned char complete[256] = {
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
+
+/*
+ * Functions used only in this module.
+ */
+
+static int		Invalid(unsigned char *src);
 
 /*
  *---------------------------------------------------------------------------
@@ -122,7 +128,61 @@ TclUtfCount(
     }
     return 3;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Invalid --
+ *
+ *	Utility routine to report whether /src/ points to the start of an
+ *	invald byte sequence that should be rejected. This might be because
+ *	it is an overlong encoding, or because it encodes something out of
+ *	the proper range. Caller guarantees that src[0] and src[1] are
+ *	readable, and
+ *
+ *	(src[0] >= 0xC0) && (src[0] != 0xC1)
+ * 	(src[1] >= 0x80) && (src[1] < 0xC0)
+ *	(src[0] < ((TCL_UTF_MAX > 3) ? 0xF5 : 0xF0))
+ *
+ * Results:
+ *	A boolean.
+ *---------------------------------------------------------------------------
+ */
 
+static const unsigned char bounds[28] = {
+    0x80, 0x80,		/* \xC0 accepts \x80 only */
+    0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF,
+    0x80, 0xBF,		/* (\xC4 - \xDC) -- all sequences valid */
+    0xA0, 0xBF,	/* \xE0\x80 through \xE0\x9F are invalid prefixes */
+    0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, /* (\xE4 - \xEC) -- all valid */
+#if TCL_UTF_MAX > 3
+    0x90, 0xBF,	/* \xF0\x80 through \xF0\x8F are invalid prefixes */
+    0x80, 0x8F  /* \xF4\x90 and higher are invalid prefixes */
+#else
+    0xC0, 0xBF,	/* Not used, but reject all again for safety. */
+    0xC0, 0xBF	/* Not used, but reject all again for safety. */
+#endif
+};
+
+INLINE static int
+Invalid(
+    unsigned char *src)	/* Points to lead byte of a UTF-8 byte sequence */
+{
+    unsigned char byte = *src;
+    int index;
+
+    if (byte % 0x04) {
+	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
+	return 0;
+    }
+    index = (byte - 0xC0) >> 1;
+    if (src[1] < bounds[index] || src[1] > bounds[index+1]) {
+	/* Out of bounds - report invalid. */
+	return 1;
+    }
+    return 0;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -860,7 +920,7 @@ Tcl_UtfFindLast(
  *
  * Tcl_UtfNext --
  *
- * 	Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
+ *	Given a pointer to some location in a UTF-8 string, Tcl_UtfNext
  *	returns a pointer to the next UTF-8 character in the string.
  *	The caller must not ask for the next character after the last
  *	character in the string if the string is not terminated by a null
@@ -880,8 +940,8 @@ const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
-    Tcl_UniChar ch = 0;
-    int len;
+    int left = totalBytes[UCHAR(*src)];
+    const char *next = src + 1;
 
     if (((*src) & 0xC0) == 0x80) {
 	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
@@ -889,14 +949,22 @@ Tcl_UtfNext(
 	}
 	return src;
     }
-    len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX <= 3
-    if ((ch >= 0xD800) && (len < 3)) {
-	len += TclUtfToUniChar(src + len, &ch);
+    while (--left) {
+	if ((*next & 0xC0) != 0x80) {
+	    /*
+	     * src points to non-trail byte; We ran out of trail bytes
+	     * before the needs of the lead byte were satisfied.
+	     * Let the (malformed) lead byte alone be a character
+	     */
+	    return src + 1;
+	}
+	next++;
     }
-#endif
-    return src + len;
+    if (Invalid((unsigned char *)src)) {
+	return src + 1;
+    }
+    return next;
 }
 
 /*
@@ -953,30 +1021,92 @@ Tcl_UtfPrev(
     const char *src,		/* A location in a UTF-8 string. */
     const char *start)		/* Pointer to the beginning of the string */
 {
-    const char *look;
-    int i, byte;
+    int trailBytesSeen = 0;	/* How many trail bytes have been verified? */
+    CONST char *fallback = src - 1;
+				/* If we cannot find a lead byte that might
+				 * start a prefix of a valid UTF byte sequence,
+				 * we will fallback to a one-byte back step */
+    unsigned char *look = (unsigned char *)fallback;
+				/* Start search at the fallback position */
 
-    look = --src;
-    for (i = 0; i < 4; i++) {
-	if (look < start) {
-	    if (src < start) {
-		src = start;
-	    }
-	    break;
-	}
-	byte = *((unsigned char *) look);
+    /* Quick boundary case exit. */
+    if (fallback <= start) {
+	return start;
+    }
+
+    do {
+	unsigned char byte = look[0];
+
 	if (byte < 0x80) {
-	    break;
+	    /*
+	     * Single byte character. Either this is a correct previous
+	     * character, or it is followed by at least one trail byte
+	     * which indicates a malformed sequence. In either case the
+	     * correct result is to return the fallback.
+	     */
+	    return fallback;
 	}
 	if (byte >= 0xC0) {
-	    if (totalBytes[byte] <= i) {
-		break;
+	    /* Non-trail byte; May be multibyte lead. */
+
+	    if ((trailBytesSeen == 0)
+		/*
+		 * We've seen no trailing context to use to check
+		 * anything. From what we know, this non-trail byte
+		 * is a prefix of a previous character, and accepting
+		 * it (the fallback) is correct.
+		 */
+
+		    || (trailBytesSeen >= totalBytes[byte])) {
+		/*
+		 * That is, (1 + trailBytesSeen > needed).
+		 * We've examined more bytes than needed to complete
+		 * this lead byte. No matter about well-formedness or
+		 * validity, the sequence starting with this lead byte
+		 * will never include the fallback location, so we must
+		 * return the fallback location. See test utf-7.17
+		 */
+		return fallback;
 	    }
-	    return look;
+
+	    /*
+	     * trailBytesSeen > 0, so we can examine look[1] safely.
+	     * Use that capability to screen out overlong sequences.
+	     */
+
+	    if (Invalid(look)) {
+		/* Reject */
+		return fallback;
+	    }
+	    return (CONST char *)look;
 	}
+
+	/* We saw a trail byte. */
+	trailBytesSeen++;
+
+	if ((CONST char *)look == start) {
+	    /*
+	     * Do not read before the start of the string
+	     *
+	     * If we get here, we've examined bytes at every location
+	     * >= start and < src and all of them are trail bytes,
+	     * including (*start).  We need to return our fallback
+	     * and exit this loop before we run past the start of the string.
+	     */
+	    return fallback;
+	}
+
+	/* Continue the search backwards... */
 	look--;
-    }
-    return src;
+    } while (trailBytesSeen < 4);
+
+    /*
+     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * properly formed byte sequence to find, and we can stop looking,
+     * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
+     * far as we can.
+     */
+    return fallback;
 }
 
 /*
