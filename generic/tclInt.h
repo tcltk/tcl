@@ -2650,8 +2650,6 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
-MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
-			    Tcl_UniChar *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    int numBytes, const char **endPtrPtr, int flags);

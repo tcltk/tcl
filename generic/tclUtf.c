@@ -522,6 +522,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
+    Tcl_UniChar ch;
     register int i = 0;
 
     /*
@@ -533,19 +534,19 @@ Tcl_NumUtfChars(
 
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
-	    src = TclUtfNext(src);
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    src = TclUtfNext(src);
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src = TclUtfNext(src);
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	if (src < endPtr) {
@@ -878,9 +879,11 @@ Tcl_UtfAtIndex(
     register CONST char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
+    Tcl_UniChar ch;
+
     while (index > 0) {
 	index--;
-	src = TclUtfNext(src);
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }

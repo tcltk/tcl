@@ -31,6 +31,7 @@ proc runtests {} {
 # Some tests require the testencoding command
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -267,16 +268,16 @@ test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
-    set x [encoding convertto iso8859-3 \u120]
-    append x [encoding convertto iso8859-3 \ud5]
-    append x [encoding convertfrom iso8859-3 \xd5]
+    set x [encoding convertto iso8859-3 \u0120]
+    append x [encoding convertto iso8859-3 \xD5]
+    append x [encoding convertfrom iso8859-3 \xD5]
 } "\xd5?\u120"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
     set x [encoding convertto iso8859-3 ab\u0120g] 
-    append x [encoding convertfrom iso8859-3 ab\xd5g]
+    append x [encoding convertfrom iso8859-3 ab\xD5g]
 } "ab\xd5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4e4eg] 
+    set x [encoding convertto shiftjis ab\u4E4Eg] 
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
 } "ab\x8c\xc1gab\u4e4eg"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
@@ -288,6 +289,9 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
     append x [encoding convertto symbol \u67]
     append x [encoding convertfrom symbol \x67]
 } "\x67\x67\u3b3"
+test encoding-12.6 {LoadTableEncoding: overflow in char value} fullutf {
+    encoding convertto iso8859-3 \U010000
+} "?"
 
 test encoding-13.1 {LoadEscapeTable} {
     viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]

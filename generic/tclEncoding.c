@@ -2471,11 +2471,6 @@ UtfToUnicodeProc(
 	    break;
         }
 	src += TclUtfToUniChar(src, &ch);
-	/*
-	 * Need to handle this in a way that won't cause misalignment
-	 * by casting dst to a Tcl_UniChar. [Bug 1122671]
-	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
-	 */
 #if TCL_UTF_MAX > 3
 	if (ch & ~0xFFFF) {
 	    ch = 0xFFFD;
@@ -2685,12 +2680,8 @@ TableFromUtfProc(
 	len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX > 3
-	/*
-	 * This prevents a crash condition. More evaluation is required for
-	 * full support of int Tcl_UniChar. [Bug 1004065]
-	 */
-
-	if (ch & 0xffff0000) {
+	/* Unicode chars > +U0FFFF cannot be represented in any table encoding */
+	if (ch & ~0xFFFF) {
 	    word = 0;
 	} else
 #endif

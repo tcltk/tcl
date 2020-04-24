@@ -63,7 +63,7 @@
 
 /*
  - lexstart - set up lexical stuff, scan leading options
- ^ static VOID lexstart(struct vars *);
+ ^ static void lexstart(struct vars *);
  */
 static void
 lexstart(
@@ -89,7 +89,7 @@ lexstart(
 
 /*
  - prefixes - implement various special prefixes
- ^ static VOID prefixes(struct vars *);
+ ^ static void prefixes(struct vars *);
  */
 static void
 prefixes(
@@ -207,7 +207,7 @@ prefixes(
  - lexnest - "call a subroutine", interpolating string at the lexical level
  * Note, this is not a very general facility.  There are a number of
  * implicit assumptions about what sorts of strings can be subroutines.
- ^ static VOID lexnest(struct vars *, const chr *, const chr *);
+ ^ static void lexnest(struct vars *, const chr *, const chr *);
  */
 static void
 lexnest(
@@ -288,7 +288,7 @@ static const chr brbackw[] = {	/* \w within brackets */
 /*
  - lexword - interpolate a bracket expression for word characters
  * Possibly ought to inquire whether there is a "word" character class.
- ^ static VOID lexword(struct vars *);
+ ^ static void lexword(struct vars *);
  */
 static void
 lexword(
@@ -755,6 +755,7 @@ lexescape(
     struct vars *v)
 {
     chr c;
+    int i;
     static const chr alert[] = {
 	CHR('a'), CHR('l'), CHR('e'), CHR('r'), CHR('t')
     };
@@ -831,18 +832,27 @@ lexescape(
 	RETV(PLAIN, CHR('\t'));
 	break;
     case CHR('u'):
-	c = lexdigits(v, 16, 4, 4);
+	c = (uchr) lexdigits(v, 16, 1, 4);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
 	RETV(PLAIN, c);
 	break;
     case CHR('U'):
-	c = lexdigits(v, 16, 8, 8);
+	i = lexdigits(v, 16, 8, 8);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	RETV(PLAIN, c);
+#if CHRBITS > 16
+	if ((unsigned)i > 0x10FFFF) {
+	    i = 0xFFFD;
+	}
+#else
+	if ((unsigned)i & ~0xFFFF) {
+	    i = 0xFFFD;
+	}
+#endif
+	RETV(PLAIN, (uchr)i);
 	break;
     case CHR('v'):
 	RETV(PLAIN, CHR('\v'));
