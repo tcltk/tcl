@@ -97,14 +97,14 @@ test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {tip389 testb
 test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {tip389 testbytestring} {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
 } 2
-test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
+test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} {testbytestring ucs2} {
     string length [testbytestring "\xF0\x8F\xBF\xBF"]
 } 4
-test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
+test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} {testbytestring ucs2} {
     # Would decode to U+110000 but that is outside the Unicode range.
     string length [testbytestring "\xF4\x90\x80\x80"]
 } 4
-test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
+test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} {testbytestring ucs2} {
     string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
 } 5
 
@@ -193,7 +193,7 @@ test utf-6.10 {Tcl_UtfNext} testutfnext {
 } 1
 test utf-6.11 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xA0\xA0
-} 2
+} 1
 test utf-6.12 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xA0\xD0
 } 1
@@ -448,10 +448,10 @@ test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfnext fullutf} {
 } 4
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testutfnext {
     testutfnext -bytestring \xA0\xA0
-} 2
+} 1
 test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80
-} 2
+} 1
 test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 1
@@ -466,10 +466,10 @@ test utf-6.91.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf}
 } 1
 test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
     testutfnext -bytestring \xA0\xA0\xA0
-} 3
-test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+} 1
+test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
     testutfnext -bytestring \x80\x80\x80
-} 3
+} 1
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
