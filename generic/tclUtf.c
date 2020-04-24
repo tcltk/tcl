@@ -579,7 +579,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    const char *next;
+    Tcl_UniChar ch;
     register int i = 0;
 
     /*
@@ -591,35 +591,20 @@ Tcl_NumUtfChars(
 
     if (length < 0) {
 	while ((*src != '\0') && (i < INT_MAX)) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    next = TclUtfNext(src);
-#if TCL_UTF_MAX > 4
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
-#else
-	    i += 1 + ((next - src) > 3);
-#endif
-	    src = next;
 	}
 	if (src < endPtr) {
 	    i += endPtr - src;
@@ -946,19 +931,10 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
+    Tcl_UniChar ch;
+
     while (index-- > 0) {
-	const char *next = TclUtfNext(src);
-
-#if TCL_UTF_MAX <= 4
-	/*
-	 * 4-byte sequences generate two UCS-2 code units in the
-	 * UTF-16 representation, so in the current indexing scheme
-	 * we need to account for an extra index (total of two).
-	 */
-	index -= ((next - src) > 3);
-#endif
-
-	src = next;
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }
