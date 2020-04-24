@@ -565,6 +565,12 @@ test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
 test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0\xA0 4
 } 1
+test utf-6.125 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+    testutfnext \xA0\xA0\xA0\xA0
+} 1
+test utf-6.126 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+    testutfnext \x80\x80\x80\x80
+} 1
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
