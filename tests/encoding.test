@@ -290,7 +290,7 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
     append x [encoding convertfrom symbol \x67]
 } "\x67\x67\u3b3"
 test encoding-12.6 {LoadTableEncoding: overflow in char value} fullutf {
-    encoding convertto iso8859-3 \U01000
+    encoding convertto iso8859-3 \U010000
 } "?"
 
 test encoding-13.1 {LoadEscapeTable} {
