@@ -64,7 +64,7 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX != 4
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 #else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
@@ -733,13 +733,6 @@ Tcl_UtfNext(
     int left = totalBytes[UCHAR(*src)];
     const char *next = src + 1;
 
-    if (((*src) & 0xC0) == 0x80) {
-	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
-	    ++src;
-	}
-	return src;
-    }
-
     while (--left) {
 	if ((*next & 0xC0) != 0x80) {
 	    /*
@@ -751,7 +744,7 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if (Invalid((unsigned char *)src)) {
+    if ((next == src + 1) || Invalid((unsigned char *)src)) {
 	return src + 1;
     }
     return next;
