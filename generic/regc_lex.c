@@ -852,7 +852,7 @@ lexescape(
 	    i = 0xFFFD;
 	}
 #endif
-	RETV(PLAIN, c);
+	RETV(PLAIN, (uchr)i);
 	break;
     case CHR('v'):
 	RETV(PLAIN, CHR('\v'));
