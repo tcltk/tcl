@@ -622,7 +622,8 @@ expectMatch	13.13 P		"a\\nb"		"a\nb"	"a\nb"
 expectMatch	13.14 P		"a\\rb"		"a\rb"	"a\rb"
 expectMatch	13.15 P		"a\\tb"		"a\tb"	"a\tb"
 expectMatch	13.16 P		"a\\u0008x"	"a\bx"	"a\bx"
-expectError	13.17 -		{a\u008x}	EESCAPE
+expectMatch	13.17 P		{a\u008x}	"a\bx"	"a\bx"
+expectError	13.17.1 -	{a\ux}		EESCAPE
 expectMatch	13.18 P		"a\\u00088x"	"a\b8x"	"a\b8x"
 expectMatch	13.19 P		"a\\U00000008x"	"a\bx"	"a\bx"
 expectError	13.20 -		{a\U0000008x}	EESCAPE
