@@ -832,7 +832,7 @@ lexescape(
 	RETV(PLAIN, CHR('\t'));
 	break;
     case CHR('u'):
-	c = (uchr) lexdigits(v, 16, 4, 4);
+	c = (uchr) lexdigits(v, 16, 1, 4);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
