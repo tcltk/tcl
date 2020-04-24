@@ -187,7 +187,7 @@ TclDumpMemoryInfo(ClientData clientData, int flags)
 	    maximum_malloc_packets,
 	    (unsigned long)maximum_bytes_malloced);
     if (flags == 0) {
-	fprintf((FILE *)clientData, buf);
+	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
 	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
