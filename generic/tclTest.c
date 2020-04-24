@@ -6849,10 +6849,10 @@ TestUtfNextCmd(
     memcpy(buffer + 1, bytes, numBytes);
     buffer[0] = buffer[numBytes + 1] = '\x00';
 
-    first = Tcl_UtfNext(buffer + 1);
+    first = TclUtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
 	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
-	result = Tcl_UtfNext(buffer + 1);
+	result = TclUtfNext(buffer + 1);
 	if (first != result) {
 	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", NULL);
 	    return TCL_ERROR;
@@ -6908,7 +6908,7 @@ TestUtfPrevCmd(
     bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
     bytes[numBytes] = '\0';
 
-    result = Tcl_UtfPrev(bytes + offset, bytes);
+    result = TclUtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
 
     Tcl_DecrRefCount(copy);
