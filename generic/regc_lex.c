@@ -843,12 +843,18 @@ lexescape(
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	if (i > 0xFFFF) {
+#if CHRBITS > 16
+	if ((unsigned)i > 0x10FFFF) {
+	    i = 0xFFFD;
+	}
+#else
+	if ((unsigned)i & ~0xFFFF) {
 	    /* TODO: output a Surrogate pair
 	     */
 	    i = 0xFFFD;
 	}
-	RETV(PLAIN, (uchr) i);
+#endif
+	RETV(PLAIN, (uchr)i);
 	break;
     case CHR('v'):
 	RETV(PLAIN, CHR('\v'));
