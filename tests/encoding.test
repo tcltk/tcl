@@ -283,16 +283,16 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
-    set x [encoding convertto iso8859-3 \u120]
-    append x [encoding convertto iso8859-3 \ud5]
-    append x [encoding convertfrom iso8859-3 \xd5]
+    set x [encoding convertto iso8859-3 \u0120]
+    append x [encoding convertto iso8859-3 \xD5]
+    append x [encoding convertfrom iso8859-3 \xD5]
 } "\xd5?\u120"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
     set x [encoding convertto iso8859-3 ab\u0120g]
-    append x [encoding convertfrom iso8859-3 ab\xd5g]
+    append x [encoding convertfrom iso8859-3 ab\xD5g]
 } "ab\xd5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4e4eg]
+    set x [encoding convertto shiftjis ab\u4E4Eg] 
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
 } "ab\x8c\xc1gab\u4e4eg"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {

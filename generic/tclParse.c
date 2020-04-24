@@ -128,6 +128,8 @@ static size_t		ParseWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr, char *typePtr);
 static size_t		ParseAllWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr);
+static int		ParseHex(const char *src, size_t numBytes,
+			    int *resultPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -702,7 +704,7 @@ TclParseAllWhiteSpace(
 /*
  *----------------------------------------------------------------------
  *
- * TclParseHex --
+ * ParseHex --
  *
  *	Scans a hexadecimal number as a Tcl_UniChar value (e.g., for parsing
  *	\x and \u escape sequences). At most numBytes bytes are scanned.
@@ -722,7 +724,7 @@ TclParseAllWhiteSpace(
  */
 
 int
-TclParseHex(
+ParseHex(
     const char *src,		/* First character to parse. */
     size_t numBytes,		/* Max number of byes to scan */
     int *resultPtr)		/* Points to storage provided by caller where
@@ -846,7 +848,7 @@ TclParseBackslash(
 	result = 0xB;
 	break;
     case 'x':
-	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "x".
@@ -861,7 +863,7 @@ TclParseBackslash(
 	}
 	break;
     case 'u':
-	count += TclParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "u".
@@ -872,7 +874,7 @@ TclParseBackslash(
 	    /* If high surrogate is immediately followed by a low surrogate
 	     * escape, combine them into one character. */
 	    int low;
-	    int count2 = TclParseHex(p+7, 4, &low);
+	    int count2 = ParseHex(p+7, 4, &low);
 	    if ((count2 == 4) && ((low & 0xDC00) == 0xDC00)) {
 		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
 		count += count2 + 2;
@@ -880,7 +882,7 @@ TclParseBackslash(
 	}
 	break;
     case 'U':
-	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "U".
