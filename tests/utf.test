@@ -882,10 +882,10 @@ test utf-7.44 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
 test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
     testutfprev \xA0\xA0\xA0
 } 2
-test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev ucs2} {
+test utf-7.46.0 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev ucs2} {
     testutfprev \xA0\xA0\xA0\xA0
 } 1
-test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev fullutf} {
+test utf-7.46.1 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev fullutf} {
     testutfprev \xA0\xA0\xA0\xA0
 } 3
 test utf-7.47 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} testutfprev {
