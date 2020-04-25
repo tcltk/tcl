@@ -157,7 +157,7 @@ static const unsigned char bounds[28] = {
 #endif
 };
 
-INLINE static int
+static int
 Invalid(
     unsigned char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
@@ -775,7 +775,7 @@ Tcl_UtfPrev(
     const char *start)		/* Pointer to the beginning of the string */
 {
     int trailBytesSeen = 0;	/* How many trail bytes have been verified? */
-    CONST char *fallback = src - 1;
+    const char *fallback = src - 1;
 				/* If we cannot find a lead byte that might
 				 * start a prefix of a valid UTF byte sequence,
 				 * we will fallback to a one-byte back step */
@@ -831,13 +831,13 @@ Tcl_UtfPrev(
 		/* Reject */
 		return fallback;
 	    }
-	    return (CONST char *)look;
+	    return (const char *)look;
 	}
 
 	/* We saw a trail byte. */
 	trailBytesSeen++;
 
-	if ((CONST char *)look == start) {
+	if ((const char *)look == start) {
 	    /*
 	     * Do not read before the start of the string
 	     *

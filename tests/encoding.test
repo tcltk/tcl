@@ -36,7 +36,8 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\ufffd"}]
+testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
 
@@ -305,7 +306,7 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
     append x [encoding convertto symbol \u67]
     append x [encoding convertfrom symbol \x67]
 } "\x67\x67\u3b3"
-test encoding-12.6 {LoadTableEncoding: overflow in char value} fullutf {
+test encoding-12.6 {LoadTableEncoding: overflow in char value} ucs2 {
     encoding convertto iso8859-3 \U010000
 } "?"
 
