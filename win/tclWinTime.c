@@ -1358,7 +1358,7 @@ TclpGmtime(
 #if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return gmtime(timePtr);
 #else
-    return _gmtime32((CONST __time32_t *)timePtr);
+    return _gmtime32((const __time32_t *)timePtr);
 #endif
 }
 
@@ -1393,7 +1393,7 @@ TclpLocaltime(
 #if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return localtime(timePtr);
 #else
-    return _localtime32((CONST __time32_t *)timePtr);
+    return _localtime32((const __time32_t *)timePtr);
 #endif
 }
 
