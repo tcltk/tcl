@@ -6721,15 +6721,11 @@ TestUtfNextCmd(
     const char *p = tobetested;
     (void)dummy;
 
-    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
-	    return TCL_ERROR;
-	}
-	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
-    } else {
-	bytes = (char *) Tcl_GetByteArrayFromObj(objv[2], &numBytes);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes");
+	return TCL_ERROR;
     }
+    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
 
     if (numBytes > (int)sizeof(buffer)-2) {
 	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
