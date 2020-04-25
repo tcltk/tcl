@@ -579,7 +579,7 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     register int i = 0;
 
     /*
@@ -590,20 +590,33 @@ Tcl_NumUtfChars(
      */
 
     if (length < 0) {
-	while ((*src != '\0') && (i < INT_MAX)) {
+	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    src += TclUtfToUniChar(src, &ch);
+	    if (((unsigned)(unsigned char)*src - 0xF0) < 5) {
+		/* treat F0 - F4 as single character */
+		ch = 0;
+		src++;
+	    } else {
+		src += TclUtfToUniChar(src, &ch);
+	    }
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src += TclUtfToUniChar(src, &ch);
+	    if (((unsigned)(unsigned char)*src - 0xF0) < 5) {
+		/* treat F0 - F4 as single character */
+		ch = 0;
+		src++;
+	    } else {
+		src += TclUtfToUniChar(src, &ch);
+	    }
 	    i++;
 	}
 	if (src < endPtr) {
@@ -931,11 +944,19 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
+    int len = 0;
 
     while (index-- > 0) {
+	len = TclUtfToUniChar(src, &ch);
+	src += len;
+    }
+#if TCL_UTF_MAX == 4
+    if ((ch >= 0xD800) && (len < 3)) {
+	/* Index points at character following high Surrogate */
 	src += TclUtfToUniChar(src, &ch);
     }
+#endif
     return src;
 }
 
