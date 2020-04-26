@@ -883,6 +883,7 @@ Tcl_UtfPrev(
  *---------------------------------------------------------------------------
  */
 
+#if 0 /* REMOVED, in order to demonstrate it's not used at all */
 Tcl_UniChar
 Tcl_UniCharAtIndex(
     register const char *src,	/* The UTF-8 string to dereference. */
@@ -893,6 +894,7 @@ Tcl_UniCharAtIndex(
     TclUtfToUniChar(Tcl_UtfAtIndex(src, index), &ch);
     return ch;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------

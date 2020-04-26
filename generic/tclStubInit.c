@@ -60,6 +60,9 @@
 #define TclStaticPackage Tcl_StaticPackage
 #define TclUnusedStubEntry NULL
 
+/* REMOVED, in order to demonstrate it's not used at all */
+#define Tcl_UniCharAtIndex 0
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
