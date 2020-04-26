@@ -282,7 +282,7 @@ byte \fIsrc[0]\fR nor the byte \fIstart[-1]\fR nor the byte
 \fIsrc[-\fBTCL_UTF_MAX\fI-1]\fR.
 .PP
 \fBTcl_UniCharAtIndex\fR corresponds to a C string array dereference or the
-Pascal Ord() function.  It returns the Tcl_UniChar represented at the
+Pascal Ord() function.  It returns the Unicode character represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
 characters.  Behavior is undefined if a negative \fIindex\fR is given.
