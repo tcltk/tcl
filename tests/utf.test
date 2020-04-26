@@ -168,7 +168,13 @@ test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end-1
 } 3
-test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
+test utf-4.12.0 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs2} {
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
+} 4
+test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs4} {
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
+} 1
+test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } 2
 
