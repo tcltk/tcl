@@ -78,6 +78,14 @@ test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4b
 test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc testbytestring} {
     expr {"\UD842" eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
+test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {pairsTo4bytes testbytestring} {
+    set hi \uD842
+    set lo \uDC42
+    eq "$hi$lo" [testbytestring \xF0\xA0\xA1\x92]
+} 1
+test utf-1.15 {Tcl_UniCharToUtf: surrogate pairs from concat} {pairsTo4bytes testbytestring} {
+    eq [string cat \uD842 \uDC42] [testbytestring \xF0\xA0\xA1\x92]
+} 1
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
