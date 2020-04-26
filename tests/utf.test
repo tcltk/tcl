@@ -33,6 +33,8 @@ testConstraint teststringobj [llength [info commands teststringobj]]
 testConstraint testutfnext [llength [info commands testutfnext]]
 testConstraint testutfprev [llength [info commands testutfprev]]
 
+testConstraint tip413 [eq {} [string trim \x00]]
+
 catch {unset x}
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
@@ -173,7 +175,7 @@ test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars test
 } 1
 test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring tip389} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] 4
-} 1
+} 2
 
 test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
     testfindfirst [testbytestring "abcbc"] 98
@@ -1220,6 +1222,14 @@ test utf-24.3 {TclUniCharIsSpace} {
 test utf-24.4 {unicode space char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:space:]]+$} \u1680\u180E\u202F] [regexp {^\s+$} \u1680\u180E\u202F]
+} {1 1}
+test utf-24.5 {TclUniCharIsSpace} tip413 {
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    string is space \x85\u1680\u180E\u200B\u202F\u2060
+} 1
+test utf-24.6 {unicode space char in regc_locale.c} tip413 {
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
 
 test utf-25.1 {Tcl_UniCharNcasecmp} -constraints teststringobj \
