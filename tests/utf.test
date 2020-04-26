@@ -13,12 +13,18 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+namespace path ::tcl::mathop
+
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint tip389 [expr {[string length \U010000] eq 2}]
+
+testConstraint Uesc [eq \U0041 A]
+testConstraint pairsTo4bytes [expr {[llength [info commands teststringbytes]]
+		&& [string length [teststringbytes \uD83D\uDCA9]] == 4}]
 
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testfindfirst [llength [info commands testfindfirst]]
@@ -48,9 +54,12 @@ test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
     expr {[format %c -1] eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
-test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} {fullutf testbytestring} {
+test utf-1.7.0 {Tcl_UniCharToUtf: 4 byte sequences} {fullutf Uesc testbytestring} {
     expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
 } 1
+test utf-1.7.1 {Tcl_UniCharToUtf: 4 byte sequences} {ucs2 Uesc testbytestring} {
+    expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
+} 0
 test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
     expr {"\uD842" eq [testbytestring "\xED\xA1\x82"]}
 } 1
@@ -63,10 +72,10 @@ test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring
 test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
     expr {[format %c 0xDC42] eq [testbytestring "\xED\xB1\x82"]}
 } 1
-test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {fullutf testbytestring} {
+test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4bytes testbytestring} {
     expr {"\uD842\uDC42" eq [testbytestring "\xF0\xA0\xA1\x82"]}
 } 1
-test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} testbytestring {
+test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc testbytestring} {
     expr {"\UD842" eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
 
