@@ -1081,7 +1081,7 @@ Tcl_UtfPrev(
  *
  * Tcl_UniCharAtIndex --
  *
- *	Returns the Tcl_UniChar represented at the specified character
+ *	Returns the Unicode character represented at the specified character
  *	(not byte) position in the UTF-8 string.
  *
  * Results:
@@ -1098,28 +1098,10 @@ Tcl_UniCharAtIndex(
     const char *src,	/* The UTF-8 string to dereference. */
     int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch = 0;
-    int fullchar = 0;
-#if TCL_UTF_MAX <= 3
-	int len = 0;
-#endif
+    int ch = 0;
 
-    while (index-- >= 0) {
-#if TCL_UTF_MAX <= 3
-	src += (len = TclUtfToUniChar(src, &ch));
-#else
-	src += TclUtfToUniChar(src, &ch);
-#endif
-    }
-    fullchar = ch;
-#if TCL_UTF_MAX <= 3
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* If last Tcl_UniChar was a high surrogate, combine with low surrogate */
-	(void)TclUtfToUniChar(src, &ch);
-	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-    }
-#endif
-    return fullchar;
+    TclUtfToUCS4(Tcl_UtfAtIndex(src, index), &ch);
+    return ch;
 }
 
 /*
