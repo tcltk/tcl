@@ -25,6 +25,7 @@ testConstraint ucs4 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
 
 testConstraint Uesc [eq \U0041 A]
+testConstraint pre388 [eq \x741 A]
 testConstraint pairsTo4bytes [expr {[llength [info commands teststringbytes]]
 		&& [string length [teststringbytes \uD83D\uDCA9]] == 4}]
 
@@ -795,15 +796,16 @@ test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
 test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
     expr {"\u4E216" eq "[testbytestring \xE4\xB8\xA1]6"}
 } 1
-test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} testbytestring {
+test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} {Uesc fullutf testbytestring} {
     expr {"\U1E2165" eq "[testbytestring \xF0\x9E\x88\x96]5"}
 } 1
-test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} testbytestring {
+test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} {Uesc fullutf testbytestring} {
     expr {"\U10E2165" eq "[testbytestring \xF4\x8E\x88\x96]5"}
 } 1
-proc bsCheck {char num} {
+
+proc bsCheck {char num {constraints {}}} {
     global errNum
-    test utf-10.$errNum {backslash substitution} {
+    test utf-10.$errNum {backslash substitution} $constraints {
 	scan $char %c value
 	set value
     } $num
@@ -838,7 +840,8 @@ bsCheck \x	120
 bsCheck \xa	10
 bsCheck \xA	10
 bsCheck \x41	65
-bsCheck \x541	84
+bsCheck \x541	65	pre388	;# == \x41
+bsCheck \x541	84	!pre388	;# == \x54 1
 bsCheck \u	117
 bsCheck \uk	117
 bsCheck \u41	65
@@ -847,24 +850,25 @@ bsCheck \uA	10
 bsCheck \340	224
 bsCheck \uA1	161
 bsCheck \u4E21	20001
-bsCheck \741	60
-bsCheck \U	85
-bsCheck \Uk	85
-bsCheck \U41	65
-bsCheck \Ua	10
-bsCheck \UA	10
-bsCheck \Ua1	161
-bsCheck \U4E21	20001
-bsCheck \U004E21	20001
-bsCheck \U00004E21	20001
-bsCheck \U0000004E21	78
-bsCheck \U00110000	69632
-bsCheck \U01100000	69632
-bsCheck \U11000000	69632
-bsCheck \U0010FFFF	1114111
-bsCheck \U010FFFF0	1114111
-bsCheck \U10FFFF00	1114111
-bsCheck \UFFFFFFFF	1048575
+bsCheck \741    225	pre388	;# == \341 
+bsCheck \741    60	!pre388	;# == \74 1
+bsCheck \U      85
+bsCheck \Uk     85
+bsCheck \U41    65			Uesc
+bsCheck \Ua     10			Uesc
+bsCheck \UA     10			Uesc
+bsCheck \UA1    161			Uesc
+bsCheck \U4E21  20001			Uesc
+bsCheck \U004E21        20001		Uesc
+bsCheck \U00004E21      20001		Uesc
+bsCheck \U0000004E21    78		Uesc
+bsCheck \U00110000      69632		{Uesc fullutf}
+bsCheck \U01100000      69632		{Uesc fullutf}
+bsCheck \U11000000      69632		{Uesc fullutf}
+bsCheck \U0010FFFF      1114111		{Uesc fullutf}
+bsCheck \U010FFFF0      1114111		{Uesc fullutf}
+bsCheck \U10FFFF00      1114111		{Uesc fullutf}
+bsCheck \UFFFFFFFF      1048575		{Uesc fullutf}
 
 test utf-11.1 {Tcl_UtfToUpper} {
     string toupper {}
