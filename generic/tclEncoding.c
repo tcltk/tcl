@@ -2557,11 +2557,6 @@ UtfToUtf16Proc(
 	}
 	src += TclUtfToUniChar(src, chPtr);
 
-	/*
-	 * Need to handle this in a way that won't cause misalignment by
-	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 */
-
 	if (clientData) {
 #if TCL_UTF_MAX > 3
 	    if (*chPtr <= 0xFFFF) {
