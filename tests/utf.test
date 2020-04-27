@@ -1118,6 +1118,7 @@ test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} {pairsTo4bytes} {
     string toupper \uD801\uDC28
 } \uD801\uDC00
 
+
 test utf-12.1 {Tcl_UtfToLower} {
     string tolower {}
 } {}
