@@ -159,6 +159,8 @@ typedef struct {
 #define SOCKET_ASYNC_CONNECT	(1<<2)	/* This socket uses async connect. */
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
+#define SOCKET_HSENT		(1<<5)	/* Socket had already sent data. */
+#define SOCKET_HRECV		(1<<6)	/* Socket had already received data. */
 
 typedef struct {
     HWND hwnd;			/* Handle to window for socket messages. */
@@ -804,10 +806,92 @@ TcpCloseProc(
 	/*
 	 * Clean up the OS socket handle. The default Windows setting for a
 	 * socket is SO_DONTLINGER, which does a graceful shutdown in the
-	 * background.
+	 * background, this can cause a flood with pending sockets in TIME_WAIT
+	 * state, so can result to exceeding of FD_SETSIZE, etc
+	 * (see bug [b6d0d8cc2c]). So try do a graceful disconnect manually,
+	 * if success don't linger otherwise lingering for 5 seconds, that should be
+	 * enough per default to fullfil a shutdown (flush buffers etc).
+	 * The port can remain longer in TIME_WAIT state, but windows could
+	 * probably use it earlier in out of sockets situation.
 	 */
 
-	if (closesocket(infoPtr->socket) == SOCKET_ERROR) {
+	SOCKET s = infoPtr->socket;
+	LINGER l;
+	l.l_linger = 5; /* 0 would cause a hard reset, so use carefully */
+
+	/* if server socket - simply close it */
+	if (infoPtr->acceptProc) {
+	    goto closeSocket;
+	}
+	/* if nothing was sent through this connection - execute a reset */
+	if (!(infoPtr->flags & (SOCKET_HSENT|SOCKET_HRECV))) {
+	    l.l_linger = 0; /* hard reset */
+	    goto lingerSocket;
+	}
+
+	/* If FD_CLOSE has been not yet received */
+	infoPtr->flags &= ~SOCKET_EOF;
+	infoPtr->flags |= (infoPtr->readyEvents & FD_CLOSE) ? SOCKET_EOF : 0;
+	if (!(infoPtr->flags & SOCKET_EOF)) {
+
+	    WSAEVENT eventObj = WSACreateEvent();
+	    int fdWrite = 0;
+
+	    /* We'll made an attempt of graceful disconnect (if possible).
+	     * Thereby FD_WRITE signaling that we'd avoid immediate disconnect. */
+	    if ((infoPtr->flags & SOCKET_HSENT) && (infoPtr->readyEvents & FD_WRITE)) {
+		fdWrite = FD_WRITE;
+	    }
+	    if (
+		   WSAEventSelect(s, eventObj, (FD_CLOSE|fdWrite)) != SOCKET_ERROR
+		&& (fdWrite || WSASendDisconnect(s, NULL) != SOCKET_ERROR)
+	    ) {
+		/* Wait a bit (1ms) for FD_CLOSE gets signalled (e. g. fast
+		 * (local) connect or already pending FIN/RST from other peer) */
+		while (WSAWaitForMultipleEvents(1, &eventObj, 0, 1, 0)
+			== WSA_WAIT_EVENT_0
+		) {
+
+		    WSANETWORKEVENTS evv;
+		    if (WSAEnumNetworkEvents(s, eventObj, &evv) == 0) {
+
+			if (evv.lNetworkEvents & FD_CLOSE) {
+			    infoPtr->flags |= SOCKET_EOF;
+			    break;
+			}
+			if (fdWrite) {
+			    /* send disconnect now (and reset it to stop repeat) */
+			    fdWrite &= ~FD_WRITE;
+			    /* don't need write anymore - send disconnect and repeat */
+			    if (WSASendDisconnect(s, NULL) != SOCKET_ERROR) {
+				continue;
+			    }
+			}
+		    }
+		    break;
+		}
+		(void) WSAEventSelect(s, NULL, 0);
+	    }
+	    WSACloseEvent(eventObj);
+	}
+
+	/* If attempt succeeded (noticed FD_CLOSE) */
+	if (  (infoPtr->flags & SOCKET_EOF) 
+	  || !(infoPtr->flags & SOCKET_HSENT)
+	) { /* don't need lingering. */
+	    int v = 0; /* the socket will not remain open */
+	    setsockopt(s, SOL_SOCKET, SO_DONTLINGER,
+			(const char *) &v, sizeof(v));
+	} else {
+lingerSocket:
+	    l.l_onoff = 1; /* the socket will remain open for l_linger time */
+	    setsockopt(s, SOL_SOCKET, SO_LINGER,
+			(const char *) &l, sizeof(l));
+	}
+
+closeSocket:
+	/* Now close it. */
+	if (closesocket(s) == SOCKET_ERROR) {
 	    TclWinConvertWSAError((DWORD) WSAGetLastError());
 	    errorCode = Tcl_GetErrno();
 	}
@@ -818,8 +902,7 @@ TcpCloseProc(
      * This may be called, if an async socket connect fails or is closed
      * between connect and thread action callback.
      */
-    if (tsdPtr->pendingSocketInfo != NULL
-	    && tsdPtr->pendingSocketInfo == infoPtr) {
+    if (tsdPtr->pendingSocketInfo == infoPtr) {
 
 	/* get infoPtr lock, because this concerns the notifier thread */
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
@@ -1249,6 +1332,8 @@ WaitForSocketEvent(
     }
 
     while (1) {
+	int rc;
+
 	if (infoPtr->lastError) {
 	    *errorCodePtr = infoPtr->lastError;
 	    result = 0;
@@ -1265,7 +1350,22 @@ WaitForSocketEvent(
 	 * Wait until something happens.
 	 */
 
-	WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+	rc = WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+	if (rc) {
+#if 0
+	    if (rc == WAIT_TIMEOUT) {
+		*errorCodePtr = ETIMEDOUT;
+		result = 0;
+		break;
+	    }
+#endif
+	    if (rc == WAIT_FAILED) {
+		TclWinConvertError(GetLastError());
+		*errorCodePtr = infoPtr->lastError = errno;
+		result = 0;
+		break;
+	    }
+	}
     }
 
     (void) Tcl_SetServiceMode(oldMode);
@@ -1646,6 +1746,7 @@ TcpInputProc(
 	    infoPtr->flags |= SOCKET_EOF;
 	}
 	if (bytesRead != SOCKET_ERROR) {
+	    infoPtr->flags |= SOCKET_HRECV;
 	    break;
 	}
 
@@ -1759,6 +1860,8 @@ TcpOutputProc(
 
 	bytesWritten = send(infoPtr->socket, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
+	    /* Signal data sent to peer */
+	    infoPtr->flags |= toWrite ? SOCKET_HSENT : 0;
 	    /*
 	     * Since Windows won't generate a new write event until we hit an
 	     * overflow condition, we need to force the event loop to poll
@@ -2350,6 +2453,7 @@ SocketProc(
 		&& tsdPtr->pendingSocketInfo != NULL
 		&& tsdPtr->pendingSocketInfo->socket ==socket ) {
 	    infoPtr = tsdPtr->pendingSocketInfo;
+	    tsdPtr->pendingSocketInfo = NULL;
 	    info_found = 1;
 	}
 	if (info_found) {
