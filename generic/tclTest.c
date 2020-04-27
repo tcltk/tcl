@@ -6849,7 +6849,7 @@ TestUtfNextCmd(
     memcpy(buffer + 1, bytes, numBytes);
     buffer[0] = buffer[numBytes + 1] = '\x00';
 
-    first = TclUtfNext(buffer + 1);
+    first = result = TclUtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
 	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
 	result = TclUtfNext(buffer + 1);
