@@ -96,6 +96,11 @@ static const unsigned char complete[256] = {
  */
 
 static int		Invalid(unsigned char *src);
+
+#define UCS4ToUpper Tcl_UniCharToUpper
+#define UCS4ToLower Tcl_UniCharToLower
+#define UCS4ToTitle Tcl_UniCharToTitle
+
 
 /*
  *---------------------------------------------------------------------------
@@ -1225,8 +1230,7 @@ int
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0;
-    int upChar;
+    int ch, upChar;
     char *src, *dst;
     size_t len;
 
@@ -1236,16 +1240,8 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	upChar = ch;
-#if TCL_UTF_MAX <= 3
-	if ((ch >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &ch);
-	    /* Combine surrogates */
-	    upChar = (((upChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	}
-#endif
-	upChar = Tcl_UniCharToUpper(upChar);
+	len = TclUtfToUCS4(src, &ch);
+	upChar = UCS4ToUpper(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1287,8 +1283,7 @@ int
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0;
-    int lowChar;
+    int ch, lowChar;
     char *src, *dst;
     size_t len;
 
@@ -1298,16 +1293,8 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	lowChar = ch;
-#if TCL_UTF_MAX <= 3
-	if ((ch >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &ch);
-	    /* Combine surrogates */
-	    lowChar = (((lowChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	}
-#endif
-	lowChar = Tcl_UniCharToLower(lowChar);
+	len = TclUtfToUCS4(src, &ch);
+	lowChar = UCS4ToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1350,8 +1337,7 @@ int
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0;
-    int titleChar, lowChar;
+    int ch, titleChar, lowChar;
     char *src, *dst;
     size_t len;
 
@@ -1363,16 +1349,8 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	titleChar = ch;
-#if TCL_UTF_MAX <= 3
-	if ((ch >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &ch);
-	    /* Combine surrogates */
-	    titleChar = (((titleChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	}
-#endif
-	titleChar = Tcl_UniCharToTitle(titleChar);
+	len = TclUtfToUCS4(src, &ch);
+	titleChar = UCS4ToTitle(ch);
 
 	if ((len < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
@@ -1383,18 +1361,11 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
 	lowChar = ch;
-#if TCL_UTF_MAX <= 3
-	if ((ch >= 0xD800) && (len < 3)) {
-	    len += TclUtfToUniChar(src + len, &ch);
-	    /* Combine surrogates */
-	    lowChar = (((lowChar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
-	}
-#endif
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
-	    lowChar = Tcl_UniCharToLower(lowChar);
+	    lowChar = UCS4ToLower(lowChar);
 	}
 
 	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
