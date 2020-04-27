@@ -775,7 +775,7 @@ test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
 test utf-9.3 {Tcl_UtfAtIndex: index = 0, Emoji} {
     string range \U1F600G 0 0
 } "\U1F600"
-test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} fullutf {
+test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
     string range \U1F600G 1 1
 } {G}
 
