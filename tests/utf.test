@@ -1127,7 +1127,7 @@ test utf-12.4 {Tcl_UtfToLower} {
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
-test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} ucs2 {
+test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
     string tolower \uDC24\uD824
 } \uDC24\uD824
 
@@ -1149,7 +1149,7 @@ test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
     string totitle \u1C90\u10D0
 } \u1C90\u10D0
-test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} ucs2 {
+test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \uDC24\uD824
 } \uDC24\uD824
 
