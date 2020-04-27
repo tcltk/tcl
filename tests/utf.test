@@ -1098,67 +1098,41 @@ test utf-24.6 {unicode space char in regc_locale.c} tip413 {
     list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
 
-test utf-25.1 {Tcl_UniCharNcasecmp} -constraints teststringobj \
-    -setup {
+proc UniCharCaseCmpTest {order one two {constraints {}}} {
+    variable count
+    test utf-25.$count {Tcl_UniCharNcasecmp} -setup {
 	testobj freeallvars
-    } \
-    -body {
-	teststringobj set 1 a
-	teststringobj set 2 b
+    } -constraints [linsert $constraints 0 teststringobj] -cleanup {
+	testobj freeallvars
+    } -body {
+	teststringobj set 1 $one
+	teststringobj set 2 $two
 	teststringobj maxchars 1
 	teststringobj maxchars 2
-	string compare -nocase [teststringobj get 1] [teststringobj get 2]
-    } \
-    -cleanup {
-	testobj freeallvars
-    } \
-    -result -1
-test utf-25.2 {Tcl_UniCharNcasecmp} -constraints teststringobj \
-    -setup {
-	testobj freeallvars
-    } \
-    -body {
-	teststringobj set 1 b
-	teststringobj set 2 a
-	teststringobj maxchars 1
-	teststringobj maxchars 2
-	string compare -nocase [teststringobj get 1] [teststringobj get 2]
-    } \
-    -cleanup {
-	testobj freeallvars
-    } \
-    -result 1
-test utf-25.3 {Tcl_UniCharNcasecmp} -constraints teststringobj \
-    -setup {
-	testobj freeallvars
-    } \
-    -body {
-	teststringobj set 1 B
-	teststringobj set 2 a
-	teststringobj maxchars 1
-	teststringobj maxchars 2
-	string compare -nocase [teststringobj get 1] [teststringobj get 2]
-    } \
-    -cleanup {
-	testobj freeallvars
-    } \
-    -result 1
+	set result [string compare -nocase [teststringobj get 1] [teststringobj get 2]]
+	if {$result eq [string map {< -1 = 0 > 1} $order]} {
+	    set result ok
+	} else {
+	    set result "'$one' should be $order '$two' (no case)"
+	}
+	set result
+    } -result ok
+    incr count
+}
+variable count 1
+UniCharCaseCmpTest < a b
+UniCharCaseCmpTest > b a
+UniCharCaseCmpTest > B a
+UniCharCaseCmpTest > aBcB abca
+UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf knownBug}
+UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf knownBug}
 
-test utf-25.4 {Tcl_UniCharNcasecmp} -constraints teststringobj \
-    -setup {
-	testobj freeallvars
-    } \
-    -body {
-	teststringobj set 1 aBcB
-	teststringobj set 2 abca
-	teststringobj maxchars 1
-	teststringobj maxchars 2
-	string compare -nocase [teststringobj get 1] [teststringobj get 2]
-    } \
-    -cleanup {
-	testobj freeallvars
-    } \
-    -result 1
+
+
+
+
+unset count
+rename UniCharCaseCmpTest {}
 
 # cleanup
 ::tcltest::cleanupTests
