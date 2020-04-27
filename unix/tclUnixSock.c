@@ -1006,7 +1006,7 @@ TcpThreadActionProc(
     if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	/*
 	 * Async-connecting socket must get reassigned handler if it have been
-	 * transferred to another thread. Remove the handler if the socket is 
+	 * transferred to another thread. Remove the handler if the socket is
 	 * not managed by this thread anymore and create new handler (TSD related)
 	 * so the callback will run in the correct thread, bug [f583715154].
 	 */
