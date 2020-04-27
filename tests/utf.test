@@ -1124,8 +1124,8 @@ UniCharCaseCmpTest < a b
 UniCharCaseCmpTest > b a
 UniCharCaseCmpTest > B a
 UniCharCaseCmpTest > aBcB abca
-UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf knownBug}
-UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf knownBug}
+UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf}
+UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf}
 
 
 
