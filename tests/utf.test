@@ -1034,8 +1034,8 @@ bsCheck \u41	65
 bsCheck \ua	10
 bsCheck \uA	10
 bsCheck \340	224
-bsCheck \ua1	161
-bsCheck \u4e21	20001
+bsCheck \uA1	161
+bsCheck \u4E21	20001
 bsCheck \741    225	pre388	;# == \341 
 bsCheck \741    60	!pre388	;# == \74 1
 bsCheck \U      85
