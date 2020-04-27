@@ -69,19 +69,6 @@ static const unsigned char totalBytes[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 /* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
-};
-
-static const unsigned char complete[256] = {
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-/* End of "continuation byte section" */
-    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
@@ -776,7 +763,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= complete[(unsigned char)*src];
+    return length >= totalBytes[(unsigned char)*src];
 }
 
 /*
@@ -1070,7 +1057,7 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < 4);
+    } while (trailBytesSeen < TCL_UTF_MAX);
 
     /*
      * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
@@ -1078,7 +1065,11 @@ Tcl_UtfPrev(
      * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
      * far as we can.
      */
+#if TCL_UTF_MAX < 4
+    return src - TCL_UTF_MAX;
+#else
     return fallback;
+#endif
 }
 
 /*

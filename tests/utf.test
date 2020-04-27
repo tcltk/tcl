@@ -394,7 +394,10 @@ test utf-6.67 {Tcl_UtfNext} testutfnext {
 test utf-6.68 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xF2\xA0\xA0G
 } 1
-test utf-6.69 {Tcl_UtfNext} testutfnext {
+test utf-6.69.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0
+} 1
+test utf-6.69.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0
 } 4
 test utf-6.70 {Tcl_UtfNext} testutfnext {
@@ -409,22 +412,40 @@ test utf-6.72 {Tcl_UtfNext} testutfnext {
 test utf-6.73 {Tcl_UtfNext} testutfnext {
     testutfnext -bytestring \xF2\xA0\xA0\xF8
 } 1
-test utf-6.74 {Tcl_UtfNext} testutfnext {
+test utf-6.74.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0G
+} 1
+test utf-6.74.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G
 } 4
-test utf-6.75 {Tcl_UtfNext} testutfnext {
+test utf-6.75.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0\xA0
+} 1
+test utf-6.75.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xA0
 } 4
-test utf-6.76 {Tcl_UtfNext} testutfnext {
+test utf-6.76.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0\xD0
+} 1
+test utf-6.76.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xD0
 } 4
-test utf-6.77 {Tcl_UtfNext} testutfnext {
+test utf-6.77.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0\xE8
+} 1
+test utf-6.77.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xE8
 } 4
-test utf-6.78 {Tcl_UtfNext} testutfnext {
+test utf-6.78.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0\xF2
+} 1
+test utf-6.78.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0\xF2
 } 4
-test utf-6.79 {Tcl_UtfNext} testutfnext {
+test utf-6.79.0 {Tcl_UtfNext} {testutfnext tip389} {
+    testutfnext -bytestring \xF2\xA0\xA0\xA0G\xF8
+} 1
+test utf-6.79.1 {Tcl_UtfNext} {testutfnext ucs4} {
     testutfnext -bytestring \xF2\xA0\xA0\xA0G\xF8
 } 4
 test utf-6.80 {Tcl_UtfNext - overlong sequences} testutfnext {
@@ -448,7 +469,10 @@ test utf-6.85 {Tcl_UtfNext - overlong sequences} testutfnext {
 test utf-6.86 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext -bytestring \xF0\x80\x80\x80
 } 1
-test utf-6.87 {Tcl_UtfNext - overlong sequences} testutfnext {
+test utf-6.87.0 {Tcl_UtfNext - overlong sequences} {testutfprev tip389} {
+    testutfnext -bytestring \xF0\x90\x80\x80
+} 1
+test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfprev ucs4} {
     testutfnext -bytestring \xF0\x90\x80\x80
 } 4
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testutfnext {
@@ -457,7 +481,10 @@ test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testu
 test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80
 } 2
-test utf-6.90 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
+test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfprev tip389} {
+    testutfnext -bytestring \xF4\x8F\xBF\xBF
+} 1
+test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfprev ucs4} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 4
 test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
@@ -533,13 +560,22 @@ test utf-7.9.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.9.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xF8\xA0 3
 } 2
-test utf-7.10 {Tcl_UtfPrev} testutfprev {
+test utf-7.10.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0
+} 2
+test utf-7.10.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0
 } 1
-test utf-7.10.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.10.2 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xA0\xA0 3
+} 2
+test utf-7.10.3 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0\xA0 3
 } 1
-test utf-7.10.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.10.4 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xF8\xA0 3
+} 2
+test utf-7.10.5 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xF8\xA0 3
 } 1
 test utf-7.11 {Tcl_UtfPrev} testutfprev {
@@ -581,13 +617,22 @@ test utf-7.14.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.14.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xF8\xA0\xA0\xF8 4
 } 3
-test utf-7.15 {Tcl_UtfPrev} testutfprev {
+test utf-7.15.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xA0
+} 3
+test utf-7.15.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0
 } 1
-test utf-7.15.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.15.2 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xA0\xA0 4
+} 3
+test utf-7.15.3 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0\xA0 4
 } 1
-test utf-7.15.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.15.4 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xA0\xF8 4
+} 3
+test utf-7.15.4 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0\xF8 4
 } 1
 test utf-7.16 {Tcl_UtfPrev} testutfprev {
@@ -608,28 +653,52 @@ test utf-7.17.1 {Tcl_UtfPrev} testutfprev {
 test utf-7.17.2 {Tcl_UtfPrev} testutfprev {
     testutfprev A\xD0\xA0\xA0\xF8 4
 } 3
-test utf-7.18 {Tcl_UtfPrev} testutfprev {
+test utf-7.18.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xA0\xA0\xA0
+} 1
+test utf-7.18.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xA0\xA0\xA0
 } 3
-test utf-7.18.1 {Tcl_UtfPrev} testutfprev {
+test utf-7.18.2 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xA0\xA0\xA0\xA0 4
+} 1
+test utf-7.18.3 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xA0\xA0\xA0\xA0 4
 } 3
-test utf-7.18.2 {Tcl_UtfPrev} testutfprev {
+test utf-7.18.4 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xA0\xA0\xA0\xF8 4
+} 1
+test utf-7.18.5 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xA0\xA0\xA0\xF8 4
 } 3
-test utf-7.19 {Tcl_UtfPrev} testutfprev {
+test utf-7.19.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF8\xA0\xA0\xA0
+} 2
+test utf-7.19.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF8\xA0\xA0\xA0
 } 4
-test utf-7.20 {Tcl_UtfPrev} testutfprev {
+test utf-7.20.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xF2\xA0\xA0\xA0
+} 2
+test utf-7.20.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0\xA0
 } 1
-test utf-7.21 {Tcl_UtfPrev} testutfprev {
+test utf-7.21.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xE8\xA0\xA0\xA0
+} 2
+test utf-7.21.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xE8\xA0\xA0\xA0
 } 4
-test utf-7.22 {Tcl_UtfPrev} testutfprev {
+test utf-7.22.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xD0\xA0\xA0\xA0
+} 2
+test utf-7.22.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xD0\xA0\xA0\xA0
 } 4
-test utf-7.23 {Tcl_UtfPrev} testutfprev {
+test utf-7.23.0 {Tcl_UtfPrev} {testutfprev tip389} {
+    testutfprev A\xA0\xA0\xA0\xA0
+} 2
+test utf-7.23.1 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xA0\xA0\xA0\xA0
 } 4
 test utf-7.24 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -653,7 +722,10 @@ test utf-7.28 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.28.1 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\x80\x80 2
 } 1
-test utf-7.29 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.29.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev tip389} {
+    testutfprev A\xF0\x80\x80\x80
+} 2
+test utf-7.29.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs4} {
     testutfprev A\xF0\x80\x80\x80
 } 4
 test utf-7.30 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -683,13 +755,22 @@ test utf-7.37 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
 test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\xE0\xA0\x80 2
 } 1
-test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.39.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev tip389} {
+    testutfprev A\xF0\x90\x80\x80
+} 2
+test utf-7.39.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs4} {
     testutfprev A\xF0\x90\x80\x80
 } 1
-test utf-7.40 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.40.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev tip389} {
+    testutfprev A\xF0\x90\x80\x80 4
+} 3
+test utf-7.40.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs4} {
     testutfprev A\xF0\x90\x80\x80 4
 } 1
-test utf-7.41 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
+test utf-7.41.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev tip389} {
+    testutfprev A\xF0\x90\x80\x80 3
+} 2
+test utf-7.41.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev ucs4} {
     testutfprev A\xF0\x90\x80\x80 3
 } 1
 test utf-7.42 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
@@ -704,7 +785,10 @@ test utf-7.44 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
 test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
     testutfprev \xA0\xA0\xA0
 } 2
-test utf-7.46 {Tcl_UtfPrev -- no lead byte at start}  testutfprev {
+test utf-7.46.0 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev tip389} {
+    testutfprev \xA0\xA0\xA0\xA0
+} 1
+test utf-7.46.1 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev ucs4} {
     testutfprev \xA0\xA0\xA0\xA0
 } 3
 test utf-7.47 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} testutfprev {
@@ -716,28 +800,40 @@ test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} tes
 test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} testutfprev {
     testutfprev \xE8\xA0\x00 2
 } 0
-test utf-7.48 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev tip389} {
+    testutfprev A\xF4\x8F\xBF\xBF
+} 2
+test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs4} {
     testutfprev A\xF4\x8F\xBF\xBF
 } 1
-test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev tip389} {
+    testutfprev A\xF4\x8F\xBF\xBF 4
+} 3
+test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs4} {
     testutfprev A\xF4\x8F\xBF\xBF 4
 } 1
-test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.48.4 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev tip389} {
+    testutfprev A\xF4\x8F\xBF\xBF 3
+} 2
+test utf-7.48.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs4} {
     testutfprev A\xF4\x8F\xBF\xBF 3
 } 1
-test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.48.6 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x8F\xBF\xBF 2
 } 1
-test utf-7.49 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev tip389} {
+    testutfprev A\xF4\x90\x80\x80
+} 2
+test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs4} {
     testutfprev A\xF4\x90\x80\x80
 } 4
-test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 4
 } 3
-test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 3
 } 2
-test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.4 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 2
 } 1
 
