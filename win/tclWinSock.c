@@ -1742,11 +1742,8 @@ TcpInputProc(
 	 * Check for end-of-file condition or successful read.
 	 */
 
-	if (bytesRead == 0) {
-	    infoPtr->flags |= SOCKET_EOF;
-	}
 	if (bytesRead != SOCKET_ERROR) {
-	    infoPtr->flags |= SOCKET_HRECV;
+	    infoPtr->flags |= (bytesRead == 0) ? SOCKET_EOF : SOCKET_HRECV;
 	    break;
 	}
 
