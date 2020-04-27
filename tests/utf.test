@@ -1049,7 +1049,9 @@ test utf-11.6 {Tcl_UtfToUpper beyond U+FFFF} {Uesc fullutf} {
 test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} {pairsTo4bytes} {
     string toupper \uD801\uDC28
 } \uD801\uDC00
-
+test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} {
+    string toupper \uDC24\uD824
+} \uDC24\uD824
 
 test utf-12.1 {Tcl_UtfToLower} {
     string tolower {}
