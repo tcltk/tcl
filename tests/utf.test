@@ -881,7 +881,13 @@ test utf-11.4 {Tcl_UtfToUpper} {
 test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
     string toupper \u10D0\u1C90
 } \u1C90\u1C90
-test utf-11.6 {Tcl_UtfToUpper low/high surrogate)} {
+test utf-11.6 {Tcl_UtfToUpper beyond U+FFFF} {Uesc fullutf} {
+    string toupper \U10428
+} \U10400
+test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} {pairsTo4bytes} {
+    string toupper \uD801\uDC28
+} \uD801\uDC00
+test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} {
     string toupper \uDC24\uD824
 } \uDC24\uD824
 
@@ -900,9 +906,15 @@ test utf-12.4 {Tcl_UtfToLower} {
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower \u10D0\u1C90
 } \u10D0\u10D0
-test utf-12.6 {Tcl_UtfToUpper low/high surrogate)} {
+test utf-12.6 {Tcl_UtfToLower low/high surrogate)} {
     string tolower \uDC24\uD824
 } \uDC24\uD824
+test utf-12.7 {Tcl_UtfToLower beyond U+FFFF} {Uesc fullutf} {
+    string tolower \U10400
+} \U10428
+test utf-12.8 {Tcl_UtfToLower beyond U+FFFF} {pairsTo4bytes} {
+    string tolower \uD801\uDC00
+} \uD801\uDC28
 
 test utf-13.1 {Tcl_UtfToTitle} {
     string totitle {}
@@ -925,6 +937,12 @@ test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \uDC24\uD824
 } \uDC24\uD824
+test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
+    string totitle \U10428
+} \U10400
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} {pairsTo4bytes} {
+    string totitle \uD801\uDC28
+} \uD801\uDC00
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
