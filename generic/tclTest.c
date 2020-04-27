@@ -316,6 +316,7 @@ static Tcl_FSListVolumesProc SimpleListVolumes;
 static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
+static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
@@ -578,8 +579,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
 	    TestsetobjerrorcodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfnext",
+	    TestUtfNextCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testutfprev",
-	    TestUtfPrevCmd, (ClientData) 0, NULL);
+	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
@@ -1515,7 +1518,7 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = (DelCmd*)ckalloc(sizeof(DelCmd));
+    dPtr = (DelCmd *)ckalloc(sizeof(DelCmd));
     dPtr->interp = interp;
     dPtr->deleteCmd = (char *)ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
@@ -1544,7 +1547,7 @@ static void
 DelDeleteProc(
     void *clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = (DelCmd *) clientData;
+    DelCmd *dPtr = (DelCmd *)clientData;
 
     Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
@@ -6380,11 +6383,6 @@ TestReport(
     if (interp == NULL) {
 	/* This is bad, but not much we can do about it */
     } else {
-	/*
-	 * No idea why I decided to program this up using the old string-based
-	 * API, but there you go. We should convert it to objects.
-	 */
-
 	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 
@@ -6811,6 +6809,61 @@ SimpleListVolumes(void)
 }
 
 /*
+ * Used to check operations of Tcl_UtfNext.
+ *
+ * Usage: testutfnext -bytestring $bytes
+ */
+
+static int
+TestUtfNextCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int numBytes;
+    char *bytes;
+    const char *result, *first;
+    char buffer[32];
+    static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
+    const char *p = tobetested;
+
+    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+    } else {
+	bytes = (char *) Tcl_GetBytesFromObj(interp, objv[2], &numBytes);
+	if (bytes == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+
+    if (numBytes > (int)sizeof(buffer)-2) {
+	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
+	return TCL_ERROR;
+    }
+
+    memcpy(buffer + 1, bytes, numBytes);
+    buffer[0] = buffer[numBytes + 1] = '\x00';
+
+    first = result = TclUtfNext(buffer + 1);
+    while ((buffer[0] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
+	result = TclUtfNext(buffer + 1);
+	if (first != result) {
+	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - buffer - 1));
+
+    return TCL_OK;
+}
+/*
  * Used to check operations of Tcl_UtfPrev.
  *
  * Usage: testutfprev $bytes $offset
@@ -6827,16 +6880,19 @@ TestUtfPrevCmd(
     char *bytes;
     const char *result;
     Tcl_Obj *copy;
-    
+
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
-    
+    bytes = (char *) Tcl_GetBytesFromObj(interp, objv[1], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+
     if (objc == 3) {
-	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &offset)) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
 	    return TCL_ERROR;
 	}
 	if (offset < 0) {
@@ -6852,10 +6908,10 @@ TestUtfPrevCmd(
     bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
     bytes[numBytes] = '\0';
 
-    result = Tcl_UtfPrev(bytes + offset, bytes);
+    result = TclUtfPrev(bytes + offset, bytes);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
 
     Tcl_DecrRefCount(copy);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
     return TCL_OK;
 }
 

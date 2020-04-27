@@ -4184,4 +4184,10 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 #endif
 
+#if defined(USE_TCL_STUBS) && (TCL_UTF_MAX > 3)
+#   undef Tcl_UtfCharComplete
+#   define Tcl_UtfCharComplete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
+	    ? 4 : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
+#endif
+
 #endif /* _TCLDECLS */
