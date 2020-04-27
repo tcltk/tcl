@@ -1043,7 +1043,7 @@ bsCheck \Uk     85
 bsCheck \U41    65			Uesc
 bsCheck \Ua     10			Uesc
 bsCheck \UA     10			Uesc
-bsCheck \Ua1    161			Uesc
+bsCheck \UA1    161			Uesc
 bsCheck \U4E21  20001			Uesc
 bsCheck \U004E21        20001		Uesc
 bsCheck \U00004E21      20001		Uesc
