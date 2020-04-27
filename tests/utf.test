@@ -1337,8 +1337,14 @@ proc UniCharCaseCmpTest {order one two {constraints {}}} {
 	teststringobj set 2 $two
 	teststringobj getunicode 1
 	teststringobj getunicode 2
-	string compare -nocase [teststringobj get 1] [teststringobj get 2]
-    } -result [string map {< -1 = 0 > 1} $order]
+	set result [string compare -nocase [teststringobj get 1] [teststringobj get 2]]
+	if {$result eq [string map {< -1 = 0 > 1} $order]} {
+	    set result ok
+	} else {
+	    set result "'$one' should be $order '$two' (no case)"
+	}
+	set result
+    } -result ok
     incr count
 }
 variable count 1
@@ -1346,6 +1352,12 @@ UniCharCaseCmpTest < a b
 UniCharCaseCmpTest > b a
 UniCharCaseCmpTest > B a
 UniCharCaseCmpTest > aBcB abca
+UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf knownBug}
+UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf knownBug}
+
+
+
+
 
 unset count
 rename UniCharCaseCmpTest {}
