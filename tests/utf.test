@@ -850,24 +850,6 @@ bsCheck \uA	10
 bsCheck \340	224
 bsCheck \uA1	161
 bsCheck \u4E21	20001
-bsCheck \741	60
-bsCheck \U	85
-bsCheck \Uk	85
-bsCheck \U41	65
-bsCheck \Ua	10
-bsCheck \UA	10
-bsCheck \Ua1	161
-bsCheck \U4E21	20001
-bsCheck \U004E21	20001
-bsCheck \U00004E21	20001
-bsCheck \U0000004E21	78
-bsCheck \U00110000	69632
-bsCheck \U01100000	69632
-bsCheck \U11000000	69632
-bsCheck \U0010FFFF	1114111
-bsCheck \U010FFFF0	1114111
-bsCheck \U10FFFF00	1114111
-bsCheck \UFFFFFFFF	1048575
 bsCheck \741    225	pre388	;# == \341 
 bsCheck \741    60	!pre388	;# == \74 1
 bsCheck \U      85
@@ -875,7 +857,7 @@ bsCheck \Uk     85
 bsCheck \U41    65			Uesc
 bsCheck \Ua     10			Uesc
 bsCheck \UA     10			Uesc
-bsCheck \Ua1    161			Uesc
+bsCheck \UA1    161			Uesc
 bsCheck \U4E21  20001			Uesc
 bsCheck \U004E21        20001		Uesc
 bsCheck \U00004E21      20001		Uesc
