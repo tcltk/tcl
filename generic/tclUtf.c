@@ -87,6 +87,9 @@ static const unsigned char totalBytes[256] = {
 
 static int		UtfCount(int ch);
 static int		Invalid(unsigned char *src);
+static int		UCS4ToUpper(int ch);
+static int		UCS4ToLower(int ch);
+static int		UCS4ToTitle(int ch);
 
 /*
  *---------------------------------------------------------------------------
@@ -1007,7 +1010,7 @@ int
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, upChar;
+    int ch, upChar;
     char *src, *dst;
     int len;
 
@@ -1017,8 +1020,8 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	upChar = Tcl_UniCharToUpper(ch);
+	len = TclUtfToUCS4(src, &ch);
+	upChar = UCS4ToUpper(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1026,7 +1029,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(upChar)) {
+	if (len < UtfCount(upChar) || ((upChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1060,7 +1063,7 @@ int
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, lowChar;
+    int ch, lowChar;
     char *src, *dst;
     int len;
 
@@ -1070,8 +1073,8 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	lowChar = Tcl_UniCharToLower(ch);
+	len = TclUtfToUCS4(src, &ch);
+	lowChar = UCS4ToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1079,7 +1082,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(lowChar)) {
+	if (len < UtfCount(lowChar) || ((lowChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1114,7 +1117,7 @@ int
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, titleChar, lowChar;
+    int ch, titleChar, lowChar;
     char *src, *dst;
     int len;
 
@@ -1126,10 +1129,10 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = TclUtfToUniChar(src, &ch);
-	titleChar = Tcl_UniCharToTitle(ch);
+	len = TclUtfToUCS4(src, &ch);
+	titleChar = UCS4ToTitle(ch);
 
-	if (len < UtfCount(titleChar)) {
+	if (len < UtfCount(titleChar) || ((titleChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1138,14 +1141,14 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = TclUtfToUniChar(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
-	    lowChar = Tcl_UniCharToLower(lowChar);
+	    lowChar = UCS4ToLower(lowChar);
 	}
 
-	if (len < UtfCount(lowChar)) {
+	if (len < UtfCount(lowChar) || ((lowChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1382,8 +1385,8 @@ TclUtfCasecmp(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
-Tcl_UniCharToUpper(
+static int
+UCS4ToUpper(
     int ch)			/* Unicode character to convert. */
 {
     int info = GetUniCharInfo(ch);
@@ -1391,7 +1394,14 @@ Tcl_UniCharToUpper(
     if (GetCaseType(info) & 0x04) {
 	ch -= GetDelta(info);
     }
-    return (Tcl_UniChar) ch;
+    return ch;
+}
+
+Tcl_UniChar
+Tcl_UniCharToUpper(
+    int ch)			/* Unicode character to convert. */
+{
+    return (Tcl_UniChar) UCS4ToUpper(ch);
 }
 
 /*
@@ -1410,8 +1420,8 @@ Tcl_UniCharToUpper(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
-Tcl_UniCharToLower(
+static int
+UCS4ToLower(
     int ch)			/* Unicode character to convert. */
 {
     int info = GetUniCharInfo(ch);
@@ -1420,7 +1430,14 @@ Tcl_UniCharToLower(
     if ((mode & 0x02) && (mode != 0x7)) {
 	ch += GetDelta(info);
     }
-    return (Tcl_UniChar) ch;
+    return ch;
+}
+
+Tcl_UniChar
+Tcl_UniCharToLower(
+    int ch)			/* Unicode character to convert. */
+{
+    return (Tcl_UniChar) UCS4ToLower(ch);
 }
 
 /*
@@ -1439,8 +1456,8 @@ Tcl_UniCharToLower(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
-Tcl_UniCharToTitle(
+static int
+UCS4ToTitle(
     int ch)			/* Unicode character to convert. */
 {
     int info = GetUniCharInfo(ch);
@@ -1457,7 +1474,14 @@ Tcl_UniCharToTitle(
     } else if (mode == 0x4) {
 	ch -= GetDelta(info);
     }
-    return (Tcl_UniChar) ch;
+    return ch;
+}
+
+Tcl_UniChar
+Tcl_UniCharToTitle(
+    int ch)			/* Unicode character to convert. */
+{
+    return (Tcl_UniChar) UCS4ToTitle(ch);
 }
 
 /*
