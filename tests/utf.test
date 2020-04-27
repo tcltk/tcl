@@ -982,10 +982,10 @@ test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
 test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
     expr {"\u4E216" eq "[testbytestring \xE4\xB8\xA1]6"}
 } 1
-test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} {Uesc testbytestring} {
+test utf-10.6 {Tcl_UtfBackslash: stops after 5 hex chars} {Uesc fullutf testbytestring} {
     expr {"\U1E2165" eq "[testbytestring \xF0\x9E\x88\x96]5"}
 } 1
-test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} {Uesc testbytestring} {
+test utf-10.7 {Tcl_UtfBackslash: stops after 6 hex chars} {Uesc fullutf testbytestring} {
     expr {"\U10E2165" eq "[testbytestring \xF4\x8E\x88\x96]5"}
 } 1
 
@@ -1048,13 +1048,13 @@ bsCheck \U4E21  20001			Uesc
 bsCheck \U004E21        20001		Uesc
 bsCheck \U00004E21      20001		Uesc
 bsCheck \U0000004E21    78		Uesc
-bsCheck \U00110000      69632		Uesc
-bsCheck \U01100000      69632		Uesc
-bsCheck \U11000000      69632		Uesc
-bsCheck \U0010FFFF      1114111		Uesc
-bsCheck \U010FFFF0      1114111		Uesc
-bsCheck \U10FFFF00      1114111		Uesc
-bsCheck \UFFFFFFFF      1048575		Uesc
+bsCheck \U00110000      69632		{Uesc fullutf}
+bsCheck \U01100000      69632		{Uesc fullutf}
+bsCheck \U11000000      69632		{Uesc fullutf}
+bsCheck \U0010FFFF      1114111		{Uesc fullutf}
+bsCheck \U010FFFF0      1114111		{Uesc fullutf}
+bsCheck \U10FFFF00      1114111		{Uesc fullutf}
+bsCheck \UFFFFFFFF      1048575		{Uesc fullutf}
 
 test utf-11.1 {Tcl_UtfToUpper} {
     string toupper {}
