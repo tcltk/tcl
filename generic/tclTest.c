@@ -7171,7 +7171,7 @@ TestUtfNextCmd(
 	return TCL_OK;
     }
 
-    first = Tcl_UtfNext(buffer + 1);
+    first = result = Tcl_UtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
 	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
