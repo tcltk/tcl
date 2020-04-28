@@ -156,7 +156,7 @@ test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestri
     testnumutfchars [testbytestring "\xC2\xA2"] end
 } 1
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\uA2\x4E"] end
+    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"] end
 } 7
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"] end
@@ -469,10 +469,10 @@ test utf-6.85 {Tcl_UtfNext - overlong sequences} testutfnext {
 test utf-6.86 {Tcl_UtfNext - overlong sequences} testutfnext {
     testutfnext -bytestring \xF0\x80\x80\x80
 } 1
-test utf-6.87.0 {Tcl_UtfNext - overlong sequences} {testutfprev tip389} {
+test utf-6.87.0 {Tcl_UtfNext - overlong sequences} {testutfnext tip389} {
     testutfnext -bytestring \xF0\x90\x80\x80
 } 1
-test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfprev ucs4} {
+test utf-6.87.1 {Tcl_UtfNext - overlong sequences} {testutfnext ucs4} {
     testutfnext -bytestring \xF0\x90\x80\x80
 } 4
 test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testutfnext {
@@ -481,10 +481,10 @@ test utf-6.88 {Tcl_UtfNext, pointing to 2th byte of 3-byte valid sequence} testu
 test utf-6.89 {Tcl_UtfNext, pointing to 2th byte of 3-byte invalid sequence} testutfnext {
     testutfnext -bytestring \x80\x80
 } 2
-test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfprev tip389} {
+test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext tip389} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 1
-test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfprev ucs4} {
+test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs4} {
     testutfnext -bytestring \xF4\x8F\xBF\xBF
 } 4
 test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
@@ -632,7 +632,7 @@ test utf-7.15.3 {Tcl_UtfPrev} {testutfprev ucs4} {
 test utf-7.15.4 {Tcl_UtfPrev} {testutfprev tip389} {
     testutfprev A\xF2\xA0\xA0\xF8 4
 } 3
-test utf-7.15.4 {Tcl_UtfPrev} {testutfprev ucs4} {
+test utf-7.15.5 {Tcl_UtfPrev} {testutfprev ucs4} {
     testutfprev A\xF2\xA0\xA0\xF8 4
 } 1
 test utf-7.16 {Tcl_UtfPrev} testutfprev {
