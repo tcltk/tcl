@@ -1010,7 +1010,7 @@ test utf-8.9.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
 } G
 test utf-8.10.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
     string index \U1F600G 0
-} "\uD83D"
+} "\uFFFD"
 test utf-8.10.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 0
 } "\U1F600"
@@ -1019,7 +1019,7 @@ test utf-8.10.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389} {
 } "\U1F600"
 test utf-8.11.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
     string index \U1F600G 1
-} "\uDE00"
+} G
 test utf-8.11.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 1
 } G
@@ -1028,7 +1028,7 @@ test utf-8.11.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389} {
 } {}
 test utf-8.12.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
     string index \U1F600G 2
-} G
+} {}
 test utf-8.12.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 2
 } {}
@@ -1071,7 +1071,7 @@ test utf-9.5.2 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
 } G
 test utf-9.6.0 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc ucs2} {
     string range \U1f600G 0 0
-} "\uD83D"
+} "\uFFFD"
 test utf-9.6.1 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc ucs4} {
     string range \U1f600G 0 0
 } "\U1F600"
@@ -1080,7 +1080,7 @@ test utf-9.6.2 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc tip389} {
 } "\U1F600"
 test utf-9.7.0 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs2} {
     string range \U1f600G 1 1
-} "\uDE00"
+} G
 test utf-9.7.1 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs4} {
     string range \U1f600G 1 1
 } "G"
@@ -1089,7 +1089,7 @@ test utf-9.7.2 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc tip389} {
 } {}
 test utf-9.8.0 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs2} {
     string range \U1f600G 2 2
-} G
+} {}
 test utf-9.8.1 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs4} {
     string range \U1f600G 2 2
 } {}
