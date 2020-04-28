@@ -232,11 +232,11 @@ differences in case when comparing upper, lower or title case
 characters.
 .PP
 \fBTcl_UtfCharComplete\fR returns 1 if the source UTF-8 string \fIsrc\fR
-of \fIlength\fR bytes is long enough to be decoded by
-\fBTcl_UtfToUniChar\fR, or 0 otherwise.  This function does not guarantee
-that the UTF-8 string is properly formed.  This routine is used by
-procedures that are operating on a byte at a time and need to know if a
-full Unicode character has been seen.
+of \fIlength\fR bytes is long enough to be handled by
+\fBTcl_UtfToUniChar\fR/\fBTcl_UtfNext\fR, or 0 otherwise.  This function
+does not guarantee that the UTF-8 string is properly formed.  This routine
+is used by procedures that are operating on a byte at a time and need to
+know if a full Unicode character has been seen.
 .PP
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
@@ -257,7 +257,11 @@ Given \fIsrc\fR, a pointer to some location in a UTF-8 string,
 \fBTcl_UtfNext\fR returns a pointer to the next UTF-8 character in the
 string.  The caller must not ask for the next character after the last
 character in the string if the string is not terminated by a null
-character.
+character. \fBTcl_UtfCharComplete\fR can be used to check if it is
+safe to call \fBTcl_UtfNext\fR if the string is not null-terminated.
+For 4-byte sequences, calling \fBTcl_UtfNext\fR will result in a
+pointer to the second byte of the character. Calling \fBTcl_UtfNext\fR
+again will result in a pointer to the lead byte of the next character.
 .PP
 \fBTcl_UtfPrev\fR is used to step backward through but not beyond the
 UTF-8 string that begins at \fIstart\fR.  If the UTF-8 string is made
@@ -265,7 +269,9 @@ up entirely of complete and well-formed characters, and \fIsrc\fR points
 to the lead byte of one of those characters (or to the location one byte
 past the end of the string), then repeated calls of \fBTcl_UtfPrev\fR will
 return pointers to the lead bytes of each character in the string, one
-character at a time, terminating when it returns \fIstart\fR.
+character at a time, terminating when it returns \fIstart\fR. For
+4-byte sequences, if \fIsrc\fR points just after the character, two
+\fBTcl_UtfPrev\fR calls are needed to point to a lead-byte again.
 .PP
 When the conditions of completeness and well-formedness may not be satisfied,
 a more precise description of the function of \fBTcl_UtfPrev\fR is necessary.
