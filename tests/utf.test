@@ -880,10 +880,10 @@ test utf-9.3.0 {Tcl_UtfAtIndex: index = 0, Emoji} ucs2 {
 test utf-9.3.1 {Tcl_UtfAtIndex: index = 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 0 0
 } "\U1F600"
-test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} ucs2 {
+test utf-9.4.0 {Tcl_UtfAtIndex: index > 0, Emoji} ucs2 {
     string range \uD83D\uDE00G 1 1
 } "\uDE00"
-test utf-9.4 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
+test utf-9.4.1 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 1 1
 } "G"
 
