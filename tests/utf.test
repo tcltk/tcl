@@ -969,7 +969,13 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
 } "\uFF"
-test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
+test utf-8.5.0 {Tcl_UniCharAtIndex: high surrogate} ucs2 {
+    string index \uD842 0
+} "\uD842"
+test utf-8.5.1 {Tcl_UniCharAtIndex: high surrogate} ucs4 {
+    string index \uD842 0
+} "\uD842"
+test utf-8.5.2 {Tcl_UniCharAtIndex: high surrogate} tip389 {
     string index \uD842 0
 } "\uD842"
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
