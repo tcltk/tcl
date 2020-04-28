@@ -493,6 +493,9 @@ Tcl_UtfToUniChar(
 	    *chPtr = (((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
 	    if (*chPtr > 0x7FF) {
+		if ((*chPtr & 0xF800) == 0xD800) {
+		    *chPtr = 0xFFFD;
+		}
 		return 3;
 	    }
 	}
@@ -589,6 +592,9 @@ Tcl_UtfToChar16(
 	    *chPtr = (((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
 	    if (*chPtr > 0x7FF) {
+		if ((*chPtr & 0xF800) == 0xD800) {
+		    *chPtr = 0xFFFD;
+		}
 		return 3;
 	    }
 	}

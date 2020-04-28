@@ -38,7 +38,8 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetencpath [llength [info commands testgetencpath]]
-
+testConstraint tip389 [expr {[string length [format %c 0x10000]] eq 2}]
+
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
 
@@ -325,72 +326,72 @@ test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
-} -result "6 \U1F602"
+} -result "6 \uFFFD\uFFFD"
 test encoding-15.5 {UtfToUtfProc emoji character input} {
     set x \xF0\x9F\x98\x82
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
     list [string length $x] $y
 } "4 \U1F602"
-test encoding-15.6 {UtfToUtfProc emoji character output} {
+test encoding-15.6 {UtfToUtfProc emoji character output} tip389 {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
     list [string length $y] $z
-} {10 edb882f09f9882eda0bd}
+} {10 efbfbdf09f9882efbfbd}
 test encoding-15.7 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uD83D
     set y [encoding convertto utf-8 \uDE02\uD83D\uD83D]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {3 9 edb882eda0bdeda0bd}
+} {3 9 efbfbdefbfbdefbfbd}
 test encoding-15.8 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\xE9
     set y [encoding convertto utf-8 \uDE02\uD83D\xE9]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {3 8 edb882eda0bdc3a9}
+} {3 8 efbfbdefbfbdc3a9}
 test encoding-15.9 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83DX
     set y [encoding convertto utf-8 \uDE02\uD83DX]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {3 7 edb882eda0bd58}
+} {3 7 efbfbdefbfbd58}
 test encoding-15.10 {UtfToUtfProc high surrogate character output} {
     set x \uDE02\xE9
     set y [encoding convertto utf-8 \uDE02\xE9]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {2 5 edb882c3a9}
+} {2 5 efbfbdc3a9}
 test encoding-15.11 {UtfToUtfProc low surrogate character output} {
     set x \uDA02\xE9
     set y [encoding convertto utf-8 \uDA02\xE9]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {2 5 eda882c3a9}
+} {2 5 efbfbdc3a9}
 test encoding-15.12 {UtfToUtfProc high surrogate character output} {
     set x \uDE02Y
     set y [encoding convertto utf-8 \uDE02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {2 4 edb88259}
+} {2 4 efbfbd59}
 test encoding-15.13 {UtfToUtfProc low surrogate character output} {
     set x \uDA02Y
     set y [encoding convertto utf-8 \uDA02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {2 4 eda88259}
+} {2 4 efbfbd59}
 test encoding-15.14 {UtfToUtfProc high surrogate character output} {
     set x \uDE02
     set y [encoding convertto utf-8 \uDE02]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {1 3 edb882}
+} {1 3 efbfbd}
 test encoding-15.15 {UtfToUtfProc low surrogate character output} {
     set x \uDA02
     set y [encoding convertto utf-8 \uDA02]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
-} {1 3 eda882}
+} {1 3 efbfbd}
 test encoding-15.16 {UtfToUtfProc emoji character output} {
     set x \U1F602
     set y [encoding convertto utf-8 \U1F602]
@@ -407,9 +408,9 @@ test encoding-16.2 {Utf16ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
 test encoding-16.3 {Utf16ToUtfProc} -body {
-    set val [encoding convertfrom utf-16 "\xDC\xDC"]
+    set val [encoding convertfrom utf-16 "\xD4\xD4"]
     list $val [format %x [scan $val %c]]
-} -result "\uDCDC dcdc"
+} -result "\uD4D4 d4d4"
 test encoding-16.4 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 NN]
     list $val [format %x [scan $val %c]]
@@ -423,11 +424,11 @@ test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
 } -result "\xD8\xD8\xDC\xDC"
 test encoding-17.2 {UtfToUtf16Proc} -body {
-    encoding convertto utf-16 "\uDCDC"
-} -result "\xDC\xDC"
+    encoding convertto utf-16 "\uD4D4"
+} -result "\xD4\xD4"
 test encoding-17.3 {UtfToUtf16Proc} -body {
-    encoding convertto utf-16 "\uD8D8"
-} -result "\xD8\xD8"
+    encoding convertto utf-16 "\uD0D0"
+} -result "\xD0\xD0"
 test encoding-17.4 {UtfToUcs2Proc} -body {
     encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460DC"]
 } -result "\uFFFD"

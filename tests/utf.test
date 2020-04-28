@@ -66,10 +66,10 @@ test utf-1.7.1 {Tcl_UniCharToUtf: 4 byte sequences} {ucs2 Uesc testbytestring} {
     expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
 } 0
 test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
-    expr {"\uD842" eq [testbytestring "\xED\xA1\x82"]}
+    expr {"\uD842" eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
 test utf-1.9 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
-    expr {"\uDC42" eq [testbytestring "\xED\xB1\x82"]}
+    expr {"\uDC42" eq [testbytestring "\xEF\xBF\xBD"]}
 } 1
 test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
     expr {[format %c 0xD842] eq [testbytestring "\xED\xA1\x82"]}
