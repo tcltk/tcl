@@ -855,24 +855,45 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
 } "\uFF"
-test utf-8.5 {Tcl_UniCharAtIndex: high surrogate} {
+test utf-8.5.0 {Tcl_UniCharAtIndex: high surrogate} ucs2 {
+    string index \uD842 0
+} "\uD842"
+test utf-8.5.1 {Tcl_UniCharAtIndex: high surrogate} ucs4 {
+    string index \uD842 0
+} "\uD842"
+test utf-8.5.2 {Tcl_UniCharAtIndex: high surrogate} tip389 {
     string index \uD842 0
 } "\uD842"
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
     string index \uDC42 0
 } "\uDC42"
 test utf-8.7.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
-    string index \uD83D\uDE00 0
+    string index \uD83D\uDE00G 0
 } "\uD83D"
 test utf-8.7.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
-    string index \uD83D\uDE00 0
+    string index \uD83D\uDE00G 0
+} "\U1F600"
+test utf-8.7.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
+    string index \uD83D\uDE00G 0
 } "\U1F600"
 test utf-8.8.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
-    string index \uD83D\uDE00 1
+    string index \uD83D\uDE00G 1
 } "\uDE00"
 test utf-8.8.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
-    string index \uD83D\uDE00 1
+    string index \uD83D\uDE00G 1
+} G
+test utf-8.8.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
+    string index \uD83D\uDE00G 1
 } {}
+test utf-8.9.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
+    string index \uD83D\uDE00G 2
+} G
+test utf-8.9.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
+    string index \uD83D\uDE00G 2
+} {}
+test utf-8.9.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
+    string index \uD83D\uDE00G 2
+} G
 
 test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
     string range abcd 0 2
@@ -886,13 +907,27 @@ test utf-9.3.0 {Tcl_UtfAtIndex: index = 0, Emoji} ucs2 {
 test utf-9.3.1 {Tcl_UtfAtIndex: index = 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 0 0
 } "\U1F600"
+test utf-9.3.2 {Tcl_UtfAtIndex: index = 0, Emoji} tip389 {
+    string range \uD83D\uDE00G 0 0
+} "\U1F600"
 test utf-9.4.0 {Tcl_UtfAtIndex: index > 0, Emoji} ucs2 {
     string range \uD83D\uDE00G 1 1
 } "\uDE00"
 test utf-9.4.1 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 1 1
 } "G"
-
+test utf-9.4.2 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
+    string range \uD83D\uDE00G 1 1
+} {}
+test utf-9.5.0 {Tcl_UtfAtIndex: index > 0, Emoji} ucs2 {
+    string range \uD83D\uDE00G 2 2
+} G
+test utf-9.5.1 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
+    string range \uD83D\uDE00G 2 2
+} {}
+test utf-9.5.2 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
+    string range \uD83D\uDE00G 2 2
+} G
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
     set x \n
