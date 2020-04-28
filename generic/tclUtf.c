@@ -1008,7 +1008,7 @@ Tcl_UtfPrev(
 	if (byte >= 0xC0) {
 	    /* Non-trail byte; May be multibyte lead. */
 
-	    if ((trailBytesSeen == 0) ||
+	    if (!trailBytesSeen || (
 		/*
 		 * We've seen no trailing context to use to check
 		 * anything. From what we know, this non-trail byte
@@ -1019,7 +1019,7 @@ Tcl_UtfPrev(
 #if 0
 		    ((byte < 0xF0) || (byte > 0xF4)) &&
 #endif
-		    (trailBytesSeen >= totalBytes[byte])) {
+		    (trailBytesSeen >= totalBytes[byte]))) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
