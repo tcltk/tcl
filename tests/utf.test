@@ -541,79 +541,79 @@ test utf-6.108 {Tcl_UtfNext, read limits} testutfnext {
 test utf-6.109 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xE8\xA0\xA0\xA0 3
 } 3
-test utf-6.108.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0G 1
-} 1
-test utf-6.108.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0G 1
-} 0
 test utf-6.110.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0G 2
+    testutfnext \xF2\xA0\xA0\xA0G 1
 } 1
 test utf-6.110.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0G 2
+    testutfnext \xF2\xA0\xA0\xA0G 1
 } 0
 test utf-6.111.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0G 3
+    testutfnext \xF2\xA0\xA0\xA0G 2
 } 1
 test utf-6.111.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0G 3
+    testutfnext \xF2\xA0\xA0\xA0G 2
 } 0
 test utf-6.112.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0G 4
+    testutfnext \xF2\xA0\xA0\xA0G 3
 } 1
 test utf-6.112.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0G 4
-} 4
+    testutfnext \xF2\xA0\xA0\xA0G 3
+} 0
 test utf-6.113.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 1
+    testutfnext \xF2\xA0\xA0\xA0G 4
 } 1
 test utf-6.113.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 1
-} 0
+    testutfnext \xF2\xA0\xA0\xA0G 4
+} 4
 test utf-6.114.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 2
+    testutfnext \xF2\xA0\xA0\xA0\xA0 1
 } 1
 test utf-6.114.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 2
+    testutfnext \xF2\xA0\xA0\xA0\xA0 1
 } 0
 test utf-6.115.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 3
+    testutfnext \xF2\xA0\xA0\xA0\xA0 2
 } 1
 test utf-6.115.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 3
+    testutfnext \xF2\xA0\xA0\xA0\xA0 2
 } 0
 test utf-6.116.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
-    testutfnext \xF2\xA0\xA0\xA0\xA0 4
+    testutfnext \xF2\xA0\xA0\xA0\xA0 3
 } 1
 test utf-6.116.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
+    testutfnext \xF2\xA0\xA0\xA0\xA0 3
+} 0
+test utf-6.117.0 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+    testutfnext \xF2\xA0\xA0\xA0\xA0 4
+} 1
+test utf-6.117.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
     testutfnext \xF2\xA0\xA0\xA0\xA0 4
 } 4
-test utf-6.117 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.118 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0G 0
 } 0
-test utf-6.118 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.119 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0G 1
 } 1
-test utf-6.119 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.120 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0 1
 } 1
-test utf-6.120 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.121 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0G 2
 } 1
-test utf-6.121 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.122 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0 2
 } 1
-test utf-6.122 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0G 3
 } 1
-test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0 3
 } 1
-test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.125 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0G 4
 } 1
-test utf-6.125 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.126 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0\xA0 4
 } 1
 
