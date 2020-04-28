@@ -105,7 +105,7 @@ test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestrin
 test utf-2.8.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring "\xF0\x90\x80\x80"]
 } 4
-test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring fullutf} {
+test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
     string length [testbytestring "\xF0\x90\x80\x80"]
 } 1
 test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring tip389} {
@@ -114,7 +114,7 @@ test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytest
 test utf-2.9.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
 } 4
-test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring fullutf} {
+test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
 } 1
 test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring tip389} {
