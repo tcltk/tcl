@@ -96,11 +96,6 @@ static const unsigned char complete[256] = {
  */
 
 static int		Invalid(unsigned char *src);
-
-#define UCS4ToUpper Tcl_UniCharToUpper
-#define UCS4ToLower Tcl_UniCharToLower
-#define UCS4ToTitle Tcl_UniCharToTitle
-
 
 /*
  *---------------------------------------------------------------------------
@@ -503,7 +498,7 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-    else if (byte < 0xF8) {
+    else if (byte < 0xF5) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
@@ -599,7 +594,7 @@ Tcl_UtfToChar16(
 	 * represents itself.
 	 */
     }
-    else if (byte < 0xF8) {
+    else if (byte < 0xF5) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
@@ -1241,7 +1236,7 @@ Tcl_UtfToUpper(
     src = dst = str;
     while (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	upChar = UCS4ToUpper(ch);
+	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1294,7 +1289,7 @@ Tcl_UtfToLower(
     src = dst = str;
     while (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	lowChar = UCS4ToLower(ch);
+	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1350,7 +1345,7 @@ Tcl_UtfToTitle(
 
     if (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	titleChar = UCS4ToTitle(ch);
+	titleChar = Tcl_UniCharToTitle(ch);
 
 	if ((len < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
 	    memmove(dst, src, len);
@@ -1365,7 +1360,7 @@ Tcl_UtfToTitle(
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
-	    lowChar = UCS4ToLower(lowChar);
+	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
 	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
