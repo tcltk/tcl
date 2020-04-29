@@ -1329,6 +1329,8 @@ UniCharCaseCmpTest > B a
 UniCharCaseCmpTest > aBcB abca
 UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf}
 UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf}
+UniCharCaseCmpTest > [format %c 0x10000] \uFFFF	{fullutf}
+UniCharCaseCmpTest > \U10000 \uFFFF		{Uesc fullutf}
 
 
 
