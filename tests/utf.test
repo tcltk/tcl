@@ -1207,8 +1207,9 @@ test utf-19.1 {TclUniCharLen} -body {
     unset -nocomplain foo
 } -result {1 4}
 
-test utf-20.1 {TclUniCharNcmp} {
-} {}
+test utf-20.1 {TclUniCharNcmp} {fullutf} {
+    string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
+} -1
 
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
