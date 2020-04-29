@@ -1821,6 +1821,69 @@ Tcl_UniCharNcmp(
  *----------------------------------------------------------------------
  */
 
+#if 1
+static int
+UTF16ToUCS4(
+    const Tcl_UniChar *units,   /* Pointer into an array of UCS-2 units */
+    size_t count,               /* How many units are available to read. */
+    int *ucs4Ptr)               /* Write the UCS-4 result here. */
+{
+    if (count == 0) {
+        /* Is this reasonable? Better to panic? */
+        *ucs4Ptr = 0;
+        return 0;
+    }
+    if ((sizeof(Tcl_UniChar) > 2) || (count == 1)
+            || ((units[0] & 0xF800) != 0xD800)
+            || ((units[1] & 0xF800) != 0xDC00)) {
+        /* We do not see a surrogate pair. Return 1st unit. */
+        *ucs4Ptr = units[0];
+        return 1;
+    }
+    /* Surrogate pair. Generate extended code point */
+    *ucs4Ptr = (0x10000 + ((units[0] & 0x3FF) << 10)) | (units[1] & 0x3FF);
+    return 2;
+}
+
+int
+Tcl_UniCharNcasecmp(
+    const Tcl_UniChar *ucs,     /* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,     /* Unicode string ucs is compared to. */
+    unsigned long numChars)     /* Number of unichars to compare. */
+{
+    unsigned long snum = numChars;
+    unsigned long tnum = numChars;
+
+    while ((snum != 0) && (tnum != 0)) {
+        int sch, tch;
+        int sdelta = UTF16ToUCS4(ucs, snum, &sch);
+        int tdelta = UTF16ToUCS4(uct, tnum, &tch);
+
+        /* TODO: Are two replacement characters always the same? */
+        /* Should replacement characters sort according to code point */
+        if (sch != tch) {
+            int lsch = Tcl_UniCharToLower(sch);
+            int ltch = Tcl_UniCharToLower(tch);
+
+            if (lsch != ltch) {
+                return (lsch - ltch);
+            }
+        }
+
+        ucs += sdelta;
+        snum -= sdelta;
+
+        uct += tdelta;
+        tnum -= tdelta;
+    }
+    /* All examined chars were same (modulo case)
+     * Then the longer string is greater.
+     */
+    return snum ? 1 : tnum ? -1 : 0;
+}
+
+#else
+
 int
 Tcl_UniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
@@ -1839,6 +1902,7 @@ Tcl_UniCharNcasecmp(
     }
     return 0;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
