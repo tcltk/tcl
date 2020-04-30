@@ -1274,6 +1274,7 @@ Tcl_UniCharToUpper(
 	}
 #if TCL_UTF_MAX > 3
     }
+    /* Clear away extension bits, if any */
     ch &= 0x1FFFFF;
 #endif
     return (Tcl_UniChar) ch;
@@ -1310,6 +1311,7 @@ Tcl_UniCharToLower(
 	}
 #if TCL_UTF_MAX > 3
     }
+    /* Clear away extension bits, if any */
     ch &= 0x1FFFFF;
 #endif
     return (Tcl_UniChar) ch;
@@ -1354,6 +1356,7 @@ Tcl_UniCharToTitle(
 	}
 #if TCL_UTF_MAX > 3
     }
+    /* Clear away extension bits, if any */
     ch &= 0x1FFFFF;
 #endif
     return (Tcl_UniChar) ch;
@@ -1548,6 +1551,7 @@ Tcl_UniCharIsControl(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
