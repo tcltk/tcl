@@ -597,16 +597,16 @@ Tcl_UtfToChar16(
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by at least two trail bytes.
-	     * (validity of 3th trail byte will be tested later)
+	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
+	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
-	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
+	    /* out of range, < 0x10000 or > 0x10FFFF */
 	}
 
 	/*
