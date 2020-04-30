@@ -428,25 +428,27 @@ Tcl_UtfToUniChar(
 	 */
     }
     else if (byte < 0xF5) {
-	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
-	     * Four-byte-character lead byte followed by three trail bytes.
+	     * Four-byte-character lead byte followed by at least two trail bytes.
+	     * (validity of 3th trail byte will be tested later)
 	     */
 #if TCL_UTF_MAX <= 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10FFFF */
-	    } else {
+	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
+	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
 #else
-	    *chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
-		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
-		return 4;
+	    if ((src[3] & 0xC0) == 0x80) {
+		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
+			| ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
+		if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
+		    return 4;
+		}
 	    }
 #endif
 	}
