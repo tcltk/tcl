@@ -493,7 +493,10 @@ test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
 test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
     testutfnext -bytestring \xA0\xA0\xA0
 } 3
-test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
+test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
+    testutfnext \x80\x80\x80
+} 1
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
     testutfnext -bytestring \x80\x80\x80
 } 3
 test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
@@ -1144,10 +1147,10 @@ test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \uDC24\uD824
 } \uDC24\uD824
-test utf-13.8 {Tcl_UniCharToTitle beyond U+FFFF} {Uesc fullutf} {
+test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
     string totitle \U10428\U10400
 } \U10400\U10428
-test utf-13.9 {Tcl_UniCharToTitle beyond U+FFFF} pairsTo4bytes {
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} pairsTo4bytes {
     string totitle \uD801\uDC28\uD801\uDC00
 } \uD801\uDC00\uD801\uDC28
 
