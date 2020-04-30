@@ -904,7 +904,7 @@ TclParseBackslash(
 	count += ParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "x".
+	     * No hexdigits -> This is just "x".
 	     */
 
 	    result = 'x';
@@ -919,17 +919,17 @@ TclParseBackslash(
 	count += ParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "u".
+	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
 #if TCL_UTF_MAX > 3
-	} else if (((result & 0xDC00) == 0xD800) && (count == 6)
+	} else if (((result & 0xFC00) == 0xD800) && (count == 6)
 		    && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
 	    /* If high surrogate is immediately followed by a low surrogate
 	     * escape, combine them into one character. */
 	    int low;
 	    int count2 = ParseHex(p+7, 4, &low);
-	    if ((count2 == 4) && ((low & 0xDC00) == 0xDC00)) {
+	    if ((count2 == 4) && ((low & 0xFC00) == 0xDC00)) {
 		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
 		count += count2 + 2;
 	    }
@@ -940,7 +940,7 @@ TclParseBackslash(
 	count += ParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
-	     * No hexadigits -> This is just "U".
+	     * No hexdigits -> This is just "U".
 	     */
 	    result = 'U';
 	} else if ((result | 0x7FF) == 0xDFFF) {

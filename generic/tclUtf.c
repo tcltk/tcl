@@ -427,26 +427,28 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-    else if (byte < 0xF8) {
-	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
+    else if (byte < 0xF5) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
-	     * Four-byte-character lead byte followed by three trail bytes.
+	     * Four-byte-character lead byte followed by at least two trail bytes.
+	     * (validity of 3th trail byte will be tested later)
 	     */
 #if TCL_UTF_MAX <= 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10FFFF */
-	    } else {
+	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
+	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
 #else
-	    *chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
-		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
-		return 4;
+	    if ((src[3] & 0xC0) == 0x80) {
+		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
+			| ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
+		if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
+		    return 4;
+		}
 	    }
 #endif
 	}
@@ -1389,12 +1391,14 @@ static int
 UCS4ToUpper(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
 
-    if (GetCaseType(info) & 0x04) {
-	ch -= GetDelta(info);
+	if (GetCaseType(info) & 0x04) {
+	    ch -= GetDelta(info);
+	}
     }
-    return ch;
+    return ch & 0x1FFFFF;
 }
 
 Tcl_UniChar
@@ -1424,13 +1428,15 @@ static int
 UCS4ToLower(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
-    int mode = GetCaseType(info);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
 
-    if ((mode & 0x02) && (mode != 0x7)) {
-	ch += GetDelta(info);
+	if ((mode & 0x02) && (mode != 0x7)) {
+	    ch += GetDelta(info);
+	}
     }
-    return ch;
+    return ch & 0x1FFFFF;
 }
 
 Tcl_UniChar
@@ -1460,21 +1466,23 @@ static int
 UCS4ToTitle(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
-    int mode = GetCaseType(info);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
 
-    if (mode & 0x1) {
-	/*
-	 * Subtract or add one depending on the original case.
-	 */
+	if (mode & 0x1) {
+	    /*
+	     * Subtract or add one depending on the original case.
+	     */
 
-	if (mode != 0x7) {
-	    ch += ((mode & 0x4) ? -1 : 1);
+	    if (mode != 0x7) {
+		ch += ((mode & 0x4) ? -1 : 1);
+	    }
+	} else if (mode == 0x4) {
+	    ch -= GetDelta(info);
 	}
-    } else if (mode == 0x4) {
-	ch -= GetDelta(info);
     }
-    return ch;
+    return ch & 0x1FFFFF;
 }
 
 Tcl_UniChar
