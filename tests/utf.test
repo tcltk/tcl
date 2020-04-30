@@ -1329,7 +1329,7 @@ test utf-20.1 {TclUniCharNcmp} {ucs4} {
 } -1
 test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
     set one [format %c 0xFFFF]
-    set two [format %c 0xFFFF]
+    set two [format %c 0x10000]
     set first [string compare $one $two]
     string range $one 0 0
     string range $two 0 0 
