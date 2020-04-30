@@ -1398,6 +1398,7 @@ UCS4ToUpper(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1436,6 +1437,7 @@ UCS4ToLower(
 	    ch += GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1482,6 +1484,7 @@ UCS4ToTitle(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1681,6 +1684,7 @@ Tcl_UniCharIsControl(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
