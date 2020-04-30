@@ -1797,29 +1797,30 @@ Tcl_UniCharNcmp(
     return 0;
 #endif /* WORDS_BIGENDIAN */
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharNcasecmp --
+ * TclUTF16Ncmp --
  *
- *	Compare at most numChars unichars of string ucs to string uct case
- *	insensitive. Both ucs and uct are assumed to be at least numChars
- *	unichars long.
+ *	Compare at most numChars characters from UTF-16 sequence units1
+ *	against characters from UTF-16 sequence units2.  Caller is expected
+ *	to guarantee that each sequence contains at least numChars characters.
  *
  * Results:
- *	Return <0 if ucs < uct, 0 if ucs == uct, or >0 if ucs > uct.
- *
- * Side effects:
- *	None.
+ *	Return	<0 if units1 < units2,
+ *		0  if units1 == units2,
+ *		>0 if units1 > units,
+ *	when considering up to numChar characters from each.
  *
  *----------------------------------------------------------------------
  */
 
-#if 1
 static int
 UTF16ToUCS4(
-    const Tcl_UniChar *units,   /* Pointer into an array of UCS-2 units */
+    const unsigned short int *units,
+				/* Pointer into an array of UCS-2 units */
     size_t count,               /* How many units are available to read. */
     int *ucs4Ptr)               /* Write the UCS-4 result here. */
 {
@@ -1840,6 +1841,54 @@ UTF16ToUCS4(
     return 2;
 }
 
+int
+TclUtf16Ncmp(
+    const unsigned short int *units1,	/* 1st UTF-16 sequence to compare */
+    const unsigned short int *units2,	/* 2nd UTF-16 sequence to compare */
+    size_t numUnits1,			/* # code units in 1st sequence */
+    size_t numUnits2,			/* # code units in 2nd sequence */
+    size_t numChars)			/* max # characters to compare */
+{
+    while ((numChars > 0) && (numUnits1 > 0) && (numUnits2 > 0)) {
+	int ch1, ch2;
+	int delta1 = UTF16ToUCS4(units1, numUnits1, &ch1);
+	int delta2 = UTF16ToUCS4(units2, numUnits2, &ch2);
+
+	if (ch1 != ch2) {
+	    return (ch1 - ch2);
+	}
+	units1 += delta1;
+	numUnits1 -= delta1;
+	units2 += delta2;
+	numUnits2 -= delta2;
+	numChars--;
+    }
+    if (numChars == 0) {
+	return 0;
+    }
+    /* Ran out of at least one sequence before seeing numChars characters */
+    Tcl_Panic("TclUtf16Ncmp request to compare too many characters");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharNcasecmp --
+ *
+ *	Compare at most numChars unichars of string ucs to string uct case
+ *	insensitive. Both ucs and uct are assumed to be at least numChars
+ *	unichars long.
+ *
+ * Results:
+ *	Return <0 if ucs < uct, 0 if ucs == uct, or >0 if ucs > uct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if 0
 int
 Tcl_UniCharNcasecmp(
     const Tcl_UniChar *ucs,     /* Unicode string to compare to uct. */

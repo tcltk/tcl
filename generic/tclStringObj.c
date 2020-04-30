@@ -3435,7 +3435,55 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
+#if TCL_UTF_MAX > 3
 			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+#else
+	int numUnits1, numUnits2;
+	const unsigned short int *units1
+		= Tcl_GetUnicodeFromObj(value1Ptr, &numUnits1);
+	const unsigned short int *units2
+		= Tcl_GetUnicodeFromObj(value2Ptr, &numUnits2);
+
+/*
+ * WARNING WARNING!  s1len and s2len were set above as the values
+ * returned by calls to Tcl_GetCharLength().  The name of this routine
+ * would suggest it reports the number of characters, but it reports
+ * the number of code units.
+ */
+
+	length = (s1len < s2len) ? s1len : s2len;
+	/* length is # chars in shorter sequence */
+
+	if (reqlength > 0 && reqlength < length) {
+	    /* Trim back to request it it matters */
+	    length = reqlength;
+	} else if (reqlength < 0) {
+	    /*
+	     * The requested length is negative, so we ignore it by setting it
+	     * to length + 1 so we correct the match var.
+	     */
+/* TODO: Check this */
+
+	    reqlength = length + 1;
+	}
+
+	if (checkEq && (s1len != s2len)) {
+/* TODO: Check this */
+	    match = 1;		/* This will be reversed below. */
+	} else {
+	    /*
+	     * The comparison function should compare up to the minimum byte
+	     * length only.
+	     */
+
+	    match = TclUtf16Ncmp(units1, units2, numUnits1, numUnits2, length);
+	}
+	if ((match == 0) && (reqlength > length)) {
+	    match = s1len - s2len;
+	}
+	match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
+	goto matchdone;
+#endif
 		    }
 		}
 	    }

@@ -4098,6 +4098,11 @@ MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
+MODULE_SCOPE int	TclUtf16Ncmp(const unsigned short int *units1,
+			    const unsigned short int *units2,
+			    size_t numUnits1, size_t numUnits2,
+			    size_t numChars);
+
 /* Flag values for the [string] ensemble functions. */
 
 #define TCL_STRING_MATCH_NOCASE TCL_MATCH_NOCASE /* (1<<0) in tcl.h */
