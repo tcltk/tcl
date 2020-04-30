@@ -319,6 +319,11 @@ test encoding-15.3 {UtfToUtfProc null character input} {
     binary scan [encoding convertto identity $y] H* z
     list [string bytelength $x] [string bytelength $y] $z
 } {1 2 c080}
+test encoding-15.16 {UtfToUtfProc: Invalid 4-byte UTF-8, see [ed29806ba]} {
+    set x \xF0\xA0\xA1\xC2
+    set y [encoding convertfrom utf-8 \xF0\xA0\xA1\xC2]
+    list [string length $x] $y
+} "4 \xF0\xA0\xA1\xC2"
 
 test encoding-16.1 {UnicodeToUtfProc} {
     set val [encoding convertfrom unicode NN]
