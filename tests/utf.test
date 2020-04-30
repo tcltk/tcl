@@ -20,7 +20,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
-testConstraint tip389 [expr {[string length [format %c 0x10000]] eq 2}]
+testConstraint tip389 [expr {[string length [format %c 0x10000]] == 2}]
 testConstraint ucs4 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
 
@@ -42,96 +42,96 @@ testConstraint tip413 [eq {} [string trim \x00]]
 catch {unset x}
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
-    expr {"\x01" eq [testbytestring "\x01"]}
+    expr {"\x01" eq [testbytestring \x01]}
 } 1
 test utf-1.2 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
-    expr {"\x00" eq [testbytestring "\xC0\x80"]}
+    expr {"\x00" eq [testbytestring \xC0\x80]}
 } 1
 test utf-1.3 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
-    expr {"\xE0" eq [testbytestring "\xC3\xA0"]}
+    expr {"\xE0" eq [testbytestring \xC3\xA0]}
 } 1
 test utf-1.4 {Tcl_UniCharToUtf: 3 byte sequences} testbytestring {
-    expr {"\u4E4E" eq [testbytestring "\xE4\xB9\x8E"]}
+    expr {"\u4E4E" eq [testbytestring \xE4\xB9\x8E]}
 } 1
 test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
-    expr {[format %c 0x110000] eq [testbytestring "\xEF\xBF\xBD"]}
+    expr {[format %c 0x110000] eq [testbytestring \xEF\xBF\xBD]}
 } 1
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
-    expr {[format %c -1] eq [testbytestring "\xEF\xBF\xBD"]}
+    expr {[format %c -1] eq [testbytestring \xEF\xBF\xBD]}
 } 1
 test utf-1.7.0 {Tcl_UniCharToUtf: 4 byte sequences} {fullutf Uesc testbytestring} {
-    expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
+    expr {"\U014E4E" eq [testbytestring \xF0\x94\xB9\x8E]}
 } 1
 test utf-1.7.1 {Tcl_UniCharToUtf: 4 byte sequences} {ucs2 Uesc testbytestring} {
-    expr {"\U014E4E" eq [testbytestring "\xF0\x94\xB9\x8E"]}
+    expr {"\U014E4E" eq [testbytestring \xF0\x94\xB9\x8E]}
 } 0
 test utf-1.8 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
-    expr {"\uD842" eq [testbytestring "\xED\xA1\x82"]}
+    expr {"\uD842" eq [testbytestring \xED\xA1\x82]}
 } 1
 test utf-1.9 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
-    expr {"\uDC42" eq [testbytestring "\xED\xB1\x82"]}
+    expr {"\uDC42" eq [testbytestring \xED\xB1\x82]}
 } 1
 test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring {
-    expr {[format %c 0xD842] eq [testbytestring "\xED\xA1\x82"]}
+    expr {[format %c 0xD842] eq [testbytestring \xED\xA1\x82]}
 } 1
 test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
-    expr {[format %c 0xDC42] eq [testbytestring "\xED\xB1\x82"]}
+    expr {[format %c 0xDC42] eq [testbytestring \xED\xB1\x82]}
 } 1
 test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4bytes testbytestring} {
-    expr {"\uD842\uDC42" eq [testbytestring "\xF0\xA0\xA1\x82"]}
+    expr {"\uD842\uDC42" eq [testbytestring \xF0\xA0\xA1\x82]}
 } 1
 test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc testbytestring} {
-    expr {"\UD842" eq [testbytestring "\xEF\xBF\xBD"]}
+    expr {"\UD842" eq [testbytestring \xEF\xBF\xBD]}
 } 1
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
 } 3
 test utf-2.2 {Tcl_UtfToUniChar: naked trail bytes} testbytestring {
-    string length [testbytestring "\x82\x83\x84"]
+    string length [testbytestring \x82\x83\x84]
 } 3
 test utf-2.3 {Tcl_UtfToUniChar: lead (2-byte) followed by non-trail} testbytestring {
-    string length [testbytestring "\xC2"]
+    string length [testbytestring \xC2]
 } 1
 test utf-2.4 {Tcl_UtfToUniChar: lead (2-byte) followed by trail} testbytestring {
-    string length [testbytestring "\xC2\xA2"]
+    string length [testbytestring \xC2\xA2]
 } 1
 test utf-2.5 {Tcl_UtfToUniChar: lead (3-byte) followed by non-trail} testbytestring {
-    string length [testbytestring "\xE2"]
+    string length [testbytestring \xE2]
 } 1
 test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestring {
-    string length [testbytestring "\xE2\xA2"]
+    string length [testbytestring \xE2\xA2]
 } 2
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
-    string length [testbytestring "\xE4\xB9\x8E"]
+    string length [testbytestring \xE4\xB9\x8E]
 } 1
 test utf-2.8.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
-    string length [testbytestring "\xF0\x90\x80\x80"]
+    string length [testbytestring \xF0\x90\x80\x80]
 } 4
 test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
-    string length [testbytestring "\xF0\x90\x80\x80"]
+    string length [testbytestring \xF0\x90\x80\x80]
 } 1
 test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring tip389} {
-    string length [testbytestring "\xF0\x90\x80\x80"]
+    string length [testbytestring \xF0\x90\x80\x80]
 } 2
 test utf-2.9.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
-    string length [testbytestring "\xF4\x8F\xBF\xBF"]
+    string length [testbytestring \xF4\x8F\xBF\xBF]
 } 4
-test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
-    string length [testbytestring "\xF4\x8F\xBF\xBF"]
+test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
+    string length \U10FFFF
 } 1
-test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring tip389} {
-    string length [testbytestring "\xF4\x8F\xBF\xBF"]
+test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} tip389 {
+    string length \uDBFF\uDFFF
 } 2
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
-    string length [testbytestring "\xF0\x8F\xBF\xBF"]
+    string length [testbytestring \xF0\x8F\xBF\xBF]
 } 4
 test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
     # Would decode to U+110000 but that is outside the Unicode range.
-    string length [testbytestring "\xF4\x90\x80\x80"]
+    string length [testbytestring \xF4\x90\x80\x80]
 } 4
 test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
-    string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
+    string length [testbytestring \xF8\xA2\xA2\xA2\xA2]
 } 5
 
 test utf-3.1 {Tcl_UtfCharComplete} {
@@ -141,32 +141,32 @@ test utf-4.1 {Tcl_NumUtfChars: zero length} testnumutfchars {
     testnumutfchars ""
 } 0
 test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC2\xA2"]
+    testnumutfchars [testbytestring \xC2\xA2]
 } 1
 test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"]
+    testnumutfchars [testbytestring abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E]
 } 7
 test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC0\x80"]
+    testnumutfchars [testbytestring \xC0\x80]
 } 1
 test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
     testnumutfchars "" 0
 } 0
 test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC2\xA2"] end
+    testnumutfchars [testbytestring \xC2\xA2] end
 } 1
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E"] end
+    testnumutfchars [testbytestring abc\xC2\xA2\xE4\xB9\x8E\xA2\x4E] end
 } 7
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC0\x80"] end
+    testnumutfchars [testbytestring \xC0\x80] end
 } 1
 # Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
 test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xE2\x82\xAC"] end-1
+    testnumutfchars [testbytestring \xE2\x82\xAC] end-1
 } 2
 test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\x00"] end+1
+    testnumutfchars [testbytestring \x00] end+1
 } 2
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end-1
@@ -182,10 +182,10 @@ test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars test
 } 2
 
 test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
-    testfindfirst [testbytestring "abcbc"] 98
+    testfindfirst [testbytestring abcbc] 98
 } bcbc
 test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
-    testfindlast [testbytestring "abcbc"] 98
+    testfindlast [testbytestring abcbc] 98
 } bc
 
 test utf-6.1 {Tcl_UtfNext} testutfnext {
@@ -493,7 +493,10 @@ test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
 test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
     testutfnext -bytestring \xA0\xA0\xA0
 } 3
-test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
+test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
+    testutfnext \x80\x80\x80
+} 1
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
     testutfnext -bytestring \x80\x80\x80
 } 3
 test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
@@ -988,10 +991,10 @@ test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
 } {
 }
 test utf-10.2 {Tcl_UtfBackslash: \u subst} testbytestring {
-    expr {"\uA2" eq [testbytestring "\xC2\xA2"]}
+    expr {"\uA2" eq [testbytestring \xC2\xA2]}
 } 1
 test utf-10.3 {Tcl_UtfBackslash: longer \u subst} testbytestring {
-    expr {"\u4E21" eq [testbytestring "\xE4\xB8\xA1"]}
+    expr {"\u4E21" eq [testbytestring \xE4\xB8\xA1]}
 } 1
 test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
     expr {"\u4E2k" eq "[testbytestring \xD3\xA2]k"}
@@ -1145,11 +1148,11 @@ test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \uDC24\uD824
 } \uDC24\uD824
 test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
-    string totitle \U10428
-} \U10400
-test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} {pairsTo4bytes} {
-    string totitle \uD801\uDC28
-} \uD801\uDC00
+    string totitle \U10428\U10400
+} \U10400\U10428
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} pairsTo4bytes {
+    string totitle \uD801\uDC28\uD801\uDC00
+} \uD801\uDC00\uD801\uDC28
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
@@ -1178,8 +1181,8 @@ test utf-16.1 {Tcl_UniCharToLower, negative delta} {
     string tolower aA
 } aa
 test utf-16.2 {Tcl_UniCharToLower, positive delta} {
-    string tolower \u0178\xFF\uA78D\u01C5\U10400
-} \xFF\xFF\u0265\u01C6\U10428
+    string tolower \u0178\xFF\uA78D\u01C5
+} \xFF\xFF\u0265\u01C6
 
 test utf-17.1 {Tcl_UniCharToLower, no delta} {
     string tolower !
@@ -1210,6 +1213,15 @@ test utf-19.1 {TclUniCharLen} -body {
 test utf-20.1 {TclUniCharNcmp} {fullutf} {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
+test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0 
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
 
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance

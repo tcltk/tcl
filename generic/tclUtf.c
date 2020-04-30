@@ -438,7 +438,7 @@ static const unsigned short cp1252[32] = {
 int
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the unsigned int represented by
+    int *chPtr)/* Filled with the Unicode character represented by
 				 * the UTF-8 string. */
 {
     int byte;
@@ -522,8 +522,8 @@ Tcl_UtfToUniChar(
 int
 Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the unsigned short represented by
-				 * the UTF-8 string. */
+    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a surrogate too. */
 {
     unsigned short byte;
 
@@ -594,19 +594,19 @@ Tcl_UtfToChar16(
 	 */
     }
     else if (byte < 0xF5) {
-	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
-	     * Four-byte-character lead byte followed by three trail bytes.
+	     * Four-byte-character lead byte followed by at least two trail bytes.
+	     * (validity of 3th trail byte will be tested later)
 	     */
-	    unsigned short high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
+	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10FFFF */
-	    } else {
+	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
+	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
 	}
 
 	/*
@@ -1651,6 +1651,7 @@ Tcl_UniCharToUpper(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1682,6 +1683,7 @@ Tcl_UniCharToLower(
 	    ch += GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1721,6 +1723,7 @@ Tcl_UniCharToTitle(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -2021,6 +2024,7 @@ Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
