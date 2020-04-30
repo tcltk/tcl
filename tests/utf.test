@@ -1258,10 +1258,10 @@ test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
     string totitle \uDC24\uD824
 } \uDC24\uD824
-test utf-13.8 {Tcl_UniCharToTitle beyond U+FFFF} {Uesc fullutf} {
+test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
     string totitle \U10428\U10400
 } \U10400\U10428
-test utf-13.9 {Tcl_UniCharToTitle beyond U+FFFF} pairsTo4bytes {
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} pairsTo4bytes {
     string totitle \uD801\uDC28\uD801\uDC00
 } \uD801\uDC00\uD801\uDC28
 
