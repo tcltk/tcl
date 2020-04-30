@@ -601,7 +601,7 @@ Tcl_UtfToChar16(
 	     */
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if ((high < 0x400) /*&& ((src[3] & 0xC0) == 0x80)*/) {
+	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
