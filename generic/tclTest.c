@@ -6825,21 +6825,14 @@ TestUtfNextCmd(
     char *bytes;
     const char *result, *first;
     char buffer[32];
-    static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
+    static const char tobetested[] = "A\xA0\xC0\xC1\xC2\xD0\xE0\xE8\xF2\xF7\xF8\xFE\xFF";
     const char *p = tobetested;
 
-    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
-	    return TCL_ERROR;
-	}
-	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
-    } else {
-	bytes = (char *) TclGetBytesFromObj(interp, objv[2], &numBytes);
-	if (bytes == NULL) {
-	    return TCL_ERROR;
-	}
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
+	return TCL_ERROR;
     }
+	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if (numBytes > (int)sizeof(buffer)-3) {
 	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 29 bytes", NULL);
@@ -6888,17 +6881,13 @@ TestUtfPrevCmd(
     int numBytes, offset;
     char *bytes;
     const char *result;
-    Tcl_Obj *copy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
-    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
-    if (bytes == NULL) {
-	return TCL_ERROR;
-    }
+    bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6913,14 +6902,8 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    copy = Tcl_DuplicateObj(objv[1]);
-    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
-    bytes[numBytes] = '\0';
-
     result = TclUtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
-
-    Tcl_DecrRefCount(copy);
     return TCL_OK;
 }
 
