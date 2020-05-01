@@ -431,17 +431,17 @@ Tcl_UtfToUniChar(
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by at least two trail bytes.
-	     * (validity of 3th trail byte will be tested later)
+	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
 #if TCL_UTF_MAX <= 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
+	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
-	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
+	    /* out of range, < 0x10000 or > 0x10FFFF */
 #else
 	    if ((src[3] & 0xC0) == 0x80) {
 		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
@@ -557,7 +557,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[(unsigned char)*src];
+    return length >= totalBytes[UCHAR(*src)];
 }
 
 /*
@@ -604,7 +604,7 @@ Tcl_NumUtfChars(
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    if (((unsigned)(unsigned char)*src - 0xF0) < 5) {
+	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
@@ -615,7 +615,7 @@ Tcl_NumUtfChars(
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    if (((unsigned)(unsigned char)*src - 0xF0) < 5) {
+	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
@@ -1031,7 +1031,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(upChar) || ((upChar & 0xF800) == 0xD800)) {
+	if (len < UtfCount(upChar) || ((upChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1084,7 +1084,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(lowChar) || ((lowChar & 0xF800) == 0xD800)) {
+	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1134,7 +1134,7 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = UCS4ToTitle(ch);
 
-	if (len < UtfCount(titleChar) || ((titleChar & 0xF800) == 0xD800)) {
+	if (len < UtfCount(titleChar) || ((titleChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1150,7 +1150,7 @@ Tcl_UtfToTitle(
 	    lowChar = UCS4ToLower(lowChar);
 	}
 
-	if (len < UtfCount(lowChar) || ((lowChar & 0xF800) == 0xD800)) {
+	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
