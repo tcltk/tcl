@@ -2504,7 +2504,7 @@ UtfToUtf16Proc(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+    TCL_UNUSED(Tcl_EncodingState *),/* Place for conversion routine to store state
 				 * information used during a piecewise
 				 * conversion. Contents of statePtr are
 				 * initialized and/or reset by conversion
@@ -2527,11 +2527,8 @@ UtfToUtf16Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    int ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*statePtr = 0;
-    }
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2544,7 +2541,7 @@ UtfToUtf16Proc(
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2557,38 +2554,28 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUniChar(src, chPtr);
+	src += TclUtfToUCS4(src, &ch);
 
 	if (clientData) {
-#if TCL_UTF_MAX > 3
-	    if (*chPtr <= 0xFFFF) {
-		*dst++ = (*chPtr & 0xFF);
-		*dst++ = (*chPtr >> 8);
+	    if (ch <= 0xFFFF) {
+		*dst++ = (ch & 0xFF);
+		*dst++ = (ch >> 8);
 	    } else {
-		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
+		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (ch & 0xFF);
+		*dst++ = ((ch & 0x3) >> 8) | 0xDC;
 	    }
-#else
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = (*chPtr >> 8);
-#endif
 	} else {
-#if TCL_UTF_MAX > 3
-	    if (*chPtr <= 0xFFFF) {
-		*dst++ = (*chPtr >> 8);
-		*dst++ = (*chPtr & 0xFF);
+	    if (ch <= 0xFFFF) {
+		*dst++ = (ch >> 8);
+		*dst++ = (ch & 0xFF);
 	    } else {
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
-		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((ch & 0x3) >> 8) | 0xDC;
+		*dst++ = (ch & 0xFF);
+		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
 	    }
-#else
-	    *dst++ = (*chPtr >> 8);
-	    *dst++ = (*chPtr & 0xFF);
-#endif
 	}
     }
     *srcReadPtr = src - srcStart;
@@ -2638,10 +2625,7 @@ UtfToUcs2Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-#if TCL_UTF_MAX <= 3
-    int len;
-#endif
-    Tcl_UniChar ch = 0;
+    int ch;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2655,7 +2639,7 @@ UtfToUcs2Proc(
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2668,18 +2652,14 @@ UtfToUcs2Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-#if TCL_UTF_MAX <= 3
-	src += (len = TclUtfToUniChar(src, &ch));
-	if ((ch >= 0xD800) && (len < 3)) {
-	    src += TclUtfToUniChar(src, &ch);
+	src += TclUtfToUCS4(src, &ch);
+	if (ch & ~0xFFFF) {
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
 	    ch = 0xFFFD;
 	}
-#else
-	src += TclUtfToUniChar(src, &ch);
-	if (ch > 0xFFFF) {
-	    ch = 0xFFFD;
-	}
-#endif
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
@@ -2852,7 +2832,7 @@ TableFromUtfProc(
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd, *prefixBytes;
-    Tcl_UniChar ch = 0;
+    int ch;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
     const unsigned short *const *fromUnicode;
@@ -2873,7 +2853,7 @@ TableFromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2882,23 +2862,13 @@ TableFromUtfProc(
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-	len = TclUtfToUniChar(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
 
-#if TCL_UTF_MAX > 3
-	/*
-	 * This prevents a crash condition. More evaluation is required for
-	 * full support of int Tcl_UniChar. [Bug 1004065]
-	 */
-
-	if (ch & 0xFFFF0000) {
+	if (ch & ~0xFFFF) {
 	    word = 0;
-	} else
-#else
-	if (!len) {
-	    word = 0;
-	} else
-#endif
+	} else {
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
+	}
 
 	if ((word == 0) && (ch != 0)) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
@@ -3054,7 +3024,7 @@ Iso88591FromUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result = TCL_OK, numChars;
-    Tcl_UniChar ch = 0;
+    int ch;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -3069,7 +3039,7 @@ Iso88591FromUtfProc(
     for (numChars = 0; src < srcEnd; numChars++) {
 	int len;
 
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -3078,29 +3048,22 @@ Iso88591FromUtfProc(
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-	len = TclUtfToUniChar(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
 
 	/*
 	 * Check for illegal characters.
 	 */
 
-	if (ch > 0xFF
-#if TCL_UTF_MAX <= 3
-		|| ((ch >= 0xD800) && (len < 3))
-#endif
-		) {
+	if (ch > 0xFF) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-#if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (len < 3)) len = 4;
-#endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
 	     */
 
-	    ch = (Tcl_UniChar) '?';
+	    ch = '?';
 	}
 
 	if (dst > dstEnd) {
@@ -3419,7 +3382,7 @@ EscapeFromUtfProc(
     const TableEncodingData *tableDataPtr;
     const char *tablePrefixBytes;
     const unsigned short *const *tableFromUnicode;
-    Tcl_UniChar ch = 0;
+    int ch;
 
     result = TCL_OK;
 
@@ -3461,7 +3424,7 @@ EscapeFromUtfProc(
 	unsigned len;
 	int word;
 
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -3470,8 +3433,12 @@ EscapeFromUtfProc(
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-	len = TclUtfToUniChar(src, &ch);
-	word = tableFromUnicode[(ch >> 8)][ch & 0xFF];
+	len = TclUtfToUCS4(src, &ch);
+	if (ch & ~0xFFFF) {
+	    word = 0;
+	} else {
+	    word = tableFromUnicode[(ch >> 8)][ch & 0xFF];
+	}
 
 	if ((word == 0) && (ch != 0)) {
 	    int oldState;
@@ -3481,7 +3448,11 @@ EscapeFromUtfProc(
 	    for (state = 0; state < dataPtr->numSubTables; state++) {
 		encodingPtr = GetTableEncoding(dataPtr, state);
 		tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
-		word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xFF];
+		if (ch & ~0xFFFF) {
+		    word = 0;
+		} else {
+		    word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xFF];
+		}
 		if (word != 0) {
 		    break;
 		}
