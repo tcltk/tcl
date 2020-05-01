@@ -1210,9 +1210,18 @@ test utf-19.1 {TclUniCharLen} -body {
     unset -nocomplain foo
 } -result {1 4}
 
-test utf-20.1 {TclUniCharNcmp} {fullutf knownBug} {
+test utf-20.1 {TclUniCharNcmp} {ucs4} {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
+test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} knownBug {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0 
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
 
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
@@ -1331,8 +1340,10 @@ UniCharCaseCmpTest < a b
 UniCharCaseCmpTest > b a
 UniCharCaseCmpTest > B a
 UniCharCaseCmpTest > aBcB abca
-UniCharCaseCmpTest < \uFFFF [format %c 0x10000]	{fullutf knownBug}
-UniCharCaseCmpTest < \uFFFF \U10000		{Uesc fullutf knownBug}
+UniCharCaseCmpTest < \uFFFF [format %c 0x10000] ucs4	
+UniCharCaseCmpTest < \uFFFF \U10000		{Uesc ucs4}
+UniCharCaseCmpTest > [format %c 0x10000] \uFFFF	ucs4	
+UniCharCaseCmpTest > \U10000 \uFFFF		{Uesc ucs4}
 
 
 

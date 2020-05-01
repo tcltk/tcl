@@ -771,7 +771,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= complete[(unsigned char)*src];
+    return length >= complete[UCHAR(*src)];
 }
 
 /*
@@ -1238,7 +1238,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(upChar)) || ((upChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1291,7 +1291,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1341,7 +1341,7 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
-	if ((len < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1357,7 +1357,7 @@ Tcl_UtfToTitle(
 	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1651,6 +1651,7 @@ Tcl_UniCharToUpper(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1682,6 +1683,7 @@ Tcl_UniCharToLower(
 	    ch += GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1721,6 +1723,7 @@ Tcl_UniCharToTitle(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1908,6 +1911,7 @@ Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
