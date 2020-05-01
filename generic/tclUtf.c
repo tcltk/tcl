@@ -598,16 +598,16 @@ Tcl_UtfToChar16(
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by at least two trail bytes.
-	     * (validity of 3th trail byte will be tested later)
+	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if ((high < 0x400) && ((src[3] & 0xC0) == 0x80)) {
+	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
-	    /* out of range, < 0x10000 or > 0x10FFFF or invalid 3th byte */
+	    /* out of range, < 0x10000 or > 0x10FFFF */
 	}
 
 	/*
@@ -772,7 +772,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     size_t length)			/* Length of above string in bytes. */
 {
-    return length >= complete[(unsigned char)*src];
+    return length >= complete[UCHAR(*src)];
 }
 
 /*
@@ -1244,7 +1244,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(upChar)) || ((upChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1297,7 +1297,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1347,7 +1347,7 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
-	if ((len < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1363,7 +1363,7 @@ Tcl_UtfToTitle(
 	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
