@@ -36,6 +36,7 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
+testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetencpath [llength [info commands testgetencpath]]
 
@@ -321,7 +322,7 @@ test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     binary scan [teststringbytes $y] H* z
     set z
 } c080
-test encoding-15.4 {UtfToUtfProc emoji character input} -body {
+test encoding-15.4 {UtfToUtfProc emoji character input} -constraints ucs2 -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
