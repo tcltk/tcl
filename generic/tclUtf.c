@@ -604,24 +604,12 @@ Tcl_NumUtfChars(
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else {
-		src += TclUtfToUniChar(src, &ch);
-	    }
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else {
-		src += TclUtfToUniChar(src, &ch);
-	    }
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	if (src < endPtr) {
