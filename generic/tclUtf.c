@@ -2360,7 +2360,7 @@ TclUtfToUCS4(
     len = TclUtfToUniChar(src, &ch);
     fullchar = ch;
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
     /* 4-byte UTF-8 is supported; decode surrogates */
 
     if ((ch >= 0xD800) && len < 3) {
