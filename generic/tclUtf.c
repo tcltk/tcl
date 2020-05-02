@@ -64,13 +64,10 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX != 4
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
+/* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 3
@@ -80,7 +77,7 @@ static const unsigned char totalBytes[256] = {
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
-
+
 static const unsigned char complete[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -95,7 +92,7 @@ static const unsigned char complete[256] = {
 #endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
     4,4,4,4,4,
 #else
     1,1,1,1,1,
@@ -626,26 +623,24 @@ Tcl_NumUtfChars(
 	const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
-#if TCL_UTF_MAX < 4
 	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
-	    } else
-#endif
-	    src += TclUtfToUniChar(src, &ch);
+	    } else {
+		src += TclUtfToUniChar(src, &ch);
+	    }
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-#if TCL_UTF_MAX < 4
 	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
-	    } else
-#endif
-	    src += TclUtfToUniChar(src, &ch);
+	    } else {
+		src += TclUtfToUniChar(src, &ch);
+	    }
 	    i++;
 	}
 	if (src < endPtr) {
