@@ -2341,7 +2341,7 @@ UtfToUtfProc(
 	    *dst++ = 0;
 	    *chPtr = 0; /* reset surrogate handling */
 	    src += 2;
-	} else if (!TclUCS4Complete(src, srcEnd - src)) {
+	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Always check before using TclUtfToUniChar. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
