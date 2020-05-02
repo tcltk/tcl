@@ -3184,8 +3184,13 @@ MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+/*
+ * Bytes F0-F4 are start-bytes for 4-byte sequences.
+ * Byte 0xED can be the start-byte of an upper surrogate. In that case,
+ * TclUtfToUCS4() might read the lower surrogate following it too.
+ */
 #   define TclUCS4Complete(src, length) (((unsigned)(UCHAR(*(src)) - 0xF0) < 5) \
-	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
+	    ? ((length) >= 4) : (UCHAR(*(src)) == 0xED) ? ((length) >= 6) : Tcl_UtfCharComplete((src), (length)))
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
