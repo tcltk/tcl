@@ -292,7 +292,7 @@ test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
     append x [encoding convertfrom iso8859-3 ab\xD5g]
 } "ab\xd5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4E4Eg] 
+    set x [encoding convertto shiftjis ab\u4E4Eg]
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
 } "ab\x8c\xc1gab\u4e4eg"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
