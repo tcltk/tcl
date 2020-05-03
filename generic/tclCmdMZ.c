@@ -1413,14 +1413,9 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[TCL_UTF_MAX] = "";
+	    char buf[8] = "";
 
-	    length = Tcl_UniCharToUtf(ch, buf);
-#if TCL_UTF_MAX > 3
-	    if ((ch >= 0xD800) && (length < 3)) {
-		length += Tcl_UniCharToUtf(-1, buf + length);
-	    }
-#endif
+	    length = TclUCS4ToUtf(ch, buf);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
 	}
     }

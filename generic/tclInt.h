@@ -3184,6 +3184,8 @@ MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
+
 /*
  * Bytes F0-F4 are start-bytes for 4-byte sequences.
  * Byte 0xED can be the start-byte of an upper surrogate. In that case,

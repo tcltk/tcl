@@ -843,7 +843,6 @@ TclParseBackslash(
 				 * written there. */
 {
     register const char *p = src+1;
-    Tcl_UniChar unichar = 0;
     int result;
     int count;
     char buf[TCL_UTF_MAX] = "";
@@ -943,7 +942,7 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "U".
 	     */
 	    result = 'U';
-	} else if ((result | 0x7FF) == 0xDFFF) {
+	} else if ((result & ~0x7FF) == 0xD800) {
 	    /* Upper or lower surrogate, not allowed in this syntax. */
 	    result = 0xFFFD;
 	}
@@ -991,16 +990,15 @@ TclParseBackslash(
 	 * #217987] test subst-3.2
 	 */
 
-	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	if (TclUCS4Complete(p, numBytes - 1)) {
+	    count = TclUtfToUCS4(p, &result) + 1;	/* +1 for '\' */
 	} else {
-	    char utfBytes[TCL_UTF_MAX];
+	    char utfBytes[8];
 
-	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
+	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
-	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUCS4(utfBytes, &result) + 1;
 	}
-	result = unichar;
 	break;
     }
 
@@ -1008,13 +1006,12 @@ TclParseBackslash(
     if (readPtr != NULL) {
 	*readPtr = count;
     }
-    count = Tcl_UniCharToUtf(result, dst);
-#if TCL_UTF_MAX > 3
-     if ((result >= 0xD800) && (count < 3)) {
-	count += Tcl_UniCharToUtf(-1, dst + count);
+#if TCL_UTF_MAX < 4
+    if (result > 0xFFFF) {
+    	result = 0xFFFD;
     }
 #endif
-    return count;
+    return TclUCS4ToUtf(result, dst);
 }
 
 /*

@@ -2354,7 +2354,7 @@ TclUniCharMatch(
  *	routine does not run off the end and dereference non-existent memory
  *	looking for trail bytes. If the source buffer is known to be '\0'
  *	terminated, this cannot happen. Otherwise, the caller should call
- *	Tcl_UtfCharComplete() before calling this routine to ensure that
+ *	TclUCS4Complete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
  * Results:
@@ -2373,25 +2373,67 @@ TclUtfToUCS4(
     int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
 			 * by the UTF-8 string. */
 {
-    int len, fullchar;
     Tcl_UniChar ch = 0;
+    int len = Tcl_UtfToUniChar(src, &ch);
 
-    len = TclUtfToUniChar(src, &ch);
-    fullchar = ch;
-
-#if TCL_UTF_MAX == 4
-    /* 4-byte UTF-8 is supported; decode surrogates */
-
-    if ((ch >= 0xD800) && len < 3) {
-	len += Tcl_UtfToUniChar(src + len, &ch);
-	fullchar = (((fullchar & 0x3FF) << 10) | (ch & 0x3FF)) + 0x10000;
+#if TCL_UTF_MAX <= 4
+    if ((ch & ~0x3FF) == 0xD800) {
+	Tcl_UniChar low = ch;
+	int len2 = Tcl_UtfToUniChar(src+len, &low);
+	if ((low & ~0x3FF) == 0xDC00) {
+	    *ucs4Ptr = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 0x10000;
+	    return len + len2;
+	}
     }
 #endif
-
-    *ucs4Ptr = fullchar;
+    *ucs4Ptr = (int)ch;
     return len;
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUCS4ToUtf --
+ *
+ *	Store the given Unicode character as a sequence of UTF-8 bytes in the
+ *	provided buffer. Might output 6 bytes, if the code point > 0xFFFF.
+ *
+ * Results:
+ *	The return values is the number of bytes in the buffer that were
+ *	consumed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclUCS4ToUtf(
+    int ch,			/* Unicode character to be stored in the
+				 * buffer. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * the Unicode character is stored. Buffer must be
+				 * large enough to hold the UTF-8 character(s)
+				 * (at most 6 bytes). */
+{
+#if TCL_UTF_MAX <= 4
+    if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
+	/* Spit out a 4-byte UTF-8 character or 2 x 3-byte UTF-8 characters, depending on Tcl
+	 * version and/or TCL_UTF_MAX build value */
+	int len = Tcl_UniCharToUtf(0xD800 | ((ch - 0x10000) >> 10), buf);
+	return len + Tcl_UniCharToUtf(0xDC00 | (ch & 0x7FF), buf + len);
+    }
+#endif
+    if ((ch & ~0x7FF) == 0xD800) {
+	buf[2] = (char) ((ch | 0x80) & 0xBF);
+	buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 12) | 0xE0);
+	return 3;
+    }
+    return Tcl_UniCharToUtf(ch, buf);
+}
+
 /*
  * Local Variables:
  * mode: c
