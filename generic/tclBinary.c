@@ -1222,11 +1222,11 @@ BinaryFormatCmd(
 
  badField:
     {
-	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1] = "";
+	int ch;
+	char buf[8] = "";
 
-	TclUtfToUniChar(errorString, &ch);
-	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	TclUtfToUCS4(errorString, &ch);
+	buf[TclUCS4ToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
 	return TCL_ERROR;
@@ -1592,11 +1592,11 @@ BinaryScanCmd(
 
  badField:
     {
-	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1] = "";
+	int ch;
+	char buf[8] = "";
 
-	TclUtfToUniChar(errorString, &ch);
-	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	TclUtfToUCS4(errorString, &ch);
+	buf[TclUCS4ToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
 	return TCL_ERROR;
