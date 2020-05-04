@@ -519,10 +519,10 @@ TclCheckEmptyString (
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUniChar --
+ * Tcl_GetUniChar/TclGetUCS4 --
  *
  *	Get the index'th Unicode character from the String object. If index
- *	is out of range, the result = 0xFFFD;
+ *	is out of range, the result = 0xFFFD (Tcl_GetUniChar) resp. -1 (TclGetUCS4)
  *
  * Results:
  *	Returns the index'th Unicode character in the Object.
@@ -587,6 +587,80 @@ Tcl_GetUniChar(
     }
     return stringPtr->unicode[index];
 }
+
+#if TCL_UTF_MAX == 4
+int
+TclGetUCS4(
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    int index)			/* Get the index'th Unicode character. */
+{
+    String *stringPtr;
+    int ch, length;
+
+    if (index < 0) {
+	return -1;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the indexing operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >= length) {
+		return -1;
+	}
+
+	return (int) bytes[index];
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
+
+    SetStringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (stringPtr->hasUnicode == 0) {
+	/*
+	 * If numChars is unknown, compute it.
+	 */
+
+	if (stringPtr->numChars == -1) {
+	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	}
+	if (stringPtr->numChars == objPtr->length) {
+	    return (Tcl_UniChar) objPtr->bytes[index];
+	}
+	FillUnicodeRep(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
+
+    if (index >= stringPtr->numChars) {
+	return -1;
+    }
+    ch = stringPtr->unicode[index];
+#if TCL_UTF_MAX <= 4
+    /* See: bug [11ae2be95dac9417] */
+    if ((ch & 0xF800) == 0xD800) {
+	if (ch & 0x400) {
+	    if ((index > 0)
+		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
+		ch = -1; /* low surrogate preceded by high surrogate */
+	    }
+	} else if ((++index < stringPtr->numChars)
+		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
+	    /* high surrogate followed by low surrogate */
+	    ch = (((ch & 0x3FF) << 10) |
+			(stringPtr->unicode[index] & 0x3FF)) + 0x10000;
+	}
+    }
+#endif
+    return ch;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -983,14 +983,14 @@ test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
 } c
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
-} \uFF
+} \xFF
 test utf-8.5.0 {Tcl_UniCharAtIndex: high surrogate} ucs2 {
     string index \uD842 0
 } \uD842
-test utf-8.5.1 {Tcl_UniCharAtIndex: high surrogate} {ucs4 knownBug} {
+test utf-8.5.1 {Tcl_UniCharAtIndex: high surrogate} {ucs4} {
     string index \uD842 0
 } \uD842
-test utf-8.5.2 {Tcl_UniCharAtIndex: high surrogate} {tip389 knownBug} {
+test utf-8.5.2 {Tcl_UniCharAtIndex: high surrogate} {tip389} {
     string index \uD842 0
 } \uD842
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
@@ -1002,7 +1002,7 @@ test utf-8.7.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
 test utf-8.7.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
     string index \uD83D\uDE00G 0
 } \U1F600
-test utf-8.7.2 {Tcl_UniCharAtIndex: Emoji} {tip389 knownBug} {
+test utf-8.7.2 {Tcl_UniCharAtIndex: Emoji} {tip389} {
     string index \uD83D\uDE00G 0
 } \U1F600
 test utf-8.8.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
@@ -1011,7 +1011,7 @@ test utf-8.8.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
 test utf-8.8.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
     string index \uD83D\uDE00G 1
 } G
-test utf-8.8.2 {Tcl_UniCharAtIndex: Emoji} {tip389 knownBug} {
+test utf-8.8.2 {Tcl_UniCharAtIndex: Emoji} {tip389} {
     string index \uD83D\uDE00G 1
 } {}
 test utf-8.9.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
@@ -1029,7 +1029,7 @@ test utf-8.10.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
 test utf-8.10.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 0
 } \U1F600
-test utf-8.10.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389 knownBug} {
+test utf-8.10.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389} {
     string index \U1F600G 0
 } \U1F600
 test utf-8.11.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
@@ -1038,7 +1038,7 @@ test utf-8.11.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
 test utf-8.11.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 1
 } G
-test utf-8.11.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389 knownBug} {
+test utf-8.11.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389} {
     string index \U1F600G 1
 } {}
 test utf-8.12.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
