@@ -5571,16 +5571,10 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[4] = "";
+	    char buf[8] = "";
 	    Tcl_UniChar ch = Tcl_GetUniChar(valuePtr, index);
 
-	    /*
-	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
-	     * but creating the object as a string seems to be faster in
-	     * practical use.
-	     */
-
-	    length = Tcl_UniCharToUtf(ch, buf);
+	    length = TclUCS4ToUtf(ch, buf);
 	    objResultPtr = Tcl_NewStringObj(buf, length);
 	}
 

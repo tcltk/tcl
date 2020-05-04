@@ -623,24 +623,26 @@ Tcl_NumUtfChars(
 	const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
+#if TCL_UTF_MAX < 4
 	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
-	    } else {
-		src += TclUtfToUniChar(src, &ch);
-	    }
+	    } else
+#endif
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+#if TCL_UTF_MAX < 4
 	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
 		/* treat F0 - F4 as single character */
 		ch = 0;
 		src++;
-	    } else {
-		src += TclUtfToUniChar(src, &ch);
-	    }
+	    } else
+#endif
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	if (src < endPtr) {
