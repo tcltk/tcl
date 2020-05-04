@@ -493,25 +493,16 @@ test utf-6.91.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
 test utf-6.91.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf} {
     testutfnext \xF4\x90\x80\x80
 } 1
-test utf-6.92.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext ucs2} {
-    testutfnext \xA0\xA0\xA0
-} 1
-test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext fullutf knownBug} {
+test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
     testutfnext \xA0\xA0\xA0
 } 3
-test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
+test utf-6.93 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} testutfnext {
     testutfnext \x80\x80\x80
 } 3
-test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf knownBug} {
-    testutfnext \x80\x80\x80
-} 3
-test utf-6.94.0 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
-    testutfnext \xA0\xA0\xA0\xA0
-} 1
-test utf-6.94.1 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext fullutf knownBug} {
+test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0
 } 3
-test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
+test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
     testutfnext \x80\x80\x80\x80
 } 3
 test utf-6.96 {Tcl_UtfNext, read limits} testutfnext {
@@ -619,18 +610,18 @@ test utf-6.121 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
 test utf-6.122 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0 2
 } 0
-test utf-6.123 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0G 3
-} 1
-test utf-6.124 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+} 3
+test utf-6.124 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0 3
-} 1
-test utf-6.125 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+} 3
+test utf-6.125 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0G 4
-} 1
-test utf-6.126 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
+} 3
+test utf-6.126 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0\xA0 4
-} 1
+} 3
 
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
