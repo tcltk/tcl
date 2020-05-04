@@ -2383,7 +2383,8 @@ TclUtfToUCS4(
  *
  * Results:
  *	The return values is the number of bytes in the buffer that were
- *	consumed.
+ *	consumed. If ch == -1, this function outputs 0 bytes (empty string),
+ *	since TclGetUCS4 returns -1 for out-of-range indices.
  *
  * Side effects:
  *	None.
@@ -2413,6 +2414,9 @@ TclUCS4ToUtf(
 	buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
 	buf[0] = (char) ((ch >> 12) | 0xE0);
 	return 3;
+    }
+    if (ch == -1) {
+	return 0;
     }
     return Tcl_UniCharToUtf(ch, buf);
 }
