@@ -21,8 +21,8 @@ testConstraint tip389 [expr {[string length [format %c 0x10000]] == 2}]
 testConstraint ucs4 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
 
-testConstraint Uesc [eq \U0041 A]
-testConstraint pre388 [eq \x741 A]
+testConstraint Uesc [expr {"\U0041" eq "A"}]
+testConstraint pre388 [expr {"\x741" eq "A"}]
 testConstraint pairsTo4bytes [expr {[llength [info commands teststringbytes]]
 		&& [string length [teststringbytes \uD83D\uDCA9]] == 4}]
 
@@ -34,7 +34,7 @@ testConstraint teststringobj [llength [info commands teststringobj]]
 testConstraint testutfnext [llength [info commands testutfnext]]
 testConstraint testutfprev [llength [info commands testutfprev]]
 
-testConstraint tip413 [eq {} [string trim \x00]]
+testConstraint tip413 [expr {[string trim \x00] eq {}}]
 
 catch {unset x}
 
@@ -484,7 +484,10 @@ test utf-6.90.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
 test utf-6.90.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf} {
     testutfnext \xF4\x8F\xBF\xBF
 } 4
-test utf-6.91 {Tcl_UtfNext, validity check [493dccc2de]} testutfnext {
+test utf-6.91.0 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext ucs2} {
+    testutfnext \xF4\x90\x80\x80
+} 1
+test utf-6.91.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext fullutf} {
     testutfnext \xF4\x90\x80\x80
 } 1
 test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testutfnext {
@@ -493,13 +496,13 @@ test utf-6.92 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} testu
 test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext ucs2} {
     testutfnext \x80\x80\x80
 } 1
-test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf} {
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext fullutf knownBug} {
     testutfnext \x80\x80\x80
-} 1
+} 3
 test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
     testutfnext \xA0\xA0\xA0\xA0
 } 1
-test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} testutfnext {
+test utf-6.95 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext ucs2} {
     testutfnext \x80\x80\x80\x80
 } 1
 test utf-6.96 {Tcl_UtfNext, read limits} testutfnext {
@@ -595,16 +598,16 @@ test utf-6.117.1 {Tcl_UtfNext, read limits} {testutfnext fullutf} {
 test utf-6.118 {Tcl_UtfNext, read limits} testutfnext {
     testutfnext \xA0G 0
 } 0
-test utf-6.119 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.119 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0G 1
 } 1
-test utf-6.120 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.120 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0 1
 } 1
-test utf-6.121 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.121 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0G 2
 } 1
-test utf-6.122 {Tcl_UtfNext, read limits} testutfnext {
+test utf-6.122 {Tcl_UtfNext, read limits} {testutfnext ucs2} {
     testutfnext \xA0\xA0\xA0 2
 } 1
 test utf-6.123 {Tcl_UtfNext, read limits} testutfnext {
@@ -950,13 +953,19 @@ test utf-7.49.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
 test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
     testutfprev A\xF4\x90\x80\x80
 } 4
-test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
     testutfprev A\xF4\x90\x80\x80 4
 } 3
-test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.3 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
+    testutfprev A\xF4\x90\x80\x80 4
+} 3
+test utf-7.49.4 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev ucs2} {
     testutfprev A\xF4\x90\x80\x80 3
 } 2
-test utf-7.49.4 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
+test utf-7.49.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf} {
+    testutfprev A\xF4\x90\x80\x80 3
+} 2
+test utf-7.49.6 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 2
 } 1
 
@@ -965,37 +974,37 @@ test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
 } a
 test utf-8.2 {Tcl_UniCharAtIndex: index = 0} {
     string index \u4E4E\u25A 0
-} "\u4E4E"
+} \u4E4E
 test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
     string index abcd 2
 } c
 test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
     string index \u4E4E\u25A\xFF\u543 2
-} "\uFF"
+} \xFF
 test utf-8.5.0 {Tcl_UniCharAtIndex: high surrogate} ucs2 {
     string index \uD842 0
-} "\uD842"
+} \uD842
 test utf-8.5.1 {Tcl_UniCharAtIndex: high surrogate} ucs4 {
     string index \uD842 0
-} "\uD842"
+} \uD842
 test utf-8.5.2 {Tcl_UniCharAtIndex: high surrogate} tip389 {
     string index \uD842 0
-} "\uD842"
+} \uD842
 test utf-8.6 {Tcl_UniCharAtIndex: low surrogate} {
     string index \uDC42 0
-} "\uDC42"
+} \uDC42
 test utf-8.7.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
     string index \uD83D\uDE00G 0
-} "\uD83D"
+} \uD83D
 test utf-8.7.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
     string index \uD83D\uDE00G 0
-} "\U1F600"
+} \U1F600
 test utf-8.7.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
     string index \uD83D\uDE00G 0
-} "\U1F600"
+} \U1F600
 test utf-8.8.0 {Tcl_UniCharAtIndex: Emoji} ucs2 {
     string index \uD83D\uDE00G 1
-} "\uDE00"
+} \uDE00
 test utf-8.8.1 {Tcl_UniCharAtIndex: Emoji} ucs4 {
     string index \uD83D\uDE00G 1
 } G
@@ -1013,13 +1022,13 @@ test utf-8.9.2 {Tcl_UniCharAtIndex: Emoji} tip389 {
 } G
 test utf-8.10.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
     string index \U1F600G 0
-} "\uFFFD"
+} \uFFFD
 test utf-8.10.1 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs4} {
     string index \U1F600G 0
-} "\U1F600"
+} \U1F600
 test utf-8.10.2 {Tcl_UniCharAtIndex: Emoji} {Uesc tip389} {
     string index \U1F600G 0
-} "\U1F600"
+} \U1F600
 test utf-8.11.0 {Tcl_UniCharAtIndex: Emoji} {Uesc ucs2} {
     string index \U1F600G 1
 } G
@@ -1044,22 +1053,22 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
 } abc
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4E4E\u25A\xFF\u543klmnop 1 5
-} "\u25A\xFF\u543kl"
+} \u25A\xFF\u543kl
 test utf-9.3.0 {Tcl_UtfAtIndex: index = 0, Emoji} ucs2 {
     string range \uD83D\uDE00G 0 0
-} "\uD83D"
+} \uD83D
 test utf-9.3.1 {Tcl_UtfAtIndex: index = 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 0 0
-} "\U1F600"
+} \U1F600
 test utf-9.3.2 {Tcl_UtfAtIndex: index = 0, Emoji} tip389 {
     string range \uD83D\uDE00G 0 0
-} "\U1F600"
+} \U1F600
 test utf-9.4.0 {Tcl_UtfAtIndex: index > 0, Emoji} ucs2 {
     string range \uD83D\uDE00G 1 1
-} "\uDE00"
+} \uDE00
 test utf-9.4.1 {Tcl_UtfAtIndex: index > 0, Emoji} ucs4 {
     string range \uD83D\uDE00G 1 1
-} "G"
+} G
 test utf-9.4.2 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
     string range \uD83D\uDE00G 1 1
 } {}
@@ -1074,19 +1083,19 @@ test utf-9.5.2 {Tcl_UtfAtIndex: index > 0, Emoji} tip389 {
 } G
 test utf-9.6.0 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc ucs2} {
     string range \U1f600G 0 0
-} "\uFFFD"
+} \uFFFD
 test utf-9.6.1 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc ucs4} {
     string range \U1f600G 0 0
-} "\U1F600"
+} \U1F600
 test utf-9.6.2 {Tcl_UtfAtIndex: index = 0, Emoji} {Uesc tip389} {
     string range \U1f600G 0 0
-} "\U1F600"
+} \U1F600
 test utf-9.7.0 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs2} {
     string range \U1f600G 1 1
 } G
 test utf-9.7.1 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc ucs4} {
     string range \U1f600G 1 1
-} "G"
+} G
 test utf-9.7.2 {Tcl_UtfAtIndex: index > 0, Emoji} {Uesc tip389} {
     string range \U1f600G 1 1
 } {}
@@ -1170,7 +1179,7 @@ bsCheck \uA	10
 bsCheck \340	224
 bsCheck \uA1	161
 bsCheck \u4E21	20001
-bsCheck \741    225	pre388	;# == \341 
+bsCheck \741    225	pre388	;# == \341
 bsCheck \741    60	!pre388	;# == \74 1
 bsCheck \U      85
 bsCheck \Uk     85
@@ -1332,7 +1341,7 @@ test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
     set two [format %c 0x10000]
     set first [string compare $one $two]
     string range $one 0 0
-    string range $two 0 0 
+    string range $two 0 0
     set second [string compare $one $two]
     expr {($first == $second) ? "agree" : "disagree"}
 } agree
@@ -1454,9 +1463,9 @@ UniCharCaseCmpTest < a b
 UniCharCaseCmpTest > b a
 UniCharCaseCmpTest > B a
 UniCharCaseCmpTest > aBcB abca
-UniCharCaseCmpTest < \uFFFF [format %c 0x10000] ucs4	
+UniCharCaseCmpTest < \uFFFF [format %c 0x10000] ucs4
 UniCharCaseCmpTest < \uFFFF \U10000		{Uesc ucs4}
-UniCharCaseCmpTest > [format %c 0x10000] \uFFFF	ucs4	
+UniCharCaseCmpTest > [format %c 0x10000] \uFFFF	ucs4
 UniCharCaseCmpTest > \U10000 \uFFFF		{Uesc ucs4}
 
 

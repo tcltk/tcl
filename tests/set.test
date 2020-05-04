@@ -533,4 +533,4 @@ catch {unset i}
 catch {unset x}
 catch {unset z}
 ::tcltest::cleanupTests
-return 
+return
