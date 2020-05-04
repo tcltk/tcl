@@ -5572,7 +5572,7 @@ TEBCresume(
 		    valuePtr->bytes+index, 1);
 	} else {
 	    char buf[8] = "";
-	    Tcl_UniChar ch = Tcl_GetUniChar(valuePtr, index);
+	    int ch = TclGetUCS4(valuePtr, index);
 
 	    length = TclUCS4ToUtf(ch, buf);
 	    objResultPtr = Tcl_NewStringObj(buf, length);

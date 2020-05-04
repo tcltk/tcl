@@ -83,13 +83,10 @@ static const unsigned char complete[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX > 4
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
+/* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 4
@@ -2402,7 +2399,8 @@ TclUtfToUCS4(
  *
  * Results:
  *	The return values is the number of bytes in the buffer that were
- *	consumed.
+ *	consumed. If ch == -1, this function outputs 0 bytes (empty string),
+ *	since TclGetUCS4 returns -1 for out-of-range indices.
  *
  * Side effects:
  *	None.
@@ -2432,6 +2430,9 @@ TclUCS4ToUtf(
 	buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
 	buf[0] = (char) ((ch >> 12) | 0xE0);
 	return 3;
+    }
+    if (ch == -1) {
+	return 0;
     }
     return Tcl_UniCharToUtf(ch, buf);
 }

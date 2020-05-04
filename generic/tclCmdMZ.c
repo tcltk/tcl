@@ -1401,7 +1401,7 @@ StringIndexCmd(
     }
 
     if ((index >= 0) && (index < length)) {
-	Tcl_UniChar ch = Tcl_GetUniChar(objv[1], index);
+	int ch = TclGetUCS4(objv[1], index);
 
 	/*
 	 * If we have a ByteArray object, we're careful to generate a new
