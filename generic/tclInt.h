@@ -3183,8 +3183,13 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
 MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
+#if TCL_UTF_MAX == 4
+    MODULE_SCOPE int	TclGetUCS4(Tcl_Obj *, int);
+#else
+    #define TclGetUCS4 Tcl_GetUniChar
+#endif
 
 /*
  * Bytes F0-F4 are start-bytes for 4-byte sequences.
