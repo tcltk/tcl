@@ -166,7 +166,7 @@ Invalid(
     unsigned char byte = *src;
     int index;
 
-    if (byte % 0x04) {
+    if ((byte & 0xC3) != 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
 	return 0;
     }
@@ -956,7 +956,7 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if ((next == src + 1) || Invalid((unsigned char *)src)) {
+    if (Invalid((unsigned char *)src)) {
 	return src + 1;
     }
     return next;
