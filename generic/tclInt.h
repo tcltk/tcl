@@ -3185,6 +3185,7 @@ MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
 MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
+MODULE_SCOPE int	TclUCS4ToLower(int ch);
 #if TCL_UTF_MAX == 4
     MODULE_SCOPE int	TclGetUCS4(Tcl_Obj *, int);
 #else
