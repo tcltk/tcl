@@ -968,6 +968,18 @@ test utf-7.49.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev fullutf}
 test utf-7.49.6 {Tcl_UtfPrev, validity check [493dccc2de]} testutfprev {
     testutfprev A\xF4\x90\x80\x80 2
 } 1
+test utf-7.50.0 {Tcl_UtfPrev, 4-byte valid sequence with additional trail} {testutfprev ucs2} {
+    testutfprev \xF2\xA0\xA0\xA0\xA0
+} 2
+test utf-7.50.1 {Tcl_UtfPrev, 4-byte valid sequence with additional trail} {testutfprev fullutf} {
+    testutfprev \xF2\xA0\xA0\xA0\xA0
+} 4
+test utf-7.51.0 {Tcl_UtfPrev, 4-byte valid sequence with additional trail} {testutfprev ucs2} {
+    testutfprev \xF2\x80\x80\x80\x80
+} 2
+test utf-7.51.1 {Tcl_UtfPrev, 4-byte valid sequence with additional trail} {testutfprev fullutf} {
+    testutfprev \xF2\x80\x80\x80\x80
+} 4
 
 test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
     string index abcd 0
