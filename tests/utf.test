@@ -661,49 +661,49 @@ test utf-7.17.2 {Tcl_UtfPrev} {testutfprev testbytestring} {
 } 3
 test utf-7.18.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xA0\xA0\xA0]
-} 3
+} 1
 test utf-7.18.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xA0\xA0\xA0]
 } 3
 test utf-7.18.2 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xA0] 4
-} 3
+} 1
 test utf-7.18.3 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xA0] 4
 } 3
 test utf-7.18.4 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xF8] 4
-} 3
+} 1
 test utf-7.18.5 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xF8] 4
 } 3
 test utf-7.19.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xF8\xA0\xA0\xA0]
-} 4
+} 2
 test utf-7.19.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xF8\xA0\xA0\xA0]
 } 4
 test utf-7.20.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xF2\xA0\xA0\xA0]
-} 1
+} 2
 test utf-7.20.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xF2\xA0\xA0\xA0]
 } 1
 test utf-7.21.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A\u8820[testbytestring \xA0]
-} 4
+} 2
 test utf-7.21.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A\u8820[testbytestring \xA0]
 } 4
 test utf-7.22.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xD0\xA0\xA0\xA0]
-} 4
+} 2
 test utf-7.22.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xD0\xA0\xA0\xA0]
 } 4
 test utf-7.23.0 {Tcl_UtfPrev} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xA0]
-} 4
+} 2
 test utf-7.23.1 {Tcl_UtfPrev} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xA0\xA0\xA0\xA0]
 } 4
@@ -730,7 +730,7 @@ test utf-7.28.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring}
 } 1
 test utf-7.29.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xF0\x80\x80\x80]
-} 4
+} 2
 test utf-7.29.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xF0\x80\x80\x80]
 } 4
@@ -763,7 +763,7 @@ test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
 } 1
 test utf-7.39.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xF0\x90\x80\x80]
-} 1
+} 2
 test utf-7.39.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xF0\x90\x80\x80]
 } 1
@@ -793,7 +793,7 @@ test utf-7.45 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev testbytestrin
 } 2
 test utf-7.46.0 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev testbytestring utf16} {
     testutfprev [testbytestring \xA0\xA0\xA0\xA0]
-} 3
+} 1
 test utf-7.46.1 {Tcl_UtfPrev -- no lead byte at start}  {testutfprev testbytestring ucs4} {
     testutfprev [testbytestring \xA0\xA0\xA0\xA0]
 } 3
@@ -808,7 +808,7 @@ test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {
 } 0
 test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring utf16} {
     testutfprev A\uDBFF\uDFFF
-} 1
+} 2
 test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs4} {
     testutfprev A\U10FFFF
 } 1
@@ -829,7 +829,7 @@ test utf-7.48.6 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbyte
 } 1
 test utf-7.49.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring utf16} {
     testutfprev A[testbytestring \xF4\x90\x80\x80]
-} 4
+} 2
 test utf-7.49.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs4} {
     testutfprev A[testbytestring \xF4\x90\x80\x80]
 } 4

@@ -815,13 +815,13 @@ Tcl_NumUtfChars(
 	    i++;
 	}
     } else {
-	const char *endPtr = src + length - 4;
+	const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	endPtr += 4;
+	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -1065,7 +1065,7 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < 4);
+    } while (trailBytesSeen < TCL_UTF_MAX);
 
     /*
      * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
@@ -1073,7 +1073,11 @@ Tcl_UtfPrev(
      * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
      * far as we can.
      */
+#if TCL_UTF_MAX > 3
     return fallback;
+#else
+    return src - TCL_UTF_MAX;
+#endif
 }
 
 /*
