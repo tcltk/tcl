@@ -4370,7 +4370,7 @@ static int
 DictionaryCompare(
     const char *left, const char *right)	/* The strings to compare. */
 {
-    Tcl_UniChar uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
+    int uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
     int diff, zeros;
     int secondaryDiff = 0;
 
@@ -4439,8 +4439,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += TclUtfToUniChar(left, &uniLeft);
-	    right += TclUtfToUniChar(right, &uniRight);
+	    left += TclUtfToUCS4(left, &uniLeft);
+	    right += TclUtfToUCS4(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because
@@ -4449,8 +4449,8 @@ DictionaryCompare(
 	     * other interesting punctuations occur).
 	     */
 
-	    uniLeftLower = Tcl_UniCharToLower(uniLeft);
-	    uniRightLower = Tcl_UniCharToLower(uniRight);
+	    uniLeftLower = TclUCS4ToLower(uniLeft);
+	    uniRightLower = TclUCS4ToLower(uniRight);
 	} else {
 	    diff = UCHAR(*left) - UCHAR(*right);
 	    break;

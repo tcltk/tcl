@@ -88,7 +88,6 @@ static const unsigned char totalBytes[256] = {
 static int		UtfCount(int ch);
 static int		Invalid(unsigned char *src);
 static int		UCS4ToUpper(int ch);
-static int		UCS4ToLower(int ch);
 static int		UCS4ToTitle(int ch);
 
 /*
@@ -1078,7 +1077,7 @@ Tcl_UtfToLower(
     src = dst = str;
     while (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	lowChar = UCS4ToLower(ch);
+	lowChar = TclUCS4ToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1149,7 +1148,7 @@ Tcl_UtfToTitle(
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
-	    lowChar = UCS4ToLower(lowChar);
+	    lowChar = TclUCS4ToLower(lowChar);
 	}
 
 	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
@@ -1254,11 +1253,11 @@ Tcl_UtfNcmp(
 	if (ch1 != ch2) {
 #if TCL_UTF_MAX == 4
 	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & 0xFC00) == 0xD800)) {
-	    if ((ch2 & 0xFC00) != 0xD800) {
+	    if (((ch1 & ~0x3FF) == 0xD800)) {
+	    if ((ch2 & ~0x3FF) != 0xD800) {
 		return ch1;
 	    }
-	    } else if ((ch2 & 0xFC00) == 0xD800) {
+	    } else if ((ch2 & ~0x3FF) == 0xD800) {
 		return -ch2;
 	    }
 #endif
@@ -1427,8 +1426,8 @@ Tcl_UniCharToUpper(
  *----------------------------------------------------------------------
  */
 
-static int
-UCS4ToLower(
+int
+TclUCS4ToLower(
     int ch)			/* Unicode character to convert. */
 {
     if (!UNICODE_OUT_OF_RANGE(ch)) {
@@ -1447,7 +1446,7 @@ Tcl_UniChar
 Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
-    return (Tcl_UniChar) UCS4ToLower(ch);
+    return (Tcl_UniChar) TclUCS4ToLower(ch);
 }
 
 /*
