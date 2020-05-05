@@ -24,7 +24,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
-testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
 
 # Used for constraining memory leak tests
@@ -1299,7 +1299,7 @@ test string-12.22 {string range, shimmering binary/index} {
     binary scan $s a* x
     string range $s $s end
 } 000000001
-test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} tip389 {
+test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
     list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]
 } [list \U100000 {} b]
 
