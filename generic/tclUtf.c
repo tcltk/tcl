@@ -129,15 +129,23 @@ UtfCount(
  *
  * Invalid --
  *
- *	Utility routine to report whether /src/ points to the start of an
- *	invald byte sequence that should be rejected. This might be because
- *	it is an overlong encoding, or because it encodes something out of
- *	the proper range. Caller guarantees that src[0] and src[1] are
- *	readable, and
+ *	Given a pointer to a two-byte prefix of a well-formed UTF-8 byte
+ *	sequence (a lead byte followed by a trail byte) this routine
+ *	examines those two bytes to determine whether the sequence is
+ *	invalid in UTF-8.  This might be because it is an overlong
+ *	encoding, or because it encodes something out of the proper range.
  *
- *	(src[0] >= 0xC0) && (src[0] != 0xC1)
- * 	(src[1] >= 0x80) && (src[1] < 0xC0)
- *	(src[0] < ((TCL_UTF_MAX > 3) ? 0xF5 : 0xF0))
+ *	Given a pointer to the bytes \xF8 or \xFC , this routine will
+ *	try to read beyond the end of the "bounds" table.  Callers must
+ *	prevent this.
+ *
+ *	Given a pointer to something else (an ASCII byte, a trail byte,
+ *	or another byte	that can never begin a valid byte sequence such
+ *	as \xF5) this routine returns false.  That makes the routine poorly
+ *	named, as it does not detect and report all invalid sequences.
+ *
+ *	Callers have to take care that this routine does something useful
+ *	for their needs.
  *
  * Results:
  *	A boolean.
@@ -737,9 +745,6 @@ Tcl_UtfNext(
     int left;
     const char *next;
 
-    if (Invalid(src)) {
-	return src + 1;
-    }
     left = totalBytes[UCHAR(*src)];
     next = src + 1;
     while (--left) {
@@ -752,6 +757,16 @@ Tcl_UtfNext(
 	    return src + 1;
 	}
 	next++;
+    }
+    /*
+     * Call Invalid() here only if required conditions are met:
+     *    src[0] is known a lead byte.
+     *    src[1] is known a trail byte.
+     * Especially important to prevent calls when src[0] == '\xF8' or '\xFC'
+     * See tests utf-6.37 through utf-6.43 through valgrind or similar tool.
+     */
+    if ((next == src + 1) || Invalid(src)) {
+	return src + 1;
     }
     return next;
 }
