@@ -122,15 +122,23 @@ UtfCount(
  *
  * Invalid --
  *
- *	Utility routine to report whether /src/ points to the start of an
- *	invald byte sequence that should be rejected. This might be because
- *	it is an overlong encoding, or because it encodes something out of
- *	the proper range. Caller guarantees that src[0] and src[1] are
- *	readable, and
+ *	Given a pointer to a two-byte prefix of a well-formed UTF-8 byte
+ *	sequence (a lead byte followed by a trail byte) this routine
+ *	examines those two bytes to determine whether the sequence is
+ *	invalid in UTF-8.  This might be because it is an overlong
+ *	encoding, or because it encodes something out of the proper range.
  *
- *	(src[0] >= 0xC0) && (src[0] != 0xC1)
- * 	(src[1] >= 0x80) && (src[1] < 0xC0)
- *	(src[0] < ((TCL_UTF_MAX > 3) ? 0xF5 : 0xF0))
+ *	Given a pointer to the bytes \xF8 or \xFC , this routine will
+ *	try to read beyond the end of the "bounds" table.  Callers must
+ *	prevent this.
+ *
+ *	Given a pointer to something else (an ASCII byte, a trail byte,
+ *	or another byte	that can never begin a valid byte sequence such
+ *	as \xF5) this routine returns false.  That makes the routine poorly
+ *	named, as it does not detect and report all invalid sequences.
+ *
+ *	Callers have to take care that this routine does something useful
+ *	for their needs.
  *
  * Results:
  *	A boolean.
