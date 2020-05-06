@@ -13,8 +13,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-namespace path ::tcl::mathop
-
 testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint utf16 [expr {[string length [format %c 0x10000]] == 2}]
@@ -1226,7 +1224,7 @@ test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
 test utf-11.6 {Tcl_UtfToUpper beyond U+FFFF} {Uesc fullutf} {
     string toupper \U10428
 } \U10400
-test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} {pairsTo4bytes} {
+test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} fullutf {
     string toupper \uD801\uDC28
 } \uD801\uDC00
 test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} {
@@ -1254,7 +1252,7 @@ test utf-12.6 {Tcl_UtfToLower low/high surrogate)} {
 test utf-12.7 {Tcl_UtfToLower beyond U+FFFF} {Uesc fullutf} {
     string tolower \U10400
 } \U10428
-test utf-12.8 {Tcl_UtfToLower beyond U+FFFF} {pairsTo4bytes} {
+test utf-12.8 {Tcl_UtfToLower beyond U+FFFF} fullutf {
     string tolower \uD801\uDC00
 } \uD801\uDC28
 
@@ -1282,7 +1280,7 @@ test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
 test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
     string totitle \U10428\U10400
 } \U10400\U10428
-test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} pairsTo4bytes {
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} fullutf {
     string totitle \uD801\uDC28\uD801\uDC00
 } \uD801\uDC00\uD801\uDC28
 
