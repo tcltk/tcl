@@ -345,7 +345,7 @@ TclpAlloc(
 
     nextf[bucket] = overPtr->next;
     overPtr->overMagic0 = overPtr->overMagic1 = MAGIC;
-    overPtr->bucketIndex = (unsigned char) bucket;
+    overPtr->bucketIndex = UCHAR(bucket);
 
 #ifdef MSTATS
     numMallocs[bucket]++;
