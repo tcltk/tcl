@@ -86,7 +86,7 @@ static const unsigned char totalBytes[256] = {
  */
 
 static int		UtfCount(int ch);
-static int		Invalid(unsigned char *src);
+static int		Invalid(const char *src);
 static int		UCS4ToUpper(int ch);
 static int		UCS4ToTitle(int ch);
 
@@ -161,9 +161,9 @@ static const unsigned char bounds[28] = {
 
 static int
 Invalid(
-    unsigned char *src)	/* Points to lead byte of a UTF-8 byte sequence */
+    const char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
-    unsigned char byte = *src;
+    unsigned char byte = UCHAR(*src);
     int index;
 
     if ((byte & 0xC3) != 0xC0) {
@@ -171,7 +171,7 @@ Invalid(
 	return 0;
     }
     index = (byte - 0xC0) >> 1;
-    if (src[1] < bounds[index] || src[1] > bounds[index+1]) {
+    if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
 	/* Out of bounds - report invalid. */
 	return 1;
     }
@@ -734,9 +734,14 @@ const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
-    int left = totalBytes[UCHAR(*src)];
-    const char *next = src + 1;
+    int left;
+    const char *next;
 
+    if (Invalid(src)) {
+	return src + 1;
+    }
+    left = totalBytes[UCHAR(*src)];
+    next = src + 1;
     while (--left) {
 	if ((*next & 0xC0) != 0x80) {
 	    /*
@@ -747,9 +752,6 @@ Tcl_UtfNext(
 	    return src + 1;
 	}
 	next++;
-    }
-    if (Invalid((unsigned char *)src)) {
-	return src + 1;
     }
     return next;
 }
@@ -785,7 +787,7 @@ Tcl_UtfPrev(
 				/* If we cannot find a lead byte that might
 				 * start a prefix of a valid UTF byte sequence,
 				 * we will fallback to a one-byte back step */
-    unsigned char *look = (unsigned char *)fallback;
+    const char *look = fallback;
 				/* Start search at the fallback position */
 
     /* Quick boundary case exit. */
@@ -794,7 +796,7 @@ Tcl_UtfPrev(
     }
 
     do {
-	unsigned char byte = look[0];
+	unsigned char byte = UCHAR(look[0]);
 
 	if (byte < 0x80) {
 	    /*
