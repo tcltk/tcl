@@ -96,11 +96,6 @@ static const unsigned char complete[256] = {
  */
 
 static int		Invalid(unsigned char *src);
-
-#define UCS4ToUpper Tcl_UniCharToUpper
-#define UCS4ToLower Tcl_UniCharToLower
-#define UCS4ToTitle Tcl_UniCharToTitle
-
 
 /*
  *---------------------------------------------------------------------------
@@ -171,7 +166,7 @@ Invalid(
     unsigned char byte = *src;
     int index;
 
-    if (byte % 0x04) {
+    if ((byte & 0xC3) != 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
 	return 0;
     }
@@ -443,7 +438,7 @@ static const unsigned short cp1252[32] = {
 int
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the unsigned int represented by
+    int *chPtr)/* Filled with the Unicode character represented by
 				 * the UTF-8 string. */
 {
     int byte;
@@ -505,7 +500,7 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-    else if (byte < 0xF8) {
+    else if (byte < 0xF5) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
@@ -530,8 +525,8 @@ Tcl_UtfToUniChar(
 int
 Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the unsigned short represented by
-				 * the UTF-8 string. */
+    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a surrogate too. */
 {
     unsigned short byte;
 
@@ -604,20 +599,20 @@ Tcl_UtfToChar16(
 	 * represents itself.
 	 */
     }
-    else if (byte < 0xF8) {
-	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
+    else if (byte < 0xF5) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
-	     * Four-byte-character lead byte followed by three trail bytes.
+	     * Four-byte-character lead byte followed by at least two trail bytes.
+	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
-	    unsigned short high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
+	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
-	    if (high >= 0x400) {
-		/* out of range, < 0x10000 or > 0x10FFFF */
-	    } else {
+	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
 		*chPtr = 0xD800 + high;
 		return 1;
 	    }
+	    /* out of range, < 0x10000 or > 0x10FFFF */
 	}
 
 	/*
@@ -782,7 +777,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= complete[(unsigned char)*src];
+    return length >= complete[UCHAR(*src)];
 }
 
 /*
@@ -826,13 +821,13 @@ Tcl_NumUtfChars(
 	}
 	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	const char *endPtr = src + length - 4;
+	const char *endPtr = src + length - TCL_UTF_MAX;
 
 	while (src < endPtr) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	endPtr += 4;
+	endPtr += TCL_UTF_MAX;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -967,7 +962,7 @@ Tcl_UtfNext(
 	}
 	next++;
     }
-    if ((next == src + 1) || Invalid((unsigned char *)src)) {
+    if (Invalid((unsigned char *)src)) {
 	return src + 1;
     }
     return next;
@@ -1076,7 +1071,7 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < 4);
+    } while (trailBytesSeen < TCL_UTF_MAX);
 
     /*
      * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
@@ -1084,7 +1079,11 @@ Tcl_UtfPrev(
      * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
      * far as we can.
      */
+#if TCL_UTF_MAX > 3
     return fallback;
+#else
+    return src - TCL_UTF_MAX;
+#endif
 }
 
 /*
@@ -1241,7 +1240,7 @@ Tcl_UtfToUpper(
     src = dst = str;
     while (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	upChar = UCS4ToUpper(ch);
+	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1249,7 +1248,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(upChar)) || ((upChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1294,7 +1293,7 @@ Tcl_UtfToLower(
     src = dst = str;
     while (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	lowChar = UCS4ToLower(ch);
+	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1302,7 +1301,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1350,9 +1349,9 @@ Tcl_UtfToTitle(
 
     if (*src) {
 	len = TclUtfToUCS4(src, &ch);
-	titleChar = UCS4ToTitle(ch);
+	titleChar = Tcl_UniCharToTitle(ch);
 
-	if ((len < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1365,10 +1364,10 @@ Tcl_UtfToTitle(
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
-	    lowChar = UCS4ToLower(lowChar);
+	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
+	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1662,6 +1661,7 @@ Tcl_UniCharToUpper(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1693,6 +1693,7 @@ Tcl_UniCharToLower(
 	    ch += GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1732,6 +1733,7 @@ Tcl_UniCharToTitle(
 	    ch -= GetDelta(info);
 	}
     }
+    /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
 
@@ -1919,6 +1921,7 @@ Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
 	    return 1;
