@@ -804,37 +804,48 @@ Tcl_UtfCharComplete(
 size_t
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    size_t length)			/* The length of the string in bytes, or -1
-				 * for strlen(string). */
+    size_t length)	/* The length of the string in bytes, or
+			 * TCL_AUTO_LENGTH for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     size_t i = 0;
 
-    /*
-     * The separate implementations are faster.
-     *
-     * Since this is a time-sensitive function, we also do the check for the
-     * single-byte char case specially.
-     */
-
     if (length == TCL_AUTO_LENGTH) {
+	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
     } else {
-	const char *endPtr = src + length - TCL_UTF_MAX;
+	/* Will return value between 0 and length. No overflow checks. */
 
-	while (src < endPtr) {
+	/* Pointer to the end of string. Never read endPtr[0] */
+	const char *endPtr = src + length;
+	/* Pointer to breakpoint in scan where optimization is lost */
+	const char *optPtr = endPtr - TCL_UTF_MAX + 1;
+
+	/*
+	 * Optimize away the call in this loop. Justified because...
+	 *	when (src < optPtr), (endPtr - src) > (endPtr - optPtr)
+	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX - 1
+	 * So (endPtr - src) >= TCL_UTF_MAX, and passing that to
+	 * Tcl_UtfCharComplete we know will cause return of 1.
+	 */
+	while ((src < optPtr)
+		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	endPtr += TCL_UTF_MAX;
+	/* Loop over the remaining string where call must happen */
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	if (src < endPtr) {
+	    /*
+	     * String ends in an incomplete UTF-8 sequence.
+	     * Count every byte in it.
+	     */
 	    i += endPtr - src;
 	}
     }
