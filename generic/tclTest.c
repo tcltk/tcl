@@ -5444,7 +5444,6 @@ TestChannelCmd(
 	chanPtr		= statePtr->topChanPtr;
 	chan		= (Tcl_Channel) chanPtr;
     } else {
-	/* lint */
 	statePtr	= NULL;
 	chan		= NULL;
     }
@@ -5499,7 +5498,7 @@ TestChannelCmd(
 
 	/* Remember the channel in the pool of detached channels */
 
-	det = (TestChannel *) ckalloc(sizeof(TestChannel));
+	det = (TestChannel *)ckalloc(sizeof(TestChannel));
 	det->chan     = chan;
 	det->nextPtr  = firstDetached;
 	firstDetached = det;
@@ -5691,7 +5690,7 @@ TestChannelCmd(
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	     hPtr != NULL;
 	     hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+	    Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	}
 	return TCL_OK;
     }
@@ -5732,7 +5731,7 @@ TestChannelCmd(
 	    chanPtr  = (Channel *) Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
-		Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	    }
 	}
 	return TCL_OK;
@@ -5789,7 +5788,7 @@ TestChannelCmd(
 	    chanPtr = (Channel *) Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_WRITABLE) {
-		Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	    }
 	}
 	return TCL_OK;
@@ -6718,16 +6717,16 @@ TestUtfNextCmd(
     char *bytes;
     const char *result, *first;
     char buffer[32];
-    static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
+    static const char tobetested[] = "A\xA0\xC0\xC1\xC2\xD0\xE0\xE8\xF2\xF7\xF8\xFE\xFF";
     const char *p = tobetested;
     (void)dummy;
 
     if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?numBytes?");
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?numBytes?");
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     offset = numBytes +TCL_UTF_MAX -1;	/* If no constraint is given, allow
 					 * the terminating NUL to limit
@@ -6745,15 +6744,15 @@ TestUtfNextCmd(
 	}
     }
 
-    if (numBytes > (int)sizeof(buffer)-2) {
+    if (numBytes > (int)sizeof(buffer) - 3) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %d bytes",
-		(int)(sizeof(buffer) - 2)));
+		(int)sizeof(buffer) - 3));
 	return TCL_ERROR;
     }
 
     memcpy(buffer + 1, bytes, numBytes);
-    buffer[0] = buffer[numBytes + 1] = '\x00';
+    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = '\x00';
 
     if (!Tcl_UtfCharComplete(buffer + 1, offset)) {
 	/* Cannot scan a complete sequence from the data */
@@ -6771,8 +6770,17 @@ TestUtfNextCmd(
 	    return TCL_ERROR;
 	}
     }
+    p = tobetested;
+    while ((buffer[numBytes + 1] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
+	result = TclUtfNext(buffer + 1);
+	if (first != result) {
+	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[end]", NULL);
+	    return TCL_ERROR;
+	}
+    }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result - buffer - 1));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - buffer - 1));
 
     return TCL_OK;
 }
@@ -6792,14 +6800,13 @@ TestUtfPrevCmd(
     int numBytes, offset;
     char *bytes;
     const char *result;
-    Tcl_Obj *copy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
-    bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &numBytes);
+    bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if (objc == 3) {
 	if (TCL_OK != TclGetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6814,14 +6821,8 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    copy = Tcl_DuplicateObj(objv[1]);
-    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
-    bytes[numBytes] = '\0';
-
     result = TclUtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
-
-    Tcl_DecrRefCount(copy);
     return TCL_OK;
 }
 
