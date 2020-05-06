@@ -659,9 +659,6 @@ Tcl_UtfNext(
     int left;
     const char *next;
 
-    if (Invalid(src)) {
-	return src + 1;
-    }
     left = totalBytes[UCHAR(*src)];
     next = src + 1;
     while (--left) {
@@ -674,6 +671,16 @@ Tcl_UtfNext(
 	    return src + 1;
 	}
 	next++;
+    }
+    /*
+     * Call Invalid() here only if required conditions are met:
+     *    src[0] is known a lead byte.
+     *    src[1] is known a trail byte.
+     * Especially important to prevent calls when src[0] == '\xF8' or '\xFC'
+     * See tests utf-6.37 through utf-6.43 through valgrind or similar tool.
+     */
+    if ((next == src + 1) || Invalid(src)) {
+	return src + 1;
     }
     return next;
 }
