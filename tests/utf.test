@@ -13,8 +13,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-namespace path ::tcl::mathop
-
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
@@ -24,8 +22,8 @@ testConstraint utf16 [expr {[string length [format %c 0x10000]] == 2}]
 testConstraint ucs4 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
 
-testConstraint Uesc [eq \U0041 A]
-testConstraint pre388 [eq \x741 A]
+testConstraint Uesc [expr {"\U0041" eq "A"}]
+testConstraint pre388 [expr {"\x741" eq "A"}]
 testConstraint pairsTo4bytes [expr {[llength [info commands teststringbytes]]
 		&& [string length [teststringbytes \uD83D\uDCA9]] == 4}]
 
@@ -37,7 +35,7 @@ testConstraint teststringobj [llength [info commands teststringobj]]
 testConstraint testutfnext [llength [info commands testutfnext]]
 testConstraint testutfprev [llength [info commands testutfprev]]
 
-testConstraint tip413 [eq {} [string trim \x00]]
+testConstraint tip413 [expr {[string trim \x00] eq {}}]
 
 catch {unset x}
 
@@ -1091,7 +1089,7 @@ test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
 test utf-11.6 {Tcl_UtfToUpper beyond U+FFFF} {Uesc fullutf} {
     string toupper \U10428
 } \U10400
-test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} {pairsTo4bytes} {
+test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} fullutf {
     string toupper \uD801\uDC28
 } \uD801\uDC00
 test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} {
@@ -1119,7 +1117,7 @@ test utf-12.6 {Tcl_UtfToLower low/high surrogate)} {
 test utf-12.7 {Tcl_UtfToLower beyond U+FFFF} {Uesc fullutf} {
     string tolower \U10400
 } \U10428
-test utf-12.8 {Tcl_UtfToLower beyond U+FFFF} {pairsTo4bytes} {
+test utf-12.8 {Tcl_UtfToLower beyond U+FFFF} fullutf {
     string tolower \uD801\uDC00
 } \uD801\uDC28
 
@@ -1147,7 +1145,7 @@ test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
 test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} {Uesc fullutf} {
     string totitle \U10428\U10400
 } \U10400\U10428
-test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} pairsTo4bytes {
+test utf-13.9 {Tcl_UtfToTitle beyond U+FFFF} fullutf {
     string totitle \uD801\uDC28\uD801\uDC00
 } \uD801\uDC00\uD801\uDC28
 
