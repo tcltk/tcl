@@ -2230,16 +2230,15 @@ ZipAddFile(
 		return TCL_ERROR;
 	    }
 	    ch = (int) (r * 256);
-	    kvbuf[i + 12] = (unsigned char) zencode(keys, crc32tab, ch, tmp);
+	    kvbuf[i + 12] = UCHAR(zencode(keys, crc32tab, ch, tmp));
 	}
 	Tcl_ResetResult(interp);
 	init_keys(passwd, keys, crc32tab);
 	for (i = 0; i < 12 - 2; i++) {
-	    kvbuf[i] = (unsigned char)
-		    zencode(keys, crc32tab, kvbuf[i + 12], tmp);
+	    kvbuf[i] = UCHAR(zencode(keys, crc32tab, kvbuf[i + 12], tmp));
 	}
-	kvbuf[i++] = (unsigned char) zencode(keys, crc32tab, crc >> 16, tmp);
-	kvbuf[i++] = (unsigned char) zencode(keys, crc32tab, crc >> 24, tmp);
+	kvbuf[i++] = UCHAR(zencode(keys, crc32tab, crc >> 16, tmp));
+	kvbuf[i++] = UCHAR(zencode(keys, crc32tab, crc >> 24, tmp));
 	len = Tcl_Write(out, (char *) kvbuf, 12);
 	memset(kvbuf, 0, 24);
 	if (len != 12) {
