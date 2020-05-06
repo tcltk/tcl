@@ -1222,6 +1222,15 @@ test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
     set second [string compare $one $two]
     expr {($first == $second) ? "agree" : "disagree"}
 } agree
+test utf-20.3 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare -length 1 $one $two]
+    string range $one 0 0
+    string range $two 0 0 
+    set second [string compare -length 1 $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
 
 test utf-21.1 {TclUniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
