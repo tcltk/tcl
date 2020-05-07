@@ -107,21 +107,21 @@ test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestrin
 test utf-2.8.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring \xF0\x90\x80\x80]
 } 4
-test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring utf16} {
-    string length [testbytestring \xF0\x90\x80\x80]
-} 2
-test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
+test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
     string length [testbytestring \xF0\x90\x80\x80]
 } 1
+test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring utf16} {
+    string length [testbytestring \xF0\x90\x80\x80]
+} 2
 test utf-2.9.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring \xF4\x8F\xBF\xBF]
 } 4
-test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} utf16 {
-    string length \uDBFF\uDFFF
-} 2
-test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
+test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
     string length \U10FFFF
 } 1
+test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} utf16 {
+    string length \uDBFF\uDFFF
+} 2
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
     string length [testbytestring \xF0\x8F\xBF\xBF]
 } 4
@@ -173,12 +173,12 @@ test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfc
 test utf-4.12.0 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs2} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } 4
-test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring utf16} {
-    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
-} 2
-test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs4} {
+test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring ucs4} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } 1
+test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring utf16} {
+    testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
+} 2
 test utf-4.13 {Tcl_NumUtfChars: end of string} {testnumutfchars testbytestring} { 
     testnumutfchars foobar[testbytestring \xF2\xC2\xA0] end
 } 8
