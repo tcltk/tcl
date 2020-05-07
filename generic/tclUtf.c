@@ -73,7 +73,7 @@ static const unsigned char totalBytes[256] = {
 #endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
     4,4,4,4,4,
 #else
     1,1,1,1,1,
@@ -887,18 +887,18 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < TCL_UTF_MAX);
+    } while (trailBytesSeen < ((TCL_UTF_MAX > 4) ? 4 : 3));
 
     /*
-     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * We've seen 3 (or 4) trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
-     * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
+     * accepting the fallback (for TCL_UTF_MAX > 4) or just go back as
      * far as we can.
      */
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
     return fallback;
 #else
-    return src - TCL_UTF_MAX;
+    return src - 3;
 #endif
 }
 
