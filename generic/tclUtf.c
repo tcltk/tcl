@@ -548,16 +548,17 @@ Tcl_NumUtfChars(
 	    i++;
 	}
 	/* Loop over the remaining string where call must happen */
-	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src += TclUtfToUniChar(src, &ch);
+	while (src < endPtr) {
+	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
+		src += TclUtfToUniChar(src, &ch);
+	    } else {
+		/*
+		 * src points to incomplete UTF-8 sequence 
+		 * Treat first byte as character and count it
+		 */
+		src++;
+	    }
 	    i++;
-	}
-	if (src < endPtr) {
-	    /*
-	     * String ends in an incomplete UTF-8 sequence.
-	     * Count every byte in it.
-	     */
-	    i += endPtr - src;
 	}
     }
     return i;
