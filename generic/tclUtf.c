@@ -540,7 +540,7 @@ Tcl_UtfToChar16(
      * Unroll 1 to 4 byte UTF-8 sequences.
      */
 
-    byte = *((unsigned char *) src);
+    byte = UCHAR(*src);
     if (byte < 0xC0) {
 	/*
 	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
@@ -657,8 +657,12 @@ Tcl_UtfToUniCharDString(
 				 * DString. */
 {
     int ch = 0, *w, *wString;
-    const char *p, *end;
+    const char *p;
     size_t oldLength;
+    /* Pointer to the end of string. Never read endPtr[0] */
+    const char *endPtr = src + length;
+    /* Pointer to last byte where optimization still can be used */
+    const char *optPtr = endPtr - TCL_UTF_MAX;
 
     if (src == NULL) {
 	return NULL;
@@ -680,19 +684,18 @@ Tcl_UtfToUniCharDString(
 
     w = wString;
     p = src;
-    end = src + length - 4;
-    while (p < end) {
-	p += Tcl_UtfToUniChar(p, &ch);
+    endPtr = src + length;
+    optPtr = endPtr - 4;
+    while (p <= optPtr) {
+	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
     }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += Tcl_UtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
+    while ((p < endPtr) && TclUCS4Complete(p, endPtr-p)) {
+	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
+    }
+    while (p < endPtr) {
+	*w++ = UCHAR(*p++);
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -710,10 +713,13 @@ Tcl_UtfToChar16DString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    unsigned short ch = 0;
-    unsigned short *w, *wString;
-    const char *p, *end;
+    unsigned short ch = 0, *w, *wString;
+    const char *p;
     size_t oldLength;
+    /* Pointer to the end of string. Never read endPtr[0] */
+    const char *endPtr = src + length;
+    /* Pointer to last byte where optimization still can be used */
+    const char *optPtr = endPtr - TCL_UTF_MAX;
 
     if (src == NULL) {
 	return NULL;
@@ -735,19 +741,18 @@ Tcl_UtfToChar16DString(
 
     w = wString;
     p = src;
-    end = src + length - 4;
-    while (p < end) {
+    endPtr = src + length;
+    optPtr = endPtr - 3;
+    while (p <= optPtr) {
 	p += Tcl_UtfToChar16(p, &ch);
 	*w++ = ch;
     }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += Tcl_UtfToChar16(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
+    while ((p < endPtr) && TclChar16Complete(p, endPtr-p)) {
+	p += Tcl_UtfToChar16(p, &ch);
 	*w++ = ch;
+    }
+    while (p < endPtr) {
+	*w++ = UCHAR(*p++);
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -755,6 +760,7 @@ Tcl_UtfToChar16DString(
 
     return wString;
 }
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -821,17 +827,17 @@ Tcl_NumUtfChars(
 
 	/* Pointer to the end of string. Never read endPtr[0] */
 	const char *endPtr = src + length;
-	/* Pointer to breakpoint in scan where optimization is lost */
-	const char *optPtr = endPtr - TCL_UTF_MAX + 1;
+	/* Pointer to last byte where optimization still can be used */
+	const char *optPtr = endPtr - TCL_UTF_MAX;
 
 	/*
 	 * Optimize away the call in this loop. Justified because...
-	 *	when (src < optPtr), (endPtr - src) > (endPtr - optPtr)
-	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX - 1
+	 * when (src <= optPtr), (endPtr - src) >= (endPtr - optPtr)
+	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX
 	 * So (endPtr - src) >= TCL_UTF_MAX, and passing that to
 	 * Tcl_UtfCharComplete we know will cause return of 1.
 	 */
-	while ((src < optPtr)
+	while (src <= optPtr
 		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -877,9 +883,9 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+	int find, len = TclUtfToUCS4(src, &find);
 
-	if (ucs4 == ch) {
+	if (find == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -916,9 +922,9 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+	int find, len = TclUtfToUCS4(src, &find);
 
-	if (ucs4 == ch) {
+	if (find == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -1066,7 +1072,7 @@ Tcl_UtfPrev(
 
 	    /*
 	     * trailBytesSeen > 0, so we can examine look[1] safely.
-	     * Use that capability to screen out overlong sequences.
+	     * Use that capability to screen out invalid sequences.
 	     */
 
 	    if (Invalid(look)) {
