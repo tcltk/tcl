@@ -1473,7 +1473,16 @@ UniCharCaseCmpTest > [format %c 0x10000] \uFFFF	ucs4
 UniCharCaseCmpTest > \U10000 \uFFFF		{Uesc ucs4}
 
 
-
+test utf-26.1 {Tcl_UniCharDString} -setup {
+    testobj freeallvars
+} -constraints {teststringobj} -cleanup {
+    testobj freeallvars
+} -body {
+    teststringobj set 1 foo
+    teststringobj getunicode 1
+    teststringobj append 1 [testbytestring barsoom\xF2\xC2\x80] 10
+    scan [string index [teststringobj get 1] 11] %c
+} -result 128
 
 
 unset count
