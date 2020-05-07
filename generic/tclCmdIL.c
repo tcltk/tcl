@@ -3309,7 +3309,7 @@ Tcl_LsearchObjCmd(
 	    if (wide < 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"stride length must be at least 1", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 			"BADSTRIDE", NULL);
 		result = TCL_ERROR;
 		goto done;
