@@ -525,12 +525,13 @@ Tcl_UtfToUniCharDString(
 	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
-    while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += TclUtfToUniChar(p, &ch);
-	*w++ = ch;
-    }
     while (p < endPtr) {
-	*w++ = UCHAR(*p++);
+	if (Tcl_UtfCharComplete(p, endPtr-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	    *w++ = ch;
+	} else {
+	    *w++ = UCHAR(*p++);
+	}
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -628,23 +629,24 @@ Tcl_NumUtfChars(
 	    i++;
 	}
 	/* Loop over the remaining string where call must happen */
-	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+	while (src < endPtr) {
+	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
 #if TCL_UTF_MAX < 4
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else
+		if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
+		    /* treat F0 - F4 as single character */
+		    ch = 0;
+		    src++;
+		} else
 #endif
-	    src += TclUtfToUniChar(src, &ch);
+		src += TclUtfToUniChar(src, &ch);
+	    } else {
+		/*
+		 * src points to incomplete UTF-8 sequence 
+		 * Treat first byte as character and count it
+		 */
+		src++;
+	    }
 	    i++;
-	}
-	if (src < endPtr) {
-	    /*
-	     * String ends in an incomplete UTF-8 sequence.
-	     * Count every byte in it.
-	     */
-	    i += endPtr - src;
 	}
     }
     return i;
