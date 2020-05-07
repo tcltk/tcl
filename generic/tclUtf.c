@@ -381,7 +381,7 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 4
 	/* If *chPtr contains a high surrogate (produced by a previous
 	 * Tcl_UtfToUniChar() call) and the next 3 bytes are UTF-8 continuation
 	 * bytes, then we must produce a follow-up low surrogate. We only
@@ -437,7 +437,7 @@ Tcl_UtfToUniChar(
 	     * Four-byte-character lead byte followed by at least two trail bytes.
 	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
@@ -446,7 +446,7 @@ Tcl_UtfToUniChar(
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
-#else
+#elif TCL_UTF_MAX > 4
 	    if ((src[3] & 0xC0) == 0x80) {
 		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 			| ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
@@ -617,25 +617,11 @@ Tcl_NumUtfChars(
 	 */
 	while (src <= optPtr
 		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
-#if TCL_UTF_MAX < 4
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else
-#endif
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	/* Loop over the remaining string where call must happen */
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-#if TCL_UTF_MAX < 4
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else
-#endif
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
