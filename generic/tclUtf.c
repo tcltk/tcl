@@ -59,7 +59,7 @@
  * UTF-8.
  */
 
-static CONST unsigned char totalBytes[256] = {
+static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -99,7 +99,7 @@ static int		Invalid(const char *src);
  *---------------------------------------------------------------------------
  */
 
-INLINE static int
+static INLINE int
 UtfCount(
     int ch)			/* The Unicode character whose size is returned. */
 {
@@ -145,7 +145,7 @@ UtfCount(
  *---------------------------------------------------------------------------
  */
 
-static CONST unsigned char bounds[28] = {
+static const unsigned char bounds[28] = {
     0x80, 0x80,		/* \xC0 accepts \x80 only */
     0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF,
     0x80, 0xBF,		/* (\xC4 - \xDC) -- all sequences valid */
@@ -160,7 +160,7 @@ static CONST unsigned char bounds[28] = {
 #endif
 };
 
-INLINE static int
+static INLINE int
 Invalid(
     const char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
@@ -259,13 +259,13 @@ three:
 
 char *
 Tcl_UniCharToUtfDString(
-    CONST Tcl_UniChar *uniStr,	/* Unicode string to convert to UTF-8. */
+    const Tcl_UniChar *uniStr,	/* Unicode string to convert to UTF-8. */
     int uniLength,		/* Length of Unicode string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
-    CONST Tcl_UniChar *w, *wEnd;
+    const Tcl_UniChar *w, *wEnd;
     char *p, *string;
     int oldLength;
 
@@ -317,17 +317,17 @@ Tcl_UniCharToUtfDString(
 
 int
 Tcl_UtfToUniChar(
-    register CONST char *src,	/* The UTF-8 string. */
-    register Tcl_UniChar *chPtr)/* Filled with the Tcl_UniChar represented by
+    const char *src,	/* The UTF-8 string. */
+    Tcl_UniChar *chPtr)/* Filled with the Tcl_UniChar represented by
 				 * the UTF-8 string. */
 {
-    register int byte;
+    Tcl_UniChar byte;
 
     /*
-     * Unroll 1 to 3 byte UTF-8 sequences, use loop to handle longer ones.
+     * Unroll 1 to 3 (or 4) byte UTF-8 sequences.
      */
 
-    byte = *((unsigned char *) src);
+    byte = UCHAR(*src);
     if (byte < 0xC0) {
 	/*
 	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
@@ -335,7 +335,7 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
-	*chPtr = (Tcl_UniChar) byte;
+	*chPtr = byte;
 	return 1;
     } else if (byte < 0xE0) {
 	if ((src[1] & 0xC0) == 0x80) {
@@ -415,7 +415,7 @@ Tcl_UtfToUniChar(
 
 Tcl_UniChar *
 Tcl_UtfToUniCharDString(
-    CONST char *src,		/* UTF-8 string to convert to Unicode. */
+    const char *src,		/* UTF-8 string to convert to Unicode. */
     int length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
@@ -423,8 +423,12 @@ Tcl_UtfToUniCharDString(
 				 * DString. */
 {
     Tcl_UniChar *w, *wString;
-    CONST char *p, *end;
+    const char *p;
     int oldLength;
+	/* Pointer to the end of string. Never read endPtr[0] */
+	const char *endPtr = src + length;
+	/* Pointer to breakpoint in scan where optimization is lost */
+	const char *optPtr = endPtr - TCL_UTF_MAX;
 
     if (length < 0) {
 	length = strlen(src);
@@ -438,24 +442,22 @@ Tcl_UtfToUniCharDString(
     oldLength = Tcl_DStringLength(dsPtr);
 
     Tcl_DStringSetLength(dsPtr,
-	    oldLength + (int) ((length + 1) * sizeof(Tcl_UniChar)));
+	    oldLength + ((length + 1) * sizeof(Tcl_UniChar)));
     wString = (Tcl_UniChar *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;
     p = src;
-    end = src + length - TCL_UTF_MAX;
-    while (p < end) {
+    endPtr = src + length;
+    optPtr = endPtr - TCL_UTF_MAX;
+    while (p <= optPtr) {
 	p += TclUtfToUniChar(p, w);
 	w++;
     }
-    end += TCL_UTF_MAX;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += TclUtfToUniChar(p, w);
-	} else {
-	    *w = UCHAR(*p++);
-	}
-	w++;
+    while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
+	p += TclUtfToUniChar(p, w++);
+    }
+    while (p < endPtr) {
+	*w++ = UCHAR(*p++);
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -485,11 +487,11 @@ Tcl_UtfToUniCharDString(
 
 int
 Tcl_UtfCharComplete(
-    CONST char *src,		/* String to check if first few bytes contain
+    const char *src,		/* String to check if first few bytes contain
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[(unsigned char)*src];
+    return length >= totalBytes[UCHAR(*src)];
 }
 
 /*
@@ -512,7 +514,7 @@ Tcl_UtfCharComplete(
 
 int
 Tcl_NumUtfChars(
-    CONST char *src,	/* The UTF-8 string to measure. */
+    const char *src,	/* The UTF-8 string to measure. */
     int length)		/* The length of the string in bytes, or -1
 			 * for strlen(string). */
 {
@@ -530,17 +532,17 @@ Tcl_NumUtfChars(
 
 	/* Pointer to the end of string. Never read endPtr[0] */
 	const char *endPtr = src + length;
-	/* Pointer to breakpoint in scan where optimization is lost */
-	const char *optPtr = endPtr - TCL_UTF_MAX + 1;
+	/* Pointer to last byte where optimization still can be used */
+	const char *optPtr = endPtr - TCL_UTF_MAX;
 
 	/*
 	 * Optimize away the call in this loop. Justified because...
-	 *	when (src < optPtr), (endPtr - src) > (endPtr - optPtr)
-	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX - 1
+	 * when (src <= optPtr), (endPtr - src) >= (endPtr - optPtr)
+	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX
 	 * So (endPtr - src) >= TCL_UTF_MAX, and passing that to
 	 * Tcl_UtfCharComplete we know will cause return of 1.
 	 */
-	while ((src < optPtr)
+	while (src <= optPtr
 		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -580,16 +582,14 @@ Tcl_NumUtfChars(
  *---------------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_UtfFindFirst(
-    CONST char *src,		/* The UTF-8 string to be searched. */
+    const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Tcl_UniChar to search for. */
 {
-    int len;
-    Tcl_UniChar find;
-
     while (1) {
-	len = TclUtfToUniChar(src, &find);
+	Tcl_UniChar find;
+	int len = TclUtfToUniChar(src, &find);
 	if (find == ch) {
 	    return src;
 	}
@@ -619,18 +619,17 @@ Tcl_UtfFindFirst(
  *---------------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_UtfFindLast(
-    CONST char *src,		/* The UTF-8 string to be searched. */
+    const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    int len;
-    Tcl_UniChar find;
-    CONST char *last;
+    const char *last = NULL;
 
-    last = NULL;
     while (1) {
-	len = TclUtfToUniChar(src, &find);
+	Tcl_UniChar find;
+	int len = TclUtfToUniChar(src, &find);
+
 	if (find == ch) {
 	    last = src;
 	}
@@ -663,9 +662,9 @@ Tcl_UtfFindLast(
  *---------------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_UtfNext(
-    CONST char *src)		/* The current location in the string. */
+    const char *src)		/* The current location in the string. */
 {
     int left;
     const char *next;
@@ -717,13 +716,13 @@ Tcl_UtfNext(
  *---------------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_UtfPrev(
-    CONST char *src,		/* A location in a UTF-8 string. */
-    CONST char *start)		/* Pointer to the beginning of the string */
+    const char *src,		/* A location in a UTF-8 string. */
+    const char *start)		/* Pointer to the beginning of the string */
 {
     int trailBytesSeen = 0;	/* How many trail bytes have been verified? */
-    CONST char *fallback = src - 1;
+    const char *fallback = src - 1;
 				/* If we cannot find a lead byte that might
 				 * start a prefix of a valid UTF byte sequence,
 				 * we will fallback to a one-byte back step */
@@ -779,13 +778,13 @@ Tcl_UtfPrev(
 		/* Reject */
 		return fallback;
 	    }
-	    return (CONST char *)look;
+	    return (const char *)look;
 	}
 
 	/* We saw a trail byte. */
 	trailBytesSeen++;
 
-	if ((CONST char *)look == start) {
+	if ((const char *)look == start) {
 	    /*
 	     * Do not read before the start of the string
 	     *
@@ -829,8 +828,8 @@ Tcl_UtfPrev(
 
 Tcl_UniChar
 Tcl_UniCharAtIndex(
-    register CONST char *src,	/* The UTF-8 string to dereference. */
-    register int index)		/* The position of the desired character. */
+    const char *src,	/* The UTF-8 string to dereference. */
+    int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch;
 
@@ -855,15 +854,14 @@ Tcl_UniCharAtIndex(
  *---------------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_UtfAtIndex(
-    register CONST char *src,	/* The UTF-8 string. */
-    register int index)		/* The position of the desired character. */
+    const char *src,	/* The UTF-8 string. */
+    int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch;
 
-    while (index > 0) {
-	index--;
+    while (index-- > 0) {
 	src += TclUtfToUniChar(src, &ch);
     }
     return src;
@@ -897,7 +895,7 @@ Tcl_UtfAtIndex(
 
 int
 Tcl_UtfBackslash(
-    CONST char *src,		/* Points to the backslash character of a
+    const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
     int *readPtr,		/* Fill in with number of characters read from
 				 * src, unless NULL. */
@@ -1113,8 +1111,8 @@ Tcl_UtfToTitle(
 
 int
 TclpUtfNcmp2(
-    CONST char *cs,		/* UTF string to compare to ct. */
-    CONST char *ct,		/* UTF string cs is compared to. */
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
     unsigned long numBytes)	/* Number of *bytes* to compare. */
 {
     /*
@@ -1123,7 +1121,7 @@ TclpUtfNcmp2(
      * fine in the strcmp manner.
      */
 
-    register int result = 0;
+    int result = 0;
 
     for ( ; numBytes != 0; numBytes--, cs++, ct++) {
 	if (*cs != *ct) {
@@ -1160,8 +1158,8 @@ TclpUtfNcmp2(
 
 int
 Tcl_UtfNcmp(
-    CONST char *cs,		/* UTF string to compare to ct. */
-    CONST char *ct,		/* UTF string cs is compared to. */
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
@@ -1208,8 +1206,8 @@ Tcl_UtfNcmp(
 
 int
 Tcl_UtfNcasecmp(
-    CONST char *cs,		/* UTF string to compare to ct. */
-    CONST char *ct,		/* UTF string cs is compared to. */
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
@@ -1252,8 +1250,8 @@ Tcl_UtfNcasecmp(
 
 int
 TclUtfCasecmp(
-    CONST char *cs,		/* UTF string to compare to ct. */
-    CONST char *ct)		/* UTF string cs is compared to. */
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct)		/* UTF string cs is compared to. */
 {
     Tcl_UniChar ch1, ch2;
 
@@ -1409,7 +1407,7 @@ Tcl_UniCharToTitle(
 
 int
 Tcl_UniCharLen(
-    CONST Tcl_UniChar *uniStr)	/* Unicode string to find length of. */
+    const Tcl_UniChar *uniStr)	/* Unicode string to find length of. */
 {
     int len = 0;
 
@@ -1439,8 +1437,8 @@ Tcl_UniCharLen(
 
 int
 Tcl_UniCharNcmp(
-    CONST Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
-    CONST Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
+    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
 #ifdef WORDS_BIGENDIAN
@@ -1484,8 +1482,8 @@ Tcl_UniCharNcmp(
 
 int
 Tcl_UniCharNcasecmp(
-    CONST Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
-    CONST Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
+    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
@@ -1860,8 +1858,8 @@ Tcl_UniCharIsWordChar(
 
 int
 Tcl_UniCharCaseMatch(
-    CONST Tcl_UniChar *uniStr,	/* Unicode String. */
-    CONST Tcl_UniChar *uniPattern,
+    const Tcl_UniChar *uniStr,	/* Unicode String. */
+    const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
@@ -2048,14 +2046,14 @@ Tcl_UniCharCaseMatch(
 
 int
 TclUniCharMatch(
-    CONST Tcl_UniChar *string,	/* Unicode String. */
+    const Tcl_UniChar *string,	/* Unicode String. */
     int strLen,			/* Length of String */
-    CONST Tcl_UniChar *pattern,	/* Pattern, which may contain special
+    const Tcl_UniChar *pattern,	/* Pattern, which may contain special
 				 * characters. */
     int ptnLen,			/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    CONST Tcl_UniChar *stringEnd, *patternEnd;
+    const Tcl_UniChar *stringEnd, *patternEnd;
     Tcl_UniChar p;
 
     stringEnd = string + strLen;
