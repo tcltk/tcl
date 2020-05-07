@@ -528,12 +528,13 @@ Tcl_UtfToUniCharDString(
 	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
-    while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += TclUtfToUniChar(p, &ch);
-	*w++ = ch;
-    }
     while (p < endPtr) {
-	*w++ = UCHAR(*p++);
+	if (Tcl_UtfCharComplete(p, endPtr-p)) {
+	    p += TclUtfToUniChar(p, &ch);
+	    *w++ = ch;
+	} else {
+	    *w++ = UCHAR(*p++);
+	}
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
