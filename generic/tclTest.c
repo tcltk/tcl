@@ -6834,13 +6834,15 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes > (int)sizeof(buffer)-3) {
-	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 29 bytes", NULL);
+    if (numBytes > (int)sizeof(buffer) - 4) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"testutfnext\" can only handle %d bytes",
+		(int)sizeof(buffer) - 4));
 	return TCL_ERROR;
     }
 
     memcpy(buffer + 1, bytes, numBytes);
-    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = '\x00';
+    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = buffer[numBytes + 3] = '\xA0';
 
     first = result = TclUtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
@@ -6856,8 +6858,8 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = TclUtfNext(buffer + 1);
 	if (first != result) {
-	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[end]", NULL);
-	    return TCL_ERROR;
+	    first = buffer;
+	    break;
 	}
     }
 
