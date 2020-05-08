@@ -738,7 +738,7 @@ test utf-7.31 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
 test utf-7.32 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF0\x80\x80\x80] 2
 } 1
-test utf-7.33 {Tcl_UtfPrev -- overlong sequence}  {testutfprev} {
+test utf-7.33 {Tcl_UtfPrev -- overlong sequence}  testutfprev {
     testutfprev A\x00
 } 1
 test utf-7.34 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
@@ -1340,7 +1340,7 @@ UniCharCaseCmpTest > \U10000 \uFFFF		{Uesc ucs4}
 
 test utf-26.1 {Tcl_UniCharDString} -setup {
     testobj freeallvars
-} -constraints {teststringobj} -cleanup {
+} -constraints {teststringobj testbytestring} -cleanup {
     testobj freeallvars
 } -body {
     teststringobj set 1 foo
