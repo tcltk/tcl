@@ -219,12 +219,9 @@ test utf-6.8 {Tcl_UtfNext} {testutfnext testbytestring} {
 test utf-6.9.0 {Tcl_UtfNext} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xA0]
 } 1
-test utf-6.9.1 {Tcl_UtfNext} {testutfnext testbytestring utf16} {
+test utf-6.9.1 {Tcl_UtfNext} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xA0]
 } -1
-test utf-6.9.2 {Tcl_UtfNext} {testutfnext testbytestring ucs4} {
-    testutfnext [testbytestring \xA0]
-} 1
 test utf-6.10 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xA0]G
 } 1
@@ -516,21 +513,15 @@ test utf-6.91.1 {Tcl_UtfNext, validity check [493dccc2de]} {testutfnext testbyte
 test utf-6.92.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xA0\xA0\xA0]
 } 1
-test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext testbytestring utf16} {
+test utf-6.92.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xA0\xA0\xA0]
 } 3
-test utf-6.92.2 {Tcl_UtfNext, pointing to 2th byte of 4-byte valid sequence} {testutfnext testbytestring ucs4} {
-    testutfnext [testbytestring \xA0\xA0\xA0]
-} 1
 test utf-6.93.0 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \x80\x80\x80]
 } 1
-test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext testbytestring utf16} {
+test utf-6.93.1 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \x80\x80\x80]
 } 3
-test utf-6.93.2 {Tcl_UtfNext, pointing to 2th byte of 4-byte invalid sequence} {testutfnext testbytestring ucs4} {
-    testutfnext [testbytestring \x80\x80\x80]
-} 1
 test utf-6.94 {Tcl_UtfNext, pointing to 2th byte of 5-byte invalid sequence} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xA0\xA0\xA0\xA0]
 } 1
