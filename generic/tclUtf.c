@@ -64,7 +64,7 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX != 4
+#if TCL_UTF_MAX < 4
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 #else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
@@ -384,7 +384,7 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 4
 	/* If *chPtr contains a high surrogate (produced by a previous
 	 * Tcl_UtfToUniChar() call) and the next 3 bytes are UTF-8 continuation
 	 * bytes, then we must produce a follow-up low surrogate. We only
@@ -440,7 +440,7 @@ Tcl_UtfToUniChar(
 	     * Four-byte-character lead byte followed by at least two trail bytes.
 	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
-#if TCL_UTF_MAX <= 4
+#if TCL_UTF_MAX == 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
@@ -449,7 +449,7 @@ Tcl_UtfToUniChar(
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
-#else
+#elif TCL_UTF_MAX > 4
 	    if ((src[3] & 0xC0) == 0x80) {
 		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 			| ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
@@ -621,26 +621,12 @@ Tcl_NumUtfChars(
 	 */
 	while (src <= optPtr
 		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
-#if TCL_UTF_MAX < 4
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else
-#endif
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	/* Loop over the remaining string where call must happen */
 	while (src < endPtr) {
 	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
-#if TCL_UTF_MAX < 4
-		if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		    /* treat F0 - F4 as single character */
-		    ch = 0;
-		    src++;
-		} else
-#endif
 		src += TclUtfToUniChar(src, &ch);
 	    } else {
 		/*
@@ -1064,11 +1050,11 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(upChar) || ((upChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(upChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(upChar, dst);
+	    dst += TclUCS4ToUtf(upChar, dst);
 	}
 	src += len;
     }
@@ -1117,11 +1103,11 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	    dst += TclUCS4ToUtf(lowChar, dst);
 	}
 	src += len;
     }
@@ -1167,11 +1153,11 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = UCS4ToTitle(ch);
 
-	if (len < UtfCount(titleChar) || ((titleChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(titleChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(titleChar, dst);
+	    dst += TclUCS4ToUtf(titleChar, dst);
 	}
 	src += len;
     }
@@ -1183,11 +1169,11 @@ Tcl_UtfToTitle(
 	    lowChar = TclUCS4ToLower(lowChar);
 	}
 
-	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	    dst += TclUCS4ToUtf(lowChar, dst);
 	}
 	src += len;
     }
