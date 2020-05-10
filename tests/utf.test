@@ -570,13 +570,13 @@ test utf-6.108 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
 test utf-6.109 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext \u8820[testbytestring \xA0] 3
 } 3
-test utf-6.110.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf16} {
+test utf-6.110.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 1
 } 1
-test utf-6.110.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs4} {
+test utf-6.110.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 1
 } 0
-test utf-6.111.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf16} {
+test utf-6.111.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 2
 } 1
 test utf-6.111.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs4} {
@@ -594,16 +594,16 @@ test utf-6.113.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf
 test utf-6.113.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs4} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 4
 } 4
-test utf-6.114.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf16} {
+test utf-6.114.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 1
 } 1
-test utf-6.114.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs4} {
+test utf-6.114.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 1
 } 0
-test utf-6.115.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf16} {
+test utf-6.115.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 2
 } 1
-test utf-6.115.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs4} {
+test utf-6.115.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 2
 } 0
 test utf-6.116.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2_utf16} {
