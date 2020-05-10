@@ -1166,19 +1166,9 @@ Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
     int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch = 0;
-    int len = 0;
-
     while (index-- > 0) {
-	len = TclUtfToUniChar(src, &ch);
-	src += len;
+	src = Tcl_UtfNext(src);
     }
-#if TCL_UTF_MAX <= 3
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src += TclUtfToUniChar(src, &ch);
-    }
-#endif
     return src;
 }
 
