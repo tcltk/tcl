@@ -81,6 +81,30 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1
 };
 
+static const unsigned char complete[256] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+#if TCL_UTF_MAX < 4
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#endif
+    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 4
+    4,4,4,4,4,
+#elif TCL_UTF_MAX < 4
+    1,1,1,1,1,
+#else
+    3,3,3,3,3,
+#endif
+    1,1,1,1,1,1,1,1,1,1,1
+};
+
 /*
  * Functions used only in this module.
  */
@@ -174,14 +198,13 @@ Invalid(
     unsigned char byte = UCHAR(*src);
     int index;
 
-    if ((byte & 0xC3) != 0xC0) {
+    if ((byte & 0xC3) == 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
-	return 0;
-    }
-    index = (byte - 0xC0) >> 1;
-    if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
-	/* Out of bounds - report invalid. */
-	return 1;
+	index = (byte - 0xC0) >> 1;
+	if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
+	    /* Out of bounds - report invalid. */
+	    return 1;
+	}
     }
     return 0;
 }
@@ -568,7 +591,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[UCHAR(*src)];
+    return length >= complete[UCHAR(*src)];
 }
 
 /*
