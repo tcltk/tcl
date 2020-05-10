@@ -86,7 +86,7 @@ static const unsigned char complete[256] = {
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
-    1,1,1,1,1,
+    3,3,3,3,3,
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
@@ -174,14 +174,13 @@ Invalid(
     unsigned char byte = UCHAR(*src);
     int index;
 
-    if ((byte & 0xC3) != 0xC0) {
+    if ((byte & 0xC3) == 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
-	return 0;
-    }
-    index = (byte - 0xC0) >> 1;
-    if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
-	/* Out of bounds - report invalid. */
-	return 1;
+	index = (byte - 0xC0) >> 1;
+	if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
+	    /* Out of bounds - report invalid. */
+	    return 1;
+	}
     }
     return 0;
 }
