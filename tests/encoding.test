@@ -335,7 +335,7 @@ test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
 } -result "6 \uD83D\uDE02"
-test encoding-15.5 {UtfToUtfProc emoji character input} {
+test encoding-15.5 {UtfToUtfProc emoji character input} knownBug {
     set x \xF0\x9F\x98\x82
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
     list [string length $x] $y
