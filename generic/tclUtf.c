@@ -69,7 +69,13 @@ static const unsigned char totalBytes[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 /* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 3
+    4,4,4,4,4,
+#else
+    1,1,1,1,1,
+#endif
+    1,1,1,1,1,1,1,1,1,1,1
 };
 
 static const unsigned char complete[256] = {
@@ -1059,7 +1065,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= totalBytes[byte])) {
+		    || (trailBytesSeen >= complete[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
