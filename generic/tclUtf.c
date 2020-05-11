@@ -653,7 +653,7 @@ Tcl_NumUtfChars(
 		src += TclUtfToUniChar(src, &ch);
 	    } else {
 		/*
-		 * src points to incomplete UTF-8 sequence 
+		 * src points to incomplete UTF-8 sequence
 		 * Treat first byte as character and count it
 		 */
 		src++;
@@ -669,7 +669,7 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Unicode character
+ *	Returns a pointer to the first occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
@@ -706,7 +706,7 @@ Tcl_UtfFindFirst(
  *
  * Tcl_UtfFindLast --
  *
- *	Returns a pointer to the last occurance of the given Unicode character
+ *	Returns a pointer to the last occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
