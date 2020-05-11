@@ -524,7 +524,7 @@ Tcl_GetByteArrayFromObj(
 	baPtr = GET_BYTEARRAY(irPtr);
 	bytes = baPtr->bytes;
 	numBytes = baPtr->used;
-    } 
+    }
 
     /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
      * a trick to get around changing size. */
