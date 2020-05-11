@@ -179,7 +179,7 @@ test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars test
 test utf-4.12.2 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring utf16} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } 2
-test utf-4.13 {Tcl_NumUtfChars: end of string} {testnumutfchars testbytestring} { 
+test utf-4.13 {Tcl_NumUtfChars: end of string} {testnumutfchars testbytestring} {
     testnumutfchars foobar[testbytestring \xF2\xC2\xA0] end
 } 8
 
