@@ -154,7 +154,7 @@ TclpInitPlatform(void)
      * invoked.
      */
 
-    TclWinInit(GetModuleHandle(NULL));
+    TclWinInit(GetModuleHandleW(NULL));
 #endif
 
     /*
@@ -260,7 +260,7 @@ AppendEnvironment(
 {
     int pathc;
     WCHAR wBuf[MAX_PATH];
-    char buf[MAX_PATH * TCL_UTF_MAX];
+    char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
     Tcl_DString ds;
     const char **pathv;
@@ -273,7 +273,7 @@ AppendEnvironment(
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
+	    if ((size_t)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;
@@ -353,7 +353,7 @@ InitializeDefaultLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
     if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
@@ -426,7 +426,7 @@ InitializeSourceLibraryDir(
     *lengthPtr = strlen(name);
     *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, (size_t) *lengthPtr + 1);
+    memcpy(*valuePtr, name, *lengthPtr + 1);
 }
 
 /*
@@ -674,16 +674,6 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-#if defined(_WIN32)
-#  define tenviron _wenviron
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_WinTCharToUtf((TCHAR *)tenvstr, len, dstr)
-#else
-#  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#endif
-
 int
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
@@ -694,7 +684,8 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    register const char *env, *p1, *p2;
+    const WCHAR *env;
+    const char *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 
@@ -704,20 +695,20 @@ TclpFindVariable(
 
     length = strlen(name);
     nameUpper = (char *)ckalloc(length + 1);
-    memcpy(nameUpper, name, (size_t) length+1);
+    memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = (const char *)tenviron[i];
+    for (i = 0, env = _wenviron[i];
 	env != NULL;
-	i++, env = (const char *)tenviron[i]) {
+	i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
 	 * after the equal sign.
 	 */
 
-	envUpper = tenviron2utfdstr(env, -1, &envString);
+	envUpper = Tcl_WinTCharToUtf((TCHAR *)env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;
