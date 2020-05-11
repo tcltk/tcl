@@ -624,15 +624,8 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-#if defined(_WIN32)
-#  define tenviron _wenviron
-#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
-#else
-#  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#endif
+#  define tenviron2utfdstr(string, len, dsPtr) \
+		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr))
 
 int
 TclpFindVariable(
@@ -644,7 +637,8 @@ TclpFindVariable(
 				 * searches). */
 {
     int i, length, result = -1;
-    const char *env, *p1, *p2;
+    const WCHAR *env;
+    const char *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 
@@ -658,16 +652,17 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = (const char *)tenviron[i];
+    for (i = 0, env = _wenviron[i];
 	env != NULL;
-	i++, env = (const char *)tenviron[i]) {
+	i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
 	 * after the equal sign.
 	 */
 
-	envUpper = tenviron2utfdstr(env, -1, &envString);
+	Tcl_DStringInit(&envString);
+	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;
