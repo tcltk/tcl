@@ -7184,7 +7184,9 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = TclUtfNext(buffer + 1);
 	if (first != result) {
-	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[end]", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Tcl_UtfNext is not supposed to read src[end]\n"
+		    "Different result when src[end] is %#x", UCHAR(p[-1])));
 	    return TCL_ERROR;
 	}
     }
