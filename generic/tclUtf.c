@@ -64,16 +64,43 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+#if TCL_UTF_MAX < 4
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-/* End of "continuation byte section" */
+#endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 4
     4,4,4,4,4,
 #else
     1,1,1,1,1,
+#endif
+    1,1,1,1,1,1,1,1,1,1,1
+};
+
+static const unsigned char complete[256] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+#if TCL_UTF_MAX < 4
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#endif
+    2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 4
+    4,4,4,4,4,
+#elif TCL_UTF_MAX < 4
+    1,1,1,1,1,
+#else
+    3,3,3,3,3,
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
@@ -171,14 +198,13 @@ Invalid(
     unsigned char byte = UCHAR(*src);
     int index;
 
-    if ((byte & 0xC3) != 0xC0) {
+    if ((byte & 0xC3) == 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
-	return 0;
-    }
-    index = (byte - 0xC0) >> 1;
-    if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
-	/* Out of bounds - report invalid. */
-	return 1;
+	index = (byte - 0xC0) >> 1;
+	if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
+	    /* Out of bounds - report invalid. */
+	    return 1;
+	}
     }
     return 0;
 }
@@ -565,7 +591,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[UCHAR(*src)];
+    return length >= complete[UCHAR(*src)];
 }
 
 /*
@@ -618,30 +644,16 @@ Tcl_NumUtfChars(
 	 */
 	while (src <= optPtr
 		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
-#if TCL_UTF_MAX < 4
-	    if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		/* treat F0 - F4 as single character */
-		ch = 0;
-		src++;
-	    } else
-#endif
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
 	/* Loop over the remaining string where call must happen */
 	while (src < endPtr) {
 	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
-#if TCL_UTF_MAX < 4
-		if (((unsigned)UCHAR(*src) - 0xF0) < 5) {
-		    /* treat F0 - F4 as single character */
-		    ch = 0;
-		    src++;
-		} else
-#endif
 		src += TclUtfToUniChar(src, &ch);
 	    } else {
 		/*
-		 * src points to incomplete UTF-8 sequence 
+		 * src points to incomplete UTF-8 sequence
 		 * Treat first byte as character and count it
 		 */
 		src++;
@@ -657,7 +669,7 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Unicode character
+ *	Returns a pointer to the first occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
@@ -694,7 +706,7 @@ Tcl_UtfFindFirst(
  *
  * Tcl_UtfFindLast --
  *
- *	Returns a pointer to the last occurance of the given Unicode character
+ *	Returns a pointer to the last occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
@@ -845,7 +857,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= totalBytes[byte])) {
+		    || (trailBytesSeen >= complete[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
@@ -1061,11 +1073,11 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(upChar) || ((upChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(upChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(upChar, dst);
+	    dst += TclUCS4ToUtf(upChar, dst);
 	}
 	src += len;
     }
@@ -1114,11 +1126,11 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	    dst += TclUCS4ToUtf(lowChar, dst);
 	}
 	src += len;
     }
@@ -1164,11 +1176,11 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = UCS4ToTitle(ch);
 
-	if (len < UtfCount(titleChar) || ((titleChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(titleChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(titleChar, dst);
+	    dst += TclUCS4ToUtf(titleChar, dst);
 	}
 	src += len;
     }
@@ -1180,11 +1192,11 @@ Tcl_UtfToTitle(
 	    lowChar = TclUCS4ToLower(lowChar);
 	}
 
-	if (len < UtfCount(lowChar) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < UtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
-	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	    dst += TclUCS4ToUtf(lowChar, dst);
 	}
 	src += len;
     }
