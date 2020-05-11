@@ -149,14 +149,14 @@ test lsearch-5.2 {binary search} {
     }
     set res
 } $decreasingIntegers
-test lsearch-5.3 {binary search finds leftmost occurances} {
+test lsearch-5.3 {binary search finds leftmost occurrences} {
     set res {}
     for {set i 0} {$i < 10} {incr i} {
 	lappend res [lsearch -integer -sorted $repeatingIncreasingIntegers $i]
     }
     set res
 } [list 0 5 10 15 20 25 30 35 40 45]
-test lsearch-5.4 {binary search -decreasing finds leftmost occurances} {
+test lsearch-5.4 {binary search -decreasing finds leftmost occurrences} {
     set res {}
     for {set i 9} {$i >= 0} {incr i -1} {
 	lappend res [lsearch -sorted -integer -decreasing \
