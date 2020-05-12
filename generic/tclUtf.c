@@ -1143,10 +1143,23 @@ Tcl_UniCharAtIndex(
     const char *src,	/* The UTF-8 string to dereference. */
     size_t index)		/* The position of the desired character. */
 {
-    int ch = 0;
+    Tcl_UniChar ch = 0;
+    int i = 0;
 
-    TclUtfToUCS4(Tcl_UtfAtIndex(src, index), &ch);
-    return ch;
+    if (index != TCL_INDEX_NONE) {
+	while (index--) {
+	    i = TclUtfToUniChar(src, &ch);
+	    src += i;
+	}
+#if TCL_UTF_MAX <= 3
+	if ((ch >= 0xD800) && (i < 3)) {
+	    /* Index points at character following high Surrogate */
+	    return -1;
+	}
+#endif
+    }
+    TclUtfToUCS4(src, &i);
+    return i;
 }
 
 /*
