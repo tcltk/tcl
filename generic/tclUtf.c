@@ -69,7 +69,13 @@ static const unsigned char totalBytes[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 /* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 3
+    4,4,4,4,4,
+#else
+    1,1,1,1,1,
+#endif
+    1,1,1,1,1,1,1,1,1,1,1
 };
 
 static const unsigned char complete[256] = {
@@ -847,7 +853,7 @@ Tcl_NumUtfChars(
 		src += TclUtfToUniChar(src, &ch);
 	    } else {
 		/*
-		 * src points to incomplete UTF-8 sequence 
+		 * src points to incomplete UTF-8 sequence
 		 * Treat first byte as character and count it
 		 */
 		src++;
@@ -863,7 +869,7 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Unicode character
+ *	Returns a pointer to the first occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
@@ -900,7 +906,7 @@ Tcl_UtfFindFirst(
  *
  * Tcl_UtfFindLast --
  *
- *	Returns a pointer to the last occurance of the given Unicode character
+ *	Returns a pointer to the last occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
@@ -1058,7 +1064,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= totalBytes[byte])) {
+		    || (trailBytesSeen >= complete[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
@@ -1166,9 +1172,19 @@ Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
     int index)		/* The position of the desired character. */
 {
+    Tcl_UniChar ch = 0;
+    int len = 0;
+
     while (index-- > 0) {
-	src = Tcl_UtfNext(src);
+	len = TclUtfToUniChar(src, &ch);
+	src += len;
     }
+#if TCL_UTF_MAX <= 3
+    if ((ch >= 0xD800) && (len < 3)) {
+	/* Index points at character following high Surrogate */
+	src += TclUtfToUniChar(src, &ch);
+    }
+#endif
     return src;
 }
 
