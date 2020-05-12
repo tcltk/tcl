@@ -1145,6 +1145,9 @@ Tcl_UniCharAtIndex(
     Tcl_UniChar ch = 0;
     int i = 0;
 
+    if (index < 0) {
+	return -1;
+    }
     while (index-- > 0) {
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
