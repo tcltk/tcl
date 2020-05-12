@@ -2529,7 +2529,7 @@ StringStartCmd(
 		break;
 	    }
 
-	    next = TclUtfPrev(p, string);
+	    next = Tcl_UtfPrev(p, string);
 	    do {
 		next += delta;
 		delta = TclUtfToUCS4(next, &ch);

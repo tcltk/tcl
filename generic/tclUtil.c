@@ -1707,7 +1707,7 @@ TclTrimRight(
 	const char *q = trim;
 	int pInc = 0, bytesLeft = numTrim;
 
-	pp = TclUtfPrev(p, bytes);
+	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUCS4(pp, &ch1);
@@ -1858,7 +1858,7 @@ TclTrim(
 	 * that we will not trim. Skip over it. */
 	if (numBytes > 0) {
 	    const char *first = bytes + trimLeft;
-	    bytes = TclUtfNext(first);
+	    bytes = Tcl_UtfNext(first);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
