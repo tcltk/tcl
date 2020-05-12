@@ -1146,18 +1146,19 @@ Tcl_UniCharAtIndex(
     Tcl_UniChar ch = 0;
     int i = 0;
 
-    if (index != TCL_INDEX_NONE) {
-	while (index--) {
-	    i = TclUtfToUniChar(src, &ch);
-	    src += i;
-	}
-#if TCL_UTF_MAX <= 3
-	if ((ch >= 0xD800) && (i < 3)) {
-	    /* Index points at character following high Surrogate */
-	    return -1;
-	}
-#endif
+    if (index == TCL_INDEX_NONE) {
+	return -1;
     }
+    while (index--) {
+	i = TclUtfToUniChar(src, &ch);
+	src += i;
+    }
+#if TCL_UTF_MAX <= 3
+    if ((ch >= 0xD800) && (i < 3)) {
+	/* Index points at character following high Surrogate */
+	return -1;
+    }
+#endif
     TclUtfToUCS4(src, &i);
     return i;
 }
