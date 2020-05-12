@@ -64,21 +64,10 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX < 4
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 4
-    4,4,4,4,4,
-#else
-    1,1,1,1,1,
-#endif
-    1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
 
 static const unsigned char complete[256] = {
@@ -86,13 +75,10 @@ static const unsigned char complete[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX < 4
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
+/* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 4
@@ -857,7 +843,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= complete[byte])) {
+		    || (trailBytesSeen >= totalBytes[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
@@ -898,7 +884,7 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < ((TCL_UTF_MAX > 4) ? 4 : 3));
+    } while (trailBytesSeen < 3);
 
     /*
      * We've seen 3 (or 4) trail bytes, so we know there will not be a
@@ -906,11 +892,7 @@ Tcl_UtfPrev(
      * accepting the fallback (for TCL_UTF_MAX > 4) or just go back as
      * far as we can.
      */
-#if TCL_UTF_MAX > 4
-    return fallback;
-#else
     return src - 3;
-#endif
 }
 
 /*
