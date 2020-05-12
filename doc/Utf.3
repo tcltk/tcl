@@ -285,7 +285,8 @@ byte \fIsrc[0]\fR nor the byte \fIstart[-1]\fR nor the byte
 Pascal Ord() function.  It returns the Unicode character represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
-characters.  Behavior is undefined if a negative \fIindex\fR is given.
+characters.  If a negative \fIindex\fR is given or \fIindex\fR points
+to the second half of a surrogate pair, it returns -1.
 .PP
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
