@@ -98,7 +98,7 @@ proc readDepends {chan} {
             } else {
 		# don't include ourselves as a dependency of ourself.
 		if {![string compare $fname $target]} {continue}
-		# store in an array so multiple occurances are not counted.
+		# store in an array so multiple occurrences are not counted.
                 set depends($target|$fname) ""
             }
         }
