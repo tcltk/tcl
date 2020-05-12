@@ -937,7 +937,9 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch = 0;
 
-    TclUtfToUniChar(Tcl_UtfAtIndex(src, index), &ch);
+    while (index-- >= 0) {
+	src += TclUtfToUniChar(src, &ch);
+    }
     return ch;
 }
 
