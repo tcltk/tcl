@@ -1,25 +1,38 @@
 sudo: false
 language: c
-
+addons:
+  apt:
+    packages:
+      - binutils-mingw-w64-i686
+      - binutils-mingw-w64-x86-64
+      - gcc-mingw-w64
+      - gcc-mingw-w64-base
+      - gcc-mingw-w64-i686
+      - gcc-mingw-w64-x86-64
+      - gcc-multilib
+  homebrew:
+    packages:
+      - libtommath
+    update: true
 matrix:
   include:
 # Testing on Linux with various compilers
     - name: "Linux/GCC/Shared"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC/Static"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/GCC/Debug"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc
       env:
         - BUILD_DIR=unix
@@ -27,7 +40,7 @@ matrix:
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc-7
       addons:
         apt:
@@ -39,7 +52,7 @@ matrix:
         - BUILD_DIR=unix
     - name: "Linux/GCC 6/Shared"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc-6
       addons:
         apt:
@@ -51,7 +64,7 @@ matrix:
         - BUILD_DIR=unix
     - name: "Linux/GCC 5/Shared"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: gcc-5
       addons:
         apt:
@@ -61,48 +74,31 @@ matrix:
             - g++-5
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC 4.9/Shared"
-      os: linux
-      dist: xenial
-      compiler: gcc-4.9
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env:
-        - BUILD_DIR=unix
 # Clang
     - name: "Linux/Clang/Shared"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: clang
       env:
         - BUILD_DIR=unix
     - name: "Linux/Clang/Static"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: clang
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/Clang/Debug"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11/Shared/Unix-like"
+    - name: "macOS/Xcode 11.4/Shared"
       os: osx
-      osx_image: xcode11
-      env:
-        - BUILD_DIR=unix
-    - name: "macOS/Xcode 11/Shared"
-      os: osx
-      osx_image: xcode11
+      osx_image: xcode11.4
       env:
         - BUILD_DIR=macosx
       install: []
@@ -110,6 +106,19 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
+    - name: "macOS/Xcode 11.4/Shared/Unix-like"
+      os: osx
+      osx_image: xcode11.4
+      env:
+        - BUILD_DIR=unix
+# Older MacOS versions
+    - name: "macOS/Xcode 11/Shared"
+      os: osx
+      osx_image: xcode11
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
     - name: "macOS/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
@@ -119,14 +128,14 @@ matrix:
       script: *mactest
     - name: "macOS/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9
+      osx_image: xcode9.2
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
     - name: "macOS/Xcode 8/Shared"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode8.3
       env:
         - BUILD_DIR=macosx
       install: []
@@ -135,15 +144,8 @@ matrix:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
@@ -156,19 +158,11 @@ matrix:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
-      dist: xenial
+      dist: bionic
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
       env:
         - BUILD_DIR=win
-        - CFGOPT="--host=i686-w64-mingw32"
+        - CFGOPT=--host=i686-w64-mingw32
       script: *crosstest
 # Test on Windows with MSVC native
     - name: "Windows/MSVC/Shared"
@@ -182,8 +176,8 @@ matrix:
         - cd ${BUILD_DIR}
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc test
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -191,8 +185,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
     - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
@@ -200,8 +194,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x64 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -210,8 +204,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -219,8 +213,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=static,msvcrt,threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Debug"
       os: windows
       compiler: cl
@@ -228,8 +222,8 @@ matrix:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc all tcltest'
-        - cmd.exe /C 'vcvarsall.bat x86 && nmake OPTS=symbols,msvcrt,threads -f makefile.vc test'
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -238,7 +232,7 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - choco install make
+        - choco install -y make
         - cd ${BUILD_DIR}
     - name: "Windows/GCC/Static"
       os: windows
@@ -278,7 +272,8 @@ matrix:
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
+  - mkdir "$HOME/install dir"
+  - ./configure ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
