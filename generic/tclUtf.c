@@ -887,12 +887,12 @@ Tcl_UtfPrev(
     } while (trailBytesSeen < 3);
 
     /*
-     * We've seen 3 (or 4) trail bytes, so we know there will not be a
+     * We've seen 3 trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
-     * accepting the fallback (for TCL_UTF_MAX > 4) or just go back as
-     * far as we can.
+     * accepting the fallback.
      */
-    return src - 3;
+
+    return fallback;
 }
 
 /*
