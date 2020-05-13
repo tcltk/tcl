@@ -254,7 +254,7 @@ characters.  Behavior is undefined if a negative \fIindex\fR is given.
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling
-\fBTcl_UtfNext\fR \fIindex\fR times.  If a negative \fIindex\fR is given,
+\fBTcl_UtfToUniChar\fR \fIindex\fR times.  If a negative \fIindex\fR is given,
 the return pointer points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl
