@@ -1752,16 +1752,16 @@ SerialSetOptionProc(
 	dcb.XonChar = argv[0][0];
 	dcb.XoffChar = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
-	    Tcl_UniChar character;
+	    int character;
 	    int charLen;
 
-	    charLen = Tcl_UtfToUniChar(argv[0], &character);
-	    if (argv[0][charLen]) {
+	    charLen = TclUtfToUCS4(argv[0], &character);
+	    if ((character & ~0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XonChar = (char) character;
-	    charLen = Tcl_UtfToUniChar(argv[1], &character);
-	    if (argv[1][charLen]) {
+	    charLen = TclUtfToUCS4(argv[1], &character);
+	    if ((character & ~0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XoffChar = (char) character;

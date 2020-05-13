@@ -64,16 +64,11 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX < 4
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
     1,1,1,1,1,
@@ -86,19 +81,14 @@ static const unsigned char complete[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#if TCL_UTF_MAX < 4
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-#else /* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
+/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#endif
+/* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 #if TCL_UTF_MAX > 4
     4,4,4,4,4,
-#elif TCL_UTF_MAX < 4
-    1,1,1,1,1,
 #else
     3,3,3,3,3,
 #endif
@@ -407,7 +397,7 @@ Tcl_UtfToUniChar(
 	 * characters representing themselves.
 	 */
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	/* If *chPtr contains a high surrogate (produced by a previous
 	 * Tcl_UtfToUniChar() call) and the next 3 bytes are UTF-8 continuation
 	 * bytes, then we must produce a follow-up low surrogate. We only
@@ -463,7 +453,7 @@ Tcl_UtfToUniChar(
 	     * Four-byte-character lead byte followed by at least two trail bytes.
 	     * We don't test the validity of 3th trail byte, see [ed29806ba]
 	     */
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	    Tcl_UniChar high = (((byte & 0x07) << 8) | ((src[1] & 0x3F) << 2)
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
@@ -472,7 +462,7 @@ Tcl_UtfToUniChar(
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
-#elif TCL_UTF_MAX > 4
+#else
 	    if ((src[3] & 0xC0) == 0x80) {
 		*chPtr = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 			| ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
@@ -857,7 +847,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= complete[byte])) {
+		    || (trailBytesSeen >= totalBytes[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
@@ -898,19 +888,15 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < ((TCL_UTF_MAX > 4) ? 4 : 3));
+    } while (trailBytesSeen < 3);
 
     /*
-     * We've seen 3 (or 4) trail bytes, so we know there will not be a
+     * We've seen 3 trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
-     * accepting the fallback (for TCL_UTF_MAX > 4) or just go back as
-     * far as we can.
+     * accepting the fallback.
      */
-#if TCL_UTF_MAX > 4
+
     return fallback;
-#else
-    return src - 3;
-#endif
 }
 
 /*
