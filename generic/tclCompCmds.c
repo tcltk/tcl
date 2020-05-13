@@ -3441,10 +3441,10 @@ TclPushVarName(
 	    /*
 	     * last char is ')' => potential array reference.
 	     */
-	    last = Tcl_UtfPrev(name + nameLen, name);
+	    last = &name[nameLen-1];
 
 	    if (*last == ')') {
-		for (p = name;  p < last;  p = Tcl_UtfNext(p)) {
+		for (p = name;  p < last;  p++) {
 		    if (*p == '(') {
 			elName = p + 1;
 			elNameLen = last - elName;
@@ -3472,15 +3472,14 @@ TclPushVarName(
     } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (*((p = varTokenPtr[n].start + varTokenPtr[n].size)-1) == ')')
-	    && (*Tcl_UtfPrev(p, varTokenPtr[n].start) == ')')) {
+	    && (*(varTokenPtr[n].start + varTokenPtr[n].size - 1) == ')')) {
 	/*
 	 * Check for parentheses inside first token.
 	 */
 
 	simpleVarName = 0;
 	for (p = varTokenPtr[1].start,
-	     last = p + varTokenPtr[1].size;  p < last;  p = Tcl_UtfNext(p)) {
+	     last = p + varTokenPtr[1].size;  p < last;  p++) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
@@ -3548,7 +3547,7 @@ TclPushVarName(
 
 	int hasNsQualifiers = 0;
 
-	for (p = name, last = p + nameLen-1;  p < last;  p = Tcl_UtfNext(p)) {
+	for (p = name, last = p + nameLen-1;  p < last;  p++) {
 	    if ((*p == ':') && (*(p+1) == ':')) {
 		hasNsQualifiers = 1;
 		break;

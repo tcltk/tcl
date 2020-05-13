@@ -511,7 +511,7 @@ TclCreateProc(
 	 */
 
 	argnamei = argname;
-	argnamelast = Tcl_UtfPrev(argname + nameLength, argname);
+	argnamelast = (nameLength > 0) ? (argname + nameLength - 1) : argname;
 	while (argnamei < argnamelast) {
 	    if (*argnamei == '(') {
 		if (*argnamelast == ')') { /* We have an array element. */
@@ -532,7 +532,7 @@ TclCreateProc(
 			"FORMALARGUMENTFORMAT", NULL);
 		goto procError;
 	    }
-	    argnamei = Tcl_UtfNext(argnamei);
+	    argnamei++;
 	}
 
 	if (precompiled) {
