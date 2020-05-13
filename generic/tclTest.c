@@ -19,6 +19,9 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
+#endif
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclOO.h"

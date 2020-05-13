@@ -94,7 +94,7 @@ static void uniCodePanic(void) {
 
 static int TclUtfCharComplete(const char *src, int length) {
 	if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
-		return length < 5;
+		return length < 3;
 	}
     return Tcl_UtfCharComplete(src, length);
 }
@@ -107,9 +107,10 @@ static const char *TclUtfNext(const char *src) {
 }
 
 static const char *TclUtfPrev(const char *src, const char *start) {
-	if (((unsigned)((unsigned char)*(src) - 0xF0) < 5) && (src >= start)) {
-		return src - 1;
-	}
+    if ((src >= start + 3) && ((src[-1] & 0xC0) == 0x80)
+	    && ((src[-2] & 0xC0) == 0x80) && ((src[-3] & 0xC0) == 0x80)) {
+	return src - 3;
+    }
     return Tcl_UtfPrev(src, start);
 }
 
