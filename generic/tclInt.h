@@ -4484,9 +4484,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(UCHAR(*((src) - 1))) < 0x80 ? (src)-1 : \
 	Tcl_UtfPrev(src, start))
 
-#define TclUtfNext(src)	\
-	(((UCHAR(*(src))) < 0x80) ? (src) + 1 : Tcl_UtfNext(src))
-
 /*
  *----------------------------------------------------------------
  * Macro that encapsulates the logic that determines when it is safe to

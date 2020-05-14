@@ -1853,8 +1853,9 @@ TclTrim(
 	/* If we did not trim the whole string, it starts with a character
 	 * that we will not trim. Skip over it. */
 	if (numBytes > 0) {
+	    int ch;
 	    const char *first = bytes + trimLeft;
-	    bytes = TclUtfNext(first);
+	    bytes += TclUtfToUCS4(first, &ch);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
@@ -3713,10 +3714,10 @@ TclGetIntForIndex(
 
 static void
 UpdateStringOfEndOffset(
-    register Tcl_Obj *objPtr)
+    Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
-    register int len = 3;
+    int len = 3;
 
     memcpy(buffer, "end", 4);
     if (objPtr->internalRep.longValue != 0) {
@@ -3787,7 +3788,7 @@ SetEndOffsetFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
-    register const char *bytes;	/* String rep of the object */
+    const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
     /*
