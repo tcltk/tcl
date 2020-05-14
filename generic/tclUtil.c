@@ -1805,8 +1805,9 @@ TclTrim(
 	/* If we did not trim the whole string, it starts with a character
 	 * that we will not trim. Skip over it. */
 	if (numBytes > 0) {
+	    int ch;
 	    const char *first = bytes + trimLeft;
-	    bytes = TclUtfNext(first);
+	    bytes += TclUtfToUCS4(first, &ch);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
