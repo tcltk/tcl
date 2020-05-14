@@ -4700,9 +4700,6 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	((unsigned char) *((src) - 1)) < 0x80 ? (src) - 1 : \
 	Tcl_UtfPrev(src, start))
 
-#define TclUtfNext(src)	\
-	((((unsigned char) *(src)) < 0x80) ? (src) + 1 : Tcl_UtfNext(src))
-
 /*
  *----------------------------------------------------------------
  * Macro that encapsulates the logic that determines when it is safe to
