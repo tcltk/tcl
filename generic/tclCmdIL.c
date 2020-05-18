@@ -3305,7 +3305,7 @@ Tcl_LsearchObjCmd(
 	    if (groupSize < 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"stride length must be at least 1", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 			"BADSTRIDE", NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3640,11 +3640,11 @@ Tcl_LsearchObjCmd(
 		/*
 		 * Normally, binary search is written to stop when it finds a
 		 * match. If there are duplicates of an element in the list,
-		 * our first match might not be the first occurance.
+		 * our first match might not be the first occurrence.
 		 * Consider: 0 0 0 1 1 1 2 2 2
 		 *
 		 * To maintain consistancy with standard lsearch semantics, we
-		 * must find the leftmost occurance of the pattern in the
+		 * must find the leftmost occurrence of the pattern in the
 		 * list. Thus we don't just stop searching here. This
 		 * variation means that a search always makes log n
 		 * comparisons (normal binary search might "get lucky" with an

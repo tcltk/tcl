@@ -3253,10 +3253,13 @@ MODULE_SCOPE int	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
 #   define TclUCS4Complete Tcl_UtfCharComplete
+#   define TclChar16Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
+	    ? ((length) >= 3) : Tcl_UtfCharComplete((src), (length)))
 #else
     MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
 #   define TclUCS4Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
+#   define TclChar16Complete Tcl_UtfCharComplete
 #endif
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
@@ -4696,9 +4699,6 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	(((src) < (start) + 2) ? (start) : \
 	((unsigned char) *((src) - 1)) < 0x80 ? (src) - 1 : \
 	Tcl_UtfPrev(src, start))
-
-#define TclUtfNext(src)	\
-	((((unsigned char) *(src)) < 0x80) ? (src) + 1 : Tcl_UtfNext(src))
 
 /*
  *----------------------------------------------------------------

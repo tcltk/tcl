@@ -69,7 +69,13 @@ static const unsigned char totalBytes[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 /* End of "continuation byte section" */
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+#if TCL_UTF_MAX > 3
+    4,4,4,4,4,
+#else
+    1,1,1,1,1,
+#endif
+    1,1,1,1,1,1,1,1,1,1,1
 };
 
 static const unsigned char complete[256] = {
@@ -86,7 +92,7 @@ static const unsigned char complete[256] = {
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
-    1,1,1,1,1,
+    3,3,3,3,3,
 #endif
     1,1,1,1,1,1,1,1,1,1,1
 };
@@ -479,7 +485,7 @@ Tcl_UtfToChar16(
      * Unroll 1 to 4 byte UTF-8 sequences.
      */
 
-    byte = *((unsigned char *) src);
+    byte = UCHAR(*src);
     if (byte < 0xC0) {
 	/*
 	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
@@ -599,8 +605,12 @@ Tcl_UtfToUniCharDString(
 				 * DString. */
 {
     int ch = 0, *w, *wString;
-    const char *p, *end;
+    const char *p;
     int oldLength;
+    /* Pointer to the end of string. Never read endPtr[0] */
+    const char *endPtr = src + length;
+    /* Pointer to last byte where optimization still can be used */
+    const char *optPtr = endPtr - TCL_UTF_MAX;
 
     if (src == NULL) {
 	return NULL;
@@ -622,19 +632,18 @@ Tcl_UtfToUniCharDString(
 
     w = wString;
     p = src;
-    end = src + length - 4;
-    while (p < end) {
-	p += Tcl_UtfToUniChar(p, &ch);
+    endPtr = src + length;
+    optPtr = endPtr - 4;
+    while (p <= optPtr) {
+	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
     }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
-	    p += Tcl_UtfToUniChar(p, &ch);
-	} else {
-	    ch = UCHAR(*p++);
-	}
+    while ((p < endPtr) && TclUCS4Complete(p, endPtr-p)) {
+	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
+    }
+    while (p < endPtr) {
+	*w++ = UCHAR(*p++);
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -652,10 +661,13 @@ Tcl_UtfToChar16DString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    unsigned short ch = 0;
-    unsigned short *w, *wString;
-    const char *p, *end;
+    unsigned short ch = 0, *w, *wString;
+    const char *p;
     int oldLength;
+    /* Pointer to the end of string. Never read endPtr[0] */
+    const char *endPtr = src + length;
+    /* Pointer to last byte where optimization still can be used */
+    const char *optPtr = endPtr - TCL_UTF_MAX;
 
     if (src == NULL) {
 	return NULL;
@@ -677,19 +689,19 @@ Tcl_UtfToChar16DString(
 
     w = wString;
     p = src;
-    end = src + length - 4;
-    while (p < end) {
+    endPtr = src + length;
+    optPtr = endPtr - 3;
+    while (p <= optPtr) {
 	p += Tcl_UtfToChar16(p, &ch);
 	*w++ = ch;
     }
-    end += 4;
-    while (p < end) {
-	if (Tcl_UtfCharComplete(p, end-p)) {
+    while (p < endPtr) {
+	if (TclChar16Complete(p, endPtr-p)) {
 	    p += Tcl_UtfToChar16(p, &ch);
+	    *w++ = ch;
 	} else {
-	    ch = UCHAR(*p++);
+	    *w++ = UCHAR(*p++);
 	}
-	*w++ = ch;
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -697,6 +709,7 @@ Tcl_UtfToChar16DString(
 
     return wString;
 }
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -746,39 +759,50 @@ Tcl_UtfCharComplete(
 int
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    int length)			/* The length of the string in bytes, or -1
-				 * for strlen(string). */
+    int length)		/* The length of the string in bytes, or -1
+			 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
 
-    /*
-     * The separate implementations are faster.
-     *
-     * Since this is a time-sensitive function, we also do the check for the
-     * single-byte char case specially.
-     */
-
     if (length < 0) {
-	while (*src != '\0') {
+	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
+	while ((*src != '\0') && (i < INT_MAX)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	const char *endPtr = src + length - TCL_UTF_MAX;
+	/* Will return value between 0 and length. No overflow checks. */
 
+	/* Pointer to the end of string. Never read endPtr[0] */
+	const char *endPtr = src + length;
+	/* Pointer to last byte where optimization still can be used */
+	const char *optPtr = endPtr - TCL_UTF_MAX;
+
+	/*
+	 * Optimize away the call in this loop. Justified because...
+	 * when (src <= optPtr), (endPtr - src) >= (endPtr - optPtr)
+	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX
+	 * So (endPtr - src) >= TCL_UTF_MAX, and passing that to
+	 * Tcl_UtfCharComplete we know will cause return of 1.
+	 */
+	while (src <= optPtr
+		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
+	    src += TclUtfToUniChar(src, &ch);
+	    i++;
+	}
+	/* Loop over the remaining string where call must happen */
 	while (src < endPtr) {
-	    src += TclUtfToUniChar(src, &ch);
+	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
+		src += TclUtfToUniChar(src, &ch);
+	    } else {
+		/*
+		 * src points to incomplete UTF-8 sequence
+		 * Treat first byte as character and count it
+		 */
+		src++;
+	    }
 	    i++;
-	}
-	endPtr += TCL_UTF_MAX;
-	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
-	    src += TclUtfToUniChar(src, &ch);
-	    i++;
-	}
-	if (src < endPtr) {
-	    i += endPtr - src;
 	}
     }
     return i;
@@ -789,7 +813,7 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Unicode character
+ *	Returns a pointer to the first occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
@@ -809,9 +833,9 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+	int find, len = TclUtfToUCS4(src, &find);
 
-	if (ucs4 == ch) {
+	if (find == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -826,7 +850,7 @@ Tcl_UtfFindFirst(
  *
  * Tcl_UtfFindLast --
  *
- *	Returns a pointer to the last occurance of the given Unicode character
+ *	Returns a pointer to the last occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
@@ -848,9 +872,9 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int ucs4, len = TclUtfToUCS4(src, &ucs4);
+	int find, len = TclUtfToUCS4(src, &find);
 
-	if (ucs4 == ch) {
+	if (find == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -983,10 +1007,24 @@ Tcl_UniCharAtIndex(
     const char *src,	/* The UTF-8 string to dereference. */
     int index)		/* The position of the desired character. */
 {
-    int ch = 0;
+    Tcl_UniChar ch = 0;
+    int i = 0;
 
-    TclUtfToUCS4(Tcl_UtfAtIndex(src, index), &ch);
-    return ch;
+    if (index < 0) {
+	return -1;
+    }
+    while (index-- > 0) {
+	i = TclUtfToUniChar(src, &ch);
+	src += i;
+    }
+#if TCL_UTF_MAX <= 3
+    if ((ch >= 0xD800) && (i < 3)) {
+	/* Index points at character following high Surrogate */
+	return -1;
+    }
+#endif
+    TclUtfToUCS4(src, &i);
+    return i;
 }
 
 /*
