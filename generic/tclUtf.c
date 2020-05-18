@@ -87,7 +87,7 @@ static const unsigned char complete[256] = {
 /* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 4
+#if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
     3,3,3,3,3,
