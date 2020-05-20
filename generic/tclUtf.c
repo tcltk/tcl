@@ -55,7 +55,7 @@
 #define UNICODE_SELF	0x80
 
 /*
- * The following structures are used when mapping between Unicode (UCS-2) and
+ * The following structures are used when mapping between Unicode and
  * UTF-8.
  */
 
