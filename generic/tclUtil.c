@@ -2208,7 +2208,7 @@ Tcl_StringCaseMatch(
 	    } else {
 		TclUtfToUCS4(pattern, &ch2);
 		if (nocase) {
-		    ch2 = Tcl_UniCharToLower(ch2);
+		    ch2 = Tcl_UniCharFold(ch2);
 		}
 	    }
 
@@ -2223,7 +2223,7 @@ Tcl_StringCaseMatch(
 		    if (nocase) {
 			while (*str) {
 			    charLen = TclUtfToUCS4(str, &ch1);
-			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
+			    if (ch2==ch1 || ch2==Tcl_UniCharFold(ch1)) {
 				break;
 			    }
 			    str += charLen;
@@ -2282,7 +2282,7 @@ Tcl_StringCaseMatch(
 	    } else {
 		str += TclUtfToUCS4(str, &ch1);
 		if (nocase) {
-		    ch1 = Tcl_UniCharToLower(ch1);
+		    ch1 = Tcl_UniCharFold(ch1);
 		}
 	    }
 	    while (1) {
@@ -2296,7 +2296,7 @@ Tcl_StringCaseMatch(
 		} else {
 		    pattern += TclUtfToUCS4(pattern, &startChar);
 		    if (nocase) {
-			startChar = Tcl_UniCharToLower(startChar);
+			startChar = Tcl_UniCharFold(startChar);
 		    }
 		}
 		if (*pattern == '-') {
@@ -2311,7 +2311,7 @@ Tcl_StringCaseMatch(
 		    } else {
 			pattern += TclUtfToUCS4(pattern, &endChar);
 			if (nocase) {
-			    endChar = Tcl_UniCharToLower(endChar);
+			    endChar = Tcl_UniCharFold(endChar);
 			}
 		    }
 		    if (((startChar <= ch1) && (ch1 <= endChar))
@@ -2360,7 +2360,7 @@ Tcl_StringCaseMatch(
 	str += TclUtfToUCS4(str, &ch1);
 	pattern += TclUtfToUCS4(pattern, &ch2);
 	if (nocase) {
-	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
+	    if (Tcl_UniCharFold(ch1) != Tcl_UniCharFold(ch2)) {
 		return 0;
 	    }
 	} else if (ch1 != ch2) {

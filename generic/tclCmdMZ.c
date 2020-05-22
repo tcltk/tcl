@@ -629,10 +629,10 @@ Tcl_RegsubObjCmd(
 		wlen = 0;
 	    }
 	} else {
-	    wsrclc = Tcl_UniCharToLower(*wsrc);
+	    wsrclc = Tcl_UniCharFold(*wsrc);
 	    for (p = wfirstChar = wstring; wstring < wend; wstring++) {
 		if ((*wstring == *wsrc ||
-			(nocase && Tcl_UniCharToLower(*wstring)==wsrclc)) &&
+			(nocase && Tcl_UniCharFold(*wstring)==wsrclc)) &&
 			(slen==1 || (strCmpFn(wstring, wsrc,
 				(unsigned long) slen) == 0))) {
 		    if (numMatches == 0) {
@@ -2095,10 +2095,10 @@ StringMapCmd(
 	    ustring1 = end;
 	} else {
 	    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
-	    u2lc = (nocase ? Tcl_UniCharToLower(*ustring2) : 0);
+	    u2lc = (nocase ? Tcl_UniCharFold(*ustring2) : 0);
 	    for (; ustring1 < end; ustring1++) {
 		if (((*ustring1 == *ustring2) ||
-			(nocase&&Tcl_UniCharToLower(*ustring1)==u2lc)) &&
+			(nocase&&Tcl_UniCharFold(*ustring1)==u2lc)) &&
 			(length2==1 || strCmpFn(ustring1, ustring2,
 				(unsigned long) length2) == 0)) {
 		    if (p != ustring1) {
@@ -2133,7 +2133,7 @@ StringMapCmd(
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
 		    mapLens+index);
 	    if (nocase && ((index % 2) == 0)) {
-		u2lc[index/2] = Tcl_UniCharToLower(*mapStrings[index]);
+		u2lc[index/2] = Tcl_UniCharFold(*mapStrings[index]);
 	    }
 	}
 	for (p = ustring1; ustring1 < end; ustring1++) {
@@ -2145,7 +2145,7 @@ StringMapCmd(
 		ustring2 = mapStrings[index];
 		length2 = mapLens[index];
 		if ((length2 > 0) && ((*ustring1 == *ustring2) || (nocase &&
-			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
+			(Tcl_UniCharFold(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
 			!strCmpFn(ustring2, ustring1, length2))) {

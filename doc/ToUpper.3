@@ -8,13 +8,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniCharToUpper, Tcl_UniCharToLower, Tcl_UniCharToTitle, Tcl_UtfToUpper, Tcl_UtfToLower, Tcl_UtfToTitle \- routines for manipulating the case of Unicode characters and UTF-8 strings
+Tcl_UniCharToUpper, Tcl_UniCharToLower, Tcl_UniCharFold, Tcl_UniCharToTitle, Tcl_UtfToUpper, Tcl_UtfToLower, Tcl_UtfToTitle \- routines for manipulating the case of Unicode characters and UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 int
 \fBTcl_UniCharToUpper\fR(\fIch\fR)
+.sp
+int
+\fBTcl_UniCharFold\fR(\fIch\fR)
 .sp
 int
 \fBTcl_UniCharToLower\fR(\fIch\fR)
@@ -50,6 +53,11 @@ character unchanged.
 If \fIch\fR represents an upper-case character,
 \fBTcl_UniCharToLower\fR returns the corresponding lower-case
 character.  If no lower-case character is defined, it returns the
+character unchanged.
+.PP
+If \fIch\fR represents an upper-case or lower-case character,
+\fBTcl_UniCharFold\fR returns the corresponding folded
+character.  If no upper-case or lower-case character is defined, it returns the
 character unchanged.
 .PP
 If \fIch\fR represents a lower-case character,

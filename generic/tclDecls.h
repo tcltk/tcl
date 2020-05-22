@@ -1927,6 +1927,8 @@ EXTERN int		Tcl_UtfCharComplete(const char *src, int length);
 EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 651 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
+/* 652 */
+EXTERN int		Tcl_UniCharFold(int ch);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2614,6 +2616,7 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 649 */
     const char * (*tcl_UtfNext) (const char *src); /* 650 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 651 */
+    int (*tcl_UniCharFold) (int ch); /* 652 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3948,6 +3951,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 650 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 651 */
+#define Tcl_UniCharFold \
+	(tclStubsPtr->tcl_UniCharFold) /* 652 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

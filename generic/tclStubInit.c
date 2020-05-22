@@ -1901,6 +1901,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 649 */
     Tcl_UtfNext, /* 650 */
     Tcl_UtfPrev, /* 651 */
+    Tcl_UniCharFold, /* 652 */
 };
 
 /* !END!: Do not edit above this line. */

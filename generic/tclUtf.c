@@ -55,7 +55,7 @@
 #define UNICODE_SELF	0x80
 
 /*
- * The following structures are used when mapping between Unicode (UCS-2) and
+ * The following structures are used when mapping between Unicode and
  * UTF-8.
  */
 
@@ -1557,8 +1557,8 @@ Tcl_UtfNcasecmp(
 		return -ch2;
 	    }
 #endif
-	    ch1 = Tcl_UniCharToLower(ch1);
-	    ch2 = Tcl_UniCharToLower(ch2);
+	    ch1 = Tcl_UniCharFold(ch1);
+	    ch2 = Tcl_UniCharFold(ch2);
 	    if (ch1 != ch2) {
 		return (ch1 - ch2);
 	    }
@@ -1652,8 +1652,8 @@ TclUtfCasecmp(
 		return -ch2;
 	    }
 #endif
-	    ch1 = Tcl_UniCharToLower(ch1);
-	    ch2 = Tcl_UniCharToLower(ch2);
+	    ch1 = Tcl_UniCharFold(ch1);
+	    ch2 = Tcl_UniCharFold(ch2);
 	    if (ch1 != ch2) {
 		return ch1 - ch2;
 	    }
@@ -1712,6 +1712,38 @@ Tcl_UniCharToUpper(
 
 int
 Tcl_UniCharToLower(
+    int ch)			/* Unicode character to convert. */
+{
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
+
+	if ((mode & 0x02) && (mode != 0x7)) {
+	    ch += GetDelta(info);
+	}
+    }
+    /* Clear away extension bits, if any */
+    return ch & 0x1FFFFF;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharFold --
+ *
+ *	Compute the lowercase equivalent of the given Unicode character.
+ *
+ * Results:
+ *	Returns the lowercase Unicode character.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharFold(
     int ch)			/* Unicode character to convert. */
 {
     if (!UNICODE_OUT_OF_RANGE(ch)) {
@@ -1866,8 +1898,8 @@ Tcl_UniCharNcasecmp(
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
-	    Tcl_UniChar lcs = Tcl_UniCharToLower(*ucs);
-	    Tcl_UniChar lct = Tcl_UniCharToLower(*uct);
+	    Tcl_UniChar lcs = Tcl_UniCharFold(*ucs);
+	    Tcl_UniChar lct = Tcl_UniCharFold(*uct);
 
 	    if (lcs != lct) {
 		return (lcs - lct);
@@ -2255,7 +2287,7 @@ Tcl_UniCharCaseMatch(
 		return 1;
 	    }
 	    if (nocase) {
-		p = Tcl_UniCharToLower(p);
+		p = Tcl_UniCharFold(p);
 	    }
 	    while (1) {
 		/*
@@ -2307,13 +2339,13 @@ Tcl_UniCharCaseMatch(
 	    Tcl_UniChar startChar, endChar;
 
 	    uniPattern++;
-	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
+	    ch1 = (nocase ? Tcl_UniCharFold(*uniStr) : *uniStr);
 	    uniStr++;
 	    while (1) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
 		    return 0;
 		}
-		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
+		startChar = (nocase ? Tcl_UniCharFold(*uniPattern)
 			: *uniPattern);
 		uniPattern++;
 		if (*uniPattern == '-') {
@@ -2321,7 +2353,7 @@ Tcl_UniCharCaseMatch(
 		    if (*uniPattern == 0) {
 			return 0;
 		    }
-		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
+		    endChar = (nocase ? Tcl_UniCharFold(*uniPattern)
 			    : *uniPattern);
 		    uniPattern++;
 		    if (((startChar <= ch1) && (ch1 <= endChar))
@@ -2363,8 +2395,8 @@ Tcl_UniCharCaseMatch(
 	 */
 
 	if (nocase) {
-	    if (Tcl_UniCharToLower(*uniStr) !=
-		    Tcl_UniCharToLower(*uniPattern)) {
+	    if (Tcl_UniCharFold(*uniStr) !=
+		    Tcl_UniCharFold(*uniPattern)) {
 		return 0;
 	    }
 	} else if (*uniStr != *uniPattern) {
@@ -2447,7 +2479,7 @@ TclUniCharMatch(
 	    }
 	    p = *pattern;
 	    if (nocase) {
-		p = Tcl_UniCharToLower(p);
+		p = Tcl_UniCharFold(p);
 	    }
 	    while (1) {
 		/*
@@ -2459,7 +2491,7 @@ TclUniCharMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while ((string < stringEnd) && (p != *string)
-				&& (p != Tcl_UniCharToLower(*string))) {
+				&& (p != Tcl_UniCharFold(*string))) {
 			    string++;
 			}
 		    } else {
@@ -2500,20 +2532,20 @@ TclUniCharMatch(
 	    Tcl_UniChar ch1, startChar, endChar;
 
 	    pattern++;
-	    ch1 = (nocase ? Tcl_UniCharToLower(*string) : *string);
+	    ch1 = (nocase ? Tcl_UniCharFold(*string) : *string);
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
 		    return 0;
 		}
-		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
+		startChar = (nocase ? Tcl_UniCharFold(*pattern) : *pattern);
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
 			return 0;
 		    }
-		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
+		    endChar = (nocase ? Tcl_UniCharFold(*pattern)
 			    : *pattern);
 		    pattern++;
 		    if (((startChar <= ch1) && (ch1 <= endChar))
@@ -2555,7 +2587,7 @@ TclUniCharMatch(
 	 */
 
 	if (nocase) {
-	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
+	    if (Tcl_UniCharFold(*string) != Tcl_UniCharFold(*pattern)) {
 		return 0;
 	    }
 	} else if (*string != *pattern) {
