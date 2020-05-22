@@ -33,6 +33,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
+testConstraint nodep [info exists tcl_precision]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -72,9 +73,9 @@ if {$noComp} {
 }
 
 
-test string-1.1.$noComp {error conditions} {
+test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "gorp": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1024,16 +1025,16 @@ test string-7.16.$noComp {string last, start index} {
     run {string last \334a \334ad\334ad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} {
+test string-8.1.$noComp {string bytelength} nodep {
     list [catch {run {string bytelength}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} {
+test string-8.2.$noComp {string bytelength} nodep {
     list [catch {run {string bytelength a b}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} {
+test string-8.3.$noComp {string bytelength} nodep {
     run {string bytelength "\xC7"}
 } 2
-test string-8.4.$noComp {string bytelength} {
+test string-8.4.$noComp {string bytelength} nodep {
     run {string b ""}
 } 0
 
@@ -1799,9 +1800,9 @@ test string-19.3.$noComp {string trimleft, unicode default} {
 test string-20.1.$noComp {string trimright errors} {
     list [catch {run {string trimright}} msg] $msg
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
-test string-20.2.$noComp {string trimright errors} {
+test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "trimg": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1894,7 +1895,7 @@ test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
