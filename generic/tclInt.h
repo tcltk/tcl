@@ -3252,8 +3252,10 @@ MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
+#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
 #else
     MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *src, int *ucs4Ptr);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);

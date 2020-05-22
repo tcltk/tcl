@@ -2547,6 +2547,146 @@ StringStartCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * StringPrevCharCmd --
+ *
+ *	This procedure is invoked to process the "string prevchar" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringPrevCharCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int ch;
+    const char *p, *string;
+    int cur, index, length, numChars;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string index");
+	return TCL_ERROR;
+    }
+
+    string = TclGetStringFromObj(objv[1], &length);
+    numChars = Tcl_NumUtfChars(string, length);
+    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    string = TclGetStringFromObj(objv[1], &length);
+    if (index >= numChars) {
+	index = numChars - 1;
+    }
+    cur = 0;
+    if (index > 0) {
+	p = Tcl_UtfAtIndex(string, index);
+
+	TclUtfToUCS4(p, &ch);
+	for (cur = index; cur >= 0; cur--) {
+	    int delta = 0;
+	    const char *next;
+
+	    if (!Tcl_UniCharIsWordChar(ch)) {
+		break;
+	    }
+
+	    next = Tcl_UtfPrev(p, string);
+	    do {
+		next += delta;
+		delta = TclUtfToUCS4(next, &ch);
+	    } while (next + delta < p);
+	    p = next;
+	}
+	if (cur != index) {
+	    cur += 1;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringPrevWordCmd --
+ *
+ *	This procedure is invoked to process the "string prevword" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringPrevWordCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int ch;
+    const char *p, *string;
+    int cur, index, length, numChars;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string index");
+	return TCL_ERROR;
+    }
+
+    string = TclGetStringFromObj(objv[1], &length);
+    numChars = Tcl_NumUtfChars(string, length);
+    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    string = TclGetStringFromObj(objv[1], &length);
+    if (index >= numChars) {
+	index = numChars - 1;
+    }
+    cur = 0;
+    if (index > 0) {
+	p = Tcl_UtfAtIndex(string, index);
+
+	TclUtfToUCS4(p, &ch);
+	for (cur = index; cur >= 0; cur--) {
+	    int delta = 0;
+	    const char *next;
+
+	    if (!Tcl_UniCharIsWordChar(ch)) {
+		break;
+	    }
+
+	    next = Tcl_UtfPrev(p, string);
+	    do {
+		next += delta;
+		delta = TclUtfToUCS4(next, &ch);
+	    } while (next + delta < p);
+	    p = next;
+	}
+	if (cur != index) {
+	    cur += 1;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * StringEndCmd --
  *
  *	This procedure is invoked to process the "string wordend" Tcl command.
@@ -2605,6 +2745,130 @@ StringEndCmd(
     return TCL_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringNextCharCmd --
+ *
+ *	This procedure is invoked to process the "string nextchar" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringNextCharCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int ch;
+    const char *p, *end, *string;
+    int cur, index, length, numChars;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string index");
+	return TCL_ERROR;
+    }
+
+    string = TclGetStringFromObj(objv[1], &length);
+    numChars = Tcl_NumUtfChars(string, length);
+    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    string = TclGetStringFromObj(objv[1], &length);
+    if (index < 0) {
+	index = 0;
+    }
+    if (index < numChars) {
+	p = Tcl_UtfAtIndex(string, index);
+	end = string+length;
+	for (cur = index; p < end; cur++) {
+	    p += TclUtfToUCS4(p, &ch);
+	    if (!Tcl_UniCharIsWordChar(ch)) {
+		break;
+	    }
+	}
+	if (cur == index) {
+	    cur++;
+	}
+    } else {
+	cur = numChars;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringNextWordCmd --
+ *
+ *	This procedure is invoked to process the "string nextword" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringNextWordCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int ch;
+    const char *p, *end, *string;
+    int cur, index, length, numChars;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string index");
+	return TCL_ERROR;
+    }
+
+    string = TclGetStringFromObj(objv[1], &length);
+    numChars = Tcl_NumUtfChars(string, length);
+    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    string = TclGetStringFromObj(objv[1], &length);
+    if (index < 0) {
+	index = 0;
+    }
+    if (index < numChars) {
+	p = Tcl_UtfAtIndex(string, index);
+	end = string+length;
+	for (cur = index; p < end; cur++) {
+	    p += TclUtfToUCS4(p, &ch);
+	    if (!Tcl_UniCharIsWordChar(ch)) {
+		break;
+	    }
+	}
+	if (cur == index) {
+	    cur++;
+	}
+    } else {
+	cur = numChars;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3321,10 +3585,10 @@ TclInitStringCmd(
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
 	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
-	{"nextchar",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"nextword",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"prevchar",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"prevword",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"nextchar",	StringNextCharCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"nextword",	StringNextWordCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"prevchar",	StringPrevCharCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"prevword",	StringPrevWordCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
 	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
