@@ -902,7 +902,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_INTEGER_ONLY | parseFlag)) {
+		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -1006,7 +1006,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE)) {
+		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE | TCL_PARSE_NO_UNDERSCORE)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {

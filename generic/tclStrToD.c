@@ -639,8 +639,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		under = 0;
-		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_X;
@@ -653,8 +652,7 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
-		under = 0;
-		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		if ((flags & TCL_PARSE_OCTAL_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_B;
@@ -664,13 +662,17 @@ TclParseNumber(
 		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
+		if (under) {
+		    goto endgame;
+		}
 		explicitOctal = 1;
-		under = 0;
 		state = ZERO_O;
 		break;
 	    }
 	    if (c == 'd' || c == 'D') {
-		under = 0;
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_D;
 		break;
 	    }
@@ -741,7 +743,7 @@ TclParseNumber(
 		numTrailZeros = 0;
 		state = OCTAL;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -832,7 +834,7 @@ TclParseNumber(
 	    } else if (c >= 'a' && c <= 'f') {
 		under = 0;
 		d = (c-'a'+10);
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -878,7 +880,7 @@ TclParseNumber(
 		under = 0;
 		state = BINARY;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -918,7 +920,7 @@ TclParseNumber(
 		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
-                if (c == '_') {
+                if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                     /* Ignore numeric "white space" */
                     under = 1;
                     break;
@@ -959,7 +961,7 @@ TclParseNumber(
 		under = 0;
 		state = DECIMAL;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -1016,7 +1018,7 @@ TclParseNumber(
 		under = 0;
 		state = FRACTION;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -1053,7 +1055,7 @@ TclParseNumber(
 		under = 0;
 		state = EXPONENT;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
@@ -1078,7 +1080,7 @@ TclParseNumber(
 		under = 0;
 		state = EXPONENT;
 		break;
-            } else if (c == '_') {
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
                 under = 1;
                 break;
