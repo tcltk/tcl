@@ -259,25 +259,43 @@ string.  The caller must not ask for the next character after the last
 character in the string if the string is not terminated by a null
 character.
 .PP
-Given \fIsrc\fR, a pointer to some location in a UTF-8 string (or to a
-null byte immediately following such a string), \fBTcl_UtfPrev\fR
-returns a pointer to the closest preceding byte that starts a UTF-8
-character.
-This function will not back up to a position before \fIstart\fR,
-the start of the UTF-8 string.  If \fIsrc\fR was already at \fIstart\fR, the
-return value will be \fIstart\fR.
+\fBTcl_UtfPrev\fR is used to step backward through but not beyond the
+UTF-8 string that begins at \fIstart\fR.  If the UTF-8 string is made
+up entirely of complete and well-formed characters, and \fIsrc\fR points
+to the lead byte of one of those characters (or to the location one byte
+past the end of the string), then repeated calls of \fBTcl_UtfPrev\fR will
+return pointers to the lead bytes of each character in the string, one
+character at a time, terminating when it returns \fIstart\fR.
+.PP
+When the conditions of completeness and well-formedness may not be satisfied,
+a more precise description of the function of \fBTcl_UtfPrev\fR is necessary.
+It always returns a pointer greater than or equal to \fIstart\fR; that is,
+always a pointer to a location in the string. It always returns a pointer to
+a byte that begins a character when scanning for characters beginning
+from \fIstart\fR. When \fIsrc\fR is greater than \fIstart\fR, it
+always returns a pointer less than \fIsrc\fR and greater than or
+equal to (\fIsrc\fR - \fBTCL_UTF_MAX\fR).  The character that begins
+at the returned pointer is the first one that either includes the
+byte \fIsrc[-1]\fR, or might include it if the right trail bytes are
+present at \fIsrc\fR and greater. \fBTcl_UtfPrev\fR never reads the
+byte \fIsrc[0]\fR nor the byte \fIstart[-1]\fR nor the byte
+\fIsrc[-\fBTCL_UTF_MAX\fI-1]\fR.
 .PP
 \fBTcl_UniCharAtIndex\fR corresponds to a C string array dereference or the
-Pascal Ord() function.  It returns the Tcl_UniChar represented at the
+Pascal Ord() function.  It returns the Unicode character represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
-characters.  Behavior is undefined if a negative \fIindex\fR is given.
+characters.  If a negative \fIindex\fR is given or \fIindex\fR points
+to the second half of a surrogate pair, it returns -1.
 .PP
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling
-\fBTcl_UtfNext\fR \fIindex\fR times.  If a negative \fIindex\fR is given,
-the return pointer points to the first character in the source string.
+\fBTcl_UtfToUniChar\fR \fIindex\fR times, except if that would return
+a pointer to the second byte of a valid 4-byte UTF-8 sequence, in which
+case, \fBTcl_UtfToUniChar\fR will be called once more to find the end
+of the sequence. If a negative \fIindex\fR is given, the returned pointer
+points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl
 commands.  It parses a backslash sequence and stores the properly formed

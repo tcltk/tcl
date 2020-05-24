@@ -730,6 +730,7 @@ Tcl_AppendElement(
     char *dst;
     int size;
     int flags;
+    int quoteHash = 1;
 
     /*
      * If the string result is empty, move the object result to the string
@@ -766,9 +767,17 @@ Tcl_AppendElement(
 	 * then this element will not lead a list, and need not have it's
 	 * leading '#' quoted.
 	 */
-
+	quoteHash = 0;
+    } else {
+	while ((--dst >= iPtr->appendResult) && TclIsSpaceProcM(*dst)) {
+	}
+	quoteHash = !TclNeedSpace(iPtr->appendResult, dst+1);
+    }
+    dst = iPtr->appendResult + iPtr->appendUsed;
+    if (!quoteHash) {
 	flags |= TCL_DONT_QUOTE_HASH;
     }
+
     iPtr->appendUsed += Tcl_ConvertElement(element, dst, flags);
 #endif /* !TCL_NO_DEPRECATED */
 }

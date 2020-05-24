@@ -994,7 +994,8 @@ RebuildLiteralTable(
     }
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = (LiteralEntry **)ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
+    tablePtr->buckets = (LiteralEntry **)ckalloc(
+	    tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
 	*newChainPtr = NULL;

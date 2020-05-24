@@ -31,7 +31,8 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint utf16 [expr {[string length \U010000] == 2}]
+testConstraint testbytestring   [llength [info commands testbytestring]]
 testConstraint nodep [info exists tcl_precision]
 testConstraint deprecated [expr {![info exists tcl_precision]}]
 
@@ -507,7 +508,7 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints {tip389} -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf16 -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 {} b]
 
@@ -1559,7 +1560,7 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} tip389 {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 {} b]
 
@@ -1800,7 +1801,7 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} tip389 {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf16 {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0C]
@@ -1870,6 +1871,34 @@ test string-20.5.$noComp {string trimright} {
 test string-20.6.$noComp {string trimright, unicode default} {
     run {string trimright ABC\u1361\x85\x00\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
+test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {testbytestring} {
+    set result {}
+    set a [testbytestring \xC0\x80\xA0]
+    set b foo$a
+    set m [list \x00 U \xA0 V [testbytestring \xA0] W]
+    lappend result [string map $m $b]
+    lappend result [string map $m [run {string trimright $b x}]]
+    lappend result [string map $m [run {string trimright $b \x00}]]
+    lappend result [string map $m [run {string trimleft $b fox}]]
+    lappend result [string map $m [run {string trimleft $b fo\x00}]]
+    lappend result [string map $m [run {string trim $b fox}]]
+    lappend result [string map $m [run {string trim $b fo\x00}]]
+} [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
+test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {testbytestring} {
+    set result {}
+    set a [testbytestring \xE8\xA0]
+    set b foo$a
+    set m [list \xE8 U \xA0 V [testbytestring \xE8] W [testbytestring \xA0] X]]
+    lappend result [string map $m $b]
+    lappend result [string map $m [run {string trimright $b x}]]
+    lappend result [string map $m [run {string trimright $b \xE8}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xE8]}]]
+    lappend result [string map $m [run {string trimright $b \xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xA0]}]]
+    lappend result [string map $m [run {string trimright $b \xE8\xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xE8\xA0]}]]
+    lappend result [string map $m [run {string trimright $b \u0000}]]
+} [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
 test string-21.1.$noComp {string wordend} -body {
     list [catch {run {string wordend a}} msg] $msg
@@ -1916,7 +1945,7 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints tip389 -body {
+test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 8
 
@@ -1959,10 +1988,15 @@ test string-22.12.$noComp {string wordstart, unicode} -body {
 test string-22.13.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\uC700\uC700 abc" 8}
 } -result 3
-test string-22.14.$noComp {string wordstart, unicode} -body {
+test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbytestring -body {
+    # See Bug c61818e4c9
+    set demo [testbytestring "abc def\xE0\xA9ghi"]
+    run {string index $demo [string wordstart $demo 10]}
+} -result g
+test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.15.$noComp {string wordstart, unicode} -constraints tip389 -body {
+test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
 
