@@ -2400,6 +2400,22 @@ TclUtfToUCS4(
     *ucs4Ptr = (int)ch;
     return len;
 }
+
+#if TCL_UTF_MAX == 4
+int
+TclUniCharToUCS4(
+    const Tcl_UniChar *src,	/* The Tcl_UniChar string. */
+    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
+			 * by the Tcl_UniChar string. */
+{
+    if (((src[0] & 0xFC00) == 0xD800) && ((src[1] & 0xFC00) == 0xDC00)) {
+	*ucs4Ptr = (((src[0] & 0x3FF) << 10) | (src[01] & 0x3FF)) + 0x10000;
+	return 2;
+    }
+    *ucs4Ptr = src[0];
+    return 1;
+}
+#endif
 
 /*
  *---------------------------------------------------------------------------
