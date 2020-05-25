@@ -3188,8 +3188,10 @@ MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
 MODULE_SCOPE int	TclUCS4ToLower(int ch);
 #if TCL_UTF_MAX == 4
     MODULE_SCOPE int	TclGetUCS4(Tcl_Obj *, int);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
 #else
-    #define TclGetUCS4 Tcl_GetUniChar
+#   define TclGetUCS4 Tcl_GetUniChar
+#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
 #endif
 
 /*
