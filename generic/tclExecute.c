@@ -5292,7 +5292,7 @@ TEBCresume(
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
 		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
-	} else if (valuePtr->bytes && length == valuePtr->length) {
+	} else if (valuePtr->bytes && length == valuePtr->length && !(valuePtr->bytes[index] & 0x80)) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
