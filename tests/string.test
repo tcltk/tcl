@@ -777,7 +777,7 @@ test string-6.80.$noComp {string is wordchar, true} {
     run {string is wordchar abc_123}
 } 1
 test string-6.81.$noComp {string is wordchar, unicode true} {
-    run {string is wordchar abc\xFCab\xDCAB\u5001}
+    run {string is wordchar abc\xFCab\xDCAB\u5001\U1D7CA}
 } 1
 test string-6.82.$noComp {string is wordchar, false} {
     list [run {string is wordchar -fail var abcd.ef}] $var
