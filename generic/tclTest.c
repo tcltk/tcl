@@ -6898,11 +6898,8 @@ TestUtfPrevCmd(
     bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if (objc == 3) {
-	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, TCL_INDEX_ERROR|TCL_INDEX_NOMIN, &offset)) {
 	    return TCL_ERROR;
-	}
-	if (offset < 0) {
-	    offset = 0;
 	}
 	if (offset > numBytes) {
 	    offset = numBytes;
