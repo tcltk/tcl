@@ -628,11 +628,11 @@ static const yytype_int8 yyrhs[] =
 static const yytype_uint16 yyrline[] =
 {
        0,   223,   223,   224,   227,   230,   233,   236,   239,   242,
-     245,   249,   254,   257,   263,   269,   277,   283,   294,   298,
-     302,   308,   312,   316,   320,   324,   330,   334,   339,   344,
-     349,   354,   358,   363,   367,   372,   379,   383,   389,   399,
-     408,   417,   427,   441,   446,   449,   452,   455,   458,   461,
-     466,   469,   474,   478,   482,   488,   506,   509
+     245,   249,   254,   257,   263,   269,   277,   283,   294,   299,
+     304,   310,   314,   318,   322,   326,   332,   336,   341,   346,
+     351,   356,   360,   365,   369,   374,   381,   385,   391,   401,
+     410,   419,   429,   443,   448,   451,   454,   457,   460,   463,
+     468,   471,   476,   480,   484,   490,   508,   511
 };
 #endif
 
@@ -1733,6 +1733,7 @@ yyreduce:
 
     {
 	    yyTimezone = (yyvsp[(1) - (2)].Number);
+	    if (yyTimezone > HOUR( 12)) yyTimezone -= HOUR(100);
 	    yyDSTmode = DSTon;
 	;}
     break;
@@ -1741,6 +1742,7 @@ yyreduce:
 
     {
 	    yyTimezone = (yyvsp[(1) - (1)].Number);
+	    if (yyTimezone > HOUR( 12)) yyTimezone -= HOUR(100);
 	    yyDSTmode = DSToff;
 	;}
     break;
@@ -1899,7 +1901,7 @@ yyreduce:
   case 38:
 
     {
-	    if ((yyvsp[(6) - (11)].Number) != HOUR( 7)) YYABORT;
+	    if ((yyvsp[(6) - (11)].Number) != HOUR( 7) + HOUR(100)) YYABORT;
 	    yyYear = (yyvsp[(1) - (11)].Number);
 	    yyMonth = (yyvsp[(3) - (11)].Number);
 	    yyDay = (yyvsp[(5) - (11)].Number);
@@ -1912,7 +1914,7 @@ yyreduce:
   case 39:
 
     {
-	    if ((yyvsp[(2) - (3)].Number) != HOUR( 7)) YYABORT;
+	    if ((yyvsp[(2) - (3)].Number) != HOUR( 7) + HOUR(100)) YYABORT;
 	    yyYear = (yyvsp[(1) - (3)].Number) / 10000;
 	    yyMonth = ((yyvsp[(1) - (3)].Number) % 10000)/100;
 	    yyDay = (yyvsp[(1) - (3)].Number) % 100;
@@ -1925,7 +1927,7 @@ yyreduce:
   case 40:
 
     {
-	    if ((yyvsp[(2) - (7)].Number) != HOUR( 7)) YYABORT;
+	    if ((yyvsp[(2) - (7)].Number) != HOUR( 7) + HOUR(100)) YYABORT;
 	    yyYear = (yyvsp[(1) - (7)].Number) / 10000;
 	    yyMonth = ((yyvsp[(1) - (7)].Number) % 10000)/100;
 	    yyDay = (yyvsp[(1) - (7)].Number) % 100;
@@ -2476,31 +2478,31 @@ static const TABLE TimezoneTable[] = {
  */
 
 static const TABLE MilitaryTable[] = {
-    { "a",	tZONE,	-HOUR( 1) },
-    { "b",	tZONE,	-HOUR( 2) },
-    { "c",	tZONE,	-HOUR( 3) },
-    { "d",	tZONE,	-HOUR( 4) },
-    { "e",	tZONE,	-HOUR( 5) },
-    { "f",	tZONE,	-HOUR( 6) },
-    { "g",	tZONE,	-HOUR( 7) },
-    { "h",	tZONE,	-HOUR( 8) },
-    { "i",	tZONE,	-HOUR( 9) },
-    { "k",	tZONE,	-HOUR(10) },
-    { "l",	tZONE,	-HOUR(11) },
-    { "m",	tZONE,	-HOUR(12) },
-    { "n",	tZONE,	HOUR(  1) },
-    { "o",	tZONE,	HOUR(  2) },
-    { "p",	tZONE,	HOUR(  3) },
-    { "q",	tZONE,	HOUR(  4) },
-    { "r",	tZONE,	HOUR(  5) },
-    { "s",	tZONE,	HOUR(  6) },
-    { "t",	tZONE,	HOUR(  7) },
-    { "u",	tZONE,	HOUR(  8) },
-    { "v",	tZONE,	HOUR(  9) },
-    { "w",	tZONE,	HOUR( 10) },
-    { "x",	tZONE,	HOUR( 11) },
-    { "y",	tZONE,	HOUR( 12) },
-    { "z",	tZONE,	HOUR( 0) },
+    { "a",	tZONE,	-HOUR( 1) + HOUR(100) },
+    { "b",	tZONE,	-HOUR( 2) + HOUR(100) },
+    { "c",	tZONE,	-HOUR( 3) + HOUR(100) },
+    { "d",	tZONE,	-HOUR( 4) + HOUR(100) },
+    { "e",	tZONE,	-HOUR( 5) + HOUR(100) },
+    { "f",	tZONE,	-HOUR( 6) + HOUR(100) },
+    { "g",	tZONE,	-HOUR( 7) + HOUR(100) },
+    { "h",	tZONE,	-HOUR( 8) + HOUR(100) },
+    { "i",	tZONE,	-HOUR( 9) + HOUR(100) },
+    { "k",	tZONE,	-HOUR(10) + HOUR(100) },
+    { "l",	tZONE,	-HOUR(11) + HOUR(100) },
+    { "m",	tZONE,	-HOUR(12) + HOUR(100) },
+    { "n",	tZONE,	HOUR(  1) + HOUR(100) },
+    { "o",	tZONE,	HOUR(  2) + HOUR(100) },
+    { "p",	tZONE,	HOUR(  3) + HOUR(100) },
+    { "q",	tZONE,	HOUR(  4) + HOUR(100) },
+    { "r",	tZONE,	HOUR(  5) + HOUR(100) },
+    { "s",	tZONE,	HOUR(  6) + HOUR(100) },
+    { "t",	tZONE,	HOUR(  7) + HOUR(100) },
+    { "u",	tZONE,	HOUR(  8) + HOUR(100) },
+    { "v",	tZONE,	HOUR(  9) + HOUR(100) },
+    { "w",	tZONE,	HOUR( 10) + HOUR(100) },
+    { "x",	tZONE,	HOUR( 11) + HOUR(100) },
+    { "y",	tZONE,	HOUR( 12) + HOUR(100) },
+    { "z",	tZONE,	HOUR( 0)  + HOUR(100) },
     { NULL, 0, 0 }
 };
 
