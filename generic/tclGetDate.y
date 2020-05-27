@@ -386,7 +386,17 @@ ordMonth: tNEXT tMONTH {
 	}
 	;
 
-iso	: tISOBASE tZONE tISOBASE {
+iso	: tUNUMBER '-' tUNUMBER '-' tUNUMBER tZONE
+		tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	    if ($6 != HOUR( 7)) YYABORT;
+	    yyYear = $1;
+	    yyMonth = $3;
+	    yyDay = $5;
+	    yyHour = $7;
+	    yyMinutes = $9;
+	    yySeconds = $11;
+	}
+	| tISOBASE tZONE tISOBASE {
 	    if ($2 != HOUR( 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
