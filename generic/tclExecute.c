@@ -5543,9 +5543,11 @@ TEBCresume(
 	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
 	match = 1;
 	if (length > 0) {
+	    int ch;
 	    end = ustring1 + length;
-	    for (p=ustring1 ; p<end ; p++) {
-		if (!tclStringClassTable[opnd].comparator(*p)) {
+	    for (p=ustring1 ; p<end ; ) {
+		p += TclUniCharToUCS4(p, &ch);
+		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;
 		}
