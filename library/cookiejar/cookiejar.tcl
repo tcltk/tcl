@@ -98,7 +98,8 @@ namespace eval [info object namespace ::http::cookiejar] {
 	}
 	proc splitPath path {
 	    set pieces [split [string trimleft $path "/"] "/"]
-	    for {set j -1} {$j < [llength $pieces]} {incr j} {
+	    set result /
+	    for {set j 0} {$j < [llength $pieces]} {incr j} {
 		lappend result /[join [lrange $pieces 0 $j] "/"]
 	    }
 	    return $result
