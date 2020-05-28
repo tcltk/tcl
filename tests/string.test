@@ -999,32 +999,38 @@ test string-6.139.$noComp {string is index, true} {
 test string-6.140.$noComp {string is index, true} {
     run {string is index none}
 } 1
-test string-6.141.$noComp {string is none, false} {
+test string-6.141.$noComp {string is index, {} {
+    run {string is index {}}
+} 1
+test string-6.142.$noComp {string is none, false} {
     run {string is none +1234567890}
 } 0
-test string-6.142.$noComp {string is none, false} {
+test string-6.143.$noComp {string is none, false} {
     run {string is none 1}
 } 0
-test string-6.143.$noComp {string is none, false} {
+test string-6.144.$noComp {string is none, false} {
     run {string is none 0}
 } 0
-test string-6.144.$noComp {string is none, true} -constraints nodep -body {
+test string-6.145.$noComp {string is none, true} -constraints nodep -body {
     run {string is none 1-2}
 } -result 1
-test string-6.145.$noComp {string is none, true} {
+test string-6.146.$noComp {string is none, true} {
     run {string is none -1}
 } 1
-test string-6.146.$noComp {string is none, false} {
+test string-6.147.$noComp {string is none, false} {
     run {string is none -2}
 } 0
-test string-6.147.$noComp {string is none, false} {
+test string-6.148.$noComp {string is none, false} {
     run {string is none end+2}
 } 0
-test string-6.148.$noComp {string is none, false} {
+test string-6.149.$noComp {string is none, false} {
     run {string is none end+1}
 } 0
-test string-6.149.$noComp {string is none, true} {
+test string-6.150.$noComp {string is none, true} {
     run {string is none none}
+} 1
+test string-6.151.$noComp {string is none, empty string} {
+    run {string is none {}}
 } 1
 
 

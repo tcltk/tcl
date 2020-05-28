@@ -3723,19 +3723,21 @@ Tcl_GetIntForIndex(
 				 * "objPtr" holds "end". */
     int flags,
     int *indexPtr)		/* Location filled in with an integer
-				 * representing an index. */
+				 * representing an index. May be NULL.*/
 {
     Tcl_WideInt wide;
 
     if (TclGetWideForIndex(interp, objPtr, endValue, flags, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
-	*indexPtr = -1;
-    } else if (wide > INT_MAX) {
-	*indexPtr = INT_MAX;
-    } else {
-	*indexPtr = (int) wide;
+    if (indexPtr != NULL) {
+	if (wide < 0) {
+	    *indexPtr = -1;
+	} else if (wide > INT_MAX) {
+	    *indexPtr = INT_MAX;
+	} else {
+	    *indexPtr = (int) wide;
+	}
     }
     return TCL_OK;
 }
@@ -3792,7 +3794,7 @@ GetEndOffsetFromObj(
 
 	    /* Value doesn't start with "e" */
 
-	    if ((length == 4) && (strncmp(bytes, "none", 4) == 0)) {
+	    if ((length == 0) || ((length == 4) && (strncmp(bytes, "none", 4) == 0))) {
 		offset = WIDE_MIN;
 		goto parseOK;
 	    }
