@@ -760,8 +760,8 @@ test regexp-20.1 {regsub shared object shimmering} -body {
     set b $a
     set c abcdefghijklmnopqurstuvwxyz0123456789
     regsub $a $c $b d
-    list $d [string length $d]
-} -result [list abcdefghijklmnopqurstuvwxyz0123456789 37]
+    list $d [string length $d] [string bytelength $d]
+} -result [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
 test regexp-20.2 {regsub shared object shimmering with -about} -body {
     eval regexp -about abc
 } -result {0 {}}

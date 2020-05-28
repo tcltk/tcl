@@ -75,7 +75,7 @@ if {$noComp} {
 
 test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "gorp": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "gorp": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1802,7 +1802,7 @@ test string-20.1.$noComp {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "trimg": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "trimg": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1858,7 +1858,7 @@ test string-21.4.$noComp {string wordend} -body {
 } -result 3
 test string-21.5.$noComp {string wordend} -body {
     run {string wordend abc. 100}
-} -result 4
+} -result -1
 test string-21.6.$noComp {string wordend} -body {
     run {string wordend "word_one two three" 2}
 } -result 8
@@ -1885,17 +1885,17 @@ test string-21.13.$noComp {string wordend, unicode} -body {
 } -result 3
 test string-21.14.$noComp {string wordend, unicode} -body {
     run {string wordend "\uC700\uC700 abc" 8}
-} -result 6
+} -result -1
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
 test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
-} -result 8
+} -result -1
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
@@ -1913,7 +1913,7 @@ test string-22.6.$noComp {string wordstart} -body {
 } -result 0
 test string-22.7.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" -2}
-} -result 0
+} -result -1
 test string-22.8.$noComp {string wordstart} -body {
     run {string wordstart "one .*&^ three" 6}
 } -result 6
@@ -1939,7 +1939,7 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 } -result g
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
-} -result 0
+} -result -1
 test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
@@ -2534,205 +2534,105 @@ test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
     string is dict {{a b c d e f g h}}
 } 0
 
-test string-33.1.$noComp {string nextchar} -body {
-    list [catch {run {string nextchar a}} msg] $msg
-} -result {1 {wrong # args: should be "string nextchar string index"}}
-test string-33.2.$noComp {string nextchar} -body {
-    list [catch {run {string nextchar a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string nextchar string index"}}
-test string-33.3.$noComp {string nextchar} -body {
-    list [catch {run {string nextchar a gorp}} msg] $msg
+test string-33.1.$noComp {string charend} -body {
+    list [catch {run {string charend a}} msg] $msg
+} -result {1 {wrong # args: should be "string charend string index"}}
+test string-33.2.$noComp {string charend} -body {
+    list [catch {run {string charend a b c}} msg] $msg
+} -result {1 {wrong # args: should be "string charend string index"}}
+test string-33.3.$noComp {string charend} -body {
+    list [catch {run {string charend a gorp}} msg] $msg
 } -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-33.4.$noComp {string nextchar} -body {
-    run {string nextchar abc. -1}
+test string-33.4.$noComp {string charend} -body {
+    run {string charend abc. -1}
 } -result 1
-test string-33.5.$noComp {string nextchar} -body {
-    run {string nextchar abc. 100}
-} -result 4
-test string-33.6.$noComp {string nextchar} -body {
-    run {string nextchar "word_one two three" 2}
+test string-33.5.$noComp {string charend} -body {
+    run {string charend abc. 100}
+} -result -1
+test string-33.6.$noComp {string charend} -body {
+    run {string charend "word_one two three" 2}
 } -result 3
-test string-33.7.$noComp {string nextchar} -body {
-    run {string nextchar "one .&# three" 5}
+test string-33.7.$noComp {string charend} -body {
+    run {string charend "one .&# three" 5}
 } -result 6
-test string-33.8.$noComp {string nextchar} -body {
+test string-33.8.$noComp {string charend} -body {
     run {string worde "x.y" 0}
 } -result 1
-test string-33.9.$noComp {string nextchar} -body {
+test string-33.9.$noComp {string charend} -body {
     run {string worde "x.y" end-1}
 } -result 2
-test string-33.10.$noComp {string nextchar, unicode} -body {
-    run {string nextchar "xyz\xC7de fg" 0}
+test string-33.10.$noComp {string charend, unicode} -body {
+    run {string charend "xyz\xC7de fg" 0}
 } -result 1
-test string-33.11.$noComp {string nextchar, unicode} -body {
-    run {string nextchar "xyz\uC700de fg" 0}
+test string-33.11.$noComp {string charend, unicode} -body {
+    run {string charend "xyz\uC700de fg" 0}
 } -result 1
-test string-33.12.$noComp {string nextchar, unicode} -body {
-    run {string nextchar "xyz\u203Fde fg" 0}
+test string-33.12.$noComp {string charend, unicode} -body {
+    run {string charend "xyz\u203Fde fg" 0}
 } -result 1
-test string-33.13.$noComp {string nextchar, unicode} -body {
-    run {string nextchar "xyz\u2045de fg" 0}
+test string-33.13.$noComp {string charend, unicode} -body {
+    run {string charend "xyz\u2045de fg" 0}
 } -result 1
-test string-33.14.$noComp {string nextchar, unicode} -body {
-    run {string nextchar "\uC700\uC700 abc" 8}
-} -result 6
-test string-33.15.$noComp {string nextchar, unicode} -constraints utf16 -body {
-    run {string nextchar "\U1D7CA\U1D7CA abc" 0}
+test string-33.14.$noComp {string charend, unicode} -body {
+    run {string charend "\uC700\uC700 abc" 8}
+} -result -1
+test string-33.15.$noComp {string charend, unicode} -constraints utf16 -body {
+    run {string charend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-33.16.$noComp {string nextchar, unicode} -constraints utf16 -body {
-    run {string nextchar "\U1D7CA\U1D7CA abc" 10}
-} -result 8
+test string-33.16.$noComp {string charend, unicode} -constraints utf16 -body {
+    run {string charend "\U1D7CA\U1D7CA abc" 10}
+} -result -1
 
-test string-34.1.$noComp {string nextword} -body {
-    list [catch {run {string nextword a}} msg] $msg
-} -result {1 {wrong # args: should be "string nextword string index"}}
-test string-34.2.$noComp {string nextword} -body {
-    list [catch {run {string nextword a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string nextword string index"}}
-test string-34.3.$noComp {string nextword} -body {
-    list [catch {run {string nextword a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-34.4.$noComp {string nextword} -body {
-    run {string nextword abc. -1}
-} -result 4
-test string-34.5.$noComp {string nextword} -body {
-    run {string nextword abc. 100}
-} -result 4
-test string-34.6.$noComp {string nextword} -body {
-    run {string nextword "word_one two three" 2}
-} -result 9
-test string-34.7.$noComp {string nextword} -body {
-    run {string nextword "one .&# three" 5}
-} -result 8
-test string-34.8.$noComp {string nextword} -body {
-    run {string worde "x.y" 0}
-} -result 1
-test string-34.9.$noComp {string nextword} -body {
-    run {string worde "x.y" end-1}
-} -result 2
-test string-34.10.$noComp {string nextword, unicode} -body {
-    run {string nextword "xyz\xC7de fg" 0}
-} -result 7
-test string-34.11.$noComp {string nextword, unicode} -body {
-    run {string nextword "xyz\uC700de fg" 0}
-} -result 7
-test string-34.12.$noComp {string nextword, unicode} -body {
-    run {string nextword "xyz\u203Fde fg" 0}
-} -result 7
-test string-34.13.$noComp {string nextword, unicode} -body {
-    run {string nextword "xyz\u2045\u2045de fg" 0}
-} -result 5
-test string-34.14.$noComp {string nextword, unicode} -body {
-    run {string nextword "\uC700\uC700 abc" 8}
-} -result 6
-test string-34.15.$noComp {string nextword, unicode} -body {
-    run {string nextword "\U1D7CA\U1D7CA abc" 0}
-} -result 3
-test string-34.16.$noComp {string nextword, unicode} -constraints utf16 -body {
-    run {string nextword "\U1D7CA\U1D7CA abc" 10}
-} -result 8
-
-test string-35.1.$noComp {string prevchar} -body {
+test string-34.1.$noComp {string charstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-35.2.$noComp {string prevchar} -body {
-    list [catch {run {string prevchar a}} msg] $msg
-} -result {1 {wrong # args: should be "string prevchar string index"}}
-test string-35.3.$noComp {string prevchar} -body {
-    list [catch {run {string prevchar a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string prevchar string index"}}
-test string-35.4.$noComp {string prevchar} -body {
-    list [catch {run {string prevchar a gorp}} msg] $msg
+} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+test string-34.2.$noComp {string charstart} -body {
+    list [catch {run {string charstart a}} msg] $msg
+} -result {1 {wrong # args: should be "string charstart string index"}}
+test string-34.3.$noComp {string charstart} -body {
+    list [catch {run {string charstart a b c}} msg] $msg
+} -result {1 {wrong # args: should be "string charstart string index"}}
+test string-34.4.$noComp {string charstart} -body {
+    list [catch {run {string charstart a gorp}} msg] $msg
 } -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-35.5.$noComp {string prevchar} -body {
-    run {string prevchar "one two three_words" 400}
+test string-34.5.$noComp {string charstart} -body {
+    run {string charstart "one two three_words" 400}
 } -result 18
-test string-35.6.$noComp {string prevchar} -body {
-    run {string prevchar "one two three_words" 2}
+test string-34.6.$noComp {string charstart} -body {
+    run {string charstart "one two three_words" 2}
 } -result 1
-test string-35.7.$noComp {string prevchar} -body {
-    run {string prevchar "one two three_words" -2}
+test string-34.7.$noComp {string charstart} -body {
+    run {string charstart "one two three_words" -2}
 } -result 0
-test string-35.8.$noComp {string prevchar} -body {
-    run {string prevchar "one .*&^ three" 6}
+test string-34.8.$noComp {string charstart} -body {
+    run {string charstart "one .*&^ three" 6}
 } -result 5
-test string-35.9.$noComp {string prevchar} -body {
-    run {string prevchar "one two three" 4}
+test string-34.9.$noComp {string charstart} -body {
+    run {string charstart "one two three" 4}
 } -result 3
-test string-35.10.$noComp {string prevchar} -body {
-    run {string prevchar "one two three" end-5}
+test string-34.10.$noComp {string charstart} -body {
+    run {string charstart "one two three" end-5}
 } -result 6
-test string-35.11.$noComp {string prevchar, unicode} -body {
-    run {string prevchar "one tw\xC7o three" 7}
+test string-34.11.$noComp {string charstart, unicode} -body {
+    run {string charstart "one tw\xC7o three" 7}
 } -result 6
-test string-35.12.$noComp {string prevchar, unicode} -body {
-    run {string prevchar "ab\uC700\uC700 cdef ghi" 12}
+test string-34.12.$noComp {string charstart, unicode} -body {
+    run {string charstart "ab\uC700\uC700 cdef ghi" 12}
 } -result 11
-test string-35.13.$noComp {string prevchar, unicode} -body {
-    run {string prevchar "\uC700\uC700 abc" 8}
+test string-34.13.$noComp {string charstart, unicode} -body {
+    run {string charstart "\uC700\uC700 abc" 8}
 } -result 5
-test string-35.14.$noComp {string prevchar, invalid UTF-8} -constraints testbytestring -body {
+test string-34.14.$noComp {string charstart, invalid UTF-8} -constraints testbytestring -body {
     # See Bug c61818e4c9
     set demo [testbytestring "abc def\xE0\xA9ghi"]
-    run {string index $demo [string prevchar $demo 10]}
+    run {string index $demo [string charstart $demo 10]}
 } -result g
-test string-35.15.$noComp {string prevchar, unicode} -body {
-    run {string prevchar "\U1D7CA\U1D7CA abc" 0}
+test string-34.15.$noComp {string charstart, unicode} -body {
+    run {string charstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-35.16.$noComp {string prevchar, unicode} -constraints utf16 -body {
-    run {string prevchar "\U1D7CA\U1D7CA abc" 10}
+test string-34.16.$noComp {string charstart, unicode} -constraints utf16 -body {
+    run {string charstart "\U1D7CA\U1D7CA abc" 10}
 } -result 7
-
-test string-36.1.$noComp {string prevword} -body {
-    list [catch {run {string word a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, compare, equal, first, index, insert, is, last, length, map, match, nextchar, nextword, prevchar, prevword, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-36.2.$noComp {string prevword} -body {
-    list [catch {run {string prevword a}} msg] $msg
-} -result {1 {wrong # args: should be "string prevword string index"}}
-test string-36.3.$noComp {string prevword} -body {
-    list [catch {run {string prevword a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string prevword string index"}}
-test string-36.4.$noComp {string prevword} -body {
-    list [catch {run {string prevword a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-36.5.$noComp {string prevword} -body {
-    run {string prevword "one two three_words" 400}
-} -result 7
-test string-36.6.$noComp {string prevword} -body {
-    run {string prevword "one two three_words" 2}
-} -result 0
-test string-36.7.$noComp {string prevword} -body {
-    run {string prevword "one two three_words" -2}
-} -result 0
-test string-36.8.$noComp {string prevword} -body {
-    run {string prevword "one .*&^ three" 6}
-} -result 3
-test string-36.9.$noComp {string prevword} -body {
-    run {string prevword "one two three" 4}
-} -result 3
-test string-36.10.$noComp {string prevword} -body {
-    run {string prevword "one two three" end-5}
-} -result 7
-test string-36.11.$noComp {string prevword, unicode} -body {
-    run {string prevword "one tw\xC7o three" 7}
-} -result 3
-test string-36.12.$noComp {string prevword, unicode} -body {
-    run {string prevword "ab\uC700\uC700 cdef ghi" 12}
-} -result 9
-test string-36.13.$noComp {string prevword, unicode} -body {
-    run {string prevword "\uC700\uC700 abc" 8}
-} -result 2
-test string-36.14.$noComp {string prevword, invalid UTF-8} -constraints testbytestring -body {
-    # See Bug c61818e4c9
-    set demo [testbytestring "abc def\xE0\xA9ghi"]
-    run {string index $demo [string prevword $demo 10]}
-} -result \xA9
-test string-36.15.$noComp {string prevword, unicode} -body {
-    run {string prevword "\U1D7CA\U1D7CA abc" 0}
-} -result 0
-test string-36.16.$noComp {string prevword, unicode} -constraints utf16 -body {
-    run {string prevword "\U1D7CA\U1D7CA abc" 10}
-} -result 4
 
 };				# foreach noComp {0 1}
 
