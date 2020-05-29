@@ -33,7 +33,6 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
-testConstraint nodep [info exists tcl_precision]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -73,9 +72,9 @@ if {$noComp} {
 }
 
 
-test string-1.1.$noComp {error conditions} -body {
+test string-1.1.$noComp {error conditions} {
     list [catch {run {string gorp a b}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "gorp": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1025,16 +1024,16 @@ test string-7.16.$noComp {string last, start index} {
     run {string last \334a \334ad\334ad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} nodep {
+test string-8.1.$noComp {string bytelength} {
     list [catch {run {string bytelength}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} nodep {
+test string-8.2.$noComp {string bytelength} {
     list [catch {run {string bytelength a b}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} nodep {
+test string-8.3.$noComp {string bytelength} {
     run {string bytelength "\xC7"}
 } 2
-test string-8.4.$noComp {string bytelength} nodep {
+test string-8.4.$noComp {string bytelength} {
     run {string b ""}
 } 0
 
@@ -1800,9 +1799,9 @@ test string-19.3.$noComp {string trimleft, unicode default} {
 test string-20.1.$noComp {string trimright errors} {
     list [catch {run {string trimright}} msg] $msg
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
-test string-20.2.$noComp {string trimright errors} -body {
+test string-20.2.$noComp {string trimright errors} {
     list [catch {run {string trimg a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "trimg": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1858,7 +1857,7 @@ test string-21.4.$noComp {string wordend} -body {
 } -result 3
 test string-21.5.$noComp {string wordend} -body {
     run {string wordend abc. 100}
-} -result -1
+} -result 4
 test string-21.6.$noComp {string wordend} -body {
     run {string wordend "word_one two three" 2}
 } -result 8
@@ -1885,17 +1884,17 @@ test string-21.13.$noComp {string wordend, unicode} -body {
 } -result 3
 test string-21.14.$noComp {string wordend, unicode} -body {
     run {string wordend "\uC700\uC700 abc" 8}
-} -result -1
+} -result 6
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
 test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
-} -result -1
+} -result 8
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
@@ -1913,7 +1912,7 @@ test string-22.6.$noComp {string wordstart} -body {
 } -result 0
 test string-22.7.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" -2}
-} -result -1
+} -result 0
 test string-22.8.$noComp {string wordstart} -body {
     run {string wordstart "one .*&^ three" 6}
 } -result 6
@@ -1939,7 +1938,7 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 } -result g
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
-} -result -1
+} -result 0
 test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
@@ -2545,10 +2544,10 @@ test string-33.3.$noComp {string charend} -body {
 } -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-33.4.$noComp {string charend} -body {
     run {string charend abc. -1}
-} -result 1
+} -result 0
 test string-33.5.$noComp {string charend} -body {
     run {string charend abc. 100}
-} -result -1
+} -result 4
 test string-33.6.$noComp {string charend} -body {
     run {string charend "word_one two three" 2}
 } -result 3
@@ -2575,13 +2574,13 @@ test string-33.13.$noComp {string charend, unicode} -body {
 } -result 1
 test string-33.14.$noComp {string charend, unicode} -body {
     run {string charend "\uC700\uC700 abc" 8}
-} -result -1
+} -result 6
 test string-33.15.$noComp {string charend, unicode} -constraints utf16 -body {
     run {string charend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
 test string-33.16.$noComp {string charend, unicode} -constraints utf16 -body {
     run {string charend "\U1D7CA\U1D7CA abc" 10}
-} -result -1
+} -result 8
 
 test string-34.1.$noComp {string charstart} -body {
     list [catch {run {string word a}} msg] $msg
@@ -2597,42 +2596,42 @@ test string-34.4.$noComp {string charstart} -body {
 } -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-34.5.$noComp {string charstart} -body {
     run {string charstart "one two three_words" 400}
-} -result 18
+} -result 19
 test string-34.6.$noComp {string charstart} -body {
     run {string charstart "one two three_words" 2}
-} -result 1
+} -result 2
 test string-34.7.$noComp {string charstart} -body {
     run {string charstart "one two three_words" -2}
-} -result 0
+} -result -1
 test string-34.8.$noComp {string charstart} -body {
     run {string charstart "one .*&^ three" 6}
-} -result 5
+} -result 6
 test string-34.9.$noComp {string charstart} -body {
     run {string charstart "one two three" 4}
-} -result 3
+} -result 4
 test string-34.10.$noComp {string charstart} -body {
     run {string charstart "one two three" end-5}
-} -result 6
+} -result 7
 test string-34.11.$noComp {string charstart, unicode} -body {
     run {string charstart "one tw\xC7o three" 7}
-} -result 6
+} -result 7
 test string-34.12.$noComp {string charstart, unicode} -body {
     run {string charstart "ab\uC700\uC700 cdef ghi" 12}
-} -result 11
+} -result 12
 test string-34.13.$noComp {string charstart, unicode} -body {
     run {string charstart "\uC700\uC700 abc" 8}
-} -result 5
+} -result 6
 test string-34.14.$noComp {string charstart, invalid UTF-8} -constraints testbytestring -body {
     # See Bug c61818e4c9
     set demo [testbytestring "abc def\xE0\xA9ghi"]
     run {string index $demo [string charstart $demo 10]}
-} -result g
+} -result h
 test string-34.15.$noComp {string charstart, unicode} -body {
     run {string charstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
 test string-34.16.$noComp {string charstart, unicode} -constraints utf16 -body {
     run {string charstart "\U1D7CA\U1D7CA abc" 10}
-} -result 7
+} -result 8
 
 };				# foreach noComp {0 1}
 

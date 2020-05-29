@@ -2518,7 +2518,7 @@ StringStartCmd(
     if (index > 0) {
 	p = &string[index];
 
-	TclUniCharToUCS4(p, &ch);
+	(void)TclUniCharToUCS4(p, &ch);
 	for (cur = index; cur >= 0; cur--) {
 	    int delta = 0;
 	    const Tcl_UniChar *next;
@@ -2537,8 +2537,6 @@ StringStartCmd(
 	if (cur != index) {
 	    cur += 1;
 	}
-    } else {
-	cur = -1;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
     return TCL_OK;
@@ -2568,7 +2566,11 @@ StringCharStartCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const Tcl_UniChar *p, *string;
+#if TCL_UTF_MAX <= 3
+    const Tcl_UniChar *src;
+#else
+    const char *src;
+#endif
     int index, length;
 
     if (objc != 3) {
@@ -2576,18 +2578,23 @@ StringCharStartCmd(
 	return TCL_ERROR;
     }
 
-    string = Tcl_GetUnicodeFromObj(objv[1], &length);
+#if TCL_UTF_MAX <= 3
+    src = Tcl_GetUnicodeFromObj(objv[1], &length);
+#else
+    src = Tcl_GetStringFromObj(objv[1], &length);
+    length = Tcl_NumUtfChars(src, length);
+#endif
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index > length) {
+    if (index >= length) {
 	index = length;
-    }
-    if (index > 0) {
-	p = &string[index];
-	index = TclUCS4Prev(p, string) - string;
-    } else {
-	index = 0;
+    } else if (index < 0) {
+	index = -1;
+#if TCL_UTF_MAX <= 3
+    } else if ((index > 0) && ((src[index-1] & 0xFC00) == 0xD800) && ((src[index] & 0xFC00) == 0xDC00)) {
+	index--;
+#endif
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
     return TCL_OK;
@@ -2646,7 +2653,7 @@ StringEndCmd(
 	    cur++;
 	}
     } else {
-	cur = -1;
+	cur = length;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
     return TCL_OK;
@@ -2676,8 +2683,11 @@ StringCharEndCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int ch;
-    const Tcl_UniChar *string;
+#if TCL_UTF_MAX <= 3
+    const Tcl_UniChar *src;
+#else
+    const char *src;
+#endif
     int index, length;
 
     if (objc != 3) {
@@ -2685,17 +2695,24 @@ StringCharEndCmd(
 	return TCL_ERROR;
     }
 
-    string = Tcl_GetUnicodeFromObj(objv[1], &length);
+#if TCL_UTF_MAX <= 3
+    src = Tcl_GetUnicodeFromObj(objv[1], &length);
+#else
+    src = Tcl_GetStringFromObj(objv[1], &length);
+    length = Tcl_NumUtfChars(src, length);
+#endif
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index < 0) {
+    if (++index < 0) {
 	index = 0;
     }
-    if (index < length) {
-	    index += TclUniCharToUCS4(&string[index], &ch);
-    } else {
-	    index = -1;
+    if (index >= length) {
+	index = length;
+#if TCL_UTF_MAX <= 3
+    } else if ((index > 0) && ((src[index-1] & 0xFC00) == 0xD800) && ((src[index] & 0xFC00) == 0xDC00)) {
+	index++;
+#endif
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
     return TCL_OK;
