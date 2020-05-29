@@ -999,7 +999,7 @@ test string-6.139.$noComp {string is index, true} {
 test string-6.140.$noComp {string is index, true} {
     run {string is index none}
 } 1
-test string-6.141.$noComp {string is index, {} {
+test string-6.141.$noComp {string is index, {}} {
     run {string is index {}}
 } 1
 test string-6.142.$noComp {string is none, false} {

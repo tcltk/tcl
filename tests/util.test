@@ -692,7 +692,7 @@ test util-9.18 {Tcl_GetIntForIndex} {
     string index abcd { -1--2 }
 } b
 test util-9.19 {Tcl_GetIntForIndex} -body {
-    string index a {}
+    string index a {_}
 } -returnCodes error -match glob -result *
 test util-9.20 {Tcl_GetIntForIndex} -body {
     string index a { }
