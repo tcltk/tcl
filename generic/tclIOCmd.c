@@ -10,14 +10,16 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 
 /*
  * Callback structure for accept callback in a TCP server.
  */
 
 typedef struct AcceptCallback {
+    unsigned int refCount;	/* To protect reference during execution */
+    Tcl_Channel chan;		/* Listener channel back-reference. */
     char *script;		/* Script to invoke. */
-    Tcl_Interp *interp;		/* Interpreter in which to run it. */
 } AcceptCallback;
 
 /*
@@ -45,14 +47,7 @@ static int		ChanPendingObjCmd(ClientData unused,
 static int		ChanTruncateObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static void		RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
-			    AcceptCallback *acceptCallbackPtr);
-static void		TcpAcceptCallbacksDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
 static void		TcpServerCloseProc(ClientData callbackData);
-static void		UnregisterTcpServerInterpCleanupProc(
-			    Tcl_Interp *interp,
-			    AcceptCallback *acceptCallbackPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -1207,139 +1202,6 @@ Tcl_OpenObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TcpAcceptCallbacksDeleteProc --
- *
- *	Assocdata cleanup routine called when an interpreter is being deleted
- *	to set the interp field of all the accept callback records registered
- *	with the interpreter to NULL. This will prevent the interpreter from
- *	being used in the future to eval accept scripts.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deallocates memory and sets the interp field of all the accept
- *	callback records to NULL to prevent this interpreter from being used
- *	subsequently to eval accept scripts.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static void
-TcpAcceptCallbacksDeleteProc(
-    ClientData clientData,	/* Data which was passed when the assocdata
-				 * was registered. */
-    Tcl_Interp *interp)		/* Interpreter being deleted - not used. */
-{
-    Tcl_HashTable *hTblPtr = clientData;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
-
-    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	AcceptCallback *acceptCallbackPtr = Tcl_GetHashValue(hPtr);
-
-	acceptCallbackPtr->interp = NULL;
-    }
-    Tcl_DeleteHashTable(hTblPtr);
-    ckfree(hTblPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * RegisterTcpServerInterpCleanup --
- *
- *	Registers an accept callback record to have its interp field set to
- *	NULL when the interpreter is deleted.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	When, in the future, the interpreter is deleted, the interp field of
- *	the accept callback data structure will be set to NULL. This will
- *	prevent attempts to eval the accept script in a deleted interpreter.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RegisterTcpServerInterpCleanup(
-    Tcl_Interp *interp,		/* Interpreter for which we want to be
-				 * informed of deletion. */
-    AcceptCallback *acceptCallbackPtr)
-				/* The accept callback record whose interp
-				 * field we want set to NULL when the
-				 * interpreter is deleted. */
-{
-    Tcl_HashTable *hTblPtr;	/* Hash table for accept callback records to
-				 * smash when the interpreter will be
-				 * deleted. */
-    Tcl_HashEntry *hPtr;	/* Entry for this record. */
-    int isNew;			/* Is the entry new? */
-
-    hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
-
-    if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
-	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
-		TcpAcceptCallbacksDeleteProc, hTblPtr);
-    }
-
-    hPtr = Tcl_CreateHashEntry(hTblPtr, acceptCallbackPtr, &isNew);
-    if (!isNew) {
-	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
-    }
-    Tcl_SetHashValue(hPtr, acceptCallbackPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UnregisterTcpServerInterpCleanupProc --
- *
- *	Unregister a previously registered accept callback record. The interp
- *	field of this record will no longer be set to NULL in the future when
- *	the interpreter is deleted.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Prevents the interp field of the accept callback record from being set
- *	to NULL in the future when the interpreter is deleted.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UnregisterTcpServerInterpCleanupProc(
-    Tcl_Interp *interp,		/* Interpreter in which the accept callback
-				 * record was registered. */
-    AcceptCallback *acceptCallbackPtr)
-				/* The record for which to delete the
-				 * registration. */
-{
-    Tcl_HashTable *hTblPtr;
-    Tcl_HashEntry *hPtr;
-
-    hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
-    if (hTblPtr == NULL) {
-	return;
-    }
-
-    hPtr = Tcl_FindHashEntry(hTblPtr, (char *) acceptCallbackPtr);
-    if (hPtr != NULL) {
-	Tcl_DeleteHashEntry(hPtr);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * AcceptCallbackProc --
  *
  *	This callback is invoked by the TCP channel driver when it accepts a
@@ -1365,6 +1227,8 @@ AcceptCallbackProc(
     int port)			/* Port of client that was accepted. */
 {
     AcceptCallback *acceptCallbackPtr = callbackData;
+    Channel *srvChanPtr = ((Channel *) acceptCallbackPtr->chan)->state->bottomChanPtr;
+    Tcl_Interp *interp = srvChanPtr->state->interp;
 
     /*
      * Check if the callback is still valid; the interpreter may have gone
@@ -1372,13 +1236,11 @@ AcceptCallbackProc(
      * data to NULL.
      */
 
-    if (acceptCallbackPtr->interp != NULL) {
+    if (interp != NULL) {
 	char portBuf[TCL_INTEGER_SPACE];
 	char *script = acceptCallbackPtr->script;
-	Tcl_Interp *interp = acceptCallbackPtr->interp;
 	int result;
 
-	Tcl_Preserve(script);
 	Tcl_Preserve(interp);
 
 	TclFormatInt(portBuf, port);
@@ -1391,11 +1253,18 @@ AcceptCallbackProc(
 
 	Tcl_RegisterChannel(NULL, chan);
 
+	acceptCallbackPtr->refCount++;
+
 	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
 		" ", address, " ", portBuf, NULL);
 	if (result != TCL_OK) {
 	    Tcl_BackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
+	}
+
+	if (acceptCallbackPtr->refCount-- == 1) {
+	    ckfree(acceptCallbackPtr);
+	    acceptCallbackPtr = NULL;
 	}
 
 	/*
@@ -1406,7 +1275,6 @@ AcceptCallbackProc(
 	Tcl_UnregisterChannel(NULL, chan);
 
 	Tcl_Release(interp);
-	Tcl_Release(script);
     } else {
 	/*
 	 * The interpreter has been deleted, so there is no useful way to use
@@ -1446,12 +1314,9 @@ TcpServerCloseProc(
     AcceptCallback *acceptCallbackPtr = callbackData;
 				/* The actual data. */
 
-    if (acceptCallbackPtr->interp != NULL) {
-	UnregisterTcpServerInterpCleanupProc(acceptCallbackPtr->interp,
-		acceptCallbackPtr);
+    if (acceptCallbackPtr->refCount-- == 1) {
+	ckfree(acceptCallbackPtr);
     }
-    Tcl_EventuallyFree(acceptCallbackPtr->script, TCL_DYNAMIC);
-    ckfree(acceptCallbackPtr);
 }
 
 /*
@@ -1587,37 +1452,25 @@ Tcl_SocketObjCmd(
     }
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr =
-		ckalloc(sizeof(AcceptCallback));
 	unsigned len = strlen(script) + 1;
-	char *copyScript = ckalloc(len);
+	AcceptCallback *acceptCallbackPtr =
+		ckalloc(sizeof(AcceptCallback) + len);
 
-	memcpy(copyScript, script, len);
-	acceptCallbackPtr->script = copyScript;
-	acceptCallbackPtr->interp = interp;
+	acceptCallbackPtr->script = (char*)(acceptCallbackPtr+1);
+	memcpy(acceptCallbackPtr->script, script, len);
 	chan = Tcl_OpenTcpServer(interp, port, host, AcceptCallbackProc,
 		acceptCallbackPtr);
 	if (chan == NULL) {
-	    ckfree(copyScript);
 	    ckfree(acceptCallbackPtr);
 	    return TCL_ERROR;
 	}
 
 	/*
-	 * Register with the interpreter to let us know when the interpreter
-	 * is deleted (by having the callback set the interp field of the
-	 * acceptCallbackPtr's structure to NULL). This is to avoid trying to
-	 * eval the script in a deleted interpreter.
+	 * Reference server channel in accept data, register a close callback.
 	 */
 
-	RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr);
-
-	/*
-	 * Register a close callback. This callback will inform the
-	 * interpreter (if it still exists) that this channel does not need to
-	 * be informed when the interpreter is deleted.
-	 */
-
+	acceptCallbackPtr->refCount = 1;
+	acceptCallbackPtr->chan = chan;
 	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
 	chan = Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async);

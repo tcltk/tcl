@@ -216,6 +216,8 @@ typedef struct ChannelState {
 				 * companion to 'unreportedError'. */
     int epoch;			/* Used to test validity of stored channelname
 				 * lookup results. */
+    Tcl_Interp *interp;		/* Single or last interp where this channel is
+				 * registered (used after transfer). */
 } ChannelState;
 
 /*

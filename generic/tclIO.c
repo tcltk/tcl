@@ -1173,6 +1173,10 @@ Tcl_RegisterChannel(
 	    Tcl_Panic("Tcl_RegisterChannel: duplicate channel names");
 	}
 	Tcl_SetHashValue(hPtr, chanPtr);
+	/* ensure the handler using this (single) interp know about attach */
+	if (statePtr->interp == NULL) {
+	    statePtr->interp = interp;
+	}
     }
     statePtr->refCount++;
 }
@@ -1364,7 +1368,10 @@ DetachChannel(
 	}
 	Tcl_DeleteHashEntry(hPtr);
 	statePtr->epoch++;
-
+	/* ensure the handler using this (single) interp know about detach */
+	if (statePtr->interp == interp) {
+	    statePtr->interp = NULL;
+	}
 	/*
 	 * Remove channel handlers that refer to this interpreter, so that
 	 * they will not be present if the actual close is delayed and more
@@ -1723,6 +1730,7 @@ Tcl_CreateChannel(
     statePtr->unreportedMsg	= NULL;
 
     statePtr->epoch		= 0;
+    statePtr->interp		= NULL;
 
     /*
      * Link the channel into the list of all channels; create an on-exit
