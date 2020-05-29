@@ -1916,6 +1916,31 @@ test socket_$af-13.2.cl2 {Testing socket transfer between threads during async c
 } -result 100 -constraints [list socket supported_$af thread]
 catch {rename transf_master {}}
 rename transf_test {}
+test socket_$af-13.3 {Testing server transfer between threads} \
+-constraints [list socket supported_$af thread] -setup {
+    set x {}
+    proc accept args {lappend x accept-in-master}
+    set serverthread [thread::create]
+    thread::send $serverthread [list set ::master [thread::id]]
+} -body {
+    thread::send $serverthread {proc accept args {thread::send -async $::master {lappend x accept-in-thread}}}
+    set port [randport]
+    set srvsock [socket -server accept -myaddr $::localhost $port]
+    thread::transfer $serverthread $srvsock
+    update
+    set tout [after 5000 {set x "TIMEOUT"}]
+    timerate {
+        set client [socket $::localhost $port]
+        vwait x
+        if {"TIMEOUT" in $x} {::tcltest::Skip "timing issue"}
+        close $client
+    } 5000 10
+    set x
+} -cleanup {
+    thread::send $serverthread [list close $srvsock]
+    catch { thread::release -wait $serverthread }
+    set serverthread {}
+} -result [lrepeat 10 accept-in-thread]
 
 # ----------------------------------------------------------------------
 
