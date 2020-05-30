@@ -505,7 +505,7 @@ if {$length == 0} {
 .SH "SEE ALSO"
 expr(n), list(n)
 .SH KEYWORDS
-case conversion, compare, index, match, pattern, string, word, equal,
+case conversion, compare, index, integer value, match, pattern, string, word, equal,
 ctype, character, reverse
 .\" Local Variables:
 .\" mode: nroff
