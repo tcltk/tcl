@@ -2713,6 +2713,8 @@ typedef struct ProcessGlobalValue {
 				/* Reject leading/trailing whitespace. */
 #define TCL_PARSE_BINARY_ONLY	64
 				/* Parse binary even without prefix. */
+#define TCL_PARSE_NO_UNDERSCORE	128
+				/* Reject underscore digit separator */
 
 /*
  *----------------------------------------------------------------------
