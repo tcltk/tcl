@@ -220,6 +220,10 @@ Tcl_ParseCommand(
 				 * point to char after terminating one. */
     size_t scanned;
 
+    if (numBytes == TCL_INDEX_NONE && start) {
+	numBytes = strlen(start);
+    }
+    TclParseInit(interp, start, numBytes, parsePtr);
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -227,10 +231,6 @@ Tcl_ParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes == TCL_AUTO_LENGTH) {
-	numBytes = strlen(start);
-    }
-    TclParseInit(interp, start, numBytes, parsePtr);
     parsePtr->commentStart = NULL;
     parsePtr->commentSize = 0;
     parsePtr->commandStart = NULL;
@@ -1348,15 +1348,14 @@ Tcl_ParseVarName(
     int varIndex;
     unsigned array;
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     /*
@@ -1631,15 +1630,14 @@ Tcl_ParseBraces(
     int startIndex, level;
     size_t length;
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     src = start;
@@ -1829,15 +1827,14 @@ Tcl_ParseQuotedString(
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
 {
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE, TCL_SUBST_ALL,

@@ -1340,7 +1340,7 @@ ReflectInput(
 		PassReceivedError(rcPtr->chan, &p);
 		*errorCodePtr = EINVAL;
 	    }
-	    p.input.toRead = TCL_AUTO_LENGTH;
+	    p.input.toRead = TCL_INDEX_NONE;
 	} else {
 	    *errorCodePtr = EOK;
 	}
