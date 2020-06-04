@@ -329,7 +329,7 @@ Tcl_UniCharToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength == TCL_AUTO_LENGTH) {
+    if (uniLength == TCL_INDEX_NONE) {
 	uniLength = 0;
 	w = uniStr;
 	while (*w != '\0') {
@@ -371,7 +371,7 @@ Tcl_Char16ToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength == TCL_AUTO_LENGTH) {
+    if (uniLength == TCL_INDEX_NONE) {
 
 	uniLength = 0;
 	w = uniStr;
@@ -672,7 +672,7 @@ Tcl_UtfToUniCharDString(
     if (src == NULL) {
 	return NULL;
     }
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = strlen(src);
     }
 
@@ -729,7 +729,7 @@ Tcl_UtfToChar16DString(
     if (src == NULL) {
 	return NULL;
     }
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = strlen(src);
     }
 
@@ -817,12 +817,12 @@ size_t
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
     size_t length)	/* The length of the string in bytes, or
-			 * TCL_AUTO_LENGTH for strlen(src). */
+			 * TCL_INDEX_NONE for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     size_t i = 0;
 
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
