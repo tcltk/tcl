@@ -2554,7 +2554,7 @@ ForwardProc(
 
 	if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = TCL_AUTO_LENGTH;
+	    paramPtr->transform.size = TCL_INDEX_NONE;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2588,7 +2588,7 @@ ForwardProc(
 
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = TCL_AUTO_LENGTH;
+	    paramPtr->transform.size = TCL_INDEX_NONE;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2618,7 +2618,7 @@ ForwardProc(
     case ForwardedDrain:
 	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = TCL_AUTO_LENGTH;
+	    paramPtr->transform.size = TCL_INDEX_NONE;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.
@@ -2644,7 +2644,7 @@ ForwardProc(
     case ForwardedFlush:
 	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
-	    paramPtr->transform.size = TCL_AUTO_LENGTH;
+	    paramPtr->transform.size = TCL_INDEX_NONE;
 	} else {
 	    /*
 	     * Process a regular return. Contains the transformation result.

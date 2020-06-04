@@ -2035,7 +2035,7 @@ TclGlob(
  * SkipToChar --
  *
  *	This function traverses a glob pattern looking for the next unquoted
- *	occurance of the specified character at the same braces nesting level.
+ *	occurrence of the specified character at the same braces nesting level.
  *
  * Results:
  *	Updates stringPtr to point to the matching character, or to the end of

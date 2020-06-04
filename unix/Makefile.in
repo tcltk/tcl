@@ -114,11 +114,6 @@ LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
 LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 
-# To disable ANSI-C procedure prototypes reverse the comment characters on the
-# following lines:
-PROTO_FLAGS		=
-#PROTO_FLAGS		= -DNO_PROTOTYPE
-
 # If you use the setenv, putenv, or unsetenv procedures to modify environment
 # variables in your application and you'd like those modifications to appear
 # in the "env" Tcl variable, switch the comments on the two lines below so
@@ -282,7 +277,7 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 
 STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
 	${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
-	${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
+	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
 	@EXTRA_CC_SWITCHES@
 
 CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
@@ -292,7 +287,7 @@ APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
-	${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
+	${AC_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
 TCLSH_OBJS = tclAppInit.o
 

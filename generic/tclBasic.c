@@ -4944,7 +4944,7 @@ TclEvalEx(
 	}
     }
 
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE) {
 	numBytes = strlen(script);
     }
     Tcl_ResetResult(interp);
