@@ -427,22 +427,23 @@ TclListObjCopy(
 Tcl_Obj *
 TclListObjRange(
     Tcl_Obj *listPtr,		/* List object to take a range from. */
-    int fromIdx,		/* Index of first element to include. */
-    int toIdx)			/* Index of last element to include. */
+    size_t fromIdx,		/* Index of first element to include. */
+    size_t toIdx)			/* Index of last element to include. */
 {
     Tcl_Obj **elemPtrs;
-    int listLen, i, newLen;
+    int listLen;
+    size_t i, newLen;
     List *listRepPtr;
 
     TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
-    if (fromIdx < 0) {
+    if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
     }
-    if (toIdx >= listLen) {
+    if (toIdx + 1 >= (size_t)listLen + 1) {
 	toIdx = listLen-1;
     }
-    if (fromIdx > toIdx) {
+    if (fromIdx + 1 > toIdx + 1) {
 	return Tcl_NewObj();
     }
 
@@ -471,7 +472,7 @@ TclListObjRange(
     for (i = 0; i < fromIdx; i++) {
 	TclDecrRefCount(elemPtrs[i]);
     }
-    for (i = toIdx + 1; i < listLen; i++) {
+    for (i = toIdx + 1; i < (size_t)listLen; i++) {
 	TclDecrRefCount(elemPtrs[i]);
     }
 
