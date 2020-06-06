@@ -1243,6 +1243,13 @@ Tcl_WaitForEvent(
 	     */
 
 	    polling = 1;
+
+	    /*
+	     * Set a small positive waitTime so that when the runloop is started
+	     * it will process all of its sources.
+	     */
+
+	    waitTime = 0.005;
 	}
     }
 
@@ -1264,10 +1271,15 @@ Tcl_WaitForEvent(
 
     runLoopRunning = tsdPtr->runLoopRunning;
     tsdPtr->runLoopRunning = 1;
-    runLoopStatus = CFRunLoopRunInMode(tsdPtr->runLoopServicingEvents ||
-	    runLoopRunning ? tclEventsOnlyRunLoopMode : kCFRunLoopDefaultMode,
-	    waitTime, TRUE);
+    runLoopStatus = CFRunLoopRunInMode(
+	tsdPtr->runLoopServicingEvents || runLoopRunning ?
+	tclEventsOnlyRunLoopMode : kCFRunLoopDefaultMode,
+	waitTime, TRUE);
     tsdPtr->runLoopRunning = runLoopRunning;
+
+    if (polling) {
+    	return tsdPtr->runLoopSourcePerformed ? 0 : 1;
+    }
 
     LOCK_NOTIFIER_TSD;
     tsdPtr->polling = 0;
@@ -1384,7 +1396,6 @@ UpdateWaitingListAndServiceEvents(
     void *info)
 {
     ThreadSpecificData *tsdPtr = info;
-
     if (tsdPtr->sleeping) {
 	return;
     }
@@ -1406,16 +1417,6 @@ UpdateWaitingListAndServiceEvents(
 	    UNLOCK_NOTIFIER;
 	}
 	tsdPtr->runLoopNestingLevel--;
-	break;
-    case kCFRunLoopBeforeWaiting:
-	if (tsdPtr->runLoopTimer && !tsdPtr->runLoopServicingEvents &&
-		(tsdPtr->runLoopNestingLevel > 1
-			|| !tsdPtr->runLoopRunning)) {
-	    tsdPtr->runLoopServicingEvents = 1;
-            /* This call seems to simply force event processing through and prevents hangups that have long been observed with Tk-Cocoa.  */
-	    Tcl_ServiceAll();
-	    tsdPtr->runLoopServicingEvents = 0;
-	}
 	break;
     default:
 	break;
