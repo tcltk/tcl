@@ -2460,7 +2460,7 @@ typedef struct List {
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     ((((objPtr)->typePtr == &tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
-	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
+	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (size_t)(endValue) + 1)) \
 	    ? ((*(idxPtr) = (size_t)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
