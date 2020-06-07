@@ -494,7 +494,7 @@ Tcl_InitNotifier(void)
 	bzero(&runLoopObserverContext, sizeof(CFRunLoopObserverContext));
 	runLoopObserverContext.info = tsdPtr;
 	runLoopObserver = CFRunLoopObserverCreate(NULL,
-		kCFRunLoopEntry|kCFRunLoopExit|kCFRunLoopBeforeWaiting, TRUE,
+		kCFRunLoopEntry|kCFRunLoopExit, TRUE,
 		LONG_MIN, UpdateWaitingListAndServiceEvents,
 		&runLoopObserverContext);
 	if (!runLoopObserver) {
@@ -512,7 +512,7 @@ Tcl_InitNotifier(void)
 	 */
 
 	runLoopObserverTcl = CFRunLoopObserverCreate(NULL,
-		kCFRunLoopEntry|kCFRunLoopExit|kCFRunLoopBeforeWaiting, TRUE,
+		kCFRunLoopEntry|kCFRunLoopExit, TRUE,
 		LONG_MIN, UpdateWaitingListAndServiceEvents,
 		&runLoopObserverContext);
 	if (!runLoopObserverTcl) {
@@ -1222,6 +1222,10 @@ Tcl_WaitForEvent(
 	Tcl_Panic("Tcl_WaitForEvent: Notifier not initialized");
     }
 
+    /*
+     * A NULL timePtr means wait forever.
+     */
+    
     if (timePtr) {
 	Tcl_Time vTime = *timePtr;
 
@@ -1235,26 +1239,18 @@ Tcl_WaitForEvent(
 	    tclScaleTimeProcPtr(&vTime, tclTimeClientData);
 	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
 	} else {
+
 	    /*
-	     * Polling: pretend to wait for files and tell the notifier thread
-	     * what we are doing. The notifier thread makes sure it goes
-	     * through select with its select mask in the same state as ours
-	     * currently is. We block until that happens.
+	     * The max block time was set to 0.
 	     */
 
 	    polling = 1;
-
-	    /*
-	     * Set a small positive waitTime so that when the runloop is started
-	     * it will process all of its sources.
-	     */
-
-	    waitTime = 0.005;
+	    waitTime = 0;
 	}
     }
 
     StartNotifierThread();
-
+	
     LOCK_NOTIFIER_TSD;
     tsdPtr->polling = polling;
     UNLOCK_NOTIFIER_TSD;
@@ -1262,24 +1258,19 @@ Tcl_WaitForEvent(
 
     /*
      * If the Tcl runloop is already running (e.g. if Tcl_WaitForEvent was
-     * called recursively) or is servicing events via the runloop observer,
-     * re-run it in a custom runloop mode containing only the source for the
-     * notifier thread, otherwise wakeups from other sources added to the
-     * common runloop modes might get lost or 3rd party event handlers might
-     * get called when they do not expect to be.
+     * called recursively) start a new runloop in a custom runloop mode
+     * containing only the source for the notifier thread.  Otherwise wakeups
+     * from other sources added to the common runloop mode might get lost or
+     * 3rd party event handlers might get called when they do not expect to
+     * be.
      */
 
     runLoopRunning = tsdPtr->runLoopRunning;
     tsdPtr->runLoopRunning = 1;
     runLoopStatus = CFRunLoopRunInMode(
-	tsdPtr->runLoopServicingEvents || runLoopRunning ?
-	tclEventsOnlyRunLoopMode : kCFRunLoopDefaultMode,
+	runLoopRunning ? tclEventsOnlyRunLoopMode : kCFRunLoopDefaultMode,
 	waitTime, TRUE);
     tsdPtr->runLoopRunning = runLoopRunning;
-
-    if (polling) {
-    	return tsdPtr->runLoopSourcePerformed ? 0 : 1;
-    }
 
     LOCK_NOTIFIER_TSD;
     tsdPtr->polling = 0;
