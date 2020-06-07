@@ -195,7 +195,7 @@ Tcl_RegexpObjCmd(
 	    if (++i >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[i], 0, TCL_INDEX_ERROR, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[i], INT_MAX - 1, TCL_INDEX_ERROR, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -550,7 +550,7 @@ Tcl_RegsubObjCmd(
 	    if (++idx >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[idx], 0, TCL_INDEX_ERROR, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[idx], INT_MAX - 1, TCL_INDEX_ERROR, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
