@@ -1244,7 +1244,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, TCL_INDEX_START, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1350,7 +1350,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], TCL_INDEX_NONE, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], WIDE_MAX - 1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1414,7 +1414,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, TCL_INDEX_START, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
