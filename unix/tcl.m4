@@ -1986,7 +1986,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*|MINGW32_*) ;;
+	    CYGWIN_*) ;;
 	    IRIX*) ;;
 	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
@@ -2114,13 +2114,13 @@ dnl # preprocessing tests use only CPPFLAGS.
 #
 #	Defines some of the following vars:
 #		NO_DIRENT_H
+#		NO_FLOAT_H
 #		NO_VALUES_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
 #		HAVE_SYS_PARAM_H
-#
 #		HAVE_STRING_H ?
 #
 #--------------------------------------------------------------------
