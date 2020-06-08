@@ -485,6 +485,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #if defined(_MSC_VER)
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
+#if !defined(_WIN64)
+#   pragma warning(disable:4305)
+#endif
 #   if _MSC_VER >= 1400
 #	pragma warning(disable:4267)
 #	pragma warning(disable:4996)
