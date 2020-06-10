@@ -555,6 +555,11 @@ test scan-5.19 {bigint scanning invalid} -setup {
     list [scan "207698809136909011942886895" \
            %llu a] $a
 } -result {1 207698809136909011942886895}
+test scan-5.20 {ignore digit separators} -setup {
+    set a {}; set b {}; set c {};
+} -body {
+    list [scan "10_23_45" %d_%d_%d a b c] $a $b $c
+} -result {3 10 23 45}
 
 test scan-6.1 {floating-point scanning} -setup {
     set a {}; set b {}; set c {}; set d {}
@@ -600,6 +605,11 @@ test scan-6.8 {floating-point scanning} -setup {
 } -body {
     list [scan "4.6 5.2" "%f %f %f %f" a b c d] $a $b $c $d
 } -result {2 4.6 5.2 {} {}}
+test scan-6.8 {disallow diget separator in floating-point} -setup {
+    set a {}; set b {}; set c {};
+} -body {
+    list [scan "3.14_2.35_98.6" %f_%f_%f a b c ] $a $b $c
+} -result {3 3.14 2.35 98.6}
 
 test scan-7.1 {string and character scanning} -setup {
     set a {}; set b {}; set c {}; set d {}
