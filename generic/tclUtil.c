@@ -3727,13 +3727,13 @@ Tcl_GetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    if (TclGetWideForIndex(interp, objPtr, endValue, flags, &wide) == TCL_ERROR) {
+    if (TclGetWideForIndex(interp, objPtr, (size_t)(endValue + 1) - 1, flags, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
 	if (wide < 0) {
 	    *indexPtr = -1;
-	} else if (wide > INT_MAX) {
+	} else if ((wide > (endValue + 1)) && (endValue >= -1)) {
 	    *indexPtr = INT_MAX;
 	} else {
 	    *indexPtr = (int) wide;
