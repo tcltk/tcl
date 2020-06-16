@@ -3731,9 +3731,9 @@ Tcl_GetIntForIndex(
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if (wide < 0) {
+	if ((wide < 0) && (endValue > TCL_INDEX_END)) {
 	    *indexPtr = -1;
-	} else if ((wide > (endValue + 1)) && (endValue >= -1)) {
+	} else if ((wide > (endValue + 1)) && (endValue > TCL_INDEX_END)) {
 	    *indexPtr = INT_MAX;
 	} else {
 	    *indexPtr = (int) wide;
