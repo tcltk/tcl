@@ -2988,7 +2988,7 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-#ifdef TCL_NO_DEPRECATED
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
     const char *bytes = TclGetString(obj);
 
@@ -3688,19 +3688,23 @@ Tcl_GetIntForIndex(
     int endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     int *indexPtr)		/* Location filled in with an integer
-				 * representing an index. */
+				 * representing an index. May be NULL.*/
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+    if (GetWideForIndex(interp, objPtr, (size_t)(endValue + 1) - 1, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
-	*indexPtr = -1;
-    } else if (wide > INT_MAX) {
-	*indexPtr = INT_MAX;
-    } else {
-	*indexPtr = (int) wide;
+    if (indexPtr != NULL) {
+	if ((wide < 0) && (endValue > TCL_INDEX_END)) {
+	    *indexPtr = -1;
+	} else if (wide > INT_MAX) {
+	    *indexPtr = INT_MAX;
+	} else if (wide < INT_MIN) {
+	    *indexPtr = INT_MIN;
+	} else {
+	    *indexPtr = (int) wide;
+	}
     }
     return TCL_OK;
 }
