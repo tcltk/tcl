@@ -3397,12 +3397,14 @@ Tcl_GetIntForIndex(
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
-	*indexPtr = TCL_INDEX_NONE;
-    } else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
-	*indexPtr = TCL_INDEX_END;
-    } else {
-	*indexPtr = (size_t) wide;
+    if (indexPtr != NULL) {
+	if ((wide < 0) && (endValue != TCL_INDEX_END)) {
+	    *indexPtr = TCL_INDEX_NONE;
+	} else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
+	    *indexPtr = TCL_INDEX_END;
+	} else {
+	    *indexPtr = (size_t) wide;
+	}
     }
     return TCL_OK;
 }
