@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
+testConstraint nodep [info exists tcl_precision]
 
 catch {unset x}
 test listobj-1.1 {Tcl_GetListObjType} emptyTest {
@@ -103,7 +104,7 @@ test listobj-5.5 {Tcl_ListObjIndex, basic tests} {
 test listobj-5.6 {Tcl_ListObjIndex, basic tests} {
     lindex a 100
 } {}
-test listobj-5.7 {Tcl_ListObjIndex, basic tests} {
+test listobj-5.7 {Tcl_ListObjIndex, basic tests} nodep {
     lindex {} -1
 } {}
 test listobj-5.8 {Tcl_ListObjIndex, error in conversion} {
@@ -139,7 +140,7 @@ test listobj-7.2 {Tcl_ListObjReplace, error converting from non-list} {
 test listobj-7.3 {Tcl_ListObjReplace, error converting from non-list} {
     list [catch {lreplace "a {b}c" 1 2 x} msg] $msg
 } {1 {list element in braces followed by "c" instead of space}}
-test listobj-7.4 {Tcl_ListObjReplace, negative first element index} {
+test listobj-7.4 {Tcl_ListObjReplace, negative first element index} nodep {
     lreplace {1 2 3 4 5} -1 1 a
 } {a 3 4 5}
 test listobj-7.5 {Tcl_ListObjReplace, last element index >= num elems} {
@@ -163,7 +164,7 @@ test listobj-7.10 {Tcl_ListObjReplace, replace tail of array} {
 test listobj-7.11 {Tcl_ListObjReplace, must grow internal array} {
     lreplace {1 2 3 4 5} 2 3 a b c d e f g h i j k l
 } {1 2 a b c d e f g h i j k l 5}
-test listobj-7.12 {Tcl_ListObjReplace, grow array, insert at start} {
+test listobj-7.12 {Tcl_ListObjReplace, grow array, insert at start} nodep {
     lreplace {1 2 3 4 5} -1 -1 a b c d e f g h i j k l
 } {a b c d e f g h i j k l 1 2 3 4 5}
 test listobj-7.13 {Tcl_ListObjReplace, grow array, insert at end} {
