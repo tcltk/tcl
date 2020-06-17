@@ -4090,6 +4090,11 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef TCL_INDEX_ERROR
+#define TCL_INDEX_ERROR 0
+#endif
+
 int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
@@ -4101,7 +4106,7 @@ TclIndexEncode(
     Tcl_WideInt wide;
     int idx;
 
-    if (TCL_OK == TclGetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , 0, &wide)) {
+    if (TCL_OK == TclGetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END, TCL_INDEX_ERROR, &wide)) {
 	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */

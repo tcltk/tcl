@@ -40,13 +40,13 @@ test lrange-1.5 {range of list elements} {
 test lrange-1.6 {range of list elements} {
     lrange {a {bcd e {f g {}}} l14 l15 d} 10 11
 } {}
-test lrange-1.7 {range of list elements} {
+test lrange-1.7 {range of list elements} nodep {
     lrange {a b c d e} -1 2
 } {a b c}
-test lrange-1.8 {range of list elements} {
+test lrange-1.8 {range of list elements} nodep {
     lrange {a b c d e} -2 -1
 } {}
-test lrange-1.9 {range of list elements} {
+test lrange-1.9 {range of list elements} nodep {
     lrange {a b c d e} -2 end
 } {a b c d e}
 test lrange-1.10 {range of list elements} {
@@ -96,7 +96,7 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
 	lrange $l 0 end-5
     }} {1 2 3 4 5}
 } {}
-test lrange-3.2 {compiled with static indices out of range, negative} {
+test lrange-3.2 {compiled with static indices out of range, negative} nodep {
     list [lrange {a b c} -1 -2] [lrange {a b c} -2 -1] [lrange {a b c} -3 -2] [lrange {a b c} -2 -3]
 } [lrepeat 4 {}]
 test lrange-3.3 {compiled with calculated indices out of range, negative constant} -constraints nodep -body {
