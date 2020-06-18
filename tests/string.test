@@ -389,7 +389,7 @@ test string-4.6.$noComp {string first} {
 test string-4.7.$noComp {string first} {
     run {string first xxx x123xx345xxx789xxx012}
 } 9
-test string-4.8.$noComp {string first} {
+test string-4.8.$noComp {string first} nodep {
     run {string first "" x123xx345xxx789xxx012}
 } -1
 test string-4.9.$noComp {string first, unicode} {
@@ -401,47 +401,47 @@ test string-4.10.$noComp {string first, unicode} {
 test string-4.11.$noComp {string first, start index} {
     run {string first \u7266 abc\u7266x 3}
 } 3
-test string-4.12.$noComp {string first, start index} -body {
+test string-4.12.$noComp {string first, start index} nodep {
     run {string first \u7266 abc\u7266x 4}
-} -result -1
-test string-4.13.$noComp {string first, start index} -body {
+} -1
+test string-4.13.$noComp {string first, start index} {
     run {string first \u7266 abc\u7266x end-2}
-} -result 3
-test string-4.14.$noComp {string first, negative start index} -body {
+} 3
+test string-4.14.$noComp {string first, negative start index} {
     run {string first b abc none}
-} -result 1
-test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} -body {
+} 1
+test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
     # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
     set uchar \u057E    ;# character with two-byte encoding in utf-8
     run {string first % %#$uchar$uchar#$uchar$uchar#% 3}
-} -result 8
-test string-4.16.$noComp {string first, normal string vs pure unicode string} -body {
+} 8
+test string-4.16.$noComp {string first, normal string vs pure unicode string} {
     set s hello
     regexp ll $s m
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} -result {{string 1} {string 0} 2}
-test string-4.17.$noComp {string first, corner case} -body {
+} {{string 1} {string 0} 2}
+test string-4.17.$noComp {string first, corner case} nodep {
     run {string first a aaa 4294967295}
-} -result {-1}
-test string-4.18.$noComp {string first, corner case} -body {
+} -1
+test string-4.18.$noComp {string first, corner case} {
     run {string first a aaa none}
-} -result {0}
-test string-4.19.$noComp {string first, corner case} -body {
+} 0
+test string-4.19.$noComp {string first, corner case} {
     run {string first a aaa end-5}
-} -result {0}
-test string-4.20.$noComp {string last, corner case} -body {
+} 0
+test string-4.20.$noComp {string last, corner case} {
     run {string last a aaa 4294967295}
-} -result {2}
-test string-4.21.$noComp {string last, corner case} -body {
+} 2
+test string-4.21.$noComp {string last, corner case} nodep {
     run {string last a aaa none}
-} -result {-1}
-test string-4.22.$noComp {string last, corner case} {
+} -1
+test string-4.22.$noComp {string last, corner case} nodep {
     run {string last a aaa end-5}
-} {-1}
+} -1
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -1069,7 +1069,7 @@ test string-7.10.$noComp {string last, unicode} {
 test string-7.11.$noComp {string last, start index} {
     run {string last \u7266 abc\u7266x 3}
 } 3
-test string-7.12.$noComp {string last, start index} {
+test string-7.12.$noComp {string last, start index} nodep {
     run {string last \u7266 abc\u7266x 2}
 } -1
 test string-7.13.$noComp {string last, start index} {
@@ -1080,7 +1080,7 @@ test string-7.14.$noComp {string last, start index} {
     ## Constrain to last 'b' should skip last 'ba'
     run {string last ba badbad end-2}
 } 0
-test string-7.15.$noComp {string last, start index} {
+test string-7.15.$noComp {string last, start index} nodep {
     run {string last \334a \334ad\334ad 0}
 } -1
 test string-7.16.$noComp {string last, start index} {
