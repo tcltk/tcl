@@ -12,7 +12,7 @@
 
 package require Tcl 8.5-
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {[string is none [lsearch [namespace children] ::tcltest]]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }

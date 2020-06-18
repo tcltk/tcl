@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {[string is none [lsearch [namespace children] ::tcltest]]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -29,8 +29,8 @@ testConstraint nodep [info exists tcl_precision]
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
     set first [string first "string" $t]
-    set result [expr {$first != -1}]
-} {1}
+    set result [string is none $first]
+} 0
 
 test stringObj-2.1 {Tcl_NewStringObj} testobj {
     set result ""
