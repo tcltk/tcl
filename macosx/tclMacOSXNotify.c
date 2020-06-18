@@ -255,8 +255,6 @@ typedef struct ThreadSpecificData {
     int runLoopRunning;		/* True if this thread's Tcl runLoop is
 				 * running. */
     int runLoopNestingLevel;	/* Level of nested runLoop invocations. */
-    int runLoopServicingEvents;	/* True if this thread's runLoop is servicing
-				 * Tcl events. */
 
     /* Must hold the notifierLock before accessing the following fields: */
     /* Start notifierLock section */
@@ -1225,7 +1223,7 @@ Tcl_WaitForEvent(
     /*
      * A NULL timePtr means wait forever.
      */
-    
+
     if (timePtr) {
 	Tcl_Time vTime = *timePtr;
 
@@ -1242,15 +1240,25 @@ Tcl_WaitForEvent(
 
 	    /*
 	     * The max block time was set to 0.
+	     *
+	     * If we set the waitTime to 0, then the call to CFRunLoopInMode
+	     * may return without processing all of its sources.  The Apple
+	     * documentation says that if the waitTime is 0 "only one pass is
+	     * made through the run loop before returning; if multiple sources
+	     * or timers are ready to fire immediately, only one (possibly two
+	     * if one is a version 0 source) will be fired, regardless of the
+	     * value of returnAfterSourceHandled."  This can cause some chanio
+	     * tests to fail.  So we use a small positive waitTime unless there
+	     * is another RunLoop running.
 	     */
 
 	    polling = 1;
-	    waitTime = 0;
+	    waitTime = tsdPtr->runLoopRunning ? 0 : 0.0001;
 	}
     }
 
     StartNotifierThread();
-	
+
     LOCK_NOTIFIER_TSD;
     tsdPtr->polling = polling;
     UNLOCK_NOTIFIER_TSD;
