@@ -384,20 +384,13 @@ Tcl_RegexpObjCmd(
 		    if (end >= offset) {
 			end--;
 		    }
-		    objs[0] = Tcl_NewWideIntObj(start);
-		    objs[1] = Tcl_NewWideIntObj(end);
 		} else {
 		    start = -1;
 		    end = -1;
-#ifdef TCL_NO_DEPRECATED
-		    TclNewObj(objs[0]);
-		    TclNewObj(objs[1]);
-#else
-		    objs[0] = Tcl_NewWideIntObj(start);
-		    objs[1] = Tcl_NewWideIntObj(end);
-#endif
 		}
 
+		objs[0] = TclNewWideIntObjFromSize(start);
+		objs[1] = TclNewWideIntObjFromSize(end);
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
@@ -3787,10 +3780,10 @@ TclNRSwitchObjCmd(
 		Tcl_Obj *rangeObjAry[2];
 
 		if (info.matches[j].end > 0) {
-		    rangeObjAry[0] = Tcl_NewWideIntObj(info.matches[j].start);
-		    rangeObjAry[1] = Tcl_NewWideIntObj(info.matches[j].end-1);
+		    rangeObjAry[0] = TclNewWideIntObjFromSize(info.matches[j].start);
+		    rangeObjAry[1] = TclNewWideIntObjFromSize(info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewWideIntObj(-1);
+		    rangeObjAry[0] = rangeObjAry[1] = TclNewWideIntObjFromSize(-1);
 		}
 
 		/*
