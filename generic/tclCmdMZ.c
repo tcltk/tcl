@@ -384,13 +384,20 @@ Tcl_RegexpObjCmd(
 		    if (end >= offset) {
 			end--;
 		    }
+		    objs[0] = Tcl_NewWideIntObj(start);
+		    objs[1] = Tcl_NewWideIntObj(end);
 		} else {
 		    start = -1;
 		    end = -1;
+#ifdef TCL_NO_DEPRECATED
+		    TclNewObj(objs[0]);
+		    TclNewObj(objs[1]);
+#else
+		    objs[0] = Tcl_NewWideIntObj(start);
+		    objs[1] = Tcl_NewWideIntObj(end);
+#endif
 		}
 
-		objs[0] = Tcl_NewWideIntObj(start);
-		objs[1] = Tcl_NewWideIntObj(end);
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {

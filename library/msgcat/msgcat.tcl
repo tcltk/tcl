@@ -15,7 +15,7 @@
 package require Tcl 8.7-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.7.0
+package provide msgcat 1.7.1
 
 namespace eval msgcat {
     namespace export mc mcn mcexists mcload mclocale mcmax\
@@ -360,19 +360,19 @@ proc msgcat::mclocale {args} {
 
 proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
-    set loclist [list $locale]
-    while {-1 !=[set pos [string last "_" $locale]]} {
-	if {$pos != -1 && $pos != "none"} {
-	    set locale [string range $locale 0 $pos-1]
+    set loclist {}
+    set locel {}
+    foreach el [split $locale _] {
+	if {[string index $locel end] != {_}} {
+	    set loclist [linsert $loclist 0 $locel]
 	}
-	if { "_" ne [string index $locale end] } {
-	    lappend loclist $locale
+	if {$locel != {}} {
+	    set locel ${locel}_${el}
+	} else {
+	    set locel ${el}
 	}
     }
-    if {"" ne [lindex $loclist end]} {
-	lappend loclist {}
-    }
-    return $loclist
+    return [linsert $loclist 0 $locel]
 }
 
 # msgcat::mcpreferences --

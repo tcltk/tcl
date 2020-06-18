@@ -3637,9 +3637,9 @@ TclStringFirst(
 	}
     }
   firstEnd:
-#if 0
-    if (value == -1) {
-	return Tcl_NewStringObj("none", 4);
+#ifdef TCL_NO_DEPRECATED
+    if (value == TCL_INDEX_NONE) {
+	return Tcl_NewObj();
     }
 #endif
     TclNewIntObj(result, value);
@@ -3729,9 +3729,9 @@ TclStringLast(
 	check--;
     }
   lastEnd:
-#if 0
-    if (value == -1) {
-	return Tcl_NewStringObj("none", 4);
+#if TCL_NO_DEPRECATED
+    if (value == TCL_INDEX_NONE) {
+	return Tcl_NewObj();
     }
 #endif
     TclNewIntObj(result, value);
