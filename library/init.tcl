@@ -233,29 +233,51 @@ proc unknown args {
 		# from the extra "eval" of $args due to the "catch" above.
 		#
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
-		    # Very likely cannot happen
-		    return -options $opts $msg
+		if {![string is none $last]} {
+		    if {$last + [string length $tail] != [string length $errInfo]} {
+			# Very likely cannot happen
+			return -options $opts $msg
+		    }
+		    if {$last > 0} {
+			set errInfo [string range $errInfo 0 $last-1]
+		    } else {
+			set errInfo {}
+		    }
 		}
-		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
+		if {![string is none $last]} {
+		    if {$last + [string length $tail] != [string length $errInfo]} {
+			return -code error -errorcode $errCode \
+				-errorinfo $errInfo $msg
+		    }
+		    if {$last > 0} {
+			set errInfo [string range $errInfo 0 $last-1]
+		    } else {
+			set errInfo {}
+		    }
+		}
+		set tail "\n    invoked from within\n"
+		set last [string last $tail $errInfo]
+		if {![string is none $last] && $last + [string length $tail] == [string length $errInfo]} {
+		    if {$last > 0} {
+			set errInfo [string range $errInfo 0 $last-1]
+		    } else {
+			set errInfo {}
+		    }
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
 		}
-		set errInfo [string range $errInfo 0 $last-1]
-		set tail "\n    invoked from within\n"
-		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] == [string length $errInfo]} {
-		    return -code error -errorcode $errCode \
-			    -errorinfo [string range $errInfo 0 $last-1] $msg
-		}
 		set tail "\n    while executing\n"
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] == [string length $errInfo]} {
+		if {![string is none $last] && $last + [string length $tail] == [string length $errInfo]} {
+		    if {$last > 0} {
+			set errInfo [string range $errInfo 0 $last-1]
+		    } else {
+			set errInfo {}
+		    }
 		    return -code error -errorcode $errCode \
-			    -errorinfo [string range $errInfo 0 $last-1] $msg
+			    -errorinfo $errInfo $msg
 		}
 		return -options $opts $msg
 	    } else {
