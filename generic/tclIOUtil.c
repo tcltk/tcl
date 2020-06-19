@@ -184,7 +184,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjCopyDirectory,
     TclpObjLstat,
     /* Needs casts since we're using version_2. */
-    (Tcl_FSLoadFileProc *) TclpDlopen,
+    (Tcl_FSLoadFileProc *)(void *) TclpDlopen,
     (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
     TclpObjChdir
 };
@@ -3244,7 +3244,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(fsPtr->loadFileProc))
+	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
@@ -4669,7 +4669,7 @@ Tcl_FSGetFileSystemForPath(
  * Tcl_FSGetNativePath --
  *
  *	This function is for use by the Win/Unix native filesystems, so that
- *	they can easily retrieve the native (char* or TCHAR*) representation
+ *	they can easily retrieve the native (char* or WCHAR*) representation
  *	of a path. Other filesystems will probably want to implement similar
  *	functions. They basically act as a safety net around
  *	Tcl_FSGetInternalRep. Normally your file-system functions will always

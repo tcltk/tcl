@@ -31,6 +31,14 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
+/* Define to 1 if you have the declaration of `gethostbyaddr_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYADDR_R
+
+/* Define to 1 if you have the declaration of `gethostbyname_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYNAME_R
+
 /* Is 'DIR64' in <sys/types.h>? */
 #undef HAVE_DIR64
 

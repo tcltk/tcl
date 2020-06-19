@@ -2680,7 +2680,7 @@ TclDatelex(
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
-	while (TclIsSpaceProc(*yyInput)) {
+	while (TclIsSpaceProcM(*yyInput)) {
 	    yyInput++;
 	}
 

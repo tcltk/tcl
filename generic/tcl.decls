@@ -595,7 +595,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# generic interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
@@ -2223,7 +2223,7 @@ declare 606 {
 
 # TIP#307 (move results between interpreters) dkf
 declare 607 {
-    void Tcl_TransferResult(Tcl_Interp *sourceInterp, int result,
+    void Tcl_TransferResult(Tcl_Interp *sourceInterp, int code,
 	    Tcl_Interp *targetInterp)
 }
 
@@ -2324,6 +2324,10 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+declare 649 {
+    void TclUnusedStubEntry(void)
+}
 
 ##############################################################################
 

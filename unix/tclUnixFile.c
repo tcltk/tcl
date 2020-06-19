@@ -98,7 +98,7 @@ TclpFindExecutable(
      */
 
     while (1) {
-	while (TclIsSpaceProc(*p)) {
+	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}
 	name = p;
