@@ -140,6 +140,8 @@ static int		ConsoleBlockModeProc(ClientData instanceData,
 static void		ConsoleCheckProc(ClientData clientData, int flags);
 static int		ConsoleCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
+static int		ConsoleClose2Proc(ClientData instanceData,
+			    Tcl_Interp *interp, int flags);
 static int		ConsoleEventProc(Tcl_Event *evPtr, int flags);
 static void		ConsoleExitHandler(ClientData clientData);
 static int		ConsoleGetHandleProc(ClientData instanceData,
@@ -179,7 +181,7 @@ static const Tcl_ChannelType consoleChannelType = {
     NULL,			/* Get option proc. */
     ConsoleWatchProc,		/* Set up notifier to watch the channel. */
     ConsoleGetHandleProc,	/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+	ConsoleClose2Proc,		/* close2proc. */
     ConsoleBlockModeProc,	/* Set blocking or non-blocking mode. */
     NULL,			/* Flush proc. */
     NULL,			/* Handler proc. */
@@ -193,8 +195,8 @@ static const Tcl_ChannelType consoleChannelType = {
  *
  * ReadConsoleBytes, WriteConsoleBytes --
  *
- *	Wrapper for ReadConsole{A,W}, that takes and returns number of bytes
- *	instead of number of TCHARS.
+ *	Wrapper for ReadConsoleW, that takes and returns number of bytes
+ *	instead of number of WCHARS.
  *
  *----------------------------------------------------------------------
  */
@@ -208,7 +210,6 @@ ReadConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
     /*
      * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return
@@ -221,11 +222,11 @@ ReadConsoleBytes(
      * will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
                              NULL);
     } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
-	*nbytesread = ntchars * tcharsize;
+	*nbytesread = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -239,12 +240,11 @@ WriteConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize = sizeof(TCHAR);
 
-    result = WriteConsole(hConsole, lpBuffer, nbytes / tcharsize, &ntchars,
+    result = WriteConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
 	    NULL);
     if (nbyteswritten != NULL) {
-	*nbyteswritten = ntchars * tcharsize;
+	*nbyteswritten = ntchars * sizeof(WCHAR);
     }
     return result;
 }
@@ -508,7 +508,7 @@ ConsoleBlockModeProc(
 /*
  *----------------------------------------------------------------------
  *
- * ConsoleCloseProc --
+ * ConsoleCloseProc/ConsoleClose2Proc --
  *
  *	Closes a console based IO channel.
  *
@@ -605,6 +605,18 @@ ConsoleCloseProc(
     ckfree(consolePtr);
 
     return errorCode;
+}
+
+static int
+ConsoleClose2Proc(
+    ClientData instanceData,	/* Pointer to ConsoleInfo structure. */
+    Tcl_Interp *interp,		/* For error reporting. */
+	int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0) {
+	return ConsoleCloseProc(instanceData, interp);
+    }
+    return EINVAL;
 }
 
 /*
@@ -1037,7 +1049,7 @@ WaitForRead(
 	    return 1;
 	}
 
-	if (PeekConsoleInput(handle, &input, 1, &count) == FALSE) {
+	if (PeekConsoleInputW(handle, &input, 1, &count) == FALSE) {
 	    /*
 	     * Check to see if the peek failed because of EOF.
 	     */
@@ -1337,7 +1349,7 @@ TclWinOpenConsoleChannel(
 	modes |= ENABLE_LINE_INPUT;
 	SetConsoleMode(infoPtr->handle, modes);
 
-	infoPtr->reader.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->reader.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->reader.thread = CreateThread(NULL, 256, ConsoleReaderThread,
 		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr,
 			infoPtr->reader.readyEvent), 0, NULL);
@@ -1346,7 +1358,7 @@ TclWinOpenConsoleChannel(
 
     if (permissions & TCL_WRITABLE) {
 
-	infoPtr->writer.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->writer.readyEvent = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writer.thread = CreateThread(NULL, 256, ConsoleWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writer.TI, infoPtr,
 			infoPtr->writer.readyEvent), 0, NULL);
@@ -1360,11 +1372,7 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-#ifdef UNICODE
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-#else
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-#endif
     return infoPtr->channel;
 }
 

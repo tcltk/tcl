@@ -139,7 +139,7 @@ TesteventloopCmd(
 	while (!done) {
 	    MSG msg;
 
-	    if (!GetMessage(&msg, NULL, 0, 0)) {
+	    if (!GetMessageW(&msg, NULL, 0, 0)) {
 		/*
 		 * The application is exiting, so repost the quit message and
 		 * start unwinding.
@@ -149,7 +149,7 @@ TesteventloopCmd(
 		break;
 	    }
 	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
+	    DispatchMessageW(&msg);
 	}
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
@@ -327,9 +327,14 @@ TestSizeCmd(
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(time_t)));
 	return TCL_OK;
     }
+    if (strcmp(Tcl_GetString(objv[1]), "st_mtime") == 0) {
+        Tcl_StatBuf *statPtr;
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(statPtr->st_mtime)));
+        return TCL_OK;
+    }
 
 syntax:
-    Tcl_WrongNumArgs(interp, 1, objv, "time_t");
+    Tcl_WrongNumArgs(interp, 1, objv, "time_t|st_mtime");
     return TCL_ERROR;
 }
 
@@ -456,7 +461,7 @@ TestplatformChmod(
      * nativePath not found
      */
 
-    if (attr == 0xffffffff) {
+    if (attr == 0xFFFFFFFF) {
 	res = -1;
 	goto done;
     }

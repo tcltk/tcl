@@ -92,11 +92,11 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #if TCL_UTF_MAX > 4
 #define	CHRBITS	32		/* Bits in a chr; must not use sizeof */
 #define	CHR_MIN	0x00000000	/* Smallest and largest chr; the value */
-#define	CHR_MAX	0xffffffff	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
+#define	CHR_MAX	0xFFFFFFFF	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
 #else
 #define	CHRBITS	16		/* Bits in a chr; must not use sizeof */
 #define	CHR_MIN	0x0000		/* Smallest and largest chr; the value */
-#define	CHR_MAX	0xffff		/* CHR_MAX-CHR_MIN+1 should fit in uchr */
+#define	CHR_MAX	0xFFFF		/* CHR_MAX-CHR_MIN+1 should fit in uchr */
 #endif
 
 /*
@@ -132,7 +132,7 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #if 1
 #define AllocVars(vPtr) \
     static Tcl_ThreadDataKey varsKey; \
-    register struct vars *vPtr = (struct vars *) \
+    struct vars *vPtr = (struct vars *) \
 	    Tcl_GetThreadData(&varsKey, sizeof(struct vars))
 #else
 /*
@@ -141,7 +141,7 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
  * faster in practice (measured!)
  */
 #define AllocVars(vPtr) \
-    register struct vars *vPtr = (struct vars *) MALLOC(sizeof(struct vars))
+    struct vars *vPtr = (struct vars *) MALLOC(sizeof(struct vars))
 #define FreeVars(vPtr) \
     FREE(vPtr)
 #endif
