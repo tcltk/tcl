@@ -678,7 +678,7 @@ TclRegAbout(
 
     resultObj = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultObj,
-	    TclNewWideIntObjFromSize(regexpPtr->re.re_nsub));
+	    Tcl_NewWideIntObj(regexpPtr->re.re_nsub));
 
     /*
      * Now append a list of all the bit-flags set for the RE.

@@ -5066,14 +5066,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #endif   /* TCL_MEM_DEBUG */
 
 /*
- * Macros to convert size_t to wide-int (and wide-int object) considering
- * platform-related negative value ((size_t)-1), if wide-int and size_t
- * have different dimensions (e. g. 32-bit platform).
+ * Experiment: Not really meant for this TIP yet
  */
 
 #ifdef TCL_NO_DEPRECATED
 #   define TclNewWideIntObjFromSize(value) \
-	((value) != TCL_INDEX_NONE) ? Tcl_NewWideIntObj(value) : Tcl_NewObj();
+	(((value) != TCL_INDEX_NONE) ? Tcl_NewWideIntObj(value) : Tcl_NewObj())
 #else
 #   define TclNewWideIntObjFromSize(value) \
 	Tcl_NewWideIntObj(value)
