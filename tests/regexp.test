@@ -803,7 +803,7 @@ test regexp-21.11 {multiple matches handle newlines} {
 test regexp-21.12 {multiple matches handle newlines} {
     regsub -all -line -- ^ "\n\n" \#
 } "\#\n\#\n\#"
-test regexp-21.13 {multiple matches handle newlines} {
+test regexp-21.13 {multiple matches handle newlines} nodep {
     regexp -all -inline -indices -line -- ^ "a\nb\nc"
 } {{0 -1} {2 1} {4 3}}
 test regexp-21.14 {regsub works with empty string} {
@@ -896,28 +896,28 @@ test regexp-22.6 {Bug 6585b21ca8} {
 } rogr
 
 
-test regexp-23.1 {regexp -all and -line} {
+test regexp-23.1 {regexp -all and -line} nodep {
     set string ""
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1}} {{0 -1}} {{0 -1}}}
-test regexp-23.2 {regexp -all and -line} {
+test regexp-23.2 {regexp -all and -line} nodep {
     set string "\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1}} {{0 -1}} {{0 -1}}}
-test regexp-23.3 {regexp -all and -line} {
+test regexp-23.3 {regexp -all and -line} nodep {
     set string "\n\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
-test regexp-23.4 {regexp -all and -line} {
+test regexp-23.4 {regexp -all and -line} nodep {
     set string "a"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -931,7 +931,7 @@ test regexp-23.5 {regexp -all and -line} {knownBug} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {2 1}} {{0 0} {2 1}} {{1 0} {2 1}}}
-test regexp-23.6 {regexp -all and -line} {
+test regexp-23.6 {regexp -all and -line} nodep {
     set string "\na"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -945,7 +945,7 @@ test regexp-23.7 {regexp -all and -line} {knownBug} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {3 2}} {{0 1} {3 2}} {{2 1} {3 2}}}
-test regexp-23.8 {regexp -all and -line} {
+test regexp-23.8 {regexp -all and -line} nodep {
     set string "a\nb"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -959,7 +959,7 @@ test regexp-23.9 {regexp -all and -line} {knownBug} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {2 1} {4 3}} {{0 0} {2 2} {4 3}} {{1 0} {3 2} {4 3}}}
-test regexp-23.10 {regexp -all and -line} {
+test regexp-23.10 {regexp -all and -line} nodep {
     set string "a\nb\nc"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
