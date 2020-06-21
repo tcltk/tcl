@@ -1526,7 +1526,7 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
-		$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip \
+		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
