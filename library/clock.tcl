@@ -664,6 +664,7 @@ proc ::tcl::clock::EnterLocale { locale } {
 #
 #----------------------------------------------------------------------
 proc ::tcl::clock::_hasRegistry {} {
+    set res 0
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    # try to load registry directly from root (if uninstalled / development env):
@@ -674,12 +675,12 @@ proc ::tcl::clock::_hasRegistry {} {
 		] registry
 	    }}
 	}
+	if { [namespace which -command ::registry] ne "" } {
+	    set res 1
+	}
     }
-    if { $::tcl_platform(platform) ne {windows} || [namespace which -command ::registry] eq "" } {
-    	proc ::tcl::clock::_hasRegistry {} {return 0}
-    	return 0
-    }
-    return 1
+    proc ::tcl::clock::_hasRegistry {} [list return $res]
+    return $res
 }
 
 #----------------------------------------------------------------------
