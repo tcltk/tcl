@@ -206,18 +206,17 @@ iextime : tUNUMBER ':' tUNUMBER ':' tUNUMBER {
 	    yyMinutes = $3;
 	    yySeconds = $5;
 	}
+	| tUNUMBER ':' tUNUMBER {
+	    yyHour = $1;
+	    yyMinutes = $3;
+	    yySeconds = 0;
+	}
 	;
 time	: tUNUMBER tMERIDIAN {
 	    yyHour = $1;
 	    yyMinutes = 0;
 	    yySeconds = 0;
 	    yyMeridian = $2;
-	}
-	| tUNUMBER ':' tUNUMBER o_merid {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = 0;
-	    yyMeridian = $4;
 	}
 	| iextime o_merid {
 	    yyMeridian = $2;
