@@ -197,6 +197,12 @@ item	: time {
 	| number
 	;
 
+iextime : tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	    yyHour = $1;
+	    yyMinutes = $3;
+	    yySeconds = $5;
+	}
+	;
 time	: tUNUMBER tMERIDIAN {
 	    yyHour = $1;
 	    yyMinutes = 0;
@@ -209,11 +215,8 @@ time	: tUNUMBER tMERIDIAN {
 	    yySeconds = 0;
 	    yyMeridian = $4;
 	}
-	| tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = $5;
-	    yyMeridian = $6;
+	| iextime o_merid {
+	    yyMeridian = $2;
 	}
 	;
 
@@ -273,6 +276,12 @@ day	: tDAY {
 	}
 	;
 
+iexdate	: tUNUMBER '-' tUNUMBER '-' tUNUMBER {
+	    yyMonth = $3;
+	    yyDay = $5;
+	    yyYear = $1;
+	}
+	;
 date	: tUNUMBER '/' tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $3;
@@ -292,11 +301,7 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyMonth = $3;
 	    yyYear = $5;
 	}
-	| tUNUMBER '-' tUNUMBER '-' tUNUMBER {
-	    yyMonth = $3;
-	    yyDay = $5;
-	    yyYear = $1;
-	}
+	| iexdate
 	| tMONTH tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $2;
@@ -332,14 +337,20 @@ ordMonth: tNEXT tMONTH {
 	}
 	;
 
-iso	: tISOBASE tZONE tISOBASE {
-	    if ($2 != HOUR( 7)) YYABORT; /* T */
+isosep	: 'T'|SP
+	;
+iso	: tISOBASE isosep tISOBASE {
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
 	    yyHour = $3 / 10000;
 	    yyMinutes = ($3 % 10000)/100;
 	    yySeconds = $3 % 100;
+	}
+	| tISOBASE isosep iextime {
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
 	}
 	| tISOBASE tISOBASE {
 	    yyYear = $1 / 10000;
@@ -349,31 +360,8 @@ iso	: tISOBASE tZONE tISOBASE {
 	    yyMinutes = ($2 % 10000)/100;
 	    yySeconds = $2 % 100;
 	}
-	| tISOBASE SP tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3;
-	    yyMinutes = $5;
-	    yySeconds = $7;
-	}
-	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    if ($2 != HOUR( 7)) YYABORT; /* T */
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3;
-	    yyMinutes = $5;
-	    yySeconds = $7;
-	}
-	| tISOBASE SP tISOBASE {
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3 / 10000;
-	    yyMinutes = ($3 % 10000)/100;
-	    yySeconds = $3 % 100;
-	}
+	| iexdate 'T' iextime
+	| iexdate iextime
 	;
 
 trek	: tSTARDATE INTNUM '.' tUNUMBER {
@@ -926,6 +914,7 @@ TclDatelex(
 	}
 	if (!(c & 0x80) && isalpha(UCHAR(c))) {		  /* INTL: ISO only. */
 	    int ret;
+	    const char *litStart = yyInput;
 	    for (p = buff; isalpha(UCHAR(c = *yyInput++)) /* INTL: ISO only. */
 		     || c == '.'; ) {
 		if (p < &buff[sizeof buff - 1]) {
@@ -937,12 +926,19 @@ TclDatelex(
 	    location->last_column = yyInput - info->dateStart - 1;
 	    ret = LookupWord(yylvalPtr, buff);
 	    /* 
-	     * lookahead for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day",
+	     * lookahead:
+	     *	for spaces to consider word boundaries (for instance
+	     *	literal T in isodateTisotimeZ is not a TZ, but Z is UTC);
+	     *	for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day";
 	     * bypass spaces after token (but ignore by TZ+OFFS), because should 
 	     * recognize next SP token, if TZ only.
 	     */
 	    if (ret == tZONE || ret == tDAYZONE) {
 		c = *yyInput;
+		if (isdigit(c)) { /* literal not a TZ  */
+		    yyInput = litStart;
+		    return *yyInput++;
+		}
 		if ((c == '+' || c == '-') && isdigit(UCHAR(*(yyInput+1)))) {
 		    if ( !isdigit(UCHAR(*(yyInput+2)))
 		      || !isdigit(UCHAR(*(yyInput+3)))) {
