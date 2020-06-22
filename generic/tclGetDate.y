@@ -17,7 +17,7 @@
 
 %parse-param {DateInfo* info}
 %lex-param {DateInfo* info}
-%pure-parser
+%define api.pure
  /* %error-verbose would be nice, but our token names are meaningless */
 %locations
 
