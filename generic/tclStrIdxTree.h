@@ -111,19 +111,6 @@ TclUtfFindEqualNCInLwr(
     return ret;
 }
 
-static inline const char *
-TclUtfNext(
-    register const char *src)	/* The current location in the string. */
-{
-    if (((unsigned char) *(src)) < 0xC0) {
-	return ++src;
-    } else {
-	Tcl_UniChar ch;
-	return src + TclUtfToUniChar(src, &ch);
-    }
-}
-
-
 /*
  * Primitives to safe set, reset and free references.
  */
