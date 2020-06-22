@@ -196,10 +196,12 @@ extern int TclDatedebug;
     tZONEwO2 = 270,
     tEPOCH = 271,
     tDST = 272,
-    tISOBASE = 273,
-    tDAY_UNIT = 274,
-    tNEXT = 275,
-    SP = 276
+    tISOBAS8 = 273,
+    tISOBAS6 = 274,
+    tISOBASL = 275,
+    tDAY_UNIT = 276,
+    tNEXT = 277,
+    SP = 278
   };
 #endif
 
@@ -501,21 +503,21 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  2
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   97
+#define YYLAST   98
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  28
+#define YYNTOKENS  31
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  18
+#define YYNNTS  23
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  65
+#define YYNRULES  72
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  104
+#define YYNSTATES  103
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   276
+#define YYMAXUTOK   278
 
 #define YYTRANSLATE(YYX)                                                \
   ((unsigned) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -528,11 +530,11 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    27,    23,    25,    26,    24,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,    22,     2,
+       2,     2,     2,    30,    25,    26,    29,    27,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,    24,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,    28,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -551,20 +553,21 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21
+      15,    16,    17,    18,    19,    20,    21,    22,    23
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   167,   167,   168,   172,   175,   178,   181,   184,   187,
-     190,   193,   197,   200,   206,   212,   220,   224,   228,   232,
-     236,   240,   246,   247,   250,   254,   258,   262,   266,   270,
-     276,   280,   285,   290,   295,   300,   304,   309,   313,   318,
-     325,   329,   335,   344,   352,   360,   369,   379,   393,   398,
-     401,   404,   407,   410,   413,   416,   421,   424,   429,   433,
-     437,   443,   446,   451,   469,   472
+       0,   171,   171,   172,   176,   179,   182,   185,   188,   191,
+     194,   197,   201,   204,   209,   215,   221,   226,   230,   234,
+     238,   242,   246,   252,   253,   256,   260,   264,   268,   272,
+     276,   282,   288,   292,   297,   298,   303,   307,   312,   316,
+     321,   328,   332,   338,   338,   340,   345,   350,   352,   357,
+     359,   360,   368,   379,   393,   398,   401,   404,   407,   410,
+     413,   416,   421,   424,   429,   433,   437,   443,   446,   449,
+     454,   472,   475
 };
 #endif
 
@@ -576,10 +579,11 @@ static const char *const yytname[] =
   "$end", "error", "$undefined", "tAGO", "tDAY", "tDAYZONE", "tID",
   "tMERIDIAN", "tMONTH", "tMONTH_UNIT", "tSTARDATE", "tSEC_UNIT",
   "tUNUMBER", "tZONE", "tZONEwO4", "tZONEwO2", "tEPOCH", "tDST",
-  "tISOBASE", "tDAY_UNIT", "tNEXT", "SP", "':'", "','", "'/'", "'-'",
-  "'.'", "'+'", "$accept", "spec", "item", "time", "zone", "comma", "day",
-  "date", "ordMonth", "iso", "trek", "relspec", "relunits", "sign", "unit",
-  "INTNUM", "number", "o_merid", YY_NULLPTR
+  "tISOBAS8", "tISOBAS6", "tISOBASL", "tDAY_UNIT", "tNEXT", "SP", "':'",
+  "','", "'-'", "'/'", "'T'", "'.'", "'+'", "$accept", "spec", "item",
+  "iextime", "time", "zone", "comma", "day", "iexdate", "date", "ordMonth",
+  "isosep", "isodate", "isotime", "iso", "trek", "relspec", "relunits",
+  "sign", "unit", "INTNUM", "numitem", "o_merid", YY_NULLPTR
 };
 #endif
 
@@ -590,16 +594,17 @@ static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
-     275,   276,    58,    44,    47,    45,    46,    43
+     275,   276,   277,   278,    58,    44,    45,    47,    84,    46,
+      43
 };
 # endif
 
-#define YYPACT_NINF -18
+#define YYPACT_NINF -21
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-18)))
+  (!!((Yystate) == (-21)))
 
-#define YYTABLE_NINF -1
+#define YYTABLE_NINF -68
 
 #define yytable_value_is_error(Yytable_value) \
   0
@@ -608,17 +613,17 @@ static const yytype_uint16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-     -18,    17,   -18,   -17,   -18,    45,   -18,    -5,   -18,    42,
-      30,    44,    44,   -18,    35,   -18,     0,   -18,   -18,   -18,
-     -18,   -18,   -18,   -18,   -18,   -18,   -18,   -18,    55,    33,
-     -18,     5,   -18,    39,   -18,   -17,   -18,   -18,    46,   -18,
-     -18,    58,    61,    62,    26,   -18,    -5,    -5,    43,   -18,
-      47,   -18,   -18,    67,   -18,     5,   -18,    72,    50,     5,
-     -18,   -18,    65,    66,   -18,    -2,    56,    54,    57,   -18,
-     -18,    59,   -18,    63,   -18,   -18,   -18,   -18,    79,     5,
-     -18,   -18,   -18,   -18,    74,   -18,    75,    76,    77,    78,
-      80,   -18,   -18,    84,   -18,   -18,   -18,    71,    73,   -18,
-      82,    85,   -18,   -18
+     -21,    11,   -21,   -20,   -21,     5,   -21,    -9,   -21,    46,
+      17,     9,     9,   -21,   -21,   -21,    24,   -21,    57,   -21,
+     -21,   -21,    33,   -21,   -21,   -21,   -21,   -21,   -21,   -15,
+     -21,   -21,   -21,    45,    26,   -21,    -7,   -21,    51,   -21,
+     -20,   -21,   -21,   -21,    48,   -21,   -21,    67,    68,    52,
+      69,   -21,    -9,    -9,   -21,   -21,   -21,   -21,    74,   -21,
+      -7,   -21,   -21,   -21,   -21,    44,   -21,    79,    40,    -7,
+     -21,   -21,    72,    73,   -21,    62,    61,    63,    64,   -21,
+     -21,   -21,   -21,    66,   -21,   -21,   -21,   -21,    84,    -7,
+     -21,   -21,   -21,    80,    81,    82,    83,   -21,   -21,   -21,
+     -21,   -21,   -21
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -626,103 +631,107 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       2,     0,     1,    24,    18,     0,    60,     0,    58,    61,
-      17,     0,     0,    38,    32,    59,     0,    56,    57,     3,
-       4,     5,     8,     6,     7,    10,    11,     9,    49,     0,
-      55,    63,    12,    22,    25,    35,    61,    62,     0,    26,
-      13,    37,     0,     0,     0,    16,     0,     0,     0,    43,
-       0,    29,    40,    61,    53,     0,    48,    61,     0,    21,
-      52,    23,     0,     0,    39,    64,    30,     0,     0,    19,
-      20,     0,    42,     0,    46,    41,    54,    28,    61,     0,
-      51,    36,    47,    65,     0,    14,     0,     0,     0,     0,
-       0,    27,    50,    64,    31,    33,    34,     0,     0,    15,
-       0,     0,    45,    44
+       2,     0,     1,    25,    19,     0,    66,     0,    64,    70,
+      18,     0,     0,    39,    45,    46,     0,    65,     0,    62,
+      63,     3,    71,     4,     5,     8,    47,     6,     7,    34,
+      10,    11,     9,    55,     0,    61,     0,    12,    23,    26,
+      36,    67,    69,    68,     0,    27,    15,    38,     0,     0,
+       0,    17,     0,     0,    52,    51,    30,    41,    67,    59,
+       0,    72,    16,    44,    43,     0,    54,    67,     0,    22,
+      58,    24,     0,     0,    40,    14,     0,     0,    32,    20,
+      21,    42,    60,     0,    48,    49,    50,    29,    67,     0,
+      57,    37,    53,     0,     0,     0,     0,    28,    56,    13,
+      35,    31,    33
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -18,   -18,   -18,   -18,   -18,    49,   -18,   -18,   -18,   -18,
-     -18,   -18,   -18,    -9,   -16,    -6,   -18,     3
+     -21,   -21,   -21,    31,   -21,   -21,    58,   -21,   -21,   -21,
+     -21,   -21,   -21,   -21,   -21,   -21,   -21,   -21,    -5,   -18,
+      -6,   -21,   -21
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     1,    19,    20,    21,    34,    22,    23,    24,    25,
-      26,    27,    28,    29,    30,    31,    32,    85
+      -1,     1,    21,    22,    23,    24,    39,    25,    26,    27,
+      28,    65,    29,    86,    30,    31,    32,    33,    34,    35,
+      36,    37,    62
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
      positive, shift that token.  If negative, reduce the rule whose
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
-static const yytype_uint8 yytable[] =
+static const yytype_int8 yytable[] =
 {
-      54,    38,    46,    47,    51,    83,    33,    36,    52,     6,
-      55,     8,    53,    37,     6,    60,     8,     2,    37,    15,
-      84,     3,     4,    59,    15,     5,     6,     7,     8,     9,
-      10,    11,    12,    13,    67,    14,    15,    16,    68,    76,
-      69,    70,    17,    80,    18,    57,    39,    45,    48,    40,
-      41,    37,    79,    49,    58,    71,    50,    35,    56,    73,
-      61,    72,    78,    92,    42,    74,    43,    44,    37,    17,
-      64,    18,    63,    65,    66,    75,    77,    81,    82,    87,
-      86,    89,    88,    91,    62,    90,    93,    94,    95,    96,
-      97,    83,    98,   100,   102,   101,    99,   103
+      59,    44,     6,    41,     8,    38,    52,    53,    63,    42,
+      43,     2,    60,    64,    17,     3,     4,    40,    70,     5,
+       6,     7,     8,     9,    10,    11,    12,    13,    69,    14,
+      15,    16,    17,    18,    51,    19,    54,    19,    67,    20,
+      61,    20,    82,    55,    42,    43,    79,    80,    66,    68,
+      45,    90,    88,    46,    47,   -67,    83,   -67,    42,    43,
+      76,    56,    89,    84,    77,    57,     6,   -67,     8,    58,
+      48,    98,    49,    50,    71,    42,    43,    73,    17,    74,
+      75,    78,    81,    87,    91,    92,    93,    94,    97,    95,
+      48,    96,    99,   100,   101,   102,    85,     0,    72
 };
 
-static const yytype_uint8 yycheck[] =
+static const yytype_int8 yycheck[] =
 {
-      16,     7,    11,    12,     4,     7,    23,    12,     8,     9,
-      16,    11,    12,    18,     9,    31,    11,     0,    18,    19,
-      22,     4,     5,    29,    19,     8,     9,    10,    11,    12,
-      13,    14,    15,    16,     8,    18,    19,    20,    12,    55,
-      46,    47,    25,    59,    27,    12,     4,    17,    13,     7,
-       8,    18,    58,    18,    21,    12,    21,    12,     3,    12,
-      21,    18,    12,    79,    22,    18,    24,    25,    18,    25,
-      12,    27,    26,    12,    12,     8,     4,    12,    12,    25,
-      24,    22,    25,     4,    35,    22,    12,    12,    12,    12,
-      12,     7,    12,    22,    12,    22,    93,    12
+      18,     7,     9,    12,    11,    25,    11,    12,    23,    18,
+      19,     0,    18,    28,    21,     4,     5,    12,    36,     8,
+       9,    10,    11,    12,    13,    14,    15,    16,    34,    18,
+      19,    20,    21,    22,    17,    26,    12,    26,    12,    30,
+       7,    30,    60,    19,    18,    19,    52,    53,     3,    23,
+       4,    69,    12,     7,     8,     9,    12,    11,    18,    19,
+       8,     4,    68,    19,    12,     8,     9,    21,    11,    12,
+      24,    89,    26,    27,    23,    18,    19,    29,    21,    12,
+      12,    12,     8,     4,    12,    12,    24,    26,     4,    26,
+      24,    27,    12,    12,    12,    12,    65,    -1,    40
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    29,     0,     4,     5,     8,     9,    10,    11,    12,
-      13,    14,    15,    16,    18,    19,    20,    25,    27,    30,
-      31,    32,    34,    35,    36,    37,    38,    39,    40,    41,
-      42,    43,    44,    23,    33,    12,    12,    18,    43,     4,
-       7,     8,    22,    24,    25,    17,    41,    41,    13,    18,
-      21,     4,     8,    12,    42,    43,     3,    12,    21,    43,
-      42,    21,    33,    26,    12,    12,    12,     8,    12,    43,
-      43,    12,    18,    12,    18,     8,    42,     4,    12,    43,
-      42,    12,    12,     7,    22,    45,    24,    25,    25,    22,
-      22,     4,    42,    12,    12,    12,    12,    12,    12,    45,
-      22,    22,    12,    12
+       0,    32,     0,     4,     5,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    18,    19,    20,    21,    22,    26,
+      30,    33,    34,    35,    36,    38,    39,    40,    41,    43,
+      45,    46,    47,    48,    49,    50,    51,    52,    25,    37,
+      12,    12,    18,    19,    51,     4,     7,     8,    24,    26,
+      27,    17,    49,    49,    12,    19,     4,     8,    12,    50,
+      51,     7,    53,    23,    28,    42,     3,    12,    23,    51,
+      50,    23,    37,    29,    12,    12,     8,    12,    12,    51,
+      51,     8,    50,    12,    19,    34,    44,     4,    12,    51,
+      50,    12,    12,    24,    26,    26,    27,     4,    50,    12,
+      12,    12,    12
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    28,    29,    29,    30,    30,    30,    30,    30,    30,
-      30,    30,    30,    31,    31,    31,    32,    32,    32,    32,
-      32,    32,    33,    33,    34,    34,    34,    34,    34,    34,
-      35,    35,    35,    35,    35,    35,    35,    35,    35,    35,
-      36,    36,    37,    37,    37,    37,    37,    38,    39,    39,
-      40,    40,    40,    40,    40,    40,    41,    41,    42,    42,
-      42,    43,    43,    44,    45,    45
+       0,    31,    32,    32,    33,    33,    33,    33,    33,    33,
+      33,    33,    33,    34,    34,    35,    35,    36,    36,    36,
+      36,    36,    36,    37,    37,    38,    38,    38,    38,    38,
+      38,    39,    40,    40,    40,    40,    40,    40,    40,    40,
+      40,    41,    41,    42,    42,    43,    43,    43,    44,    44,
+      45,    45,    45,    46,    47,    47,    48,    48,    48,    48,
+      48,    48,    49,    49,    50,    50,    50,    51,    51,    51,
+      52,    53,    53
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     0,     2,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     2,     4,     6,     2,     1,     1,     3,
-       3,     2,     1,     2,     1,     2,     2,     4,     3,     2,
-       3,     5,     1,     5,     5,     2,     4,     2,     1,     3,
-       2,     3,     3,     2,     7,     7,     3,     4,     2,     1,
-       4,     3,     2,     2,     3,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     0,     1
+       1,     1,     1,     5,     3,     2,     2,     2,     1,     1,
+       3,     3,     2,     1,     2,     1,     2,     2,     4,     3,
+       2,     5,     3,     5,     1,     5,     2,     4,     2,     1,
+       3,     2,     3,     1,     1,     1,     1,     1,     1,     1,
+       3,     2,     2,     4,     2,     1,     4,     3,     2,     2,
+       3,     1,     1,     1,     1,     1,     1,     1,     1,     1,
+       1,     0,     1
 };
 
 
@@ -1569,6 +1578,26 @@ yyreduce:
   case 13:
 
     {
+	    yyHour = (yyvsp[-4].Number);
+	    yyMinutes = (yyvsp[-2].Number);
+	    yySeconds = (yyvsp[0].Number);
+	}
+
+    break;
+
+  case 14:
+
+    {
+	    yyHour = (yyvsp[-2].Number);
+	    yyMinutes = (yyvsp[0].Number);
+	    yySeconds = 0;
+	}
+
+    break;
+
+  case 15:
+
+    {
 	    yyHour = (yyvsp[-1].Number);
 	    yyMinutes = 0;
 	    yySeconds = 0;
@@ -1577,29 +1606,15 @@ yyreduce:
 
     break;
 
-  case 14:
-
-    {
-	    yyHour = (yyvsp[-3].Number);
-	    yyMinutes = (yyvsp[-1].Number);
-	    yySeconds = 0;
-	    yyMeridian = (yyvsp[0].Meridian);
-	}
-
-    break;
-
-  case 15:
-
-    {
-	    yyHour = (yyvsp[-5].Number);
-	    yyMinutes = (yyvsp[-3].Number);
-	    yySeconds = (yyvsp[-1].Number);
-	    yyMeridian = (yyvsp[0].Meridian);
-	}
-
-    break;
-
   case 16:
+
+    {
+	    yyMeridian = (yyvsp[0].Meridian);
+	}
+
+    break;
+
+  case 17:
 
     {
 	    yyTimezone = (yyvsp[-1].Number);
@@ -1608,7 +1623,7 @@ yyreduce:
 
     break;
 
-  case 17:
+  case 18:
 
     {
 	    yyTimezone = (yyvsp[0].Number);
@@ -1617,7 +1632,7 @@ yyreduce:
 
     break;
 
-  case 18:
+  case 19:
 
     {
 	    yyTimezone = (yyvsp[0].Number);
@@ -1626,7 +1641,7 @@ yyreduce:
 
     break;
 
-  case 19:
+  case 20:
 
     { /* GMT+0100, GMT-1000, etc. */
 	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number)*((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
@@ -1635,7 +1650,7 @@ yyreduce:
 
     break;
 
-  case 20:
+  case 21:
 
     { /* GMT+1, GMT-10, etc. */
 	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number)*((yyvsp[0].Number) * 60);
@@ -1644,7 +1659,7 @@ yyreduce:
 
     break;
 
-  case 21:
+  case 22:
 
     { /* +0100, -0100 */
 	    yyTimezone = -(yyvsp[-1].Number)*((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
@@ -1653,7 +1668,7 @@ yyreduce:
 
     break;
 
-  case 24:
+  case 25:
 
     {
 	    yyDayOrdinal = 1;
@@ -1662,7 +1677,7 @@ yyreduce:
 
     break;
 
-  case 25:
+  case 26:
 
     {
 	    yyDayOrdinal = 1;
@@ -1671,7 +1686,7 @@ yyreduce:
 
     break;
 
-  case 26:
+  case 27:
 
     {
 	    yyDayOrdinal = (yyvsp[-1].Number);
@@ -1680,7 +1695,7 @@ yyreduce:
 
     break;
 
-  case 27:
+  case 28:
 
     {
 	    yyDayOrdinal = (yyvsp[-3].Number) * (yyvsp[-1].Number);
@@ -1689,7 +1704,7 @@ yyreduce:
 
     break;
 
-  case 28:
+  case 29:
 
     {
 	    yyDayOrdinal = (yyvsp[-2].Number) * (yyvsp[-1].Number);
@@ -1698,7 +1713,7 @@ yyreduce:
 
     break;
 
-  case 29:
+  case 30:
 
     {
 	    yyDayOrdinal = 2;
@@ -1707,46 +1722,7 @@ yyreduce:
 
     break;
 
-  case 30:
-
-    {
-	    yyMonth = (yyvsp[-2].Number);
-	    yyDay = (yyvsp[0].Number);
-	}
-
-    break;
-
   case 31:
-
-    {
-	    yyMonth = (yyvsp[-4].Number);
-	    yyDay = (yyvsp[-2].Number);
-	    yyYear = (yyvsp[0].Number);
-	}
-
-    break;
-
-  case 32:
-
-    {
-	    yyYear = (yyvsp[0].Number) / 10000;
-	    yyMonth = ((yyvsp[0].Number) % 10000)/100;
-	    yyDay = (yyvsp[0].Number) % 100;
-	}
-
-    break;
-
-  case 33:
-
-    {
-	    yyDay = (yyvsp[-4].Number);
-	    yyMonth = (yyvsp[-2].Number);
-	    yyYear = (yyvsp[0].Number);
-	}
-
-    break;
-
-  case 34:
 
     {
 	    yyMonth = (yyvsp[-2].Number);
@@ -1756,7 +1732,36 @@ yyreduce:
 
     break;
 
+  case 32:
+
+    {
+	    yyMonth = (yyvsp[-2].Number);
+	    yyDay = (yyvsp[0].Number);
+	}
+
+    break;
+
+  case 33:
+
+    {
+	    yyMonth = (yyvsp[-4].Number);
+	    yyDay = (yyvsp[-2].Number);
+	    yyYear = (yyvsp[0].Number);
+	}
+
+    break;
+
   case 35:
+
+    {
+	    yyDay = (yyvsp[-4].Number);
+	    yyMonth = (yyvsp[-2].Number);
+	    yyYear = (yyvsp[0].Number);
+	}
+
+    break;
+
+  case 36:
 
     {
 	    yyMonth = (yyvsp[-1].Number);
@@ -1765,7 +1770,7 @@ yyreduce:
 
     break;
 
-  case 36:
+  case 37:
 
     {
 	    yyMonth = (yyvsp[-3].Number);
@@ -1775,7 +1780,7 @@ yyreduce:
 
     break;
 
-  case 37:
+  case 38:
 
     {
 	    yyMonth = (yyvsp[0].Number);
@@ -1784,7 +1789,7 @@ yyreduce:
 
     break;
 
-  case 38:
+  case 39:
 
     {
 	    yyMonth = 1;
@@ -1794,7 +1799,7 @@ yyreduce:
 
     break;
 
-  case 39:
+  case 40:
 
     {
 	    yyMonth = (yyvsp[-1].Number);
@@ -1804,7 +1809,7 @@ yyreduce:
 
     break;
 
-  case 40:
+  case 41:
 
     {
 	    yyMonthOrdinalIncr = 1;
@@ -1813,7 +1818,7 @@ yyreduce:
 
     break;
 
-  case 41:
+  case 42:
 
     {
 	    yyMonthOrdinalIncr = (yyvsp[-1].Number);
@@ -1822,13 +1827,29 @@ yyreduce:
 
     break;
 
-  case 42:
+  case 45:
+
+    { /* YYYYMMDD */
+	    yyYear = (yyvsp[0].Number) / 10000;
+	    yyMonth = ((yyvsp[0].Number) % 10000)/100;
+	    yyDay = (yyvsp[0].Number) % 100;
+	}
+
+    break;
+
+  case 46:
+
+    { /* YYMMDD */
+	    yyYear = (yyvsp[0].Number) / 10000;
+	    yyMonth = ((yyvsp[0].Number) % 10000)/100;
+	    yyDay = (yyvsp[0].Number) % 100;
+	}
+
+    break;
+
+  case 48:
 
     {
-	    if ((yyvsp[-1].Number) != HOUR( 7)) YYABORT; /* T */
-	    yyYear = (yyvsp[-2].Number) / 10000;
-	    yyMonth = ((yyvsp[-2].Number) % 10000)/100;
-	    yyDay = (yyvsp[-2].Number) % 100;
 	    yyHour = (yyvsp[0].Number) / 10000;
 	    yyMinutes = ((yyvsp[0].Number) % 10000)/100;
 	    yySeconds = (yyvsp[0].Number) % 100;
@@ -1836,9 +1857,9 @@ yyreduce:
 
     break;
 
-  case 43:
+  case 51:
 
-    {
+    { /* YYYYMMDDhhmmss */
 	    yyYear = (yyvsp[-1].Number) / 10000;
 	    yyMonth = ((yyvsp[-1].Number) % 10000)/100;
 	    yyDay = (yyvsp[-1].Number) % 100;
@@ -1849,47 +1870,21 @@ yyreduce:
 
     break;
 
-  case 44:
+  case 52:
 
-    {
-	    yyYear = (yyvsp[-6].Number) / 10000;
-	    yyMonth = ((yyvsp[-6].Number) % 10000)/100;
-	    yyDay = (yyvsp[-6].Number) % 100;
-	    yyHour = (yyvsp[-4].Number);
-	    yyMinutes = (yyvsp[-2].Number);
-	    yySeconds = (yyvsp[0].Number);
+    { /* YYYYMMDDhhmm */
+	    if (yyDigitCount != 4) YYABORT; /* normally unreached */
+	    yyYear = (yyvsp[-1].Number) / 10000;
+	    yyMonth = ((yyvsp[-1].Number) % 10000)/100;
+	    yyDay = (yyvsp[-1].Number) % 100;
+	    yyHour = (yyvsp[0].Number) / 100;
+	    yyMinutes = ((yyvsp[0].Number) % 100);
+	    yySeconds = 0;
 	}
 
     break;
 
-  case 45:
-
-    {
-	    if ((yyvsp[-5].Number) != HOUR( 7)) YYABORT; /* T */
-	    yyYear = (yyvsp[-6].Number) / 10000;
-	    yyMonth = ((yyvsp[-6].Number) % 10000)/100;
-	    yyDay = (yyvsp[-6].Number) % 100;
-	    yyHour = (yyvsp[-4].Number);
-	    yyMinutes = (yyvsp[-2].Number);
-	    yySeconds = (yyvsp[0].Number);
-	}
-
-    break;
-
-  case 46:
-
-    {
-	    yyYear = (yyvsp[-2].Number) / 10000;
-	    yyMonth = ((yyvsp[-2].Number) % 10000)/100;
-	    yyDay = (yyvsp[-2].Number) % 100;
-	    yyHour = (yyvsp[0].Number) / 10000;
-	    yyMinutes = ((yyvsp[0].Number) % 10000)/100;
-	    yySeconds = (yyvsp[0].Number) % 100;
-	}
-
-    break;
-
-  case 47:
+  case 53:
 
     {
 	    /*
@@ -1906,7 +1901,7 @@ yyreduce:
 
     break;
 
-  case 48:
+  case 54:
 
     {
 	    yyRelSeconds *= -1;
@@ -1916,7 +1911,7 @@ yyreduce:
 
     break;
 
-  case 50:
+  case 56:
 
     {
 	    *yyRelPointer += (yyvsp[-3].Number) * (yyvsp[-1].Number) * (yyvsp[0].Number);
@@ -1924,7 +1919,7 @@ yyreduce:
 
     break;
 
-  case 51:
+  case 57:
 
     {
 	    *yyRelPointer += (yyvsp[-2].Number) * (yyvsp[-1].Number) * (yyvsp[0].Number);
@@ -1932,7 +1927,7 @@ yyreduce:
 
     break;
 
-  case 52:
+  case 58:
 
     {
 	    *yyRelPointer += (yyvsp[-1].Number) * (yyvsp[0].Number);
@@ -1940,7 +1935,7 @@ yyreduce:
 
     break;
 
-  case 53:
+  case 59:
 
     {
 	    *yyRelPointer += (yyvsp[0].Number);
@@ -1948,7 +1943,7 @@ yyreduce:
 
     break;
 
-  case 54:
+  case 60:
 
     {
 	    *yyRelPointer += (yyvsp[-1].Number) * (yyvsp[0].Number);
@@ -1956,7 +1951,7 @@ yyreduce:
 
     break;
 
-  case 55:
+  case 61:
 
     {
 	    *yyRelPointer += (yyvsp[0].Number);
@@ -1964,7 +1959,7 @@ yyreduce:
 
     break;
 
-  case 56:
+  case 62:
 
     {
 	    (yyval.Number) = -1;
@@ -1972,7 +1967,7 @@ yyreduce:
 
     break;
 
-  case 57:
+  case 63:
 
     {
 	    (yyval.Number) =  1;
@@ -1980,7 +1975,7 @@ yyreduce:
 
     break;
 
-  case 58:
+  case 64:
 
     {
 	    (yyval.Number) = (yyvsp[0].Number);
@@ -1989,7 +1984,7 @@ yyreduce:
 
     break;
 
-  case 59:
+  case 65:
 
     {
 	    (yyval.Number) = (yyvsp[0].Number);
@@ -1998,7 +1993,7 @@ yyreduce:
 
     break;
 
-  case 60:
+  case 66:
 
     {
 	    (yyval.Number) = (yyvsp[0].Number);
@@ -2007,7 +2002,7 @@ yyreduce:
 
     break;
 
-  case 61:
+  case 67:
 
     {
 	    (yyval.Number) = (yyvsp[0].Number);
@@ -2015,7 +2010,7 @@ yyreduce:
 
     break;
 
-  case 62:
+  case 68:
 
     {
 	    (yyval.Number) = (yyvsp[0].Number);
@@ -2023,7 +2018,15 @@ yyreduce:
 
     break;
 
-  case 63:
+  case 69:
+
+    {
+	    (yyval.Number) = (yyvsp[0].Number);
+	}
+
+    break;
+
+  case 70:
 
     {
 	    if ((info->flags & (CLF_TIME|CLF_HAVEDATE|CLF_RELCONV)) == (CLF_TIME|CLF_HAVEDATE)) {
@@ -2044,7 +2047,7 @@ yyreduce:
 
     break;
 
-  case 64:
+  case 71:
 
     {
 	    (yyval.Meridian) = MER24;
@@ -2052,7 +2055,7 @@ yyreduce:
 
     break;
 
-  case 65:
+  case 72:
 
     {
 	    (yyval.Meridian) = (yyvsp[0].Meridian);
@@ -2704,6 +2707,7 @@ TclDatelex(
     register char *p;
     char buff[20];
     int Count;
+    const char *tokStart;
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
@@ -2716,6 +2720,7 @@ TclDatelex(
 		return SP;
 	    }
 	}
+	tokStart = yyInput;
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
 	    
@@ -2725,26 +2730,48 @@ TclDatelex(
 	    register int num = c - '0';
 	    p = (char *)yyInput;
 	    while (isdigit(UCHAR(c = *(++p)))) {
-		num *= 10;
-		num += c - '0';
-	    };
+		if (num >= 0) {
+		    num *= 10; num += c - '0';
+		}
+	    }
 	    yylvalPtr->Number = num;
 	    yyDigitCount = p - yyInput;
 	    yyInput = p;
 
-	    /* ignore spaces after digits (optional) */
-	    yyInput = bypassSpaces(yyInput);
 	    /*
 	     * A number with 6 or more digits is considered an ISO 8601 base.
 	     */
 
+	    location->last_column = yyInput - info->dateStart - 1;
 	    if (yyDigitCount >= 6) {
-		location->last_column = yyInput - info->dateStart - 1;
-		return tISOBASE;
-	    } else {
-		location->last_column = yyInput - info->dateStart - 1;
-		return tUNUMBER;
+		if (yyDigitCount == 14 || yyDigitCount == 12) {
+		    /* long form of ISO 8601 (without separator), either
+		     * YYYYMMDDhhmmss or YYYYMMDDhhmm, so reduce to date
+		     * (8 chars is isodate) */
+		    p = (char *)tokStart;
+		    num = *p++ - '0';
+		    do {
+			num *= 10; num += *p++ - '0';
+		    } while (p - tokStart < 8);
+		    yylvalPtr->Number = num;
+		    yyDigitCount = 8;
+		    yyInput = p;
+		    location->last_column = yyInput - info->dateStart - 1;
+		    return tISOBASL;
+		}
+		if (num < 0) { /* overflow */
+		    return tID;
+		}
+		if (yyDigitCount == 8) {
+		    return tISOBAS8;
+		}
+		if (yyDigitCount == 6) {
+		    return tISOBAS6;
+		}
 	    }
+	    /* ignore spaces after digits (optional) */
+	    yyInput = bypassSpaces(yyInput);
+	    return tUNUMBER;
 	}
 	if (!(c & 0x80) && isalpha(UCHAR(c))) {		  /* INTL: ISO only. */
 	    int ret;
@@ -2759,12 +2786,19 @@ TclDatelex(
 	    location->last_column = yyInput - info->dateStart - 1;
 	    ret = LookupWord(yylvalPtr, buff);
 	    /* 
-	     * lookahead for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day",
+	     * lookahead:
+	     *	for spaces to consider word boundaries (for instance
+	     *	literal T in isodateTisotimeZ is not a TZ, but Z is UTC);
+	     *	for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day";
 	     * bypass spaces after token (but ignore by TZ+OFFS), because should 
 	     * recognize next SP token, if TZ only.
 	     */
 	    if (ret == tZONE || ret == tDAYZONE) {
 		c = *yyInput;
+		if (isdigit(c)) { /* literal not a TZ  */
+		    yyInput = tokStart;
+		    return *yyInput++;
+		}
 		if ((c == '+' || c == '-') && isdigit(UCHAR(*(yyInput+1)))) {
 		    if ( !isdigit(UCHAR(*(yyInput+2)))
 		      || !isdigit(UCHAR(*(yyInput+3)))) {

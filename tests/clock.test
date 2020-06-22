@@ -36174,6 +36174,7 @@ test clock-34.12 {clock scan, relative times} {
     set time [clock scan "Oct 23, 1992 -1 day"  -gmt true]
     clock format $time -format {%b %d, %Y} -gmt true
 } "Oct 22, 1992"
+
 test clock-34.13 {clock scan, ISO 8601 base date format} {
     set time [clock scan "19921023" -gmt true]
     clock format $time -format {%b %d, %Y} -gmt true
@@ -36190,12 +36191,70 @@ test clock-34.16 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T235959" -gmt true]
     clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Oct 23, 1992 23:59:59"
+test clock-34.16.1a {clock scan, ISO 8601 T literal optional (YYYYMMDDhhmmss)} {
+    set time [clock scan "19921023235959" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
+test clock-34.16.1b {clock scan, ISO 8601 T literal optional (YYYYMMDDhhmm)} {
+    set time [clock scan "199210232359" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:00"
+test clock-34.16.2 {clock scan, ISO 8601 extended date time} {
+    set time [clock scan "1992-10-23T23:59:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
 test clock-34.17 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023 235959" -gmt true]
     clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Oct 23, 1992 23:59:59"
+test clock-34.17.2a {clock scan, ISO 8601 extended date time (YYYY-MM-DD hh:mm:ss)} {
+    set time [clock scan "1992-10-23 23:59:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
+test clock-34.17.2b {clock scan, ISO 8601 extended date time (YYYY-MM-DDThh:mm:ss)} {
+    set time [clock scan "1992-10-23T23:59:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
+test clock-34.17.2c {clock scan, ISO 8601 extended date time (YYYY-MM-DD hh:mm)} {
+    set time [clock scan "1992-10-23 23:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:00"
+test clock-34.17.2d {clock scan, ISO 8601 extended date time (YYYY-MM-DDThh:mm)} {
+    set time [clock scan "1992-10-23T23:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:00"
+test clock-34.17.3 {clock scan, TZ-word boundaries - Z is not TZ here } -body {
+    set time [clock scan "1992-10-23Z23:59:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} -returnCodes error -match glob \
+  -result {unable to convert date-time string*}
+test clock-34.17.4 {clock scan, TZ-word boundaries - Z is TZ UTC here} {
+    set time [clock scan "1992-10-23 Z 23:59:59" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
+test clock-34.17.5 {clock scan, ISO 8601 extended date time with UTC TZ} {
+    set time [clock scan "1992-10-23T23:59:59Z" -timezone :America/Detroit]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
 test clock-34.18 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T000000" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 00:00:00"
+test clock-34.18.2 {clock scan, ISO 8601 extended date time} {
+    set time [clock scan "1992-10-23T00:00:00" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 00:00:00"
+test clock-34.18.3 {clock scan, TZ-word boundaries - Z is not TZ here } -body {
+    set time [clock scan "1992-10-23Z00:00:00" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} -returnCodes error -match glob \
+  -result {unable to convert date-time string*}
+test clock-34.18.4 {clock scan, TZ-word boundaries - Z is TZ UTC here} {
+    set time [clock scan "1992-10-23 Z 00:00:00" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 00:00:00"
+test clock-34.18.5 {clock scan, ISO 8601 extended date time with UTC TZ} {
+    set time [clock scan "1992-10-23T00:00:00Z" -timezone :America/Detroit]
     clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Oct 23, 1992 00:00:00"
 

@@ -137,7 +137,9 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tZONEwO2
 %token	tEPOCH
 %token	tDST
-%token	tISOBASE
+%token	tISOBAS8
+%token	tISOBAS6
+%token	tISOBASL
 %token	tDAY_UNIT
 %token	tNEXT
 %token	SP
@@ -153,7 +155,9 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %type	<Number>	tZONE
 %type	<Number>	tZONEwO4
 %type	<Number>	tZONEwO2
-%type	<Number>	tISOBASE
+%type	<Number>	tISOBAS8
+%type	<Number>	tISOBAS6
+%type	<Number>	tISOBASL
 %type	<Number>	tDAY_UNIT
 %type	<Number>	unit
 %type	<Number>	sign
@@ -194,26 +198,28 @@ item	: time {
 	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
 	    info->flags |= CLF_RELCONV;
 	}
-	| number
+	| numitem
 	;
 
+iextime : tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	    yyHour = $1;
+	    yyMinutes = $3;
+	    yySeconds = $5;
+	}
+	| tUNUMBER ':' tUNUMBER {
+	    yyHour = $1;
+	    yyMinutes = $3;
+	    yySeconds = 0;
+	}
+	;
 time	: tUNUMBER tMERIDIAN {
 	    yyHour = $1;
 	    yyMinutes = 0;
 	    yySeconds = 0;
 	    yyMeridian = $2;
 	}
-	| tUNUMBER ':' tUNUMBER o_merid {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = 0;
-	    yyMeridian = $4;
-	}
-	| tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = $5;
-	    yyMeridian = $6;
+	| iextime o_merid {
+	    yyMeridian = $2;
 	}
 	;
 
@@ -273,6 +279,12 @@ day	: tDAY {
 	}
 	;
 
+iexdate	: tUNUMBER '-' tUNUMBER '-' tUNUMBER {
+	    yyMonth = $3;
+	    yyDay = $5;
+	    yyYear = $1;
+	}
+	;
 date	: tUNUMBER '/' tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $3;
@@ -282,20 +294,11 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyDay = $3;
 	    yyYear = $5;
 	}
-	| tISOBASE {
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	}
+	| isodate
 	| tUNUMBER '-' tMONTH '-' tUNUMBER {
 	    yyDay = $1;
 	    yyMonth = $3;
 	    yyYear = $5;
-	}
-	| tUNUMBER '-' tUNUMBER '-' tUNUMBER {
-	    yyMonth = $3;
-	    yyDay = $5;
-	    yyYear = $1;
 	}
 	| tMONTH tUNUMBER {
 	    yyMonth = $1;
@@ -332,16 +335,29 @@ ordMonth: tNEXT tMONTH {
 	}
 	;
 
-iso	: tISOBASE tZONE tISOBASE {
-	    if ($2 != HOUR( 7)) YYABORT; /* T */
+isosep	: 'T'|SP
+	;
+isodate	: tISOBAS8 { /* YYYYMMDD */
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
-	    yyHour = $3 / 10000;
-	    yyMinutes = ($3 % 10000)/100;
-	    yySeconds = $3 % 100;
 	}
-	| tISOBASE tISOBASE {
+	| tISOBAS6 { /* YYMMDD */
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	}
+	| iexdate
+	;
+isotime	: tISOBAS6 {
+	    yyHour = $1 / 10000;
+	    yyMinutes = ($1 % 10000)/100;
+	    yySeconds = $1 % 100;
+	}
+	| iextime
+	;
+iso	: isodate isosep isotime
+	| tISOBASL tISOBAS6 { /* YYYYMMDDhhmmss */
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -349,30 +365,14 @@ iso	: tISOBASE tZONE tISOBASE {
 	    yyMinutes = ($2 % 10000)/100;
 	    yySeconds = $2 % 100;
 	}
-	| tISOBASE SP tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	| tISOBASL tUNUMBER { /* YYYYMMDDhhmm */
+	    if (yyDigitCount != 4) YYABORT; /* normally unreached */
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
-	    yyHour = $3;
-	    yyMinutes = $5;
-	    yySeconds = $7;
-	}
-	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    if ($2 != HOUR( 7)) YYABORT; /* T */
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3;
-	    yyMinutes = $5;
-	    yySeconds = $7;
-	}
-	| tISOBASE SP tISOBASE {
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3 / 10000;
-	    yyMinutes = ($3 % 10000)/100;
-	    yySeconds = $3 % 100;
+	    yyHour = $2 / 100;
+	    yyMinutes = ($2 % 100);
+	    yySeconds = 0;
 	}
 	;
 
@@ -443,12 +443,15 @@ unit	: tSEC_UNIT {
 INTNUM	: tUNUMBER {
 	    $$ = $1;
 	}
-	| tISOBASE {
+	| tISOBAS6 {
+	    $$ = $1;
+	}
+	| tISOBAS8 {
 	    $$ = $1;
 	}
 	;
 
-number	: INTNUM {
+numitem	: tUNUMBER {
 	    if ((info->flags & (CLF_TIME|CLF_HAVEDATE|CLF_RELCONV)) == (CLF_TIME|CLF_HAVEDATE)) {
 		yyYear = $1;
 	    } else {
@@ -882,6 +885,7 @@ TclDatelex(
     register char *p;
     char buff[20];
     int Count;
+    const char *tokStart;
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
@@ -894,6 +898,7 @@ TclDatelex(
 		return SP;
 	    }
 	}
+	tokStart = yyInput;
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
 	    
@@ -903,26 +908,48 @@ TclDatelex(
 	    register int num = c - '0';
 	    p = (char *)yyInput;
 	    while (isdigit(UCHAR(c = *(++p)))) {
-		num *= 10;
-		num += c - '0';
-	    };
+		if (num >= 0) {
+		    num *= 10; num += c - '0';
+		}
+	    }
 	    yylvalPtr->Number = num;
 	    yyDigitCount = p - yyInput;
 	    yyInput = p;
 
-	    /* ignore spaces after digits (optional) */
-	    yyInput = bypassSpaces(yyInput);
 	    /*
 	     * A number with 6 or more digits is considered an ISO 8601 base.
 	     */
 
+	    location->last_column = yyInput - info->dateStart - 1;
 	    if (yyDigitCount >= 6) {
-		location->last_column = yyInput - info->dateStart - 1;
-		return tISOBASE;
-	    } else {
-		location->last_column = yyInput - info->dateStart - 1;
-		return tUNUMBER;
+		if (yyDigitCount == 14 || yyDigitCount == 12) {
+		    /* long form of ISO 8601 (without separator), either
+		     * YYYYMMDDhhmmss or YYYYMMDDhhmm, so reduce to date
+		     * (8 chars is isodate) */
+		    p = (char *)tokStart;
+		    num = *p++ - '0';
+		    do {
+			num *= 10; num += *p++ - '0';
+		    } while (p - tokStart < 8);
+		    yylvalPtr->Number = num;
+		    yyDigitCount = 8;
+		    yyInput = p;
+		    location->last_column = yyInput - info->dateStart - 1;
+		    return tISOBASL;
+		}
+		if (num < 0) { /* overflow */
+		    return tID;
+		}
+		if (yyDigitCount == 8) {
+		    return tISOBAS8;
+		}
+		if (yyDigitCount == 6) {
+		    return tISOBAS6;
+		}
 	    }
+	    /* ignore spaces after digits (optional) */
+	    yyInput = bypassSpaces(yyInput);
+	    return tUNUMBER;
 	}
 	if (!(c & 0x80) && isalpha(UCHAR(c))) {		  /* INTL: ISO only. */
 	    int ret;
@@ -937,12 +964,19 @@ TclDatelex(
 	    location->last_column = yyInput - info->dateStart - 1;
 	    ret = LookupWord(yylvalPtr, buff);
 	    /* 
-	     * lookahead for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day",
+	     * lookahead:
+	     *	for spaces to consider word boundaries (for instance
+	     *	literal T in isodateTisotimeZ is not a TZ, but Z is UTC);
+	     *	for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day";
 	     * bypass spaces after token (but ignore by TZ+OFFS), because should 
 	     * recognize next SP token, if TZ only.
 	     */
 	    if (ret == tZONE || ret == tDAYZONE) {
 		c = *yyInput;
+		if (isdigit(c)) { /* literal not a TZ  */
+		    yyInput = tokStart;
+		    return *yyInput++;
+		}
 		if ((c == '+' || c == '-') && isdigit(UCHAR(*(yyInput+1)))) {
 		    if ( !isdigit(UCHAR(*(yyInput+2)))
 		      || !isdigit(UCHAR(*(yyInput+3)))) {
