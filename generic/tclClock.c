@@ -1261,6 +1261,7 @@ ClockGetSystemTimeZone(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
     ClockClientData *dataPtr = clientData;
+    Tcl_InterpState interpState;
 
     /* if known (cached and same epoch) - return now */
     if (dataPtr->systemTimeZone != NULL
@@ -1268,16 +1269,19 @@ ClockGetSystemTimeZone(
 	return dataPtr->systemTimeZone;
     }
 
+    interpState = Tcl_SaveInterpState(interp, 0);
+
     Tcl_UnsetObjRef(dataPtr->systemTimeZone);
     Tcl_UnsetObjRef(dataPtr->systemSetupTZData);
 
     if (Tcl_EvalObjv(interp, 1, &dataPtr->literals[LIT_GETSYSTEMTIMEZONE], 0) != TCL_OK) {
+	Tcl_DiscardInterpState(interpState);
 	return NULL;
     }
     if (dataPtr->systemTimeZone == NULL) {
 	Tcl_SetObjRef(dataPtr->systemTimeZone, Tcl_GetObjResult(interp));
     }
-    Tcl_ResetResult(interp);
+    (void) Tcl_RestoreInterpState(interp, interpState);
     return dataPtr->systemTimeZone;
 }
 
@@ -1301,6 +1305,7 @@ ClockSetupTimeZone(
     Tcl_Obj *timezoneObj)
 {
     ClockClientData *dataPtr = clientData;
+    Tcl_InterpState interpState;
     int loaded;
     Tcl_Obj *callargs[2];
 
@@ -1338,11 +1343,14 @@ ClockSetupTimeZone(
     }
     /* setup now */
     callargs[0] = dataPtr->literals[LIT_SETUPTIMEZONE];
+    interpState = Tcl_SaveInterpState(interp, 0);
     if (Tcl_EvalObjv(interp, 2, callargs, 0) == TCL_OK) {
     	/* save unnormalized last used */
 	Tcl_SetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);
+	(void) Tcl_RestoreInterpState(interp, interpState);
 	return callargs[1];
     }
+    Tcl_DiscardInterpState(interpState);
     return NULL;
 }
 
