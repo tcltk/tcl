@@ -360,19 +360,19 @@ proc msgcat::mclocale {args} {
 
 proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
-    set loclist {}
-    set locel {}
-    foreach el [split $locale _] {
-	if {[string index $locel end] != {_}} {
-	    set loclist [linsert $loclist 0 $locel]
-	}
-	if {$locel != {}} {
-	    set locel ${locel}_${el}
+    set result [list {}]
+    set el {}
+    foreach e [split $locale _] {
+	if {$el eq {}} {
+	    set el ${e}
 	} else {
-	    set locel ${el}
+	    set el ${el}_${e}
+	}
+	if {[string index $el end] != {_}} {
+	    set result [linsert $result 0 $el]
 	}
     }
-    return [linsert $loclist 0 $locel]
+    return $result
 }
 
 # msgcat::mcpreferences --
