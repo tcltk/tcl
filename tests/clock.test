@@ -36191,6 +36191,14 @@ test clock-34.16 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T235959" -gmt true]
     clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Oct 23, 1992 23:59:59"
+test clock-34.16.1a {clock scan, ISO 8601 T literal optional (YYYYMMDDhhmmss)} {
+    set time [clock scan "19921023235959" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:59"
+test clock-34.16.1b {clock scan, ISO 8601 T literal optional (YYYYMMDDhhmm)} {
+    set time [clock scan "199210232359" -gmt true]
+    clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
+} "Oct 23, 1992 23:59:00"
 test clock-34.16.2 {clock scan, ISO 8601 extended date time} {
     set time [clock scan "1992-10-23T23:59:59" -gmt true]
     clock format $time -format {%b %d, %Y %H:%M:%S} -gmt true
