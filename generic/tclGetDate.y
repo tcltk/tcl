@@ -89,7 +89,7 @@
 typedef struct _TABLE {
     const char *name;
     int type;
-    time_t value;
+    long value;
 } TABLE;
 
 /*
@@ -103,7 +103,7 @@ typedef enum _DSTMODE {
 %}
 
 %union {
-    time_t Number;
+    long Number;
     enum _MERIDIAN Meridian;
 }
 
