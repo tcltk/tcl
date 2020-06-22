@@ -14,6 +14,7 @@
 */config.cache
 */config.log
 */config.status
+*/config.status.lineno
 */tclConfig.sh
 */tclsh*
 */tcltest*
@@ -21,6 +22,8 @@
 */version.vc
 */libtcl.vfs
 */libtcl_*.zip
+.fslckout
+_FOSSIL_
 html
 libtommath/bn.ilg
 libtommath/bn.ind
