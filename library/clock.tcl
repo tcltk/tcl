@@ -16,25 +16,9 @@
 #
 #----------------------------------------------------------------------
 
-# We must have message catalogs that support the root locale, and we need
-# access to the Registry on Windows systems.
+# We must have message catalogs that support the root locale.
 
-uplevel \#0 {
-    package require msgcat 1.6
-    if { $::tcl_platform(platform) eq {windows} } {
-	if { [catch { package require registry 1.1 }] } {
-	    # try to load registry directly from root (if uninstalled / development env):
-	    if {![regexp {[/\\]library$} [info library]] || [catch {
-		load [lindex \
-			[glob -tails -directory [file dirname [info nameofexecutable]] \
-			    tclreg*[expr {[::tcl::pkgconfig get debug] ? {g} : {}}].dll] 0 \
-		] registry
-	    }]} {
-		namespace eval ::tcl::clock [list variable NoRegistry {}]
-	    }
-	}
-    }
-}
+package require msgcat 1.6
 
 # Put the library directory into the namespace for the ensemble so that the
 # library code can find message catalogs and time zone definition files.
@@ -673,6 +657,34 @@ proc ::tcl::clock::EnterLocale { locale } {
 
 #----------------------------------------------------------------------
 #
+# _hasRegistry --
+#
+#	Helper that checks whether registry module is available (Windows only)
+#	and loads it on demand.
+#
+#----------------------------------------------------------------------
+proc ::tcl::clock::_hasRegistry {} {
+    set res 0
+    if { $::tcl_platform(platform) eq {windows} } {
+	if { [catch { package require registry 1.1 }] } {
+	    # try to load registry directly from root (if uninstalled / development env):
+	    if {[regexp {[/\\]library$} [info library]]} {catch {
+		load [lindex \
+			[glob -tails -directory [file dirname [info nameofexecutable]] \
+			    tclreg*[expr {[::tcl::pkgconfig get debug] ? {g} : {}}].dll] 0 \
+		] registry
+	    }}
+	}
+	if { [namespace which -command ::registry] ne "" } {
+	    set res 1
+	}
+    }
+    proc ::tcl::clock::_hasRegistry {} [list return $res]
+    return $res
+}
+
+#----------------------------------------------------------------------
+#
 # LoadWindowsDateTimeFormats --
 #
 #	Load the date/time formats from the Control Panel in Windows and
@@ -696,8 +708,7 @@ proc ::tcl::clock::EnterLocale { locale } {
 proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
     # Bail out if we can't find the Registry
 
-    variable NoRegistry
-    if { [info exists NoRegistry] } return
+    if { ![_hasRegistry] } return
 
     if { ![catch {
 	registry get "HKEY_CURRENT_USER\\Control Panel\\International" \
@@ -822,14 +833,14 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
     variable LocaleFormats
 
     if { $fmtkey eq {} } { set fmtkey FMT_$format }
-    if { [catch {
-    	set locfmt [dict get $LocaleFormats $locale $fmtkey]
-    }] } {
+    if {[dict exists $LocaleFormats $locale $fmtkey]} {
+	set locfmt [dict get $LocaleFormats $locale $fmtkey]
+    } else {
 
-    	# get map list cached or build it:
-	if { [catch {
+	# get map list cached or build it:
+	if {[dict exists $LocaleFormats $locale MLST]} {
 	    set mlst [dict get $LocaleFormats $locale MLST]
-	}] } {
+	} else {
 
 	    # message catalog dictionary:
 	    set mcd [mcget $locale]
@@ -957,7 +968,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 
     if {! [info exists TZData($timezone)] } {
 
-    	variable TimeZoneBad
+	variable TimeZoneBad
 	if { [dict exists $TimeZoneBad $timezone] } {
 	    return -code error \
 		-errorcode [list CLOCK badTimeZone $timezone] \
@@ -1078,10 +1089,9 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 
 proc ::tcl::clock::GuessWindowsTimeZone {} {
     variable WinZoneInfo
-    variable NoRegistry
     variable TimeZoneBad
 
-    if { [info exists NoRegistry] } {
+    if { ![_hasRegistry] } {
 	return :localtime
     }
 
