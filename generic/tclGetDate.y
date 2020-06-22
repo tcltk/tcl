@@ -166,7 +166,7 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 
 spec	: /* NULL */
 	| spec item
-	| spec SP item
+	/* | spec SP item */
 	;
 
 item	: time {
