@@ -14,7 +14,8 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64)
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
+/* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
 #if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
@@ -485,6 +486,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #if defined(_MSC_VER)
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
+#if !defined(_WIN64)
+#   pragma warning(disable:4305)
+#endif
 #   if _MSC_VER >= 1400
 #	pragma warning(disable:4267)
 #	pragma warning(disable:4996)
