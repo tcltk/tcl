@@ -14,20 +14,15 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-/* define _USE_64BIT_TIME_T (or make/configure option time64bit) to force 64-bit time_t */
-#if defined(_USE_64BIT_TIME_T)
-#define __MINGW_USE_VC2005_COMPAT
-#endif
-
-#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT) && defined(BUILD_tcl)
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
+#   define __MINGW_USE_VC2005_COMPAT
 #endif
 
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0501 means Windows XP and above
  */
 
 #ifndef WINVER
@@ -96,6 +91,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
+#ifdef HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
 #include <limits.h>
 
 #ifndef __GNUC__
@@ -316,7 +314,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -324,7 +322,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -486,6 +484,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
 #if defined(_MSC_VER)
+#   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
 #   if _MSC_VER >= 1400
 #	pragma warning(disable:4267)

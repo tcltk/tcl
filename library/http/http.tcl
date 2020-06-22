@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.0
+package provide http 2.9.2
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1332,9 +1332,7 @@ proc http::Connected {token proto phost srvurl} {
 	set how POST
 	# The query channel must be blocking for the async Write to
 	# work properly.
-	lassign [fconfigure $sock -translation] trRead trWrite
-	fconfigure $state(-querychannel) -blocking 1 \
-					 -translation [list $trRead binary]
+	fconfigure $state(-querychannel) -blocking 1 -translation binary
 	set contDone 0
     }
     if {[info exists state(-method)] && ($state(-method) ne "")} {
@@ -2978,7 +2976,7 @@ proc http::IsBinaryContentType {type} {
     # and so on.
     if {$major eq "application"} {
 	set minor [string trimright $minor]
-	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	if {$minor in {"json" "xml" "xml-external-parsed-entity" "xml-dtd"}} {
 	    return false
 	}
     }

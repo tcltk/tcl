@@ -1376,7 +1376,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     set times [linsert $times 0 $MINWIDE]
     set codes {}
     foreach c $tempCodes {
-	lappend codes [expr { $c & 0xff }]
+	lappend codes [expr { $c & 0xFF }]
     }
     set codes [linsert $codes 0 0]
 

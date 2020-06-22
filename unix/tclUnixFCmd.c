@@ -1841,7 +1841,7 @@ GetModeFromPermString(
 		/* who */
 		switch (*(modeStringPtr+n+i)) {
 		case 'u':
-		    who |= 0x9c0;
+		    who |= 0x9C0;
 		    continue;
 		case 'g':
 		    who |= 0x438;
@@ -1850,13 +1850,13 @@ GetModeFromPermString(
 		    who |= 0x207;
 		    continue;
 		case 'a':
-		    who |= 0xfff;
+		    who |= 0xFFF;
 		    continue;
 		}
 	    }
 	    who_found = 1;
 	    if (who == 0) {
-		who = 0xfff;
+		who = 0xFFF;
 	    }
 	    if (!op_found) {
 		/* op */
@@ -1889,7 +1889,7 @@ GetModeFromPermString(
 		what |= 0x49;
 		continue;
 	    case 's':
-		what |= 0xc00;
+		what |= 0xC00;
 		continue;
 	    case 't':
 		what |= 0x200;

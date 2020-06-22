@@ -1749,7 +1749,7 @@ EXTERN int		Tcl_GetErrorLine(Tcl_Interp *interp);
 EXTERN void		Tcl_SetErrorLine(Tcl_Interp *interp, int lineNum);
 /* 607 */
 EXTERN void		Tcl_TransferResult(Tcl_Interp *sourceInterp,
-				int result, Tcl_Interp *targetInterp);
+				int code, Tcl_Interp *targetInterp);
 /* 608 */
 EXTERN int		Tcl_InterpActive(Tcl_Interp *interp);
 /* 609 */
@@ -1816,6 +1816,26 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
+/* Slot 631 is reserved */
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+/* Slot 634 is reserved */
+/* Slot 635 is reserved */
+/* Slot 636 is reserved */
+/* Slot 637 is reserved */
+/* Slot 638 is reserved */
+/* Slot 639 is reserved */
+/* Slot 640 is reserved */
+/* Slot 641 is reserved */
+/* Slot 642 is reserved */
+/* Slot 643 is reserved */
+/* Slot 644 is reserved */
+/* Slot 645 is reserved */
+/* Slot 646 is reserved */
+/* Slot 647 is reserved */
+/* Slot 648 is reserved */
+/* 649 */
+EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2458,7 +2478,7 @@ typedef struct TclStubs {
     int (*tcl_ParseArgsObjv) (Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv); /* 604 */
     int (*tcl_GetErrorLine) (Tcl_Interp *interp); /* 605 */
     void (*tcl_SetErrorLine) (Tcl_Interp *interp, int lineNum); /* 606 */
-    void (*tcl_TransferResult) (Tcl_Interp *sourceInterp, int result, Tcl_Interp *targetInterp); /* 607 */
+    void (*tcl_TransferResult) (Tcl_Interp *sourceInterp, int code, Tcl_Interp *targetInterp); /* 607 */
     int (*tcl_InterpActive) (Tcl_Interp *interp); /* 608 */
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */
@@ -2482,6 +2502,25 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
+    void (*reserved631)(void);
+    void (*reserved632)(void);
+    void (*reserved633)(void);
+    void (*reserved634)(void);
+    void (*reserved635)(void);
+    void (*reserved636)(void);
+    void (*reserved637)(void);
+    void (*reserved638)(void);
+    void (*reserved639)(void);
+    void (*reserved640)(void);
+    void (*reserved641)(void);
+    void (*reserved642)(void);
+    void (*reserved643)(void);
+    void (*reserved644)(void);
+    void (*reserved645)(void);
+    void (*reserved646)(void);
+    void (*reserved647)(void);
+    void (*reserved648)(void);
+    void (*tclUnusedStubEntry) (void); /* 649 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3774,10 +3813,32 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+/* Slot 631 is reserved */
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+/* Slot 634 is reserved */
+/* Slot 635 is reserved */
+/* Slot 636 is reserved */
+/* Slot 637 is reserved */
+/* Slot 638 is reserved */
+/* Slot 639 is reserved */
+/* Slot 640 is reserved */
+/* Slot 641 is reserved */
+/* Slot 642 is reserved */
+/* Slot 643 is reserved */
+/* Slot 644 is reserved */
+/* Slot 645 is reserved */
+/* Slot 646 is reserved */
+/* Slot 647 is reserved */
+/* Slot 648 is reserved */
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 649 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef TclUnusedStubEntry
 
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp

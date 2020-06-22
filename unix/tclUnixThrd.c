@@ -119,9 +119,9 @@ TclpThreadCreate(
     }
 
     if (pthread_create(&theThread, &attr,
-	    (void * (*)(void *))proc, (void *)clientData) &&
+	    (void * (*)(void *))(void *)proc, (void *)clientData) &&
 	    pthread_create(&theThread, NULL,
-		    (void * (*)(void *))proc, (void *)clientData)) {
+		    (void * (*)(void *))(void *)proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
 	*idPtr = (Tcl_ThreadId)theThread;

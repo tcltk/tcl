@@ -287,8 +287,7 @@ static int		GetIntegerOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetNextOperand(AssemblyEnv*, Tcl_Token**, Tcl_Obj**);
 static void		LookForFreshCatches(BasicBlock*, BasicBlock**);
 static void		MoveCodeForJumps(AssemblyEnv*, int);
-static void		MoveExceptionRangesToBasicBlock(AssemblyEnv*, int,
-			    int);
+static void		MoveExceptionRangesToBasicBlock(AssemblyEnv*, int);
 static AssemblyEnv*	NewAssemblyEnv(CompileEnv*, int);
 static int		ProcessCatches(AssemblyEnv*);
 static int		ProcessCatchesInBasicBlock(AssemblyEnv*, BasicBlock*,
@@ -664,7 +663,7 @@ BBEmitOpcode(
 				/* Compilation environment */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
-    int op = TalInstructionTable[tblIdx].tclInstCode & 0xff;
+    int op = TalInstructionTable[tblIdx].tclInstCode & 0xFF;
 
     /*
      * If this is the first instruction in a basic block, record its line
@@ -726,13 +725,13 @@ BBEmitInst1or4(
 				/* Current basic block */
     int op = TalInstructionTable[tblIdx].tclInstCode;
 
-    if (param <= 0xff) {
+    if (param <= 0xFF) {
 	op >>= 8;
     } else {
-	op &= 0xff;
+	op &= 0xFF;
     }
     TclEmitInt1(op, envPtr);
-    if (param <= 0xff) {
+    if (param <= 0xFF) {
 	TclEmitInt1(param, envPtr);
     } else {
 	TclEmitInt4(param, envPtr);
@@ -784,6 +783,7 @@ TclNRAssembleObjCmd(
     Tcl_Obj* backtrace;		/* Object where extra error information is
 				 * constructed. */
 
+    (void)dummy;
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
 	return TCL_ERROR;
@@ -959,7 +959,7 @@ TclCompileAssembleCmd(
     int numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     int depth = envPtr->currStackDepth;
-
+    (void)cmdPtr;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1697,9 +1697,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	{
-	    int flags = TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0);
-
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, flags, 0);
+	    BBEmitInstInt1(assemEnvPtr, tblIdx, TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
 	}
 	break;
 
@@ -1808,7 +1806,6 @@ CompileEmbeddedScript(
 
     int savedStackDepth = envPtr->currStackDepth;
     int savedMaxStackDepth = envPtr->maxStackDepth;
-    int savedCodeIndex = envPtr->codeNext - envPtr->codeStart;
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 
     envPtr->currStackDepth = 0;
@@ -1841,8 +1838,7 @@ CompileEmbeddedScript(
      * need to be fixed up once the stack depth is known.
      */
 
-    MoveExceptionRangesToBasicBlock(assemEnvPtr, savedCodeIndex,
-	    savedExceptArrayNext);
+    MoveExceptionRangesToBasicBlock(assemEnvPtr, savedExceptArrayNext);
 
     /*
      * Flush the current basic block.
@@ -1901,7 +1897,6 @@ SyncStackDepth(
 static void
 MoveExceptionRangesToBasicBlock(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    int savedCodeIndex,		/* Start of the embedded code */
     int savedExceptArrayNext)	/* Saved index of the end of the exception
 				 * range array */
 {
@@ -2229,7 +2224,7 @@ GetIntegerOperand(
  *	TCL_ERROR (with an appropriate error message) if the parse fails.
  *
  * Side effects:
- *	Stores the list index at '*index'. Values between -1 and 0x7fffffff
+ *	Stores the list index at '*index'. Values between -1 and 0x7FFFFFFF
  *	have their natural meaning; values between -2 and -0x80000000
  *	represent 'end-2-N'.
  *
@@ -2392,7 +2387,7 @@ CheckOneByte(
 {
     Tcl_Obj* result;		/* Error message */
 
-    if (value < 0 || value > 0xff) {
+    if (value < 0 || value > 0xFF) {
 	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
@@ -2427,7 +2422,7 @@ CheckSignedOneByte(
 {
     Tcl_Obj* result;		/* Error message */
 
-    if (value > 0x7f || value < -0x80) {
+    if (value > 0x7F || value < -0x80) {
 	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
@@ -2841,7 +2836,7 @@ CalculateJumpRelocations(
 		if (bbPtr->flags & BB_JUMP1) {
 		    offset = jumpTarget->startOffset
 			    - (bbPtr->jumpOffset + motion);
-		    if (offset < -0x80 || offset > 0x7f) {
+		    if (offset < -0x80 || offset > 0x7F) {
 			opcode = TclGetUInt1AtPtr(envPtr->codeStart
 				+ bbPtr->jumpOffset);
 			++opcode;
@@ -4310,6 +4305,8 @@ DupAssembleCodeInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
+    (void)srcPtr;
+    (void)copyPtr;
     return;
 }
 

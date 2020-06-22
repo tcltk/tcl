@@ -1515,7 +1515,7 @@ ClockGetdatefieldsObjCmd(
     TclDateFields fields;
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
-    Tcl_Obj *const *literals = data->literals;
+    Tcl_Obj *const *lit = data->literals;
     int changeover;
 
     fields.tzName = NULL;
@@ -1539,7 +1539,7 @@ ClockGetdatefieldsObjCmd(
      */
 
     if (objv[1]->typePtr == &tclBignumType) {
-	Tcl_SetObjResult(interp, literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
 
@@ -1553,33 +1553,33 @@ ClockGetdatefieldsObjCmd(
     /* Make dict of fields */
 
     dict = Tcl_NewDictObj();
-    Tcl_DictObjPut(NULL, dict, literals[LIT_LOCALSECONDS],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_LOCALSECONDS],
 	    Tcl_NewWideIntObj(fields.localSeconds));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_SECONDS],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_SECONDS],
 	    Tcl_NewWideIntObj(fields.seconds));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_TZNAME], fields.tzName);
+    Tcl_DictObjPut(NULL, dict, lit[LIT_TZNAME], fields.tzName);
     Tcl_DecrRefCount(fields.tzName);
-    Tcl_DictObjPut(NULL, dict, literals[LIT_TZOFFSET],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_TZOFFSET],
 	    Tcl_NewIntObj(fields.tzOffset));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_JULIANDAY],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewIntObj(fields.julianDay));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_GREGORIAN],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_GREGORIAN],
 	    Tcl_NewIntObj(fields.gregorian));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_ERA],
-	    literals[fields.era ? LIT_BCE : LIT_CE]);
-    Tcl_DictObjPut(NULL, dict, literals[LIT_YEAR],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_ERA],
+	    lit[fields.era ? LIT_BCE : LIT_CE]);
+    Tcl_DictObjPut(NULL, dict, lit[LIT_YEAR],
 	    Tcl_NewIntObj(fields.year));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFYEAR],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFYEAR],
 	    Tcl_NewIntObj(fields.dayOfYear));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_MONTH],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_MONTH],
 	    Tcl_NewIntObj(fields.month));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFMONTH],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFMONTH],
 	    Tcl_NewIntObj(fields.dayOfMonth));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_ISO8601YEAR],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_ISO8601YEAR],
 	    Tcl_NewIntObj(fields.iso8601Year));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_ISO8601WEEK],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_ISO8601WEEK],
 	    Tcl_NewIntObj(fields.iso8601Week));
-    Tcl_DictObjPut(NULL, dict, literals[LIT_DAYOFWEEK],
+    Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFWEEK],
 	    Tcl_NewIntObj(fields.dayOfWeek));
     Tcl_SetObjResult(interp, dict);
 
@@ -1709,7 +1709,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     TclDateFields fields;
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
-    Tcl_Obj *const *literals = data->literals;
+    Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
@@ -1726,12 +1726,12 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_YEAR], &fields.year)
+    if (FetchEraField(interp, dict, lit[LIT_ERA], &era) != TCL_OK
+	    || FetchIntField(interp, dict, lit[LIT_YEAR], &fields.year)
 		!= TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_MONTH], &fields.month)
+	    || FetchIntField(interp, dict, lit[LIT_MONTH], &fields.month)
 		!= TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_DAYOFMONTH],
+	    || FetchIntField(interp, dict, lit[LIT_DAYOFMONTH],
 		&fields.dayOfMonth) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
@@ -1753,7 +1753,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
+    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewIntObj(fields.julianDay));
     if (status == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
@@ -1795,7 +1795,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     TclDateFields fields;
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
-    Tcl_Obj *const *literals = data->literals;
+    Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
@@ -1812,12 +1812,12 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_ISO8601YEAR],
+    if (FetchEraField(interp, dict, lit[LIT_ERA], &era) != TCL_OK
+	    || FetchIntField(interp, dict, lit[LIT_ISO8601YEAR],
 		&fields.iso8601Year) != TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_ISO8601WEEK],
+	    || FetchIntField(interp, dict, lit[LIT_ISO8601WEEK],
 		&fields.iso8601Week) != TCL_OK
-	    || FetchIntField(interp, dict, literals[LIT_DAYOFWEEK],
+	    || FetchIntField(interp, dict, lit[LIT_DAYOFWEEK],
 		&fields.dayOfWeek) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
@@ -1839,7 +1839,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
+    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewIntObj(fields.julianDay));
     if (status == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
@@ -2351,7 +2351,7 @@ ConvertUTCToLocalUsingC(
     time_t tock;
     struct tm *timeVal;		/* Time after conversion */
     int diff;			/* Time zone diff local-Greenwich */
-    char buffer[8];		/* Buffer for time zone name */
+    char buffer[16];		/* Buffer for time zone name */
 
     /*
      * Use 'localtime' to determine local year, month, day, time of day.
@@ -2843,7 +2843,7 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
-#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
+#if 0 /* BUG https://core.tcl-lang.org/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
 #else
     /*
@@ -3037,6 +3037,7 @@ ClockGetenvObjCmd(
 {
     const char *varName;
     const char *varValue;
+    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -3129,6 +3130,7 @@ ClockClicksObjCmd(
     int index = CLICKS_NATIVE;
     Tcl_Time now;
     Tcl_WideInt clicks = 0;
+    (void)clientData;
 
     switch (objc) {
     case 1:
@@ -3191,6 +3193,7 @@ ClockMillisecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, NULL, "clock milliseconds");
@@ -3227,6 +3230,7 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
+    (void)clientData;
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, NULL, "clock microseconds");
 	return TCL_ERROR;
@@ -4521,6 +4525,7 @@ ClockSecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, NULL, "clock seconds");

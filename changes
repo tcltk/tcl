@@ -2307,7 +2307,7 @@ to the standard channel, do not increment the refcount. The channel can
 be NULL if there is for example no standard input. (JL)
 
 9/6/96 (portability improvement) Changed parsing of backslash sequences
-like \n to translate directly to absolute values like 0xa instead of
+like \n to translate directly to absolute values like 0xA instead of
 letting the compiler do the translation.  This guarantees that the
 translation is done the same everywhere. (JO)
 
@@ -8303,7 +8303,7 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.1, September 20, 2013 --- https://core.tcl-lang.org/tcl/ for details
 
 2013-09-27 (enhancement) improved ::env synchronization (fellows)
 
@@ -8451,7 +8451,7 @@ include ::oo::class (fellows)
 
 2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
 
---- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.2, August 27, 2014 --- https://core.tcl-lang.org/tcl/ for details
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
@@ -8491,7 +8491,7 @@ include ::oo::class (fellows)
 
 2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
 
---- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.3, November 12, 2014 --- https://core.tcl-lang.org/tcl/ for details
 
 2014-11-21 (bug)[743338] Win: socket error encoding (ladayaroslav,nijtmans)
 
@@ -8527,7 +8527,7 @@ include ::oo::class (fellows)
 2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
         *** POTENTIAL INCOMPATIBILITY ***
 
---- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.4, March 12, 2015 --- https://core.tcl-lang.org/tcl/ for details
 
 2015-03-19 (bug)[e66e44] Win: Ctrl-C/Ctrl-Break in console not EOF (nadkarni)
 
@@ -8623,7 +8623,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
 
---- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.5, February 29, 2016 --- https://core.tcl-lang.org/tcl/ for details
 
 2016-03-01 (bug)[803042] mem leak due to reference cycle (porter)
 
@@ -8697,7 +8697,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
 
---- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.6, July 27, 2016 --- https://core.tcl-lang.org/tcl/ for details
 
 2016-09-07 (bug)[c09edf] Bad caching with  custom resolver (neumann,nijtmans)
 
@@ -8794,7 +8794,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
 
---- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.7, August 9, 2017 --- https://core.tcl-lang.org/tcl/ for details
 
 2017-08-10 [array names -regexp] supports backrefs (goth)
 
@@ -8829,7 +8829,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-12-19 (bug)[586e71] EvalObjv exception handling at level #0 (sebres,porter)
 
---- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.8, December 22, 2017 --- https://core.tcl-lang.org/tcl/ for details
 
 2018-02-11 (enhance) stop blocking conversion of object to/from class (coulter)
 
@@ -8894,3 +8894,54 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
 
 - Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
+
+2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
+
+2018-12-30 (bug)[3cf3a9] variable 'timezone' deprecated in vc2017 (nijtmans)
+
+2019-01-09 (bug)[cc1e91] [list [list {*}[set a " "]]] regression (sebres)
+
+2019-02-01 (bug)[e3f481] tests var-1.2[01] (sebres)
+
+2019-03-01 (new) Update to Unicode 12.0 (nijtmans)
+
+2019-03-05 (new)[TIP 527] New command [timerate] (sebres)
+
+2019-03-08 (bug)[39fed4] [package require] memory validity (hume,porter)
+
+2019-04-23 (new) New command tcl::unsupported::corotype (fellows)
+
+2019-05-04 (bug) memlink when namespace deletion kills linked var (porter)
+
+2019-05-28 (new) README file converted to README.md in Markdown (nijtmans)
+
+2019-06-17 (bug)[8b9854] [info level 0] regression with ensembles (porter)
+
+2019-06-20 (bug)[6bdadf] crash multi-arg write-traced [lappend] (fellows,porter)
+
+2019-06-21 (bug)[f8a33c] crash Tcl_Exit before init (brooks,sebres)
+
+2019-08-27 (bug)[fa6bf3] Bytecode fails epoch recovery at numLevel=0 (sebres)
+
+2019-08-29 (bug)[fec0c1] C stack overflow compiling bytecode (ade,sebres)
+
+2019-09-12 tzdata updated to Olson's tzdata2019c (jima)
+
+2019-09-20 (new) registry/dde no longer need -DUNICODE (nijtmans)
+=> registry 1.3.4
+=> dde 1.4.2
+
+2019-10-02 (bug)[16768d] Fix [info hostname] on NetBSD (rytaro)
+
+2019-10-23 (new) libtommath updated to release 1.2.0 (nijtmans)
+
+2019-10-25 OSX: system Tcl deprecated. End default use of its packages. (walzer)
+
+2019-10-28 (bug)[bcd100] bad fs cache when system encoding changes (coulter)
+
+2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
+
+2019-11-18 (bug)[13657a] application/json us text, not binary (noe,nijtmans)
+=> http 2.9.1
+
+- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -

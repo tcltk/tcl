@@ -106,12 +106,11 @@ TclBN_revision(void)
  *----------------------------------------------------------------------
  */
 
-extern void
+int
 TclBNInitBignumFromLong(
     mp_int *a,
     long initVal)
 {
-    int status;
     unsigned long v;
     mp_digit *p;
 
@@ -119,8 +118,7 @@ TclBNInitBignumFromLong(
      * Allocate enough memory to hold the largest possible long
      */
 
-    status = mp_init(a);
-    if (status != MP_OKAY) {
+    if (mp_init(a) != MP_OKAY) {
 	Tcl_Panic("initialization failure in TclBNInitBignumFromLong");
     }
 
@@ -130,7 +128,7 @@ TclBNInitBignumFromLong(
 
     if (initVal < 0) {
 	a->sign = MP_NEG;
-	v = -initVal;
+	v = -(unsigned long)initVal;
     } else {
 	a->sign = MP_ZPOS;
 	v = initVal;
@@ -146,6 +144,7 @@ TclBNInitBignumFromLong(
 	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
+    return MP_OKAY;
 }
 
 /*
@@ -164,17 +163,17 @@ TclBNInitBignumFromLong(
  *----------------------------------------------------------------------
  */
 
-extern void
+int
 TclBNInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
 {
-    if (v < (Tcl_WideInt)0) {
-	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)(-v));
-	mp_neg(a, a);
-    } else {
-	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+    if (v < 0) {
+	(void)TclBNInitBignumFromWideUInt(a, -(Tcl_WideUInt)v);
+	return mp_neg(a, a);
     }
+    (void)TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+    return MP_OKAY;
 }
 
 /*
@@ -193,20 +192,18 @@ TclBNInitBignumFromWideInt(
  *----------------------------------------------------------------------
  */
 
-extern void
+int
 TclBNInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */
 {
-    int status;
     mp_digit *p;
 
     /*
      * Allocate enough memory to hold the largest possible Tcl_WideUInt.
      */
 
-    status = mp_init(a);
-    if (status != MP_OKAY) {
+    if (mp_init(a) != MP_OKAY) {
 	Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
     }
 
@@ -222,6 +219,7 @@ TclBNInitBignumFromWideUInt(
 	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
+    return MP_OKAY;
 }
 
 /*

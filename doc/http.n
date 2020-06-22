@@ -13,7 +13,7 @@
 .SH NAME
 http \- Client-side implementation of the HTTP/1.1 protocol
 .SH SYNOPSIS
-\fBpackage require http ?2.8?\fR
+\fBpackage require http ?2.9?\fR
 .\" See Also -useragent option documentation in body!
 .sp
 \fB::http::config ?\fI\-option value\fR ...?
@@ -161,7 +161,7 @@ throwing an error processing non-latin-1 characters.
 The value of the User-Agent header in the HTTP request.  In an unsafe
 interpreter, the default value depends upon the operating system, and
 the version numbers of \fBhttp\fR and \fBTcl\fR, and is (for example)
-.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.8.12 Tcl/8.6.8\fR" .
+.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.9.0 Tcl/8.6.9\fR" .
 A safe interpreter cannot determine its operating system, and so the default
 in a safe interpreter is to use a Windows 10 value with the current version
 numbers of \fBhttp\fR and \fBTcl\fR.

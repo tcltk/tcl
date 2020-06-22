@@ -49,6 +49,10 @@ proc test {args} {
 puts [outputChannel] "  Validity default mode: [expr {$valid_mode ? "on": "off"}]"
 testConstraint valid_off [expr {![clock configure -valid]}]
 
+if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
+    namespace import ::tcl::unsupported::timerate
+}
+
 # TEST PLAN
 
 # clock-0:
@@ -268,17 +272,6 @@ proc ::testClock::registry { cmd path key } {
 	return -code error "test case attempts to read unknown registry entry $path $key"
     }
     return [dict get $reg $path $key]
-}
-
-proc timeWithinDuration {duration start end} {
-    regexp {([\d.]+)(s|ms|us)} $duration -> duration unit
-    if {[llength $start] > 1} { set start [expr "([join $start +])/[llength $start]"] }
-    if {[llength $end] > 1} { set end [expr "([join $end +])/[llength $end]"] }
-    set delta [expr {$end - $start}]
-    expr {
-	  ($delta > 0) && ($delta <= $duration) ?
-	  "ok" :
-	  "test should have taken 0-$duration $unit, actually took $delta"}
 }
 
 
@@ -35994,22 +35987,36 @@ test clock-33.4a {clock milliseconds} {
     concat {}
 } {}
 test clock-33.5 {clock clicks tests, millisecond timing test} {
-    set start [set end {}]
-    lassign [time {
-	lappend start [clock clicks -milli]
-	after 1 {lappend end [clock clicks -milli]}
-	vwait end
-    } 5] tm
-    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
+    if {[lindex [timerate {
+	set start [clock clicks -milli]
+	timerate {} 10; # short but precise busy wait
+	set end [clock clicks -milli]
+    } 1 1] 0] > 60000} {
+	::tcltest::Skip "timing issue"
+    }
+    # 60 msecs seems to be the max time slice under Windows 95/98
+    expr {
+	  ($end > $start) && (($end - $start) <= 60) ?
+	  "ok" : 
+	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
-    set start [set end {}]
-    lassign [time {
-	lappend start [clock milliseconds]
-	after 1 {lappend end [clock milliseconds]}
-	vwait end
-    } 5] tm
-    timeWithinDuration [expr {int($tm/1000 + 1)}]ms $start $end
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
+    if {[lindex [timerate {
+	set start [clock milliseconds]
+	timerate {} 10; # short but precise busy wait
+	set end [clock milliseconds]
+    } 1 1] 0] > 60000} {
+	::tcltest::Skip "timing issue"
+    }
+    # 60 msecs seems to be the max time slice under Windows 95/98
+    expr {
+	  ($end > $start) && (($end - $start) <= 60) ?
+	  "ok" : 
+	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
@@ -36019,23 +36026,29 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
-    set start [set end {}]
-    lassign [time {
-	lappend start [clock clicks -micro]
-	after 1 {lappend end [clock clicks -micro]}
-	vwait end
-    } 5] tm
-    timeWithinDuration [expr {int($tm + 10)}]us $start $end
-} {ok}
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
+    if {[lindex [timerate {
+	set start [clock clicks -micro]
+	timerate {} 10; # short but precise busy wait
+	set end [clock clicks -micro]
+    } 1 1] 0] > 60000} {
+	::tcltest::Skip "timing issue"
+    }
+    expr {($end > $start) && (($end - $start) <= 60000)}
+} {1}
 test clock-33.8a {clock test, microsecond timing test} {
-    set start [set end {}]
-    lassign [time {
-	lappend start [clock microseconds]
-	after 1 {lappend end [clock microseconds]}
-	vwait end
-    } 5] tm
-    timeWithinDuration [expr {int($tm + 10)}]us $start $end
-} {ok}
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
+    if {[lindex [timerate {
+	set start [clock microseconds]
+	timerate {} 10; # short but precise busy wait
+	set end [clock microseconds]
+    } 1 1] 0] > 60000} {
+	::tcltest::Skip "timing issue"
+    }
+    expr {($end > $start) && (($end - $start) <= 60000)}
+} {1}
 
 test clock-33.9 {clock clicks test, millis align with seconds} {
     set t1 [clock seconds]

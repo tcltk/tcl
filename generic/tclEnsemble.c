@@ -107,7 +107,7 @@ static inline Tcl_Obj *
 NewNsObj(
     Tcl_Namespace *namespacePtr)
 {
-    register Namespace *nsPtr = (Namespace *) namespacePtr;
+    Namespace *nsPtr = (Namespace *) namespacePtr;
 
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
@@ -1813,7 +1813,7 @@ NsEnsembleImplementationCmdNR(
 
 	subcmdName = Tcl_GetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
-	    register int cmp = strncmp(subcmdName,
+	    int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
 		    (unsigned) stringLength);
 
@@ -2404,7 +2404,7 @@ MakeCachedEnsembleCommand(
     Tcl_HashEntry *hPtr,
     Tcl_Obj *fix)
 {
-    register EnsembleCmdRep *ensembleCmd;
+    EnsembleCmdRep *ensembleCmd;
 
     if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
@@ -2900,6 +2900,7 @@ TclCompileEnsemble(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
@@ -2909,7 +2910,6 @@ TclCompileEnsemble(
     int ourResult = TCL_ERROR;
     unsigned numBytes;
     const char *word;
-    DefineLineInformation;
 
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords < depth + 1) {
@@ -3238,6 +3238,7 @@ TclAttemptCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     int result, i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
@@ -3247,7 +3248,6 @@ TclAttemptCompileProc(
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
-    DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3371,11 +3371,11 @@ CompileToInvokedCommand(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     char *bytes;
     int length, i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    DefineLineInformation;
 
     /*
      * Push the words of the command. Take care; the command words may be
