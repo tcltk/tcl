@@ -14,12 +14,26 @@
  */
 
 #include "tclInt.h"
+
+/*
+ * In macOS 10.12 the os_unfair_lock was introduced as a replacement for the
+ * OSSpinLock, and the OSSpinLock was deprecated.
+ */
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
+#define USE_OS_UNFAIR_LOCK
+#include <os/lock.h>
+#undef TCL_MAC_DEBUG_NOTIFIER
+#endif
+
 #ifdef HAVE_COREFOUNDATION	/* Traditional unix select-based notifier is
 				 * in tclUnixNotfy.c */
 #include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
 
 /* #define TCL_MAC_DEBUG_NOTIFIER 1 */
+
+#if  !defined(USE_OS_UNFAIR_LOCK)
 
 /*
  * We use the Darwin-native spinlock API rather than pthread mutexes for
@@ -102,26 +116,45 @@ extern int		_spin_lock_try(OSSpinLock *lock);
 #define SPINLOCK_INIT		0
 
 #endif /* HAVE_LIBKERN_OSATOMIC_H && HAVE_OSSPINLOCKLOCK */
+#endif /* not using os_unfair_lock */
 
 /*
- * These spinlocks lock access to the global notifier state.
+ * These locks control access to the global notifier state.
  */
 
+#if defined(USE_OS_UNFAIR_LOCK)
+static os_unfair_lock notifierInitLock = OS_UNFAIR_LOCK_INIT;
+static os_unfair_lock notifierLock     = OS_UNFAIR_LOCK_INIT;
+#else
 static OSSpinLock notifierInitLock = SPINLOCK_INIT;
 static OSSpinLock notifierLock     = SPINLOCK_INIT;
+#endif
 
 /*
- * Macros abstracting notifier locking/unlocking
+ * Macros that abstract notifier locking/unlocking
  */
 
+#if defined(USE_OS_UNFAIR_LOCK)
+#define LOCK_NOTIFIER_INIT	os_unfair_lock_lock(&notifierInitLock)
+#define UNLOCK_NOTIFIER_INIT	os_unfair_lock_unlock(&notifierInitLock)
+#define LOCK_NOTIFIER		os_unfair_lock_lock(&notifierLock)
+#define UNLOCK_NOTIFIER		os_unfair_lock_unlock(&notifierLock)
+#define LOCK_NOTIFIER_TSD	os_unfair_lock_lock(&tsdPtr->tsdLock)
+#define UNLOCK_NOTIFIER_TSD	os_unfair_lock_unlock(&tsdPtr->tsdLock)
+#else
 #define LOCK_NOTIFIER_INIT	SpinLockLock(&notifierInitLock)
 #define UNLOCK_NOTIFIER_INIT	SpinLockUnlock(&notifierInitLock)
 #define LOCK_NOTIFIER		SpinLockLock(&notifierLock)
 #define UNLOCK_NOTIFIER		SpinLockUnlock(&notifierLock)
 #define LOCK_NOTIFIER_TSD	SpinLockLock(&tsdPtr->tsdLock)
 #define UNLOCK_NOTIFIER_TSD	SpinLockUnlock(&tsdPtr->tsdLock)
+#endif
 
-#ifdef TCL_MAC_DEBUG_NOTIFIER
+/*
+ * The debug version of the Notifier only works if using OSSpinLock.
+ */
+
+#if defined(TCL_MAC_DEBUG_NOTIFIER) && !defined(USE_OS_UNFAIR_LOCK)
 #define TclMacOSXNotifierDbgMsg(m, ...) \
     do {								\
 	fprintf(notifierLog?notifierLog:stderr, "tclMacOSXNotify.c:%d: " \
@@ -148,7 +181,7 @@ static OSSpinLock notifierLock     = SPINLOCK_INIT;
 #undef LOCK_NOTIFIER
 #define LOCK_NOTIFIER		SpinLockLockDbg(&notifierLock)
 #undef LOCK_NOTIFIER_TSD
-#define LOCK_NOTIFIER_TSD	SpinLockLockDbg(&tsdPtr->tsdLock)
+#define LOCK_NOTIFIER_TSD	SpinLockLockDbg(tsdPtr->tsdLock)
 #include <asl.h>
 static FILE *notifierLog = NULL;
 #ifndef NOTIFIER_LOG
@@ -267,9 +300,14 @@ typedef struct ThreadSpecificData {
 				 * from these pointers. */
     /* End notifierLock section */
 
+#if defined(USE_OS_UNFAIR_LOCK)
+    os_unfair_lock tsdLock;
+#else
     OSSpinLock tsdLock;		/* Must hold this lock before acessing the
 				 * following fields from more than one
 				 * thread. */
+#endif
+
     /* Start tsdLock section */
     SelectMasks checkMasks;	/* This structure is used to build up the
 				 * masks to be used in the next call to
@@ -455,7 +493,6 @@ Tcl_InitNotifier(void)
     /*
      * Initialize support for weakly imported spinlock API.
      */
-
     if (pthread_once(&spinLockLockInitControl, SpinLockLockInit)) {
 	Tcl_Panic("Tcl_InitNotifier: pthread_once failed");
     }
@@ -526,7 +563,11 @@ Tcl_InitNotifier(void)
 	tsdPtr->runLoopObserverTcl = runLoopObserverTcl;
 	tsdPtr->runLoopTimer = NULL;
 	tsdPtr->waitTime = CF_TIMEINTERVAL_FOREVER;
+#if defined(USE_OS_UNFAIR_LOCK)
+	tsdPtr->tsdLock = OS_UNFAIR_LOCK_INIT;
+#else
 	tsdPtr->tsdLock = SPINLOCK_INIT;
+#endif
     }
 
     LOCK_NOTIFIER_INIT;
@@ -584,7 +625,6 @@ Tcl_InitNotifier(void)
     ENABLE_ASL;
     notifierCount++;
     UNLOCK_NOTIFIER_INIT;
-
     return tsdPtr;
 }
 
@@ -1449,7 +1489,7 @@ OnOffWaitingList(
 {
     int changeWaitingList;
 
-#ifdef TCL_MAC_DEBUG_NOTIFIER
+#if defined(TCL_MAC_DEBUG_NOTIFIER) && !defined(USE_OS_UNFAIR_LOCK)
     if (SpinLockTry(&notifierLock)) {
 	Tcl_Panic("OnOffWaitingList: notifierLock unlocked");
     }
@@ -1980,9 +2020,19 @@ AtForkChild(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    UNLOCK_NOTIFIER_TSD;
-    UNLOCK_NOTIFIER;
-    UNLOCK_NOTIFIER_INIT;
+    /*
+     * If a child process unlocks an os_unfair_lock that was created in its parent
+     * the child will exit with an illegal instruction error.  So we reinitialize
+     * the lock in the child rather than attempt to unlock it.
+     */
+
+#if defined(USE_OS_UNFAIR_LOCK)
+    tsdPtr->tsdLock = OS_UNFAIR_LOCK_INIT;
+#else
+       UNLOCK_NOTIFIER_TSD;
+       UNLOCK_NOTIFIER;
+       UNLOCK_NOTIFIER_INIT;
+#endif
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
 	if (!noCFafterFork) {
