@@ -300,6 +300,20 @@ test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" no_tclclo
     set ret
 } {ens:0 ens:1 stubs:0 stubs:1}
 
+test clock-0.2 "initial: loading of format/locale does not overwrite interp state (errorInfo)" -setup {
+    # be sure - we have no cached locale/msgcat, etc:
+    if {[namespace which -command ::tcl::clock::ClearCaches] ne ""} {
+	::tcl::clock::ClearCaches
+    }
+} -body {
+    if {[catch {
+	return -level 0 -code error -errorcode {EXPERR TEST-ERROR} -errorinfo "ERROR expected error" test
+    }]} {
+	clock format -now -locale de; # should not overwrite error code/info
+	list $::errorCode $::errorInfo
+    }
+} -result {{EXPERR TEST-ERROR} {ERROR expected error}}
+
 # Test some of the basics of [clock format]
 
 set syntax "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"
