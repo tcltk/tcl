@@ -35,5 +35,6 @@
 *.lib binary
 *.pdf binary
 *.png binary
+*.sln binary
 *.xlsx binary
 *.zip binary
