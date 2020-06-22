@@ -4115,6 +4115,11 @@ repeat_rel:
 	    yyMonth += yyRelMonth - 1;
 	    yyYear += yyMonth / 12;
 	    m = yyMonth % 12;
+	    /* compiler fix for negative offs - wrap y, m = (0, -1) -> (-1, 11) */
+	    if (m < 0) {
+		yyYear--;
+		m = 12 + m;
+	    }
 	    yyMonth = m + 1;
 
 	    /* if the day doesn't exist in the current month, repair it */
