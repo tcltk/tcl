@@ -822,14 +822,14 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
     variable LocaleFormats
 
     if { $fmtkey eq {} } { set fmtkey FMT_$format }
-    if { [catch {
-    	set locfmt [dict get $LocaleFormats $locale $fmtkey]
-    }] } {
+    if {[dict exists $LocaleFormats $locale $fmtkey]} {
+	set locfmt [dict get $LocaleFormats $locale $fmtkey]
+    } else {
 
-    	# get map list cached or build it:
-	if { [catch {
+	# get map list cached or build it:
+	if {[dict exists $LocaleFormats $locale MLST]} {
 	    set mlst [dict get $LocaleFormats $locale MLST]
-	}] } {
+	} else {
 
 	    # message catalog dictionary:
 	    set mcd [mcget $locale]
