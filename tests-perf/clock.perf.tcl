@@ -2,18 +2,18 @@
 # ------------------------------------------------------------------------
 #
 # test-performance.tcl --
-#
+# 
 #  This file provides common performance tests for comparison of tcl-speed
 #  degradation by switching between branches.
 #  (currently for clock ensemble only)
 #
 # ------------------------------------------------------------------------
-#
+# 
 # Copyright (c) 2014 Serg G. Brester (aka sebres)
-#
+# 
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
-#
+# 
 
 array set in {-time 500}
 if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} {
@@ -215,7 +215,7 @@ proc test-freescan {{reptime 1000}} {
     {clock scan "next January" -base 0 -gmt 1}
     # FreeScan : relative week
     {clock scan "next Fri" -base 0 -gmt 1}
-    # FreeScan : relative weekday and week offset
+    # FreeScan : relative weekday and week offset 
     {clock scan "next January + 2 week" -base 0 -gmt 1}
     # FreeScan : time only with base
     {clock scan "19:18:30" -base 148863600 -gmt 1}
@@ -300,7 +300,7 @@ proc test-convert {{reptime 1000}} {
     {clock format [clock scan "19:18:30 EST" -base 148863600] -format "%H:%M:%S %z" -timezone EST}
 
     # Format locale 1x: comparison values
-    {clock format 0 -gmt 1 -locale en}
+    {clock format 0 -gmt 1 -locale en} 
     {clock format 0 -gmt 1 -locale de}
     {clock format 0 -gmt 1 -locale fr}
     # Format locale 2x: without switching locale (en, en)
@@ -340,7 +340,7 @@ proc test-convert {{reptime 1000}} {
     {clock scan "19:18:30 MST" -base 148863600; clock scan "19:18:30 EST" -base 148863600}
     # FreeScan TZ 2x (+1 gmt, +1 system-default)
     {clock scan "19:18:30 MST" -base 148863600 -gmt 1; clock scan "19:18:30 EST" -base 148863600}
-
+    
     # Scan TZ: comparison included in scan string vs. given
     {clock scan "2009-06-30T18:30:00 CEST" -format "%Y-%m-%dT%H:%M:%S %z"}
     {clock scan "2009-06-30T18:30:00 CET" -format "%Y-%m-%dT%H:%M:%S %z"}
@@ -356,10 +356,16 @@ proc test-other {{reptime 1000}} {
     # Scan : julian day (overflow)
     {catch {clock scan 5373485 -format %J}}
 
+    setup {set _(org-reptime) $_(reptime); lset _(reptime) 1 50}
+
     # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
-    {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
+    setup {set i -1}
+    {clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1}
     # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
-    {set i 50; time { clock scan "[incr i -1] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
+    setup {incr i; set j $i}
+    {clock scan "[incr j -1] - 25.11.2015" -format "$j - %d.%m.%Y" -base 0 -gmt 1}
+    setup {set _(reptime) $_(org-reptime); set j $i}
+    {clock scan "[incr j -1] - 25.11.2015" -format "$j - %d.%m.%Y" -base 0 -gmt 1; if {!$j} {set j $i}}
   }
 }
 
