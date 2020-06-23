@@ -844,14 +844,21 @@ ClockLocalizeFormat(
 	callargs[0] = dataPtr->literals[LIT_LOCALIZE_FORMAT];
 	callargs[1] = opts->localeObj;
 	callargs[2] = opts->formatObj;
-	callargs[3] = keyObj;
-	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK
+	callargs[3] = opts->mcDictObj;
+	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) == TCL_OK
 	) {
-	    goto done;
+	    valObj = Tcl_GetObjResult(opts->interp);
 	}
 
-	valObj = Tcl_GetObjResult(opts->interp);
-
+	/* ensure mcDictObj remains unshared */
+	if (opts->mcDictObj->refCount > 1) {
+	    /* smart reference (shared dict as object with no ref-counter) */
+	    opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp,
+		opts->mcDictObj);
+	}
+	if (!valObj) {
+	    goto done;
+	}
 	/* cache it inside mc-dictionary (this incr. ref count of keyObj/valObj) */
 	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj,
 		keyObj, valObj) != TCL_OK

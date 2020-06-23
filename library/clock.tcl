@@ -477,8 +477,7 @@ proc ::tcl::clock::Initialize {} {
 
     # Caches
 
-    variable LocaleFormats \
-			[dict create];	# Dictionary with localized formats
+    variable LocFmtMap [dict create];	# Dictionary with localized format maps
 
     variable TimeZoneBad [dict create]; # Dictionary whose keys are time zone
     					# names and whose values are 1 if
@@ -570,12 +569,18 @@ proc ::tcl::clock::mcMerge {locales} {
 	set mrgcat [mcMerge [lrange $locales 1 end]]
 	if {[dict exists $Msgs $ns $loc]} {
 	    set mrgcat [dict merge $mrgcat [dict get $Msgs $ns $loc]]
+	    dict set mrgcat L $loc
+	} else {
+	    # be sure a duplicate is created, don't overwrite {} (common) locale:
+	    set mrgcat [dict merge $mrgcat [dict create L $loc]]
 	}
     } else {
 	if {[dict exists $Msgs $ns $loc]} {
 	    set mrgcat [dict get $Msgs $ns $loc]
+	    dict set mrgcat L $loc
 	} else {
-	    set mrgcat [dict create]
+	    # be sure a duplicate is created, don't overwrite {} (common) locale:
+	    set mrgcat [dict create L $loc]
 	}
     }
     dict set mcMergedCat $loc $mrgcat
@@ -819,6 +824,8 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #	locale -- Current [mclocale] locale, supplied to avoid
 #		  an extra call
 #	format -- Format supplied to [clock scan] or [clock format]
+#	mcd    -- Message catalog dictionary for current locale (read-only,
+#		  don't store it to avoid shared references).
 #
 # Results:
 #	Returns the string with locale-dependent composite format groups
@@ -829,53 +836,40 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
-    variable LocaleFormats
+proc ::tcl::clock::LocalizeFormat { locale format mcd } {
+    variable LocFmtMap
 
-    if { $fmtkey eq {} } { set fmtkey FMT_$format }
-    if {[dict exists $LocaleFormats $locale $fmtkey]} {
-	set locfmt [dict get $LocaleFormats $locale $fmtkey]
+    # get map list cached or build it:
+    if {[dict exists $LocFmtMap $locale]} {
+	set mlst [dict get $LocFmtMap $locale]
     } else {
+	# Handle locale-dependent format groups by mapping them out of the format
+	# string.  Note that the order of the [string map] operations is
+	# significant because later formats can refer to later ones; for example
+	# %c can refer to %X, which in turn can refer to %T.
 
-	# get map list cached or build it:
-	if {[dict exists $LocaleFormats $locale MLST]} {
-	    set mlst [dict get $LocaleFormats $locale MLST]
-	} else {
-
-	    # message catalog dictionary:
-	    set mcd [mcget $locale]
-
-	    # Handle locale-dependent format groups by mapping them out of the format
-	    # string.  Note that the order of the [string map] operations is
-	    # significant because later formats can refer to later ones; for example
-	    # %c can refer to %X, which in turn can refer to %T.
-
-	    set mlst {
-		%% %%
-		%D %m/%d/%Y
-		%+ {%a %b %e %H:%M:%S %Z %Y}
-	    }
-	    lappend mlst %EY [string map $mlst [dict get $mcd LOCALE_YEAR_FORMAT]]
-	    lappend mlst %T  [string map $mlst [dict get $mcd TIME_FORMAT_24_SECS]]
-	    lappend mlst %R  [string map $mlst [dict get $mcd TIME_FORMAT_24]]
-	    lappend mlst %r  [string map $mlst [dict get $mcd TIME_FORMAT_12]]
-	    lappend mlst %X  [string map $mlst [dict get $mcd TIME_FORMAT]]
-	    lappend mlst %EX [string map $mlst [dict get $mcd LOCALE_TIME_FORMAT]]
-	    lappend mlst %x  [string map $mlst [dict get $mcd DATE_FORMAT]]
-	    lappend mlst %Ex [string map $mlst [dict get $mcd LOCALE_DATE_FORMAT]]
-	    lappend mlst %c  [string map $mlst [dict get $mcd DATE_TIME_FORMAT]]
-	    lappend mlst %Ec [string map $mlst [dict get $mcd LOCALE_DATE_TIME_FORMAT]]
-
-	    dict set LocaleFormats $locale MLST $mlst
+	set mlst {
+	    %% %%
+	    %D %m/%d/%Y
+	    %+ {%a %b %e %H:%M:%S %Z %Y}
 	}
+	lappend mlst %EY [string map $mlst [dict get $mcd LOCALE_YEAR_FORMAT]]
+	lappend mlst %T  [string map $mlst [dict get $mcd TIME_FORMAT_24_SECS]]
+	lappend mlst %R  [string map $mlst [dict get $mcd TIME_FORMAT_24]]
+	lappend mlst %r  [string map $mlst [dict get $mcd TIME_FORMAT_12]]
+	lappend mlst %X  [string map $mlst [dict get $mcd TIME_FORMAT]]
+	lappend mlst %EX [string map $mlst [dict get $mcd LOCALE_TIME_FORMAT]]
+	lappend mlst %x  [string map $mlst [dict get $mcd DATE_FORMAT]]
+	lappend mlst %Ex [string map $mlst [dict get $mcd LOCALE_DATE_FORMAT]]
+	lappend mlst %c  [string map $mlst [dict get $mcd DATE_TIME_FORMAT]]
+	lappend mlst %Ec [string map $mlst [dict get $mcd LOCALE_DATE_TIME_FORMAT]]
 
-	# translate copy of format (don't use format object here, because otherwise
-	# it can lose its internal representation (string map - convert to unicode)
-	set locfmt [string map $mlst [string range " $format" 1 end]]
-
-	# cache it:
-	dict set LocaleFormats $locale $fmtkey $locfmt
+	dict set LocFmtMap $locale $mlst
     }
+
+    # translate copy of format (don't use format object here, because otherwise
+    # it can lose its internal representation (string map - convert to unicode)
+    set locfmt [string map $mlst [string range " $format" 1 end]]
 
     # Save original format as long as possible, because of internal
     # representation (performance).
@@ -2077,7 +2071,7 @@ proc ::tcl::clock::ChangeCurrentLocale {args} {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ClearCaches {} {
-    variable LocaleFormats
+    variable LocFmtMap
     variable mcMergedCat
     variable TimeZoneBad
 
@@ -2087,7 +2081,7 @@ proc ::tcl::clock::ClearCaches {} {
     # clear msgcat cache:
     set mcMergedCat [dict create]
 
-    set LocaleFormats {}
+    set LocFmtMap {}
     set TimeZoneBad {}
     InitTZData
 }

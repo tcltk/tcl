@@ -642,7 +642,7 @@ NormLocaleObj(
     if ( dataPtr->currentLocale != NULL
       && ( localeObj == dataPtr->currentLocale
        || (localeObj->length == dataPtr->currentLocale->length
-	  && strcmp(loc, TclGetString(dataPtr->currentLocale)) == 0
+	  && strcasecmp(loc, TclGetString(dataPtr->currentLocale)) == 0
 	)
       )
     ) {
@@ -652,7 +652,7 @@ NormLocaleObj(
     if ( dataPtr->lastUsedLocale != NULL
       && ( localeObj == dataPtr->lastUsedLocale
        || (localeObj->length == dataPtr->lastUsedLocale->length
-	  && strcmp(loc, TclGetString(dataPtr->lastUsedLocale)) == 0
+	  && strcasecmp(loc, TclGetString(dataPtr->lastUsedLocale)) == 0
 	)
       )
     ) {
@@ -663,7 +663,7 @@ NormLocaleObj(
     if ( dataPtr->prevUsedLocale != NULL
       && ( localeObj == dataPtr->prevUsedLocale
        || (localeObj->length == dataPtr->prevUsedLocale->length
-	  && strcmp(loc, TclGetString(dataPtr->prevUsedLocale)) == 0
+	  && strcasecmp(loc, TclGetString(dataPtr->prevUsedLocale)) == 0
 	)
       )
     ) {
@@ -756,18 +756,21 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    }
 	}
 
+	/* check or obtain mcDictObj (be sure it's modifiable) */
 	if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
-	    Tcl_Obj *callargs[2];
+	    int ref = 1;
 
-	    /* first try to find it own catalog dict */
+	    /* first try to find locale catalog dict */
 	    if (dataPtr->mcDicts == NULL) {
 		Tcl_SetObjRef(dataPtr->mcDicts, Tcl_NewDictObj());
 	    }
 	    Tcl_DictObjGet(NULL, dataPtr->mcDicts,
 		opts->localeObj, &opts->mcDictObj);
 
-	    if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
+	    if (opts->mcDictObj == NULL) {
 		/* get msgcat dictionary - ::tcl::clock::mcget locale */
+		Tcl_Obj *callargs[2];
+
 		callargs[0] = dataPtr->literals[LIT_MCGET];
 		callargs[1] = opts->localeObj;
 
@@ -777,18 +780,19 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 
 		opts->mcDictObj = Tcl_GetObjResult(opts->interp);
 		Tcl_ResetResult(opts->interp);
+		ref = 0; /* new object is not yet referenced */
+	    }
 
-		/* be sure that object reference not increases (dict changeable) */
-		if (opts->mcDictObj->refCount > 0) {
-		    /* smart reference (shared dict as object with no ref-counter) */
-		    opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp,
-		    	opts->mcDictObj);
-	        }
-
-		/* create exactly one reference to catalog / make it searchable for future */
-		Tcl_DictObjPut(NULL, dataPtr->mcDicts, opts->localeObj,
+	    /* be sure that object reference doesn't increase (dict changeable) */
+	    if (opts->mcDictObj->refCount > ref) {
+		/* smart reference (shared dict as object with no ref-counter) */
+		opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp,
 		    opts->mcDictObj);
 	    }
+
+	    /* create exactly one reference to catalog / make it searchable for future */
+	    Tcl_DictObjPut(NULL, dataPtr->mcDicts, opts->localeObj,
+		opts->mcDictObj);
 
 	    if ( opts->localeObj == dataPtr->literals[LIT_C]
 	      || opts->localeObj == dataPtr->defaultLocale
