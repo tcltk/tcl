@@ -46,6 +46,14 @@
 #endif /* _MSC_VER */
 
 /*
+ * Meridian: am, pm, or 24-hour style.
+ */
+
+typedef enum _MERIDIAN {
+    MERam, MERpm, MER24
+} MERIDIAN;
+
+/*
  * yyparse will accept a 'struct DateInfo' as its parameter; that's where the
  * parsed fields will be returned.
  */
@@ -63,7 +71,7 @@ typedef struct DateInfo {
     time_t dateHour;
     time_t dateMinutes;
     time_t dateSeconds;
-    int dateMeridian;
+    MERIDIAN dateMeridian;
     int dateHaveTime;
 
     time_t dateTimezone;
@@ -149,14 +157,6 @@ typedef struct _TABLE {
 typedef enum _DSTMODE {
     DSTon, DSToff, DSTmaybe
 } DSTMODE;
-
-/*
- * Meridian: am, pm, or 24-hour style.
- */
-
-typedef enum _MERIDIAN {
-    MERam, MERpm, MER24
-} MERIDIAN;
 
 %}
 
@@ -777,9 +777,9 @@ LookupWord(
     YYSTYPE* yylvalPtr,
     char *buff)
 {
-    register char *p;
-    register char *q;
-    register const TABLE *tp;
+    char *p;
+    char *q;
+    const TABLE *tp;
     int i, abbrev;
 
     /*
@@ -902,14 +902,14 @@ TclDatelex(
     YYLTYPE* location,
     DateInfo *info)
 {
-    register char c;
-    register char *p;
+    char c;
+    char *p;
     char buff[20];
     int Count;
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
-	while (TclIsSpaceProc(*yyInput)) {
+	while (TclIsSpaceProcM(*yyInput)) {
 	    yyInput++;
 	}
 
@@ -972,7 +972,7 @@ TclDatelex(
 
 int
 TclClockOldscanObjCmd(
-    ClientData clientData,	/* Unused */
+    void *dummy,		/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
     Tcl_Obj *const *objv)	/* Parameters */
@@ -982,6 +982,7 @@ TclClockOldscanObjCmd(
     DateInfo dateInfo;
     DateInfo* info = &dateInfo;
     int status;
+    (void)dummy;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1086,7 +1087,7 @@ TclClockOldscanObjCmd(
 
     if (yyHaveTime) {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj((int)
-		ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian)));
+		ToSeconds(yyHour, yyMinutes, yySeconds, (MERIDIAN)yyMeridian)));
     } else {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
     }
