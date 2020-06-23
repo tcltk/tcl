@@ -102,9 +102,6 @@ typedef enum _MERIDIAN {
     MERam, MERpm, MER24
 } MERIDIAN;
 
-
-
-
 /*
  * yyparse will accept a 'struct DateInfo' as its parameter; that's where the
  * parsed fields will be returned.
@@ -209,6 +206,9 @@ typedef struct _TABLE {
 typedef enum _DSTMODE {
     DSTon, DSToff, DSTmaybe
 } DSTMODE;
+
+
+
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
