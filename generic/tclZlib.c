@@ -2948,8 +2948,9 @@ ZlibTransformClose(
 	(void) deflateEnd(&cd->outStream);
     } else {
 	/*
-	 * If we have rest of read input (overshot by Z_STREAM_END or on possible error),
-	 * unget this part of buffer back to the parent channel.
+	 * If we have unused bytes from the read input (overshot by
+	 * Z_STREAM_END or on possible error), unget them back to the parent
+	 * channel, so that they appear as not being read yet.
 	 */
 	if (cd->inStream.avail_in) {
 	    Tcl_Ungets (cd->parent, (char *)cd->inStream.next_in, cd->inStream.avail_in, 0);

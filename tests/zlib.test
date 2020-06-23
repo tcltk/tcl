@@ -920,7 +920,7 @@ test zlib-10.2 "bug #2818131 (mismatch gets)" -constraints {
     rename zlibRead {}
 } -result {error {invalid block type}}
 
-test zlib-11.1 "Bug #3390073: mis-appled gzip filtering" -setup {
+test zlib-11.1 "Bug #3390073: mis-applied gzip filtering" -setup {
     set file [makeFile {} test.input]
 } -constraints zlib -body {
     set f [open $file wb]
@@ -934,7 +934,7 @@ test zlib-11.1 "Bug #3390073: mis-appled gzip filtering" -setup {
 } -cleanup {
     removeFile $file
 } -result {1000 0}
-test zlib-11.2 "Bug #3390073: mis-appled gzip filtering" -setup {
+test zlib-11.2 "Bug #3390073: mis-applied gzip filtering" -setup {
     set file [makeFile {} test.input]
 } -constraints zlib -body {
     set f [open $file wb]
@@ -1005,6 +1005,62 @@ test zlib-12.2 {Patrick Dunnigan's issue} -constraints zlib -setup {
     removeFile $filesrc
     removeFile $filedst
 } -result 56
+
+test zlib-13.1 {Ticket 8af92dfb66 - zlib stream mis-expansion} -constraints zlib -setup {
+    set pathin  [file join $::tcltest::testsDirectory assets zlib.bin]
+    set chanin  [open $pathin rb]
+    set pathout [file join [pwd] zlib.deflated]
+    set chanout [open $pathout wb]
+    zlib push inflate $chanin
+    fcopy $chanin $chanout
+    close $chanin
+    close $chanout
+} -body {
+    file size $pathout    
+} -cleanup {
+    file delete $pathout
+    unset chanin pathin chanout pathout
+} -result 458752
+
+test zlib-13.2 {Ticket f70ce1fead - zlib multi-stream expansion} -constraints zlib -setup {
+    # Start from the basic asset
+    set pathin  [file join $::tcltest::testsDirectory assets zlib.bin]
+    set chanin  [open $pathin rb]
+    # Create a multi-stream by copying the asset twice into it.
+    set pathout [file join [pwd] zlib.multi]
+    set chanout [open $pathout wb]
+    fcopy $chanin $chanout
+    seek  $chanin 0 start
+    fcopy $chanin $chanout
+    close $chanin
+    close $chanout
+    # The multi-stream file shall be our input
+    set pathin $pathout
+    set chanin [open $pathin rb]
+    # And our destinations
+    set pathout1 [file join [pwd] zlib.1]
+    set pathout2 [file join [pwd] zlib.2]
+} -body {
+    # Decode first stream
+    set chanout [open $pathout1 wb]
+    zlib push inflate $chanin
+    fcopy $chanin $chanout
+    chan pop $chanin
+    close $chanout
+    # Decode second stream
+    set chanout [open $pathout2 wb]
+    zlib push inflate $chanin
+    fcopy $chanin $chanout
+    chan pop $chanin
+    close $chanout
+    #    
+    list [file size $pathout1] [file size $pathout2]
+} -cleanup {
+    close $chanin
+    file delete $pathout $pathout1 $pathout2
+    unset chanin pathin chanout pathout pathout1 pathout2
+} -result {458752 458752}
+
 
 ::tcltest::cleanupTests
 return

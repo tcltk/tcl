@@ -193,12 +193,18 @@ How hard to compress the data. Must be an integer from 0 (uncompressed) to 9
 .TP
 \fB\-limit\fI readaheadLimit\fR
 .
-The maximum number of bytes ahead to read when decompressing. This can be set
-to 1 to find the border for multi-stream inflate or mixed data, to ensure it
-would handle correctly e. g. some operations on following streams after first
-caused to due time.
-Otherwise Tcl would try to automatically return previously read extra data
-to input stream back.
+The maximum number of bytes ahead to read when decompressing.
+.RS
+.PP
+This option has become \fBirrelevant\fR. It was originally introduced
+to prevent Tcl from reading beyond the end of a compressed stream in
+multi-stream channels to ensure that the data after was left alone for
+further reading, at the cost of speed.
+.PP
+Tcl now automatically returns any bytes it has read beyond the end of
+a compressed stream back to the channel, making them appear as unread
+to further readers.
+.RE
 .PP
 Both compressing and decompressing channel transformations add extra
 configuration options that may be accessed through \fBchan configure\fR. The
