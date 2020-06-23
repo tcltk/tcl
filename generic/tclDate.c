@@ -2482,7 +2482,7 @@ static const TABLE MilitaryTable[] = {
 
 static inline const char *
 bypassSpaces(
-    register const char *s)
+    const char *s)
 {
     while (TclIsSpaceProc(*s)) {
 	s++;
@@ -2555,9 +2555,9 @@ LookupWord(
     YYSTYPE* yylvalPtr,
     char *buff)
 {
-    register char *p;
-    register char *q;
-    register const TABLE *tp;
+    char *p;
+    char *q;
+    const TABLE *tp;
     int i, abbrev;
 
     /*
@@ -2680,8 +2680,8 @@ TclDatelex(
     YYLTYPE* location,
     DateInfo *info)
 {
-    register char c;
-    register char *p;
+    char c;
+    char *p;
     char buff[20];
     int Count;
     const char *tokStart;
@@ -2704,7 +2704,7 @@ TclDatelex(
 	    /*
 	     * Convert the string into a number; count the number of digits.
 	     */
-	    register int num = c - '0';
+	    int num = c - '0';
 	    p = (char *)yyInput;
 	    while (isdigit(UCHAR(c = *(++p)))) {
 		if (num >= 0) {
@@ -2772,7 +2772,7 @@ TclDatelex(
 	     */
 	    if (ret == tZONE || ret == tDAYZONE) {
 		c = *yyInput;
-		if (isdigit(c)) { /* literal not a TZ  */
+		if (isdigit(UCHAR(c))) { /* literal not a TZ  */
 		    yyInput = tokStart;
 		    return *yyInput++;
 		}

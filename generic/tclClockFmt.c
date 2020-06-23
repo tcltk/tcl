@@ -907,22 +907,22 @@ FindTokenBegin(
 	case CTOKT_INT:
 	case CTOKT_WIDE:
 	    /* should match at least one digit */
-	    while (!isdigit(UCHAR(*p)) && (p = TclUtfNext(p)) < end) {};
+	    while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {};
 	    return p;
 	break;
 	case CTOKT_WORD:
 	    c = *(tok->tokWord.start);
 	    /* should match at least to the first char of this word */
-	    while (*p != c && (p = TclUtfNext(p)) < end) {};
+	    while (*p != c && (p = Tcl_UtfNext(p)) < end) {};
 	    return p;
 	break;
 	case CTOKT_SPACE:
-	    while (!isspace(UCHAR(*p)) && (p = TclUtfNext(p)) < end) {};
+	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {};
 	    return p;
 	break;
 	case CTOKT_CHAR:
 	    c = *((char *)tok->map->data);
-	    while (*p != c && (p = TclUtfNext(p)) < end) {};
+	    while (*p != c && (p = Tcl_UtfNext(p)) < end) {};
 	    return p;
 	break;
 	}
@@ -2135,7 +2135,7 @@ word_tok:
 		if (isspace(UCHAR(*p))) {
 		    fss->scnSpaceCount++;
 		}
-		p = TclUtfNext(p);
+		p = Tcl_UtfNext(p);
 		wordTok->tokWord.end = p;
 	    }
 	    break;
@@ -3134,7 +3134,7 @@ word_tok:
 		    wordTok->map = &FmtWordTokenMap;
 		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
 		}
-		p = TclUtfNext(p);
+		p = Tcl_UtfNext(p);
 		wordTok->tokWord.end = p;
 	    }
 	    break;
