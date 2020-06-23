@@ -14,7 +14,6 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-
 #if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
@@ -23,7 +22,7 @@
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0501 means Windows XP and above
  */
 
 #ifndef WINVER
