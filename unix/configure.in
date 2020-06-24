@@ -298,7 +298,6 @@ SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strtod, [
-    #include <stdlib.h>
     extern double strtod();
     char *term, *string = " +69";
     exit(strtod(string,&term) != 69 || term != string+4);

@@ -15059,7 +15059,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    #include <stdlib.h>
     extern double strtod();
     char *term, *string = " +69";
     exit(strtod(string,&term) != 69 || term != string+4);
