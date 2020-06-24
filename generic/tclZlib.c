@@ -110,7 +110,7 @@ typedef struct {
     int format;			/* What format of data is going on the wire.
 				 * Needed so that the correct [fconfigure]
 				 * options can be enabled. */
-    int readAheadLimit;		/* The maximum number of bytes to read from
+    unsigned int readAheadLimit;/* The maximum number of bytes to read from
 				 * the underlying stream in one go. */
     z_stream inStream;		/* Structure used by zlib for decompression of
 				 * input. */
@@ -3059,7 +3059,7 @@ ZlibTransformInput(
     gotBytes = 0;
     readBytes = cd->inStream.avail_in; /* how many bytes in buffer now */
     while (!(cd->flags & STREAM_DONE) && toRead > 0) {
-    	int n, decBytes;
+    	unsigned int n; int decBytes;
 
 	/* if starting from scratch or continuation after full decompression */
 	if (!cd->inStream.avail_in) {
@@ -3735,7 +3735,7 @@ ZlibStackChannelTransform(
 	if (cd->inAllocated < cd->readAheadLimit) {
 	    cd->inAllocated = cd->readAheadLimit;
 	}
-	cd->inBuffer = ckalloc(cd->inAllocated);
+	cd->inBuffer = (char *)ckalloc(cd->inAllocated);
 	if (cd->flags & IN_HEADER) {
 	    if (inflateGetHeader(&cd->inStream, &cd->inHeader.header) != Z_OK) {
 		goto error;
