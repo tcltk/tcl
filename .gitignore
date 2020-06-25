@@ -1,4 +1,5 @@
 *.a
+*.bundle
 *.dll
 *.dylib
 *.exe
@@ -10,11 +11,17 @@
 *.res
 *.sl
 *.so
-*/Makefile
-*/config.cache
-*/config.log
-*/config.status
-*/config.status.lineno
+.fslckout
+Makefile
+Tcl-Info.plist
+autom4te.cache
+config.cache
+config.log
+config.status
+config.status.lineno
+html
+manifest.uuid
+_FOSSIL_
 */tclConfig.sh
 */tclsh*
 */tcltest*
@@ -22,9 +29,6 @@
 */version.vc
 */libtcl.vfs
 */libtcl_*.zip
-.fslckout
-_FOSSIL_
-html
 libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build
@@ -43,6 +47,7 @@ libtommath/etc/*
 libtommath/demo/*
 libtommath/*.out
 libtommath/*.tex
+macosx/configure
 unix/autoMkindex.tcl
 unix/dltest.marker
 unix/tcl.pc

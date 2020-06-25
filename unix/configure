@@ -8894,8 +8894,10 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
 }
 _ACEOF
@@ -8953,8 +8955,10 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strtoul();
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 }
@@ -9511,6 +9515,7 @@ else
 /* end confdefs.h.  */
 
 	#include <stdlib.h>
+	#include <string.h>
 	#define OURVAR "havecopy=yes"
 	int main (int argc, char *argv[])
 	{
