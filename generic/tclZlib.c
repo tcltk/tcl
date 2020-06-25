@@ -3017,7 +3017,7 @@ ZlibTransformInput(
 	    /* buffer to start, we can read to whole available buffer */
 	    cd->inStream.next_in = (Bytef *) cd->inBuffer;
 	}
-	/* 
+	/*
 	 * If done - no read needed anymore, check we have to copy rest of
 	 * decompressed data, otherwise return with size (or 0 for Eof)
 	 */
@@ -3101,7 +3101,7 @@ copyDecompressed:
 		    continue;
 		}
 		*errorCodePtr = EAGAIN;
-		return -1;		
+		return -1;
 	    }
 	    break;
 	}
