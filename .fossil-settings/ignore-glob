@@ -13,6 +13,7 @@
 *.sl
 *.so
 */Makefile
+*/autom4te.cache
 */config.cache
 */config.log
 */config.status
@@ -42,10 +43,19 @@ libtommath/etc/*
 libtommath/demo/*
 libtommath/*.out
 libtommath/*.tex
+macosx/configure
 unix/autoMkindex.tcl
 unix/dltest.marker
+unix/dltest/*.bundle
+unix/dltest/*.dll
+unix/dltest/*.dylib
+unix/dltest/*.o
+unix/dltest/*.sl
+unix/dltest/*.so
 unix/tcl.pc
 unix/tclIndex
+unix/Tcl-Info.plist
+unix/Tclsh-Info.plist
 unix/pkgs/*
 win/Debug*
 win/Release*
