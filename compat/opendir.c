@@ -1,4 +1,4 @@
-/* 
+/*
  * opendir.c --
  *
  *	This file provides dirent-style directory-reading procedures for V7
@@ -10,7 +10,7 @@
 
 #undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((sizeof (struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+    ((sizeof(struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
 /*
  * open a directory.
@@ -20,9 +20,9 @@ DIR *
 opendir(
     char *name)
 {
-    register DIR *dirp;
-    register int fd;
-    char *myname;
+    DIR *dirp;
+    int fd;
+    const char *myname;
 
     myname = ((*name == '\0') ? "." : name);
     if ((fd = open(myname, 0, 0)) == -1) {
@@ -45,14 +45,14 @@ opendir(
 #ifndef pyr
 #define	ODIRSIZ	14
 
-struct	olddirect {
+struct olddirect {
     ino_t od_ino;
     char od_name[ODIRSIZ];
 };
 #else	/* a Pyramid in the ATT universe */
 #define	ODIRSIZ	248
 
-struct	olddirect {
+struct olddirect {
     long od_ino;
     short od_fill1, od_fill2;
     char od_name[ODIRSIZ];
@@ -65,9 +65,9 @@ struct	olddirect {
 
 struct dirent *
 readdir(
-    register DIR *dirp)
+    DIR *dirp)
 {
-    register struct olddirect *dp;
+    struct olddirect *dp;
     static struct dirent dir;
 
     for (;;) {
@@ -101,10 +101,10 @@ readdir(
 
 void
 closedir(
-    register DIR *dirp)
+    DIR *dirp)
 {
     close(dirp->dd_fd);
     dirp->dd_fd = -1;
     dirp->dd_loc = 0;
-    ckfree((char *) dirp);
+    ckfree(dirp);
 }

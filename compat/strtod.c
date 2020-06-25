@@ -1,4 +1,4 @@
-/* 
+/*
  * strtod.c --
  *
  *	Source code for the "strtod" library procedure.
@@ -61,7 +61,7 @@ static double powersOf10[] = {	/* Table giving binary powers of 10.  Entry */
 
 double
 strtod(
-    CONST char *string,		/* A decimal ASCII floating-point number,
+    const char *string,		/* A decimal ASCII floating-point number,
 				 * optionally preceded by white space. Must
 				 * have form "-I.FE-X", where I is the integer
 				 * part of the mantissa, F is the fractional
@@ -77,8 +77,8 @@ strtod(
 {
     int sign, expSign = FALSE;
     double fraction, dblExp, *d;
-    register CONST char *p;
-    register int c;
+    const char *p;
+    int c;
     int exp = 0;		/* Exponent read from "EX" field. */
     int fracExp = 0;		/* Exponent that derives from the fractional
 				 * part. Under normal circumstatnces, it is
@@ -92,7 +92,7 @@ strtod(
     int mantSize;		/* Number of digits in mantissa. */
     int decPt;			/* Number of mantissa digits BEFORE decimal
 				 * point. */
-    CONST char *pExp;		/* Temporarily holds location of exponent in
+    const char *pExp;		/* Temporarily holds location of exponent in
 				 * string. */
 
     /*
@@ -137,7 +137,7 @@ strtod(
      * has more than 18 digits, ignore the extras, since they can't affect the
      * value anyway.
      */
-    
+
     pExp  = p;
     p -= mantSize;
     if (decPt < 0) {
@@ -217,7 +217,7 @@ strtod(
      * by processing the exponent one bit at a time to combine many powers of
      * 2 of 10. Then combine the exponent with the fraction.
      */
-    
+
     if (exp < 0) {
 	expSign = TRUE;
 	exp = -exp;
