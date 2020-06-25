@@ -1032,7 +1032,7 @@ test zlib-13.1 {Ticket [8af92dfb66] - zlib stream mis-expansion} -constraints zl
     close $chanin
     close $chanout
 } -body {
-    file size $pathout    
+    file size $pathout
 } -cleanup {
     removeFile $pathout
     unset chanin pathin chanout pathout
@@ -1069,7 +1069,7 @@ test zlib-13.2 {Ticket [f70ce1fead] - zlib multi-stream expansion} -constraints 
     fcopy $chanin $chanout
     chan pop $chanin
     close $chanout
-    #    
+    #
     list [file size $pathout1] [file size $pathout2]
 } -cleanup {
     close $chanin
