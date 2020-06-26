@@ -372,3 +372,4 @@ script:
   - make all tcltest
   - make test
   - make install
+  - make dist
