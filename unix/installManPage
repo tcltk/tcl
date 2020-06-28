@@ -114,7 +114,7 @@ SrcDir=`dirname $ManPage`
 ### Process Page to Create Target Pages
 ###
 
-Specials="DString Thread Notifier RegExp library packagens pkgMkIndex safesock"
+Specials="DString Thread Notifier RegExp library packagens pkgMkIndex safesock FindPhoto FontId MeasureChar"
 for n in $Specials; do
     if [ "$Name" = "$n" ] ; then
 	Names="$n $Names"
