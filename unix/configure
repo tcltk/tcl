@@ -14926,7 +14926,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
 }
 _ACEOF
@@ -15096,7 +15095,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    extern int strtoul();
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 }
