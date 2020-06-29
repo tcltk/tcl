@@ -21,6 +21,7 @@
 #include "tclOOInt.h"
 #include "tclCompile.h"
 #include "tclTomMath.h"
+#include "tclUuid.h"
 #include <math.h>
 #include <assert.h>
 
@@ -1170,12 +1171,52 @@ Tcl_CreateInterp(void)
     Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
+     * TIP #???: Append build information "+<UUID>.<tag1>.<tag2>...."
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+	    "+" STRINGIFY(TCL_VERSION_UUID)
+#ifdef TCL_COMPILE_DEBUG
+	    ".compiledebug"
+#endif
+#ifdef TCL_COMPILE_STATS
+	    ".compilestats"
+#endif
+#ifndef NDEBUG
+	    ".debug"
+#endif
+#ifdef TCL_MEM_DEBUG
+	    ".memdebug"
+#endif
+#ifdef TCL_NO_DEPRECATED
+	    ".nodeprecate"
+#endif
+#ifndef TCL_THREADS
+	    ".nothread"
+#endif
+#ifndef TCL_CFG_OPTIMIZED
+	    ".nooptimize"
+#endif
+#ifdef TCL_CFG_PROFILED
+	    ".profiled"
+#endif
+#ifdef STATIC_BUILD
+	    ".static"
+#endif
+#if TCL_UTF_MAX < 4
+	    ".utf16"
+#endif
+#endif /* TCL_NO_DEPRECATED || TCL_MAJOR_VERSION > 8 */
+	    , &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));

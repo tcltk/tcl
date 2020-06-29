@@ -1694,7 +1694,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; *p != 0; p++) {
+    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b') ||
 		((hasunstable && (*p=='a' || *p=='b')) ||
@@ -1999,6 +1999,9 @@ CheckRequirement(
     char *dash = NULL, *buf;
 
     dash = (char *)strchr(string, '-');
+    while ((dash != NULL) && dash[1] && !isdigit(UCHAR(dash[1]))) {
+	dash = strchr(dash+1, '-');
+    }
     if (dash == NULL) {
 	/*
 	 * No dash found, has to be a simple version.
@@ -2007,7 +2010,11 @@ CheckRequirement(
 	return CheckVersionAndConvert(interp, string, NULL, NULL);
     }
 
-    if (strchr(dash+1, '-') != NULL) {
+    buf = strchr(dash+1, '-');
+    while ((buf != NULL) && buf[1] && !isdigit(UCHAR(buf[1]))) {
+	buf = strchr(buf+1, '-');
+    }
+    if (buf != NULL) {
 	/*
 	 * More dashes found after the first. This is wrong.
 	 */
