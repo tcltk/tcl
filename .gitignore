@@ -2,6 +2,7 @@
 *.bundle
 *.dll
 *.dylib
+*.dylib.E
 *.exe
 *.exp
 *.lib
@@ -14,6 +15,7 @@
 .fslckout
 Makefile
 Tcl-Info.plist
+Tclsh-Info.plist
 autom4te.cache
 config.cache
 config.log
@@ -59,4 +61,5 @@ win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj
+win/nmakehlp.out
 win/nmhlp-out.txt
