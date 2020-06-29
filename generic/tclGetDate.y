@@ -16,7 +16,7 @@
 
 %parse-param {DateInfo* info}
 %lex-param {DateInfo* info}
-%pure-parser
+%define api.pure
  /* %error-verbose would be nice, but our token names are meaningless */
 %locations
 
@@ -977,7 +977,7 @@ TclClockOldscanObjCmd(
 	return TCL_ERROR;
     }
 
-    yyInput = Tcl_GetString( objv[1] );
+    yyInput = TclGetString(objv[1]);
     dateInfo.dateStart = yyInput;
 
     yyHaveDate = 0;

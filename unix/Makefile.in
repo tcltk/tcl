@@ -2224,10 +2224,15 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
-dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
-		$(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
+$(TOP_DIR)/manifest.uuid:
+	printf "git." >$(TOP_DIR)/manifest.uuid
+	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
+
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
+		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/configure.ac \
@@ -2321,7 +2326,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in \
 		$(DISTDIR)/tools
 	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
 		$(DISTDIR)/tools/configure $(DISTDIR)/tools/findBadExternals.tcl \
-		$(DISTDIR)/tools/fix_tommath_h.tcl $(DISTDIR)/tools/loadICU.tcl \
+		$(DISTDIR)/tools/loadICU.tcl \
 		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
 		$(DISTDIR)/tools/tcltk-man2html.tcl
 	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath

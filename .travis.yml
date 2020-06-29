@@ -382,6 +382,15 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-symbols=mem"
       before_install: *makepreinst
+# "make dist" only
+    - name: "Linux: make dist"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+      script:
+        - make dist
 before_install:
   - cd ${BUILD_DIR}
 install:
