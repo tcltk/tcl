@@ -1191,11 +1191,20 @@ Tcl_CreateInterp(void)
 #ifdef TCL_COMPILE_STATS
 	    ".compilestats"
 #endif
+#if defined(__clang__) && defined(__clang_major__)
+	    ".clang" STRINGIFY(__clang_major__)
+#endif
 #ifndef NDEBUG
 	    ".debug"
 #endif
+#if !defined(__clang__) && defined(__GNUC__)
+	    ".gcc" STRINGIFY(__GNUC__)
+#endif
 #ifdef TCL_MEM_DEBUG
 	    ".memdebug"
+#endif
+#if defined(_MSC_VER)
+	    ".msvc" STRINGIFY(_MSC_VER)
 #endif
 #ifdef TCL_NO_DEPRECATED
 	    ".nodeprecate"

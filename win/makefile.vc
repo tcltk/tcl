@@ -758,11 +758,11 @@ $(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
 	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
-$(ROOT)\manifest.uuid:	$(WIN_DIR)\gitmanifest.in
+$(ROOT)\manifest.uuid:
    copy $(WIN_DIR)\gitmanifest.in $(ROOT)\manifest.uuid
    git rev-parse HEAD >>$(ROOT)\manifest.uuid
 
-$(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid $(WIN_DIR)\tclUuid.h.in
+$(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
 	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
 
 $(TMP_DIR)\tclBasic.obj: $(GENERICDIR)\tclBasic.c $(TMP_DIR)\tclUuid.h
