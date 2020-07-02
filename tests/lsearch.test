@@ -15,14 +15,12 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-
-testConstraint nodep [info exists tcl_precision]
 
 set x {abcd bbcd 123 234 345}
 test lsearch-1.1 {lsearch command} {
     lsearch $x 123
 } 2
-test lsearch-1.2 {lsearch command} nodep {
+test lsearch-1.2 {lsearch command} {
     lsearch $x 3456
 } -1
 test lsearch-1.3 {lsearch command} {

@@ -15,8 +15,6 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-
-testConstraint nodep [info exists tcl_precision]
 
 test switch-1.1 {simple patterns} {
     switch a a {subst 1} b {subst 2} c {subst 3} default {subst 4}
@@ -569,7 +567,7 @@ test switch-12.7 {[Bug 3106532] -indexvar should be directly usable with [string
 test switch-12.8 {-indexvar and matched empty strings} {
     switch -regexp -indexvar x -- abcdef ^...(x?) {return $x}
 } {{0 2} {3 2}}
-test switch-12.9 {-indexvar and unmatched strings} nodep {
+test switch-12.9 {-indexvar and unmatched strings} {
     switch -regexp -indexvar x -- abcdef ^...(x)? {return $x}
 } {{0 2} {-1 -1}}
 

@@ -3643,11 +3643,11 @@ TclGetWideForIndex(
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = (Tcl_WideInt)endValue;
 	    }
-	    if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+	    if ((*widePtr < -1) && (flags & TCL_INDEX_NOMIN)) {
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = 0;
 	    }
-	    if ((*widePtr < 0) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
+	    if ((*widePtr < -1) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
@@ -3658,11 +3658,11 @@ TclGetWideForIndex(
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = (Tcl_WideInt)endValue;
 	    }
-	    if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+	    if ((*widePtr < -1) && (flags & TCL_INDEX_NOMIN)) {
 		if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 		*widePtr = 0;
 	    }
-	    if ((*widePtr < 0) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
+	    if ((*widePtr < -1) && (flags & TCL_INDEX_ERROR)) goto invalidWideIndex;
 	    return TCL_OK;
 	}
     }
@@ -3670,7 +3670,7 @@ TclGetWideForIndex(
     /* objPtr does not hold a number, check the end+/- format... */
     code = GetEndOffsetFromObj(interp, objPtr, endValue, widePtr);
     if (code == TCL_OK) {
-	if ((*widePtr < 0) && (flags & TCL_INDEX_NOMIN)) {
+	if ((*widePtr < -1) && (flags & TCL_INDEX_NOMIN)) {
 	    if (flags & TCL_INDEX_ERROR) goto invalidWideIndex;
 	    *widePtr = 0;
 	}

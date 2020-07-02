@@ -887,10 +887,10 @@ test package-4.39 {Tcl_PackageCmd procedure, "vcompare" option} -body {
 } -returnCodes error -result {expected version number but got "a.b"}
 test package-4.40 {Tcl_PackageCmd procedure, "vcompare" option} {
     package vc 2.1 2.3
-} -1
+} {-1}
 test package-4.41 {Tcl_PackageCmd procedure, "vcompare" option} {
     package vc 2.2.4 2.2.4
-} 0
+} {0}
 test package-4.42 {Tcl_PackageCmd procedure, "versions" option} -body {
     package versions
 } -returnCodes error -result {wrong # args: should be "package versions package"}
@@ -988,25 +988,25 @@ test package-6.5 {CheckVersion procedure} -body {
 
 test package-7.1 {ComparePkgVersions procedure} {
     package vcompare 1.23 1.22
-} 1
+} {1}
 test package-7.2 {ComparePkgVersions procedure} {
     package vcompare 1.22.1.2.3 1.22.1.2.3
 } {0}
 test package-7.3 {ComparePkgVersions procedure} {
     package vcompare 1.21 1.22
-} -1
+} {-1}
 test package-7.4 {ComparePkgVersions procedure} {
     package vcompare 1.21 1.21.2
-} -1
+} {-1}
 test package-7.5 {ComparePkgVersions procedure} {
     package vcompare 1.21.1 1.21
-} 1
+} {1}
 test package-7.6 {ComparePkgVersions procedure} {
     package vsatisfies 1.21.1 1.21
-} 1
+} {1}
 test package-7.7 {ComparePkgVersions procedure} {
     package vsatisfies 2.22.3 1.21
-} 0
+} {0}
 test package-7.8 {ComparePkgVersions procedure} {
     package vsatisfies 1 1
 } {1}

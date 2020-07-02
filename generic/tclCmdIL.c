@@ -3802,9 +3802,9 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = TclNewWideIntObjFromSize(i+groupOffset);
+		itemPtr = Tcl_NewWideIntObj(i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
+		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
 			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3824,9 +3824,9 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = TclNewWideIntObjFromSize(index+groupOffset);
+	    itemPtr = Tcl_NewWideIntObj(index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
+		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
 			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
@@ -4414,7 +4414,7 @@ Tcl_LsortObjCmd(
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
-			objPtr = TclNewWideIntObjFromSize(idx + j - groupOffset);
+			objPtr = Tcl_NewWideIntObj(idx + j - groupOffset);
 			newArray[i++] = objPtr;
 			Tcl_IncrRefCount(objPtr);
 		    } else {
@@ -4426,7 +4426,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = TclNewWideIntObjFromSize(elementPtr->payload.index);
+		objPtr = Tcl_NewWideIntObj(elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }

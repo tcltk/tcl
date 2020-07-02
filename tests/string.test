@@ -34,7 +34,6 @@ testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
 testConstraint nodep [info exists tcl_precision]
-testConstraint deprecated [expr {![info exists tcl_precision]}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -389,7 +388,7 @@ test string-4.6.$noComp {string first} {
 test string-4.7.$noComp {string first} {
     run {string first xxx x123xx345xxx789xxx012}
 } 9
-test string-4.8.$noComp {string first} nodep {
+test string-4.8.$noComp {string first} {
     run {string first "" x123xx345xxx789xxx012}
 } -1
 test string-4.9.$noComp {string first, unicode} {
@@ -401,47 +400,47 @@ test string-4.10.$noComp {string first, unicode} {
 test string-4.11.$noComp {string first, start index} {
     run {string first \u7266 abc\u7266x 3}
 } 3
-test string-4.12.$noComp {string first, start index} nodep {
+test string-4.12.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x 4}
-} -1
-test string-4.13.$noComp {string first, start index} {
+} -result -1
+test string-4.13.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x end-2}
-} 3
-test string-4.14.$noComp {string first, negative start index} {
-    run {string first b abc none}
-} 1
-test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} {
+} -result 3
+test string-4.14.$noComp {string first, negative start index} -body {
+    run {string first b abc -1}
+} -result 1
+test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars} -body {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
     # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
     set uchar \u057E    ;# character with two-byte encoding in utf-8
     run {string first % %#$uchar$uchar#$uchar$uchar#% 3}
-} 8
-test string-4.16.$noComp {string first, normal string vs pure unicode string} {
+} -result 8
+test string-4.16.$noComp {string first, normal string vs pure unicode string} -body {
     set s hello
     regexp ll $s m
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} {{string 1} {string 0} 2}
-test string-4.17.$noComp {string first, corner case} nodep {
+} -result {{string 1} {string 0} 2}
+test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
-} -1
-test string-4.18.$noComp {string first, corner case} {
-    run {string first a aaa none}
-} 0
-test string-4.19.$noComp {string first, corner case} {
+} -result {-1}
+test string-4.18.$noComp {string first, corner case} -body {
+    run {string first a aaa -1}
+} -result {0}
+test string-4.19.$noComp {string first, corner case} -body {
     run {string first a aaa end-5}
-} 0
-test string-4.20.$noComp {string last, corner case} {
+} -result {0}
+test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
-} 2
-test string-4.21.$noComp {string last, corner case} nodep {
-    run {string last a aaa none}
-} -1
-test string-4.22.$noComp {string last, corner case} nodep {
+} -result {2}
+test string-4.21.$noComp {string last, corner case} -body {
+    run {string last a aaa -1}
+} -result {-1}
+test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
-} -1
+} {-1}
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -458,8 +457,8 @@ test string-5.4.$noComp {string index} {
 test string-5.5.$noComp {string index} {
     run {string index abcde 5}
 } {}
-test string-5.6.$noComp {string index} {
-    list [catch {run {string index abcde none}} msg] $msg
+test string-5.6.$noComp {string index} nodep {
+    list [catch {run {string index abcde -10}} msg] $msg
 } {0 {}}
 test string-5.7.$noComp {string index} {
     list [catch {run {string index a xyz}} msg] $msg
@@ -503,7 +502,7 @@ test string-5.18.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" end-0o0289}} msg] $msg
 } -match glob -result {1 {*invalid octal number*}}
 test string-5.19.$noComp {string index, bytearray object out of bounds} {
-    run {string index [binary format I* {0x50515253 0x52}] none}
+    run {string index [binary format I* {0x50515253 0x52}] -1}
 } {}
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
@@ -972,67 +971,6 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
-test string-6.132.$noComp {string is index, true} {
-    run {string is index +1234567890}
-} 1
-test string-6.133.$noComp {string is index, true} {
-    run {string is index 1}
-} 1
-test string-6.134.$noComp {string is index, true} {
-    run {string is index 0}
-} 1
-test string-6.135.$noComp {string is index, true} {
-    run {string is index -1}
-} 1
-test string-6.136.$noComp {string is index, false} {
-    run {string is index -2}
-} 0
-test string-6.137.$noComp {string is index, false} {
-    run {string is index end+2}
-} 0
-test string-6.138.$noComp {string is index, true} {
-    run {string is index end+1}
-} 1
-test string-6.139.$noComp {string is index, true} {
-    run {string is index end-9999999}
-} 1
-test string-6.140.$noComp {string is index, true} {
-    run {string is index none}
-} 1
-test string-6.141.$noComp {string is index, {}} {
-    run {string is index {}}
-} 1
-test string-6.142.$noComp {string is none, false} {
-    run {string is none +1234567890}
-} 0
-test string-6.143.$noComp {string is none, false} {
-    run {string is none 1}
-} 0
-test string-6.144.$noComp {string is none, false} {
-    run {string is none 0}
-} 0
-test string-6.145.$noComp {string is none, true} -constraints nodep -body {
-    run {string is none 1-2}
-} -result 1
-test string-6.146.$noComp {string is none, true} {
-    run {string is none -1}
-} 1
-test string-6.147.$noComp {string is none, false} {
-    run {string is none -2}
-} 0
-test string-6.148.$noComp {string is none, false} {
-    run {string is none end+2}
-} 0
-test string-6.149.$noComp {string is none, false} {
-    run {string is none end+1}
-} 0
-test string-6.150.$noComp {string is none, true} {
-    run {string is none none}
-} 1
-test string-6.151.$noComp {string is none, empty string} {
-    run {string is none {}}
-} 1
-
 
 catch {rename largest_int {}}
 
@@ -1069,7 +1007,7 @@ test string-7.10.$noComp {string last, unicode} {
 test string-7.11.$noComp {string last, start index} {
     run {string last \u7266 abc\u7266x 3}
 } 3
-test string-7.12.$noComp {string last, start index} nodep {
+test string-7.12.$noComp {string last, start index} {
     run {string last \u7266 abc\u7266x 2}
 } -1
 test string-7.13.$noComp {string last, start index} {
@@ -1080,7 +1018,7 @@ test string-7.14.$noComp {string last, start index} {
     ## Constrain to last 'b' should skip last 'ba'
     run {string last ba badbad end-2}
 } 0
-test string-7.15.$noComp {string last, start index} nodep {
+test string-7.15.$noComp {string last, start index} {
     run {string last \334a \334ad\334ad 0}
 } -1
 test string-7.16.$noComp {string last, start index} {
@@ -1504,10 +1442,10 @@ test string-12.7.$noComp {string range, last < first} {
     run {string range abcdefghijklmnop 10 9}
 } {}
 test string-12.8.$noComp {string range, first < 0} {
-    run {string range abcdefghijklmnop none 2}
+    run {string range abcdefghijklmnop -1 2}
 } {abc}
-test string-12.9.$noComp {string range} {
-    run {string range abcdefghijklmnop none none}
+test string-12.9.$noComp {string range} nodep {
+    run {string range abcdefghijklmnop -3 -2}
 } {}
 test string-12.10.$noComp {string range} {
     run {string range abcdefghijklmnop 1000 1010}
@@ -1640,8 +1578,8 @@ test string-14.8.$noComp {string replace} {
 test string-14.9.$noComp {string replace} {
     run {string replace abcdefghijklmnop none 2}
 } {defghijklmnop}
-test string-14.10.$noComp {string replace} {
-    run {string replace abcdefghijklmnop none none}
+test string-14.10.$noComp {string replace} nodep {
+    run {string replace abcdefghijklmnop -3 -2}
 } {abcdefghijklmnop}
 test string-14.11.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 1000 1010}
@@ -1668,7 +1606,7 @@ test string-14.18.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 9 XXX}
 } {abcdefghijklmnop}
 test string-14.19.$noComp {string replace} {
-    run {string replace {} none 0 A}
+    run {string replace {} -1 0 A}
 } A
 test string-14.20.$noComp {string replace} {
     run {string replace [makeByteArray abcdefghijklmnop] end-10 end-2\
@@ -1916,7 +1854,7 @@ test string-21.3.$noComp {string wordend} -body {
     list [catch {run {string wordend a gorp}} msg] $msg
 } -result {1 {bad index "gorp": must be integer?[+-]integer?, end?[+-]integer? or none}}
 test string-21.4.$noComp {string wordend} -body {
-    run {string wordend abc. none}
+    run {string wordend abc. -1}
 } -result 3
 test string-21.5.$noComp {string wordend} -body {
     run {string wordend abc. 100}
@@ -2472,7 +2410,7 @@ test string-31.9.$noComp {string insert, empty strings} {
     run {tcl::string::insert {} 0 {}}
 } {}
 test string-31.10.$noComp {string insert, negative index} {
-    run {tcl::string::insert 0123 none _}
+    run {tcl::string::insert 0123 -1 _}
 } _0123
 test string-31.11.$noComp {string insert, index beyond end} {
     run {tcl::string::insert 0123 5 _}
