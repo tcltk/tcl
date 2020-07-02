@@ -17,8 +17,8 @@ if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
-if {[catch {package require msgcat 1.7}]} {
-    puts stderr "Skipping tests in [info script].  No msgcat 1.7 found to test."
+if {[catch {package require msgcat 1.6}]} {
+    puts stderr "Skipping tests in [info script].  No msgcat 1.6 found to test."
     return
 }
 

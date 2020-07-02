@@ -39,11 +39,11 @@ set threadSuperKillScript {
 proc getThreadErrorFromInfo { info } {
     set list [split $info \n]
     set idx [lsearch -glob $list "*eval*unwound*"]
-    if {![string is none $idx]} then {
+    if {$idx != -1} then {
         return [lindex $list $idx]
     }
     set idx [lsearch -glob $list "*eval*canceled*"]
-    if {![string is none $idx]} then {
+    if {$idx != -1} then {
         return [lindex $list $idx]
     }
     return ""; # some other error we do not care about.

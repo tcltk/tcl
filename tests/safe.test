@@ -145,10 +145,10 @@ test safe-5.1 {test auto-loading in safe interpreters} -setup {
     catch {safe::interpDelete a}
     safe::interpCreate a
 } -body {
-    interp eval a {tcl_endOfWord {abc } 0}
+    interp eval a {tcl_endOfWord "" 0}
 } -cleanup {
     safe::interpDelete a
-} -result 3
+} -result -1
 
 # test safe interps 'information leak'
 proc SafeEval {script} {

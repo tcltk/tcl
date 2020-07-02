@@ -3963,8 +3963,8 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = TclNewWideIntObjFromSize(start);
-	    objs[1] = TclNewWideIntObjFromSize(end);
+	    objs[0] = Tcl_NewWideIntObj(start);
+	    objs[1] = Tcl_NewWideIntObj(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
