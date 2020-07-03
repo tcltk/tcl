@@ -146,7 +146,9 @@ proc tcl_startOfNextWord {str start} {
 proc tcl_startOfPreviousWord {str start} {
     variable ::tcl::WordBreakRE
     set word {-1 -1}
-    regexp -indices -- $WordBreakRE(previous) [string range $str 0 $start-1] \
-	    result word
+    if {$start > 0} {
+	regexp -indices -- $WordBreakRE(previous) [string range $str 0 $start-1] \
+		result word
+    }
     return [lindex $word 0]
 }
