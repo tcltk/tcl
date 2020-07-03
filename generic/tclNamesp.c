@@ -154,6 +154,12 @@ static const Tcl_ObjType nsNameType = {
  * "namespace" command.
  */
 
+#if defined(TCL_NO_DEPRECATED) || (TCL_MAJOR_VERSION > 8)
+    /* TODO: Fix TclCompileNamespaceQualifiersCmd, so it doesn't use index "-2",
+     * which arises from substracting "1" from "-1" */
+#   define TclCompileNamespaceQualifiersCmd NULL
+#endif
+
 static const EnsembleImplMap defaultNamespaceMap[] = {
     {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
     {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
@@ -169,8 +175,8 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
     {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"qualifiers", NamespaceQualifiersCmd, NULL/*TclCompileNamespaceQualifiersCmd*/, NULL, NULL, 0},
-    {"tail",	   NamespaceTailCmd,	NULL/*TclCompileNamespaceTailCmd*/, NULL, NULL, 0},
+    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
+    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, 0},
     {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
     {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},

@@ -1872,6 +1872,8 @@ TclCompileNamespaceQualifiersCmd(
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
     TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
     off = CurrentOffset(envPtr);
+    /* TODO: If INST_STR_FIND_LAST results in -1, we shouldn't substract
+     * "1" since that leads to the deprecated index "-2". See TIP #577 */
     PushStringLiteral(envPtr, "1");
     TclEmitOpcode(	INST_SUB,			envPtr);
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
