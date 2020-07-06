@@ -1043,7 +1043,7 @@ BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 !endif
 
-!if !$(DEBUG) || $(DEBUG) && $(UNCHECKED)
+!if !$(DEBUG) || $(TCL_VERSION) > 86 || $(DEBUG) && $(UNCHECKED)
 SUFX	    = $(SUFX:g=)
 !endif
 
@@ -1292,7 +1292,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
+OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS /DUSE_NMAKE=1
 !if $(VCVERSION) >= 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else

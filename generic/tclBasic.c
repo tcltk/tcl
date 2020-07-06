@@ -1183,7 +1183,6 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL
-#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 	    "+" STRINGIFY(TCL_VERSION_UUID)
 #ifdef TCL_COMPILE_DEBUG
 	    ".compiledebug"
@@ -1192,28 +1191,39 @@ Tcl_CreateInterp(void)
 	    ".compilestats"
 #endif
 #if defined(__clang__) && defined(__clang_major__)
-	    ".clang" STRINGIFY(__clang_major__)
+	    ".clang-" STRINGIFY(__clang_major__)
+#if __clang_minor__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__clang_minor__)
 #endif
 #ifndef NDEBUG
 	    ".debug"
 #endif
 #if !defined(__clang__) && defined(__GNUC__)
-	    ".gcc" STRINGIFY(__GNUC__)
+	    ".gcc-" STRINGIFY(__GNUC__)
+#if __GNUC_MINOR__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__GNUC_MINOR__)
 #endif
 #ifdef TCL_MEM_DEBUG
 	    ".memdebug"
 #endif
 #if defined(_MSC_VER)
-	    ".msvc" STRINGIFY(_MSC_VER)
+	    ".msvc-" STRINGIFY(_MSC_VER)
+#endif
+#ifdef USE_NMAKE
+	    ".nmake"
 #endif
 #ifdef TCL_NO_DEPRECATED
-	    ".nodeprecate"
+	    ".no-deprecate"
 #endif
 #ifndef TCL_THREADS
-	    ".nothread"
+	    ".no-thread"
 #endif
 #ifndef TCL_CFG_OPTIMIZED
-	    ".nooptimize"
+	    ".no-optimize"
 #endif
 #ifdef TCL_CFG_PROFILED
 	    ".profiled"
@@ -1224,7 +1234,6 @@ Tcl_CreateInterp(void)
 #if TCL_UTF_MAX < 4
 	    ".utf16"
 #endif
-#endif /* TCL_NO_DEPRECATED || TCL_MAJOR_VERSION > 8 */
 	    , &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {

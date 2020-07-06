@@ -1998,23 +1998,16 @@ CheckRequirement(
 
     char *dash = NULL, *buf;
 
-    dash = (char *)strchr(string, '-');
-    while ((dash != NULL) && dash[1] && !isdigit(UCHAR(dash[1]))) {
-	dash = strchr(dash+1, '-');
-    }
+    dash = strchr(string, '+') ? NULL : (char *)strchr(string, '-');
     if (dash == NULL) {
 	/*
-	 * No dash found, has to be a simple version.
+	 * '+' found or no dash found: has to be a simple version.
 	 */
 
 	return CheckVersionAndConvert(interp, string, NULL, NULL);
     }
 
-    buf = strchr(dash+1, '-');
-    while ((buf != NULL) && buf[1] && !isdigit(UCHAR(buf[1]))) {
-	buf = strchr(buf+1, '-');
-    }
-    if (buf != NULL) {
+    if (strchr(dash+1, '-') != NULL) {
 	/*
 	 * More dashes found after the first. This is wrong.
 	 */
