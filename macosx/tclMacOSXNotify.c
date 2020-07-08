@@ -31,6 +31,9 @@
  */
 
 #if defined(HAVE_LIBKERN_OSATOMIC_H) && defined(HAVE_OSSPINLOCKLOCK)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wunused-function"
 /*
  * Use OSSpinLock API where available (Tiger or later).
  */
@@ -42,14 +45,17 @@
  * Support for weakly importing spinlock API.
  */
 #define WEAK_IMPORT_SPINLOCKLOCK
+
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
 #define VOLATILE volatile
 #else
 #define VOLATILE
 #endif /* MAC_OS_X_VERSION_MAX_ALLOWED >= 1050 */
+
 #ifndef bool
 #define bool int
 #endif
+
 extern void		OSSpinLockLock(VOLATILE OSSpinLock *lock)
 			    WEAK_IMPORT_ATTRIBUTE;
 extern void		OSSpinLockUnlock(VOLATILE OSSpinLock *lock)
@@ -101,6 +107,7 @@ extern int		_spin_lock_try(OSSpinLock *lock);
 #define SpinLockTry(p)		_spin_lock_try(p)
 #define SPINLOCK_INIT		0
 
+#pragma GCC diagnostic pop
 #endif /* HAVE_LIBKERN_OSATOMIC_H && HAVE_OSSPINLOCKLOCK */
 
 /*
@@ -217,7 +224,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct FileHandlerEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
@@ -232,7 +239,7 @@ typedef struct FileHandlerEvent {
  * writable, and exceptional conditions.
  */
 
-typedef struct SelectMasks {
+typedef struct {
     fd_set readable;
     fd_set writable;
     fd_set exceptional;
@@ -686,7 +693,7 @@ StartNotifierThread(void)
 
 void
 Tcl_FinalizeNotifier(
-    ClientData clientData)		/* Not used. */
+    ClientData clientData)
 {
     ThreadSpecificData *tsdPtr;
 
@@ -789,7 +796,7 @@ void
 Tcl_AlertNotifier(
     ClientData clientData)
 {
-    ThreadSpecificData *tsdPtr = clientData;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
@@ -967,7 +974,7 @@ Tcl_CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -1311,7 +1318,7 @@ QueueFileEvents(
 {
     SelectMasks readyMasks;
     FileHandler *filePtr;
-    ThreadSpecificData *tsdPtr = info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     /*
      * Queue all detected file events.
@@ -1350,7 +1357,7 @@ QueueFileEvents(
 	 */
 
 	if (filePtr->readyMask == 0) {
-	    FileHandlerEvent *fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
+	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)ckalloc(sizeof(FileHandlerEvent));
 
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
@@ -1383,7 +1390,7 @@ UpdateWaitingListAndServiceEvents(
     CFRunLoopActivity activity,
     void *info)
 {
-    ThreadSpecificData *tsdPtr = info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     if (tsdPtr->sleeping) {
 	return;
@@ -1412,7 +1419,10 @@ UpdateWaitingListAndServiceEvents(
 		(tsdPtr->runLoopNestingLevel > 1
 			|| !tsdPtr->runLoopRunning)) {
 	    tsdPtr->runLoopServicingEvents = 1;
-            /* This call seems to simply force event processing through and prevents hangups that have long been observed with Tk-Cocoa.  */
+            /*
+	     * This call seems to simply force event processing through and
+	     * prevents hangups that have long been observed with Tk-Cocoa.
+	     */
 	    Tcl_ServiceAll();
 	    tsdPtr->runLoopServicingEvents = 0;
 	}

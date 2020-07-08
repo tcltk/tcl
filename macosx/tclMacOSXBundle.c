@@ -106,7 +106,7 @@ OpenResourceMap(
 	if (tclMacOSXDarwinRelease >= 8)
 #endif
 	{
-	    openresourcemap = dlsym(RTLD_NEXT,
+	    openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
 		    "CFBundleOpenBundleResourceMap");
 #ifdef TCL_DEBUG_LOAD
 	    if (!openresourcemap) {
