@@ -61,6 +61,7 @@ set auto_index(::safe::DirInAccessPath) [list ::tcl::Pkg::source [file join $dir
 set auto_index(::safe::Subset) [list ::tcl::Pkg::source [file join $dir safe.tcl]]
 set auto_index(::safe::AliasSubset) [list ::tcl::Pkg::source [file join $dir safe.tcl]]
 set auto_index(::safe::AliasEncoding) [list ::tcl::Pkg::source [file join $dir safe.tcl]]
+set auto_index(::safe::setAutoPathSync) [list source [file join $dir safe.tcl]]
 set auto_index(tcl_wordBreakAfter) [list ::tcl::Pkg::source [file join $dir word.tcl]]
 set auto_index(tcl_wordBreakBefore) [list ::tcl::Pkg::source [file join $dir word.tcl]]
 set auto_index(tcl_endOfWord) [list ::tcl::Pkg::source [file join $dir word.tcl]]

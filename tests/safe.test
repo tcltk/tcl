@@ -184,11 +184,11 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 # high level general test
 test safe-7.1 {tests that everything works at high level with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 1
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
     }
 
     set i [safe::interpCreate]
@@ -204,16 +204,16 @@ test safe-7.1 {tests that everything works at high level with conventional AutoP
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result 2.*
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 1
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
     } else {
         set SyncVal_TMP 1
     }
@@ -231,7 +231,7 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventio
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 test safe-7.3 {check that safe subinterpreters work} {
@@ -242,11 +242,11 @@ test safe-7.3 {check that safe subinterpreters work} {
 
 test safe-7.4 {tests specific path and positive search with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 1
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
     } else {
         set SyncVal_TMP 1
     }
@@ -265,17 +265,17 @@ test safe-7.4 {tests specific path and positive search with conventional AutoPat
     # other than the first and last in the access path.
 } -cleanup {
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 test safe-7.5 {tests positive and negative module loading with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 1
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
     }
 
     set i [safe::interpCreate]
@@ -294,7 +294,7 @@ test safe-7.5 {tests positive and negative module loading with conventional Auto
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -result {1 {can't find package shell} 0}
 
@@ -962,13 +962,13 @@ test safe-17.2 {Check that first element of slave auto_path (and access path) is
 
 test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 0
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
     } else {
-        error {This test is meaningful only if the command ::safe::SetAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
 
     # Without AutoPathSync, we need a more complete auto_path, because the slave will use the same value.
@@ -990,19 +990,19 @@ test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without
     set ::auto_path $::auto_TMP
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -result 1.0
 
 test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPath without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 0
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
     } else {
-        error {This test is meaningful only if the command ::safe::SetAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -1020,19 +1020,19 @@ test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPat
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 test safe-18.3 {Check that default auto_path is the same as in the master interpreter without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 0
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
     } else {
-        error {This test is meaningful only if the command ::safe::SetAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
 
     set i [safe::interpCreate]
@@ -1049,19 +1049,19 @@ test safe-18.3 {Check that default auto_path is the same as in the master interp
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-	safe::SetAutoPathSync $SyncVal_TMP
+	safe::setAutoPathSync $SyncVal_TMP
     }
 } -result [set ::auto_path]
 
 test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 0
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
     } else {
-        error {This test is meaningful only if the command ::safe::SetAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -1087,19 +1087,19 @@ test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-	safe::SetAutoPathSync $SyncVal_TMP
+	safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 test safe-18.5 {cf. safe-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::SetAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
 
     if {$SyncExists} {
-        set SyncVal_TMP [safe::SetAutoPathSync]
-        safe::SetAutoPathSync 0
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
     } else {
-        error {This test is meaningful only if the command ::safe::SetAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
 
     set i [safe::interpCreate]
@@ -1118,7 +1118,7 @@ test safe-18.5 {cf. safe-7.5 - tests positive and negative module loading withou
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::SetAutoPathSync $SyncVal_TMP
+        safe::setAutoPathSync $SyncVal_TMP
     }
 } -result {1 {can't find package shell} 0}
 
