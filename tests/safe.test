@@ -197,16 +197,17 @@ test safe-7.1 {tests that everything works at high level with conventional AutoP
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
     #  package require in a slave works like in the master)
-    set v [interp eval $i {package require http 2}]
+    set v [interp eval $i {package require opt}]
     # no error shall occur:
-    interp eval $i {http::config}
+    interp eval $i {::tcl::Lempty {a list}}
     set v
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result 2.*
+} -match glob -result 0.4.*
+
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
@@ -223,17 +224,17 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventio
     set token1 [safe::interpAddToAccessPath $i [info library]]
     # should add as p* (not p1 if master has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # an error shall occur (http is not anymore in the secure 0-level
+    # an error shall occur (opt is not anymore in the secure 0-level
     # provided deep path)
     list $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package opt} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 test safe-7.3 {check that safe subinterpreters work} {
     set i [safe::interpCreate]
     set j [safe::interpCreate [list $i x]]
@@ -255,10 +256,10 @@ test safe-7.4 {tests specific path and positive search with conventional AutoPat
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
     # should add as p* (not p1 if master has a module path)
-    set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
-    # this time, unlike test safe-7.2, http 1.0 should be found
+    set token2 [safe::interpAddToAccessPath $i [file join [info library] opt]]
+    # this time, unlike test safe-7.2, opt should be found
     list $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
     # Note that the glob match elides directories (those from the module path)
@@ -267,7 +268,7 @@ test safe-7.4 {tests specific path and positive search with conventional AutoPat
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 0.4.* {-accessPath {[list $tcl_library *$tcl_library/opt]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 test safe-7.5 {tests positive and negative module loading with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
@@ -980,11 +981,11 @@ test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without
     set i [safe::interpCreate]
 } -body {
     # no error shall occur:
-    # (because the default access_path shall include 1st level sub dirs
-    #  so package require in a slave works like in the master)
-    set v [interp eval $i {package require http 1}]
+    # (because the default access_path shall include 1st level sub dirs so
+    #  package require in a slave works like in the master)
+    set v [interp eval $i {package require opt}]
     # no error shall occur:
-    interp eval $i {http_config}
+    interp eval $i {::tcl::Lempty {a list}}
     set v
 } -cleanup {
     set ::auto_path $::auto_TMP
@@ -992,7 +993,7 @@ test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -result 1.0
+} -match glob -result 0.4.*
 
 test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPath without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
@@ -1012,17 +1013,18 @@ test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPat
     set token1 [safe::interpAddToAccessPath $i [info library]]
     # should add as p1
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # an error shall occur (http is not anymore in the secure 0-level
+    # an error shall occur (opt is not anymore in the secure 0-level
     # provided deep path)
     list $auto1 $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package opt} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
+
 
 test safe-18.3 {Check that default auto_path is the same as in the master interpreter without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
@@ -1075,21 +1077,21 @@ test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_
     set token1 [safe::interpAddToAccessPath $i [info library]]
 
     # should add as p* (not p1 if master has a module path)
-    set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
+    set token2 [safe::interpAddToAccessPath $i [file join [info library] opt]]
 
     # should not have been changed by Safe Base:
     set auto2 [interp eval $i {set ::auto_path}]
 
-    # This time, unlike test safe-18.2 and the try above, http 1.0 should be found:
+    # This time, unlike test safe-18.2 and the try above, opt should be found:
     list $auto1 $auto2 $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
 	safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 0.4.* {-accessPath {[list $tcl_library *$tcl_library/opt]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
 
 test safe-18.5 {cf. safe-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
@@ -1167,3 +1169,4 @@ return
 # Local Variables:
 # mode: tcl
 # End:
+
