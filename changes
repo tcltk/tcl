@@ -8945,3 +8945,47 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 => http 2.9.1
 
 - Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+
+2019-12-03 (bug)[3cd9bea1e6] Corner case in surrogate handling (nijtmans)
+
+2019-12-09 (new)[2cf1202807] Add tcltest::(EvalTest|CleanupTest) (pooryorick, sebres)
+
+2019-12-12 (new)[23016a5299] Add 3 libtommath functions to stub table (nijtmans)
+
+2019-12-23 (bug)[ce3b9f2b04] compilation errors with clang, windows msys2 (nijtmans)
+
+2019-12-27 (bug)[1de6b0629e] number parser fails handling int overflow in exponents (kbk)
+
+2020-01-04 (bug)[9128866ec8] tis-620 encoding fails to load (pooryorick)
+
+2020-01-13 (bug)[0b9332722a] Support utf-8 on Windows console (jedlička)
+
+2020-01-17 (bug)[8cd2fe7474] "unload" command bug, when handling multiple libs (berc)
+
+2020-01-17 (bug)[5d989f9ba3] Seg fault in lsort for large list length (sebres)
+
+2020-01-30 (bug)[1f9f6b8596] Reset WSAGetLastError()/errno in case of earlier error (nijtmans)
+
+2020-01-30 (bug)[968255386e] windows: avoid create of legacy error-vars on init phase (sebres)
+
+2020-02-21 (bug)[da235271f1] [info hostname] on Windows is limited to max NetBIOS name length (apnadkarni)
+
+2020-02-25 (bug)[df73151114] release references when setting a class's superclasses fails (dkf)
+
+2020-02-26 (bug)[cc5c355ced] Make dde/reg compilable with C++ compiler. -> 1.4.3/1.3.5 (nijtmans)
+
+2020-03-04 (bug)[3a5bf9c4ee] WideSeekProc/Close2Proc() implemented for all internal channels (nijtmans)
+
+2020-03-05 (new)[341689c2ff] Update to Unicode-13 (nijtmans)
+
+2020-03-06 (new)[7f2b0f5d2d] Remove SetIndexFromAny (dgp)
+
+2020-03-16 (bug)[8f89e2e059] Windows: environment is not reflected properly, special characters (sebres, nijtmans)
+
+2020-03-27 (bug)[767e070d35] Tcl_GetRange/Tcl_GetUniChar do not validate index inputs (nijtmans)
+
+2020-03-28 (bug)[8edfcedfa0] binary encode base64 explodes multi-byte wrapchars (dgp)
+
+2020-03-31 (bug)[b8e82d293b] accepted -maxlen value breaks uuencode round trip (dgp)
+
+- Released 8.6.11, Aug ??, 2020 - details at http://core.tcl-lang.org/tcl/ -
