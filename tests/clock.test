@@ -35660,6 +35660,30 @@ test clock-34.18 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T000000"]
     clock format $time -format {%b %d, %Y %H:%M:%S}
 } "Oct 23, 1992 00:00:00"
+test clock-34.19 {clock scan, ISO 8601 point in time format} {
+    set time [clock scan "19921023T00:00:00"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} "Oct 23, 1992 00:00:00"
+test clock-34.20 {clock scan, ISO 8601 point in time format} {
+    set time [clock scan "1992-10-23T00:00:00"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} "Oct 23, 1992 00:00:00"
+test clock-34.21 {clock scan, ISO 8601 invalid TZ} -body {
+    set time [clock scan "19921023MST000000"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} -returnCodes error -match glob -result {unable to convert date-time string*}
+test clock-34.22 {clock scan, ISO 8601 invalid TZ} -body {
+    set time [clock scan "19921023M000000"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} -returnCodes error -match glob -result {unable to convert date-time string*}
+test clock-34.23 {clock scan, ISO 8601 invalid TZ} -body {
+    set time [clock scan "1992-10-23M00:00:00"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} -returnCodes error -match glob -result {unable to convert date-time string*}
+test clock-34.24 {clock scan, ISO 8601 invalid TZ} -body {
+    set time [clock scan "1992-10-23MST00:00:00"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} -returnCodes error -match glob -result {unable to convert date-time string*}
 
 # CLOCK SCAN REAL TESTS
 # We use 5am PST, 31-12-1999 as the base for these scans because irrespective
