@@ -913,9 +913,10 @@ An ISO 8601 point-in-time specification, such as
 where \fBT\fR is the literal
 .QW T ,
 .QW "\fICCyymmdd hhmmss\fR" ,
+.QW \fICCyymmdd\fBT\fIhh:mm:ss\fR ,
 or
-.QW \fICCyymmdd\fBT\fIhh:mm:ss\fR .
-Note that only these three formats are accepted.
+.QW \fICCyy-mm-dd\fBT\fIhh:mm:ss\fR.
+Note that only these four formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
 specifications specified in ISO8601.  Other formats can be recognized by
 giving an explicit \fB\-format\fR option to the \fBclock scan\fR command.
