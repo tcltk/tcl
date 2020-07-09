@@ -249,10 +249,11 @@ proc ::safe::interpConfigure {args} {
 # Optional Arguments :
 # + slave name : if empty, generated name will be used
 # + access_path: path list controlling where load/source can occur,
-#                if empty: the master auto_path will be used.
+#                if empty: the master auto_path and its subdirectories will be
+#                used.
 # + staticsok  : flag, if 0 :no static package can be loaded (load {} Xxx)
 #                      if 1 :static packages are ok.
-# + nestedok: flag, if 0 :no loading to sub-sub interps (load xx xx sub)
+# + nestedok   : flag, if 0 :no loading to sub-sub interps (load xx xx sub)
 #                      if 1 : multiple levels are ok.
 
 # use the full name and no indent so auto_mkIndex can find us
@@ -278,12 +279,16 @@ proc ::safe::InterpCreate {
 
 #
 # InterpSetConfig (was setAccessPath) :
-#    Sets up slave virtual auto_path and corresponding structure within
+#    Sets up slave virtual access path and corresponding structure within
 #    the master. Also sets the tcl_library in the slave to be the first
 #    directory in the path.
 #    NB: If you change the path after the slave has been initialized you
 #    probably need to call "auto_reset" in the slave in order that it gets
 #    the right auto_index() array values.
+#
+#    It is the caller's responsibility, if it supplies a non-empty value for
+#    access_path, to make the first directory in the path suitable for use as
+#    tcl_library, and (if ![SetAutoPathSync]), to set the slave's ::auto_path.
 
 proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     global auto_path
@@ -309,10 +314,14 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 			moved it to front of slave's access_path" NOTICE
 	}
 
+	set raw_auto_path $access_path
+
 	# Add 1st level sub dirs (will searched by auto loading from tcl
 	# code in the slave using glob and thus fail, so we add them here
 	# so by default it works the same).
 	set access_path [AddSubDirs $access_path]
+    } else {
+	set raw_auto_path {}
     }
 
     Log $slave "Setting accessPath=($access_path) staticsok=$staticsok\
@@ -343,7 +352,20 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	incr i
     }
 
+    # Set the slave auto_path.
+    # If [SetAutoPathSync], SyncAccessPath will overwrite this value with the
+    # full access path.
+    # If ![SetAutoPathSync], Safe Base code will not change this value.
+    set tokens_auto_path {}
+    foreach dir $raw_auto_path {
+	if {[dict exists $remap_access_path $dir]} {
+	    lappend tokens_auto_path [dict get $remap_access_path $dir]
+	}
+    }
+    ::interp eval $slave [list set auto_path $tokens_auto_path]
+
     set morepaths [::tcl::tm::list]
+    set firstpass 1
     while {[llength $morepaths]} {
 	set addpaths $morepaths
 	set morepaths {}
@@ -361,7 +383,12 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    lappend map_access_path    $token $dir
 	    lappend remap_access_path  $dir $token
 	    lappend norm_access_path   [file normalize $dir]
-	    lappend slave_tm_path $token
+	    if {$firstpass} {
+		# $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		# Later passes handle subdirectories, which belong in the
+		# access path but not in the module path.
+		lappend slave_tm_path  $token
+	    }
 	    incr i
 
 	    # [Bug 2854929]
@@ -372,6 +399,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # subdirectories.
 	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
 	}
+	set firstpass 0
     }
 
     set state(access_path)       $access_path
@@ -545,6 +573,15 @@ proc ::safe::interpDelete {slave} {
 
     namespace upvar ::safe S$slave state
 
+    # Sub interpreters would be deleted automatically, but if they are managed
+    # by the Safe Base we also need to clean up, and this needs to be done
+    # independently of the cleanupHook.
+    foreach sub [interp slaves $slave] {
+        if {[info exists ::safe::S[list $slave $sub]]} {
+            ::safe::interpDelete [list $slave $sub]
+        }
+    }
+
     # If the slave has a cleanup hook registered, call it.  Check the
     # existance because we might be called to delete an interp which has
     # not been registered with us at all
@@ -611,20 +648,23 @@ proc ::safe::setLogCmd {args} {
 # ------------------- END OF PUBLIC METHODS ------------
 
 #
-# Sets the slave auto_path to the master recorded value.  Also sets
-# tcl_library to the first token of the virtual path.
+# Sets the slave auto_path to its recorded access path.  Also sets
+# tcl_library to the first token of the access path.
 #
 proc ::safe::SyncAccessPath {slave} {
+    variable AutoPathSync
     namespace upvar ::safe S$slave state
 
     set slave_access_path $state(access_path,slave)
-    ::interp eval $slave [list set auto_path $slave_access_path]
+    if {$AutoPathSync} {
+	::interp eval $slave [list set auto_path $slave_access_path]
 
-    Log $slave "auto_path in $slave has been set to $slave_access_path"\
-	NOTICE
+	Log $slave "auto_path in $slave has been set to $slave_access_path"\
+		NOTICE
+    }
 
     # This code assumes that info library is the first element in the
-    # list of auto_path's. See -> InterpSetConfig for the code which
+    # list of access path's. See -> InterpSetConfig for the code which
     # ensures this condition.
 
     ::interp eval $slave [list \
@@ -688,6 +728,7 @@ proc ::safe::AliasFileSubcommand {slave subcommand name} {
 # AliasGlob is the target of the "glob" alias in safe interpreters.
 
 proc ::safe::AliasGlob {slave args} {
+    variable AutoPathSync
     Log $slave "GLOB ! $args" NOTICE
     set cmd {}
     set at 0
@@ -710,8 +751,12 @@ proc ::safe::AliasGlob {slave args} {
 
     while {$at < [llength $args]} {
 	switch -glob -- [set opt [lindex $args $at]] {
-	    -nocomplain - -- - -join - -tails {
+	    -nocomplain - -- - -tails {
 		lappend cmd $opt
+		set got($opt) 1
+		incr at
+	    }
+	    -join {
 		set got($opt) 1
 		incr at
 	    }
@@ -729,15 +774,20 @@ proc ::safe::AliasGlob {slave args} {
 		incr at
 	    }
 	    pkgIndex.tcl {
-		# Oops, this is globbing a subdirectory in regular package
-		# search. That is not wanted. Abort, handler does catch
-		# already (because glob was not defined before). See
-		# package.tcl, lines 484ff in tclPkgUnknown.
-		return -code error "unknown command glob"
+		if {$AutoPathSync} {
+		    # Oops, this is globbing a subdirectory in regular package
+		    # search. That is not wanted. Abort, handler does catch
+		    # already (because glob was not defined before). See
+		    # package.tcl, lines 484ff in tclPkgUnknown.
+		    return -code error "unknown command glob"
+		} else {
+		    break
+		}
 	    }
 	    -* {
 		Log $slave "Safe base rejecting glob option '$opt'"
 		return -code error "Safe base rejecting glob option '$opt'"
+		# unsafe/unnecessary options rejected: -path
 	    }
 	    default {
 		break
@@ -761,7 +811,7 @@ proc ::safe::AliasGlob {slave args} {
 	lappend cmd -directory $dir
     }
 
-    # Apply the -join semantics ourselves
+    # Apply the -join semantics ourselves (hence -join not copied to $cmd)
     if {$got(-join)} {
 	set args [lreplace $args $at end [join [lrange $args $at end] "/"]]
     }
@@ -1100,8 +1150,49 @@ proc ::safe::Setup {} {
     return
 }
 
+# Accessor method for ::safe::SetAutoPathSync
+# Usage: ::safe::SetAutoPathSync ?newValue?
+
+proc ::safe::SetAutoPathSync {args} {
+    variable AutoPathSync
+
+    if {[llength $args] == 1} {
+        set newValue [lindex $args 0]
+        if {![string is boolean -strict $newValue]} {
+            return -code error "new value must be a valid boolean"
+        }
+        set args [expr {$newValue && $newValue}]
+        if {([info vars ::safe::S*] ne {}) && ($args != $AutoPathSync)} {
+            return -code error \
+                    "cannot change AutoPathSync while Safe Base slaves exist"
+        }
+    }
+
+    set AutoPathSync {*}$args
+}
+
 namespace eval ::safe {
-    # internal variables
+    # internal variables (must not begin with "S")
+
+    # AutoPathSync
+    #
+    # Set AutoPathSync to 0 to give a slave's ::auto_path the same meaning as
+    # for an unsafe interpreter: the package command will search its directories
+    # and first-level subdirectories for pkgIndex.tcl files; the auto-loader
+    # will search its directories for tclIndex files.  The access path and
+    # module path will be maintained as separate values, and ::auto_path will
+    # not be updated when the user calls ::safe::interpAddToAccessPath to add to
+    # the access path.  If the user specifies an access path when calling
+    # interpCreate, interpInit or interpConfigure, it is the user's
+    # responsibility to define the slave's auto_path.  If these commands are
+    # called with no (or empty) access path, the slave's auto_path will be set
+    # to a tokenized form of the master's auto_path, and these directories and
+    # their first-level subdirectories will be added to the access path.
+    #
+    # Set to 1 for "traditional" behavior: a slave's entire access path and
+    # module path are copied to its ::auto_path, which is updated whenever
+    # the user calls ::safe::interpAddToAccessPath to add to the access path.
+    variable AutoPathSync 1
 
     # Log command, set via 'setLogCmd'. Logging is disabled when empty.
     variable Log {}
