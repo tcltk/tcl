@@ -1026,7 +1026,7 @@ test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPat
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
 
 test safe-18.3 {Check that default auto_path is the same as in the master interpreter without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
     # All ::safe commands are loaded at start of file.
@@ -1093,7 +1093,7 @@ test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_
     if {$SyncExists} {
 	safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
 
 test safe-18.5 {cf. safe-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
