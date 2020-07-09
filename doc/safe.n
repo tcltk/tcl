@@ -23,10 +23,13 @@ safe \- Creating and manipulating safe interpreters
 .sp
 \fB::safe::interpFindInAccessPath\fR \fIslave\fR \fIdirectory\fR
 .sp
+\fB::safe::setAutoPathSync\fR ?\fInewValue\fR?
+.sp
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
 .SS OPTIONS
 .PP
 ?\fB\-accessPath\fR \fIpathList\fR?
+?\fB\-autoPath\fR \fIpathList\fR?
 ?\fB\-statics\fR \fIboolean\fR? ?\fB\-noStatics\fR?
 ?\fB\-nested\fR \fIboolean\fR? ?\fB\-nestedLoadOk\fR?
 ?\fB\-deleteHook\fR \fIscript\fR?
@@ -140,6 +143,15 @@ $slave eval [list set tk_library \e
 .CE
 .RE
 .TP
+\fB::safe::setAutoPathSync\fR ?\fInewValue\fR?
+This command is used to get or set the "Sync Mode" of the Safe Base.
+When an argument is supplied, the command returns an error if the argument
+is not a boolean value, or if any Safe Base interpreters exist.  Typically
+the value will be set as part of initialization - boolean true for
+"Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode"
+on, the Safe Base keeps each slave interpreter's ::auto_path synchronized
+with its access path.  See the section \fBSYNC MODE\fR below for details.
+.TP
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
 This command installs a script that will be called when interesting
 life cycle events occur for a safe interpreter.
@@ -190,6 +202,13 @@ empty list, the safe interpreter will use the same directories as its
 master for auto-loading.
 See the section \fBSECURITY\fR below for more detail about virtual paths,
 tokens and access control.
+.TP
+\fB\-autoPath\fR \fIdirectoryList\fR
+This option sets the list of directories in the safe interpreter's
+::auto_path.  The option is undefined if the Safe Base has "Sync Mode" on
+- in that case the safe interpreter's ::auto_path is managed by the Safe
+Base and is a tokenized form of its access path.
+See the section \fBSYNC MODE\fR below for details.
 .TP
 \fB\-statics\fR \fIboolean\fR
 This option specifies if the safe interpreter will be allowed
@@ -323,7 +342,8 @@ list will be assigned a token that will be set in
 the slave \fBauto_path\fR and the first element of that list will be set as
 the \fBtcl_library\fR for that slave.
 .PP
-If the access path argument is not given or is the empty list,
+If the access path argument is not given to \fB::safe::interpCreate\fR or
+\fB::safe::interpInit\fR or is the empty list,
 the default behavior is to let the slave access the same packages
 as the master has access to (Or to be more precise:
 only packages written in Tcl (which by definition cannot be dangerous
@@ -349,8 +369,119 @@ When the \fIaccessPath\fR is changed after the first creation or
 initialization (i.e. through \fBinterpConfigure -accessPath \fR\fIlist\fR),
 an \fBauto_reset\fR is automatically evaluated in the safe interpreter
 to synchronize its \fBauto_index\fR with the new token list.
+.SH SYNC MODE
+Before Tcl version 8.6.x, the Safe Base kept each safe interpreter's
+::auto_path synchronized with a tokenized form of its access path.
+Limitations of Tcl 8.4 and earlier made this feature necessary.  This
+definition of ::auto_path did not conform its specification in library(n)
+and pkg_mkIndex(n), but nevertheless worked perfectly well for the discovery
+and loading of packages.  The introduction of Tcl modules in Tcl 8.5 added a
+large number of directories to the access path, and it is inconvenient to
+have these additional directories unnecessarily appended to the ::auto_path.
+.PP
+In order to preserve compatibility with existing code, this synchronization
+of the ::auto_path and access path ("Sync Mode" on) is still the default.
+However, the Safe Base offers the option of limiting the safe interpreter's
+::auto_path to the much shorter list of directories that is necessary for
+it to perform its function ("Sync Mode" off).  Use the command
+\fB::safe::setAutoPathSync\fR to choose the mode before creating any Safe
+Base interpreters.
+.PP
+In either mode, the most convenient way to initialize a safe interpreter is
+to call \fB::safe::interpCreate\fR or \fB::safe::interpInit\fR without the
+\fB\-accessPath\fR or \fB\-autoPath\fR options (or with the \fB\-accessPath\fR
+option set to the
+empty list), which will give the safe interpreter the same access as the
+master interpreter to packages, modules, and autoloader files.  With
+"Sync Mode" off, the ::auto_path will be set to a tokenized form of the master's
+::auto_path.
+.PP
+With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the empty
+list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR, or
+\fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
+interpreter's ::auto_path.  Any directories that do not also belong to the
+access path cannot be tokenized and will be silently ignored.
+.PP
+With "Sync Mode" off, if the access path is reset to the values in the
+master interpreter by calling \fB::safe::interpConfigure\fR with arguments
+\fB\-accessPath\fR {}, then the ::auto_path will also be reset unless the argument
+\fB\-autoPath\fR is supplied to specify a different value.
+.PP
+With "Sync Mode" off, if a non-empty value of \fB\-accessPath\fR is supplied, the
+safe interpreter's ::auto_path will be set to {} (by
+\fB::safe::interpCreate\fR, \fB::safe::interpInit\fR) or left unchanged
+(by \fB::safe::interpConfigure\fR).  If the same command specifies a new
+value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR argument has
+been processed.
+
+Examples of use with "Sync Mode" off: any of these commands will set the
+::auto_path to a tokenized form of its value in the master interpreter:
+.RS
+.PP
+.CS
+ safe::interpCreate foo
+ safe::interpCreate foo -accessPath {}
+ safe::interpInit bar
+ safe::interpInit bar -accessPath {}
+ safe::interpConfigure foo -accessPath {}
+.CE
+.RE
+.TP
+Example of use with "Sync Mode" off: when initializing a safe interpreter
+with a non-empty access path, the ::auto_path will be set to {} unless its
+own value is also specified:
+.RS
+.PP
+.CS
+ safe::interpCreate foo -accessPath {
+     /usr/local/TclHome/lib/tcl8.6
+     /usr/local/TclHome/lib/tcl8.6/http1.0
+     /usr/local/TclHome/lib/tcl8.6/opt0.4
+     /usr/local/TclHome/lib/tcl8.6/msgs
+     /usr/local/TclHome/lib/tcl8.6/encoding
+     /usr/local/TclHome/lib
+ }
+
+ # The slave's ::auto_path must be given a suitable value:
+
+ safe::interpConfigure foo -autoPath {
+     /usr/local/TclHome/lib/tcl8.6
+     /usr/local/TclHome/lib
+ }
+
+ # The two commands can be combined:
+
+ safe::interpCreate foo -accessPath {
+     /usr/local/TclHome/lib/tcl8.6
+     /usr/local/TclHome/lib/tcl8.6/http1.0
+     /usr/local/TclHome/lib/tcl8.6/opt0.4
+     /usr/local/TclHome/lib/tcl8.6/msgs
+     /usr/local/TclHome/lib/tcl8.6/encoding
+     /usr/local/TclHome/lib
+ } -autoPath {
+     /usr/local/TclHome/lib/tcl8.6
+     /usr/local/TclHome/lib
+ }
+.CE
+.RE
+.TP
+Example of use with "Sync Mode" off: the command
+\fBsafe::interpAddToAccessPath\fR does not change the safe interpreter's
+::auto_path, and so any necessary change must be made by the script:
+.RS
+.PP
+.CS
+ safe::interpAddToAccessPath foo /usr/local/TclHome/lib/extras/Img1.4.11
+
+ lassign [safe::interpConfigure foo -autoPath] DUM slaveAutoPath
+ lappend slaveAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
+ safe::interpConfigure foo -autoPath $slaveAutoPath
+.CE
+.RE
+.TP
 .SH "SEE ALSO"
-interp(n), library(n), load(n), package(n), source(n), unknown(n)
+interp(n), library(n), load(n), package(n), pkg_mkIndex(n), source(n),
+tm(n), unknown(n)
 .SH KEYWORDS
 alias, auto\-loading, auto_mkindex, load, master interpreter, safe
 interpreter, slave interpreter, source
