@@ -78,18 +78,29 @@ proc ::safe::InterpNested {} {
 
 # Interface/entry point function and front end for "Create"
 proc ::safe::interpCreate {args} {
+    variable AutoPathSync
+    if {$AutoPathSync} {
+        set autoPath {}
+    }
     set Args [::tcl::OptKeyParse ::safe::interpCreate $args]
+
+    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
     InterpCreate $slave $accessPath \
-	[InterpStatics] [InterpNested] $deleteHook
+	[InterpStatics] [InterpNested] $deleteHook $autoPath $withAutoPath
 }
 
 proc ::safe::interpInit {args} {
+    variable AutoPathSync
+    if {$AutoPathSync} {
+        set autoPath {}
+    }
     set Args [::tcl::OptKeyParse ::safe::interpIC $args]
     if {![::interp exists $slave]} {
 	return -code error "\"$slave\" is not an interpreter"
     }
+    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
     InterpInit $slave $accessPath \
-	[InterpStatics] [InterpNested] $deleteHook
+	[InterpStatics] [InterpNested] $deleteHook $autoPath $withAutoPath
 }
 
 # Check that the given slave is "one of us"
@@ -115,6 +126,7 @@ proc ::safe::CheckInterp {slave} {
 # So this will be hopefully written and some integrated with opt1.0
 # (hopefully for tcl8.1 ?)
 proc ::safe::interpConfigure {args} {
+    variable AutoPathSync
     switch [llength $args] {
 	1 {
 	    # If we have exactly 1 argument the semantic is to return all
@@ -125,11 +137,17 @@ proc ::safe::interpConfigure {args} {
 	    CheckInterp $slave
 	    namespace upvar ::safe S$slave state
 
-	    return [join [list \
+	    set TMP [list \
 		[list -accessPath $state(access_path)] \
 		[list -statics    $state(staticsok)]   \
 		[list -nested     $state(nestedok)]    \
-	        [list -deleteHook $state(cleanupHook)]]]
+	        [list -deleteHook $state(cleanupHook)] \
+	    ]
+	    if {!$AutoPathSync} {
+	        set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
+	        lappend TMP [list -autoPath $SLAP]
+	    }
+	    return [join $TMP]
 	}
 	2 {
 	    # If we have exactly 2 arguments the semantic is a "configure
@@ -153,6 +171,14 @@ proc ::safe::interpConfigure {args} {
 	    switch -exact -- $name {
 		-accessPath {
 		    return [list -accessPath $state(access_path)]
+		}
+		-autoPath {
+		    if {$AutoPathSync} {
+		        return -code error "unknown flag $name (bug)"
+		    } else {
+		        set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
+		        return [list -autoPath $SLAP]
+		    }
 		}
 		-statics    {
 		    return [list -statics $state(staticsok)]
@@ -194,8 +220,16 @@ proc ::safe::interpConfigure {args} {
 	    if {![::tcl::OptProcArgGiven -accessPath]} {
 		set doreset 1
 		set accessPath $state(access_path)
+		# BUG? is doreset the wrong way round?
 	    } else {
 		set doreset 0
+	    }
+	    if {(!$AutoPathSync) && (![::tcl::OptProcArgGiven -autoPath])} {
+		set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
+		set autoPath $SLAP
+	    } elseif {$AutoPathSync} {
+		set autoPath {}
+	    } else {
 	    }
 	    if {
 		![::tcl::OptProcArgGiven -statics]
@@ -217,7 +251,9 @@ proc ::safe::interpConfigure {args} {
 		set deleteHook $state(cleanupHook)
 	    }
 	    # we can now reconfigure :
-	    InterpSetConfig $slave $accessPath $statics $nested $deleteHook
+	    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
+	    set res [InterpSetConfig $slave $accessPath $statics $nested $deleteHook $autoPath $withAutoPath]
+puts stderr [list changed_map $res do_reset $doreset]
 	    # auto_reset the slave (to completly synch the new access_path)
 	    if {$doreset} {
 		if {[catch {::interp eval $slave {auto_reset}} msg]} {
@@ -263,6 +299,8 @@ proc ::safe::InterpCreate {
 			   staticsok
 			   nestedok
 			   deletehook
+			   autoPath
+			   withAutoPath
 		       } {
     # Create the slave.
     if {$slave ne ""} {
@@ -274,7 +312,7 @@ proc ::safe::InterpCreate {
     Log $slave "Created" NOTICE
 
     # Initialize it. (returns slave name)
-    InterpInit $slave $access_path $staticsok $nestedok $deletehook
+    InterpInit $slave $access_path $staticsok $nestedok $deletehook $autoPath $withAutoPath
 }
 
 #
@@ -290,8 +328,9 @@ proc ::safe::InterpCreate {
 #    access_path, to make the first directory in the path suitable for use as
 #    tcl_library, and (if ![SetAutoPathSync]), to set the slave's ::auto_path.
 
-proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
+proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook autoPath withAutoPath} {
     global auto_path
+    variable AutoPathSync
 
     # determine and store the access path if empty
     if {$access_path eq ""} {
@@ -321,11 +360,18 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	# so by default it works the same).
 	set access_path [AddSubDirs $access_path]
     } else {
-	set raw_auto_path {}
+        set raw_auto_path $autoPath
+    }
+
+    if {$withAutoPath} {
+        set raw_auto_path $autoPath
     }
 
     Log $slave "Setting accessPath=($access_path) staticsok=$staticsok\
 		nestedok=$nestedok deletehook=($deletehook)" NOTICE
+    if {!$AutoPathSync} {
+        Log $slave "Setting auto_path=($raw_auto_path)" NOTICE
+    }
 
     namespace upvar ::safe S$slave state
 
@@ -335,7 +381,11 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     # We save the virtual form separately as well, as syncing it with the
     # slave has to be defered until the necessary commands are present for
     # setup.
-
+if {[info exists state(access_path,map)]} {
+    set old_map_access_path $state(access_path,map)
+} else {
+    set old_map_access_path {}
+}
     set norm_access_path  {}
     set slave_access_path {}
     set map_access_path   {}
@@ -352,7 +402,8 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	incr i
     }
 
-    # Set the slave auto_path.
+    # Set the slave auto_path to a tokenized raw_auto_path.
+    # Silently ignore any directories that are not in the access path.
     # If [SetAutoPathSync], SyncAccessPath will overwrite this value with the
     # full access path.
     # If ![SetAutoPathSync], Safe Base code will not change this value.
@@ -364,6 +415,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     }
     ::interp eval $slave [list set auto_path $tokens_auto_path]
 
+    # Add the tcl::tm directories to the access path.
     set morepaths [::tcl::tm::list]
     set firstpass 1
     while {[llength $morepaths]} {
@@ -413,22 +465,49 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set state(cleanupHook)       $deletehook
 
     SyncAccessPath $slave
+
+    set result [expr {[lrange $map_access_path 0 end] ne [lrange $old_map_access_path 0 end]}]
+    return $result
+}
+
+
+#
+# DetokPath:
+#    Convert tokens to directories where possible.
+#    Leave undefined tokens unconverted.  They are
+#    nonsense in both the slave and the master.
+#
+proc ::safe::DetokPath {slave tokenPath} {
+    namespace upvar ::safe S$slave state
+
+    set slavePath {}
+    foreach token $tokenPath {
+	if {[dict exists $state(access_path,map) $token]} {
+	    lappend slavePath [dict get $state(access_path,map) $token]
+	} else {
+	    lappend slavePath $token
+	}
+    }
+    return $slavePath
 }
 
 #
 #
-# FindInAccessPath:
+# interpFindInAccessPath:
 #    Search for a real directory and returns its virtual Id (including the
 #    "$")
+#
+#    When debugging, use TranslatePath for the inverse operation.
 proc ::safe::interpFindInAccessPath {slave path} {
     namespace upvar ::safe S$slave state
 
     if {![dict exists $state(access_path,remap) $path]} {
-	return -code error "$path not found in access path $access_path"
+	return -code error "$path not found in access path"
     }
 
     return [dict get $state(access_path,remap) $path]
 }
+
 
 #
 # addToAccessPath:
@@ -465,9 +544,11 @@ proc ::safe::InterpInit {
 			 staticsok
 			 nestedok
 			 deletehook
+			 autoPath
+			 withAutoPath
 		     } {
     # Configure will generate an access_path when access_path is empty.
-    InterpSetConfig $slave $access_path $staticsok $nestedok $deletehook
+    InterpSetConfig $slave $access_path $staticsok $nestedok $deletehook $autoPath $withAutoPath
 
     # NB we need to add [namespace current], aliases are always absolute
     # paths.
@@ -671,6 +752,7 @@ proc ::safe::SyncAccessPath {slave} {
 
     ::interp eval $slave [list \
 	      set tcl_library [lindex $slave_access_path 0]]
+    return
 }
 
 # Returns the virtual token for directory number N.
@@ -1109,16 +1191,21 @@ proc ::safe::Setup {} {
     # Setup the arguments parsing
     #
     ####
+    variable AutoPathSync
 
     # Share the descriptions
-    set temp [::tcl::OptKeyRegister {
+    set OptList {
 	{-accessPath -list {} "access path for the slave"}
 	{-noStatics "prevent loading of statically linked pkgs"}
 	{-statics true "loading of statically linked pkgs"}
 	{-nestedLoadOk "allow nested loading"}
 	{-nested false "nested loading"}
 	{-deleteHook -script {} "delete hook"}
-    }]
+    }
+    if {!$AutoPathSync} {
+        lappend OptList {-autoPath -list {} "::auto_path for the slave"}
+    }
+    set temp [::tcl::OptKeyRegister $OptList]
 
     # create case (slave is optional)
     ::tcl::OptKeyRegister {
@@ -1157,11 +1244,23 @@ proc ::safe::Setup {} {
 
 # Accessor method for ::safe::SetAutoPathSync
 # Usage: ::safe::SetAutoPathSync ?newValue?
+# Respond to changes by calling Setup again, precerving any
+# caller-defined logging.  This allows complete equivalence with
+# prior Safe Base behavior if AutoPathSync is true.
+#
+#                   >>> WARNING <<<
+#
+# DO NOT CHANGE AutoPathSync EXCEPT BY THIS COMMAND - IT IS VITAL THAT WHENEVER
+# THE VALUE CHANGES, THE EXISTING PARSE TOKENS ARE DELETED AND Setup IS CALLED
+# AGAIN.
+# (The initialization of AutoPathSync at the end of this file is acceptable
+#  because Setup has not yet been called.)
 
 proc ::safe::SetAutoPathSync {args} {
     variable AutoPathSync
 
-    if {[llength $args] == 1} {
+    if {[llength $args] == 0} {
+    } elseif {[llength $args] == 1} {
         set newValue [lindex $args 0]
         if {![string is boolean -strict $newValue]} {
             return -code error "new value must be a valid boolean"
@@ -1169,11 +1268,22 @@ proc ::safe::SetAutoPathSync {args} {
         set args [expr {$newValue && $newValue}]
         if {([info vars ::safe::S*] ne {}) && ($args != $AutoPathSync)} {
             return -code error \
-                    "cannot change AutoPathSync while Safe Base slaves exist"
+                    "cannot set new value while Safe Base slaves exist"
         }
+        if {($args != $AutoPathSync)} {
+            set AutoPathSync {*}$args
+            ::tcl::OptKeyDelete ::safe::interpCreate
+            ::tcl::OptKeyDelete ::safe::interpIC
+            set TmpLog [setLogCmd]
+            Setup
+            setLogCmd $TmpLog
+        }
+    } else {
+        set msg {wrong # args: should be "safe::SetAutoPathSync ?newValue?"}
+        return -code error $msg
     }
 
-    set AutoPathSync {*}$args
+    return $AutoPathSync
 }
 
 namespace eval ::safe {
@@ -1219,6 +1329,10 @@ namespace eval ::safe {
     # staticsok         : Value of option -statics
     # nestedok          : Value of option -nested
     # cleanupHook       : Value of option -deleteHook
+    #
+    # Because the slave can change its value of ::auto_path, the value of
+    # option -autoPath is not stored in the array but must be obtained from
+    # the slave.
 }
 
 ::safe::Setup
