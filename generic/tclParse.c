@@ -942,9 +942,11 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "U".
 	     */
 	    result = 'U';
+#if TCL_UTF_MAX > 3
 	} else if ((result & ~0x7FF) == 0xD800) {
 	    /* Upper or lower surrogate, not allowed in this syntax. */
 	    result = 0xFFFD;
+#endif
 	}
 	break;
     case '\n':
