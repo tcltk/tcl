@@ -78,8 +78,8 @@ test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring 
 test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4bytes testbytestring} {
     expr {"\uD842\uDC42" eq [testbytestring \xF0\xA0\xA1\x82]}
 } 1
-test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc testbytestring} {
-    expr {"\UD842" eq [testbytestring \xEF\xBF\xBD]}
+test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc ucs2} {
+    expr {"\UD842" eq "\uD842"}
 } 1
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
