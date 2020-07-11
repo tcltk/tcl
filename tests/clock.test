@@ -35875,11 +35875,11 @@ test clock-34.60 {clock scan tests (+TZ)} {
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 31,2014 22:59:59 GMT}
 test clock-34.61 {clock scan tests (-TZ)} {
-    set time [clock scan "23:59:59 -0100" -base 0]
+    set time [clock scan "23:59:59 -0100" -base 0 -gmt true]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 02,1970 00:59:59 GMT}
 test clock-34.62 {clock scan tests (+TZ)} {
-    set time [clock scan "23:59:59 +0100" -base 0]
+    set time [clock scan "23:59:59 +0100" -base 0 -gmt true]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 01,1970 22:59:59 GMT}
 test clock-34.63 {clock scan tests (TZ)} {
@@ -35899,11 +35899,11 @@ test clock-34.66 {clock scan tests (relspec, day unit not TZ)} {
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 09,1970 23:59:59 GMT}
 test clock-34.67 {clock scan tests (merid and TZ)} {
-    set time [clock scan "10:59 pm CET" -base 2000000]
+    set time [clock scan "10:59 pm CET" -base 2000000 -gmt true]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 24,1970 21:59:00 GMT}
 test clock-34.68 {clock scan tests (merid and TZ)} {
-    set time [clock scan "10:59 pm +0100" -base 2000000]
+    set time [clock scan "10:59 pm +0100" -base 2000000 -gmt true]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 24,1970 21:59:00 GMT}
 
