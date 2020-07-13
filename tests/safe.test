@@ -24,6 +24,58 @@ foreach i [interp slaves] {
 set saveAutoPath $::auto_path
 set ::auto_path [info library]
 
+# The defunct package http 1.0 was convenient for testing package loading.
+# - Replaced here with tests using example packages provided in subdirectory
+#   auto0 of the tests directory, which are independent of any changes
+#   made to the packages provided with Tcl.
+#   - These are tests 7.1 7.2 7.4 9.10 9.12
+#   - Tests 7.0[a-f] test the example packages themselves before they
+#     are used to test Safe Base interpreters.
+# - Alternatively use packages opt and (from cookiejar) tcl::idna.
+#   - These alternative tests have suffix "opt".
+#   - These are 7.[124]opt, 9.1[02]opt
+#   - Tests 7.[124]opt, 9.1[02]opt use "package require opt".
+#   - Tests 9.1[02]opt also use "package require tcl::idna".
+#
+# When using package opt for testing positive/negative package search:
+# - The directory location and the error message depend on whether
+#   and how the package is installed.
+
+# Error message for tests 7.2opt for "package require opt".
+if {[string match *zipfs:/* [info library]]} {
+    # pkgIndex.tcl is in [info library]
+    # file to be sourced is in [info library]/opt*
+    set pkgOptErrMsg {permission denied}
+} else {
+    # pkgIndex.tcl and file to be sourced are
+    # both in [info library]/opt*
+    set pkgOptErrMsg {can't find package opt}
+}
+
+# Directory of opt for tests 7.4opt, 9.10opt, 9.12opt
+# for "package require opt".
+if {[file exists [file join [info library] opt0.4]]} {
+    # Installed files in lib8.7/opt0.4
+    set pkgOptDir opt0.4
+} elseif {[file exists [file join [info library] opt]]} {
+    # Installed files in zipfs, or source files used by "make test"
+    set pkgOptDir opt
+} else {
+    error {cannot find opt library}
+}
+
+# Directory of cookiejar for tests 9.10opt, 9.12opt
+# for "package require tcl::idna".
+if {[file exists [file join [info library] cookiejar0.2]]} {
+    # Installed files in lib8.7/cookiejar0.2
+    set pkgJarDir cookiejar0.2
+} elseif {[file exists [file join [info library] cookiejar]]} {
+    # Installed files in zipfs, or source files used by "make test"
+    set pkgJarDir cookiejar
+} else {
+    error {cannot find cookiejar library}
+}
+
 set TestsDir [file normalize [file dirname [info script]]]
 
 # Force actual loading of the safe package because we use un exported (and
@@ -320,17 +372,19 @@ test safe-7.1 {tests that everything works at high level} -setup {
     safe::interpDelete $i
 } -match glob -result 1.2.3
 # high level general test
-test safe-7.1http {tests that everything works at high level, uses http 2} -body {
+test safe-7.1opt {tests that everything works at high level, uses pkg opt} -setup {
     set i [safe::interpCreate]
+} -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
     #  package require in a slave works like in the master)
-    set v [interp eval $i {package require http 2}]
+    set v [interp eval $i {package require opt}]
     # no error shall occur:
-    interp eval $i {http::config}
-    safe::interpDelete $i
+    interp eval $i {::tcl::Lempty {a list}}
     set v
-} -match glob -result 2.*
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result 0.4.*
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -351,19 +405,23 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
         {can't find package SafeTestPackage1}\
         {-accessPath {[list $tcl_library */dummy/unixlike/test/path $TestsDir/auto0]}\
         -statics 0 -nested 1 -deleteHook {}} {}"
-test safe-7.2http {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
+test safe-7.2opt {tests specific path and interpFind/AddToAccessPath, uses pkg opt} -setup {
+} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p1
+    # should add as p* (not p1 if master has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # an error shall occur (http is not anymore in the secure 0-level
+    # an error shall occur (opt is not anymore in the secure 0-level
     # provided deep path)
     list $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
-} -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -cleanup {
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {$pkgOptErrMsg}\
+        {-accessPath {[list $tcl_library */dummy/unixlike/test/path]}\
+        -statics 0 -nested 1 -deleteHook {}} {}"
 test safe-7.3 {check that safe subinterpreters work} {
     set i [safe::interpCreate]
     set j [safe::interpCreate [list $i x]]
@@ -387,18 +445,24 @@ test safe-7.4 {tests specific path and positive search} -setup {
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.2.3\
         {-accessPath {[list $tcl_library * $TestsDir/auto0/auto1]}\
         -statics 0 -nested 1 -deleteHook {}} {}"
-test safe-7.4http {tests specific path and positive search, uses http1.0} -constraints needs_http1.0 -body {
+test safe-7.4opt {tests specific path and positive search, uses pkg opt} -setup {
+} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p1
-    set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
-    # this time, unlike test safe-7.2, http should be found
+    # should add as p* (not p1 if master has a module path)
+    set token2 [safe::interpAddToAccessPath $i [file join [info library] $pkgOptDir]]
+    # this time, unlike test safe-7.2opt, opt should be found
     list $token1 $token2 \
-	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [catch {interp eval $i {package require opt}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
-} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
+    # Note that the glob match elides directories (those from the module path)
+    # other than the first and last in the access path.
+} -cleanup {
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 0.4.*\
+        {-accessPath {[list $tcl_library *$tcl_library/$pkgOptDir]}\
+        -statics 0 -nested 1 -deleteHook {}} {}"
 
 # test source control on file name
 set i "a"
@@ -748,7 +812,45 @@ test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages un
         {-accessPath {[list $tcl_library $TestsDir/auto0 $TestsDir/auto0/auto2 $TestsDir/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         0 OK1 0 OK2"
+test safe-9.10opt {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, uses pkg opt and tcl::idna} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $tcl_library $pkgOptDir] \
+                                            [file join $tcl_library $pkgJarDir]]]
 
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set path1 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgOptDir]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgJarDir]]
+
+    # Load pkgIndex.tcl data.
+    catch {interp eval $i {package require NOEXIST}}
+
+    # Rearrange access path.  Swap tokens {$p(:1:)} and {$p(:2:)}.
+    # This has no effect because the records in Pkg of these directories were from access as children of {$p(:0:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $tcl_library $pkgJarDir] \
+                                           [file join $tcl_library $pkgOptDir]]
+
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set path3 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgOptDir]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgJarDir]]
+
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {interp eval $i {package require tcl::idna}} msg3]
+    set code4 [catch {interp eval $i {package require opt}} msg4]
+    set code5 [catch {interp eval $i {::tcl::Lempty {a list}}} msg5]
+    set code6 [catch {interp eval $i {::tcl::idna::IDNAencode example.com}} msg6]
+
+    list $path1 $path2 $path3 $path4 $code3 $msg3 $code4 $msg4 \
+         $confA $confB $code5 $msg5 $code6 $msg6
+} -cleanup {
+} -match glob -result "{\$p(:1:)} {\$p(:2:)} {\$p(:2:)} {\$p(:1:)} 0 1.* 0 0.4.*\
+        {-accessPath {[list $tcl_library $tcl_library/$pkgOptDir $tcl_library/$pkgJarDir]*}\
+        -statics 1 -nested 0 -deleteHook {}}\
+        {-accessPath {[list $tcl_library $tcl_library/$pkgJarDir $tcl_library/$pkgOptDir]*}\
+        -statics 1 -nested 0 -deleteHook {}} 0 0 0 example.com"
 test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -789,7 +891,6 @@ test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages un
         {-accessPath {[list $tcl_library $TestsDir/auto0/auto2 $TestsDir/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         0 OK1 0 OK2"
-
 test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -824,7 +925,39 @@ test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fa
         {-accessPath {[list $tcl_library $TestsDir/auto0/auto1 $TestsDir/auto0/auto2]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library]*} -statics 1 -nested 0 -deleteHook {}}"
+test safe-9.12opt {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, uses pkg opt and tcl::idna} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $tcl_library $pkgOptDir] \
+                                            [file join $tcl_library $pkgJarDir]]]
 
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set path1 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgOptDir]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $tcl_library $pkgJarDir]]
+
+    # Load pkgIndex.tcl data.
+    catch {interp eval $i {package require NOEXIST}}
+
+    # Limit access path.  Remove tokens {$p(:1:)} and {$p(:2:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library]
+
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set code4 [catch {::safe::interpFindInAccessPath $i [file join $tcl_library $pkgOptDir]} path4]
+    set code5 [catch {::safe::interpFindInAccessPath $i [file join $tcl_library $pkgJarDir]} path5]
+
+    # Try to load the packages.
+    set code3 [catch {interp eval $i {package require opt}} msg3]
+    set code6 [catch {interp eval $i {package require tcl::idna}} msg6]
+
+    list $path1 $path2 $code4 $path4 $code5 $path5 $code3 $msg3 $code6 $msg6 $confA $confB
+} -cleanup {
+} -match glob -result "{\$p(:1:)} {\$p(:2:)} 1 {* not found in access path}\
+        1 {* not found in access path} 1 {*} 1 {*}\
+        {-accessPath {[list $tcl_library $tcl_library/$pkgOptDir $tcl_library/$pkgJarDir]*}\
+        -statics 1 -nested 0 -deleteHook {}}\
+        {-accessPath {[list $tcl_library]*} -statics 1 -nested 0 -deleteHook {}}"
 test safe-9.20 {check module loading} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -1563,7 +1696,7 @@ test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
 } -result {}
 
 set ::auto_path $saveAutoPath
-unset saveAutoPath TestsDir
+unset pkgOptErrMsg pkgOptDir pkgJarDir saveAutoPath TestsDir
 # cleanup
 ::tcltest::cleanupTests
 return
