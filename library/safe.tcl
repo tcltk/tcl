@@ -352,6 +352,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     }
 
     set morepaths [::tcl::tm::list]
+    set firstpass 1
     while {[llength $morepaths]} {
 	set addpaths $morepaths
 	set morepaths {}
@@ -360,6 +361,12 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # Prevent the addition of dirs on the tm list to the
 	    # result if they are already known.
 	    if {[dict exists $remap_access_path $dir]} {
+	        if {$firstpass} {
+		    # $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		    # Later passes handle subdirectories, which belong in the
+		    # access path but not in the module path.
+		    lappend slave_tm_path  [dict get $remap_access_path $dir]
+		}
 		continue
 	    }
 
@@ -369,7 +376,12 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    lappend map_access_path    $token $dir
 	    lappend remap_access_path  $dir $token
 	    lappend norm_access_path   [file normalize $dir]
-	    lappend slave_tm_path $token
+	    if {$firstpass} {
+		# $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		# Later passes handle subdirectories, which belong in the
+		# access path but not in the module path.
+		lappend slave_tm_path  $token
+	    }
 	    incr i
 
 	    # [Bug 2854929]
@@ -380,6 +392,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # subdirectories.
 	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
 	}
+	set firstpass 0
     }
 
     set state(access_path)       $access_path
