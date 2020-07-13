@@ -225,6 +225,14 @@ proc ::safe::interpConfigure {args} {
 		} else {
 		    Log $slave "successful auto_reset" NOTICE
 		}
+		# Wherever possible, refresh package data.
+		# - Ideally [package ifneeded $pkg $ver {}] would clear the
+		#   stale data from the interpreter, but instead it sets a
+		#   nonsense empty script.
+		# - We cannot purge stale package data, but we can overwrite
+		#   it where we have fresh data.  Any remaining stale data will
+		#   do no harm but the error messages may be cryptic.
+		::interp eval $slave [list catch {package require NOEXIST}]
 	    }
 	}
     }
