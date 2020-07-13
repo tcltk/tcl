@@ -217,7 +217,7 @@ proc ::safe::interpConfigure {args} {
 		set deleteHook $state(cleanupHook)
 	    }
 	    # we can now reconfigure :
-	    InterpSetConfig $slave $accessPath $statics $nested $deleteHook
+	    set slave_tm_rel [InterpSetConfig $slave $accessPath $statics $nested $deleteHook]
 	    # auto_reset the slave (to completly synch the new access_path)
 	    if {$doreset} {
 		if {[catch {::interp eval $slave {auto_reset}} msg]} {
@@ -233,7 +233,7 @@ proc ::safe::interpConfigure {args} {
 			    ::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
 		}
 
-		# Wherever possible, refresh package data.
+		# Wherever possible, refresh package/module data.
 		# - Ideally [package ifneeded $pkg $ver {}] would clear the
 		#   stale data from the interpreter, but instead it sets a
 		#   nonsense empty script.
@@ -241,6 +241,10 @@ proc ::safe::interpConfigure {args} {
 		#   it where we have fresh data.  Any remaining stale data will
 		#   do no harm but the error messages may be cryptic.
 		::interp eval $slave [list catch {package require NOEXIST}]
+		foreach rel $slave_tm_rel {
+		    set cmd [list package require [string map {/ ::} $rel]::NOEXIST]
+		    ::interp eval $slave [list catch $cmd]
+		}
 	    }
 	}
     }
@@ -348,6 +352,8 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set map_access_path   {}
     set remap_access_path {}
     set slave_tm_path     {}
+    set slave_tm_roots    {}
+    set slave_tm_rel      {}
 
     set i 0
     foreach dir $access_path {
@@ -374,6 +380,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 		    # Later passes handle subdirectories, which belong in the
 		    # access path but not in the module path.
 		    lappend slave_tm_path  [dict get $remap_access_path $dir]
+		    lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
 		}
 		continue
 	    }
@@ -389,6 +396,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 		# Later passes handle subdirectories, which belong in the
 		# access path but not in the module path.
 		lappend slave_tm_path  $token
+		lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
 	    }
 	    incr i
 
@@ -399,6 +407,14 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # 'platform/shell-X.tm', i.e arbitrarily deep
 	    # subdirectories.
 	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
+	    foreach sub [glob -nocomplain -directory $dir -type d *] {
+	        lappend slave_tm_roots [file normalize $sub] [dict get $slave_tm_roots $dir]
+	        set lenny [string length [dict get $slave_tm_roots $dir]]
+	        set relpath [string range [file normalize $sub] $lenny+1 end]
+                if {$relpath ni $slave_tm_rel} {
+	            lappend slave_tm_rel $relpath
+                }
+	    }
 	}
 	set firstpass 0
     }
@@ -414,6 +430,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set state(cleanupHook)       $deletehook
 
     SyncAccessPath $slave
+    return $slave_tm_rel
 }
 
 #
