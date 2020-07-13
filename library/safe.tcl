@@ -404,7 +404,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
     namespace upvar ::safe S$slave state
 
     if {![dict exists $state(access_path,remap) $path]} {
-	return -code error "$path not found in access path $access_path"
+	return -code error "$path not found in access path"
     }
 
     return [dict get $state(access_path,remap) $path]
