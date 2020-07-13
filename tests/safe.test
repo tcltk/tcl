@@ -302,7 +302,25 @@ test safe-7.0f {example modules packages, test in master interpreter, append to 
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
 
 # high level general test
-test safe-7.1 {tests that everything works at high level} -body {
+# Use example packages not http1.0
+test safe-7.1 {tests that everything works at high level} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0]
+    set i [safe::interpCreate]
+    set ::auto_path $tmpAutoPath
+} -body {
+    # no error shall occur:
+    # (because the default access_path shall include 1st level sub dirs so
+    #  package require in a slave works like in the master)
+    set v [interp eval $i {package require SafeTestPackage1}]
+    # no error shall occur:
+    interp eval $i {HeresPackage1}
+    set v
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result 1.2.3
+# high level general test
+test safe-7.1http {tests that everything works at high level, uses http 2} -body {
     set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
@@ -313,7 +331,27 @@ test safe-7.1 {tests that everything works at high level} -body {
     safe::interpDelete $i
     set v
 } -match glob -result 2.*
-test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
+test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
+} -body {
+    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
+    # should not add anything (p0)
+    set token1 [safe::interpAddToAccessPath $i [info library]]
+    # should add as p* (not p1 if master has a module path)
+    set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
+    # should add as p* (not p2 if master has a module path)
+    set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
+    # an error shall occur (SafeTestPackage1 is not anymore in the secure 0-level
+    # provided deep path)
+    list $token1 $token2 $token3 \
+	    [catch {interp eval $i {package require SafeTestPackage1}} msg] $msg \
+	    [safe::interpConfigure $i]\
+	    [safe::interpDelete $i]
+} -cleanup {
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} {\$p(:*:)} 1\
+        {can't find package SafeTestPackage1}\
+        {-accessPath {[list $tcl_library */dummy/unixlike/test/path $TestsDir/auto0]}\
+        -statics 0 -nested 1 -deleteHook {}} {}"
+test safe-7.2http {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -331,6 +369,36 @@ test safe-7.3 {check that safe subinterpreters work} {
     set j [safe::interpCreate [list $i x]]
     list [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j]
 } {ok {} 0}
+test safe-7.4 {tests specific path and positive search} -setup {
+} -body {
+    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
+    # should not add anything (p0)
+    set token1 [safe::interpAddToAccessPath $i [info library]]
+    # should add as p* (not p1 if master has a module path)
+    set token2 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
+    # this time, unlike test safe-7.2, SafeTestPackage1 should be found
+    list $token1 $token2 \
+	    [catch {interp eval $i {package require SafeTestPackage1}} msg] $msg \
+	    [safe::interpConfigure $i]\
+	    [safe::interpDelete $i]
+    # Note that the glob match elides directories (those from the module path)
+    # other than the first and last in the access path.
+} -cleanup {
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.2.3\
+        {-accessPath {[list $tcl_library * $TestsDir/auto0/auto1]}\
+        -statics 0 -nested 1 -deleteHook {}} {}"
+test safe-7.4http {tests specific path and positive search, uses http1.0} -constraints needs_http1.0 -body {
+    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
+    # should not add anything (p0)
+    set token1 [safe::interpAddToAccessPath $i [info library]]
+    # should add as p1
+    set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
+    # this time, unlike test safe-7.2, http should be found
+    list $token1 $token2 \
+	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [safe::interpConfigure $i]\
+	    [safe::interpDelete $i]
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 # test source control on file name
 set i "a"
