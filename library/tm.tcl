@@ -238,12 +238,16 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 			continue
 		    }
 
-		    if {[package ifneeded $pkgname $pkgversion] ne {}} {
+		    if {    ([package ifneeded $pkgname $pkgversion] ne {})
+			 && (![interp issafe])
+		    } {
 			# There's already a provide script registered for
 			# this version of this package.  Since all units of
 			# code claiming to be the same version of the same
 			# package ought to be identical, just stick with
 			# the one we already have.
+			# This does not apply to Safe Base interpreters because
+			# the token-to-directory mapping may have changed.
 			continue
 		    }
 
