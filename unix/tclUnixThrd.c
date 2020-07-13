@@ -472,7 +472,7 @@ Tcl_MutexUnlock(
  *	This procedure is invoked to clean up one mutex. This is only safe to
  *	call at the end of time.
  *
- *	This assumes the Master Lock is held.
+ *	This assumes the Main Lock is held.
  *
  * Results:
  *	None.
@@ -605,7 +605,7 @@ Tcl_ConditionNotify(
  *	This procedure is invoked to clean up a condition variable. This is
  *	only safe to call at the end of time.
  *
- *	This assumes the Master Lock is held.
+ *	This assumes the Main Lock is held.
  *
  * Results:
  *	None.
@@ -793,7 +793,7 @@ TclpThreadDeleteKey(
 }
 
 void
-TclpThreadSetMasterTSD(
+TclpThreadSetMainTSD(
     void *tsdKeyPtr,
     void *ptr)
 {
@@ -805,7 +805,7 @@ TclpThreadSetMasterTSD(
 }
 
 void *
-TclpThreadGetMasterTSD(
+TclpThreadGetMainTSD(
     void *tsdKeyPtr)
 {
     pthread_key_t *ptkeyPtr = tsdKeyPtr;

@@ -189,7 +189,7 @@ void *
 TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMainTSD(tsdMain.key);
     ClientData resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
@@ -223,12 +223,12 @@ TclThreadStorageKeySet(
     Tcl_ThreadDataKey *dataKeyPtr,
     void *value)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMainTSD(tsdMain.key);
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
 
     if (tsdTablePtr == NULL) {
 	tsdTablePtr = TSDTableCreate();
-	TclpThreadSetMasterTSD(tsdMain.key, tsdTablePtr);
+	TclpThreadSetMainTSD(tsdMain.key, tsdTablePtr);
     }
 
     /*
@@ -288,11 +288,11 @@ TclThreadStorageKeySet(
 void
 TclFinalizeThreadDataThread(void)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMainTSD(tsdMain.key);
 
     if (tsdTablePtr != NULL) {
 	TSDTableDelete(tsdTablePtr);
-	TclpThreadSetMasterTSD(tsdMain.key, NULL);
+	TclpThreadSetMainTSD(tsdMain.key, NULL);
     }
 }
 

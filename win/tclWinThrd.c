@@ -700,9 +700,9 @@ Tcl_ConditionWait(
 	if (doExit) {
 	    /*
 	     * Create a per-thread exit handler to clean up the condEvent. We
-	     * must be careful to do this outside the Master Lock because
+	     * must be careful to do this outside the Main Lock because
 	     * Tcl_CreateThreadExitHandler uses its own ThreadSpecificData,
-	     * and initializing that may drop back into the Master Lock.
+	     * and initializing that may drop back into the Main Lock.
 	     */
 
 	    Tcl_CreateThreadExitHandler(FinalizeConditionEvent, tsdPtr);
@@ -902,7 +902,7 @@ FinalizeConditionEvent(
  *	This procedure is invoked to clean up a condition variable. This is
  *	only safe to call at the end of time.
  *
- *	This assumes the Master Lock is held.
+ *	This assumes the Main Lock is held.
  *
  * Results:
  *	None.
@@ -1073,7 +1073,7 @@ TclpThreadDeleteKey(
 }
 
 void
-TclpThreadSetMasterTSD(
+TclpThreadSetMainTSD(
     void *tsdKeyPtr,
     void *ptr)
 {
@@ -1085,7 +1085,7 @@ TclpThreadSetMasterTSD(
 }
 
 void *
-TclpThreadGetMasterTSD(
+TclpThreadGetMainTSD(
     void *tsdKeyPtr)
 {
     DWORD *key = tsdKeyPtr;

@@ -3824,7 +3824,7 @@ test oo-27.22 {variables declaration uniqueifies: Bug 3396896} -setup {
 } -result {v t}
 test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
     oo::class create Super
-    oo::class create Master {
+    oo::class create Parent {
 	superclass Super
 	variable member1 member2
 	constructor {} {
@@ -3850,7 +3850,7 @@ test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
 	method result {} {return $result}
     }
 } -body {
-    [[Master new] getChild] result
+    [[Parent new] getChild] result
 } -cleanup {
     Super destroy
 } -result {parent1 parent2 parent1 parent2 parent1 parent2 parent1 parent2}
