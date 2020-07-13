@@ -192,10 +192,10 @@ proc ::safe::interpConfigure {args} {
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
 	    if {![::tcl::OptProcArgGiven -accessPath]} {
-		set doreset 1
+		set doreset 0
 		set accessPath $state(access_path)
 	    } else {
-		set doreset 0
+		set doreset 1
 	    }
 	    if {
 		![::tcl::OptProcArgGiven -statics]
