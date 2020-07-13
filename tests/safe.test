@@ -24,6 +24,8 @@ foreach i [interp slaves] {
 set saveAutoPath $::auto_path
 set ::auto_path [info library]
 
+set TestsDir [file normalize [file dirname [info script]]]
+
 # Force actual loading of the safe package because we use un exported (and
 # thus un-autoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
@@ -178,6 +180,126 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 
 # More test should be added to check that hostname, nameofexecutable, aren't
 # leaking infos, but they still do...
+
+# Tests 7.0* test the example files before using them to test safe interpreters.
+
+test safe-7.0a {example tclIndex commands, test in master interpreter} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
+} -body {
+    # Try to load the commands.
+    set code3 [catch report1 msg3]
+    set code4 [catch report2 msg4]
+    list $code3 $msg3 $code4 $msg4
+} -cleanup {
+    catch {rename report1 {}}
+    catch {rename report2 {}}
+    set ::auto_path $tmpAutoPath
+    auto_reset
+} -match glob -result {0 ok1 0 ok2}
+
+test safe-7.0b {example tclIndex commands, negative test in master interpreter} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0]
+} -body {
+    # Try to load the commands.
+    set code3 [catch report1 msg3]
+    set code4 [catch report2 msg4]
+    list $code3 $msg3 $code4 $msg4
+} -cleanup {
+    catch {rename report1 {}}
+    catch {rename report2 {}}
+    set ::auto_path $tmpAutoPath
+    auto_reset
+} -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
+
+test safe-7.0c {example pkgIndex.tcl packages, test in master interpreter, child directories} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0]
+} -body {
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {package require SafeTestPackage1} msg3]
+    set code4 [catch {package require SafeTestPackage2} msg4]
+    set code5 [catch HeresPackage1 msg5]
+    set code6 [catch HeresPackage2 msg6]
+
+    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
+} -cleanup {
+    set ::auto_path $tmpAutoPath
+    catch {package forget SafeTestPackage1}
+    catch {package forget SafeTestPackage2}
+    catch {rename HeresPackage1 {}}
+    catch {rename HeresPackage2 {}}
+} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
+
+test safe-7.0d {example pkgIndex.tcl packages, test in master interpreter, main directories} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0 auto1] \
+                        [file join $TestsDir auto0 auto2]
+} -body {
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {package require SafeTestPackage1} msg3]
+    set code4 [catch {package require SafeTestPackage2} msg4]
+    set code5 [catch HeresPackage1 msg5]
+    set code6 [catch HeresPackage2 msg6]
+
+    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
+} -cleanup {
+    set ::auto_path $tmpAutoPath
+    catch {package forget SafeTestPackage1}
+    catch {package forget SafeTestPackage2}
+    catch {rename HeresPackage1 {}}
+    catch {rename HeresPackage2 {}}
+} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
+
+test safe-7.0e {example modules packages, test in master interpreter, replace path} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    # Try to load the modules and run a command from each one.
+    set code0 [catch {package require test0} msg0]
+    set code1 [catch {package require mod1::test1} msg1]
+    set code2 [catch {package require mod2::test2} msg2]
+    set out0  [test0::try0]
+    set out1  [mod1::test1::try1]
+    set out2  [mod2::test2::try2]
+
+    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    catch {package forget test0}
+    catch {package forget mod1::test1}
+    catch {package forget mod2::test2}
+    catch {namespace delete ::test0}
+    catch {namespace delete ::mod1}
+} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
+
+test safe-7.0f {example modules packages, test in master interpreter, append to path} -setup {
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    # Try to load the modules and run a command from each one.
+    set code0 [catch {package require test0} msg0]
+    set code1 [catch {package require mod1::test1} msg1]
+    set code2 [catch {package require mod2::test2} msg2]
+    set out0  [test0::try0]
+    set out1  [mod1::test1::try1]
+    set out2  [mod2::test2::try2]
+
+    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    catch {package forget test0}
+    catch {package forget mod1::test1}
+    catch {package forget mod2::test2}
+    catch {namespace delete ::test0}
+    catch {namespace delete ::mod1}
+} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
 
 # high level general test
 test safe-7.1 {tests that everything works at high level} -body {
@@ -833,6 +955,7 @@ test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
 } -result {}
 
 set ::auto_path $saveAutoPath
+unset saveAutoPath TestsDir
 # cleanup
 ::tcltest::cleanupTests
 return
