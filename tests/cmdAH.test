@@ -1638,7 +1638,7 @@ test cmdAH-31.9 {Tcl_FileObjCmd: channels in other interp} {
     lsort [safeInterp eval [list file channels]]
 } [lsort [list stdout $newFileId]]
 test cmdAH-31.10 {Tcl_FileObjCmd: channels in other interp} {
-    # we can now write to $newFileId from slave
+    # we can now write to $newFileId from child
     safeInterp eval [list puts $newFileId "hello"]
 } {}
 interp transfer {} $newFileId safeInterp

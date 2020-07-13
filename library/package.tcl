@@ -237,7 +237,7 @@ proc pkg_mkIndex {args} {
 	$c eval [list set ::tcl::file $file]
 	$c eval [list set ::tcl::direct $direct]
 
-	# Download needed procedures into the slave because we've just deleted
+	# Download needed procedures into the child because we've just deleted
 	# the unknown procedure.  This doesn't handle procedures with default
 	# arguments.
 

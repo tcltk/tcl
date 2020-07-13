@@ -44,8 +44,8 @@ namespace eval ::tcl {
             {-intflag      7}
             {-weirdflag                    "help string"}
             {-noStatics                    "Not ok to load static packages"}
-            {-nestedloading1 true           "OK to load into nested slaves"}
-            {-nestedloading2 -boolean true "OK to load into nested slaves"}
+            {-nestedloading1 true           "OK to load into nested childs"}
+            {-nestedloading2 -boolean true "OK to load into nested childs"}
             {-libsOK        -choice {Tk SybTcl}
 		                      "List of packages that can be loaded"}
             {-precision     -int 12        "Number of digits of precision"}

@@ -22,12 +22,12 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * masterLock is used to serialize creation of mutexes, condition variables,
+ * mainLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
  * ability to statically initialize the mutex.
  */
 
-static pthread_mutex_t masterLock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mainLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * initLock is used to serialize initialization and finalization of Tcl. It
@@ -48,8 +48,8 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  * These are for the critical sections inside this file.
  */
 
-#define MASTER_LOCK	pthread_mutex_lock(&masterLock)
-#define MASTER_UNLOCK	pthread_mutex_unlock(&masterLock)
+#define MAIN_LOCK	pthread_mutex_lock(&mainLock)
+#define MAIN_UNLOCK	pthread_mutex_unlock(&mainLock)
 
 #endif /* TCL_THREADS */
 
@@ -274,7 +274,7 @@ TclFinalizeLock(void)
     /*
      * You do not need to destroy mutexes that were created with the
      * PTHREAD_MUTEX_INITIALIZER macro. These mutexes do not need any
-     * destruction: masterLock, allocLock, and initLock.
+     * destruction: mainLock, allocLock, and initLock.
      */
 
     pthread_mutex_unlock(&initLock);
@@ -309,7 +309,7 @@ TclpInitUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMasterLock
+ * TclpMainLock
  *
  *	This procedure is used to grab a lock that serializes creation and
  *	finalization of serialization objects. This interface is only needed
@@ -322,16 +322,16 @@ TclpInitUnlock(void)
  *	None.
  *
  * Side effects:
- *	Acquire the master mutex.
+ *	Acquire the main mutex.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpMasterLock(void)
+TclpMainLock(void)
 {
 #ifdef TCL_THREADS
-    pthread_mutex_lock(&masterLock);
+    pthread_mutex_lock(&mainLock);
 #endif
 }
 
@@ -339,7 +339,7 @@ TclpMasterLock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMasterUnlock
+ * TclpMainUnlock
  *
  *	This procedure is used to release a lock that serializes creation and
  *	finalization of synchronization objects.
@@ -348,16 +348,16 @@ TclpMasterLock(void)
  *	None.
  *
  * Side effects:
- *	Release the master mutex.
+ *	Release the main mutex.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpMasterUnlock(void)
+TclpMainUnlock(void)
 {
 #ifdef TCL_THREADS
-    pthread_mutex_unlock(&masterLock);
+    pthread_mutex_unlock(&mainLock);
 #endif
 }
 
@@ -421,10 +421,10 @@ Tcl_MutexLock(
     pthread_mutex_t *pmutexPtr;
 
     if (*mutexPtr == NULL) {
-	MASTER_LOCK;
+	MAIN_LOCK;
 	if (*mutexPtr == NULL) {
 	    /*
-	     * Double inside master lock check to avoid a race condition.
+	     * Double inside main lock check to avoid a race condition.
 	     */
 
 	    pmutexPtr = ckalloc(sizeof(pthread_mutex_t));
@@ -432,7 +432,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	MASTER_UNLOCK;
+	MAIN_UNLOCK;
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pthread_mutex_lock(pmutexPtr);
@@ -529,7 +529,7 @@ Tcl_ConditionWait(
     struct timespec ptime;
 
     if (*condPtr == NULL) {
-	MASTER_LOCK;
+	MAIN_LOCK;
 
 	/*
 	 * Double check inside mutex to avoid race, then initialize condition
@@ -542,7 +542,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	MASTER_UNLOCK;
+	MAIN_UNLOCK;
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);
@@ -800,7 +800,7 @@ TclpThreadSetMasterTSD(
     pthread_key_t *ptkeyPtr = tsdKeyPtr;
 
     if (pthread_setspecific(*ptkeyPtr, ptr)) {
-	Tcl_Panic("unable to set master TSD value");
+	Tcl_Panic("unable to set main TSD value");
     }
 }
 

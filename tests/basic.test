@@ -1003,13 +1003,13 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
 } {global}
 
 test basic-50.1 {[586e71dce4] EvalObjv level #0 exception handling} -setup {
-    interp create slave
-    interp alias {} foo slave return
+    interp create child
+    interp alias {} foo child return
 } -body {
     list [catch foo m] $m
 } -cleanup {
     unset -nocomplain m
-    interp delete slave
+    interp delete child
 } -result {0 {}}
 
 # Clean up after expand tests

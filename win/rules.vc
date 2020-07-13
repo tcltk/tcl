@@ -514,7 +514,7 @@ CFG_ENCODING	= \"cp1252\"
 # information about supported compiler options etc.
 #
 # Tcl itself will always use the nmakehlp.c program which is
-# in its own source. This is the "master" copy and kept updated.
+# in its own source. This is the "main" copy and kept updated.
 #
 # Extensions built against an installed Tcl will use the installed
 # copy of Tcl's nmakehlp.c if there is one and their own version
@@ -1669,7 +1669,7 @@ default-shell: default-setup $(PROJECT)
 !ifdef RCFILE
 
 # Note: don't use $** in below rule because there may be other dependencies
-# and only the "master" rc must be passed to the resource compiler
+# and only the "main" rc must be passed to the resource compiler
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
 	$(RESCMD) $(RCDIR)\$(PROJECT).rc
 
@@ -1723,7 +1723,7 @@ DISABLE_IMPLICIT_RULES = 0
 
 !if !$(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
-# main application, the master makefile should define explicit rules.
+# main application, the main makefile should define explicit rules.
 
 {$(ROOT)}.c{$(TMP_DIR)}.obj::
 	$(CCPKGCMD) @<<

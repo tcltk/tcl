@@ -27,11 +27,11 @@
  */
 
 /*
- * The master collection of information about TSDs. This is shared across the
+ * The main collection of information about TSDs. This is shared across the
  * whole process, and includes the mutex used to protect it.
  */
 
-static struct TSDMaster {
+static struct TSDMain {
     void *key;			/* Key into the system TSD structure. The
 				 * collection of Tcl TSD values for a
 				 * particular thread will hang off the
@@ -41,7 +41,7 @@ static struct TSDMaster {
 				 * increasing value. */
     Tcl_Mutex mutex;		/* Protection for the rest of this structure,
 				 * which holds per-process data. */
-} tsdMaster = { NULL, 0, NULL };
+} tsdMain = { NULL, 0, NULL };
 
 /*
  * The type of the data held per thread in a system TSD.
@@ -189,7 +189,7 @@ void *
 TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
     ClientData resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
@@ -223,12 +223,12 @@ TclThreadStorageKeySet(
     Tcl_ThreadDataKey *dataKeyPtr,
     void *value)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
 
     if (tsdTablePtr == NULL) {
 	tsdTablePtr = TSDTableCreate();
-	TclpThreadSetMasterTSD(tsdMaster.key, tsdTablePtr);
+	TclpThreadSetMasterTSD(tsdMain.key, tsdTablePtr);
     }
 
     /*
@@ -240,15 +240,15 @@ TclThreadStorageKeySet(
      */
 
     if (keyPtr->offset == 0) {
-	Tcl_MutexLock(&tsdMaster.mutex);
+	Tcl_MutexLock(&tsdMain.mutex);
 	if (keyPtr->offset == 0) {
 	    /*
 	     * The Tcl_ThreadDataKey hasn't been used yet. Make a new one.
 	     */
 
-	    keyPtr->offset = ++tsdMaster.counter;
+	    keyPtr->offset = ++tsdMain.counter;
 	}
-	Tcl_MutexUnlock(&tsdMaster.mutex);
+	Tcl_MutexUnlock(&tsdMain.mutex);
     }
 
     /*
@@ -288,11 +288,11 @@ TclThreadStorageKeySet(
 void
 TclFinalizeThreadDataThread(void)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMain.key);
 
     if (tsdTablePtr != NULL) {
 	TSDTableDelete(tsdTablePtr);
-	TclpThreadSetMasterTSD(tsdMaster.key, NULL);
+	TclpThreadSetMasterTSD(tsdMain.key, NULL);
     }
 }
 
@@ -316,7 +316,7 @@ TclFinalizeThreadDataThread(void)
 void
 TclInitThreadStorage(void)
 {
-    tsdMaster.key = TclpThreadCreateKey();
+    tsdMain.key = TclpThreadCreateKey();
 }
 
 /*
@@ -339,8 +339,8 @@ TclInitThreadStorage(void)
 void
 TclFinalizeThreadStorage(void)
 {
-    TclpThreadDeleteKey(tsdMaster.key);
-    tsdMaster.key = NULL;
+    TclpThreadDeleteKey(tsdMain.key);
+    tsdMain.key = NULL;
 }
 
 #else /* !TCL_THREADS */

@@ -4619,7 +4619,7 @@ Tcl_FSGetFileSystemForPath(
     /*
      * Check if the filesystem has changed in some way since this object's
      * internal representation was calculated. Before doing that, assure we
-     * have the most up-to-date copy of the master filesystem. This is
+     * have the most up-to-date copy of the main filesystem. This is
      * accomplished by the FsGetFirstFilesystem() call.
      */
 

@@ -1804,7 +1804,7 @@ typedef struct Interp {
 				 * of hidden commands on a per-interp
 				 * basis. */
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
-				 * track of master/slave interps on a
+				 * track of parent/child interps on a
 				 * per-interp basis. */
     union {
 	void (*optimizer)(void *envPtr);
@@ -2082,7 +2082,7 @@ typedef struct Interp {
      *  (c) are accessed very often (e.g., at each command call)
      *
      * Note that these are the same for all interps in the same thread. They
-     * just have to be initialised for the thread's master interp, slaves
+     * just have to be initialised for the thread's main interp, childs
      * inherit the value.
      *
      * They are used by the macros defined below.
@@ -2600,20 +2600,20 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, int *lengthPtr,
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
- * the value, and the master is kept as a counted string, with epoch and mutex
+ * the value, and the main is kept as a counted string, with epoch and mutex
  * control. Each ProcessGlobalValue struct should be a static variable in some
  * file.
  */
 
 typedef struct ProcessGlobalValue {
     int epoch;			/* Epoch counter to detect changes in the
-				 * master value. */
-    int numBytes;		/* Length of the master string. */
-    char *value;		/* The master string value. */
-    Tcl_Encoding encoding;	/* system encoding when master string was
+				 * main value. */
+    int numBytes;		/* Length of the main string. */
+    char *value;		/* The main string value. */
+    Tcl_Encoding encoding;	/* system encoding when main string was
 				 * initialized. */
     TclInitProcessGlobalValueProc *proc;
-    				/* A procedure to initialize the master string
+    				/* A procedure to initialize the main string
 				 * copy when a "get" request comes in before
 				 * any "set" request has been received. */
     Tcl_Mutex mutex;		/* Enforce orderly access from multiple
@@ -3097,8 +3097,8 @@ MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
-MODULE_SCOPE void	TclpMasterLock(void);
-MODULE_SCOPE void	TclpMasterUnlock(void);
+MODULE_SCOPE void	TclpMainLock(void);
+MODULE_SCOPE void	TclpMainUnlock(void);
 MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,

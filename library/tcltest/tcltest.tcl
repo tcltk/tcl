@@ -811,12 +811,35 @@ namespace eval tcltest {
     trace add variable Option(-errfile) write \
 	    [namespace code {errorChannel $Option(-errfile) ;#}]
 
-    proc loadIntoSlaveInterpreter {slave args} {
+    proc loadIntoChildInterpreter {child args} {
 	variable Version
-	interp eval $slave [package ifneeded tcltest $Version]
-	interp eval $slave "tcltest::configure {*}{$args}"
-	interp alias $slave ::tcltest::ReportToMaster \
-	    {} ::tcltest::ReportedFromSlave
+	interp eval $child [package ifneeded tcltest $Version]
+	interp eval $child "tcltest::configure {*}{$args}"
+	interp alias $child ::tcltest::ReportToParent \
+	    {} ::tcltest::ReportedFromChild
+    }
+    proc loadIntoSlaveInterpreter {child args} {
+	variable Version
+	interp eval $child [package ifneeded tcltest $Version]
+	interp eval $child "tcltest::configure {*}{$args}"
+	interp alias $child ::tcltest::ReportToParent \
+	    {} ::tcltest::ReportedFromChild
+    }
+    proc ReportedFromChild {total passed skipped failed because newfiles} {
+	variable numTests
+	variable skippedBecause
+	variable createdNewFiles
+	incr numTests(Total)   $total
+	incr numTests(Passed)  $passed
+	incr numTests(Skipped) $skipped
+	incr numTests(Failed)  $failed
+	foreach {constraint count} $because {
+	    incr skippedBecause($constraint) $count
+	}
+	foreach {testfile created} $newfiles {
+	    lappend createdNewFiles($testfile) {*}$created
+	}
+	return
     }
     proc ReportedFromSlave {total passed skipped failed because newfiles} {
 	variable numTests
@@ -2462,8 +2485,8 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     set testFileName [file tail [info script]]
 
     # Hook to handle reporting to a parent interpreter
-    if {[llength [info commands [namespace current]::ReportToMaster]]} {
-	ReportToMaster $numTests(Total) $numTests(Passed) $numTests(Skipped) \
+    if {[llength [info commands [namespace current]::ReportToParent]]} {
+	ReportToParent $numTests(Total) $numTests(Passed) $numTests(Skipped) \
 	    $numTests(Failed) [array get skippedBecause] \
 	    [array get createdNewFiles]
 	set testSingleFile false

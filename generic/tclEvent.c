@@ -1043,7 +1043,7 @@ TclInitSubsystems(void)
 	     * implementation of self-initializing locks.
 	     */
 
-	    TclInitThreadStorage();     /* Creates master hash table for
+	    TclInitThreadStorage();     /* Creates main hash table for
 					 * thread local storage */
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
@@ -1157,7 +1157,7 @@ Tcl_Finalize(void)
     TclFinalizeFilesystem();
 
     /*
-     * Undo all Tcl_ObjType registrations, and reset the master list of free
+     * Undo all Tcl_ObjType registrations, and reset the main list of free
      * Tcl_Obj's. After this returns, no more Tcl_Obj's should be allocated or
      * freed.
      *

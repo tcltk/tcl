@@ -24,18 +24,18 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
 #endif
 
 /*
- * This is the master lock used to serialize access to other serialization
+ * This is the main lock used to serialize access to other serialization
  * data structures.
  */
 
-static CRITICAL_SECTION masterLock;
+static CRITICAL_SECTION mainLock;
 static int init = 0;
-#define MASTER_LOCK TclpMasterLock()
-#define MASTER_UNLOCK TclpMasterUnlock()
+#define MAIN_LOCK TclpMainLock()
+#define MAIN_UNLOCK TclpMainUnlock()
 
 
 /*
- * This is the master lock used to serialize initialization and finalization
+ * This is the main lock used to serialize initialization and finalization
  * of Tcl as a whole.
  */
 
@@ -368,7 +368,7 @@ TclpInitLock(void)
 	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
-	InitializeCriticalSection(&masterLock);
+	InitializeCriticalSection(&mainLock);
     }
     EnterCriticalSection(&initLock);
 }
@@ -399,7 +399,7 @@ TclpInitUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMasterLock
+ * TclpMainLock
  *
  *	This procedure is used to grab a lock that serializes creation of
  *	mutexes, condition variables, and thread local storage keys.
@@ -411,13 +411,13 @@ TclpInitUnlock(void)
  *	None.
  *
  * Side effects:
- *	Acquire the master mutex.
+ *	Acquire the main mutex.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpMasterLock(void)
+TclpMainLock(void)
 {
     if (!init) {
 	/*
@@ -430,15 +430,15 @@ TclpMasterLock(void)
 	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
-	InitializeCriticalSection(&masterLock);
+	InitializeCriticalSection(&mainLock);
     }
-    EnterCriticalSection(&masterLock);
+    EnterCriticalSection(&mainLock);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpMasterUnlock
+ * TclpMainUnlock
  *
  *	This procedure is used to release a lock that serializes creation and
  *	deletion of synchronization objects.
@@ -447,15 +447,15 @@ TclpMasterLock(void)
  *	None.
  *
  * Side effects:
- *	Release the master mutex.
+ *	Release the main mutex.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpMasterUnlock(void)
+TclpMainUnlock(void)
 {
-    LeaveCriticalSection(&masterLock);
+    LeaveCriticalSection(&mainLock);
 }
 
 /*
@@ -512,14 +512,14 @@ Tcl_GetAllocMutex(void)
 void
 TclFinalizeLock(void)
 {
-    MASTER_LOCK;
+    MAIN_LOCK;
     DeleteCriticalSection(&joinLock);
 
     /*
      * Destroy the critical section that we are holding!
      */
 
-    DeleteCriticalSection(&masterLock);
+    DeleteCriticalSection(&mainLock);
     init = 0;
 
 #ifdef TCL_THREADS
@@ -567,10 +567,10 @@ Tcl_MutexLock(
     CRITICAL_SECTION *csPtr;
 
     if (*mutexPtr == NULL) {
-	MASTER_LOCK;
+	MAIN_LOCK;
 
 	/*
-	 * Double inside master lock check to avoid a race.
+	 * Double inside main lock check to avoid a race.
 	 */
 
 	if (*mutexPtr == NULL) {
@@ -579,7 +579,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	MASTER_UNLOCK;
+	MAIN_UNLOCK;
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     EnterCriticalSection(csPtr);
@@ -681,7 +681,7 @@ Tcl_ConditionWait(
      */
 
     if (tsdPtr->flags == WIN_THREAD_UNINIT) {
-	MASTER_LOCK;
+	MAIN_LOCK;
 
 	/*
 	 * Create the per-thread event and queue pointers.
@@ -695,7 +695,7 @@ Tcl_ConditionWait(
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	    doExit = 1;
 	}
-	MASTER_UNLOCK;
+	MAIN_UNLOCK;
 
 	if (doExit) {
 	    /*
@@ -710,7 +710,7 @@ Tcl_ConditionWait(
     }
 
     if (*condPtr == NULL) {
-	MASTER_LOCK;
+	MAIN_LOCK;
 
 	/*
 	 * Initialize the per-condition queue pointers and Mutex.
@@ -724,7 +724,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) winCondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	MASTER_UNLOCK;
+	MAIN_UNLOCK;
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     winCondPtr = *((WinCondition **)condPtr);
@@ -1080,7 +1080,7 @@ TclpThreadSetMasterTSD(
     DWORD *key = tsdKeyPtr;
 
     if (!TlsSetValue(*key, ptr)) {
-	Tcl_Panic("unable to set master TSD value");
+	Tcl_Panic("unable to set main TSD value");
     }
 }
 
