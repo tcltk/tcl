@@ -225,6 +225,14 @@ proc ::safe::interpConfigure {args} {
 		} else {
 		    Log $slave "successful auto_reset" NOTICE
 		}
+
+		# Sync the paths used to search for Tcl modules.
+		::interp eval $slave {tcl::tm::path remove {*}[tcl::tm::list]}
+		if {[llength $state(tm_path_slave)] > 0} {
+		    ::interp eval $slave [list \
+			    ::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
+		}
+
 		# Wherever possible, refresh package data.
 		# - Ideally [package ifneeded $pkg $ver {}] would clear the
 		#   stale data from the interpreter, but instead it sets a
