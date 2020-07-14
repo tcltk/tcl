@@ -1030,7 +1030,7 @@ proc ::safe::BadSubcommand {child command subcommand args} {
 # AliasEncoding is the target of the "encoding" alias in safe interpreters.
 
 proc ::safe::AliasEncoding {child option args} {
-    # Note that [encoding dirs] is not supported in safe childs at all
+    # Note that [encoding dirs] is not supported in safe children at all
     set subcommands {convertfrom convertto names system}
     try {
 	set option [tcl::prefix match -error [list -level 1 -errorcode \

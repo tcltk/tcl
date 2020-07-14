@@ -117,8 +117,8 @@ typedef struct Target {
  * This record is used for two purposes: First, childTable (a hashtable) maps
  * from names of commands to child interpreters. This hashtable is used to
  * store information about child interpreters of this interpreter, to map over
- * all childs, etc. The second purpose is to store information about all
- * aliases in childs (or siblings) which direct to target commands in this
+ * all children, etc. The second purpose is to store information about all
+ * aliases in children (or siblings) which direct to target commands in this
  * interpreter (using the targetsPtr doubly-linked list).
  *
  * NB: the flags field in the interp structure, used with SAFE_INTERP mask
@@ -132,7 +132,7 @@ typedef struct Parent {
 				 * from command names to Child records. */
     Target *targetsPtr;		/* The head of a doubly-linked list of all the
 				 * target records which denote aliases from
-				 * childs or sibling interpreters that direct
+				 * children or sibling interpreters that direct
 				 * to commands in this interpreter. This list
 				 * is used to remove dangling pointers from
 				 * the child (or sibling) interpreters when
@@ -611,7 +611,7 @@ NRInterpCmd(
     int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
-	"childs",	"create",	"debug",	"delete",
+	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
@@ -620,7 +620,7 @@ NRInterpCmd(
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
-	OPT_CHILDS,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
+	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
@@ -1008,7 +1008,7 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 3, objv + 3);
-    case OPT_CHILDS:
+    case OPT_CHILDREN:
     case OPT_SLAVES: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;
@@ -2136,7 +2136,7 @@ TclSetInterpCancelFlags(
 	}
 
 	/*
-	 * Now, recursively handle this for the childs of this child
+	 * Now, recursively handle this for the children of this child
 	 * interpreter.
 	 */
 
@@ -2152,7 +2152,7 @@ TclSetInterpCancelFlags(
  *	Sets the result of the asking interpreter to a proper Tcl list
  *	containing the names of interpreters between the asking and target
  *	interpreters. The target interpreter must be either the same as the
- *	asking interpreter or one of its childs (including recursively).
+ *	asking interpreter or one of its children (including recursively).
  *
  * Results:
  *	TCL_OK if the target interpreter is the same as, or a descendant of,

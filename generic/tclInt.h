@@ -2082,7 +2082,7 @@ typedef struct Interp {
      *  (c) are accessed very often (e.g., at each command call)
      *
      * Note that these are the same for all interps in the same thread. They
-     * just have to be initialised for the thread's main interp, childs
+     * just have to be initialised for the thread's main interp, children
      * inherit the value.
      *
      * They are used by the macros defined below.

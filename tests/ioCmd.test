@@ -2029,7 +2029,7 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
     set ida [interp create];#puts <<$ida>>
     set idb [interp create];#puts <<$idb>>
 
-    # Magic to get the test* commands in the childs
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 
@@ -2067,7 +2067,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
     set ida [interp create];#puts <<$ida>>
     set idb [interp create];#puts <<$idb>>
 
-    # Magic to get the test* commands in the childs
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 

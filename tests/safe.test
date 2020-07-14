@@ -17,7 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp childs] {
+foreach i [interp children] {
     interp delete $i
 }
 

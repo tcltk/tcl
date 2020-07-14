@@ -1162,7 +1162,7 @@ test iortrans-8.3 {chan flush, bug 2921116} -match glob -setup {
 test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
-    # Magic to get the test* commands in the childs
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 } -constraints {testchannel} -match glob -body {
@@ -1205,7 +1205,7 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
 test iortrans-11.1 {origin interpreter of moved transform destroyed during access} -setup {
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
-    # Magic to get the test* commands in the childs
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 } -constraints {testchannel} -match glob -body {

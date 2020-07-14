@@ -21,13 +21,13 @@ This command makes it possible to create one or more new Tcl
 interpreters that co-exist with the creating interpreter in the
 same application.  The creating interpreter is called the \fIparent\fR
 and the new interpreter is called a \fIchild\fR.
-A parent can create any number of childs, and each child can
-itself create additional childs for which it is parent, resulting
+A parent can create any number of children, and each child can
+itself create additional children for which it is parent, resulting
 in a hierarchy of interpreters.
 .PP
 Each interpreter is independent from the others: it has its own name
 space for commands, procedures, and global variables.
-A parent interpreter may create connections between its childs and
+A parent interpreter may create connections between its children and
 itself using a mechanism called an \fIalias\fR.  An \fIalias\fR is
 a command in a child interpreter which, when invoked, causes a
 command to be invoked in its parent interpreter or in another child
@@ -189,7 +189,7 @@ built-in commands and variables. The \fB\-\|\-\fR switch can be used to
 mark the end of switches;  it may be needed if \fIpath\fR is an unusual
 value such as \fB\-safe\fR. The result of the command is the name of the
 new interpreter. The name of a child interpreter must be unique among all
-the childs for its parent;  an error occurs if a child interpreter by the
+the children for its parent;  an error occurs if a child interpreter by the
 given name already exists in this parent.
 The initial recursion limit of the child interpreter is set to the
 current recursion limit of its parent interpreter.
@@ -239,7 +239,7 @@ consistency of the underlying interpreter's state.
 \fBinterp\fR \fBdelete \fR?\fIpath ...?\fR
 .
 Deletes zero or more interpreters given by the optional \fIpath\fR
-arguments, and for each interpreter, it also deletes its childs. The
+arguments, and for each interpreter, it also deletes its children. The
 command also deletes the child command for each interpreter deleted.
 For each \fIpath\fR argument, if no interpreter by that name
 exists, the command raises an error.
@@ -287,7 +287,7 @@ Currently both \fIexposedCmdName\fR and \fIhiddenCmdName\fR can
 not contain namespace qualifiers, or an error is raised.
 Commands to be hidden by \fBinterp hide\fR are looked up in the global
 namespace even if the current namespace is not the global one. This
-prevents childs from fooling a parent interpreter into hiding the wrong
+prevents children from fooling a parent interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
 Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
@@ -371,7 +371,7 @@ Both interpreters must close it to close the underlying IO channel; IO
 channels accessible in an interpreter are automatically closed when an
 interpreter is destroyed.
 .TP
-\fBinterp\fR \fBchilds\fR ?\fIpath\fR?
+\fBinterp\fR \fBchildren\fR ?\fIpath\fR?
 .
 Returns a Tcl list of the names of all the child interpreters associated
 with the interpreter identified by \fIpath\fR. If \fIpath\fR is omitted,
@@ -487,7 +487,7 @@ Currently both \fIexposedCmdName\fR and \fIhiddenCmdName\fR can
 not contain namespace qualifiers, or an error is raised.
 Commands to be hidden are looked up in the global
 namespace even if the current namespace is not the global one. This
-prevents childs from fooling a parent interpreter into hiding the wrong
+prevents children from fooling a parent interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
 For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
 .TP
@@ -745,7 +745,7 @@ To help avoid this problem, no substitutions or evaluations are
 applied to arguments of \fBinterp invokehidden\fR.
 .PP
 Safe interpreters are not allowed to invoke hidden commands in themselves
-or in their descendants. This prevents safe childs from gaining access to
+or in their descendants. This prevents safe children from gaining access to
 hidden functionality in themselves or their descendants.
 .PP
 The set of hidden commands in an interpreter can be manipulated by a trusted
@@ -764,12 +764,12 @@ qualifiers, and you must first rename a command in a namespace to the
 global namespace before you can hide it.
 Commands to be hidden by \fBinterp hide\fR are looked up in the global
 namespace even if the current namespace is not the global one. This
-prevents childs from fooling a parent interpreter into hiding the wrong
+prevents children from fooling a parent interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
 .SH "RESOURCE LIMITS"
 .PP
 Every interpreter has two kinds of resource limits that may be imposed by any
-parent interpreter upon its childs. Command limits (of type \fBcommand\fR)
+parent interpreter upon its children. Command limits (of type \fBcommand\fR)
 restrict the total number of Tcl commands that may be executed by an
 interpreter (as can be inspected via the \fBinfo cmdcount\fR command), and
 time limits (of type \fBtime\fR) place a limit by which execution within the
