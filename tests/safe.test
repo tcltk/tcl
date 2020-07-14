@@ -533,7 +533,6 @@ test safe-7.1opt {tests that everything works at high level with conventional Au
     }
 
     set i [safe::interpCreate]
-
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
@@ -1287,7 +1286,7 @@ test safe-9.10z {interpConfigure change the access path; pkgIndex.tcl packages u
         {-accessPath {[list $tcl_library $ZipMountPoint/auto0 $ZipMountPoint/auto0/auto2 $ZipMountPoint/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         0 OK1 0 OK2"
-test safe-9.10opt {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, use pkg opt and tcl::idna} -setup {
+test safe-9.10opt {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, uses pkg opt and tcl::idna} -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
@@ -1515,7 +1514,7 @@ test safe-9.12z {interpConfigure change the access path; pkgIndex.tcl packages f
         {-accessPath {[list $tcl_library $ZipMountPoint/auto0/auto1 $ZipMountPoint/auto0/auto2]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library]*} -statics 1 -nested 0 -deleteHook {}}"
-test safe-9.12opt {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, use pkg opt and tcl::idna} -setup {
+test safe-9.12opt {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, uses pkg opt and tcl::idna} -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]

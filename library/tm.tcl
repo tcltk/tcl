@@ -237,8 +237,9 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 			# acceptable to "package vcompare".
 			continue
 		    }
-		    if {    ([package ifneeded $pkgname $pkgversion] ne {})
-			 && (![interp issafe])
+
+		    if {([package ifneeded $pkgname $pkgversion] ne {})
+			    && (![interp issafe])
 		    } {
 			# There's already a provide script registered for
 			# this version of this package.  Since all units of
