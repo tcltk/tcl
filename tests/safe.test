@@ -2363,9 +2363,7 @@ test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
 } -cleanup {
     safe::interpDelete $i
 } -result {}
-
-puts stderr [interp slaves]
-
+
 set ::auto_path $saveAutoPath
 zipfs unmount ${ZipMountPoint}
 unset pkgOptErrMsg pkgOptDir pkgJarDir saveAutoPath TestsDir ZipMountPoint
