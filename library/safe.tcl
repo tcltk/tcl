@@ -218,11 +218,10 @@ proc ::safe::interpConfigure {args} {
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
 	    if {![::tcl::OptProcArgGiven -accessPath]} {
-		set doreset 1
-		set accessPath $state(access_path)
-		# BUG? is doreset the wrong way round?
-	    } else {
 		set doreset 0
+		set accessPath $state(access_path)
+	    } else {
+		set doreset 1
 	    }
 	    if {(!$AutoPathSync) && (![::tcl::OptProcArgGiven -autoPath])} {
 		set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
@@ -252,14 +251,34 @@ proc ::safe::interpConfigure {args} {
 	    }
 	    # we can now reconfigure :
 	    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
-	    set res [InterpSetConfig $slave $accessPath $statics $nested $deleteHook $autoPath $withAutoPath]
-puts stderr [list changed_map $res do_reset $doreset]
-	    # auto_reset the slave (to completly synch the new access_path)
+	    set slave_tm_rel [InterpSetConfig $slave $accessPath $statics $nested $deleteHook $autoPath $withAutoPath]
+
+	    # auto_reset the slave (to completely synch the new access_path) tests safe-9.8 safe-9.9
 	    if {$doreset} {
 		if {[catch {::interp eval $slave {auto_reset}} msg]} {
 		    Log $slave "auto_reset failed: $msg"
 		} else {
 		    Log $slave "successful auto_reset" NOTICE
+		}
+
+		# Sync the paths used to search for Tcl modules.
+		::interp eval $slave {tcl::tm::path remove {*}[tcl::tm::list]}
+		if {[llength $state(tm_path_slave)] > 0} {
+		    ::interp eval $slave [list \
+			    ::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
+		}
+
+		# Wherever possible, refresh package/module data.
+		# - Ideally [package ifneeded $pkg $ver {}] would clear the
+		#   stale data from the interpreter, but instead it sets a
+		#   nonsense empty script.
+		# - We cannot purge stale package data, but we can overwrite
+		#   it where we have fresh data.  Any remaining stale data will
+		#   do no harm but the error messages may be cryptic.
+		::interp eval $slave [list catch {package require NOEXIST}]
+		foreach rel $slave_tm_rel {
+		    set cmd [list package require [string map {/ ::} $rel]::NOEXIST]
+		    ::interp eval $slave [list catch $cmd]
 		}
 	    }
 	}
@@ -381,16 +400,13 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook au
     # We save the virtual form separately as well, as syncing it with the
     # slave has to be defered until the necessary commands are present for
     # setup.
-if {[info exists state(access_path,map)]} {
-    set old_map_access_path $state(access_path,map)
-} else {
-    set old_map_access_path {}
-}
     set norm_access_path  {}
     set slave_access_path {}
     set map_access_path   {}
     set remap_access_path {}
     set slave_tm_path     {}
+    set slave_tm_roots    {}
+    set slave_tm_rel      {}
 
     set i 0
     foreach dir $access_path {
@@ -426,6 +442,13 @@ if {[info exists state(access_path,map)]} {
 	    # Prevent the addition of dirs on the tm list to the
 	    # result if they are already known.
 	    if {[dict exists $remap_access_path $dir]} {
+	        if {$firstpass} {
+		    # $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		    # Later passes handle subdirectories, which belong in the
+		    # access path but not in the module path.
+		    lappend slave_tm_path  [dict get $remap_access_path $dir]
+		    lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
+		}
 		continue
 	    }
 
@@ -440,6 +463,7 @@ if {[info exists state(access_path,map)]} {
 		# Later passes handle subdirectories, which belong in the
 		# access path but not in the module path.
 		lappend slave_tm_path  $token
+		lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
 	    }
 	    incr i
 
@@ -450,6 +474,14 @@ if {[info exists state(access_path,map)]} {
 	    # 'platform/shell-X.tm', i.e arbitrarily deep
 	    # subdirectories.
 	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
+	    foreach sub [glob -nocomplain -directory $dir -type d *] {
+	        lappend slave_tm_roots [file normalize $sub] [dict get $slave_tm_roots $dir]
+	        set lenny [string length [dict get $slave_tm_roots $dir]]
+	        set relpath [string range [file normalize $sub] $lenny+1 end]
+                if {$relpath ni $slave_tm_rel} {
+	            lappend slave_tm_rel $relpath
+                }
+	    }
 	}
 	set firstpass 0
     }
@@ -466,8 +498,7 @@ if {[info exists state(access_path,map)]} {
 
     SyncAccessPath $slave
 
-    set result [expr {[lrange $map_access_path 0 end] ne [lrange $old_map_access_path 0 end]}]
-    return $result
+    return $slave_tm_rel
 }
 
 
