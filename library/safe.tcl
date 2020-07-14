@@ -192,10 +192,10 @@ proc ::safe::interpConfigure {args} {
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
 	    if {![::tcl::OptProcArgGiven -accessPath]} {
-		set doreset 1
+		set doreset 0
 		set accessPath $state(access_path)
 	    } else {
-		set doreset 0
+		set doreset 1
 	    }
 	    if {
 		![::tcl::OptProcArgGiven -statics]
@@ -217,13 +217,33 @@ proc ::safe::interpConfigure {args} {
 		set deleteHook $state(cleanupHook)
 	    }
 	    # we can now reconfigure :
-	    InterpSetConfig $slave $accessPath $statics $nested $deleteHook
+	    set slave_tm_rel [InterpSetConfig $slave $accessPath $statics $nested $deleteHook]
 	    # auto_reset the slave (to completly synch the new access_path)
 	    if {$doreset} {
 		if {[catch {::interp eval $slave {auto_reset}} msg]} {
 		    Log $slave "auto_reset failed: $msg"
 		} else {
 		    Log $slave "successful auto_reset" NOTICE
+		}
+
+		# Sync the paths used to search for Tcl modules.
+		::interp eval $slave {tcl::tm::path remove {*}[tcl::tm::list]}
+		if {[llength $state(tm_path_slave)] > 0} {
+		    ::interp eval $slave [list \
+			    ::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
+		}
+
+		# Wherever possible, refresh package/module data.
+		# - Ideally [package ifneeded $pkg $ver {}] would clear the
+		#   stale data from the interpreter, but instead it sets a
+		#   nonsense empty script.
+		# - We cannot purge stale package data, but we can overwrite
+		#   it where we have fresh data.  Any remaining stale data will
+		#   do no harm but the error messages may be cryptic.
+		::interp eval $slave [list catch {package require NOEXIST}]
+		foreach rel $slave_tm_rel {
+		    set cmd [list package require [string map {/ ::} $rel]::NOEXIST]
+		    ::interp eval $slave [list catch $cmd]
 		}
 	    }
 	}
@@ -332,6 +352,8 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set map_access_path   {}
     set remap_access_path {}
     set slave_tm_path     {}
+    set slave_tm_roots    {}
+    set slave_tm_rel      {}
 
     set i 0
     foreach dir $access_path {
@@ -344,6 +366,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     }
 
     set morepaths [::tcl::tm::list]
+    set firstpass 1
     while {[llength $morepaths]} {
 	set addpaths $morepaths
 	set morepaths {}
@@ -352,6 +375,13 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # Prevent the addition of dirs on the tm list to the
 	    # result if they are already known.
 	    if {[dict exists $remap_access_path $dir]} {
+	        if {$firstpass} {
+		    # $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		    # Later passes handle subdirectories, which belong in the
+		    # access path but not in the module path.
+		    lappend slave_tm_path  [dict get $remap_access_path $dir]
+		    lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
+		}
 		continue
 	    }
 
@@ -361,7 +391,13 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    lappend map_access_path    $token $dir
 	    lappend remap_access_path  $dir $token
 	    lappend norm_access_path   [file normalize $dir]
-	    lappend slave_tm_path $token
+	    if {$firstpass} {
+		# $dir is in [::tcl::tm::list] and belongs in the slave_tm_path.
+		# Later passes handle subdirectories, which belong in the
+		# access path but not in the module path.
+		lappend slave_tm_path  $token
+		lappend slave_tm_roots [file normalize $dir] [file normalize $dir]
+	    }
 	    incr i
 
 	    # [Bug 2854929]
@@ -371,7 +407,16 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # 'platform/shell-X.tm', i.e arbitrarily deep
 	    # subdirectories.
 	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
+	    foreach sub [glob -nocomplain -directory $dir -type d *] {
+	        lappend slave_tm_roots [file normalize $sub] [dict get $slave_tm_roots $dir]
+	        set lenny [string length [dict get $slave_tm_roots $dir]]
+	        set relpath [string range [file normalize $sub] $lenny+1 end]
+                if {$relpath ni $slave_tm_rel} {
+	            lappend slave_tm_rel $relpath
+                }
+	    }
 	}
+	set firstpass 0
     }
 
     set state(access_path)       $access_path
@@ -385,6 +430,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set state(cleanupHook)       $deletehook
 
     SyncAccessPath $slave
+    return $slave_tm_rel
 }
 
 #
@@ -396,7 +442,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
     namespace upvar ::safe S$slave state
 
     if {![dict exists $state(access_path,remap) $path]} {
-	return -code error "$path not found in access path $access_path"
+	return -code error "$path not found in access path"
     }
 
     return [dict get $state(access_path,remap) $path]
