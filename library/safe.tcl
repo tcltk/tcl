@@ -769,8 +769,12 @@ proc ::safe::AliasGlob {slave args} {
 
     while {$at < [llength $args]} {
 	switch -glob -- [set opt [lindex $args $at]] {
-	    -nocomplain - -- - -join - -tails {
+	    -nocomplain - -- - -tails {
 		lappend cmd $opt
+		set got($opt) 1
+		incr at
+	    }
+	    -join {
 		set got($opt) 1
 		incr at
 	    }
