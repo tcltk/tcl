@@ -406,8 +406,9 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	    # 'platform::shell', which translate into
 	    # 'platform/shell-X.tm', i.e arbitrarily deep
 	    # subdirectories.
-	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
-	    foreach sub [glob -nocomplain -directory $dir -type d *] {
+	    set next [glob -nocomplain -directory $dir -type d *]
+	    lappend morepaths {*}$next
+	    foreach sub $next {
 	        lappend slave_tm_roots [file normalize $sub] [dict get $slave_tm_roots $dir]
 	        set lenny [string length [dict get $slave_tm_roots $dir]]
 	        set relpath [string range [file normalize $sub] $lenny+1 end]
