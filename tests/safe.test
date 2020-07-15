@@ -825,7 +825,7 @@ test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fa
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library]*} -statics 1 -nested 0 -deleteHook {}}"
 
-test safe-9.20 {check module loading} -setup {
+test safe-9.20 {check module loading} -constraints nonPortable -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -865,7 +865,7 @@ test safe-9.20 {check module loading} -setup {
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
 
-test safe-9.21 {interpConfigure change the access path; check module loading; stale data case 1} -setup {
+test safe-9.21 {interpConfigure change the access path; check module loading; stale data case 1} -constraints nonPortable -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -933,7 +933,7 @@ test safe-9.21 {interpConfigure change the access path; check module loading; st
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
 
-test safe-9.22 {interpConfigure change the access path; check module loading; stale data case 0} -setup {
+test safe-9.22 {interpConfigure change the access path; check module loading; stale data case 0} -constraints nonPortable -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -996,7 +996,7 @@ test safe-9.22 {interpConfigure change the access path; check module loading; st
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
 
-test safe-9.23 {interpConfigure change the access path; check module loading; stale data case 3} -setup {
+test safe-9.23 {interpConfigure change the access path; check module loading; stale data case 3} -constraints nonPortable -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -1070,7 +1070,7 @@ test safe-9.23 {interpConfigure change the access path; check module loading; st
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
 
-test safe-9.24 {interpConfigure change the access path; check module loading; stale data case 2 (worst case)} -setup {
+test safe-9.24 {interpConfigure change the access path; check module loading; stale data case 2 (worst case)} -constraints nonPortable -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
