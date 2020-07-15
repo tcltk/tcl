@@ -603,7 +603,7 @@ declare 162 {
     const char *Tcl_GetHostName(void)
 }
 declare 163 {
-    int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
+    int Tcl_GetInterpPath(Tcl_Interp *interp, Tcl_Interp *slaveInterp)
 }
 declare 164 {
     Tcl_Interp *Tcl_GetMaster(Tcl_Interp *interp)

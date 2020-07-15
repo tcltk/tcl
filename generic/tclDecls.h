@@ -469,7 +469,7 @@ TCLAPI int		Tcl_GetErrno(void);
 /* 162 */
 TCLAPI const char *	Tcl_GetHostName(void);
 /* 163 */
-TCLAPI int		Tcl_GetInterpPath(Tcl_Interp *askInterp,
+TCLAPI int		Tcl_GetInterpPath(Tcl_Interp *interp,
 				Tcl_Interp *slaveInterp);
 /* 164 */
 TCLAPI Tcl_Interp *	Tcl_GetMaster(Tcl_Interp *interp);
@@ -1931,7 +1931,7 @@ typedef struct TclStubs {
     const char * (*tcl_GetCommandName) (Tcl_Interp *interp, Tcl_Command command); /* 160 */
     int (*tcl_GetErrno) (void); /* 161 */
     const char * (*tcl_GetHostName) (void); /* 162 */
-    int (*tcl_GetInterpPath) (Tcl_Interp *askInterp, Tcl_Interp *slaveInterp); /* 163 */
+    int (*tcl_GetInterpPath) (Tcl_Interp *interp, Tcl_Interp *slaveInterp); /* 163 */
     Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
     const char * (*tcl_GetNameOfExecutable) (void); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) (Tcl_Interp *interp); /* 166 */
