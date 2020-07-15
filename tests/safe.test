@@ -1354,6 +1354,15 @@ proc buildEnvironment {filename} {
     set testdir2 [makeDirectory deletemetoo $testdir]
     set testfile [makeFile {} $filename $testdir2]
 }
+proc buildEnvironment2 {filename} {
+    upvar 1 testdir testdir testdir2 testdir2 testfile testfile
+    upvar 1 testdir3 testdir3 testfile2 testfile2
+    set testdir [makeDirectory deletethisdir]
+    set testdir2 [makeDirectory deletemetoo $testdir]
+    set testfile [makeFile {} $filename $testdir2]
+    set testdir3 [makeDirectory deleteme $testdir]
+    set testfile2 [makeFile {} $filename $testdir3]
+}
 #### New tests for Safe base glob, with patches @ Bug 2964715
 test safe-13.1 {glob is restricted [Bug 2964715]} -setup {
     set i [safe::interpCreate]
@@ -1425,7 +1434,7 @@ test safe-13.6 {as 13.4 but test silent failure when result is outside access_pa
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {}
-test safe-13.7 {mimic the glob call by tclPkgUnknown which gives a deliberate error in a safe interpreter [Bug 2964715]} -setup {
+test safe-13.7 {mimic the glob call by tclPkgUnknown in a safe interpreter [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment pkgIndex.tcl
 } -body {
@@ -1437,9 +1446,25 @@ test safe-13.7 {mimic the glob call by tclPkgUnknown which gives a deliberate er
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {{EXPECTED/deletemetoo/pkgIndex.tcl}}
-# Note the extra {} around the result above; that's *expected* because of the
-# format of virtual path roots.
-test safe-13.8 {mimic the glob call by tclPkgUnknown without the deliberate error that is specific to pkgIndex.tcl [Bug 2964715]} -setup {
+# Note the extra {} around the result above; that's *expected* because the
+# tokenized paths require delimitation in the list returned by glob; the
+# braces remain after the token is replaced by EXPECTED.
+test safe-13.7a {mimic the glob call by tclPkgUnknown in a safe interpreter with multiple subdirectories} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment2 pkgIndex.tcl
+} -body {
+    set safeTD [::safe::interpAddToAccessPath $i $testdir]
+    ::safe::interpAddToAccessPath $i $testdir2
+    ::safe::interpAddToAccessPath $i $testdir3
+    lsort [string map [list $safeTD EXPECTED] [$i eval [list \
+	glob -directory $safeTD -join * pkgIndex.tcl]]]
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {EXPECTED/deleteme/pkgIndex.tcl EXPECTED/deletemetoo/pkgIndex.tcl}
+# Cf safe-13.7 - this time there's no extra {} around the result; the list
+# operation lsort removed it.
+test safe-13.8 {mimic the glob call by tclPkgUnknown without the special treatment that is specific to pkgIndex.tcl [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment notIndex.tcl
 } -body {
@@ -1477,6 +1502,7 @@ test safe-13.10 {as 13.8 but test silent failure when result is outside access_p
     removeDirectory $testdir
 } -result {}
 rename buildEnvironment {}
+rename buildEnvironment2 {}
 
 #### Test for the module path
 test safe-14.1 {Check that module path is the same as in the master interpreter [Bug 2964715]} -setup {
