@@ -365,10 +365,18 @@ test safe-7.2http {tests specific path and interpFind/AddToAccessPath, uses http
 	    [safe::interpDelete $i]
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 test safe-7.3 {check that safe subinterpreters work} {
+    set g [interp slaves]
+    if {$g ne {}} {
+        append g { -- residue of an earlier test}
+    }
+    set h [info vars ::safe::S*]
+    if {$h ne {}} {
+        append h { -- residue of an earlier test}
+    }
     set i [safe::interpCreate]
     set j [safe::interpCreate [list $i x]]
-    list [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j]
-} {ok {} 0}
+    list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j] [info vars ::safe::S*]
+} {{} {} ok {} 0 {}}
 test safe-7.4 {tests specific path and positive search} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]

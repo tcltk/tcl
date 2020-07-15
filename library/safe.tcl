@@ -593,6 +593,17 @@ proc ::safe::interpDelete {slave} {
 
     namespace upvar ::safe S$slave state
 
+    # When an interpreter is deleted with [interp delete], any sub-interpreters
+    # are deleted automatically, but this leaves behind their data in the Safe
+    # Base. To clean up properly, we call safe::interpDelete recursively on each
+    # Safe Base sub-interpreter, so each one is deleted cleanly and not by
+    # the automatic mechanism built into [interp delete].
+    foreach sub [interp slaves $slave] {
+        if {[info exists ::safe::S[list $slave $sub]]} {
+            ::safe::interpDelete [list $slave $sub]
+        }
+    }
+
     # If the slave has a cleanup hook registered, call it.  Check the
     # existance because we might be called to delete an interp which has
     # not been registered with us at all
