@@ -14,7 +14,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # TODO: This test is likely worthless. Confirm and remove
-if {[string is none [lsearch [namespace children] ::tcltest]]} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
 }
 

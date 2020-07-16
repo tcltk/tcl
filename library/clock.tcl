@@ -3506,15 +3506,13 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     if {$version eq {2}} {
 	set seek [expr {$seek + 8 * $nLeap + $nIsStd + $nIsGMT + 1}]
 	set last [string first \n $d $seek]
-	if {![string is none $last] && $last > 0} {
-	    set posix [string range $d $seek [expr {$last-1}]]
-	    if {[llength $posix] > 0} {
-		set posixFields [ParsePosixTimeZone $posix]
-		foreach tuple [ProcessPosixTimeZone $posixFields] {
-		    lassign $tuple t gmtoff isDst abbrev
-		    if {$t > $lastTime} {
-			lappend r $tuple
-		    }
+	set posix [string range $d $seek [expr {$last-1}]]
+	if {[llength $posix] > 0} {
+	    set posixFields [ParsePosixTimeZone $posix]
+	    foreach tuple [ProcessPosixTimeZone $posixFields] {
+		lassign $tuple t gmtoff isDst abbrev
+		if {$t > $lastTime} {
+		    lappend r $tuple
 		}
 	    }
 	}

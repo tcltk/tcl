@@ -238,51 +238,29 @@ proc unknown args {
 		# from the extra "eval" of $args due to the "catch" above.
 		#
 		set last [string last $tail $errInfo]
-		if {![string is none $last]} {
-		    if {$last + [string length $tail] != [string length $errInfo]} {
-			# Very likely cannot happen
-			return -options $opts $msg
-		    }
-		    if {$last > 0} {
-			set errInfo [string range $errInfo 0 $last-1]
-		    } else {
-			set errInfo {}
-		    }
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    # Very likely cannot happen
+		    return -options $opts $msg
 		}
+		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {![string is none $last]} {
-		    if {$last + [string length $tail] != [string length $errInfo]} {
-			return -code error -errorcode $errCode \
-				-errorinfo $errInfo $msg
-		    }
-		    if {$last > 0} {
-			set errInfo [string range $errInfo 0 $last-1]
-		    } else {
-			set errInfo {}
-		    }
-		}
-		set tail "\n    invoked from within\n"
-		set last [string last $tail $errInfo]
-		if {![string is none $last] && $last + [string length $tail] == [string length $errInfo]} {
-		    if {$last > 0} {
-			set errInfo [string range $errInfo 0 $last-1]
-		    } else {
-			set errInfo {}
-		    }
+		if {$last + [string length $tail] != [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
+		}
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\n    invoked from within\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
 		}
 		set tail "\n    while executing\n"
 		set last [string last $tail $errInfo]
-		if {![string is none $last] && $last + [string length $tail] == [string length $errInfo]} {
-		    if {$last > 0} {
-			set errInfo [string range $errInfo 0 $last-1]
-		    } else {
-			set errInfo {}
-		    }
+		if {$last + [string length $tail] == [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
-			    -errorinfo $errInfo $msg
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
 		}
 		return -options $opts $msg
 	    } else {
@@ -764,7 +742,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {![string is none [string first $nsrc $ndest]]} {
+	if {[string first $nsrc $ndest] != -1} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
