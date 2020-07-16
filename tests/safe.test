@@ -500,7 +500,7 @@ test safe-7.1 {tests that everything works at high level} -setup {
 # Use zipped example packages not tcl8.x/opt
 test safe-7.1z {tests that everything works at high level; zipfs} -setup {
     set tmpAutoPath $::auto_path
-    lappend ::auto_path [file join $TestsDir auto0]
+    lappend ::auto_path [file join $ZipMountPoint auto0]
     set i [safe::interpCreate]
     set ::auto_path $tmpAutoPath
 } -body {
@@ -556,7 +556,7 @@ test safe-7.2z {tests specific path and interpFind/AddToAccessPath; zipfs} -setu
     # should add as p* (not p1 if master has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
     # should add as p* (not p2 if master has a module path)
-    set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
+    set token3 [safe::interpAddToAccessPath $i [file join $ZipMountPoint auto0]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
     # an error shall occur (SafeTestPackage1 is not anymore in the secure 0-level
@@ -567,7 +567,7 @@ test safe-7.2z {tests specific path and interpFind/AddToAccessPath; zipfs} -setu
 } -cleanup {
 } -match glob -result {{$p(:0:)} {$p(:*:)} {$p(:*:)} --\
         1 {can't find package SafeTestPackage1} --\
-        {TCLLIB */dummy/unixlike/test/path TESTSDIR/auto0} -- {}}
+        {TCLLIB */dummy/unixlike/test/path ZIPDIR/auto0} -- {}}
 test safe-7.2opt {tests specific path and interpFind/AddToAccessPath, uses pkg opt} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -622,7 +622,7 @@ test safe-7.4z {tests specific path and positive search; zipfs} -setup {
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
     # should add as p* (not p1 if master has a module path)
-    set token2 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
+    set token2 [safe::interpAddToAccessPath $i [file join $ZipMountPoint auto0 auto1]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
     # this time, unlike test safe-7.2, SafeTestPackage1 should be found
@@ -633,7 +633,7 @@ test safe-7.4z {tests specific path and positive search; zipfs} -setup {
     # other than the first and last in the access path.
 } -cleanup {
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.2.3 --\
-        {TCLLIB * TESTSDIR/auto0/auto1} -- {}}
+        {TCLLIB * ZIPDIR/auto0/auto1} -- {}}
 test safe-7.4opt {tests specific path and positive search, uses pkg opt} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
