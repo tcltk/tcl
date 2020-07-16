@@ -2081,7 +2081,7 @@ Tcl_GetParent(
 /*
  *----------------------------------------------------------------------
  *
- * TclSetInterpCancelFlags --
+ * TclSetChildCancelFlags --
  *
  *	This function marks all child interpreters belonging to a given
  *	interpreter as being canceled or not canceled, depending on the
@@ -2097,7 +2097,7 @@ Tcl_GetParent(
  */
 
 void
-TclSetInterpCancelFlags(
+TclSetChildCancelFlags(
     Tcl_Interp *interp,		/* Set cancel flags of this interpreter. */
     int flags,			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -2140,7 +2140,7 @@ TclSetInterpCancelFlags(
 	 * interpreter.
 	 */
 
-	TclSetInterpCancelFlags((Tcl_Interp *) iPtr, flags, force);
+	TclSetChildCancelFlags((Tcl_Interp *) iPtr, flags, force);
     }
 }
 
@@ -2794,7 +2794,7 @@ ChildEval(
      * function for that particular Tcl_Interp.
      */
 
-    TclSetInterpCancelFlags(childInterp, 0, 0);
+    TclSetChildCancelFlags(childInterp, 0, 0);
 
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);

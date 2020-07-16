@@ -79,7 +79,7 @@ against the standard Tcl library.  Extensions (stub-enabled or
 not) are not intended to call \fBTcl_Main\fR.
 .PP
 \fBTcl_Main\fR is not thread-safe.  It should only be called by
-a single mail thread of a multi-threaded application.  This
+a single main thread of a multi-threaded application.  This
 restriction is not a problem with normal use described above.
 .PP
 \fBTcl_Main\fR and therefore all applications based upon it, like
