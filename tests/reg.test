@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 
-if {[string is none [lsearch [namespace children] ::tcltest]]} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
 }
 

@@ -60,7 +60,7 @@
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
 
-if {[string is none [lsearch [namespace children] ::tcltest]]} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }

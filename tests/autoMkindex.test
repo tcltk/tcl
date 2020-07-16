@@ -168,13 +168,13 @@ test autoMkindex-2.1 {commands on the autoload path can be imported} -setup {
 test autoMkindex-3.1 {slaveHook} -setup {
     file delete tclIndex
 } -body {
-    auto_mkindex_parser::slavehook {
+    auto_mkindex_parser::childhook {
 	_%@namespace eval ::blt {
 	    proc foo {} {}
 	    _%@namespace export foo
 	}
     }
-    auto_mkindex_parser::slavehook { _%@namespace import -force ::blt::* }
+    auto_mkindex_parser::childhook { _%@namespace import -force ::blt::* }
     auto_mkindex . autoMkindex.tcl
     file exists tclIndex
 } -cleanup {
