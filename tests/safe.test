@@ -530,7 +530,7 @@ test safe-7.1opt {tests that everything works at high level, uses pkg opt} -setu
 } -cleanup {
     safe::interpDelete $i
 } -match glob -result 0.4.*
- test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
+test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
@@ -587,7 +587,7 @@ test safe-7.2opt {tests specific path and interpFind/AddToAccessPath, uses pkg o
 } -cleanup {
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package opt} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}}
- test safe-7.3 {check that safe subinterpreters work} {
+test safe-7.3 {check that safe subinterpreters work} {
     set g [interp slaves]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
@@ -600,7 +600,7 @@ test safe-7.2opt {tests specific path and interpFind/AddToAccessPath, uses pkg o
     set j [safe::interpCreate [list $i x]]
     list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j] [info vars ::safe::S*]
 } {{} {} ok {} 0 {}}
- test safe-7.4 {tests specific path and positive search} -setup {
+test safe-7.4 {tests specific path and positive search} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
@@ -831,7 +831,7 @@ test safe-9.4 {dual specification of statics} {
 test safe-9.5 {dual specification of nested} -returnCodes error -body {
     safe::interpCreate -nested 0 -nestedload
 } -result {conflicting values given for -nested and -nestedLoadOk}
- test safe-9.6 {interpConfigure widget like behaviour} -body {
+test safe-9.6 {interpConfigure widget like behaviour} -body {
    # this test shall work, don't try to "fix it" unless you *really* know what
    # you are doing (ie you are me :p) -- dl
    list [set i [safe::interpCreate \
@@ -850,7 +850,7 @@ test safe-9.5 {dual specification of nested} -returnCodes error -body {
 	 safe::interpConfigure $i]
 } -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}} {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}} {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}} {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
 
- test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
+test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
    # this test shall work, believed equivalent to 9.6
     set i [safe::interpCreate \
 	    -noStatics \
@@ -874,7 +874,7 @@ test safe-9.5 {dual specification of nested} -returnCodes error -body {
     safe::interpDelete $i
 } -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}} {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}} {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}} {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
 
- test safe-9.8 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset)} -setup {
+test safe-9.8 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset)} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -956,7 +956,7 @@ test safe-9.8z {interpConfigure change the access path; tclIndex commands unaffe
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library $ZipMountPoint/auto0/auto2 $ZipMountPoint/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}"
- test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset)} -setup {
+test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset)} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -1035,7 +1035,7 @@ test safe-9.9z {interpConfigure change the access path; tclIndex commands unaffe
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library $ZipMountPoint/auto0/auto2 $ZipMountPoint/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}"
- test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement} -setup {
+test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement} -setup {
 } -body {
     # For complete correspondence to safe-9.10opt, include auto0 in access path.
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -1169,7 +1169,7 @@ test safe-9.10opt {interpConfigure change the access path; pkgIndex.tcl packages
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library $tcl_library/$pkgJarDir $tcl_library/$pkgOptDir]*}\
         -statics 1 -nested 0 -deleteHook {}} 0 0 0 example.com"
- test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
+test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -1250,7 +1250,7 @@ test safe-9.11z {interpConfigure change the access path; pkgIndex.tcl packages u
         {-accessPath {[list $tcl_library $ZipMountPoint/auto0/auto2 $ZipMountPoint/auto0/auto1]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         0 OK1 0 OK2"
- test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
+test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -1351,7 +1351,7 @@ test safe-9.12opt {interpConfigure change the access path; pkgIndex.tcl packages
         {-accessPath {[list $tcl_library $tcl_library/$pkgOptDir $tcl_library/$pkgJarDir]*}\
         -statics 1 -nested 0 -deleteHook {}}\
         {-accessPath {[list $tcl_library]*} -statics 1 -nested 0 -deleteHook {}}"
- test safe-9.20 {check module loading} -setup {
+test safe-9.20 {check module loading} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -1436,7 +1436,7 @@ test safe-9.20z {check module loading; zipfs} -setup {
                         $ZipMountPoint/auto0/modules/mod2]*}\
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
- test safe-9.21 {interpConfigure change the access path; check module loading; stale data case 1} -setup {
+test safe-9.21 {interpConfigure change the access path; check module loading; stale data case 1} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -1565,7 +1565,7 @@ test safe-9.21z {interpConfigure change the access path; check module loading; s
                         $ZipMountPoint/auto0/modules/mod2]}\
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
- test safe-9.22 {interpConfigure change the access path; check module loading; stale data case 0} -setup {
+test safe-9.22 {interpConfigure change the access path; check module loading; stale data case 0} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -1684,7 +1684,7 @@ test safe-9.22z {interpConfigure change the access path; check module loading; s
                             $ZipMountPoint/auto0/modules/mod2]}\
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
- test safe-9.23 {interpConfigure change the access path; check module loading; stale data case 3} -setup {
+test safe-9.23 {interpConfigure change the access path; check module loading; stale data case 3} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -1825,7 +1825,7 @@ test safe-9.23z {interpConfigure change the access path; check module loading; s
                             $ZipMountPoint/auto0/modules/mod2]}\
         -statics 1 -nested 0 -deleteHook {}} --\
         res0 res1 res2"
- test safe-9.24 {interpConfigure change the access path; check module loading; stale data case 2 (worst case)} -setup {
+test safe-9.24 {interpConfigure change the access path; check module loading; stale data case 2 (worst case)} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -2239,7 +2239,7 @@ test safe-13.6 {as 13.4 but test silent failure when result is outside access_pa
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {}
- test safe-13.7 {mimic the glob call by tclPkgUnknown in a safe interpreter [Bug 2964715]} -setup {
+test safe-13.7 {mimic the glob call by tclPkgUnknown in a safe interpreter [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment pkgIndex.tcl
 } -body {
@@ -2251,7 +2251,7 @@ test safe-13.6 {as 13.4 but test silent failure when result is outside access_pa
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {EXPECTED/deletemetoo/pkgIndex.tcl}
- test safe-13.7a {mimic the glob call by tclPkgUnknown in a safe interpreter with multiple subdirectories} -setup {
+test safe-13.7a {mimic the glob call by tclPkgUnknown in a safe interpreter with multiple subdirectories} -setup {
     set i [safe::interpCreate]
     buildEnvironment2 pkgIndex.tcl
 } -body {
