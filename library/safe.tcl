@@ -472,8 +472,9 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook au
 	    # 'platform::shell', which translate into
 	    # 'platform/shell-X.tm', i.e arbitrarily deep
 	    # subdirectories.
-	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
-	    foreach sub [glob -nocomplain -directory $dir -type d *] {
+	    set next [glob -nocomplain -directory $dir -type d *]
+	    lappend morepaths {*}$next
+	    foreach sub $next {
 	        lappend slave_tm_roots [file normalize $sub] [dict get $slave_tm_roots $dir]
 	        set lenny [string length [dict get $slave_tm_roots $dir]]
 	        set relpath [string range [file normalize $sub] $lenny+1 end]
@@ -685,6 +686,17 @@ proc ::safe::interpDelete {slave} {
 
     namespace upvar ::safe S$slave state
 
+    # When an interpreter is deleted with [interp delete], any sub-interpreters
+    # are deleted automatically, but this leaves behind their data in the Safe
+    # Base. To clean up properly, we call safe::interpDelete recursively on each
+    # Safe Base sub-interpreter, so each one is deleted cleanly and not by
+    # the automatic mechanism built into [interp delete].
+    foreach sub [interp slaves $slave] {
+        if {[info exists ::safe::S[list $slave $sub]]} {
+            ::safe::interpDelete [list $slave $sub]
+        }
+    }
+
     # If the slave has a cleanup hook registered, call it.  Check the
     # existance because we might be called to delete an interp which has
     # not been registered with us at all
@@ -855,8 +867,12 @@ proc ::safe::AliasGlob {slave args} {
 
     while {$at < [llength $args]} {
 	switch -glob -- [set opt [lindex $args $at]] {
-	    -nocomplain - -- - -join - -tails {
+	    -nocomplain - -- - -tails {
 		lappend cmd $opt
+		set got($opt) 1
+		incr at
+	    }
+	    -join {
 		set got($opt) 1
 		incr at
 	    }
