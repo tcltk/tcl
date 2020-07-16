@@ -16,7 +16,7 @@ if {![llength [info commands case]]} {
     return
 }
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
