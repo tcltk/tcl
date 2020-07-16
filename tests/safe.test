@@ -1456,6 +1456,7 @@ test safe-13.7a {mimic the glob call by tclPkgUnknown in a safe interpreter with
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {EXPECTED/deleteme/pkgIndex.tcl EXPECTED/deletemetoo/pkgIndex.tcl}
+# See comments on lsort after test safe-9.20.
 test safe-13.8 {mimic the glob call by tclPkgUnknown without the special treatment that is specific to pkgIndex.tcl [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment notIndex.tcl
