@@ -24,5 +24,6 @@ libtommath/win64/libtommath.dll.a
 *.jpg
 *.lib
 *.pdf
-*.png*.xlsx
+*.png
+*.xlsx
 *.zip

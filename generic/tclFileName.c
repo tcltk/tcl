@@ -2445,7 +2445,7 @@ DoGlob(
 		int len;
 		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-		if (strchr(separators, joined[len-1]) == NULL) {
+		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
 	    }
@@ -2482,7 +2482,7 @@ DoGlob(
 	    int len;
 	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-	    if (strchr(separators, joined[len-1]) == NULL) {
+	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
