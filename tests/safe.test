@@ -583,8 +583,8 @@ test safe-7.2opt {tests specific path and interpFind/AddToAccessPath, uses pkg o
 	    [catch {interp eval $i {package require opt}} msg] $msg -- \
 	    $mappA -- [safe::interpDelete $i]
 } -cleanup {
-} -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package opt} --\
-        {TCLLIB */dummy/unixlike/test/path} -- {}}
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} -- 1 {$pkgOptErrMsg} --\
+        {TCLLIB */dummy/unixlike/test/path} -- {}"
 test safe-7.3 {check that safe subinterpreters work} {
     set g [interp slaves]
     if {$g ne {}} {
