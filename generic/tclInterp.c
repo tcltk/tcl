@@ -611,7 +611,7 @@ NRInterpCmd(
     int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
-	"create",	"debug",	"delete",
+	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
@@ -620,7 +620,7 @@ NRInterpCmd(
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
-	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
+	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
@@ -1008,6 +1008,7 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return SlaveRecursionLimit(interp, slaveInterp, objc - 3, objv + 3);
+    case OPT_CHILDREN:
     case OPT_SLAVES: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;
