@@ -3974,5 +3974,8 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp,objPtr) \
     Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#define Tcl_CreateChild Tcl_CreateSlave
+#define Tcl_GetChild Tcl_GetSlave
+#define Tcl_GetParent Tcl_GetMaster
 
 #endif /* _TCLDECLS */

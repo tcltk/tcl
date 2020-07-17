@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_IsSafe, Tcl_MakeSafe, Tcl_CreateSlave, Tcl_GetSlave, Tcl_GetMaster, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
+Tcl_IsSafe, Tcl_MakeSafe, Tcl_CreateChild, Tcl_CreateSlave, Tcl_GetChild, Tcl_GetSlave, Tcl_GetParent, Tcl_GetMaster, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -19,11 +19,26 @@ int
 int
 \fBTcl_MakeSafe\fR(\fIinterp\fR)
 .sp
+.VS "TIP 581"
+Tcl_Interp *
+\fBTcl_CreateChild\fR(\fIinterp, name, isSafe\fR)
+.VE "TIP 581"
+.sp
 Tcl_Interp *
 \fBTcl_CreateSlave\fR(\fIinterp, name, isSafe\fR)
 .sp
+.VS "TIP 581"
+Tcl_Interp *
+\fBTcl_GetChild\fR(\fIinterp, name\fR)
+.VE "TIP 581"
+.sp
 Tcl_Interp *
 \fBTcl_GetSlave\fR(\fIinterp, name\fR)
+.sp
+.VS "TIP 581"
+Tcl_Interp *
+\fBTcl_GetParent\fR(\fIinterp\fR)
+.VE "TIP 581"
 .sp
 Tcl_Interp *
 \fBTcl_GetMaster\fR(\fIinterp\fR)
@@ -133,6 +148,10 @@ slave in which Tcl code has access only to set of Tcl commands defined as
 see the manual entry for the Tcl \fBinterp\fR command for details.
 If the creation of the new slave interpreter failed, \fBNULL\fR is returned.
 .PP
+.VS "TIP 581"
+\fBTcl_CreateChild\fR is a synonym for \fBTcl_CreateSlave\fR.
+.VE "TIP 581"
+.PP
 \fBTcl_IsSafe\fR returns \fB1\fR if \fIinterp\fR is
 .QW safe
 (was created with the \fBTCL_SAFE_INTERPRETER\fR flag specified),
@@ -154,9 +173,17 @@ may be a better choice, since it creates interpreters in a known-safe state.
 \fIinterp\fR. The slave interpreter is identified by \fIslaveName\fR.
 If no such slave interpreter exists, \fBNULL\fR is returned.
 .PP
+.VS "TIP 581"
+\fBTcl_GetChild\fR is a synonym for \fBTcl_GetSlave\fR.
+.VE "TIP 581"
+.PP
 \fBTcl_GetMaster\fR returns a pointer to the master interpreter of
 \fIinterp\fR. If \fIinterp\fR has no master (it is a
 top-level interpreter) then \fBNULL\fR is returned.
+.PP
+.VS "TIP 581"
+\fBTcl_GetParent\fR is a synonym for \fBTcl_GetMaster\fR.
+.VE "TIP 581"
 .PP
 \fBTcl_GetInterpPath\fR stores in the result of \fIaskingInterp\fR
 the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
