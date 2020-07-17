@@ -623,7 +623,7 @@ EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 				int *decpt, int *signum, char **endPtr);
 /* 250 */
-EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
+EXTERN void		TclSetChildCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
 EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
@@ -918,7 +918,7 @@ typedef struct TclIntStubs {
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
-    void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    void (*tclSetChildCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, const char *bytes, int length, int flags); /* 251 */
     Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
     Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
@@ -1356,8 +1356,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
-#define TclSetSlaveCancelFlags \
-	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclSetChildCancelFlags \
+	(tclIntStubsPtr->tclSetChildCancelFlags) /* 250 */
 #define TclRegisterLiteral \
 	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 #define TclPtrGetVar \
