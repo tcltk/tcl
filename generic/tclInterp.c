@@ -2161,7 +2161,7 @@ Tcl_GetMaster(
 /*
  *----------------------------------------------------------------------
  *
- * TclSetSlaveCancelFlags --
+ * TclSetChildCancelFlags --
  *
  *	This function marks all slave interpreters belonging to a given
  *	interpreter as being canceled or not canceled, depending on the
@@ -2177,7 +2177,7 @@ Tcl_GetMaster(
  */
 
 void
-TclSetSlaveCancelFlags(
+TclSetChildCancelFlags(
     Tcl_Interp *interp,		/* Set cancel flags of this interpreter. */
     int flags,			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -2220,7 +2220,7 @@ TclSetSlaveCancelFlags(
 	 * interpreter.
 	 */
 
-	TclSetSlaveCancelFlags((Tcl_Interp *) iPtr, flags, force);
+	TclSetChildCancelFlags((Tcl_Interp *) iPtr, flags, force);
     }
 }
 
@@ -2874,7 +2874,7 @@ SlaveEval(
      * function for that particular Tcl_Interp.
      */
 
-    TclSetSlaveCancelFlags(slaveInterp, 0, 0);
+    TclSetChildCancelFlags(slaveInterp, 0, 0);
 
     Tcl_Preserve(slaveInterp);
     Tcl_AllowExceptions(slaveInterp);
