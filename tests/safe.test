@@ -1572,6 +1572,7 @@ test safe-16.1 {Bug 3529949: defang ~ in paths} -setup {
 } -cleanup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
+    unset savedHOME
 } -result {./~}
 test safe-16.2 {Bug 3529949: defang ~user in paths} -setup {
     set i [safe::interpCreate]
@@ -1581,6 +1582,7 @@ test safe-16.2 {Bug 3529949: defang ~user in paths} -setup {
 	    "file join \[file dirname ~$user\] \[file tail ~$user\]"]
 } -cleanup {
     safe::interpDelete $i
+    unset user
 } -result {./~USER}
 test safe-16.3 {Bug 3529949: defang ~ in globs} -setup {
     set syntheticHOME [makeDirectory foo]
@@ -1595,6 +1597,7 @@ test safe-16.3 {Bug 3529949: defang ~ in globs} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     removeDirectory $syntheticHOME
+    unset savedHOME syntheticHOME
 } -result {}
 test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
     set i [safe::interpCreate]
@@ -1604,6 +1607,52 @@ test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
 } -cleanup {
     safe::interpDelete $i
 } -result {}
+test safe-16.5 {Bug 3529949: defang ~ in paths used by AliasGlob (1)} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -body {
+    $i eval {
+	set d [format %c 126]
+	file join {$p(:0:)} $d
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+    unset savedHOME
+} -result {~}
+test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -body {
+    $i eval {
+	set d [format %c 126]
+	file join {$p(:0:)/foo/bar} $d
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+    unset savedHOME
+} -result {~}
+test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -body {
+    string map [list $user USER] [$i eval [list file join {$p(:0:)} ~$user]]
+} -cleanup {
+    safe::interpDelete $i
+    unset user
+} -result {~USER}
+test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -body {
+    string map [list $user USER] [$i eval [list file join {$p(:0:)/foo/bar} ~$user]]
+} -cleanup {
+    safe::interpDelete $i
+    unset user
+} -result {~USER}
 
 set ::auto_path $SaveAutoPath
 unset SaveAutoPath TestsDir PathMapp
