@@ -792,13 +792,6 @@ proc ::safe::AliasGlob {slave args} {
 		set virtualdir [lindex $args [incr at]]
 		incr at
 	    }
-	    pkgIndex.tcl {
-		# Oops, this is globbing a subdirectory in regular package
-		# search. That is not wanted. Abort, handler does catch
-		# already (because glob was not defined before). See
-		# package.tcl, lines 484ff in tclPkgUnknown.
-		return -code error "unknown command glob"
-	    }
 	    -* {
 		Log $slave "Safe base rejecting glob option '$opt'"
 		return -code error "Safe base rejecting glob option '$opt'"
