@@ -820,6 +820,13 @@ proc ::safe::AliasGlob {slave args} {
 	} else {
 	    lappend cmd -directory $dir
 	}
+    } else {
+	# The code after this "if ... else" block would conspire to return with
+	# no results in this case, if it were allowed to proceed.  Instead,
+	# return now and reduce the number of cases to be considered later.
+	Log $slave {option -directory must be supplied}
+	if {$got(-nocomplain)} return
+	return -code error "permission denied"
     }
 
     # Apply the -join semantics ourselves.
