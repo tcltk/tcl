@@ -822,19 +822,27 @@ proc ::safe::AliasGlob {slave args} {
 	}
     }
 
-    # Apply the -join semantics ourselves
+    # Apply the -join semantics ourselves.
     if {$got(-join)} {
 	set args [lreplace $args $at end [join [lrange $args $at end] "/"]]
     }
 
-    # Process remaining pattern arguments
+    # Process the pattern arguments.  If we've done a join there is only one
+    # pattern argument.
+
     set firstPattern [llength $cmd]
     foreach opt [lrange $args $at end] {
 	if {![regexp $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
+	    # The *.tm search comes here.
 	} elseif {[string match ~* $thedir]} {
 	    set thedir ./$thedir
 	}
+	# "Special" treatment for (joined) argument {*/pkgIndex.tcl}.
+	# Do the expansion of "*" here, and filter out any directories that are
+	# not in the access path.  The outcome is to lappend to cmd a path of
+	# the form $virtualdir/subdir/pkgIndex.tcl for each subdirectory subdir,
+	# after removing any subdir that are not in the access path.
 	if {($thedir eq "*") && ($thefile eq "pkgIndex.tcl")} {
 	    set mapped 0
 	    foreach d [glob -directory [TranslatePath $slave $virtualdir] \
@@ -847,7 +855,19 @@ proc ::safe::AliasGlob {slave args} {
 		}
 	    }
 	    if {$mapped} continue
+	    # Don't [continue] if */pkgIndex.tcl has no matches in the access
+	    # path.  The pattern will now receive the same treatment as a
+	    # "non-special" pattern (and will fail because it includes a "*" in
+	    # the directory name).
 	}
+	# Any directory pattern that is not an exact (i.e. non-glob) match to a
+	# directory in the access path will be rejected here.
+	# - Rejections include any directory pattern that has glob matching
+	#   patterns "*", "?", backslashes, braces or square brackets, (UNLESS
+	#   it corresponds to a genuine directory name AND that directory is in
+	#   the access path).
+	# - The only "special matching characters" that remain in patterns for
+	#   processing by glob are in the filename tail.
 	try {
 	    DirInAccessPath $slave [TranslatePath $slave \
 		    [file join $virtualdir $thedir]]
@@ -865,8 +885,17 @@ proc ::safe::AliasGlob {slave args} {
 	return
     }
     try {
+	# >>>>>>>>>> HERE'S THE CALL TO SAFE INTERP GLOB <<<<<<<<<<
+	# - Pattern arguments added to cmd have NOT been translated from tokens.
+	#   Only the virtualdir is translated (to dir).
+	# - In the pkgIndex.tcl case, there is no "*" in the pattern arguments,
+	#   which are a list of names each with tail pkgIndex.tcl.  The purpose
+	#   of the call to glob is to remove the names for which the file does
+	#   not exist.
 	set entries [::interp invokehidden $slave glob {*}$cmd]
     } on error msg {
+	# This is the only place that a call with -nocomplain and no invalid
+	# "dash-options" can return an error.
 	Log $slave $msg
 	return -code error "script error"
     }
