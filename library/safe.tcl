@@ -815,7 +815,11 @@ proc ::safe::AliasGlob {slave args} {
 	    if {$got(-nocomplain)} return
 	    return -code error "permission denied"
 	}
-	lappend cmd -directory $dir
+	if {$got(--)} {
+	    set cmd [linsert $cmd end-1 -directory $dir]
+	} else {
+	    lappend cmd -directory $dir
+	}
     }
 
     # Apply the -join semantics ourselves
