@@ -3796,7 +3796,7 @@ CancelEvalProc(
 	     * interpreters belonging to this one.
 	     */
 
-	    TclSetSlaveCancelFlags((Tcl_Interp *) iPtr,
+	    TclSetChildCancelFlags((Tcl_Interp *) iPtr,
 		    cancelInfo->flags | CANCELED, 0);
 
 	    /*
