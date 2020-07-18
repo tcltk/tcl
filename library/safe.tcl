@@ -842,8 +842,6 @@ proc ::safe::AliasGlob {slave args} {
 	if {![regexp $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
 	    # The *.tm search comes here.
-	} elseif {[string match ~* $thedir]} {
-	    set thedir ./$thedir
 	}
 	# "Special" treatment for (joined) argument {*/pkgIndex.tcl}.
 	# Do the expansion of "*" here, and filter out any directories that are
@@ -875,6 +873,12 @@ proc ::safe::AliasGlob {slave args} {
 	#   the access path).
 	# - The only "special matching characters" that remain in patterns for
 	#   processing by glob are in the filename tail.
+	# - [file join $anything ~${foo}] is ~${foo}, which is not an exact
+	#   match to any directory in the access path.  Hence directory patterns
+	#   that begin with "~" are rejected here.  Tests safe-16.[5-8] check
+	#   that "file join" remains as required and does not expand ~${foo}.
+	# - Bug [3529949] relates to unwanted expansion of ~${foo} and this is
+	#   how the present code avoids the bug.  All tests safe-16.* relate.
 	try {
 	    DirInAccessPath $slave [TranslatePath $slave \
 		    [file join $virtualdir $thedir]]
