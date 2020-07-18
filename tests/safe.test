@@ -21,8 +21,10 @@ foreach i [interp slaves] {
     interp delete $i
 }
 
-set saveAutoPath $::auto_path
+set SaveAutoPath $::auto_path
 set ::auto_path [info library]
+set TestsDir [file normalize [file dirname [info script]]]
+set PathMapp [list $tcl_library TCLLIB $TestsDir TESTSDIR]
 
 # The defunct package http 1.0 was convenient for testing package loading.
 # - Replaced here with tests using example packages provided in subdirectory
@@ -252,6 +254,7 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
     lsort $r
 } {byteOrder engine pathSeparator platform pointerSize wordSize}
 
+rename SafeEval {}
 # More test should be added to check that hostname, nameofexecutable, aren't
 # leaking infos, but they still do...
 
@@ -322,7 +325,6 @@ test safe-7.0c {example pkgIndex.tcl packages, test in master interpreter, child
     set code4 [catch {package require SafeTestPackage2} msg4]
     set code5 [catch HeresPackage1 msg5]
     set code6 [catch HeresPackage2 msg6]
-
     list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
 } -cleanup {
     set ::auto_path $tmpAutoPath
@@ -358,7 +360,6 @@ test safe-7.0d {example pkgIndex.tcl packages, test in master interpreter, main 
     set code4 [catch {package require SafeTestPackage2} msg4]
     set code5 [catch HeresPackage1 msg5]
     set code6 [catch HeresPackage2 msg6]
-
     list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
 } -cleanup {
     set ::auto_path $tmpAutoPath
@@ -399,7 +400,6 @@ test safe-7.0e {example modules packages, test in master interpreter, replace pa
     set out0  [test0::try0]
     set out1  [mod1::test1::try1]
     set out2  [mod2::test2::try2]
-
     list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
 } -cleanup {
     tcl::tm::path remove [file join $TestsDir auto0 modules]
@@ -448,7 +448,6 @@ test safe-7.0f {example modules packages, test in master interpreter, append to 
     set out0  [test0::try0]
     set out1  [mod1::test1::try1]
     set out2  [mod2::test2::try2]
-
     list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
 } -cleanup {
     tcl::tm::path remove [file join $TestsDir auto0 modules]
@@ -596,7 +595,8 @@ test safe-7.3 {check that safe subinterpreters work} {
     }
     set i [safe::interpCreate]
     set j [safe::interpCreate [list $i x]]
-    list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j] [info vars ::safe::S*]
+    list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] \
+            [interp exists $j] [info vars ::safe::S*]
 } {{} {} ok {} 0 {}}
 test safe-7.4 {tests specific path and positive search} -setup {
 } -body {
@@ -654,24 +654,28 @@ test safe-7.4opt {tests specific path and positive search, uses pkg opt} -setup 
         {TCLLIB * TCLLIB/OPTDIR} -- {}}
 
 # test source control on file name
-set i "a"
 test safe-8.1 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
 } -body {
     safe::interpCreate $i
     $i eval {source}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
+    unset i
 } -result {wrong # args: should be "source ?-encoding E? fileName"}
 test safe-8.2 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
 } -body {
     safe::interpCreate $i
     $i eval {source a b c d e}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
+    unset i
 } -result {wrong # args: should be "source ?-encoding E? fileName"}
 test safe-8.3 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set log {}
     proc safe-test-log {str} {lappend ::log $str}
@@ -682,10 +686,12 @@ test safe-8.3 {safe source control on file} -setup {
     list [catch {$i eval {source .}} msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
     safe::interpDelete $i
+    rename safe-test-log {}
+    unset i log
 } -result {1 {permission denied} {{ERROR for slave a : ".": is a directory}}}
 test safe-8.4 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set log {}
     proc safe-test-log {str} {global log; lappend log $str}
@@ -696,10 +702,12 @@ test safe-8.4 {safe source control on file} -setup {
     list [catch {$i eval {source /abc/def}} msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
     safe::interpDelete $i
+    rename safe-test-log {}
+    unset i log
 } -result {1 {permission denied} {{ERROR for slave a : "/abc/def": not in access_path}}}
 test safe-8.5 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set log {}
     proc safe-test-log {str} {global log; lappend log $str}
@@ -714,10 +722,12 @@ test safe-8.5 {safe source control on file} -setup {
     } msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
     safe::interpDelete $i
+    rename safe-test-log {}
+    unset i log
 } -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah]:no such file or directory"]]
 test safe-8.6 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set log {}
     proc safe-test-log {str} {global log; lappend log $str}
@@ -730,10 +740,12 @@ test safe-8.6 {safe source control on file} -setup {
     } msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
     safe::interpDelete $i
+    rename safe-test-log {}
+    unset i log
 } -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah.tcl]:no such file or directory"]]
 test safe-8.7 {safe source control on file} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set log {}
     proc safe-test-log {str} {global log; lappend log $str}
@@ -748,14 +760,16 @@ test safe-8.7 {safe source control on file} -setup {
     } msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
     safe::interpDelete $i
+    rename safe-test-log {}
+    unset i log
 } -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
 test safe-8.8 {safe source forbids -rsrc} emptyTest {
     # Disabled this test.  It was only useful for long unsupported
     # Mac OS 9 systems. [Bug 860a9f1945]
 } {}
 test safe-8.9 {safe source and return} -setup {
+    set i "a"
     set returnScript [makeFile {return "ok"} return.tcl]
     catch {safe::interpDelete $i}
 } -body {
@@ -765,8 +779,10 @@ test safe-8.9 {safe source and return} -setup {
 } -cleanup {
     catch {safe::interpDelete $i}
     removeFile $returnScript
+    unset i
 } -result ok
 test safe-8.10 {safe source and return} -setup {
+    set i "a"
     set returnScript [makeFile {return -level 2 "ok"} return.tcl]
     catch {safe::interpDelete $i}
 } -body {
@@ -779,10 +795,11 @@ test safe-8.10 {safe source and return} -setup {
 } -cleanup {
     catch {safe::interpDelete $i}
     removeFile $returnScript
+    unset i
 } -result ok
 
-set i "a"
 test safe-9.1 {safe interps' deleteHook} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set res {}
 } -body {
@@ -795,8 +812,12 @@ test safe-9.1 {safe interps' deleteHook} -setup {
     }
     safe::interpCreate $i -deleteHook "testDelHook arg1 arg2"
     list [interp eval $i exit] $res
+} -cleanup {
+    catch {rename testDelHook {}}
+    unset i res
 } -result {{} {arg1 arg2 a}}
 test safe-9.2 {safe interps' error in deleteHook} -setup {
+    set i "a"
     catch {safe::interpDelete $i}
     set res {}
     set log {}
@@ -817,7 +838,9 @@ test safe-9.2 {safe interps' error in deleteHook} -setup {
     list [safe::interpDelete $i] $res $log
 } -cleanup {
     safe::setLogCmd $prevlog
-    unset log
+    catch {rename testDelHook {}}
+    rename safe-test-log {}
+    unset i log res
 } -result {{} {arg1 arg2 a} {{NOTICE for slave a : About to delete} {ERROR for slave a : Delete hook error (being catched)} {NOTICE for slave a : Deleted}}}
 test safe-9.3 {dual specification of statics} -returnCodes error -body {
     safe::interpCreate -stat true -nostat
@@ -846,7 +869,526 @@ test safe-9.6 {interpConfigure widget like behaviour} -body {
 	 safe::interpConfigure $i]\
 	[safe::interpConfigure $i -deleteHook toto -nosta -nested 0
 	 safe::interpConfigure $i]
-} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}} {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}} {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}} {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
+        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
+        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
+   # this test shall work, believed equivalent to 9.6
+    set i [safe::interpCreate \
+	    -noStatics \
+	    -nestedLoadOk \
+	    -deleteHook {foo bar}]
+	   safe::interpConfigure $i -accessPath /foo/bar
+    set a [safe::interpConfigure $i]
+    set b [safe::interpConfigure $i -aCCess]
+    set c [safe::interpConfigure $i -nested]
+    set d [safe::interpConfigure $i -statics]
+    set e [safe::interpConfigure $i -DEL]
+	   safe::interpConfigure $i -accessPath /blah -statics 1
+    set f [safe::interpConfigure $i]
+	   safe::interpConfigure $i -deleteHook toto -nosta -nested 0
+    set g [safe::interpConfigure $i]
+
+    list $a $b $c $d $e $f $g
+} -cleanup {
+    safe::interpDelete $i
+    unset -nocomplain a b c d e f g i
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
+        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
+        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+test safe-9.8 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset)} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load auto_load data.
+    interp eval $i {catch nonExistentCommand}
+
+    # Load and run the commands.
+    # This guarantees the test will pass even if the tokens are swapped.
+    set code1 [catch {interp eval $i {report1}} msg1]
+    set code2 [catch {interp eval $i {report2}} msg2]
+
+    # Rearrange access path.  Swap tokens {$p(:1:)} and {$p(:2:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto2] \
+                                           [file join $TestsDir auto0 auto1]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set mappB [mapList $PathMapp [dict get $confB -accessPath]]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Run the commands.
+    set code3 [catch {interp eval $i {report1}} msg3]
+    set code4 [catch {interp eval $i {report2}} msg4]
+
+    list $path1 $path2 -- $path3 $path4 -- $code3 $msg3 $code4 $msg4 -- $mappA -- $mappB
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} -- 0 ok1 0 ok2 --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
+        {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*}}
+test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset)} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load auto_load data.
+    interp eval $i {catch nonExistentCommand}
+
+    # Do not load the commands.  With the tokens swapped, the test
+    # will pass only if the Safe Base has called auto_reset.
+
+    # Rearrange access path.  Swap tokens {$p(:1:)} and {$p(:2:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto2] \
+                                           [file join $TestsDir auto0 auto1]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set mappB [mapList $PathMapp [dict get $confB -accessPath]]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load and run the commands.
+    set code3 [catch {interp eval $i {report1}} msg3]
+    set code4 [catch {interp eval $i {report2}} msg4]
+
+    list $path1 $path2 -- $path3 $path4 -- $code3 $msg3 $code4 $msg4 -- $mappA -- $mappB
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} --\
+        0 ok1 0 ok2 --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
+        {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*}}
+test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement} -setup {
+} -body {
+    # For complete correspondence to safe-9.10opt, include auto0 in access path.
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0] \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load pkgIndex.tcl data.
+    catch {interp eval $i {package require NOEXIST}}
+
+    # Rearrange access path.  Swap tokens {$p(:2:)} and {$p(:3:)}.
+    # This would have no effect because the records in Pkg of these directories
+    # were from access as children of {$p(:1:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0] \
+                                           [file join $TestsDir auto0 auto2] \
+                                           [file join $TestsDir auto0 auto1]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set mappB [mapList $PathMapp [dict get $confB -accessPath]]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
+    set code4 [catch {interp eval $i {package require SafeTestPackage2}} msg4 opts4]
+    set code5 [catch {interp eval $i {HeresPackage1}} msg5 opts5]
+    set code6 [catch {interp eval $i {HeresPackage2}} msg6 opts6]
+
+    list $path1 $path2 -- $path3 $path4 -- $code3 $msg3 $code4 $msg4 -- \
+         $mappA -- $mappB -- $code5 $msg5 $code6 $msg6
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:2:)} {$p(:3:)} -- {$p(:3:)} {$p(:2:)} -- 0 1.2.3 0 2.3.4 --\
+        {TCLLIB TESTSDIR/auto0 TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
+        {TCLLIB TESTSDIR/auto0 TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*} --\
+        0 OK1 0 OK2}
+test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load pkgIndex.tcl data.
+    catch {interp eval $i {package require NOEXIST}}
+
+    # Rearrange access path.  Swap tokens {$p(:1:)} and {$p(:2:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto2] \
+                                           [file join $TestsDir auto0 auto1]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set mappB [mapList $PathMapp [dict get $confB -accessPath]]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
+    set code4 [catch {interp eval $i {package require SafeTestPackage2}} msg4 opts4]
+    set code5 [catch {interp eval $i {HeresPackage1}} msg5 opts5]
+    set code6 [catch {interp eval $i {HeresPackage2}} msg6 opts6]
+
+    list $path1 $path2 -- $path3 $path4 -- $code3 $msg3 $code4 $msg4 -- \
+            $mappA -- $mappB -- \
+            $code5 $msg5 $code6 $msg6
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} --\
+        0 1.2.3 0 2.3.4 --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
+        {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*} --\
+        0 OK1 0 OK2}
+test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load pkgIndex.tcl data.
+    catch {interp eval $i {package require NOEXIST}}
+
+    # Limit access path.  Remove tokens {$p(:1:)} and {$p(:2:)}.
+    safe::interpConfigure $i -accessPath [list $tcl_library]
+
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set mappB [mapList $PathMapp [dict get $confB -accessPath]]
+    set code4 [catch {::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]} path4]
+    set code5 [catch {::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]} path5]
+
+    # Try to load the packages.
+    set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3]
+    set code6 [catch {interp eval $i {package require SafeTestPackage2}} msg6]
+
+    list $path1 $path2 -- $code4 $path4 -- $code5 $path5 -- $code3 $code6 -- \
+            $mappA -- $mappB
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:1:)} {$p(:2:)} -- 1 {* not found in access path} --\
+        1 {* not found in access path} -- 1 1 --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} -- {TCLLIB*}}
+test safe-9.20 {check module loading} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library]]
+
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set sortA [mapAndSortList $PathMapp [dict get $confA -accessPath]]
+    set modsA [interp eval $i {tcl::tm::path list}]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Try to load the packages and run a command from each one.
+    set code0 [catch {interp eval $i {package require test0}} msg0]
+    set code1 [catch {interp eval $i {package require mod1::test1}} msg1]
+    set code2 [catch {interp eval $i {package require mod2::test2}} msg2]
+    set out0  [interp eval $i {test0::try0}]
+    set out1  [interp eval $i {mod1::test1::try1}]
+    set out2  [interp eval $i {mod2::test2::try2}]
+
+    list [lsort [list $path0 $path1 $path2]] -- $modsA -- \
+            $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    safe::interpDelete $i
+} -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
+        0 0.5 0 1.0 0 2.0 --\
+        {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
+         TESTSDIR/auto0/modules/mod2} -- res0 res1 res2}
+# - The command safe::InterpSetConfig adds the master's [tcl::tm::list] in
+#   tokenized form to the slave's access path, and then adds all the
+#   descendants, discovered recursively by using glob.
+# - The order of the directories in the list returned by glob is system-dependent,
+#   and therefore this is true also for (a) the order of token assignment to
+#   descendants of the [tcl::tm::list] roots; and (b) the order of those same
+#   directories in the access path.  Both those things must be sorted before
+#   comparing with expected results.  The test is therefore not totally strict,
+#   but will notice missing or surplus directories.
+test safe-9.21 {interpConfigure change the access path; check module loading; stale data case 1} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library]]
+
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set sortA [mapAndSortList $PathMapp [dict get $confA -accessPath]]
+    set modsA [interp eval $i {tcl::tm::path list}]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Add to access path.
+    # This injects more tokens, pushing modules to higher token numbers.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto1] \
+                                           [file join $TestsDir auto0 auto2]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set sortB [mapAndSortList $PathMapp [dict get $confB -accessPath]]
+    set modsB [interp eval $i {tcl::tm::path list}]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path5 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Load pkg data.
+    catch {interp eval $i {package require NOEXIST}}
+    catch {interp eval $i {package require mod1::NOEXIST}}
+    catch {interp eval $i {package require mod2::NOEXIST}}
+
+    # Try to load the packages and run a command from each one.
+    set code0 [catch {interp eval $i {package require test0}} msg0]
+    set code1 [catch {interp eval $i {package require mod1::test1}} msg1]
+    set code2 [catch {interp eval $i {package require mod2::test2}} msg2]
+    set out0  [interp eval $i {test0::try0}]
+    set out1  [interp eval $i {mod1::test1::try1}]
+    set out2  [interp eval $i {mod2::test2::try2}]
+
+    list [lsort [list $path0 $path1 $path2]] -- $modsA -- \
+            [lsort [list $path3 $path4 $path5]] -- $modsB -- \
+            $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
+            $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    safe::interpDelete $i
+} -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
+        {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
+        0 0.5 0 1.0 0 2.0 --\
+        {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
+         TESTSDIR/auto0/modules/mod2} --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2 TESTSDIR/auto0/modules\
+         TESTSDIR/auto0/modules/mod1 TESTSDIR/auto0/modules/mod2} --\
+        res0 res1 res2}
+# See comments on lsort after test safe-9.20.
+test safe-9.22 {interpConfigure change the access path; check module loading; stale data case 0} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library]]
+
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set sortA [mapAndSortList $PathMapp [dict get $confA -accessPath]]
+    set modsA [interp eval $i {tcl::tm::path list}]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Add to access path.
+    # This injects more tokens, pushing modules to higher token numbers.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                          [file join $TestsDir auto0 auto1] \
+                                          [file join $TestsDir auto0 auto2]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set sortB [mapAndSortList $PathMapp [dict get $confB -accessPath]]
+    set modsB [interp eval $i {tcl::tm::path list}]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path5 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Try to load the packages and run a command from each one.
+    set code0 [catch {interp eval $i {package require test0}} msg0]
+    set code1 [catch {interp eval $i {package require mod1::test1}} msg1]
+    set code2 [catch {interp eval $i {package require mod2::test2}} msg2]
+    set out0  [interp eval $i {test0::try0}]
+    set out1  [interp eval $i {mod1::test1::try1}]
+    set out2  [interp eval $i {mod2::test2::try2}]
+
+    list [lsort [list $path0 $path1 $path2]] -- $modsA --\
+            [lsort [list $path3 $path4 $path5]] -- $modsB -- \
+            $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
+            $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    safe::interpDelete $i
+} -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
+        {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
+        0 0.5 0 1.0 0 2.0 --\
+        {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
+         TESTSDIR/auto0/modules/mod2} --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2 TESTSDIR/auto0/modules\
+         TESTSDIR/auto0/modules/mod1 TESTSDIR/auto0/modules/mod2} --\
+        res0 res1 res2}
+# See comments on lsort after test safe-9.20.
+test safe-9.23 {interpConfigure change the access path; check module loading; stale data case 3} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library]]
+
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set sortA [mapAndSortList $PathMapp [dict get $confA -accessPath]]
+    set modsA [interp eval $i {tcl::tm::path list}]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Force the interpreter to acquire pkg data which will soon become stale.
+    catch {interp eval $i {package require NOEXIST}}
+    catch {interp eval $i {package require mod1::NOEXIST}}
+    catch {interp eval $i {package require mod2::NOEXIST}}
+
+    # Add to access path.
+    # This injects more tokens, pushing modules to higher token numbers.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto1] \
+                                           [file join $TestsDir auto0 auto2]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set sortB [mapAndSortList $PathMapp [dict get $confB -accessPath]]
+    set modsB [interp eval $i {tcl::tm::path list}]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path5 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Refresh stale pkg data.
+    catch {interp eval $i {package require NOEXIST}}
+    catch {interp eval $i {package require mod1::NOEXIST}}
+    catch {interp eval $i {package require mod2::NOEXIST}}
+
+    # Try to load the packages and run a command from each one.
+    set code0 [catch {interp eval $i {package require test0}} msg0]
+    set code1 [catch {interp eval $i {package require mod1::test1}} msg1]
+    set code2 [catch {interp eval $i {package require mod2::test2}} msg2]
+    set out0  [interp eval $i {test0::try0}]
+    set out1  [interp eval $i {mod1::test1::try1}]
+    set out2  [interp eval $i {mod2::test2::try2}]
+
+    list [lsort [list $path0 $path1 $path2]] -- $modsA --\
+            [lsort [list $path3 $path4 $path5]] -- $modsB -- \
+            $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
+            $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    safe::interpDelete $i
+} -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
+        {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
+        0 0.5 0 1.0 0 2.0 --\
+        {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
+         TESTSDIR/auto0/modules/mod2} --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2 TESTSDIR/auto0/modules\
+         TESTSDIR/auto0/modules/mod1 TESTSDIR/auto0/modules/mod2} --\
+        res0 res1 res2}
+# See comments on lsort after test safe-9.20.
+test safe-9.24 {interpConfigure change the access path; check module loading; stale data case 2 (worst case)} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library]]
+
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set sortA [mapAndSortList $PathMapp [dict get $confA -accessPath]]
+    set modsA [interp eval $i {tcl::tm::path list}]
+    set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Force the interpreter to acquire pkg data which will soon become stale.
+    catch {interp eval $i {package require NOEXIST}}
+    catch {interp eval $i {package require mod1::NOEXIST}}
+    catch {interp eval $i {package require mod2::NOEXIST}}
+
+    # Add to access path.
+    # This injects more tokens, pushing modules to higher token numbers.
+    safe::interpConfigure $i -accessPath [list $tcl_library \
+                                           [file join $TestsDir auto0 auto1] \
+                                           [file join $TestsDir auto0 auto2]]
+    # Inspect.
+    set confB [safe::interpConfigure $i]
+    set sortB [mapAndSortList $PathMapp [dict get $confB -accessPath]]
+    set modsB [interp eval $i {tcl::tm::path list}]
+    set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules]]
+    set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod1]]
+    set path5 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 modules mod2]]
+
+    # Try to load the packages and run a command from each one.
+    set code0 [catch {interp eval $i {package require test0}} msg0]
+    set code1 [catch {interp eval $i {package require mod1::test1}} msg1]
+    set code2 [catch {interp eval $i {package require mod2::test2}} msg2]
+    set out0  [interp eval $i {test0::try0}]
+    set out1  [interp eval $i {mod1::test1::try1}]
+    set out2  [interp eval $i {mod2::test2::try2}]
+
+    list [lsort [list $path0 $path1 $path2]] -- $modsA -- \
+            [lsort [list $path3 $path4 $path5]] -- $modsB -- \
+            $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
+            $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    safe::interpDelete $i
+} -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
+        {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
+        0 0.5 0 1.0 0 2.0 --\
+        {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
+         TESTSDIR/auto0/modules/mod2} --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2 TESTSDIR/auto0/modules\
+         TESTSDIR/auto0/modules/mod1 TESTSDIR/auto0/modules/mod2} --\
+        res0 res1 res2}
+# See comments on lsort after test safe-9.20.
 
 test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
    # this test shall work, believed equivalent to 9.6
@@ -2335,6 +2877,7 @@ test safe-16.1 {Bug 3529949: defang ~ in paths} -setup {
 } -cleanup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
+    unset savedHOME
 } -result {./~}
 test safe-16.2 {Bug 3529949: defang ~user in paths} -setup {
     set i [safe::interpCreate]
@@ -2344,6 +2887,7 @@ test safe-16.2 {Bug 3529949: defang ~user in paths} -setup {
 	    "file join \[file dirname ~$user\] \[file tail ~$user\]"]
 } -cleanup {
     safe::interpDelete $i
+    unset user
 } -result {./~USER}
 test safe-16.3 {Bug 3529949: defang ~ in globs} -setup {
     set syntheticHOME [makeDirectory foo]
@@ -2358,6 +2902,7 @@ test safe-16.3 {Bug 3529949: defang ~ in globs} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     removeDirectory $syntheticHOME
+    unset savedHOME syntheticHOME
 } -result {}
 test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
     set i [safe::interpCreate]
@@ -2367,10 +2912,56 @@ test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
 } -cleanup {
     safe::interpDelete $i
 } -result {}
+test safe-16.5 {Bug 3529949: defang ~ in paths used by AliasGlob (1)} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -body {
+    $i eval {
+	set d [format %c 126]
+	file join {$p(:0:)} $d
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+    unset savedHOME
+} -result {~}
+test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -body {
+    $i eval {
+	set d [format %c 126]
+	file join {$p(:0:)/foo/bar} $d
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+    unset savedHOME
+} -result {~}
+test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -body {
+    string map [list $user USER] [$i eval [list file join {$p(:0:)} ~$user]]
+} -cleanup {
+    safe::interpDelete $i
+    unset user
+} -result {~USER}
+test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -body {
+    string map [list $user USER] [$i eval [list file join {$p(:0:)/foo/bar} ~$user]]
+} -cleanup {
+    safe::interpDelete $i
+    unset user
+} -result {~USER}
 
-set ::auto_path $saveAutoPath
+set ::auto_path $SaveAutoPath
 zipfs unmount ${ZipMountPoint}
-unset pkgOptErrMsg pkgOptDir pkgJarDir saveAutoPath TestsDir ZipMountPoint PathMapp
+unset pkgOptErrMsg pkgOptDir pkgJarDir SaveAutoPath TestsDir ZipMountPoint PathMapp
 rename mapList {}
 rename mapAndSortList {}
 # cleanup
